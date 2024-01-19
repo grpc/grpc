@@ -20,6 +20,7 @@ load(
     "py_grpc_library",
     "py_proto_library",
 )
+load("//:python_rules_test.bzl", "python_rules_test_suite")
 
 package(
     default_testonly = 1,
@@ -144,6 +145,16 @@ py_test(
     ],
 )
 
+py_test(
+    name = "import_from_grpcio_reflection_test",
+    srcs = ["import_from_grpcio_reflection.py"],
+    main = "import_from_grpcio_reflection.py",
+    python_version = "PY3",
+    deps = [
+        "@com_github_grpc_grpc//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
+    ],
+)
+
 # Test that a py_proto_library can be successfully imported without requiring
 # explicit dependencies on unused dependencies of the generated code.
 py_test(
@@ -154,4 +165,8 @@ py_test(
     deps = [
         ":helloworld_py_pb2",
     ],
+)
+
+python_rules_test_suite(
+    name = "python_rules_test",
 )

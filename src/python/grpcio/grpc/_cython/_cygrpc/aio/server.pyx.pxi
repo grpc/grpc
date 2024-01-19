@@ -55,6 +55,7 @@ cdef class RPCState:
         self.metadata_sent = False
         self.status_sent = False
         self.status_code = StatusCode.ok
+        self.py_status_code = None
         self.status_details = ''
         self.trailing_metadata = _IMMUTABLE_EMPTY_METADATA
         self.compression_algorithm = None
@@ -184,6 +185,7 @@ cdef class _ServicerContext:
                 self._rpc_state.status_details = details
 
             actual_code = get_status_code(code)
+            self._rpc_state.py_status_code = code
             self._rpc_state.status_code = actual_code
 
             self._rpc_state.status_sent = True
@@ -213,9 +215,10 @@ cdef class _ServicerContext:
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
+        self._rpc_state.py_status_code = code
 
     def code(self):
-        return self._rpc_state.status_code
+        return self._rpc_state.py_status_code
 
     def set_details(self, str details):
         self._rpc_state.status_details = details
@@ -398,6 +401,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Executes application logic
     cdef object response_message
     cdef _SyncServicerContext sync_servicer_context
+    install_context_from_request_call_event_aio(rpc_state)
 
     if _is_async_handler(unary_handler):
         # Run async method handlers in this coroutine
@@ -450,6 +454,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
+    uninstall_context()
 
 
 async def _finish_handler_with_stream_responses(RPCState rpc_state,
@@ -465,6 +470,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     """
     cdef object async_response_generator
     cdef object response_message
+    install_context_from_request_call_event_aio(rpc_state)
 
     if inspect.iscoroutinefunction(stream_handler):
         # Case 1: Coroutine async handler - using reader-writer API
@@ -518,6 +524,7 @@ async def _finish_handler_with_stream_responses(RPCState rpc_state,
     rpc_state.metadata_sent = True
     rpc_state.status_sent = True
     await execute_batch(rpc_state, finish_ops, loop)
+    uninstall_context()
 
 
 async def _handle_unary_unary_rpc(object method_handler,
@@ -702,7 +709,9 @@ async def _handle_exceptions(RPCState rpc_state, object rpc_coro, object loop):
         if rpc_state.client_closed:
             return
         else:
-            raise
+            _LOGGER.exception('ExecuteBatchError raised in core by servicer method [%s]' % (
+                _decode(rpc_state.method())))
+            return
     except Exception as e:
         _LOGGER.exception('Unexpected [%s] raised by servicer method [%s]' % (
             type(e).__name__,

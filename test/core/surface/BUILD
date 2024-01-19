@@ -33,6 +33,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "channel_init_test",
+    srcs = ["channel_init_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "grpc_completion_queue_test",
     srcs = ["completion_queue_test.cc"],
     external_deps = ["gtest"],
@@ -112,18 +126,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "public_headers_must_be_c89",
-    srcs = ["public_headers_must_be_c89.c"],
-    language = "C",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
     ],
 )

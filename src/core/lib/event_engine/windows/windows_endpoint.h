@@ -19,6 +19,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 
 namespace grpc_event_engine {
@@ -29,7 +30,7 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   WindowsEndpoint(const EventEngine::ResolvedAddress& peer_address,
                   std::unique_ptr<WinSocket> socket,
                   MemoryAllocator&& allocator, const EndpointConfig& config,
-                  Executor* Executor);
+                  ThreadPool* thread_pool, std::shared_ptr<EventEngine> engine);
   ~WindowsEndpoint() override;
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* args) override;
@@ -47,13 +48,23 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
                absl::AnyInvocable<void(absl::Status)> cb);
-    // Resets the per-request data
-    void Reset();
+    // Resets the per-request data, releasing the ref on io_state_.
+    // Returns the previous callback.
+    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    ResetAndReturnCallback();
+    // Run the callback with whatever data is available, and reset state.
+    //
+    // Returns true if the callback has been called with some data. Returns
+    // false if no data has been read.
+    bool MaybeFinishIfDataHasAlreadyBeenRead();
+    // Swap any leftover slices into the provided buffer
+    void DonateSpareSlices(SliceBuffer* buffer);
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
     absl::AnyInvocable<void(absl::Status)> cb_;
     SliceBuffer* buffer_ = nullptr;
+    SliceBuffer last_read_buffer_;
   };
 
   // Permanent closure type for Write callbacks
@@ -62,8 +73,10 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     void Run() override;
     void Prime(std::shared_ptr<AsyncIOState> io_state, SliceBuffer* buffer,
                absl::AnyInvocable<void(absl::Status)> cb);
-    // Resets the per-request data
-    void Reset();
+    // Resets the per-request data, releasing the ref on io_state_.
+    // Returns the previous callback.
+    ABSL_MUST_USE_RESULT absl::AnyInvocable<void(absl::Status)>
+    ResetAndReturnCallback();
 
    private:
     std::shared_ptr<AsyncIOState> io_state_;
@@ -78,12 +91,20 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   // Endpoint, and be destroyed asynchronously when all pending overlapped
   // events are complete.
   struct AsyncIOState {
-    AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket);
+    AsyncIOState(WindowsEndpoint* endpoint, std::unique_ptr<WinSocket> socket,
+                 std::shared_ptr<EventEngine> engine, ThreadPool* thread_pool);
     ~AsyncIOState();
+
+    // Perform the low-level calls and execute the HandleReadClosure
+    // asynchronously.
+    void DoTcpRead(SliceBuffer* buffer);
+
     WindowsEndpoint* const endpoint;
     std::unique_ptr<WinSocket> socket;
     HandleReadClosure handle_read_event;
     HandleWriteClosure handle_write_event;
+    std::shared_ptr<EventEngine> engine;
+    ThreadPool* thread_pool;
   };
 
   EventEngine::ResolvedAddress peer_address_;
@@ -91,7 +112,6 @@ class WindowsEndpoint : public EventEngine::Endpoint {
   EventEngine::ResolvedAddress local_address_;
   std::string local_address_string_;
   MemoryAllocator allocator_;
-  Executor* executor_;
   std::shared_ptr<AsyncIOState> io_state_;
 };
 

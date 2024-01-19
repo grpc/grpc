@@ -26,13 +26,15 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
-#include "upb/json_encode.h"
-#include "upb/status.h"
-#include "upb/upb.hpp"
+#include "upb/base/status.hpp"
+#include "upb/json/encode.h"
+#include "upb/mem/arena.hpp"
 
+#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 
@@ -68,8 +70,9 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
     errors->AddError("could not parse plugin config");
     return {};
   }
-  const auto* plugin_config =
-      grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(specifier);
+  const auto* plugin_config = reinterpret_cast<const upb_Message*>(
+      grpc_lookup_v1_RouteLookupClusterSpecifier_route_lookup_config(
+          specifier));
   if (plugin_config == nullptr) {
     ValidationErrors::ScopedField field(errors, ".route_lookup_config");
     errors->AddError("field not present");
@@ -88,16 +91,21 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   void* buf = upb_Arena_Malloc(arena, json_size + 1);
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  auto json = JsonParse(reinterpret_cast<char*>(buf));
   GPR_ASSERT(json.ok());
-  return Json::Array{Json::Object{
-      {"rls_experimental",
-       Json::Object{
-           {"routeLookupConfig", std::move(*json)},
-           {"childPolicy",
-            Json::Array{Json::Object{{"cds_experimental", Json::Object()}}}},
-           {"childPolicyConfigTargetFieldName", "cluster"},
-       }}}};
+  return Json::FromArray({Json::FromObject(
+      {{"rls_experimental",
+        Json::FromObject({
+            {"routeLookupConfig", std::move(*json)},
+            {"childPolicy",
+             Json::FromArray({
+                 Json::FromObject({{"cds_experimental",
+                                    Json::FromObject({
+                                        {"isDynamic", Json::FromBool(true)},
+                                    })}}),
+             })},
+            {"childPolicyConfigTargetFieldName", Json::FromString("cluster")},
+        })}})});
 }
 
 //

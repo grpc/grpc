@@ -30,15 +30,14 @@
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/health/health_check_client.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
-#include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,12 +58,15 @@
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/cancel_callback.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/transport.h"
 
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -131,6 +133,36 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
   return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
          channel_stack_->call_stack_size;
+}
+
+ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
+    CallArgs call_args) {
+  // If not using channelz, we just need to call the channel stack.
+  if (channelz_subchannel() == nullptr) {
+    return channel_stack_->MakeClientCallPromise(std::move(call_args));
+  }
+  // Otherwise, we need to wrap the channel stack promise with code that
+  // handles the channelz updates.
+  return OnCancel(
+      Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
+          [self = Ref()](ServerMetadataHandle metadata) {
+            channelz::SubchannelNode* channelz_subchannel =
+                self->channelz_subchannel();
+            GPR_ASSERT(channelz_subchannel != nullptr);
+            if (metadata->get(GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
+              channelz_subchannel->RecordCallFailed();
+            } else {
+              channelz_subchannel->RecordCallSucceeded();
+            }
+            return metadata;
+          }),
+      [self = Ref()]() {
+        channelz::SubchannelNode* channelz_subchannel =
+            self->channelz_subchannel();
+        GPR_ASSERT(channelz_subchannel != nullptr);
+        channelz_subchannel->RecordCallFailed();
+      });
 }
 
 //
@@ -367,182 +399,14 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& p : watchers_) {
     subchannel_->work_serializer_.Schedule(
-        [watcher = p.second->Ref(), state, status]() {
-          watcher->OnConnectivityStateChange(state, status);
+        [watcher = p.second->Ref(), state, status]() mutable {
+          auto* watcher_ptr = watcher.get();
+          watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
+                                                 status);
         },
         DEBUG_LOCATION);
   }
 }
-
-//
-// Subchannel::HealthWatcherMap::HealthWatcher
-//
-
-// State needed for tracking the connectivity state with a particular
-// health check service name.
-class Subchannel::HealthWatcherMap::HealthWatcher
-    : public AsyncConnectivityStateWatcherInterface {
- public:
-  HealthWatcher(WeakRefCountedPtr<Subchannel> c,
-                std::string health_check_service_name)
-      : subchannel_(std::move(c)),
-        health_check_service_name_(std::move(health_check_service_name)),
-        state_(subchannel_->state_ == GRPC_CHANNEL_READY
-                   ? GRPC_CHANNEL_CONNECTING
-                   : subchannel_->state_),
-        watcher_list_(subchannel_.get()) {
-    // If the subchannel is already connected, start health checking.
-    if (subchannel_->state_ == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
-  }
-
-  ~HealthWatcher() override {
-    subchannel_.reset(DEBUG_LOCATION, "health_watcher");
-  }
-
-  const std::string& health_check_service_name() const {
-    return health_check_service_name_;
-  }
-
-  grpc_connectivity_state state() const { return state_; }
-
-  void AddWatcherLocked(
-      RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
-    subchannel_->work_serializer_.Schedule(
-        [watcher = watcher->Ref(), state = state_, status = status_]() {
-          watcher->OnConnectivityStateChange(state, status);
-        },
-        DEBUG_LOCATION);
-    watcher_list_.AddWatcherLocked(std::move(watcher));
-  }
-
-  void RemoveWatcherLocked(
-      Subchannel::ConnectivityStateWatcherInterface* watcher) {
-    watcher_list_.RemoveWatcherLocked(watcher);
-  }
-
-  bool HasWatchers() const { return !watcher_list_.empty(); }
-
-  void NotifyLocked(grpc_connectivity_state state, const absl::Status& status)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(subchannel_->mu_) {
-    if (state == GRPC_CHANNEL_READY) {
-      // If we had not already notified for CONNECTING state, do so now.
-      // (We may have missed this earlier, because if the transition
-      // from IDLE to CONNECTING to READY was too quick, the connected
-      // subchannel may not have sent us a notification for CONNECTING.)
-      if (state_ != GRPC_CHANNEL_CONNECTING) {
-        state_ = GRPC_CHANNEL_CONNECTING;
-        status_ = status;
-        watcher_list_.NotifyLocked(state_, status);
-      }
-      // If we've become connected, start health checking.
-      StartHealthCheckingLocked();
-    } else {
-      state_ = state;
-      status_ = status;
-      watcher_list_.NotifyLocked(state_, status);
-      // We're not connected, so stop health checking.
-      health_check_client_.reset();
-    }
-  }
-
-  void Orphan() override {
-    watcher_list_.Clear();
-    health_check_client_.reset();
-    Unref();
-  }
-
- private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& status) override {
-    {
-      MutexLock lock(&subchannel_->mu_);
-      if (new_state != GRPC_CHANNEL_SHUTDOWN &&
-          health_check_client_ != nullptr) {
-        state_ = new_state;
-        status_ = status;
-        watcher_list_.NotifyLocked(new_state, status);
-      }
-    }
-    // Drain any connectivity state notifications after releasing the mutex.
-    subchannel_->work_serializer_.DrainQueue();
-  }
-
-  void StartHealthCheckingLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(subchannel_->mu_) {
-    GPR_ASSERT(health_check_client_ == nullptr);
-    health_check_client_ = MakeHealthCheckClient(
-        health_check_service_name_, subchannel_->connected_subchannel_,
-        subchannel_->pollset_set_, subchannel_->channelz_node_, Ref());
-  }
-
-  WeakRefCountedPtr<Subchannel> subchannel_;
-  std::string health_check_service_name_;
-  OrphanablePtr<SubchannelStreamClient> health_check_client_;
-  grpc_connectivity_state state_;
-  absl::Status status_;
-  ConnectivityStateWatcherList watcher_list_;
-};
-
-//
-// Subchannel::HealthWatcherMap
-//
-
-void Subchannel::HealthWatcherMap::AddWatcherLocked(
-    WeakRefCountedPtr<Subchannel> subchannel,
-    const std::string& health_check_service_name,
-    RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
-  // If the health check service name is not already present in the map,
-  // add it.
-  auto it = map_.find(health_check_service_name);
-  HealthWatcher* health_watcher;
-  if (it == map_.end()) {
-    auto w = MakeOrphanable<HealthWatcher>(std::move(subchannel),
-                                           health_check_service_name);
-    health_watcher = w.get();
-    map_.emplace(health_check_service_name, std::move(w));
-  } else {
-    health_watcher = it->second.get();
-  }
-  // Add the watcher to the entry.
-  health_watcher->AddWatcherLocked(std::move(watcher));
-}
-
-void Subchannel::HealthWatcherMap::RemoveWatcherLocked(
-    const std::string& health_check_service_name,
-    ConnectivityStateWatcherInterface* watcher) {
-  auto it = map_.find(health_check_service_name);
-  GPR_ASSERT(it != map_.end());
-  it->second->RemoveWatcherLocked(watcher);
-  // If we just removed the last watcher for this service name, remove
-  // the map entry.
-  if (!it->second->HasWatchers()) map_.erase(it);
-}
-
-void Subchannel::HealthWatcherMap::NotifyLocked(grpc_connectivity_state state,
-                                                const absl::Status& status) {
-  for (const auto& p : map_) {
-    p.second->NotifyLocked(state, status);
-  }
-}
-
-grpc_connectivity_state
-Subchannel::HealthWatcherMap::CheckConnectivityStateLocked(
-    Subchannel* subchannel, const std::string& health_check_service_name) {
-  auto it = map_.find(health_check_service_name);
-  if (it == map_.end()) {
-    // If the health check service name is not found in the map, we're
-    // not currently doing a health check for that service name.  If the
-    // subchannel's state without health checking is READY, report
-    // CONNECTING, since that's what we'd be in as soon as we do start a
-    // watch.  Otherwise, report the channel's state without health checking.
-    return subchannel->state_ == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
-                                                    : subchannel->state_;
-  }
-  HealthWatcher* health_watcher = it->second.get();
-  return health_watcher->state();
-}
-
-void Subchannel::HealthWatcherMap::ShutdownLocked() { map_.clear(); }
 
 //
 // Subchannel
@@ -599,6 +463,7 @@ Subchannel::Subchannel(SubchannelKey key,
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
       watcher_list_(this),
+      work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
       event_engine_(args_.GetObjectRef<EventEngine>()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
@@ -689,7 +554,6 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 }
 
 void Subchannel::WatchConnectivityState(
-    const absl::optional<std::string>& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   {
     MutexLock lock(&mu_);
@@ -697,25 +561,20 @@ void Subchannel::WatchConnectivityState(
     if (interested_parties != nullptr) {
       grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
     }
-    if (!health_check_service_name.has_value()) {
-      work_serializer_.Schedule(
-          [watcher = watcher->Ref(), state = state_, status = status_]() {
-            watcher->OnConnectivityStateChange(state, status);
-          },
-          DEBUG_LOCATION);
-      watcher_list_.AddWatcherLocked(std::move(watcher));
-    } else {
-      health_watcher_map_.AddWatcherLocked(
-          WeakRef(DEBUG_LOCATION, "health_watcher"), *health_check_service_name,
-          std::move(watcher));
-    }
+    work_serializer_.Schedule(
+        [watcher = watcher->Ref(), state = state_, status = status_]() mutable {
+          auto* watcher_ptr = watcher.get();
+          watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
+                                                 status);
+        },
+        DEBUG_LOCATION);
+    watcher_list_.AddWatcherLocked(std::move(watcher));
   }
   // Drain any connectivity state notifications after releasing the mutex.
   work_serializer_.DrainQueue();
 }
 
 void Subchannel::CancelConnectivityStateWatch(
-    const absl::optional<std::string>& health_check_service_name,
     ConnectivityStateWatcherInterface* watcher) {
   {
     MutexLock lock(&mu_);
@@ -723,12 +582,7 @@ void Subchannel::CancelConnectivityStateWatch(
     if (interested_parties != nullptr) {
       grpc_pollset_set_del_pollset_set(pollset_set_, interested_parties);
     }
-    if (!health_check_service_name.has_value()) {
-      watcher_list_.RemoveWatcherLocked(watcher);
-    } else {
-      health_watcher_map_.RemoveWatcherLocked(*health_check_service_name,
-                                              watcher);
-    }
+    watcher_list_.RemoveWatcherLocked(watcher);
   }
   // Drain any connectivity state notifications after releasing the mutex.
   // (Shouldn't actually be necessary in this case, but better safe than sorry.)
@@ -778,7 +632,6 @@ void Subchannel::Orphan() {
     shutdown_ = true;
     connector_.reset();
     connected_subchannel_.reset();
-    health_watcher_map_.ShutdownLocked();
   }
   // Drain any connectivity state notifications after releasing the mutex.
   work_serializer_.DrainQueue();
@@ -828,10 +681,8 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
             ConnectivityStateName(state),
             status.ok() ? "" : absl::StrCat(": ", status_.ToString()))));
   }
-  // Notify non-health watchers.
+  // Notify watchers.
   watcher_list_.NotifyLocked(state, status_);
-  // Notify health watchers.
-  health_watcher_map_.NotifyLocked(state, status_);
 }
 
 void Subchannel::OnRetryTimer() {
@@ -918,9 +769,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   // Construct channel stack.
-  ChannelStackBuilderImpl builder("subchannel", GRPC_CLIENT_SUBCHANNEL,
-                                  connecting_result_.channel_args);
-  builder.SetTransport(connecting_result_.transport);
+  // Builder takes ownership of transport.
+  ChannelStackBuilderImpl builder(
+      "subchannel", GRPC_CLIENT_SUBCHANNEL,
+      connecting_result_.channel_args.SetObject(
+          std::exchange(connecting_result_.transport, nullptr)));
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return false;
   }
@@ -933,9 +786,6 @@ bool Subchannel::PublishTransportLocked() {
             key_.ToString().c_str(), StatusToString(error).c_str());
     return false;
   }
-  // Release the ownership since it is now owned by the connected filter in the
-  // channel stack (published).
-  connecting_result_.transport = nullptr;
   RefCountedPtr<channelz::SocketNode> socket =
       std::move(connecting_result_.socket_node);
   connecting_result_.Reset();

@@ -23,14 +23,14 @@ import helloworld_pb2_grpc
 
 
 def run():
-    uds_addresses = ['unix:helloworld.sock', 'unix:///tmp/helloworld.sock']
+    uds_addresses = ["unix:helloworld.sock", "unix:///tmp/helloworld.sock"]
     for uds_address in uds_addresses:
         with grpc.insecure_channel(uds_address) as channel:
             stub = helloworld_pb2_grpc.GreeterStub(channel)
-            response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
-            logging.info('Received: %s', response.message)
+            response = stub.SayHello(helloworld_pb2.HelloRequest(name="you"))
+            logging.info("Received: %s", response.message)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     run()

@@ -40,7 +40,7 @@ popd
 # Install protobuf
 mkdir -p "third_party/protobuf/cmake/build"
 pushd "third_party/protobuf/cmake/build"
-cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
+cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release -Dprotobuf_ABSL_PROVIDER=package ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
@@ -66,11 +66,14 @@ make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
-# a standalone build from an archive
-# shellcheck disable=SC2016
-git submodule foreach 'cd $toplevel; rm -rf $name'
+# a standalone build from an archive.
+# Get list of submodules from the .gitmodules file since for "git submodule foreach"
+# we'd need to be in a git workspace (and that's not the case when running
+# distribtests as a bazel action)
+grep 'path = ' .gitmodules | sed 's/^.*path = //' | xargs rm -rf
 
 # Install gRPC
+# TODO(jtattermusch): avoid the need for setting utf8_range_DIR
 mkdir -p "cmake/build"
 pushd "cmake/build"
 cmake \
@@ -81,6 +84,7 @@ cmake \
   -DgRPC_ABSL_PROVIDER=package \
   -DgRPC_CARES_PROVIDER=package \
   -DgRPC_PROTOBUF_PROVIDER=package \
+  -Dutf8_range_DIR=/usr/local/lib/cmake/utf8_range \
   -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \

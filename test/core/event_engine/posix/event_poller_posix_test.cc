@@ -19,9 +19,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
@@ -33,10 +31,10 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -67,17 +65,14 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/util/port.h"
 
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
-
 static gpr_mu g_mu;
-static grpc_event_engine::experimental::PosixEventPoller* g_event_poller =
-    nullptr;
+static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+    g_event_poller;
 
 // buffer size used to send and receive data.
 // 1024 is the minimal value to set TCP send and receive buffer.
@@ -700,7 +695,7 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), g_event_poller, kNumHandles,
+  Worker* worker = new Worker(Scheduler(), g_event_poller.get(), kNumHandles,
                               kNumWakeupsPerHandle);
   worker->Start();
   worker->Wait();
@@ -713,10 +708,8 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   gpr_mu_init(&g_mu);
-  grpc_core::UniquePtr<char> poll_strategy =
-      GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
-  auto strings = absl::StrSplit(poll_strategy.get(), ',');
+  auto poll_strategy = grpc_core::ConfigVars::Get().PollStrategy();
+  auto strings = absl::StrSplit(poll_strategy, ',');
   if (std::find(strings.begin(), strings.end(), "none") != strings.end()) {
     // Skip the test entirely if poll strategy is none.
     return 0;

@@ -55,7 +55,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
 /// is safe to use from within core.
@@ -103,7 +103,6 @@ struct CallRegistrationTable {
   // C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall> map
       ABSL_GUARDED_BY(mu);
-  int method_registration_attempts ABSL_GUARDED_BY(mu) = 0;
 };
 
 class Channel : public RefCounted<Channel>,
@@ -112,7 +111,7 @@ class Channel : public RefCounted<Channel>,
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
       const char* target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type,
-      grpc_transport* optional_transport);
+      Transport* optional_transport);
 
   static absl::StatusOr<RefCountedPtr<Channel>> CreateWithBuilder(
       ChannelStackBuilder* builder);
@@ -148,11 +147,6 @@ class Channel : public RefCounted<Channel>,
   int TestOnlyRegisteredCalls() {
     MutexLock lock(&registration_table_.mu);
     return registration_table_.map.size();
-  }
-
-  int TestOnlyRegistrationAttempts() {
-    MutexLock lock(&registration_table_.mu);
-    return registration_table_.method_registration_attempts;
   }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {

@@ -13,7 +13,10 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
+
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GPR_WINDOWS
 
@@ -28,9 +31,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
-#include "src/core/lib/event_engine/thread_pool.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -47,18 +51,23 @@ class WindowsEventEngine : public EventEngine,
  public:
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
-    ~WindowsDNSResolver() override;
-    LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                    absl::string_view name,
-                                    absl::string_view default_port,
-                                    Duration timeout) override;
-    LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                               absl::string_view name,
-                               Duration timeout) override;
-    bool CancelLookup(LookupTaskHandle handle) override;
+    WindowsDNSResolver() = delete;
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+    explicit WindowsDNSResolver(
+        grpc_core::OrphanablePtr<AresResolver> ares_resolver);
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+    void LookupHostname(LookupHostnameCallback on_resolve,
+                        absl::string_view name,
+                        absl::string_view default_port) override;
+    void LookupSRV(LookupSRVCallback on_resolve,
+                   absl::string_view name) override;
+    void LookupTXT(LookupTXTCallback on_resolve,
+                   absl::string_view name) override;
+
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+   private:
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   };
 
   WindowsEventEngine();
@@ -79,7 +88,7 @@ class WindowsEventEngine : public EventEngine,
 
   bool CancelConnect(ConnectionHandle handle) override;
   bool IsWorkerThread() override;
-  std::unique_ptr<DNSResolver> GetDNSResolver(
+  absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) override;
   void Run(Closure* closure) override;
   void Run(absl::AnyInvocable<void()> closure) override;
@@ -88,11 +97,12 @@ class WindowsEventEngine : public EventEngine,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
-  // Retrieve the base executor.
+  // Retrieve the base ThreadPool.
   // This is public because most classes that know the concrete
   // WindowsEventEngine type are effectively friends.
   // Not intended for external use.
-  Executor* executor() { return executor_.get(); }
+  ThreadPool* thread_pool() { return thread_pool_.get(); }
+  IOCP* poller() { return &iocp_; }
 
  private:
   // State of an active connection.
@@ -103,7 +113,8 @@ class WindowsEventEngine : public EventEngine,
     grpc_core::Mutex mu
         ABSL_ACQUIRED_BEFORE(WindowsEventEngine::connection_mu_);
     EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
-    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu);
+    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu) =
+        EventEngine::TaskHandle::kInvalid;
     EventEngine::OnConnectCallback on_connected_user_callback
         ABSL_GUARDED_BY(mu);
     EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);
@@ -115,14 +126,14 @@ class WindowsEventEngine : public EventEngine,
   // A poll worker which schedules itself unless kicked
   class IOCPWorkClosure : public EventEngine::Closure {
    public:
-    explicit IOCPWorkClosure(Executor* executor, IOCP* iocp);
+    explicit IOCPWorkClosure(ThreadPool* thread_pool, IOCP* iocp);
     void Run() override;
     void WaitForShutdown();
 
    private:
     std::atomic<int> workers_{1};
     grpc_core::Notification done_signal_;
-    Executor* executor_;
+    ThreadPool* thread_pool_;
     IOCP* iocp_;
   };
 
@@ -149,7 +160,7 @@ class WindowsEventEngine : public EventEngine,
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};
 
-  std::shared_ptr<ThreadPool> executor_;
+  std::shared_ptr<ThreadPool> thread_pool_;
   IOCP iocp_;
   TimerManager timer_manager_;
   IOCPWorkClosure iocp_worker_;

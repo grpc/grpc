@@ -69,6 +69,7 @@ some configuration as environment variables that can be set.
   - health_check_client - traces health checking client code
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
+  - http2_ping - traces pings/ping acks/antagonist writes in http2 stack.
   - http1 - traces HTTP/1.x operations performed by gRPC
   - inproc - traces the in-process transport
   - http_keepalive - traces gRPC keepalive pings
@@ -101,7 +102,6 @@ some configuration as environment variables that can be set.
   - xds_client - traces xds client
   - xds_cluster_manager_lb - traces cluster manager LB policy
   - xds_cluster_impl_lb - traces cluster impl LB policy
-  - xds_cluster_resolver_lb - traces xds cluster resolver LB policy
   - xds_resolver - traces xds resolver
 
   The following tracers will only run in binaries built in DEBUG mode. This is

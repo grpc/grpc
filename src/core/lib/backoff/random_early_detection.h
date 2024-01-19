@@ -17,9 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <limits.h>
+
 #include <cstdint>
 
-#include "absl/random/random.h"
+#include "absl/random/bit_gen_ref.h"
 
 namespace grpc_core {
 
@@ -27,6 +29,7 @@ namespace grpc_core {
 // or accepted based upon their size.
 class RandomEarlyDetection {
  public:
+  RandomEarlyDetection() : soft_limit_(INT_MAX), hard_limit_(INT_MAX) {}
   RandomEarlyDetection(uint64_t soft_limit, uint64_t hard_limit)
       : soft_limit_(soft_limit), hard_limit_(hard_limit) {}
 
@@ -35,10 +38,15 @@ class RandomEarlyDetection {
   bool MustReject(uint64_t size) { return size >= hard_limit_; }
 
   // Returns true if the item should be rejected.
-  bool Reject(uint64_t size);
+  bool Reject(uint64_t size, absl::BitGenRef bitsrc) const;
 
   uint64_t soft_limit() const { return soft_limit_; }
   uint64_t hard_limit() const { return hard_limit_; }
+
+  void SetLimits(uint64_t soft_limit, uint64_t hard_limit) {
+    soft_limit_ = soft_limit;
+    hard_limit_ = hard_limit;
+  }
 
  private:
   // The soft limit is the size at which we start rejecting items with a
@@ -47,8 +55,6 @@ class RandomEarlyDetection {
   uint64_t soft_limit_;
   // The hard limit is the size at which we reject all items.
   uint64_t hard_limit_;
-  // The bit generator used to generate random numbers.
-  absl::InsecureBitGen bitgen_;
 };
 
 }  // namespace grpc_core

@@ -25,7 +25,7 @@ from tests.unit import resources
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
-_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
+_SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 _NUM_STREAM_RESPONSES = 5
 _RESPONSE_PAYLOAD_SIZE = 42
 
@@ -34,20 +34,25 @@ class _SecureCallMixin:
     """A Mixin to run the call tests over a secure channel."""
 
     async def setUp(self):
-        server_credentials = grpc.ssl_server_credentials([
-            (resources.private_key(), resources.certificate_chain())
-        ])
+        server_credentials = grpc.ssl_server_credentials(
+            [(resources.private_key(), resources.certificate_chain())]
+        )
         channel_credentials = grpc.ssl_channel_credentials(
-            resources.test_root_certificates())
+            resources.test_root_certificates()
+        )
 
         self._server_address, self._server = await start_test_server(
-            secure=True, server_credentials=server_credentials)
-        channel_options = ((
-            'grpc.ssl_target_name_override',
-            _SERVER_HOST_OVERRIDE,
-        ),)
-        self._channel = aio.secure_channel(self._server_address,
-                                           channel_credentials, channel_options)
+            secure=True, server_credentials=server_credentials
+        )
+        channel_options = (
+            (
+                "grpc.ssl_target_name_override",
+                _SERVER_HOST_OVERRIDE,
+            ),
+        )
+        self._channel = aio.secure_channel(
+            self._server_address, channel_credentials, channel_options
+        )
         self._stub = test_pb2_grpc.TestServiceStub(self._channel)
 
     async def tearDown(self):
@@ -69,8 +74,9 @@ class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
             grpc.access_token_call_credentials("abc"),
             grpc.access_token_call_credentials("def"),
         )
-        call = self._stub.UnaryCall(messages_pb2.SimpleRequest(),
-                                    credentials=call_credentials)
+        call = self._stub.UnaryCall(
+            messages_pb2.SimpleRequest(), credentials=call_credentials
+        )
         response = await call
 
         self.assertIsInstance(response, messages_pb2.SimpleResponse)
@@ -82,18 +88,23 @@ class TestUnaryStreamSecureCall(_SecureCallMixin, AioTestBase):
     async def test_unary_stream_async_generator_secure(self):
         request = messages_pb2.StreamingOutputCallRequest()
         request.response_parameters.extend(
-            messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE,)
-            for _ in range(_NUM_STREAM_RESPONSES))
+            messages_pb2.ResponseParameters(
+                size=_RESPONSE_PAYLOAD_SIZE,
+            )
+            for _ in range(_NUM_STREAM_RESPONSES)
+        )
         call_credentials = grpc.composite_call_credentials(
             grpc.access_token_call_credentials("abc"),
             grpc.access_token_call_credentials("def"),
         )
-        call = self._stub.StreamingOutputCall(request,
-                                              credentials=call_credentials)
+        call = self._stub.StreamingOutputCall(
+            request, credentials=call_credentials
+        )
 
         async for response in call:
-            self.assertIsInstance(response,
-                                  messages_pb2.StreamingOutputCallResponse)
+            self.assertIsInstance(
+                response, messages_pb2.StreamingOutputCallResponse
+            )
             self.assertEqual(len(response.payload.body), _RESPONSE_PAYLOAD_SIZE)
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
@@ -102,14 +113,14 @@ class TestUnaryStreamSecureCall(_SecureCallMixin, AioTestBase):
 # Prepares the request that stream in a ping-pong manner.
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE = messages_pb2.StreamingOutputCallRequest()
 _STREAM_OUTPUT_REQUEST_ONE_RESPONSE.response_parameters.append(
-    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE))
+    messages_pb2.ResponseParameters(size=_RESPONSE_PAYLOAD_SIZE)
+)
 
 
 class TestStreamStreamSecureCall(_SecureCallMixin, AioTestBase):
     _STREAM_ITERATIONS = 2
 
     async def test_async_generator_secure_channel(self):
-
         async def request_generator():
             for _ in range(self._STREAM_ITERATIONS):
                 yield _STREAM_OUTPUT_REQUEST_ONE_RESPONSE
@@ -119,14 +130,15 @@ class TestStreamStreamSecureCall(_SecureCallMixin, AioTestBase):
             grpc.access_token_call_credentials("def"),
         )
 
-        call = self._stub.FullDuplexCall(request_generator(),
-                                         credentials=call_credentials)
+        call = self._stub.FullDuplexCall(
+            request_generator(), credentials=call_credentials
+        )
         async for response in call:
             self.assertEqual(_RESPONSE_PAYLOAD_SIZE, len(response.payload.body))
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

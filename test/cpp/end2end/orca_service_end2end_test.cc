@@ -141,30 +141,36 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   };
   // Initial response should not have any values populated.
   ReadResponses([](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.application_utilization(), 0);
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
-  // Now set CPU utilization on the server.
-  server_metric_recorder_->SetCpuUtilization(0.5);
+  // Now set app utilization on the server.
+  server_metric_recorder_->SetApplicationUtilization(0.5);
   ReadResponses([](const OrcaLoadReport& response) {
-    EXPECT_EQ(response.cpu_utilization(), 0.5);
+    EXPECT_EQ(response.application_utilization(), 0.5);
+    EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
-  // Update CPU utilization and set memory utilization.
-  server_metric_recorder_->SetCpuUtilization(0.8);
+  // Update app utilization and set CPU and memory utilization.
+  server_metric_recorder_->SetApplicationUtilization(1.8);
+  server_metric_recorder_->SetCpuUtilization(0.3);
   server_metric_recorder_->SetMemoryUtilization(0.4);
   ReadResponses([](const OrcaLoadReport& response) {
-    EXPECT_EQ(response.cpu_utilization(), 0.8);
+    EXPECT_EQ(response.application_utilization(), 1.8);
+    EXPECT_EQ(response.cpu_utilization(), 0.3);
     EXPECT_EQ(response.mem_utilization(), 0.4);
     EXPECT_THAT(response.utilization(), ::testing::UnorderedElementsAre());
   });
-  // Unset CPU and memory utilization and set a named utilization.
+  // Unset app, CPU, and memory utilization and set a named utilization.
+  server_metric_recorder_->ClearApplicationUtilization();
   server_metric_recorder_->ClearCpuUtilization();
   server_metric_recorder_->ClearMemoryUtilization();
   server_metric_recorder_->SetNamedUtilization(kMetricName1, 0.3);
   ReadResponses([&](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.application_utilization(), 0);
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
     EXPECT_THAT(
@@ -176,6 +182,7 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   server_metric_recorder_->SetNamedUtilization(kMetricName2, 0.2);
   server_metric_recorder_->SetNamedUtilization(kMetricName3, 0.1);
   ReadResponses([&](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.application_utilization(), 0);
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
     EXPECT_THAT(
@@ -187,6 +194,7 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   server_metric_recorder_->SetAllNamedUtilization(
       {{kMetricName2, 0.5}, {kMetricName4, 0.9}});
   ReadResponses([&](const OrcaLoadReport& response) {
+    EXPECT_EQ(response.application_utilization(), 0);
     EXPECT_EQ(response.cpu_utilization(), 0);
     EXPECT_EQ(response.mem_utilization(), 0);
     EXPECT_THAT(

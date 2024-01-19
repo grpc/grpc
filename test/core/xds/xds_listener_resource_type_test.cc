@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -34,8 +33,8 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "upb/def.hpp"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 #include <grpc/grpc.h>
 
@@ -52,6 +51,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/config_source.pb.h"
@@ -277,7 +277,8 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto http_connection_manager = GetHCMConfig(resource);
   ASSERT_TRUE(http_connection_manager.has_value());
   auto* rds_name =
@@ -289,7 +290,7 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -311,7 +312,8 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto http_connection_manager = GetHCMConfig(resource);
   ASSERT_TRUE(http_connection_manager.has_value());
   auto* rds_name =
@@ -323,7 +325,7 @@ TEST_P(HttpConnectionManagerTest, RdsConfigSourceUsesAds) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Zero());
 }
@@ -424,7 +426,8 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto http_connection_manager = GetHCMConfig(resource);
   ASSERT_TRUE(http_connection_manager.has_value());
   auto* rds_name =
@@ -436,7 +439,7 @@ TEST_P(HttpConnectionManagerTest, SetsMaxStreamDuration) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager->http_max_stream_duration,
             Duration::Milliseconds(5005));
 }
@@ -629,7 +632,8 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto http_connection_manager = GetHCMConfig(resource);
   ASSERT_TRUE(http_connection_manager.has_value());
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
@@ -637,7 +641,7 @@ TEST_P(HttpConnectionManagerTest, HttpFilterTypeNotSupportedButOptional) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
 }
 
 TEST_P(HttpConnectionManagerTest, NoHttpFilters) {
@@ -766,7 +770,8 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* api_listener = absl::get_if<XdsListenerResource::HttpConnectionManager>(
       &resource.listener);
   ASSERT_NE(api_listener, nullptr);
@@ -775,7 +780,7 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
 }
 
 TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
@@ -848,7 +853,8 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
   ASSERT_NE(tcp_listener, nullptr);
@@ -860,7 +866,7 @@ TEST_F(HttpConnectionManagerClientOrServerOnlyTest,
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
 }
 
 //
@@ -958,7 +964,8 @@ TEST_F(TcpListenerTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
   ASSERT_NE(tcp_listener, nullptr);
@@ -979,7 +986,7 @@ TEST_F(TcpListenerTest, MinimumValidConfig) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 
@@ -1017,7 +1024,8 @@ TEST_F(TcpListenerTest, FilterChainMatchCriteria) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
   ASSERT_NE(tcp_listener, nullptr);
@@ -1056,7 +1064,7 @@ TEST_F(TcpListenerTest, FilterChainMatchCriteria) {
   EXPECT_EQ(router.name, "router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
-  EXPECT_EQ(router.config.config, Json()) << router.config.config.Dump();
+  EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
   EXPECT_EQ(http_connection_manager.http_max_stream_duration, Duration::Zero());
 }
 
@@ -1478,7 +1486,8 @@ TEST_F(TcpListenerTest, DownstreamTlsContext) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
   ASSERT_NE(tcp_listener, nullptr);
@@ -1534,7 +1543,8 @@ TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
   ASSERT_NE(tcp_listener, nullptr);
@@ -1594,7 +1604,8 @@ TEST_F(TcpListenerTest, ClientCertificateRequired) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
-  auto& resource = static_cast<XdsListenerResource&>(**decode_result.resource);
+  auto& resource =
+      static_cast<const XdsListenerResource&>(**decode_result.resource);
   auto* tcp_listener =
       absl::get_if<XdsListenerResource::TcpListener>(&resource.listener);
   ASSERT_NE(tcp_listener, nullptr);

@@ -1,0 +1,59 @@
+network_input {
+    input_segments {
+        segments {
+            delay_ms: 1
+            client_prefix: {}
+        }
+        segments {
+            delay_ms: 1
+            settings {}
+        }
+        segments {
+            delay_ms: 1
+            header {
+                stream_id: 1
+                end_headers: true
+                end_stream: false
+                simple_header {
+                    method: "POST"
+                    scheme: "http"
+                    authority: "foo"
+                    path: "/reg"
+                    te: "trailers"
+                }
+            }
+        }
+        segments {
+            delay_ms: 1
+            rst_stream {
+                stream_id: 1
+            }
+        }
+        segments {
+            delay_ms: 1
+            header {
+                stream_id: 3
+                end_headers: true
+                end_stream: false
+                simple_header {
+                    method: "POST"
+                    scheme: "http"
+                    authority: "foo"
+                    path: "/reg"
+                    te: "trailers"
+                }
+            }
+        }
+        segments {
+            rst_stream {
+                stream_id: 3
+            }
+        }
+        segments {
+            delay_ms: 1
+            ping {
+                opaque: 1
+            }
+        }
+    }
+}

@@ -18,7 +18,6 @@
 #include <stdint.h>
 
 #include <atomic>
-#include <initializer_list>
 #include <memory>
 
 #include "absl/status/status.h"
@@ -255,10 +254,6 @@ void ResetEventManagerOnFork() {
     poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
-  if (grpc_core::Fork::Enabled()) {
-    gpr_mu_destroy(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
-  }
   InitEpoll1PollerLinux();
 }
 
@@ -273,8 +268,10 @@ bool InitEpoll1PollerLinux() {
     return false;
   }
   if (grpc_core::Fork::Enabled()) {
-    gpr_mu_init(&fork_fd_list_mu);
-    grpc_core::Fork::SetResetChildPollingEngineFunc(ResetEventManagerOnFork);
+    if (grpc_core::Fork::RegisterResetChildPollingEngineFunc(
+            ResetEventManagerOnFork)) {
+      gpr_mu_init(&fork_fd_list_mu);
+    }
   }
   close(fd);
   return true;
@@ -349,7 +346,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
       }
     }
     write_closure_->SetShutdown(why);
-    write_closure_->SetShutdown(why);
+    error_closure_->SetShutdown(why);
   }
 }
 
@@ -370,10 +367,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   ForkPollerListAddPoller(this);
 }
 
-void Epoll1Poller::Shutdown() {
-  ForkPollerListRemovePoller(this);
-  delete this;
-}
+void Epoll1Poller::Shutdown() { ForkPollerListRemovePoller(this); }
 
 void Epoll1Poller::Close() {
   grpc_core::MutexLock lock(&mu_);
@@ -567,10 +561,10 @@ void Epoll1Poller::Kick() {
   GPR_ASSERT(wakeup_fd_->Wakeup().ok());
 }
 
-Epoll1Poller* MakeEpoll1Poller(Scheduler* scheduler) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
-    return new Epoll1Poller(scheduler);
+    return std::make_shared<Epoll1Poller>(scheduler);
   }
   return nullptr;
 }
@@ -627,7 +621,9 @@ void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-Epoll1Poller* MakeEpoll1Poller(Scheduler* /*scheduler*/) { return nullptr; }
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/) {
+  return nullptr;
+}
 
 void Epoll1Poller::PrepareFork() {}
 

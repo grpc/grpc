@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/http/httpcli.h"
@@ -45,6 +47,7 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
                                 grpc_error_handle* error);
 
  private:
+  bool ShouldUseMetadataServer();
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) override;
@@ -70,6 +73,8 @@ class AwsExternalAccountCredentials final : public ExternalAccountCredentials {
                                   grpc_error_handle error);
 
   void AddMetadataRequestHeaders(grpc_http_request* request);
+
+  absl::string_view CredentialSourceType() override;
 
   std::string audience_;
   OrphanablePtr<HttpRequest> http_request_;

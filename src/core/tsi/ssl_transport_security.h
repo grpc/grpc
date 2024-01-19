@@ -21,10 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include <openssl/x509.h>
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -179,8 +182,16 @@ struct tsi_ssl_client_handshaker_options {
   // The directory where all hashed CRL files enforced by the handshaker are
   // located. If the directory is invalid, CRL checking will fail open and just
   // log. An empty directory will not enable crl checking. Only OpenSSL version
-  // > 1.1 is supported for CRL checking
+  // >= 1.1 is supported for CRL checking. Cannot be used in conjunction with
+  // `crl_provider`.
   const char* crl_directory;
+
+  // A provider of CRLs. If set, when doing handshakes the `CrlProvider`'s
+  // `GetCrl` function will be called to find CRLs when checking certificates
+  // for revocation. Cannot be used in conjunction with `crl_directory`.
+  // This provider is created and owned by the user and passed in through
+  // options as a shared_ptr.
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
@@ -222,6 +233,10 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, size_t network_bio_buf_size,
     size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
+
+// Increments reference count of the client handshaker factory.
+tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
+    tsi_ssl_client_handshaker_factory* client_factory);
 
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
@@ -325,6 +340,24 @@ struct tsi_ssl_server_handshaker_options {
   // crl checking. Only OpenSSL version > 1.1 is supported for CRL checking
   const char* crl_directory;
 
+  // A provider of CRLs. If set, when doing handshakes the `CrlProvider`'s
+  // `GetCrl` function will be called to find CRLs when checking certificates
+  // for revocation. Cannot be used in conjunction with `crl_directory`.
+  // This provider is created and owned by the user and passed in through
+  // options as a shared_ptr.
+  std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
+
+  // If true, the SSL server sends a list of CA names to the client in the
+  // ServerHello. This list of CA names is extracted from the server's trust
+  // bundle, and the client may use this lint as a hint to decide which
+  // certificate it should send to the server.
+  //
+  // WARNING: This is an extremely dangerous option. If the server's trust
+  // bundle is sufficiently large, then setting this bit to true will result in
+  // the server being unable to generate a ServerHello, and hence the server
+  // will be unusable.
+  bool send_client_ca_list;
+
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
@@ -338,7 +371,8 @@ struct tsi_ssl_server_handshaker_options {
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
-        crl_directory(nullptr) {}
+        crl_directory(nullptr),
+        send_client_ca_list(true) {}
 };
 
 // Creates a server handshaker factory.

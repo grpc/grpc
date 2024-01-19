@@ -28,7 +28,6 @@ _NUM_OF_LOOPS = 50
 
 
 class TestOutsideInit(unittest.TestCase):
-
     def test_behavior_outside_asyncio(self):
         # Ensures non-AsyncIO object can be initiated
         channel_creds = grpc.ssl_channel_credentials()
@@ -37,8 +36,8 @@ class TestOutsideInit(unittest.TestCase):
         # NOTE(lidiz) This behavior is bound with GAPIC generator, and required
         # by test frameworks like pytest. In test frameworks, objects shared
         # across cases need to be created outside of AsyncIO coroutines.
-        aio.insecure_channel('')
-        aio.secure_channel('', channel_creds)
+        aio.insecure_channel("")
+        aio.secure_channel("", channel_creds)
         aio.server()
         aio.init_grpc_aio()
         aio.shutdown_grpc_aio()

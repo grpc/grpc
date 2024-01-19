@@ -23,12 +23,12 @@
 bool squelch = false;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size != 64) return 0;
+  if (size != 24) return 0;
   auto r = grpc_core::chaotic_good::FrameHeader::Parse(data);
   if (!r.ok()) return 0;
-  uint8_t reserialized[64];
+  uint8_t reserialized[24];
   r->Serialize(reserialized);
   // If it parses, we insist that the bytes reserialize to the same thing.
-  if (memcmp(data, reserialized, 64) != 0) abort();
+  if (memcmp(data, reserialized, 24) != 0) abort();
   return 0;
 }

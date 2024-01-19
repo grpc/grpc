@@ -15,7 +15,6 @@
 //
 
 #include <stddef.h>
-#include <stdint.h>
 
 #include <map>
 #include <memory>
@@ -26,8 +25,8 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
-#include "upb/upb.h"
-#include "upb/upb.hpp"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
 
@@ -203,8 +202,15 @@ Slice OrcaService::GetOrCreateSerializedResponse() {
       xds_data_orca_v3_OrcaLoadReport_set_mem_utilization(response,
                                                           data.mem_utilization);
     }
+    if (data.application_utilization != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_application_utilization(
+          response, data.application_utilization);
+    }
     if (data.qps != -1) {
       xds_data_orca_v3_OrcaLoadReport_set_rps_fractional(response, data.qps);
+    }
+    if (data.eps != -1) {
+      xds_data_orca_v3_OrcaLoadReport_set_eps(response, data.eps);
     }
     for (const auto& u : data.utilization) {
       xds_data_orca_v3_OrcaLoadReport_utilization_set(

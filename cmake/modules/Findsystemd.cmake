@@ -25,7 +25,7 @@ if(TARGET systemd)
 endif()
 
 find_package(PkgConfig)
-pkg_check_modules(SYSTEMD libsystemd)
+pkg_check_modules(SYSTEMD libsystemd>=233)
 
 if(SYSTEMD_FOUND)
   set(systemd_FOUND "${SYSTEMD_FOUND}")

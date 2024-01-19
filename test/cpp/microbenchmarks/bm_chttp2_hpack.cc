@@ -25,6 +25,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/random/random.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -328,7 +330,9 @@ BENCHMARK_TEMPLATE(BM_HpackEncoderEncodeHeader,
 static void BM_HpackParserInitDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    { grpc_core::HPackParser(); }
+    {
+      grpc_core::HPackParser();
+    }
     grpc_core::ExecCtx::Get()->Flush();
   }
 }
@@ -349,13 +353,17 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init(arena);
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+               std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
                grpc_core::HPackParser::Priority::None,
                grpc_core::HPackParser::LogInfo{
                    1, grpc_core::HPackParser::LogInfo::kHeaders, false});
-  auto parse_vec = [&p](const std::vector<grpc_slice>& slices) {
+  auto parse_vec = [&p, bitgen = absl::BitGen()](
+                       const std::vector<grpc_slice>& slices) mutable {
     for (size_t i = 0; i < slices.size(); ++i) {
-      auto error = p.Parse(slices[i], i == slices.size() - 1);
+      auto error =
+          p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
+                  /*call_tracer=*/nullptr);
       GPR_ASSERT(error.ok());
     }
   };
@@ -371,6 +379,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
       b.Init(arena);
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
+                   std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
                    grpc_core::HPackParser::Priority::None,
                    grpc_core::HPackParser::LogInfo{

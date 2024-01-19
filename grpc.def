@@ -157,6 +157,10 @@ EXPORTS
     grpc_tls_certificate_provider_file_watcher_create
     grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
+    grpc_tls_credentials_options_set_min_tls_version
+    grpc_tls_credentials_options_set_max_tls_version
+    grpc_tls_credentials_options_copy
+    grpc_tls_credentials_options_destroy
     grpc_tls_credentials_options_set_certificate_provider
     grpc_tls_credentials_options_watch_root_certs
     grpc_tls_credentials_options_set_root_cert_name
@@ -165,6 +169,7 @@ EXPORTS
     grpc_tls_credentials_options_set_cert_request_type
     grpc_tls_credentials_options_set_crl_directory
     grpc_tls_credentials_options_set_verify_server_cert
+    grpc_tls_credentials_options_set_send_client_ca_list
     grpc_tls_credentials_options_set_check_call_host
     grpc_insecure_credentials_create
     grpc_insecure_server_credentials_create

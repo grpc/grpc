@@ -20,17 +20,21 @@
 
 #include <string.h>
 
+#include <algorithm>
+#include <string>
 #include <vector>
+
+#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/global_config_generic.h"
-#include "src/core/lib/security/security_connector/ssl_utils_config.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gpr/subprocess.h"
 #include "test/core/util/port.h"
-#include "test/core/util/subprocess.h"
 
 namespace grpc_core {
 namespace testing {
@@ -77,10 +81,10 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   if (use_ssl) {
     args.push_back(gpr_strdup("--ssl"));
     // Set the environment variable for the SSL certificate file
-    char* pem_file;
-    gpr_asprintf(&pem_file, "%s/src/core/tsi/test_creds/ca.pem", root);
-    GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, pem_file);
-    gpr_free(pem_file);
+    ConfigVars::Overrides overrides;
+    overrides.default_ssl_roots_file_path =
+        absl::StrCat(root, "/src/core/tsi/test_creds/ca.pem");
+    ConfigVars::SetOverrides(overrides);
   }
   gpr_log(GPR_INFO, "starting HttpRequest test server subprocess:");
   for (size_t i = 0; i < args.size(); i++) {

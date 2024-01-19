@@ -25,16 +25,11 @@ from grpc._typing import SerializingFunction
 _LOGGER = logging.getLogger(__name__)
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
-    cygrpc.ConnectivityState.idle:
-        grpc.ChannelConnectivity.IDLE,
-    cygrpc.ConnectivityState.connecting:
-        grpc.ChannelConnectivity.CONNECTING,
-    cygrpc.ConnectivityState.ready:
-        grpc.ChannelConnectivity.READY,
-    cygrpc.ConnectivityState.transient_failure:
-        grpc.ChannelConnectivity.TRANSIENT_FAILURE,
-    cygrpc.ConnectivityState.shutdown:
-        grpc.ChannelConnectivity.SHUTDOWN,
+    cygrpc.ConnectivityState.idle: grpc.ChannelConnectivity.IDLE,
+    cygrpc.ConnectivityState.connecting: grpc.ChannelConnectivity.CONNECTING,
+    cygrpc.ConnectivityState.ready: grpc.ChannelConnectivity.READY,
+    cygrpc.ConnectivityState.transient_failure: grpc.ChannelConnectivity.TRANSIENT_FAILURE,
+    cygrpc.ConnectivityState.shutdown: grpc.ChannelConnectivity.SHUTDOWN,
 }
 
 CYGRPC_STATUS_CODE_TO_STATUS_CODE = {
@@ -63,26 +58,30 @@ STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
 
 MAXIMUM_WAIT_TIMEOUT = 0.1
 
-_ERROR_MESSAGE_PORT_BINDING_FAILED = 'Failed to bind to address %s; set ' \
-    'GRPC_VERBOSITY=debug environment variable to see detailed error message.'
+_ERROR_MESSAGE_PORT_BINDING_FAILED = (
+    "Failed to bind to address %s; set "
+    "GRPC_VERBOSITY=debug environment variable to see detailed error message."
+)
 
 
 def encode(s: AnyStr) -> bytes:
     if isinstance(s, bytes):
         return s
     else:
-        return s.encode('utf8')
+        return s.encode("utf8")
 
 
 def decode(b: AnyStr) -> str:
     if isinstance(b, bytes):
-        return b.decode('utf-8', 'replace')
+        return b.decode("utf-8", "replace")
     return b
 
 
-def _transform(message: Any, transformer: Union[SerializingFunction,
-                                                DeserializingFunction, None],
-               exception_message: str) -> Any:
+def _transform(
+    message: Any,
+    transformer: Union[SerializingFunction, DeserializingFunction, None],
+    exception_message: str,
+) -> Any:
     if transformer is None:
         return message
     else:
@@ -94,30 +93,37 @@ def _transform(message: Any, transformer: Union[SerializingFunction,
 
 
 def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
-    return _transform(message, serializer, 'Exception serializing message!')
+    return _transform(message, serializer, "Exception serializing message!")
 
 
-def deserialize(serialized_message: bytes,
-                deserializer: Optional[DeserializingFunction]) -> Any:
-    return _transform(serialized_message, deserializer,
-                      'Exception deserializing message!')
+def deserialize(
+    serialized_message: bytes, deserializer: Optional[DeserializingFunction]
+) -> Any:
+    return _transform(
+        serialized_message, deserializer, "Exception deserializing message!"
+    )
 
 
 def fully_qualified_method(group: str, method: str) -> str:
-    return '/{}/{}'.format(group, method)
+    return "/{}/{}".format(group, method)
 
 
-def _wait_once(wait_fn: Callable[..., bool], timeout: float,
-               spin_cb: Optional[Callable[[], None]]):
+def _wait_once(
+    wait_fn: Callable[..., bool],
+    timeout: float,
+    spin_cb: Optional[Callable[[], None]],
+):
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
 
 
-def wait(wait_fn: Callable[..., bool],
-         wait_complete_fn: Callable[[], bool],
-         timeout: Optional[float] = None,
-         spin_cb: Optional[Callable[[], None]] = None) -> bool:
+def wait(
+    wait_fn: Callable[..., bool],
+    wait_complete_fn: Callable[[], bool],
+    timeout: Optional[float] = None,
+    spin_cb: Optional[Callable[[], None]] = None,
+) -> bool:
     """Blocks waiting for an event without blocking the thread indefinitely.
 
     See https://github.com/grpc/grpc/issues/19464 for full context. CPython's

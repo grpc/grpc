@@ -26,7 +26,7 @@ cd "$(dirname "$0")/../../.."
 grep -EIrn \
     'std::(mutex|condition_variable|lock_guard|unique_lock|thread)' \
     include/grpc include/grpcpp src/core src/cpp | \
-    grep -Ev include/grpcpp/impl/sync.h | \
+    grep -Ev 'include/grpcpp/impl/sync.h|src/core/lib/gprpp/work_serializer.cc' | \
     diff - /dev/null
 
 #
@@ -36,7 +36,7 @@ grep -EIrn \
 grep -EIrn \
     '^#include (<mutex>|<condition_variable>|<thread>|<ratio>|<filesystem>|<future>|<system_error>)' \
     include/grpc include/grpcpp src/core src/cpp | \
-    grep -Ev include/grpcpp/impl/sync.h | \
+    grep -Ev 'include/grpcpp/impl/sync.h|src/core/lib/gprpp/work_serializer.cc' | \
     diff - /dev/null
 
 #

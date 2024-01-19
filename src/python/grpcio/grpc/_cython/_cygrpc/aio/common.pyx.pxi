@@ -181,7 +181,7 @@ if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
         try:
             return asyncio.get_running_loop()
         except RuntimeError:
-            return asyncio.get_event_loop()
+            return asyncio.get_event_loop_policy().get_event_loop()
 else:
     def get_working_loop():
         """Returns a running event loop."""

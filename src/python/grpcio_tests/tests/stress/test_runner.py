@@ -33,7 +33,6 @@ def _weighted_test_case_generator(weighted_cases):
 
 
 class TestRunner(threading.Thread):
-
     def __init__(self, stub, test_cases, hist, exception_queue, stop_event):
         super(TestRunner, self).__init__()
         self._exception_queue = exception_queue
@@ -55,4 +54,8 @@ class TestRunner(threading.Thread):
                 self._exception_queue.put(
                     Exception(
                         "An exception occurred during test {}".format(
-                            test_case), e))
+                            test_case
+                        ),
+                        e,
+                    )
+                )

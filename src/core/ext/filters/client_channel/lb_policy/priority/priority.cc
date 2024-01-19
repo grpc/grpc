@@ -35,7 +35,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
@@ -47,6 +47,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -55,11 +56,11 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/load_balancing/delegating_helper.h"
 #include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/load_balancing/lb_policy_factory.h"
 #include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -162,25 +163,23 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    class Helper : public ChannelControlHelper {
+    class Helper : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
           : priority_(std::move(priority)) {}
 
       ~Helper() override { priority_.reset(DEBUG_LOCATION, "Helper"); }
 
-      RefCountedPtr<SubchannelInterface> CreateSubchannel(
-          ServerAddress address, const ChannelArgs& args) override;
       void UpdateState(grpc_connectivity_state state,
                        const absl::Status& status,
                        RefCountedPtr<SubchannelPicker> picker) override;
       void RequestReresolution() override;
-      absl::string_view GetAuthority() override;
-      EventEngine* GetEventEngine() override;
-      void AddTraceEvent(TraceSeverity severity,
-                         absl::string_view message) override;
 
      private:
+      ChannelControlHelper* parent_helper() const override {
+        return priority_->priority_policy_->channel_control_helper();
+      }
+
       RefCountedPtr<ChildPriority> priority_;
     };
 
@@ -293,7 +292,7 @@ PriorityLb::PriorityLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       child_failover_timeout_(std::max(
           Duration::Zero(),
-          args.args
+          channel_args()
               .GetDurationFromIntMillis(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS)
               .value_or(kDefaultChildFailoverTimeout))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -336,7 +335,7 @@ absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[priority_lb %p] received update", this);
   }
   // Update config.
-  config_ = std::move(args.config);
+  config_ = args.config.TakeAsSubclass<PriorityLbConfig>();
   // Update args.
   args_ = std::move(args.args);
   // Update addresses.
@@ -412,7 +411,8 @@ void PriorityLb::ChoosePriorityLocked() {
     // Create child if needed.
     if (child == nullptr) {
       child = MakeOrphanable<ChildPriority>(
-          Ref(DEBUG_LOCATION, "ChildPriority"), child_name);
+          RefAsSubclass<PriorityLb>(DEBUG_LOCATION, "ChildPriority"),
+          child_name);
       auto child_config = config_->children().find(child_name);
       GPR_DEBUG_ASSERT(child_config != config_->children().end());
       // TODO(roth): If the child reports a non-OK status with the
@@ -683,7 +683,13 @@ absl::Status PriorityLb::ChildPriority::UpdateLocked(
   UpdateArgs update_args;
   update_args.config = std::move(config);
   if (priority_policy_->addresses_.ok()) {
-    update_args.addresses = (*priority_policy_->addresses_)[name_];
+    auto it = priority_policy_->addresses_->find(name_);
+    if (it == priority_policy_->addresses_->end()) {
+      update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
+          EndpointAddressesList());
+    } else {
+      update_args.addresses = it->second;
+    }
   } else {
     update_args.addresses = priority_policy_->addresses_.status();
   }
@@ -793,14 +799,6 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 // PriorityLb::ChildPriority::Helper
 //
 
-RefCountedPtr<SubchannelInterface>
-PriorityLb::ChildPriority::Helper::CreateSubchannel(ServerAddress address,
-                                                    const ChannelArgs& args) {
-  if (priority_->priority_policy_->shutting_down_) return nullptr;
-  return priority_->priority_policy_->channel_control_helper()
-      ->CreateSubchannel(std::move(address), args);
-}
-
 void PriorityLb::ChildPriority::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
@@ -815,22 +813,6 @@ void PriorityLb::ChildPriority::Helper::RequestReresolution() {
     return;
   }
   priority_->priority_policy_->channel_control_helper()->RequestReresolution();
-}
-
-absl::string_view PriorityLb::ChildPriority::Helper::GetAuthority() {
-  return priority_->priority_policy_->channel_control_helper()->GetAuthority();
-}
-
-EventEngine* PriorityLb::ChildPriority::Helper::GetEventEngine() {
-  return priority_->priority_policy_->channel_control_helper()
-      ->GetEventEngine();
-}
-
-void PriorityLb::ChildPriority::Helper::AddTraceEvent(
-    TraceSeverity severity, absl::string_view message) {
-  if (priority_->priority_policy_->shutting_down_) return;
-  priority_->priority_policy_->channel_control_helper()->AddTraceEvent(severity,
-                                                                       message);
 }
 
 //
@@ -853,8 +835,8 @@ void PriorityLbConfig::PriorityLbChild::JsonPostLoad(const Json& json,
                                                      const JsonArgs&,
                                                      ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".config");
-  auto it = json.object_value().find("config");
-  if (it == json.object_value().end()) {
+  auto it = json.object().find("config");
+  if (it == json.object().end()) {
     errors->AddError("field not present");
     return;
   }
@@ -903,15 +885,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override {
-    if (json.type() == Json::Type::JSON_NULL) {
-      // priority was mentioned as a policy in the deprecated
-      // loadBalancingPolicy field or in the client API.
-      return absl::InvalidArgumentError(
-          "field:loadBalancingPolicy error:priority policy requires "
-          "configuration. Please use loadBalancingConfig field of service "
-          "config instead.");
-    }
-    return LoadRefCountedFromJson<PriorityLbConfig>(
+    return LoadFromJson<RefCountedPtr<PriorityLbConfig>>(
         json, JsonArgs(), "errors validating priority LB policy config");
   }
 };

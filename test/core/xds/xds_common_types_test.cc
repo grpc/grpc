@@ -16,8 +16,6 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
-#include <algorithm>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,8 +33,8 @@
 #include "google/protobuf/duration.upb.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/def.hpp"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 #include <grpc/grpc.h>
 
@@ -50,6 +48,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/proto/grpc/testing/xds/v3/regex.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
@@ -127,7 +126,8 @@ TEST_F(DurationTest, Basic) {
   google_protobuf_Duration_set_nanos(duration_proto, 2000000);
   ValidationErrors errors;
   Duration duration = ParseDuration(duration_proto, &errors);
-  EXPECT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  EXPECT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   EXPECT_EQ(duration, Duration::Milliseconds(1002));
 }
 
@@ -138,7 +138,8 @@ TEST_F(DurationTest, NegativeNumbers) {
   google_protobuf_Duration_set_nanos(duration_proto, -2);
   ValidationErrors errors;
   ParseDuration(duration_proto, &errors);
-  absl::Status status = errors.status("validation failed");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed");
   EXPECT_EQ(status.message(),
             "validation failed: ["
             "field:nanos error:value must be in the range [0, 999999999]; "
@@ -153,7 +154,8 @@ TEST_F(DurationTest, ValuesTooHigh) {
   google_protobuf_Duration_set_nanos(duration_proto, 1000000000);
   ValidationErrors errors;
   ParseDuration(duration_proto, &errors);
-  absl::Status status = errors.status("validation failed");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation failed");
   EXPECT_EQ(status.message(),
             "validation failed: ["
             "field:nanos error:value must be in the range [0, 999999999]; "
@@ -195,7 +197,10 @@ class CommonTlsConfigTest : public XdsCommonTypesTest {
     ValidationErrors errors;
     CommonTlsContext common_tls_context =
         CommonTlsContext::Parse(decode_context_, upb_proto, &errors);
-    if (!errors.ok()) return errors.status("validation failed");
+    if (!errors.ok()) {
+      return errors.status(absl::StatusCode::kInvalidArgument,
+                           "validation failed");
+    }
     return common_tls_context;
   }
 };
@@ -544,7 +549,8 @@ TEST_F(ExtractXdsExtensionTest, Basic) {
   google_protobuf_Any_set_value(any_proto, StdStringToUpbString(kValue));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
   ASSERT_TRUE(absl::holds_alternative<absl::string_view>(extension->value));
@@ -565,11 +571,12 @@ TEST_F(ExtractXdsExtensionTest, TypedStruct) {
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
   ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(absl::get<Json>(extension->value).Dump(), "{\"foo\":\"bar\"}");
+  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
 }
 
 TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
@@ -586,11 +593,12 @@ TEST_F(ExtractXdsExtensionTest, UdpaTypedStruct) {
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
   ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(absl::get<Json>(extension->value).Dump(), "{\"foo\":\"bar\"}");
+  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)), "{\"foo\":\"bar\"}");
 }
 
 TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
@@ -605,11 +613,12 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithoutValue) {
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "MyType");
   ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(absl::get<Json>(extension->value).Dump(), "{}");
+  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)), "{}");
 }
 
 TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
@@ -662,11 +671,12 @@ TEST_F(ExtractXdsExtensionTest, TypedStructJsonConversion) {
                                 StdStringToUpbString(serialized_typed_struct));
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
-  ASSERT_TRUE(errors.ok()) << errors.status("unexpected errors");
+  ASSERT_TRUE(errors.ok()) << errors.status(absl::StatusCode::kInvalidArgument,
+                                            "unexpected errors");
   ASSERT_TRUE(extension.has_value());
   EXPECT_EQ(extension->type, "envoy.ExtensionType");
   ASSERT_TRUE(absl::holds_alternative<Json>(extension->value));
-  EXPECT_EQ(absl::get<Json>(extension->value).Dump(),
+  EXPECT_EQ(JsonDump(absl::get<Json>(extension->value)),
             "{"
             "\"key\":null,"
             "\"list\":[null,234],"
@@ -681,7 +691,8 @@ TEST_F(ExtractXdsExtensionTest, FieldMissing) {
   ValidationErrors::ScopedField field(&errors, "any");
   auto extension = ExtractXdsExtension(decode_context_, nullptr, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: [field:any error:field not present]")
@@ -693,7 +704,8 @@ TEST_F(ExtractXdsExtensionTest, TypeUrlMissing) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: [field:type_url error:field not present]")
@@ -714,7 +726,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlMissing) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["
@@ -730,7 +743,8 @@ TEST_F(ExtractXdsExtensionTest, TypeUrlNoSlash) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["
@@ -753,7 +767,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNoSlash) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["
@@ -769,7 +784,8 @@ TEST_F(ExtractXdsExtensionTest, TypeUrlNothingAfterSlash) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["
@@ -792,7 +808,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructTypeUrlNothingAfterSlash) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["
@@ -812,7 +829,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructParseFailure) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["
@@ -835,7 +853,8 @@ TEST_F(ExtractXdsExtensionTest, TypedStructWithInvalidProtobufStruct) {
   ValidationErrors errors;
   auto extension = ExtractXdsExtension(decode_context_, any_proto, &errors);
   ASSERT_FALSE(errors.ok());
-  absl::Status status = errors.status("validation errors");
+  absl::Status status =
+      errors.status(absl::StatusCode::kInvalidArgument, "validation errors");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.message(),
             "validation errors: ["

@@ -22,6 +22,12 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM)
+bool g_event_engine_supports_fd = true;
+#else
+bool g_event_engine_supports_fd = false;
+#endif
+
 bool UseEventEngineClient() {
 // TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
 // available for other platforms.
@@ -29,6 +35,8 @@ bool UseEventEngineClient() {
   return grpc_core::IsEventEngineClientEnabled();
 #elif defined(GPR_WINDOWS)
   return grpc_core::IsEventEngineClientEnabled();
+#elif defined(GRPC_IOS_EVENT_ENGINE_CLIENT)
+  return true;
 #else
   return false;
 #endif
@@ -37,7 +45,8 @@ bool UseEventEngineClient() {
 bool UseEventEngineListener() {
 // TODO(hork, eryu): Adjust the ifdefs accordingly when event engines become
 // available for other platforms.
-#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM)
+#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM) && \
+    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return grpc_core::IsEventEngineListenerEnabled();
 #else
   return false;
@@ -45,8 +54,9 @@ bool UseEventEngineListener() {
 }
 
 bool EventEngineSupportsFd() {
-#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM)
-  return true;
+#if defined(GRPC_POSIX_SOCKET_TCP) && !defined(GRPC_CFSTREAM) && \
+    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+  return g_event_engine_supports_fd;
 #else
   return false;
 #endif

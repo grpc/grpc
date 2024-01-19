@@ -39,34 +39,15 @@ struct TaskHandleComparator {
       return absl::Hash<HashType>()({handle.keys[0], handle.keys[1]});
     }
   };
-  struct Eq {
-    using is_transparent = void;
-    bool operator()(const TaskHandle& lhs, const TaskHandle& rhs) const {
-      return lhs.keys[0] == rhs.keys[0] && lhs.keys[1] == rhs.keys[1];
-    }
-  };
 };
 
-using TaskHandleSet = absl::flat_hash_set<
-    grpc_event_engine::experimental::EventEngine::TaskHandle,
-    TaskHandleComparator<
-        grpc_event_engine::experimental::EventEngine::TaskHandle>::Hash,
-    TaskHandleComparator<
-        grpc_event_engine::experimental::EventEngine::TaskHandle>::Eq>;
+using TaskHandleSet =
+    absl::flat_hash_set<EventEngine::TaskHandle,
+                        TaskHandleComparator<EventEngine::TaskHandle>::Hash>;
 
 using ConnectionHandleSet = absl::flat_hash_set<
-    grpc_event_engine::experimental::EventEngine::ConnectionHandle,
-    TaskHandleComparator<
-        grpc_event_engine::experimental::EventEngine::ConnectionHandle>::Hash,
-    TaskHandleComparator<
-        grpc_event_engine::experimental::EventEngine::ConnectionHandle>::Eq>;
-
-using LookupTaskHandleSet = absl::flat_hash_set<
-    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle,
-    TaskHandleComparator<grpc_event_engine::experimental::EventEngine::
-                             DNSResolver::LookupTaskHandle>::Hash,
-    TaskHandleComparator<grpc_event_engine::experimental::EventEngine::
-                             DNSResolver::LookupTaskHandle>::Eq>;
+    EventEngine::ConnectionHandle,
+    TaskHandleComparator<EventEngine::ConnectionHandle>::Hash>;
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

@@ -17,13 +17,16 @@ syntax = "proto3";
 package fuzzing_event_engine;
 
 message Actions {
-    // Map of tick event (0..??) to the amount to increment the timer by.
-    repeated Delay tick_lengths = 1;
-    // Map of task id to the amount to delay execution of the task by.
-    repeated Delay run_delay = 2;
+    reserved 1;
+    // How much to delay each task by, in nanoseconds.
+    repeated uint64 run_delay = 2;
+    // Order in which to bind port numbers.
+    // After this ports are assigned in order, from 1 to 65535.
+    repeated uint32 assign_ports = 3;
+    // Write size constraints for each connection, in order of creation.
+    repeated Connection connections = 4;
 };
 
-message Delay {
-    uint32 id = 1;
-    uint64 delay_us = 2;
+message Connection {
+    repeated uint32 write_size = 1;
 };

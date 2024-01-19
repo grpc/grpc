@@ -263,6 +263,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
+    external_deps = ["gtest"],
     language = "C++",
     tags = [
         "endpoint_test",
@@ -350,29 +351,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "stranded_event_test",
-    srcs = ["stranded_event_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    tags = [
-        # TODO(apolcyn): This test is failing on Windows at entry, enable once passing.
-        # See e.g. https://source.cloud.google.com/results/invocations/6716596a-c9e1-4780-85ed-890d8758d582/targets
-        "no_windows",
-        "cpu:10",
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:slice",
-        "//test/core/end2end:cq_verifier",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

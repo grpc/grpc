@@ -22,15 +22,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
+#include <map>
+#include <string>
 
-#include "src/core/lib/gprpp/global_config.h"
-#include "src/core/lib/gprpp/memory.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
-
-// TODO(veblush): Remove this deprecated function once codes depending on this
-// function are updated in the internal repo.
-void grpc_tracer_init(const char* env_var_name);
+#include "absl/strings/string_view.h"
 
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
@@ -40,8 +35,9 @@ namespace grpc_core {
 class TraceFlag;
 class TraceFlagList {
  public:
-  static bool Set(const char* name, bool enabled);
+  static bool Set(absl::string_view name, bool enabled);
   static void Add(TraceFlag* flag);
+  static void SaveTo(std::map<std::string, bool>& values);
 
  private:
   static void LogAllTracers();
@@ -105,6 +101,15 @@ class DebugOnlyTraceFlag {
   void set_enabled(bool /*enabled*/) {}
 };
 #endif
+
+class SavedTraceFlags {
+ public:
+  SavedTraceFlags();
+  void Restore();
+
+ private:
+  std::map<std::string, bool> values_;
+};
 
 }  // namespace grpc_core
 

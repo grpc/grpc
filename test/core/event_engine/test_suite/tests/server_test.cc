@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -34,7 +31,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -68,11 +65,32 @@ using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
 }  // namespace
+
+TEST_F(EventEngineServerTest, CannotBindAfterStarted) {
+  std::shared_ptr<EventEngine> engine(this->NewEventEngine());
+  ChannelArgsEndpointConfig config;
+  auto listener = engine->CreateListener(
+      [](std::unique_ptr<Endpoint>, grpc_core::MemoryAllocator) {},
+      [](absl::Status) {}, config,
+      std::make_unique<grpc_core::MemoryQuota>("foo"));
+  // Bind an initial port to ensure normal listener startup
+  auto resolved_addr = URIToResolvedAddress(absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
+  ASSERT_TRUE(resolved_addr.ok()) << resolved_addr.status();
+  auto bind_result = (*listener)->Bind(*resolved_addr);
+  ASSERT_TRUE(bind_result.ok()) << bind_result.status();
+  auto listen_result = (*listener)->Start();
+  ASSERT_TRUE(listen_result.ok()) << listen_result;
+  // A subsequent bind, which should fail
+  auto resolved_addr2 = URIToResolvedAddress(absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
+  ASSERT_TRUE(resolved_addr2.ok());
+  ASSERT_FALSE((*listener)->Bind(*resolved_addr2).ok());
+}
 
 // Create a connection using the oracle EventEngine to a listener created
 // by the Test EventEngine and exchange bi-di data over the connection.
@@ -80,7 +98,7 @@ constexpr int kNumExchangedMessages = 100;
 // equals data read at the other end of the stream.
 TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::string target_addr = absl::StrCat(
@@ -117,7 +135,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   oracle_ee->Connect(
       [&client_endpoint,
        &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
-        ASSERT_TRUE(endpoint.ok());
+        ASSERT_TRUE(endpoint.ok()) << endpoint.status();
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },
@@ -145,7 +163,6 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   client_endpoint.reset();
   server_endpoint.reset();
   listener.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and
@@ -155,7 +172,7 @@ TEST_F(EventEngineServerTest,
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 10;        // M
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
@@ -274,7 +291,6 @@ TEST_F(EventEngineServerTest,
   }
   server_endpoint.reset();
   listener.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix

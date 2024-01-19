@@ -40,7 +40,6 @@ from tests.unit import test_common
 
 
 class Snapshotter:
-
     def __init__(self):
         self._start_time = 0.0
         self._end_time = 0.0
@@ -87,7 +86,9 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         self._snapshotter = Snapshotter()
 
     def RunServer(self, request_iterator, context):
-        config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
+        # pylint: disable=stop-iteration-return
+        config = next(request_iterator).setup
+        # pylint: enable=stop-iteration-return
         server, port = self._create_server(config)
         cores = multiprocessing.cpu_count()
         server.start()
@@ -118,44 +119,54 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         if config.server_type == control_pb2.ASYNC_SERVER:
             servicer = benchmark_server.BenchmarkServer()
             benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
-                servicer, server)
+                servicer, server
+            )
         elif config.server_type == control_pb2.ASYNC_GENERIC_SERVER:
             resp_size = config.payload_config.bytebuf_params.resp_size
             servicer = benchmark_server.GenericBenchmarkServer(resp_size)
             method_implementations = {
-                'StreamingCall':
-                    grpc.stream_stream_rpc_method_handler(servicer.StreamingCall
-                                                         ),
-                'UnaryCall':
-                    grpc.unary_unary_rpc_method_handler(servicer.UnaryCall),
+                "StreamingCall": grpc.stream_stream_rpc_method_handler(
+                    servicer.StreamingCall
+                ),
+                "UnaryCall": grpc.unary_unary_rpc_method_handler(
+                    servicer.UnaryCall
+                ),
             }
             handler = grpc.method_handlers_generic_handler(
-                'grpc.testing.BenchmarkService', method_implementations)
+                "grpc.testing.BenchmarkService", method_implementations
+            )
             server.add_generic_rpc_handlers((handler,))
         else:
-            raise Exception('Unsupported server type {}'.format(
-                config.server_type))
+            raise Exception(
+                "Unsupported server type {}".format(config.server_type)
+            )
 
         if self._server_port is not None and config.port == 0:
             server_port = self._server_port
         else:
             server_port = config.port
 
-        if config.HasField('security_params'):  # Use SSL
+        if config.HasField("security_params"):  # Use SSL
             server_creds = grpc.ssl_server_credentials(
-                ((resources.private_key(), resources.certificate_chain()),))
-            port = server.add_secure_port('[::]:{}'.format(server_port),
-                                          server_creds)
+                ((resources.private_key(), resources.certificate_chain()),)
+            )
+            port = server.add_secure_port(
+                "[::]:{}".format(server_port), server_creds
+            )
         else:
-            port = server.add_insecure_port('[::]:{}'.format(server_port))
+            port = server.add_insecure_port("[::]:{}".format(server_port))
 
         return (server, port)
 
     def RunClient(self, request_iterator, context):
-        config = next(request_iterator).setup  #pylint: disable=stop-iteration-return
+        # pylint: disable=stop-iteration-return
+        config = next(request_iterator).setup
+        # pylint: enable=stop-iteration-return
         client_runners = []
-        qps_data = histogram.Histogram(config.histogram_params.resolution,
-                                       config.histogram_params.max_possible)
+        qps_data = histogram.Histogram(
+            config.histogram_params.resolution,
+            config.histogram_params.max_possible,
+        )
         self._snapshotter.snapshot()
         self._snapshotter.reset()
 
@@ -184,8 +195,9 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
 
     def _get_client_status(self, qps_data):
         latencies = qps_data.get_data()
-        stats = stats_pb2.ClientStats(latencies=latencies,
-                                      **self._snapshotter.stats())
+        stats = stats_pb2.ClientStats(
+            latencies=latencies, **self._snapshotter.stats()
+        )
         return control_pb2.ClientStatus(stats=stats)
 
     def _create_client_runner(self, server, config, qps_data):
@@ -193,29 +205,35 @@ class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
         if config.client_type == control_pb2.SYNC_CLIENT:
             if config.rpc_type == control_pb2.UNARY:
                 client = benchmark_client.UnarySyncBenchmarkClient(
-                    server, config, qps_data)
+                    server, config, qps_data
+                )
             elif config.rpc_type == control_pb2.STREAMING:
                 client = benchmark_client.StreamingSyncBenchmarkClient(
-                    server, config, qps_data)
+                    server, config, qps_data
+                )
             elif config.rpc_type == control_pb2.STREAMING_FROM_SERVER:
                 no_ping_pong = True
                 client = benchmark_client.ServerStreamingSyncBenchmarkClient(
-                    server, config, qps_data)
+                    server, config, qps_data
+                )
         elif config.client_type == control_pb2.ASYNC_CLIENT:
             if config.rpc_type == control_pb2.UNARY:
                 client = benchmark_client.UnaryAsyncBenchmarkClient(
-                    server, config, qps_data)
+                    server, config, qps_data
+                )
             else:
-                raise Exception('Async streaming client not supported')
+                raise Exception("Async streaming client not supported")
         else:
-            raise Exception('Unsupported client type {}'.format(
-                config.client_type))
+            raise Exception(
+                "Unsupported client type {}".format(config.client_type)
+            )
 
         # In multi-channel tests, we split the load across all channels
         load_factor = float(config.client_channels)
-        if config.load_params.WhichOneof('load') == 'closed_loop':
+        if config.load_params.WhichOneof("load") == "closed_loop":
             runner = client_runner.ClosedLoopClientRunner(
-                client, config.outstanding_rpcs_per_channel, no_ping_pong)
+                client, config.outstanding_rpcs_per_channel, no_ping_pong
+            )
         else:  # Open loop Poisson
             alpha = config.load_params.poisson.offered_load / load_factor
 

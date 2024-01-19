@@ -94,5 +94,17 @@ void AsyncCertificateVerifier::WorkerThread(void* arg) {
   }
 }
 
+bool VerifiedRootCertSubjectVerifier::Verify(
+    TlsCustomVerificationCheckRequest* request,
+    std::function<void(grpc::Status)>, grpc::Status* sync_status) {
+  if (request->verified_root_cert_subject() != expected_subject_) {
+    *sync_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                                "VerifiedRootCertSubjectVerifier failed");
+  } else {
+    *sync_status = grpc::Status::OK;
+  }
+  return true;
+}
+
 }  // namespace testing
 }  // namespace grpc

@@ -26,12 +26,11 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
-_UNARY_CALL_METHOD_WITH_SLEEP = '/grpc.testing.TestService/UnaryCallWithSleep'
+_UNARY_CALL_METHOD_WITH_SLEEP = "/grpc.testing.TestService/UnaryCallWithSleep"
 _LONG_TIMEOUT_THAT_SHOULD_NOT_EXPIRE = 60
 
 
 class TestCloseChannel(AioTestBase):
-
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
 
@@ -134,6 +133,6 @@ class TestCloseChannel(AioTestBase):
             self.assertTrue(call2.cancelled())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)

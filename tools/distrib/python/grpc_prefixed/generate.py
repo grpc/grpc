@@ -30,12 +30,13 @@ import sys
 import jinja2
 
 WORK_PATH = os.path.realpath(os.path.dirname(__file__))
-LICENSE = os.path.join(WORK_PATH, '../../../../LICENSE')
-BUILD_PATH = os.path.join(WORK_PATH, 'build')
-DIST_PATH = os.path.join(WORK_PATH, 'dist')
+LICENSE = os.path.join(WORK_PATH, "../../../../LICENSE")
+BUILD_PATH = os.path.join(WORK_PATH, "build")
+DIST_PATH = os.path.join(WORK_PATH, "dist")
 
 env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.join(WORK_PATH, 'templates')))
+    loader=jinja2.FileSystemLoader(os.path.join(WORK_PATH, "templates"))
+)
 
 LOGGER = logging.getLogger(__name__)
 POPEN_TIMEOUT_S = datetime.timedelta(minutes=1).total_seconds()
@@ -44,10 +45,11 @@ POPEN_TIMEOUT_S = datetime.timedelta(minutes=1).total_seconds()
 @dataclasses.dataclass
 class PackageMeta:
     """Meta-info of a PyPI package."""
+
     name: str
     name_long: str
     destination_package: str
-    version: str = '1.0.0'
+    version: str = "1.0.0"
 
 
 def clean() -> None:
@@ -68,81 +70,112 @@ def generate_package(meta: PackageMeta) -> None:
     os.makedirs(package_path, exist_ok=True)
 
     # Copy license
-    shutil.copyfile(LICENSE, os.path.join(package_path, 'LICENSE'))
+    shutil.copyfile(LICENSE, os.path.join(package_path, "LICENSE"))
 
     # Generates source code
     for template_name in env.list_templates():
         template = env.get_template(template_name)
         with open(
-                os.path.join(package_path,
-                             template_name.replace('.template', '')), 'w') as f:
+            os.path.join(package_path, template_name.replace(".template", "")),
+            "w",
+        ) as f:
             f.write(template.render(dataclasses.asdict(meta)))
 
     # Creates wheel
-    job = subprocess.Popen([
-        sys.executable,
-        os.path.join(package_path, 'setup.py'), 'sdist', '--dist-dir', DIST_PATH
-    ],
-                           cwd=package_path,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.STDOUT)
+    job = subprocess.Popen(
+        [
+            sys.executable,
+            os.path.join(package_path, "setup.py"),
+            "sdist",
+            "--dist-dir",
+            DIST_PATH,
+        ],
+        cwd=package_path,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
     outs, _ = job.communicate(timeout=POPEN_TIMEOUT_S)
 
     # Logs result
     if job.returncode != 0:
-        LOGGER.error('Wheel creation failed with %d', job.returncode)
+        LOGGER.error("Wheel creation failed with %d", job.returncode)
         LOGGER.error(outs)
     else:
-        LOGGER.info('Package <%s> generated', meta.name)
+        LOGGER.info("Package <%s> generated", meta.name)
 
 
 def main():
     clean()
 
     generate_package(
-        PackageMeta(name='grpc',
-                    name_long='gRPC Python',
-                    destination_package='grpcio'))
+        PackageMeta(
+            name="grpc", name_long="gRPC Python", destination_package="grpcio"
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-status',
-                    name_long='gRPC Rich Error Status',
-                    destination_package='grpcio-status'))
+        PackageMeta(
+            name="grpc-status",
+            name_long="gRPC Rich Error Status",
+            destination_package="grpcio-status",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-channelz',
-                    name_long='gRPC Channel Tracing',
-                    destination_package='grpcio-channelz'))
+        PackageMeta(
+            name="grpc-channelz",
+            name_long="gRPC Channel Tracing",
+            destination_package="grpcio-channelz",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-tools',
-                    name_long='ProtoBuf Code Generator',
-                    destination_package='grpcio-tools'))
+        PackageMeta(
+            name="grpc-tools",
+            name_long="ProtoBuf Code Generator",
+            destination_package="grpcio-tools",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-reflection',
-                    name_long='gRPC Reflection',
-                    destination_package='grpcio-reflection'))
+        PackageMeta(
+            name="grpc-reflection",
+            name_long="gRPC Reflection",
+            destination_package="grpcio-reflection",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-testing',
-                    name_long='gRPC Testing Utility',
-                    destination_package='grpcio-testing'))
+        PackageMeta(
+            name="grpc-testing",
+            name_long="gRPC Testing Utility",
+            destination_package="grpcio-testing",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-health-checking',
-                    name_long='gRPC Health Checking',
-                    destination_package='grpcio-health-checking'))
+        PackageMeta(
+            name="grpc-health-checking",
+            name_long="gRPC Health Checking",
+            destination_package="grpcio-health-checking",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-csds',
-                    name_long='gRPC Client Status Discovery Service',
-                    destination_package='grpcio-csds'))
+        PackageMeta(
+            name="grpc-csds",
+            name_long="gRPC Client Status Discovery Service",
+            destination_package="grpcio-csds",
+        )
+    )
 
     generate_package(
-        PackageMeta(name='grpc-admin',
-                    name_long='gRPC Admin Interface',
-                    destination_package='grpcio-admin'))
+        PackageMeta(
+            name="grpc-admin",
+            name_long="gRPC Admin Interface",
+            destination_package="grpcio-admin",
+        )
+    )
 
 
 if __name__ == "__main__":

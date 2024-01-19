@@ -25,7 +25,6 @@ LONG_UNARY_CALL_WITH_SLEEP_VALUE = 1
 
 
 class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
-
     def UnaryCall(self, request, context):
         return messages_pb2.SimpleResponse()
 
@@ -37,25 +36,26 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 def start_test_server(port: int = 0) -> Tuple[str, Any]:
     server = grpc.server(futures.ThreadPoolExecutor())
     servicer = TestServiceServicer()
-    test_pb2_grpc.add_TestServiceServicer_to_server(TestServiceServicer(),
-                                                    server)
+    test_pb2_grpc.add_TestServiceServicer_to_server(
+        TestServiceServicer(), server
+    )
 
     server.add_generic_rpc_handlers((_create_extra_generic_handler(servicer),))
-    port = server.add_insecure_port('[::]:%d' % port)
+    port = server.add_insecure_port("[::]:%d" % port)
     server.start()
-    return 'localhost:%d' % port, server
+    return "localhost:%d" % port, server
 
 
 def _create_extra_generic_handler(servicer: TestServiceServicer) -> Any:
     # Add programatically extra methods not provided by the proto file
     # that are used during the tests
     rpc_method_handlers = {
-        'UnaryCallWithSleep':
-            grpc.unary_unary_rpc_method_handler(
-                servicer.UnaryCallWithSleep,
-                request_deserializer=messages_pb2.SimpleRequest.FromString,
-                response_serializer=messages_pb2.SimpleResponse.
-                SerializeToString)
+        "UnaryCallWithSleep": grpc.unary_unary_rpc_method_handler(
+            servicer.UnaryCallWithSleep,
+            request_deserializer=messages_pb2.SimpleRequest.FromString,
+            response_serializer=messages_pb2.SimpleResponse.SerializeToString,
+        )
     }
-    return grpc.method_handlers_generic_handler('grpc.testing.TestService',
-                                                rpc_method_handlers)
+    return grpc.method_handlers_generic_handler(
+        "grpc.testing.TestService", rpc_method_handlers
+    )

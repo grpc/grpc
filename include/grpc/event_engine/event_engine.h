@@ -79,7 +79,7 @@ namespace experimental {
 ///
 ///
 /// Blocking EventEngine Callbacks
-/// -----------------------------
+/// ------------------------------
 ///
 /// Doing blocking work in EventEngine callbacks is generally not advisable.
 /// While gRPC's default EventEngine implementations have some capacity to scale
@@ -89,6 +89,15 @@ namespace experimental {
 ///
 /// *Best Practice* : Occasional blocking work may be fine, but we do not
 /// recommend running a mostly blocking workload in EventEngine threads.
+///
+///
+/// Thread-safety guarantees
+/// ------------------------
+///
+/// All EventEngine methods are guaranteed to be thread-safe, no external
+/// synchronization is required to call any EventEngine method. Please note that
+/// this does not apply to application callbacks, which may be run concurrently;
+/// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine : public std::enable_shared_from_this<EventEngine> {
@@ -122,15 +131,21 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a Cancel method.
   struct TaskHandle {
     intptr_t keys[2];
+    static const GRPC_DLL TaskHandle kInvalid;
+    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
+    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
-  static constexpr TaskHandle kInvalidTaskHandle{-1, -1};
   /// A handle to a cancellable connection attempt.
   ///
   /// Returned by \a Connect, and can be passed to \a CancelConnect.
   struct ConnectionHandle {
     intptr_t keys[2];
+    static const GRPC_DLL ConnectionHandle kInvalid;
+    friend bool operator==(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
+    friend bool operator!=(const ConnectionHandle& lhs,
+                           const ConnectionHandle& rhs);
   };
-  static constexpr ConnectionHandle kInvalidConnectionHandle{-1, -1};
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
   ///
@@ -240,6 +255,45 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
+
+    /// A method which allows users to query whether an Endpoint implementation
+    /// supports a specified extension. The name of the extension is provided
+    /// as an input.
+    ///
+    /// An extension could be any type with a unique string id. Each extension
+    /// may support additional capabilities and if the Endpoint implementation
+    /// supports the queried extension, it should return a valid pointer to the
+    /// extension type.
+    ///
+    /// E.g., use case of an EventEngine::Endpoint supporting a custom
+    /// extension.
+    ///
+    /// class CustomEndpointExtension {
+    ///  public:
+    ///    static constexpr std::string name = "my.namespace.extension_name";
+    ///    void Process() { ... }
+    /// }
+    ///
+    ///
+    /// class CustomEndpoint :
+    ///        public EventEngine::Endpoint, CustomEndpointExtension {
+    ///   public:
+    ///     void* QueryExtension(absl::string_view id) override {
+    ///       if (id == CustomEndpointExtension::name) {
+    ///         return static_cast<CustomEndpointExtension*>(this);
+    ///       }
+    ///       return nullptr;
+    ///     }
+    ///     ...
+    /// }
+    ///
+    /// auto ext_ =
+    /// static_cast<CustomEndpointExtension*>(
+    ///   endpoint->QueryExtension(CustomrEndpointExtension::name));
+    /// if (ext_ != nullptr) { ext_->Process(); }
+    ///
+    ///
+    virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
   };
 
   /// Called when a new connection is established.
@@ -277,8 +331,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// \a on_shutdown will never be called.
   ///
   /// If this method returns a Listener, then \a on_shutdown will be invoked
-  /// exactly once, when the Listener is shut down. The status passed to it will
-  /// indicate if there was a problem during shutdown.
+  /// exactly once when the Listener is shut down, and only after all
+  /// \a on_accept callbacks have finished executing. The status passed to it
+  /// will indicate if there was a problem during shutdown.
   ///
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
@@ -311,15 +366,17 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// If the associated connection has not been completed, it will be cancelled,
   /// and this method will return true. The \a OnConnectCallback will not be
-  /// called.
+  /// called, and \a on_connect will be destroyed before this method returns.
   virtual bool CancelConnect(ConnectionHandle handle) = 0;
   /// Provides asynchronous resolution.
+  ///
+  /// This object has a destruction-is-cancellation semantic.
+  /// Implementations should make sure that all pending requests are cancelled
+  /// when the object is destroyed and all pending callbacks will be called
+  /// shortly. If cancellation races with request completion, implementations
+  /// may choose to either cancel or satisfy the request.
   class DNSResolver {
    public:
-    /// Task handle for DNS Resolution requests.
-    struct LookupTaskHandle {
-      intptr_t keys[2];
-    };
     /// Optional configuration for DNSResolvers.
     struct ResolverOptions {
       /// If empty, default DNS servers will be used.
@@ -342,7 +399,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
         absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
     using LookupTXTCallback =
-        absl::AnyInvocable<void(absl::StatusOr<std::string>)>;
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<std::string>>)>;
 
     virtual ~DNSResolver() = default;
 
@@ -351,37 +408,26 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// \a default_port may be a non-numeric named service port, and will only
     /// be used if \a address does not already contain a port component.
     ///
-    /// When the lookup is complete, the \a on_resolve callback will be invoked
-    /// with a status indicating the success or failure of the lookup.
-    /// Implementations should pass the appropriate statuses to the callback.
-    /// For example, callbacks might expect to receive DEADLINE_EXCEEDED or
+    /// When the lookup is complete or cancelled, the \a on_resolve callback
+    /// will be invoked with a status indicating the success or failure of the
+    /// lookup. Implementations should pass the appropriate statuses to the
+    /// callback. For example, callbacks might expect to receive CANCELLED or
     /// NOT_FOUND.
-    ///
-    /// If cancelled, \a on_resolve will not be executed.
-    virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
-                                            absl::string_view name,
-                                            absl::string_view default_port,
-                                            Duration timeout) = 0;
+    virtual void LookupHostname(LookupHostnameCallback on_resolve,
+                                absl::string_view name,
+                                absl::string_view default_port) = 0;
     /// Asynchronously perform an SRV record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
-                                       absl::string_view name,
-                                       Duration timeout) = 0;
+    virtual void LookupSRV(LookupSRVCallback on_resolve,
+                           absl::string_view name) = 0;
     /// Asynchronously perform a TXT record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
-                                       absl::string_view name,
-                                       Duration timeout) = 0;
-    /// Cancel an asynchronous lookup operation.
-    ///
-    /// This shares the same semantics with \a EventEngine::Cancel: successfully
-    /// cancelled lookups will not have their callbacks executed, and this
-    /// method returns true.
-    virtual bool CancelLookup(LookupTaskHandle handle) = 0;
+    virtual void LookupTXT(LookupTXTCallback on_resolve,
+                           absl::string_view name) = 0;
   };
 
   /// At time of destruction, the EventEngine must have no active
@@ -398,14 +444,17 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   virtual bool IsWorkerThread() = 0;
 
   /// Creates and returns an instance of a DNSResolver, optionally configured by
-  /// the \a options struct.
-  virtual std::unique_ptr<DNSResolver> GetDNSResolver(
+  /// the \a options struct. This method may return a non-OK status if an error
+  /// occurred when creating the DNSResolver. If the caller requests a custom
+  /// DNS server, and the EventEngine implementation does not support it, this
+  /// must return an error.
+  virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
       const DNSResolver::ResolverOptions& options) = 0;
 
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. The \a closure will
-  /// not be deleted after it has been run, ownership remains with the caller.
+  /// \a Closures passed to \a Run cannot be cancelled. The \a closure will not
+  /// be deleted after it has been run, ownership remains with the caller.
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a Run returns. For example, if the caller must release a lock before the
@@ -414,9 +463,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   virtual void Run(Closure* closure) = 0;
   /// Asynchronously executes a task as soon as possible.
   ///
-  /// \a Closures scheduled with \a Run cannot be cancelled. Unlike the
-  /// overloaded \a Closure alternative, the absl::AnyInvocable version's \a
-  /// closure will be deleted by the EventEngine after the closure has been run.
+  /// \a Closures passed to \a Run cannot be cancelled. Unlike the overloaded \a
+  /// Closure alternative, the absl::AnyInvocable version's \a closure will be
+  /// deleted by the EventEngine after the closure has been run.
   ///
   /// This version of \a Run may be less performant than the \a Closure version
   /// in some scenarios. This overload is useful in situations where performance
@@ -452,17 +501,12 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
                               absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
-  /// If the associated closure has already been scheduled to run, it will not
-  /// be cancelled, and this function will return false.
+  /// If the associated closure cannot be cancelled for any reason, this
+  /// function will return false.
   ///
-  /// If the associated closure has not been scheduled to run, it will be
-  /// cancelled, and the associated absl::AnyInvocable or \a Closure* will not
-  /// be executed. In this case, Cancel will return true.
-  ///
-  /// Implementation note: closures should be destroyed in a timely manner after
-  /// execution or cancellation (milliseconds), since any state bound to the
-  /// closure may need to be destroyed for things to progress (e.g., if a
-  /// closure holds a ref to some ref-counted object).
+  /// If the associated closure can be cancelled, the associated callback will
+  /// never be run, and this method will return true. If the callback type was
+  /// an absl::AnyInvocable, it will be destroyed before the method returns.
   virtual bool Cancel(TaskHandle handle) = 0;
 };
 

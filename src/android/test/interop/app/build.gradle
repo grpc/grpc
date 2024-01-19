@@ -29,6 +29,9 @@ android {
                 arguments '-DgRPC_BUILD_CODEGEN=off'
                 arguments '-DPROTOBUF_PROTOC_EXECUTABLE=' + protoc
                 arguments '-DgRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
+                arguments '-Dprotobuf_INSTALL=OFF'
+                arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
+                version "3.22.1"
             }
         }
         ndk {
@@ -47,6 +50,7 @@ android {
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
+            version "3.22.1"
         }
     }
 }

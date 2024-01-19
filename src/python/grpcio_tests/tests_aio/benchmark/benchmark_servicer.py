@@ -24,29 +24,29 @@ from src.proto.grpc.testing import messages_pb2
 
 
 class BenchmarkServicer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
-
     async def UnaryCall(self, request, unused_context):
-        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
+        payload = messages_pb2.Payload(body=b"\0" * request.response_size)
         return messages_pb2.SimpleResponse(payload=payload)
 
     async def StreamingFromServer(self, request, unused_context):
-        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
+        payload = messages_pb2.Payload(body=b"\0" * request.response_size)
         # Sends response at full capacity!
         while True:
             yield messages_pb2.SimpleResponse(payload=payload)
 
     async def StreamingCall(self, request_iterator, unused_context):
         async for request in request_iterator:
-            payload = messages_pb2.Payload(body=b'\0' * request.response_size)
+            payload = messages_pb2.Payload(body=b"\0" * request.response_size)
             yield messages_pb2.SimpleResponse(payload=payload)
 
 
 class GenericBenchmarkServicer(
-        benchmark_service_pb2_grpc.BenchmarkServiceServicer):
+    benchmark_service_pb2_grpc.BenchmarkServiceServicer
+):
     """Generic (no-codec) Server implementation for the Benchmark service."""
 
     def __init__(self, resp_size):
-        self._response = '\0' * resp_size
+        self._response = "\0" * resp_size
 
     async def UnaryCall(self, unused_request, unused_context):
         return self._response

@@ -21,7 +21,6 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
 
 #include "absl/status/status.h"
@@ -388,6 +387,10 @@ void PosixOracleListener::HandleIncomingConnections() {
 absl::StatusOr<int> PosixOracleListener::Bind(
     const EventEngine::ResolvedAddress& addr) {
   grpc_core::MutexLock lock(&mu_);
+  if (is_started_) {
+    return absl::FailedPreconditionError(
+        "Listener is already started, ports can no longer be bound");
+  }
   int new_socket;
   int opt = -1;
   grpc_resolved_address address = CreateGRPCResolvedAddress(addr);

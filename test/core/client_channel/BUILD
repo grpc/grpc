@@ -23,6 +23,8 @@ grpc_cc_test(
     srcs = ["client_channel_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:grpc_client_channel",
         "//src/core:channel_args",
@@ -41,6 +43,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
@@ -67,6 +70,8 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -82,6 +87,8 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",

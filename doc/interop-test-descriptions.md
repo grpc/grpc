@@ -39,6 +39,18 @@ Clients should accept these arguments:
 * --service_config_json=SERVICE_CONFIG_JSON
     * Disables service config lookups and sets the provided string as the
       default service config.
+* --additional_metadata=ADDITIONAL_METADATA
+    * Additional metadata to send in each request, as a semicolon-separated list
+      of key:value pairs. The first key/value pair is separated by the first colon.
+      The second key/value pair is separated by the next colon *following* the
+      next semi-colon thereafter, and so on. For example:
+      - `abc-key:abc-value;foo-key:foo-value`
+          - Key/value pairs: `abc-key`/`abc-value`, `foo-key`/`foo-value`.
+      - `abc-key:abc:value;foo-key:foo:value`
+          - Key/value pairs: `abc-key`/`abc:value`, `foo-key`/`foo:value`.
+
+      Keys must be ASCII only (no `-bin` headers allowed). Values may contain
+      any character except semi-colons.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
@@ -1152,12 +1164,12 @@ Procedures:
       }
     }
     ```
-2. After getting a response, client waits up to 5 seconds to receive a OOB load 
-report that matches the requested load report in step 1. To wait for load 
-report, client may inject a callback to the custom LB policy, or poll the result
-by doing empty unary call that carries a reference, e.g. using 
-CallOptions, that will be filled in by the custom LB policy as part of the 
-`OrcaOobReportListener` API.
+2. After getting a response, client waits up to 10 seconds (or a total of 30s
+for the entire test case) to receive an OOB load report that matches the
+requested load report in step 1. To wait for load report, client may inject a
+callback to the custom LB policy, or poll the result by doing empty unary call
+that carries a reference, e.g. using CallOptions, that will be filled in by the
+custom LB policy as part of the `OrcaOobReportListener` API.
 3. Then client sends: 
     ```
     {
@@ -1165,7 +1177,7 @@ CallOptions, that will be filled in by the custom LB policy as part of the
         cpu_utilization: 0.29309
         memory_utilization: 0.2
         utilization: {
-          util: 100.2039
+          util: 0.2039
         }
       }
       response_parameters:{
@@ -1173,8 +1185,9 @@ CallOptions, that will be filled in by the custom LB policy as part of the
       }
     }
     ```
-4. After getting a response, client waits up to 5 seconds to receive a OOB load
-report that matches the requested load report in step 3. Similar to step 2.
+4. After getting a response, client waits up to 10 seconds (or a total of 30s
+for the entire test case) to receive an OOB load report that matches the
+requested load report in step 3. Similar to step 2.
 5. Client half closes the stream, and asserts the streaming call is successful. 
 
 ### Experimental Tests

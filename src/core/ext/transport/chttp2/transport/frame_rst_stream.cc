@@ -22,8 +22,7 @@
 
 #include <stddef.h>
 
-#include <initializer_list>
-
+#include "absl/random/distributions.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -31,10 +30,12 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -124,6 +125,12 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
               absl::StrCat("Received RST_STREAM with error code ", reason)),
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(reason));
+    }
+    if (!t->is_client &&
+        absl::Bernoulli(t->bitgen, t->ping_on_rst_stream_percent / 100.0)) {
+      ++t->num_pending_induced_frames;
+      t->ping_callbacks.RequestPing();
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);
   }

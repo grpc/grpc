@@ -18,6 +18,7 @@
 #include <atomic>
 #include <chrono>
 #include <random>
+#include <set>
 #include <thread>
 #include <vector>
 
@@ -81,7 +82,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
 
   MemoryQuota memory_quota("foo");
   memory_quota.SetSize(4096);
-  auto memory_allocator = memory_quota.CreateMemoryOwner("bar");
+  auto memory_allocator = memory_quota.CreateMemoryOwner();
   auto object = memory_allocator.MakeUnique<Sized<2048>>();
 
   auto checker1 = CallChecker::Make();
@@ -156,7 +157,7 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 
   for (size_t i = 0; i < 10000; i++) {
     ExecCtx exec_ctx;
-    auto memory_owner = memory_quota.CreateMemoryOwner("bar");
+    auto memory_owner = memory_quota.CreateMemoryOwner();
     memory_owner.PostReclaimer(
         ReclamationPass::kDestructive,
         [&count_reclaimers_called](absl::optional<ReclamationSweep> sweep) {
@@ -167,6 +168,23 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
   }
 
   EXPECT_GE(count_reclaimers_called.load(std::memory_order_relaxed), 8000);
+}
+
+TEST(MemoryQuotaTest, AllMemoryQuotas) {
+  auto gather = []() {
+    std::set<std::string> all_names;
+    for (const auto& q : AllMemoryQuotas()) {
+      all_names.emplace(q->name());
+    }
+    return all_names;
+  };
+
+  auto m1 = MakeMemoryQuota("m1");
+  auto m2 = MakeMemoryQuota("m2");
+
+  EXPECT_EQ(gather(), std::set<std::string>({"m1", "m2"}));
+  m1.reset();
+  EXPECT_EQ(gather(), std::set<std::string>({"m2"}));
 }
 
 }  // namespace testing

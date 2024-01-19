@@ -21,6 +21,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -114,7 +115,7 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
 
 // Tests that we ignore Listener deletions if configured to do so.
 TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
-  InitClient(BootstrapBuilder().SetIgnoreResourceDeletion());
+  InitClient(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -401,7 +402,9 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
-MATCHER_P2(AdjustedClockInRange, t1, t2, "equals time") {
+MATCHER_P2(AdjustedClockInRange, t1, t2,
+           absl::StrFormat("time between %s and %s", t1.ToString().c_str(),
+                           t2.ToString().c_str())) {
   gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
   grpc_core::Timestamp cycle_time =
       grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);
@@ -467,6 +470,8 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 }
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
@@ -524,6 +529,8 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the
 // matching route has an action other than RouteAction.
 TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   // Set a route with an inappropriate route action
   auto* vhost = route_config.mutable_virtual_hosts(0);
@@ -2401,7 +2408,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

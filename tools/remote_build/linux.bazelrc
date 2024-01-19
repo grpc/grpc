@@ -18,12 +18,12 @@
 import %workspace%/tools/remote_build/include/rbe_remote_execution.bazelrc
 
 # Next section is linux-specific RBE configuration
-build --crosstool_top=@rbe_default//cc:toolchain
-build --extra_toolchains=@rbe_default//config:cc-toolchain
+build --crosstool_top=//third_party/toolchains:rbe_linux_default_toolchain_suite
+build --extra_toolchains=//third_party/toolchains:rbe_linux_default_cc_toolchain
 # Use custom execution platforms defined in third_party/toolchains
-build --extra_execution_platforms=@rbe_default//config:platform
-build --host_platform=@rbe_default//config:platform
-build --platforms=@rbe_default//config:platform
+build --extra_execution_platforms=//third_party/toolchains:rbe_linux_default_platform
+build --host_platform=//third_party/toolchains:rbe_linux_default_platform
+build --platforms=//third_party/toolchains:rbe_linux_default_platform
 
 # we assume the default bazel RBE build is on linux,
 # so filter out stuff that should not be built or run there.
@@ -34,8 +34,8 @@ import %workspace%/tools/remote_build/include/test_config_common.bazelrc
 
 build --jobs=100
 
-build:opt --test_tag_filters=-noopt
-build:dbg --test_tag_filters=-nodbg
+build:opt --test_tag_filters=-noopt,-no_linux
+build:dbg --test_tag_filters=-nodbg,-no_linux
 
 # address sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -53,12 +53,11 @@ build:msan --test_timeout=60,900,1800,3600
 # TODO(jtattermusch): revisit the disabled tests
 build:msan --test_tag_filters=-no_linux,-nomsan,-json_run_localhost
 build:msan --cxxopt=--stdlib=libc++
-# setting LD_LIBRARY_PATH is necessary
-# to avoid "libc++.so.1: cannot open shared object file"
-build:msan --action_env=LD_LIBRARY_PATH=/usr/local/lib
-build:msan --host_crosstool_top=@rbe_default//cc:toolchain
-# override the config-agnostic crosstool_top
-build:msan --crosstool_top=@rbe_msan//cc:toolchain
+build:msan --linkopt=--stdlib=libc++
+# use MSAN-instrumented version of libc++
+# TODO(jtattermusch): include the modified LD_LIBRARY_PATH in an msan-specific
+# toolchain configuration, instead of needing to explicitly set it here.
+build:msan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib/x86_64-unknown-linux-gnu
 
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -83,3 +82,6 @@ build:ubsan --linkopt=-fsanitize=memory
 build:ubsan --cxxopt=--stdlib=libc++
 build:ubsan --action_env=MSAN_OPTIONS=halt_on_error=0
 build:ubsan --test_tag_filters=-no_linux,-noubsan
+# use MSAN-instrumented version of libc++
+# TODO(jtattermusch): run UBSAN without enabling MSAN too.
+build:ubsan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib/x86_64-unknown-linux-gnu

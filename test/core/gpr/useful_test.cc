@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include <limits>
+#include <memory>
 
 #include "gtest/gtest.h"
 

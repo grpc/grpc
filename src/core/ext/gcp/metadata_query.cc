@@ -22,7 +22,6 @@
 
 #include <string.h>
 
-#include <initializer_list>
 #include <memory>
 #include <utility>
 
@@ -46,19 +45,24 @@ namespace grpc_core {
 
 TraceFlag grpc_metadata_query_trace(false, "metadata_query");
 
-constexpr const char MetadataQuery::kZoneAttribute[] =
-    "/computeMetadata/v1/instance/zone";
-constexpr const char MetadataQuery::kClusterNameAttribute[] =
-    "/computeMetadata/v1/instance/attributes/cluster-name";
-constexpr const char MetadataQuery::kRegionAttribute[] =
-    "/computeMetadata/v1/instance/region";
-constexpr const char MetadataQuery::kInstanceIdAttribute[] =
-    "/computeMetadata/v1/instance/id";
-constexpr const char MetadataQuery::kIPv6Attribute[] =
-    "/computeMetadata/v1/instance/network-interfaces/0/ipv6s";
+constexpr const char MetadataQuery::kZoneAttribute[];
+constexpr const char MetadataQuery::kClusterNameAttribute[];
+constexpr const char MetadataQuery::kRegionAttribute[];
+constexpr const char MetadataQuery::kInstanceIdAttribute[];
+constexpr const char MetadataQuery::kIPv6Attribute[];
 
 MetadataQuery::MetadataQuery(
     std::string attribute, grpc_polling_entity* pollent,
+    absl::AnyInvocable<void(std::string /* attribute */,
+                            absl::StatusOr<std::string> /* result */)>
+        callback,
+    Duration timeout)
+    : MetadataQuery("metadata.google.internal.", std::move(attribute), pollent,
+                    std::move(callback), timeout) {}
+
+MetadataQuery::MetadataQuery(
+    std::string metadata_server_name, std::string attribute,
+    grpc_polling_entity* pollent,
     absl::AnyInvocable<void(std::string /* attribute */,
                             absl::StatusOr<std::string> /* result */)>
         callback,
@@ -67,7 +71,7 @@ MetadataQuery::MetadataQuery(
       attribute_(std::move(attribute)),
       callback_(std::move(callback)) {
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
-  auto uri = URI::Create("http", "metadata.google.internal.", attribute_,
+  auto uri = URI::Create("http", std::move(metadata_server_name), attribute_,
                          {} /* query params */, "" /* fragment */);
   GPR_ASSERT(uri.ok());  // params are hardcoded
   grpc_http_request request;

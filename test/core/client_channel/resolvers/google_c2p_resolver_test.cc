@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <thread>
@@ -28,7 +27,6 @@
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -101,10 +99,19 @@ TEST(DestroyGoogleC2pChannelWithActiveConnectStressTest,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::SetEnv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER", "true");
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
-  auto result = RUN_ALL_TESTS();
+  int result;
+  {
+    grpc_core::testing::FakeUdpAndTcpServer fake_xds_server(
+        grpc_core::testing::FakeUdpAndTcpServer::AcceptMode::
+            kWaitForClientToSendFirstBytes,
+        grpc_core::testing::FakeUdpAndTcpServer::
+            CloseSocketUponReceivingBytesFromPeer);
+    grpc_core::SetEnv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI",
+                      fake_xds_server.address());
+    result = RUN_ALL_TESTS();
+  }
   grpc_shutdown();
   return result;
 }

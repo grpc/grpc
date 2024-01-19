@@ -228,4 +228,14 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture);
 void tsi_test_frame_protector_do_round_trip_no_handshake(
     tsi_test_frame_protector_fixture* fixture);
 
+struct SelfSignedCertificateOptions {
+  std::string common_name;
+  std::string organization;
+  std::string organizational_unit;
+};
+
+// Returns a PEM-encoded self-signed certificate.
+std::string GenerateSelfSignedCertificate(
+    const SelfSignedCertificateOptions& options);
+
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H

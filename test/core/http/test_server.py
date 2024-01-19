@@ -22,48 +22,56 @@ import ssl
 import sys
 
 _PEM = os.path.abspath(
-    os.path.join(os.path.dirname(sys.argv[0]), '../../..',
-                 'src/core/tsi/test_creds/server1.pem'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        "../../..",
+        "src/core/tsi/test_creds/server1.pem",
+    )
+)
 _KEY = os.path.abspath(
-    os.path.join(os.path.dirname(sys.argv[0]), '../../..',
-                 'src/core/tsi/test_creds/server1.key'))
+    os.path.join(
+        os.path.dirname(sys.argv[0]),
+        "../../..",
+        "src/core/tsi/test_creds/server1.key",
+    )
+)
 print(_PEM)
 open(_PEM).close()
 
-argp = argparse.ArgumentParser(description='Server for httpcli_test')
-argp.add_argument('-p', '--port', default=10080, type=int)
-argp.add_argument('-s', '--ssl', default=False, action='store_true')
+argp = argparse.ArgumentParser(description="Server for httpcli_test")
+argp.add_argument("-p", "--port", default=10080, type=int)
+argp.add_argument("-s", "--ssl", default=False, action="store_true")
 args = argp.parse_args()
 
-print('server running on port %d' % args.port)
+print("server running on port %d" % args.port)
 
 
 class Handler(BaseHTTPRequestHandler):
-
     def good(self):
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html')
+        self.send_header("Content-Type", "text/html")
         self.end_headers()
         self.wfile.write(
-            '<html><head><title>Hello world!</title></head>'.encode('ascii'))
+            "<html><head><title>Hello world!</title></head>".encode("ascii")
+        )
         self.wfile.write(
-            '<body><p>This is a test</p></body></html>'.encode('ascii'))
+            "<body><p>This is a test</p></body></html>".encode("ascii")
+        )
 
     def do_GET(self):
-        if self.path == '/get':
+        if self.path == "/get":
             self.good()
 
     def do_POST(self):
-        content_len = self.headers.get('content-length')
-        content = self.rfile.read(int(content_len)).decode('ascii')
-        if self.path == '/post' and content == 'hello':
+        content_len = self.headers.get("content-length")
+        content = self.rfile.read(int(content_len)).decode("ascii")
+        if self.path == "/post" and content == "hello":
             self.good()
 
 
-httpd = HTTPServer(('localhost', args.port), Handler)
+httpd = HTTPServer(("localhost", args.port), Handler)
 if args.ssl:
-    httpd.socket = ssl.wrap_socket(httpd.socket,
-                                   certfile=_PEM,
-                                   keyfile=_KEY,
-                                   server_side=True)
+    ctx = ssl.SSLContext()
+    ctx.load_cert_chain(certfile=_PEM, keyfile=_KEY)
+    httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
 httpd.serve_forever()

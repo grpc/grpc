@@ -20,80 +20,88 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
+#include "absl/functional/function_ref.h"
 
-#define GRPC_ARG_HIERARCHICAL_PATH "grpc.internal.address.hierarchical_path"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_core {
 
-const char* kHierarchicalPathAttributeKey = "hierarchical_path";
+absl::string_view HierarchicalPathArg::ChannelArgName() {
+  return GRPC_ARG_NO_SUBCHANNEL_PREFIX "address.hierarchical_path";
+}
+
+int HierarchicalPathArg::ChannelArgsCompare(const HierarchicalPathArg* a,
+                                            const HierarchicalPathArg* b) {
+  for (size_t i = 0; i < a->path_.size(); ++i) {
+    if (b->path_.size() == i) return 1;
+    int r = a->path_[i].as_string_view().compare(b->path_[i].as_string_view());
+    if (r != 0) return r;
+  }
+  if (b->path_.size() > a->path_.size()) return -1;
+  return 0;
+}
 
 namespace {
 
-class HierarchicalPathAttribute : public ServerAddress::AttributeInterface {
+class HierarchicalAddressIterator : public EndpointAddressesIterator {
  public:
-  explicit HierarchicalPathAttribute(std::vector<std::string> path)
-      : path_(std::move(path)) {}
+  HierarchicalAddressIterator(
+      std::shared_ptr<EndpointAddressesIterator> parent_it,
+      RefCountedStringValue child_name)
+      : parent_it_(std::move(parent_it)), child_name_(std::move(child_name)) {}
 
-  std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<HierarchicalPathAttribute>(path_);
+  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+      const override {
+    RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
+    parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+      const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
+      if (path_arg == nullptr) return;
+      const std::vector<RefCountedStringValue>& path = path_arg->path();
+      auto it = path.begin();
+      if (it == path.end()) return;
+      if (*it != child_name_) return;
+      ChannelArgs args = endpoint.args();
+      ++it;
+      if (it != path.end()) {
+        std::vector<RefCountedStringValue> remaining_path(it, path.end());
+        if (remaining_path_attr == nullptr ||
+            remaining_path_attr->path() != remaining_path) {
+          remaining_path_attr =
+              MakeRefCounted<HierarchicalPathArg>(std::move(remaining_path));
+        }
+        args = args.SetObject(remaining_path_attr);
+      }
+      callback(EndpointAddresses(endpoint.addresses(), args));
+    });
   }
-
-  int Cmp(const AttributeInterface* other) const override {
-    const std::vector<std::string>& other_path =
-        static_cast<const HierarchicalPathAttribute*>(other)->path_;
-    for (size_t i = 0; i < path_.size(); ++i) {
-      if (other_path.size() == i) return 1;
-      int r = path_[i].compare(other_path[i]);
-      if (r != 0) return r;
-    }
-    if (other_path.size() > path_.size()) return -1;
-    return 0;
-  }
-
-  std::string ToString() const override {
-    return absl::StrCat("[", absl::StrJoin(path_, ", "), "]");
-  }
-
-  const std::vector<std::string>& path() const { return path_; }
 
  private:
-  std::vector<std::string> path_;
+  std::shared_ptr<EndpointAddressesIterator> parent_it_;
+  RefCountedStringValue child_name_;
 };
 
 }  // namespace
 
-std::unique_ptr<ServerAddress::AttributeInterface>
-MakeHierarchicalPathAttribute(std::vector<std::string> path) {
-  return std::make_unique<HierarchicalPathAttribute>(std::move(path));
-}
-
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    const absl::StatusOr<ServerAddressList>& addresses) {
+    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses) {
   if (!addresses.ok()) return addresses.status();
   HierarchicalAddressMap result;
-  for (const ServerAddress& address : *addresses) {
-    const HierarchicalPathAttribute* path_attribute =
-        static_cast<const HierarchicalPathAttribute*>(
-            address.GetAttribute(kHierarchicalPathAttributeKey));
-    if (path_attribute == nullptr) continue;
-    const std::vector<std::string>& path = path_attribute->path();
+  (*addresses)->ForEach([&](const EndpointAddresses& endpoint) {
+    const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
+    if (path_arg == nullptr) return;
+    const std::vector<RefCountedStringValue>& path = path_arg->path();
     auto it = path.begin();
-    ServerAddressList& target_list = result[*it];
-    std::unique_ptr<HierarchicalPathAttribute> new_attribute;
-    ++it;
-    if (it != path.end()) {
-      std::vector<std::string> remaining_path(it, path.end());
-      new_attribute = std::make_unique<HierarchicalPathAttribute>(
-          std::move(remaining_path));
+    if (it == path.end()) return;
+    auto& target_list = result[*it];
+    if (target_list == nullptr) {
+      target_list =
+          std::make_shared<HierarchicalAddressIterator>(*addresses, *it);
     }
-    target_list.emplace_back(address.WithAttribute(
-        kHierarchicalPathAttributeKey, std::move(new_attribute)));
-  }
+  });
   return result;
 }
 

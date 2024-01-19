@@ -74,7 +74,7 @@ class EndpointPairFixture {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      grpc_transport* transport = grpc_create_chttp2_transport(
+      grpc_core::Transport* transport = grpc_create_chttp2_transport(
           core_server->channel_args(), endpoints.server, false /* is_client */);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
@@ -96,7 +96,7 @@ class EndpointPairFixture {
               .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
       ApplyCommonChannelArguments(&args);
 
-      grpc_transport* transport =
+      grpc_core::Transport* transport =
           grpc_create_chttp2_transport(args, endpoints.client, true);
       GPR_ASSERT(transport);
       grpc_channel* channel =
@@ -142,7 +142,7 @@ class InProcessCHTTP2 : public EndpointPairFixture {
     }
   }
 
-  int writes_performed() const { return stats_->num_writes; }
+  int writes_performed() const { return gpr_atm_acq_load(&stats_->num_writes); }
 
  private:
   grpc_passthru_endpoint_stats* stats_;

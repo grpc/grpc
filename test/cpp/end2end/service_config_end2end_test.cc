@@ -50,11 +50,12 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -124,18 +125,15 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   static void SetUpTestSuite() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
   }
 
   void SetUp() override {
     grpc_init();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    bool localhost_resolves_to_ipv4 = false;
-    bool localhost_resolves_to_ipv6 = false;
-    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                                 &localhost_resolves_to_ipv6);
-    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
   }
 
   void TearDown() override {
@@ -173,16 +171,14 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
 
   grpc_core::Resolver::Result BuildFakeResults(const std::vector<int>& ports) {
     grpc_core::Resolver::Result result;
-    result.addresses = grpc_core::ServerAddressList();
+    result.addresses = grpc_core::EndpointAddressesList();
     for (const int& port : ports) {
-      std::string lb_uri_str =
-          absl::StrCat(ipv6_only_ ? "ipv6:[::1]:" : "ipv4:127.0.0.1:", port);
-      absl::StatusOr<grpc_core::URI> lb_uri = grpc_core::URI::Parse(lb_uri_str);
+      absl::StatusOr<grpc_core::URI> lb_uri =
+          grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
       GPR_ASSERT(lb_uri.ok());
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
-      result.addresses->emplace_back(address.addr, address.len,
-                                     grpc_core::ChannelArgs());
+      result.addresses->emplace_back(address, grpc_core::ChannelArgs());
     }
     return result;
   }
@@ -190,7 +186,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   void SetNextResolutionNoServiceConfig(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionValidServiceConfig(const std::vector<int>& ports) {
@@ -199,7 +195,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), "{}");
     ASSERT_TRUE(result.service_config.ok()) << result.service_config.status();
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionInvalidServiceConfig(const std::vector<int>& ports) {
@@ -207,7 +203,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     result.service_config =
         absl::InvalidArgumentError("error parsing service config");
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   void SetNextResolutionWithServiceConfig(const std::vector<int>& ports,
@@ -216,7 +212,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     grpc_core::Resolver::Result result = BuildFakeResults(ports);
     result.service_config =
         grpc_core::ServiceConfigImpl::Create(grpc_core::ChannelArgs(), svc_cfg);
-    response_generator_->SetResponse(result);
+    response_generator_->SetResponseSynchronously(result);
   }
 
   std::vector<int> GetServersPorts(size_t start_index = 0) {
@@ -431,7 +427,6 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     return "{\"version\": \"invalid_default\"";
   }
 
-  bool ipv6_only_ = false;
   const std::string server_host_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;

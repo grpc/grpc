@@ -33,9 +33,9 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -43,9 +43,9 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -168,9 +168,9 @@ void OverrideAddressSortingSourceAddrFactory(
   address_sorting_override_source_addr_factory_for_testing(factory);
 }
 
-grpc_core::ServerAddressList BuildLbAddrInputs(
+grpc_core::EndpointAddressesList BuildLbAddrInputs(
     const std::vector<TestAddress>& test_addrs) {
-  grpc_core::ServerAddressList addresses;
+  grpc_core::EndpointAddressesList addresses;
   for (const auto& addr : test_addrs) {
     addresses.emplace_back(TestAddressToGrpcResolvedAddress(addr),
                            grpc_core::ChannelArgs());
@@ -178,7 +178,7 @@ grpc_core::ServerAddressList BuildLbAddrInputs(
   return addresses;
 }
 
-void VerifyLbAddrOutputs(const grpc_core::ServerAddressList& addresses,
+void VerifyLbAddrOutputs(const grpc_core::EndpointAddressesList& addresses,
                          std::vector<std::string> expected_addrs) {
   EXPECT_EQ(addresses.size(), expected_addrs.size());
   for (size_t i = 0; i < addresses.size(); ++i) {
@@ -842,13 +842,9 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) == 0) {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
-  } else if (strcmp("ares", resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver.get());
-  }
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.dns_resolver = "ares";
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();

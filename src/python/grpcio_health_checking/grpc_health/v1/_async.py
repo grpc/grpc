@@ -24,8 +24,10 @@ from grpc_health.v1 import health_pb2_grpc as _health_pb2_grpc
 
 class HealthServicer(_health_pb2_grpc.HealthServicer):
     """An AsyncIO implementation of health checking servicer."""
+
     _server_status: MutableMapping[
-        str, '_health_pb2.HealthCheckResponse.ServingStatus']
+        str, "_health_pb2.HealthCheckResponse.ServingStatus"
+    ]
     _server_watchers: MutableMapping[str, asyncio.Condition]
     _gracefully_shutting_down: bool
 
@@ -34,8 +36,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self._server_watchers = collections.defaultdict(asyncio.Condition)
         self._gracefully_shutting_down = False
 
-    async def Check(self, request: _health_pb2.HealthCheckRequest,
-                    context) -> None:
+    async def Check(
+        self, request: _health_pb2.HealthCheckRequest, context
+    ) -> None:
         status = self._server_status.get(request.service)
 
         if status is None:
@@ -43,8 +46,9 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         else:
             return _health_pb2.HealthCheckResponse(status=status)
 
-    async def Watch(self, request: _health_pb2.HealthCheckRequest,
-                    context) -> None:
+    async def Watch(
+        self, request: _health_pb2.HealthCheckRequest, context
+    ) -> None:
         condition = self._server_watchers[request.service]
         last_status = None
         try:
@@ -52,7 +56,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 while True:
                     status = self._server_status.get(
                         request.service,
-                        _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN)
+                        _health_pb2.HealthCheckResponse.SERVICE_UNKNOWN,
+                    )
 
                     # NOTE(lidiz) If the observed status is the same, it means
                     # there are missing intermediate statuses. It's considered
@@ -60,7 +65,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                     if status != last_status:
                         # Responds with current health state
                         await context.write(
-                            _health_pb2.HealthCheckResponse(status=status))
+                            _health_pb2.HealthCheckResponse(status=status)
+                        )
 
                     # Records the last sent status
                     last_status = status
@@ -72,8 +78,10 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                 del self._server_watchers[request.service]
 
     async def _set(
-            self, service: str,
-            status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
+        self,
+        service: str,
+        status: _health_pb2.HealthCheckResponse.ServingStatus,
+    ) -> None:
         if service in self._server_watchers:
             condition = self._server_watchers.get(service)
             async with condition:
@@ -83,8 +91,10 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             self._server_status[service] = status
 
     async def set(
-            self, service: str,
-            status: _health_pb2.HealthCheckResponse.ServingStatus) -> None:
+        self,
+        service: str,
+        status: _health_pb2.HealthCheckResponse.ServingStatus,
+    ) -> None:
         """Sets the status of a service.
 
         Args:
@@ -109,5 +119,6 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         else:
             self._gracefully_shutting_down = True
             for service in self._server_status:
-                await self._set(service,
-                                _health_pb2.HealthCheckResponse.NOT_SERVING)
+                await self._set(
+                    service, _health_pb2.HealthCheckResponse.NOT_SERVING
+                )

@@ -23,8 +23,8 @@
 #include <memory>
 #include <utility>
 
-#include "upb/upb.h"
-#include "upb/upb.hpp"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>

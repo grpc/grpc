@@ -21,6 +21,27 @@ licenses(["notice"])
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
+    name = "directory_reader_test",
+    srcs = ["directory_reader_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:directory_reader",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],
     external_deps = [
@@ -55,37 +76,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "global_config_test",
-    srcs = ["global_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "global_config_env_test",
-    srcs = ["global_config_env_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "bitset_test",
     srcs = ["bitset_test.cc"],
     external_deps = ["gtest"],
@@ -94,6 +84,18 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:bitset",
+    ],
+)
+
+grpc_cc_test(
+    name = "if_list_test",
+    srcs = ["if_list_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:if_list",
     ],
 )
 
@@ -130,6 +132,18 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:overload",
+    ],
+)
+
+grpc_cc_test(
+    name = "down_cast_test",
+    srcs = ["down_cast_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
     ],
 )
 
@@ -219,6 +233,7 @@ grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
+        "absl/container:flat_hash_set",
         "gtest",
     ],
     language = "C++",
@@ -401,6 +416,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -441,6 +457,21 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:load_file",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "uuid_v4_test",
+    srcs = ["uuid_v4_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:uuid_v4",
         "//test/core/util:grpc_test_util",
     ],
 )

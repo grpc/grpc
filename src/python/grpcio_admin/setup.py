@@ -19,7 +19,7 @@ import sys
 import setuptools
 
 _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
+_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -28,33 +28,35 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import grpc_version
 
 CLASSIFIERS = [
-    'Development Status :: 5 - Production/Stable',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'License :: OSI Approved :: Apache Software License',
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
 ]
 
 PACKAGE_DIRECTORIES = {
-    '': '.',
+    "": ".",
 }
 
 INSTALL_REQUIRES = (
-    'grpcio-channelz>={version}'.format(version=grpc_version.VERSION),
-    'grpcio-csds>={version}'.format(version=grpc_version.VERSION),
+    "grpcio-channelz>={version}".format(version=grpc_version.VERSION),
+    "grpcio-csds>={version}".format(version=grpc_version.VERSION),
 )
 SETUP_REQUIRES = INSTALL_REQUIRES
 
-setuptools.setup(name='grpcio-admin',
-                 version=grpc_version.VERSION,
-                 license='Apache License 2.0',
-                 description='a collection of admin services',
-                 long_description=open(_README_PATH, 'r').read(),
-                 author='The gRPC Authors',
-                 author_email='grpc-io@googlegroups.com',
-                 classifiers=CLASSIFIERS,
-                 url='https://grpc.io',
-                 package_dir=PACKAGE_DIRECTORIES,
-                 packages=setuptools.find_packages('.'),
-                 python_requires='>=3.6',
-                 install_requires=INSTALL_REQUIRES,
-                 setup_requires=SETUP_REQUIRES)
+setuptools.setup(
+    name="grpcio-admin",
+    version=grpc_version.VERSION,
+    license="Apache License 2.0",
+    description="a collection of admin services",
+    long_description=open(_README_PATH, "r").read(),
+    author="The gRPC Authors",
+    author_email="grpc-io@googlegroups.com",
+    classifiers=CLASSIFIERS,
+    url="https://grpc.io",
+    package_dir=PACKAGE_DIRECTORIES,
+    packages=setuptools.find_packages("."),
+    python_requires=">=3.6",
+    install_requires=INSTALL_REQUIRES,
+    setup_requires=SETUP_REQUIRES,
+)

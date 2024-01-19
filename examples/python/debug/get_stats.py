@@ -32,20 +32,22 @@ def run(addr):
         # succeeded/failed RPCs. For more info see:
         # https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto
         response = channelz_stub.GetServers(channelz_pb2.GetServersRequest())
-        print(f'Info for all servers: {response}')
+        print(f"Info for all servers: {response}")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--addr',
-                        nargs=1,
-                        type=str,
-                        default='[::]:50051',
-                        help='the address to request')
+    parser.add_argument(
+        "--addr",
+        nargs=1,
+        type=str,
+        default="[::]:50051",
+        help="the address to request",
+    )
     args = parser.parse_args()
     run(addr=args.addr)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     main()

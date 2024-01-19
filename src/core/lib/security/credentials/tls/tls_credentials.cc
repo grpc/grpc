@@ -20,14 +20,15 @@
 
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -44,6 +45,30 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   if (options == nullptr) {
     gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
     return false;
+  }
+  // In this case, there will be non-retriable handshake errors.
+  if (options->min_tls_version() > options->max_tls_version()) {
+    gpr_log(GPR_ERROR, "TLS min version must not be higher than max version.");
+    grpc_tls_credentials_options_destroy(options);
+    return false;
+  }
+  if (options->max_tls_version() > grpc_tls_version::TLS1_3) {
+    gpr_log(GPR_ERROR, "TLS max version must not be higher than v1.3.");
+    grpc_tls_credentials_options_destroy(options);
+    return false;
+  }
+  if (options->min_tls_version() < grpc_tls_version::TLS1_2) {
+    gpr_log(GPR_ERROR, "TLS min version must not be lower than v1.2.");
+    grpc_tls_credentials_options_destroy(options);
+    return false;
+  }
+  if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
+    gpr_log(GPR_ERROR,
+            "Setting crl_directory and crl_provider not supported. Using the "
+            "crl_provider.");
+    // TODO(gtcooke94) - Maybe return false here. Right now object lifetime of
+    // this options struct is leaky if false is returned and represents a more
+    // complex fix to handle in another PR.
   }
   // In the following conditions, there won't be any issues, but it might
   // indicate callers are doing something wrong with the API.
@@ -98,7 +123,7 @@ TlsCredentials::create_security_connector(
   return sc;
 }
 
-grpc_core::UniqueTypeName TlsCredentials::type() const {
+grpc_core::UniqueTypeName TlsCredentials::Type() {
   static grpc_core::UniqueTypeName::Factory kFactory("Tls");
   return kFactory.Create();
 }

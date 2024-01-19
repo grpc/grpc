@@ -28,7 +28,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
@@ -39,6 +38,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -105,10 +105,9 @@ void PollingResolver::ShutdownLocked() {
 }
 
 void PollingResolver::ScheduleNextResolutionTimer(const Duration& timeout) {
-  RefCountedPtr<PollingResolver> self = Ref();
   next_resolution_timer_handle_ =
       channel_args_.GetObject<EventEngine>()->RunAfter(
-          timeout, [self = std::move(self)]() mutable {
+          timeout, [self = RefAsSubclass<PollingResolver>()]() mutable {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             auto* self_ptr = self.get();
@@ -159,7 +158,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       gpr_log(GPR_INFO,
               "[polling resolver %p] returning result: "
-              "addresses=%s, service_config=%s",
+              "addresses=%s, service_config=%s, resolution_note=%s",
               this,
               result.addresses.ok()
                   ? absl::StrCat("<", result.addresses->size(), " addresses>")
@@ -170,15 +169,15 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
                          ? "<null>"
                          : std::string((*result.service_config)->json_string())
                                .c_str())
-                  : result.service_config.status().ToString().c_str());
+                  : result.service_config.status().ToString().c_str(),
+              result.resolution_note.c_str());
     }
     GPR_ASSERT(result.result_health_callback == nullptr);
-    RefCountedPtr<PollingResolver> self =
-        Ref(DEBUG_LOCATION, "result_health_callback");
-    result.result_health_callback = [self =
-                                         std::move(self)](absl::Status status) {
-      self->GetResultStatus(std::move(status));
-    };
+    result.result_health_callback =
+        [self = RefAsSubclass<PollingResolver>(
+             DEBUG_LOCATION, "result_health_callback")](absl::Status status) {
+          self->GetResultStatus(std::move(status));
+        };
     result_status_state_ = ResultStatusState::kResultHealthCallbackPending;
     result_handler_->ReportResult(std::move(result));
   }
@@ -260,8 +259,13 @@ void PollingResolver::StartResolvingLocked() {
   request_ = StartRequest();
   last_resolution_timestamp_ = Timestamp::Now();
   if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
-    gpr_log(GPR_INFO, "[polling resolver %p] starting resolution, request_=%p",
-            this, request_.get());
+    if (request_ != nullptr) {
+      gpr_log(GPR_INFO,
+              "[polling resolver %p] starting resolution, request_=%p", this,
+              request_.get());
+    } else {
+      gpr_log(GPR_INFO, "[polling resolver %p] StartRequest failed", this);
+    }
   }
 }
 

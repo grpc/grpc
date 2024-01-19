@@ -29,6 +29,9 @@ android {
                 arguments '-DgRPC_BUILD_CODEGEN=off'
                 arguments '-Dhelloworld_PROTOBUF_PROTOC_EXECUTABLE=' + protoc
                 arguments '-Dhelloworld_GRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
+                arguments '-Dprotobuf_INSTALL=OFF'
+                arguments '-Dutf8_range_ENABLE_INSTALL=OFF'
+                version "3.22.1"
             }
         }
         ndk.abiFilters 'x86'
@@ -45,6 +48,7 @@ android {
     externalNativeBuild {
         cmake {
             path "CMakeLists.txt"
+            version "3.22.1"
         }
     }
 }

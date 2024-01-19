@@ -18,7 +18,6 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
-#include <algorithm>
 #include <map>
 #include <utility>
 #include <vector>
@@ -29,7 +28,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
 #include "src/core/ext/xds/xds_http_stateful_session_filter.h"
@@ -88,9 +86,7 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
     RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
-    if (XdsOverrideHostEnabled()) {
-      RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    }
+    RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
   }
 }
 

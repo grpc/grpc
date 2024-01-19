@@ -22,15 +22,13 @@
 
 #include <algorithm>
 #include <set>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
 
 #include <grpc/impl/connectivity_state.h>
@@ -79,9 +77,11 @@ class OrcaProducer::ConnectivityWatcher
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  void OnConnectivityStateChange(grpc_connectivity_state state,
-                                 const absl::Status&) override {
+  void OnConnectivityStateChange(
+      RefCountedPtr<ConnectivityStateWatcherInterface> self,
+      grpc_connectivity_state state, const absl::Status&) override {
     producer_->OnConnectivityStateChange(state);
+    self.reset();
   }
 
   grpc_pollset_set* interested_parties() override {
@@ -215,11 +215,10 @@ class OrcaProducer::OrcaStreamEventHandler
 void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   subchannel_ = std::move(subchannel);
   connected_subchannel_ = subchannel_->connected_subchannel();
-  auto connectivity_watcher = MakeRefCounted<ConnectivityWatcher>(WeakRef());
+  auto connectivity_watcher =
+      MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<OrcaProducer>());
   connectivity_watcher_ = connectivity_watcher.get();
-  subchannel_->WatchConnectivityState(
-      /*health_check_service_name=*/absl::nullopt,
-      std::move(connectivity_watcher));
+  subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
 void OrcaProducer::Orphan() {
@@ -228,8 +227,7 @@ void OrcaProducer::Orphan() {
     stream_client_.reset();
   }
   GPR_ASSERT(subchannel_ != nullptr);  // Should not be called before Start().
-  subchannel_->CancelConnectivityStateWatch(
-      /*health_check_service_name=*/absl::nullopt, connectivity_watcher_);
+  subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }
 
@@ -272,7 +270,8 @@ void OrcaProducer::MaybeStartStreamLocked() {
   if (connected_subchannel_ == nullptr) return;
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       connected_subchannel_, subchannel_->pollset_set(),
-      std::make_unique<OrcaStreamEventHandler>(WeakRef(), report_interval_),
+      std::make_unique<OrcaStreamEventHandler>(
+          WeakRefAsSubclass<OrcaProducer>(), report_interval_),
       GRPC_TRACE_FLAG_ENABLED(grpc_orca_client_trace) ? "OrcaClient" : nullptr);
 }
 
@@ -313,7 +312,10 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // If not, create a new one.
   subchannel->GetOrAddDataProducer(
       OrcaProducer::Type(), [&](Subchannel::DataProducerInterface** producer) {
-        if (*producer != nullptr) producer_ = (*producer)->RefIfNonZero();
+        if (*producer != nullptr) {
+          producer_ =
+              (*producer)->RefIfNonZero().TakeAsSubclass<OrcaProducer>();
+        }
         if (producer_ == nullptr) {
           producer_ = MakeRefCounted<OrcaProducer>();
           *producer = producer_.get();

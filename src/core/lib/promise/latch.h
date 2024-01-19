@@ -19,17 +19,15 @@
 
 #include <stdint.h>
 
+#include <atomic>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/intra_activity_waiter.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
 
@@ -39,11 +37,13 @@ namespace grpc_core {
 // Initially the Latch is unset.
 // It can be waited upon by the Wait method, which produces a Promise that
 // resolves when the Latch is Set to a value of type T.
+// Latches only work correctly within a single activity.
 template <typename T>
 class Latch {
  public:
   Latch() = default;
   Latch(const Latch&) = delete;
+  explicit Latch(T value) : value_(std::move(value)), has_value_(true) {}
   Latch& operator=(const Latch&) = delete;
   Latch(Latch&& other) noexcept
       : value_(std::move(other.value_)), has_value_(other.has_value_) {
@@ -61,17 +61,37 @@ class Latch {
   }
 
   // Produce a promise to wait for a value from this latch.
+  // Moves the result out of the latch.
   auto Wait() {
 #ifndef NDEBUG
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T> {
       if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
+        gpr_log(GPR_INFO, "%sWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
       if (has_value_) {
         return std::move(value_);
+      } else {
+        return waiter_.pending();
+      }
+    };
+  }
+
+  // Produce a promise to wait for a value from this latch.
+  // Copies the result out of the latch.
+  auto WaitAndCopy() {
+#ifndef NDEBUG
+    has_had_waiters_ = true;
+#endif
+    return [this]() -> Poll<T> {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_INFO, "%sWaitAndCopy %s", DebugTag().c_str(),
+                StateString().c_str());
+      }
+      if (has_value_) {
+        return value_;
       } else {
         return waiter_.pending();
       }
@@ -89,9 +109,11 @@ class Latch {
     waiter_.Wake();
   }
 
+  bool is_set() const { return has_value_; }
+
  private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " LATCH[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
@@ -163,9 +185,11 @@ class Latch<void> {
     waiter_.Wake();
   }
 
+  bool is_set() const { return is_set_; }
+
  private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " LATCH(void)[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
@@ -185,6 +209,70 @@ class Latch<void> {
 
 template <typename T>
 using LatchWaitPromise = decltype(std::declval<Latch<T>>().Wait());
+
+// A Latch that can have its value observed by outside threads, but only waited
+// upon from inside a single activity.
+template <typename T>
+class ExternallyObservableLatch;
+
+template <>
+class ExternallyObservableLatch<void> {
+ public:
+  ExternallyObservableLatch() = default;
+  ExternallyObservableLatch(const ExternallyObservableLatch&) = delete;
+  ExternallyObservableLatch& operator=(const ExternallyObservableLatch&) =
+      delete;
+
+  // Produce a promise to wait for this latch.
+  auto Wait() {
+    return [this]() -> Poll<Empty> {
+      if (grpc_trace_promise_primitives.enabled()) {
+        gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
+                StateString().c_str());
+      }
+      if (IsSet()) {
+        return Empty{};
+      } else {
+        return waiter_.pending();
+      }
+    };
+  }
+
+  // Set the latch.
+  void Set() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
+    }
+    is_set_.store(true, std::memory_order_relaxed);
+    waiter_.Wake();
+  }
+
+  bool IsSet() const { return is_set_.load(std::memory_order_relaxed); }
+
+  void Reset() {
+    if (grpc_trace_promise_primitives.enabled()) {
+      gpr_log(GPR_INFO, "%sReset %s", DebugTag().c_str(),
+              StateString().c_str());
+    }
+    is_set_.store(false, std::memory_order_relaxed);
+  }
+
+ private:
+  std::string DebugTag() {
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " LATCH(void)[0x",
+                        reinterpret_cast<uintptr_t>(this), "]: ");
+  }
+
+  std::string StateString() {
+    return absl::StrCat(
+        "is_set:", is_set_.load(std::memory_order_relaxed) ? "true" : "false",
+        " waiter:", waiter_.DebugString());
+  }
+
+  // True if we have a value set, false otherwise.
+  std::atomic<bool> is_set_{false};
+  IntraActivityWaiter waiter_;
+};
 
 }  // namespace grpc_core
 

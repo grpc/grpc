@@ -17,6 +17,7 @@
 # please refer to comments in the "bazel_namespace_package_hack" module.
 try:
     from tests import bazel_namespace_package_hack
+
     bazel_namespace_package_hack.sys_path_to_site_dir_hack()
 except ImportError:
     pass
@@ -32,11 +33,10 @@ from examples.python.errors import server as error_handling_server
 
 
 class ErrorHandlingExampleTest(unittest.TestCase):
-
     def setUp(self):
-        self._server, port = error_handling_server.create_server('[::]:0')
+        self._server, port = error_handling_server.create_server("[::]:0")
         self._server.start()
-        self._channel = grpc.insecure_channel('localhost:%d' % port)
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
 
     def tearDown(self):
         self._channel.close()
@@ -49,6 +49,6 @@ class ErrorHandlingExampleTest(unittest.TestCase):
         # No unhandled exception raised, test passed!
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

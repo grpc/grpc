@@ -30,14 +30,17 @@
 #include "absl/types/optional.h"
 
 #include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/ext/xds/xds_audit_logger_registry.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
 
@@ -81,11 +84,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
     bool Equals(const XdsServer& other) const override;
 
-    const std::string& channel_creds_type() const {
-      return channel_creds_.type;
-    }
-    const Json::Object& channel_creds_config() const {
-      return channel_creds_.config;
+    RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
+      return channel_creds_config_;
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
@@ -95,15 +95,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     Json ToJson() const;
 
    private:
-    struct ChannelCreds {
-      std::string type;
-      Json::Object config;
-
-      static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    };
-
     std::string server_uri_;
-    ChannelCreds channel_creds_;
+    RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
     std::set<std::string> server_features_;
   };
 
@@ -161,6 +154,9 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   const XdsLbPolicyRegistry& lb_policy_registry() const {
     return lb_policy_registry_;
   }
+  const XdsAuditLoggerRegistry& audit_logger_registry() const {
+    return audit_logger_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -177,6 +173,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
   XdsHttpFilterRegistry http_filter_registry_;
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;
+  XdsAuditLoggerRegistry audit_logger_registry_;
 };
 
 }  // namespace grpc_core

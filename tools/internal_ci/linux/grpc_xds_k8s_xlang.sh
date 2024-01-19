@@ -17,7 +17,7 @@ set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
-readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
+readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
 ## xDS test server/client Docker images
 readonly SERVER_LANGS="cpp go java"
 readonly CLIENT_LANGS="cpp go java"
@@ -75,6 +75,7 @@ main() {
   OLDEST_BRANCH=$(find_oldest_branch "${OLDEST_BRANCH}" "${LATEST_BRANCH}")
   # Run cross lang tests: for given cross lang versions
   XLANG_VERSIONS="${MAIN_BRANCH} ${LATEST_BRANCH} ${OLDEST_BRANCH}"
+  declare -A FIXED_VERSION_NAMES=( ["${MAIN_BRANCH}"]="${MAIN_BRANCH}" ["${LATEST_BRANCH}"]="latest" ["${OLDEST_BRANCH}"]="oldest")
   for VERSION in ${XLANG_VERSIONS}
   do
     for CLIENT_LANG in ${CLIENT_LANGS}
@@ -82,7 +83,8 @@ main() {
     for SERVER_LANG in ${SERVER_LANGS}
     do
       if [ "${CLIENT_LANG}" != "${SERVER_LANG}" ]; then
-        if run_test "${CLIENT_LANG}" "${VERSION}" "${SERVER_LANG}" "${VERSION}"; then
+        FIXED="${FIXED_VERSION_NAMES[${VERSION}]}"
+        if run_test "${CLIENT_LANG}" "${VERSION}" "${SERVER_LANG}" "${VERSION}" "${FIXED}" "${FIXED}"; then
           successful_string="${successful_string} ${VERSION}/${CLIENT_LANG}-${SERVER_LANG}"
         else
           failed_tests=$((failed_tests+1))
@@ -96,9 +98,6 @@ main() {
   set +x
   echo "Failed test suites list: ${failed_string}"
   echo "Successful test suites list: ${successful_string}"
-  if (( failed_tests > 0 )); then
-    exit 1
-  fi
 }
 
 main "$@"

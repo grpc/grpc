@@ -20,12 +20,10 @@
 
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -304,7 +302,7 @@ class EnvironmentAutoDetectHelper
               on_done(std::move(resource).value());
             }
           },
-          grpc_core::Duration::Seconds(1)));
+          grpc_core::Duration::Seconds(10)));
     }
   }
 

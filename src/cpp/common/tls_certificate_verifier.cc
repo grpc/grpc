@@ -19,7 +19,6 @@
 #include <algorithm>
 #include <functional>
 #include <map>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -62,6 +61,13 @@ grpc::string_ref TlsCustomVerificationCheckRequest::peer_cert_full_chain()
 grpc::string_ref TlsCustomVerificationCheckRequest::common_name() const {
   return c_request_->peer_info.common_name != nullptr
              ? c_request_->peer_info.common_name
+             : "";
+}
+
+grpc::string_ref TlsCustomVerificationCheckRequest::verified_root_cert_subject()
+    const {
+  return c_request_->peer_info.verified_root_cert_subject != nullptr
+             ? c_request_->peer_info.verified_root_cert_subject
              : "";
 }
 

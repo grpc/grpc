@@ -301,9 +301,12 @@ class ServerInterface : public internal::CallHook {
                         internal::ServerAsyncStreamingInterface* stream,
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
-                        bool delete_on_finalize);
+                        bool delete_on_finalize, bool issue_request = true);
 
     bool FinalizeResult(void** tag, bool* status) override;
+
+   protected:
+    void IssueRequest();
 
    private:
     grpc_call_details call_details_;

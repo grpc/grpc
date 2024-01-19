@@ -38,12 +38,12 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -73,40 +73,43 @@ typedef struct grpc_call_create_args {
   absl::optional<grpc_core::Slice> authority;
 
   grpc_core::Timestamp send_deadline;
+  bool registered_method;  // client_only
 } grpc_call_create_args;
 
 namespace grpc_core {
-class PromiseBasedCall;
+class BasicPromiseBasedCall;
 class ServerPromiseBasedCall;
 
 class ServerCallContext {
  public:
-  ServerCallContext(ServerPromiseBasedCall* call,
-                    const void* server_stream_data)
-      : call_(call), server_stream_data_(server_stream_data) {}
-  ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
+  virtual void PublishInitialMetadata(
+      ClientMetadataHandle metadata,
+      grpc_metadata_array* publish_initial_metadata) = 0;
+
+  // Construct the top of the server call promise for the v2 filter stack.
+  // TODO(ctiller): delete when v3 is available.
+  virtual ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
       CallArgs call_args, grpc_completion_queue* cq,
-      grpc_metadata_array* publish_initial_metadata,
-      absl::FunctionRef<void(grpc_call* call)> publish);
+      absl::FunctionRef<void(grpc_call* call)> publish) = 0;
 
   // Server stream data as supplied by the transport (so we can link the
   // transport stream up with the call again).
   // TODO(ctiller): legacy API - once we move transports to promises we'll
   // create the promise directly and not need to pass around this token.
-  const void* server_stream_data() { return server_stream_data_; }
+  virtual const void* server_stream_data() = 0;
 
- private:
-  ServerPromiseBasedCall* const call_;
-  const void* const server_stream_data_;
+ protected:
+  ~ServerCallContext() = default;
 };
 
 // TODO(ctiller): move more call things into this type
 class CallContext {
  public:
-  explicit CallContext(PromiseBasedCall* call) : call_(call) {}
+  explicit CallContext(BasicPromiseBasedCall* call) : call_(call) {}
 
   // Update the deadline (if deadline < the current deadline).
   void UpdateDeadline(Timestamp deadline);
+  Timestamp deadline() const;
 
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion
@@ -119,26 +122,46 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based
   void Unref(const char* reason = "call_context");
 
+  RefCountedPtr<CallContext> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<CallContext>(this);
+  }
+
   grpc_call_stats* call_stats() { return &call_stats_; }
   gpr_atm* peer_string_atm_ptr();
-  grpc_polling_entity* polling_entity() { return &pollent_; }
+  gpr_cycle_counter call_start_time() { return start_time_; }
 
   ServerCallContext* server_call_context();
+
+  void set_traced(bool traced) { traced_ = traced; }
+  bool traced() const { return traced_; }
+
+  // TEMPORARY HACK
+  // Create a call spine object for this call.
+  // Said object should only be created once.
+  // Allows interop between the v2 call stack and the v3 (which is required by
+  // transports).
+  RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs call_args);
+  grpc_call* c_call();
 
  private:
   friend class PromiseBasedCall;
   // Call final info.
   grpc_call_stats call_stats_;
-  // Pollset stuff, can't wait to remove.
-  // TODO(ctiller): bring forth EventEngine.
-  grpc_polling_entity pollent_;
   // TODO(ctiller): remove this once transport APIs are promise based and we
   // don't need refcounting here.
-  PromiseBasedCall* const call_;
+  BasicPromiseBasedCall* const call_;
+  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+  // Is this call traced?
+  bool traced_ = false;
 };
 
 template <>
 struct ContextType<CallContext> {};
+
+RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
+                                                 Channel* channel,
+                                                 Arena* arena);
 
 }  // namespace grpc_core
 

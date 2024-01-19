@@ -83,6 +83,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         ":server_helper_lib",
+        "//:grpcpp_orca_service",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -105,6 +106,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        ":backend_metrics_lb_policy",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -233,15 +235,12 @@ sh_test(
     tags = ["no_windows"],
 )
 
-grpc_cc_binary(
-    name = "xds_interop_client",
-    srcs = [
-        "xds_interop_client.cc",
-    ],
-    external_deps = [
-        "absl/flags:flag",
-    ],
+grpc_cc_library(
+    name = "xds_stats_watcher",
+    srcs = ["xds_stats_watcher.cc"],
+    hdrs = ["xds_stats_watcher.h"],
     deps = [
+        ":rpc_behavior_lb_policy",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
@@ -253,14 +252,50 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_binary(
-    name = "xds_interop_server",
-    testonly = True,
+grpc_cc_test(
+    name = "xds_stats_watcher_test",
     srcs = [
-        "xds_interop_server.cc",
+        "xds_stats_watcher_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [":xds_stats_watcher"],
+)
+
+grpc_cc_binary(
+    name = "xds_interop_client",
+    srcs = [
+        "xds_interop_client.cc",
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
+    ],
+    deps = [
+        ":rpc_behavior_lb_policy",
+        ":xds_stats_watcher",
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
+        "//:grpcpp_csm_observability",
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_interop_server_lib",
+    testonly = True,
+    srcs = [
+        "pre_stop_hook_server.cc",
+        "xds_interop_server_lib.cc",
+    ],
+    hdrs = [
+        "pre_stop_hook_server.h",
+        "xds_interop_server_lib.h",
     ],
     deps = [
         "//:grpc++",
@@ -269,8 +304,57 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
+        "//test/cpp/end2end:test_health_check_service_impl",
+    ],
+)
+
+grpc_cc_binary(
+    name = "xds_interop_server",
+    testonly = True,
+    srcs = [
+        "xds_interop_server.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
+    ],
+    deps = [
+        ":xds_interop_server_lib",
+        "//:grpc++",
+        "//:grpcpp_csm_observability",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "pre_stop_hook_server_test",
+    srcs = [
+        "pre_stop_hook_server_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":xds_interop_server_lib",
+        "//:grpc++",
+        "//src/proto/grpc/testing:istio_echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_interop_server_test",
+    srcs = [
+        "xds_interop_server_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":xds_interop_server_lib",
+        "//:grpc++",
+        "//src/proto/grpc/testing:istio_echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
@@ -354,5 +438,130 @@ grpc_cc_binary(
         ":client_helper_lib",
         "//:grpc++",
         "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_server",
+    srcs = [
+        "observability_interop_server_bootstrap.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":interop_server_lib",
+        "//:grpc++",
+        "//:grpcpp_gcp_observability",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "observability_interop_client_main",
+    srcs = [
+        "observability_client.cc",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":client_helper_lib",
+        "//:grpcpp_gcp_observability",
+        "//src/cpp/ext/otel:otel_plugin",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_client",
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        ":observability_interop_client_main",
+        "//:grpc++",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_binary(
+    name = "observability_interop_test",
+    srcs = ["interop_test.cc"],
+    data = [
+        ":observability_interop_client",
+        ":observability_interop_server",
+    ],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    tags = [
+        "no_windows",
+        "nobuilder",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "backend_metrics_lb_policy",
+    srcs = [
+        "backend_metrics_lb_policy.cc",
+    ],
+    hdrs = [
+        "backend_metrics_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:messages_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "backend_metrics_lb_policy_test",
+    srcs = [
+        "backend_metrics_lb_policy_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":backend_metrics_lb_policy",
+        "//:grpc++",
+        "//:grpcpp_orca_service",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_library(
+    name = "rpc_behavior_lb_policy",
+    srcs = [
+        "rpc_behavior_lb_policy.cc",
+    ],
+    hdrs = [
+        "rpc_behavior_lb_policy.h",
+    ],
+    external_deps = [
+    ],
+    language = "C++",
+    tags = ["nobuilder"],
+    deps = [
+        "//:grpc",
+        "//:grpc++",
     ],
 )

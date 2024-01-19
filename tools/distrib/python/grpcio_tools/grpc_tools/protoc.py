@@ -29,10 +29,10 @@ _DISABLE_DYNAMIC_STUBS = "GRPC_PYTHON_DISABLE_DYNAMIC_STUBS"
 def main(command_arguments):
     """Run the protocol buffer compiler with the given command-line arguments.
 
-  Args:
-    command_arguments: a list of strings representing command line arguments to
-        `protoc`.
-  """
+    Args:
+      command_arguments: a list of strings representing command line arguments to
+          `protoc`.
+    """
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
 
@@ -52,19 +52,25 @@ if sys.version_info >= (3, 5, 0):
         global _FINDERS_INSTALLED
         with _FINDERS_INSTALLED_LOCK:
             if not _FINDERS_INSTALLED:
-                sys.meta_path.extend([
-                    ProtoFinder(_PROTO_MODULE_SUFFIX,
-                                _protoc_compiler.get_protos),
-                    ProtoFinder(_SERVICE_MODULE_SUFFIX,
-                                _protoc_compiler.get_services)
-                ])
+                sys.meta_path.extend(
+                    [
+                        ProtoFinder(
+                            _PROTO_MODULE_SUFFIX, _protoc_compiler.get_protos
+                        ),
+                        ProtoFinder(
+                            _SERVICE_MODULE_SUFFIX,
+                            _protoc_compiler.get_services,
+                        ),
+                    ]
+                )
                 sys.path.append(
-                    pkg_resources.resource_filename('grpc_tools', '_proto'))
+                    pkg_resources.resource_filename("grpc_tools", "_proto")
+                )
                 _FINDERS_INSTALLED = True
 
     def _module_name_to_proto_file(suffix, module_name):
         components = module_name.split(".")
-        proto_name = components[-1][:-1 * len(suffix)]
+        proto_name = components[-1][: -1 * len(suffix)]
         # NOTE(rbellevi): The Protobuf library expects this path to use
         # forward slashes on every platform.
         return "/".join(components[:-1] + [proto_name + ".proto"])
@@ -77,8 +83,9 @@ if sys.version_info >= (3, 5, 0):
     def _protos(protobuf_path):
         """Returns a gRPC module generated from the indicated proto file."""
         _maybe_install_proto_finders()
-        module_name = _proto_file_to_module_name(_PROTO_MODULE_SUFFIX,
-                                                 protobuf_path)
+        module_name = _proto_file_to_module_name(
+            _PROTO_MODULE_SUFFIX, protobuf_path
+        )
         module = importlib.import_module(module_name)
         return module
 
@@ -86,8 +93,9 @@ if sys.version_info >= (3, 5, 0):
         """Returns a module generated from the indicated proto file."""
         _maybe_install_proto_finders()
         _protos(protobuf_path)
-        module_name = _proto_file_to_module_name(_SERVICE_MODULE_SUFFIX,
-                                                 protobuf_path)
+        module_name = _proto_file_to_module_name(
+            _SERVICE_MODULE_SUFFIX, protobuf_path
+        )
         module = importlib.import_module(module_name)
         return module
 
@@ -99,9 +107,9 @@ if sys.version_info >= (3, 5, 0):
     _proto_code_cache_lock = threading.RLock()
 
     class ProtoLoader(importlib.abc.Loader):
-
-        def __init__(self, suffix, codegen_fn, module_name, protobuf_path,
-                     proto_root):
+        def __init__(
+            self, suffix, codegen_fn, module_name, protobuf_path, proto_root
+        ):
             self._suffix = suffix
             self._codegen_fn = codegen_fn
             self._module_name = module_name
@@ -113,8 +121,9 @@ if sys.version_info >= (3, 5, 0):
 
         def _generated_file_to_module_name(self, filepath):
             components = filepath.split(os.path.sep)
-            return ".".join(components[:-1] +
-                            [os.path.splitext(components[-1])[0]])
+            return ".".join(
+                components[:-1] + [os.path.splitext(components[-1])[0]]
+            )
 
         def exec_module(self, module):
             assert module.__name__ == self._module_name
@@ -125,8 +134,9 @@ if sys.version_info >= (3, 5, 0):
                     exec(code, module.__dict__)
                 else:
                     files = self._codegen_fn(
-                        self._protobuf_path.encode('ascii'),
-                        [path.encode('ascii') for path in sys.path])
+                        self._protobuf_path.encode("ascii"),
+                        [path.encode("ascii") for path in sys.path],
+                    )
                     # NOTE: The files are returned in topological order of dependencies. Each
                     # entry is guaranteed to depend only on the modules preceding it in the
                     # list and the last entry is guaranteed to be our requested module. We
@@ -134,7 +144,8 @@ if sys.version_info >= (3, 5, 0):
                     # don't have to regenerate code that has already been generated by protoc.
                     for f in files[:-1]:
                         module_name = self._generated_file_to_module_name(
-                            f[0].decode('ascii'))
+                            f[0].decode("ascii")
+                        )
                         if module_name not in sys.modules:
                             if module_name not in _proto_code_cache:
                                 _proto_code_cache[module_name] = f[1]
@@ -142,7 +153,6 @@ if sys.version_info >= (3, 5, 0):
                     exec(files[-1][1], module.__dict__)
 
     class ProtoFinder(importlib.abc.MetaPathFinder):
-
         def __init__(self, suffix, codegen_fn):
             self._suffix = suffix
             self._codegen_fn = codegen_fn
@@ -160,14 +170,20 @@ if sys.version_info >= (3, 5, 0):
                 else:
                     return importlib.machinery.ModuleSpec(
                         fullname,
-                        ProtoLoader(self._suffix, self._codegen_fn, fullname,
-                                    filepath, search_path))
+                        ProtoLoader(
+                            self._suffix,
+                            self._codegen_fn,
+                            fullname,
+                            filepath,
+                            search_path,
+                        ),
+                    )
 
     # NOTE(rbellevi): We provide an environment variable that enables users to completely
     # disable this behavior if it is not desired, e.g. for performance reasons.
     if not os.getenv(_DISABLE_DYNAMIC_STUBS):
         _maybe_install_proto_finders()
 
-if __name__ == '__main__':
-    proto_include = pkg_resources.resource_filename('grpc_tools', '_proto')
-    sys.exit(main(sys.argv + ['-I{}'.format(proto_include)]))
+if __name__ == "__main__":
+    proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
+    sys.exit(main(sys.argv + ["-I{}".format(proto_include)]))

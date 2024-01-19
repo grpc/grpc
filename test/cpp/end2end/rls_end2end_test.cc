@@ -43,6 +43,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -100,7 +101,7 @@ class MyTestServiceImpl : public BackendService {
                     ::testing::Pair(kCallCredsMdKey, kCallCredsMdValue)));
     IncreaseRequestCount();
     auto client_metadata = context->client_metadata();
-    auto range = client_metadata.equal_range("X-Google-RLS-Data");
+    auto range = client_metadata.equal_range("x-google-rls-data");
     {
       grpc::internal::MutexLock lock(&mu_);
       for (auto it = range.first; it != range.second; ++it) {
@@ -134,7 +135,8 @@ class FakeResolverResponseGeneratorWrapper {
 
   void SetNextResolution(absl::string_view service_config_json) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(service_config_json));
+    response_generator_->SetResponseSynchronously(
+        BuildFakeResults(service_config_json));
   }
 
   grpc_core::FakeResolverResponseGenerator* Get() const {
@@ -158,7 +160,9 @@ class FakeResolverResponseGeneratorWrapper {
 class RlsEnd2endTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
-    GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_core::ConfigVars::Overrides overrides;
+    overrides.client_channel_backup_poll_interval_ms = 1;
+    grpc_core::ConfigVars::SetOverrides(overrides);
     grpc_core::CoreConfiguration::RegisterBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
     grpc_init();
@@ -170,11 +174,6 @@ class RlsEnd2endTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    bool localhost_resolves_to_ipv4 = false;
-    bool localhost_resolves_to_ipv6 = false;
-    grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                                 &localhost_resolves_to_ipv6);
-    ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
     rls_server_ = std::make_unique<ServerThread<RlsServiceImpl>>(
         "rls", [](grpc::ServerContext* ctx) {
           EXPECT_THAT(ctx->client_metadata(),
@@ -222,11 +221,6 @@ class RlsEnd2endTest : public ::testing::Test {
           std::make_unique<ServerThread<MyTestServiceImpl>>("backend"));
       backends_.back()->Start();
     }
-  }
-
-  std::string TargetStringForPort(int port) {
-    if (ipv6_only_) return absl::StrCat("ipv6:[::1]:", port);
-    return absl::StrCat("ipv4:127.0.0.1:", port);
   }
 
   struct RpcOptions {
@@ -461,7 +455,6 @@ class RlsEnd2endTest : public ::testing::Test {
     bool running_ = false;
   };
 
-  bool ipv6_only_;
   std::vector<std::unique_ptr<ServerThread<MyTestServiceImpl>>> backends_;
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
   std::unique_ptr<FakeResolverResponseGeneratorWrapper>
@@ -490,7 +483,7 @@ TEST_F(RlsEnd2endTest, Basic) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -521,7 +514,7 @@ TEST_F(RlsEnd2endTest, DuplicateHeadersAreMerged) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, absl::StrCat(kTestValue, ",", kTestValue2)}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Same header present twice in the request.  Values should be merged.
   CheckRpcSendOk(
       DEBUG_LOCATION,
@@ -551,7 +544,7 @@ TEST_F(RlsEnd2endTest, SecondHeaderUsed) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key2", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -590,7 +583,7 @@ TEST_F(RlsEnd2endTest, MultipleHeaderKeys) {
           {kTestKey, kTestValue},
           {kTestKey2, kTestValue2},
       }),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(
       DEBUG_LOCATION,
       RpcOptions().set_metadata({{"key1", kTestValue}, {"key2", kTestValue2}}));
@@ -621,7 +614,7 @@ TEST_F(RlsEnd2endTest, NoHeaderMatch) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Request does not have header "key1", so kTestKey will not be added.
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -647,7 +640,7 @@ TEST_F(RlsEnd2endTest, WildcardMethod) {
                         .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -675,7 +668,7 @@ TEST_F(RlsEnd2endTest, NoKeyBuilderForMethod) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
   EXPECT_EQ(rls_server_->service_.response_count(), 1);
@@ -703,7 +696,7 @@ TEST_F(RlsEnd2endTest, HeaderData) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)},
                        kHeaderData));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -750,7 +743,7 @@ TEST_F(RlsEnd2endTest, ExtraKeysAndConstantKeys) {
           {kMethodKey, kMethodValue},
           {kConstantKey, kConstantValue},
       }),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -779,10 +772,10 @@ TEST_F(RlsEnd2endTest, TwoCacheEntriesWithSameTarget) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue2}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -826,10 +819,10 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   const char* kTestValue3 = "test_value_3";
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue2}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue3}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue2}}));
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -851,7 +844,7 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithoutDefaultTarget) {
   // Now give the RLS server the right response.
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Sleep long enough for backoff to elapse, then try another RPC.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(3));
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -878,7 +871,7 @@ TEST_F(RlsEnd2endTest, FailedRlsRequestWithDefaultTarget) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_default_target(TargetStringForPort(backends_[0]->port_))
+          .set_default_target(grpc_core::LocalIpUri(backends_[0]->port_))
           .Build());
   // Don't give the RLS server a response, so the RLS request will fail.
   // The data plane RPC should be sent to the default target.
@@ -914,13 +907,13 @@ TEST_F(RlsEnd2endTest, RlsRequestTimeout) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_default_target(TargetStringForPort(backends_[1]->port_))
+          .set_default_target(grpc_core::LocalIpUri(backends_[1]->port_))
           .set_lookup_service_timeout(grpc_core::Duration::Seconds(2))
           .Build());
   // RLS server will send a response, but it's longer than the timeout.
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}),
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}),
       /*response_delay=*/grpc_core::Duration::Seconds(3));
   // The data plane RPC should be sent to the default target.
   CheckRpcSendOk(DEBUG_LOCATION, RpcOptions().set_timeout_ms(4000).set_metadata(
@@ -947,7 +940,7 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
                                          "  }"
                                          "]",
                                          kServiceValue, kMethodValue, kTestKey))
-          .set_default_target(TargetStringForPort(backends_[0]->port_));
+          .set_default_target(grpc_core::LocalIpUri(backends_[0]->port_));
   SetNextResolution(service_config_builder.Build());
   // Don't give the RLS server a response, so the RLS request will fail.
   // The data plane RPC should be sent to the default target.
@@ -967,7 +960,7 @@ TEST_F(RlsEnd2endTest, UpdateConfig) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // Now update the config to point to a new default target.
   service_config_builder.set_default_target(
-      TargetStringForPort(backends_[1]->port_));
+      grpc_core::LocalIpUri(backends_[1]->port_));
   SetNextResolution(service_config_builder.Build());
   // Send another RPC, which should go to the new default target.
   // The RLS server will *not* see another request, because the cache
@@ -1000,7 +993,7 @@ TEST_F(RlsEnd2endTest, CachedResponse) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Send two RPCs.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1034,7 +1027,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1047,7 +1040,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntry) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}},
                       RouteLookupRequest::REASON_STALE),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Wait longer than stale age.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
   // Send another RPC.  This should use the stale value but should
@@ -1084,7 +1077,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)},
                        kHeaderData));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1098,7 +1091,7 @@ TEST_F(RlsEnd2endTest, StaleCacheEntryWithHeaderData) {
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}},
                       RouteLookupRequest::REASON_STALE, kHeaderData),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)},
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)},
                        kHeaderData));
   // Wait longer than stale age.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(2));
@@ -1135,7 +1128,7 @@ TEST_F(RlsEnd2endTest, ExpiredCacheEntry) {
           .Build());
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   // Send one RPC.  RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
@@ -1181,10 +1174,10 @@ TEST_F(RlsEnd2endTest, CacheSizeLimit) {
   // Set RLS responses for both kTestValue and kTestValue2.
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue}}),
-      BuildRlsResponse({TargetStringForPort(backends_[0]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[0]->port_)}));
   rls_server_->service_.SetResponse(
       BuildRlsRequest({{kTestKey, kTestValue2}}),
-      BuildRlsResponse({TargetStringForPort(backends_[1]->port_)}));
+      BuildRlsResponse({grpc_core::LocalIpUri(backends_[1]->port_)}));
   // Send an RPC for kTestValue.
   // RLS server gets a request, and RPC goes to backend.
   CheckRpcSendOk(DEBUG_LOCATION,
@@ -1252,7 +1245,7 @@ TEST_F(RlsEnd2endTest, MultipleTargets) {
       BuildRlsResponse(
           // Second target will report TRANSIENT_FAILURE, but should
           // never be used.
-          {TargetStringForPort(backends_[0]->port_), "invalid_target"}));
+          {grpc_core::LocalIpUri(backends_[0]->port_), "invalid_target"}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -1282,7 +1275,7 @@ TEST_F(RlsEnd2endTest, MultipleTargetsFirstInTransientFailure) {
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
           // First target will report TRANSIENT_FAILURE.
-          {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
+          {"invalid_target", grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);
@@ -1313,7 +1306,7 @@ TEST_F(RlsEnd2endTest, ConnectivityStateReady) {
       BuildRlsRequest({{kTestKey, kTestValue}}),
       BuildRlsResponse(
           // One target in TRANSIENT_FAILURE, the other in READY.
-          {"invalid_target", TargetStringForPort(backends_[0]->port_)}));
+          {"invalid_target", grpc_core::LocalIpUri(backends_[0]->port_)}));
   CheckRpcSendOk(DEBUG_LOCATION,
                  RpcOptions().set_metadata({{"key1", kTestValue}}));
   EXPECT_EQ(rls_server_->service_.request_count(), 1);

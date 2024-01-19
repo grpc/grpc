@@ -29,6 +29,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 #include "test/core/util/cmdline.h"
 
@@ -55,7 +56,8 @@ static void on_jwt_verification_done(void* user_data,
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
     GPR_ASSERT(claims != nullptr);
-    std::string claims_str = grpc_jwt_claims_json(claims)->Dump(/*indent=*/2);
+    std::string claims_str =
+        grpc_core::JsonDump(*grpc_jwt_claims_json(claims), /*indent=*/2);
     printf("Claims: \n\n%s\n", claims_str.c_str());
     grpc_jwt_claims_destroy(claims);
   } else {

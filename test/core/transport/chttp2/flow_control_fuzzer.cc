@@ -22,8 +22,6 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <queue>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -37,6 +35,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -44,6 +43,7 @@
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -125,9 +125,16 @@ class FlowControlFuzzer {
     }
     return &it->second;
   }
+  const Stream* GetStream(uint32_t id) const {
+    auto it = streams_.find(id);
+    if (it == streams_.end()) {
+      return nullptr;
+    }
+    return &it->second;
+  }
 
   MemoryQuotaRefPtr memory_quota_ = MakeMemoryQuota("fuzzer");
-  MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner("owner");
+  MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner();
   std::unique_ptr<TransportFlowControl> tfc_;
   absl::optional<uint32_t> queued_initial_window_size_;
   absl::optional<uint32_t> queued_send_max_frame_size_;
@@ -138,7 +145,7 @@ class FlowControlFuzzer {
   uint32_t remote_initial_window_size_ = kDefaultWindow;
   int64_t remote_transport_window_size_ = kDefaultWindow;
   std::map<uint32_t, Stream> streams_;
-  std::queue<uint32_t> streams_to_update_;
+  std::vector<uint32_t> streams_to_update_;
   uint64_t allocated_memory_ = 0;
   Timestamp next_bdp_ping_ = Timestamp::ProcessEpoch();
 };
@@ -290,8 +297,14 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
   }
   if (scheduled_write_) {
     SendToRemote send;
+    if (!squelch) {
+      fprintf(stderr, "**** PERFORM WRITE ****\n");
+    }
     if (Timestamp::Now() >= next_bdp_ping_) {
       if (auto* bdp = tfc_->bdp_estimator()) {
+        if (!squelch) {
+          fprintf(stderr, "- schedule bdp ping\n");
+        }
         bdp->SchedulePing();
         bdp->StartPing();
         next_bdp_ping_ = Timestamp::InfFuture();
@@ -300,20 +313,33 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
     }
     if (!sending_initial_window_size_ &&
         queued_initial_window_size_.has_value()) {
+      if (!squelch) {
+        fprintf(stderr, "- send initial window %d\n",
+                *queued_initial_window_size_);
+      }
       sending_initial_window_size_ = true;
       send.initial_window_size =
           std::exchange(queued_initial_window_size_, absl::nullopt);
+      tfc_->FlushedSettings();
     }
-    while (!streams_to_update_.empty()) {
-      auto* stream = GetStream(streams_to_update_.front());
-      streams_to_update_.pop();
-      send.stream_window_updates.push_back(
-          {stream->id, stream->fc.MaybeSendUpdate()});
+    std::vector<uint32_t> streams_to_update = std::move(streams_to_update_);
+    streams_to_update_.clear();
+    for (auto stream_id : streams_to_update) {
+      auto* stream = GetStream(stream_id);
+      auto size = stream->fc.MaybeSendUpdate();
+      if (!squelch) {
+        fprintf(stderr, "- send [%" PRId64 "] stream window update %db\n",
+                static_cast<int64_t>(stream->id), size);
+      }
+      send.stream_window_updates.push_back({stream->id, size});
     }
     send.transport_window_update = tfc_->MaybeSendUpdate(sending_payload);
     queued_send_max_frame_size_.reset();
     send_to_remote_.emplace_back(std::move(send));
     scheduled_write_ = false;
+    if (!squelch) {
+      fprintf(stderr, "**** FINISH WRITE ****\n");
+    }
   }
 }
 
@@ -339,7 +365,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
     }
   };
   with_urgency(action.send_stream_update(),
-               [this, stream]() { streams_to_update_.push(stream->id); });
+               [this, stream]() { streams_to_update_.push_back(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
     GPR_ASSERT(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
@@ -392,6 +418,14 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   if (sending_initial_window_size_ && queued_initial_window_size_.has_value()) {
     reconciled_initial_window = *queued_initial_window_size_;
     inflight_send_initial_windows.push_back(*queued_initial_window_size_);
+    // And since we'll initiate a write, any updates that are queued to be
+    // written will be considered and send their desired updates.
+    reconciled_transport_window += tfc_->DesiredAnnounceSize(true);
+    for (auto stream_id : streams_to_update_) {
+      auto* stream = GetStream(stream_id);
+      if (stream == nullptr) continue;
+      reconciled_stream_deltas[stream_id] += stream->fc.DesiredAnnounceSize();
+    }
   }
 
   // Finally, if a stream has indicated it's willing to read, the reconciled
@@ -404,11 +438,17 @@ void FlowControlFuzzer::AssertNoneStuck() const {
       fprintf(stderr,
               "FAILED: stream %d has stream_window=%" PRId64
               ", transport_window=%" PRId64 ", delta=%" PRId64
-              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64 "\n",
+              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
+              ", transport announced_stream_total_over_incoming_window=%" PRId64
+              ", transport announced_window=%" PRId64
+              " transport target_window=%" PRId64 " sent_init_window=%d\n",
               id_stream.first, stream_window, reconciled_transport_window,
               reconciled_stream_deltas[id_stream.first],
               reconciled_initial_window,
-              (id_stream.second.fc.min_progress_size()));
+              (id_stream.second.fc.min_progress_size()),
+              tfc_->announced_stream_total_over_incoming_window(),
+              tfc_->announced_window(), tfc_->target_window(),
+              tfc_->sent_init_window());
       fprintf(stderr,
               "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
               remote_initial_window_size_,
@@ -437,6 +477,8 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::chttp2::InitGlobals();
   grpc_core::chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
   for (const auto& action : msg.actions()) {

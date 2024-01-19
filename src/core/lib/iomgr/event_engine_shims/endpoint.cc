@@ -17,8 +17,11 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -60,29 +63,27 @@ class EventEngineEndpointWrapper {
   struct grpc_event_engine_endpoint {
     grpc_endpoint base;
     EventEngineEndpointWrapper* wrapper;
-    std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
-        read_buffer;
-    std::aligned_storage<sizeof(SliceBuffer), alignof(SliceBuffer)>::type
-        write_buffer;
+    alignas(SliceBuffer) char read_buffer[sizeof(SliceBuffer)];
+    alignas(SliceBuffer) char write_buffer[sizeof(SliceBuffer)];
   };
 
   explicit EventEngineEndpointWrapper(
       std::unique_ptr<EventEngine::Endpoint> endpoint);
+
+  EventEngine::Endpoint* endpoint() { return endpoint_.get(); }
+
+  std::unique_ptr<EventEngine::Endpoint> ReleaseEndpoint() {
+    return std::move(endpoint_);
+  }
 
   int Fd() {
     grpc_core::MutexLock lock(&mu_);
     return fd_;
   }
 
-  absl::string_view PeerAddress() {
-    grpc_core::MutexLock lock(&mu_);
-    return peer_address_;
-  }
+  absl::string_view PeerAddress() { return peer_address_; }
 
-  absl::string_view LocalAddress() {
-    grpc_core::MutexLock lock(&mu_);
-    return local_address_;
-  }
+  absl::string_view LocalAddress() { return local_address_; }
 
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
   void Unref() {
@@ -119,8 +120,7 @@ class EventEngineEndpointWrapper {
     read_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       size_t i;
-      gpr_log(GPR_INFO, "TCP: %p READ (peer=%s) error=%s", eeep_->wrapper,
-              std::string(eeep_->wrapper->PeerAddress()).c_str(),
+      gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
               status.ToString().c_str());
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
@@ -256,13 +256,20 @@ class EventEngineEndpointWrapper {
     }
   }
 
+  bool CanTrackErrors() {
+    if (EventEngineSupportsFd()) {
+      return reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+          ->CanTrackErrors();
+    } else {
+      return false;
+    }
+  }
+
  private:
   void OnShutdownInternal() {
     {
       grpc_core::MutexLock lock(&mu_);
       fd_ = -1;
-      local_address_ = "";
-      peer_address_ = "";
     }
     endpoint_.reset();
     // For the Ref taken in TriggerShutdown
@@ -277,8 +284,10 @@ class EventEngineEndpointWrapper {
   grpc_closure* pending_read_cb_;
   grpc_closure* pending_write_cb_;
   grpc_slice_buffer* pending_read_buffer_;
-  std::string peer_address_;
-  std::string local_address_;
+  const std::string peer_address_{
+      ResolvedAddressToURI(endpoint_->GetPeerAddress()).value_or("")};
+  const std::string local_address_{
+      ResolvedAddressToURI(endpoint_->GetLocalAddress()).value_or("")};
   int fd_{-1};
 };
 
@@ -378,7 +387,12 @@ int EndpointGetFd(grpc_endpoint* ep) {
   return eeep->wrapper->Fd();
 }
 
-bool EndpointCanTrackErr(grpc_endpoint* /* ep */) { return false; }
+bool EndpointCanTrackErr(grpc_endpoint* ep) {
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  return eeep->wrapper->CanTrackErrors();
+}
 
 grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     EndpointRead,
@@ -399,14 +413,6 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
   eeep_->wrapper = this;
-  auto local_addr = ResolvedAddressToURI(endpoint_->GetLocalAddress());
-  if (local_addr.ok()) {
-    local_address_ = *local_addr;
-  }
-  auto peer_addr = ResolvedAddressToURI(endpoint_->GetPeerAddress());
-  if (peer_addr.ok()) {
-    peer_address_ = *peer_addr;
-  }
   if (EventEngineSupportsFd()) {
     fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
               ->GetWrappedFd();
@@ -427,6 +433,30 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
 
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep) {
   return ep->vtable == &grpc_event_engine_endpoint_vtable;
+}
+
+EventEngine::Endpoint* grpc_get_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep) {
+  if (!grpc_is_event_engine_endpoint(ep)) {
+    return nullptr;
+  }
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  return eeep->wrapper->endpoint();
+}
+
+std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep) {
+  if (!grpc_is_event_engine_endpoint(ep)) {
+    return nullptr;
+  }
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  auto endpoint = eeep->wrapper->ReleaseEndpoint();
+  delete eeep->wrapper;
+  return endpoint;
 }
 
 void grpc_event_engine_endpoint_destroy_and_release_fd(

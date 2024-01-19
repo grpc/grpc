@@ -83,29 +83,6 @@ TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigGrpclb) {
   EXPECT_EQ(lb_config->name(), "grpclb");
 }
 
-TEST_F(ClientChannelParserTest, ValidLoadBalancingConfigXds) {
-  const char* test_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_cluster_resolver_experimental\":{\n"
-      "      \"discoveryMechanisms\": [\n"
-      "        { \"clusterName\": \"foo\",\n"
-      "          \"type\": \"EDS\"\n"
-      "        } ],\n"
-      "      \"xdsLbPolicy\": [{\"round_robin\":{}}]\n"
-      "    } }\n"
-      "  ]\n"
-      "}";
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  const auto* parsed_config =
-      static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(parser_index_));
-  auto lb_config = parsed_config->parsed_lb_config();
-  EXPECT_EQ(lb_config->name(), "xds_cluster_resolver_experimental");
-}
-
 TEST_F(ClientChannelParserTest, UnknownLoadBalancingConfig) {
   const char* test_json = "{\"loadBalancingConfig\": [{\"unknown\":{}}]}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
@@ -163,15 +140,15 @@ TEST_F(ClientChannelParserTest, UnknownLoadBalancingPolicy) {
       << service_config.status();
 }
 
-TEST_F(ClientChannelParserTest, LoadBalancingPolicyXdsNotAllowed) {
-  const char* test_json =
-      "{\"loadBalancingPolicy\":\"xds_cluster_resolver_experimental\"}";
+TEST_F(ClientChannelParserTest,
+       LegacyLoadBalancingPolicySpecifiesPolicyThatRequiresConfig) {
+  const char* test_json = "{\"loadBalancingPolicy\":\"rls_experimental\"}";
   auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
             "errors validating service config: ["
             "field:loadBalancingPolicy error:LB policy "
-            "\"xds_cluster_resolver_experimental\" requires a config. Please "
+            "\"rls_experimental\" requires a config. Please "
             "use loadBalancingConfig instead.]")
       << service_config.status();
 }
@@ -296,7 +273,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
   EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(service_config.status().message(),
             "JSON parsing failed: ["
-            "duplicate key \"healthCheckConfig\" at index 104]")
+            "duplicate key \"healthCheckConfig\" at index 82]")
       << service_config.status();
 }
 

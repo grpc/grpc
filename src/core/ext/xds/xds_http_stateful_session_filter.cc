@@ -30,7 +30,8 @@
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upb.h"
 #include "envoy/extensions/http/stateful_session/cookie/v3/cookie.upbdefs.h"
 #include "envoy/type/http/v3/cookie.upb.h"
-#include "upb/def.h"
+
+#include <grpc/support/json.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
@@ -41,6 +42,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/lib/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -75,7 +77,6 @@ Json::Object ValidateStatefulSession(
       envoy_extensions_filters_http_stateful_session_v3_StatefulSession_session_state(
           stateful_session);
   if (session_state == nullptr) {
-    errors->AddError("field not present");
     return {};
   }
   ValidationErrors::ScopedField field2(errors, ".typed_config");
@@ -119,20 +120,20 @@ Json::Object ValidateStatefulSession(
     ValidationErrors::ScopedField field(errors, ".name");
     errors->AddError("field not present");
   }
-  cookie_config["name"] = std::move(cookie_name);
+  cookie_config["name"] = Json::FromString(std::move(cookie_name));
   // ttl
   {
     ValidationErrors::ScopedField field(errors, ".ttl");
     const auto* duration = envoy_type_http_v3_Cookie_ttl(cookie);
     if (duration != nullptr) {
       Duration ttl = ParseDuration(duration, errors);
-      cookie_config["ttl"] = ttl.ToJsonString();
+      cookie_config["ttl"] = Json::FromString(ttl.ToJsonString());
     }
   }
   // path
   std::string path =
       UpbStringToStdString(envoy_type_http_v3_Cookie_path(cookie));
-  if (!path.empty()) cookie_config["path"] = std::move(path);
+  if (!path.empty()) cookie_config["path"] = Json::FromString(std::move(path));
   return cookie_config;
 }
 
@@ -156,9 +157,9 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     errors->AddError("could not parse stateful session filter config");
     return absl::nullopt;
   }
-  return FilterConfig{
-      ConfigProtoName(),
-      ValidateStatefulSession(context, stateful_session, errors)};
+  return FilterConfig{ConfigProtoName(),
+                      Json::FromObject(ValidateStatefulSession(
+                          context, stateful_session, errors))};
 }
 
 absl::optional<XdsHttpFilterImpl::FilterConfig>
@@ -186,13 +187,12 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     const auto* stateful_session =
         envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_stateful_session(
             stateful_session_per_route);
-    if (stateful_session == nullptr) {
-      errors->AddError("field not present");
-    } else {
+    if (stateful_session != nullptr) {
       config = ValidateStatefulSession(context, stateful_session, errors);
     }
   }
-  return FilterConfig{OverrideConfigProtoName(), Json(std::move(config))};
+  return FilterConfig{OverrideConfigProtoName(),
+                      Json::FromObject(std::move(config))};
 }
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
@@ -209,10 +209,10 @@ absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
     const FilterConfig* filter_config_override) const {
-  Json config = filter_config_override != nullptr
-                    ? filter_config_override->config
-                    : hcm_filter_config.config;
-  return ServiceConfigJsonEntry{"stateful_session", config.Dump()};
+  const Json& config = filter_config_override != nullptr
+                           ? filter_config_override->config
+                           : hcm_filter_config.config;
+  return ServiceConfigJsonEntry{"stateful_session", JsonDump(config)};
 }
 
 }  // namespace grpc_core

@@ -110,7 +110,6 @@
 
   <!-- Do proto compilation by default in a C# project. In other types, the user invoke
        Protobuf_Compile directly where required. -->
-  <!-- TODO(kkm): Do shared compile in outer multitarget project? -->
   <Target Name="_Protobuf_Compile_BeforeCsCompile"
           BeforeTargets="BeforeCompile"
           DependsOnTargets="Protobuf_Compile"

@@ -14,6 +14,7 @@
 
 require 'etc'
 require 'mkmf'
+require_relative '../../lib/grpc/version.rb'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
 windows_ucrt = RUBY_PLATFORM =~ /(mingw|mswin).*ucrt/
@@ -30,30 +31,56 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
+def debug_symbols_output_dir
+  d = ENV['GRPC_RUBY_DEBUG_SYMBOLS_OUTPUT_DIR']
+  return nil if d.nil? or d.size == 0
+  d
+end
+
+def maybe_remove_strip_all_linker_flag(flags)
+  if debug_symbols_output_dir
+    # Hack to prevent automatic stripping during shared library linking.
+    # rake-compiler-dock sets the -s LDFLAG when building rubies for
+    # cross compilation, and this -s flag propagates into RbConfig. Stripping
+    # during the link is problematic because it prevents us from saving
+    # debug symbols. We want to first link our shared library, then save
+    # debug symbols, and only after that strip.
+    flags = flags.split(' ')
+    flags = flags.reject {|flag| flag == '-s'}
+    flags = flags.join(' ')
+  end
+  flags
+end
+
 def env_unset?(name)
   ENV[name].nil? || ENV[name].size == 0
 end
 
-def rbconfig_set?(name)
-  RbConfig::CONFIG[name] && RbConfig::CONFIG[name].size > 0
+def inherit_env_or_rbconfig(name)
+  ENV[name] = inherit_rbconfig(name) if env_unset?(name)
 end
 
-def inherit_rbconfig(name)
-  ENV[name] = RbConfig::CONFIG[name] if env_unset?(name) && rbconfig_set?(name)
+def inherit_rbconfig(name, linker_flag: false)
+  value = RbConfig::CONFIG[name] || ''
+  if linker_flag
+    value = maybe_remove_strip_all_linker_flag(value)
+  end
+  p "extconf.rb setting ENV[#{name}] = #{value}"
+  ENV[name] = value
 end
 
 def env_append(name, string)
-  ENV[name] ||= ''
   ENV[name] += ' ' + string
 end
 
-inherit_rbconfig 'AR'
-inherit_rbconfig 'CC'
-inherit_rbconfig 'CXX'
-inherit_rbconfig 'RANLIB'
-inherit_rbconfig 'STRIP'
+# build grpc C-core
+inherit_env_or_rbconfig 'AR'
+inherit_env_or_rbconfig 'CC'
+inherit_env_or_rbconfig 'CXX'
+inherit_env_or_rbconfig 'RANLIB'
+inherit_env_or_rbconfig 'STRIP'
 inherit_rbconfig 'CPPFLAGS'
-inherit_rbconfig 'LDFLAGS'
+inherit_rbconfig('LDFLAGS', linker_flag: true)
 
 ENV['LD'] = ENV['CC'] if env_unset?('LD')
 ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
@@ -89,10 +116,14 @@ env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
+env_append 'CPPFLAGS', '-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
 ENV['BUILDDIR'] = output_dir
+
+strip_tool = RbConfig::CONFIG['STRIP']
+strip_tool += ' -x' if apple_toolchain
 
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
@@ -110,8 +141,13 @@ unless windows
   exit 1 unless $? == 0
 end
 
+# C-core built, generate Makefile for ruby extension
+$LDFLAGS = maybe_remove_strip_all_linker_flag($LDFLAGS)
+$DLDFLAGS = maybe_remove_strip_all_linker_flag($DLDFLAGS)
+
 $CFLAGS << ' -DGRPC_RUBY_WINDOWS_UCRT' if windows_ucrt
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
+$CFLAGS << ' -g'
 
 def have_ruby_abi_version()
   return true if RUBY_ENGINE == 'truffleruby'
@@ -142,7 +178,10 @@ end
 
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', ext_export_filename())
 $LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
-$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain
+if apple_toolchain
+  $LDFLAGS << ' -weak_framework CoreFoundation'
+  $LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"'
+end
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
@@ -151,7 +190,7 @@ if grpc_config == 'gcov'
 end
 
 if grpc_config == 'dbg'
-  $CFLAGS << ' -O0 -ggdb3'
+  $CFLAGS << ' -O0'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if linux
@@ -167,26 +206,49 @@ $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
 
 output = File.join('grpc', 'grpc_c')
+puts "extconf.rb $LDFLAGS: #{$LDFLAGS}"
+puts "extconf.rb $DLDFLAGS: #{$DLDFLAGS}"
+puts "extconf.rb $CFLAGS: #{$CFLAGS}"
 puts 'Generating Makefile for ' + output
 create_makefile(output)
 
-strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool += ' -x' if apple_toolchain
+ruby_major_minor = /(\d+\.\d+)/.match(RUBY_VERSION).to_s
+debug_symbols = "grpc-#{GRPC::VERSION}-#{RUBY_PLATFORM}-ruby-#{ruby_major_minor}.dbg"
+
+File.open('Makefile.new', 'w') do |o|
+  o.puts 'hijack_remove_unused_artifacts: all remove_unused_artifacts'
+  o.puts
+  o.write(File.read('Makefile'))
+  o.puts
+  o.puts 'remove_unused_artifacts: $(DLLIB)'
+  # Now that the extension library has been linked, we can remove unused artifacts
+  # that take up a lot of disk space.
+  rm_obj_cmd = "rm -rf #{File.join(output_dir, 'objs')}"
+  o.puts "\t$(ECHO) Removing unused object artifacts: #{rm_obj_cmd}"
+  o.puts "\t$(Q) #{rm_obj_cmd}"
+  rm_grpc_core_libs = "rm -f #{grpc_lib_dir}/*.a"
+  o.puts "\t$(ECHO) Removing unused grpc core libraries: #{rm_grpc_core_libs}"
+  o.puts "\t$(Q) #{rm_grpc_core_libs}"
+end
+File.rename('Makefile.new', 'Makefile')
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
     o.puts 'hijack: all strip'
     o.puts
-    File.foreach('Makefile') do |i|
-      o.puts i
-    end
+    o.write(File.read('Makefile'))
     o.puts
     o.puts 'strip: $(DLLIB)'
+    if debug_symbols_output_dir
+      o.puts "\t$(ECHO) Saving debug symbols in #{debug_symbols_output_dir}/#{debug_symbols}"
+      o.puts "\t$(Q) objcopy --only-keep-debug $(DLLIB) #{debug_symbols_output_dir}/#{debug_symbols}"
+    end
     o.puts "\t$(ECHO) Stripping $(DLLIB)"
     o.puts "\t$(Q) #{strip_tool} $(DLLIB)"
   end
   File.rename('Makefile.new', 'Makefile')
 end
+
 if ENV['GRPC_RUBY_TEST_ONLY_WORKAROUND_MAKE_INSTALL_BUG']
   # Note: this env var setting is intended to work around a problem observed
   # with the ginstall command on grpc's macos automated test infrastructure,

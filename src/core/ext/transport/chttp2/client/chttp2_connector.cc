@@ -22,7 +22,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -33,7 +32,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
@@ -72,7 +71,6 @@
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 
@@ -179,9 +177,9 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       grpc_chttp2_transport_start_reading(self->result_->transport,
                                           args->read_buffer,
                                           &self->on_receive_settings_, nullptr);
-      RefCountedPtr<Chttp2Connector> cc = self->Ref();
       self->timer_handle_ = self->event_engine_->RunAfter(
-          self->args_.deadline - Timestamp::Now(), [self = std::move(cc)] {
+          self->args_.deadline - Timestamp::Now(),
+          [self = self->RefAsSubclass<Chttp2Connector>()] {
             ApplicationCallbackExecCtx callback_exec_ctx;
             ExecCtx exec_ctx;
             self->OnTimeout();
@@ -409,7 +407,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
       grpc_fd_create(fd, "client", true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
       "fd-client");
-  grpc_transport* transport =
+  grpc_core::Transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
   auto channel = grpc_core::Channel::Create(
@@ -419,7 +417,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
     grpc_core::ExecCtx::Get()->Flush();
     return channel->release()->c_ptr();
   } else {
-    grpc_transport_destroy(transport);
+    transport->Orphan();
     return grpc_lame_client_channel_create(
         target, static_cast<grpc_status_code>(channel.status().code()),
         "Failed to create client channel");

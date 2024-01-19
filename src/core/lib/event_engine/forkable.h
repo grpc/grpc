@@ -16,44 +16,65 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <vector>
+
+#include <grpc/support/log.h>
+
+#include "src/core/lib/debug/trace.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
-// Register fork handlers with the system, enabling fork support.
-//
-// This provides pthread-based support for fork events. Any objects that
-// implement Forkable can register themselves with this system using
-// ManageForkable, and their respective methods will be called upon fork.
-//
-// This should be called once upon grpc_initialization.
-void RegisterForkHandlers();
+extern grpc_core::TraceFlag grpc_trace_fork;
 
-// Global callback for pthread_atfork's *prepare argument
-void PrepareFork();
-// Global callback for pthread_atfork's *parent argument
-void PostforkParent();
-// Global callback for pthread_atfork's *child argument
-void PostforkChild();
+#define GRPC_FORK_TRACE_LOG(format, ...)                 \
+  do {                                                   \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fork)) {      \
+      gpr_log(GPR_DEBUG, "[fork] " format, __VA_ARGS__); \
+    }                                                    \
+  } while (0)
+
+#define GRPC_FORK_TRACE_LOG_STRING(format) GRPC_FORK_TRACE_LOG("%s", format)
 
 // An interface to be implemented by EventEngines that wish to have managed fork
-// support.
+// support. The child class must guarantee that those methods are thread-safe.
 class Forkable {
  public:
-  Forkable();
-  virtual ~Forkable();
+  virtual ~Forkable() = default;
   virtual void PrepareFork() = 0;
   virtual void PostforkParent() = 0;
   virtual void PostforkChild() = 0;
 };
 
-// Add Forkables from the set of objects that are supported.
-// Upon fork, each forkable will have its respective fork hooks called on
-// the thread that invoked the fork.
-//
-// Relative ordering of fork callback operations is not guaranteed.
-void ManageForkable(Forkable* forkable);
-// Remove a forkable from the managed set.
-void StopManagingForkable(Forkable* forkable);
+// ObjectGroupForkHandler is meant to be used as a static object in each
+// translation unit where Forkables are created and registered with the
+// ObjectGroupForkHandler. It essentially provides storage for Forkables'
+// instances (as a vector of weak pointers) and helper methods that are meant to
+// be invoked inside the fork handlers (see pthread_atfork(3)). The idea is to
+// have different Forkables (e.g. PosixEventPoller) to store their instances
+// (e.g. a PosixEventPoller object) in a single place separated from other
+// Forkables (a sharded approach). Forkables need to register their pthread fork
+// handlers and manage the relative ordering themselves. This object is
+// thread-unsafe.
+class ObjectGroupForkHandler {
+ public:
+  // Registers a Forkable with this ObjectGroupForkHandler, the Forkable must be
+  // created as a shared pointer.
+  void RegisterForkable(std::shared_ptr<Forkable> forkable,
+                        GRPC_UNUSED void (*prepare)(void),
+                        GRPC_UNUSED void (*parent)(void),
+                        GRPC_UNUSED void (*child)(void));
+
+  void Prefork();
+  void PostforkParent();
+  void PostforkChild();
+
+ private:
+  GRPC_UNUSED bool registered_ = false;
+  bool is_forking_ = false;
+  std::vector<std::weak_ptr<Forkable> > forkables_;
+};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

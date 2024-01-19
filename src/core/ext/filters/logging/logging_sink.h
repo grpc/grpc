@@ -26,6 +26,7 @@
 #include <map>
 #include <string>
 
+#include "absl/numeric/int128.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -62,7 +63,7 @@ class LoggingSink {
 
   struct Entry {
     enum class EventType {
-      kUnkown = 0,
+      kUnknown = 0,
       kClientHeader,
       kServerHeader,
       kClientMessage,
@@ -72,7 +73,7 @@ class LoggingSink {
       kCancel
     };
 
-    enum class Logger { kUnkown = 0, kClient, kServer };
+    enum class Logger { kUnknown = 0, kClient, kServer };
 
     struct Payload {
       std::map<std::string, std::string> metadata;
@@ -91,10 +92,10 @@ class LoggingSink {
       uint32_t ip_port = 0;
     };
 
-    uint64_t call_id = 0;
+    absl::uint128 call_id = 0;
     uint64_t sequence_id = 0;
-    EventType type = LoggingSink::Entry::EventType::kUnkown;
-    Logger logger = LoggingSink::Entry::Logger::kUnkown;
+    EventType type = LoggingSink::Entry::EventType::kUnknown;
+    Logger logger = LoggingSink::Entry::Logger::kUnknown;
     Payload payload;
     bool payload_truncated = false;
     Address peer;
@@ -102,6 +103,11 @@ class LoggingSink {
     std::string service_name;
     std::string method_name;
     Timestamp timestamp;
+    // Optional tracing details
+    std::string trace_id;
+    std::string span_id;
+    bool is_sampled = false;
+    bool is_trailer_only = false;
   };
 
   virtual ~LoggingSink() = default;

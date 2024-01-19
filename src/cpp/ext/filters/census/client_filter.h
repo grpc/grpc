@@ -23,6 +23,9 @@
 
 #include "absl/status/statusor.h"
 
+#include <grpcpp/support/client_interceptor.h>
+#include <grpcpp/support/interceptor.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -47,6 +50,13 @@ class OpenCensusClientFilter : public grpc_core::ChannelFilter {
   explicit OpenCensusClientFilter(bool tracing_enabled)
       : tracing_enabled_(tracing_enabled) {}
   bool tracing_enabled_ = true;
+};
+
+class OpenCensusClientInterceptorFactory
+    : public grpc::experimental::ClientInterceptorFactoryInterface {
+ public:
+  grpc::experimental::Interceptor* CreateClientInterceptor(
+      grpc::experimental::ClientRpcInfo* info) override;
 };
 
 }  // namespace internal

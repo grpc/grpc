@@ -76,8 +76,8 @@ void ClientChannelGlobalParsedConfig::JsonPostLoad(const Json& json,
   // Parse LB config.
   {
     ValidationErrors::ScopedField field(errors, ".loadBalancingConfig");
-    auto it = json.object_value().find("loadBalancingConfig");
-    if (it != json.object_value().end()) {
+    auto it = json.object().find("loadBalancingConfig");
+    if (it != json.object().end()) {
       auto config = lb_policy_registry.ParseLoadBalancingConfig(it->second);
       if (!config.ok()) {
         errors->AddError(config.status().message());

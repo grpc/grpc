@@ -1,0 +1,27 @@
+actions {
+  create_channel {
+    target: "unix::p<,0,,, 140J"
+    channel_actions {
+    }
+  }
+}
+actions {
+  check_connectivity: true
+}
+actions {
+  enable_tracer: "V)"
+}
+actions {
+  poll_cq {
+  }
+}
+actions {
+  close_channel {
+  }
+}
+event_engine_actions {
+  tick_lengths {
+    id: 4
+    delay_us: 409823569256
+  }
+}

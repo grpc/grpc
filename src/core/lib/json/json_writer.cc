@@ -145,9 +145,7 @@ void JsonWriter::EscapeString(const std::string& string) {
   OutputChar('"');
   for (size_t idx = 0; idx < string.size(); ++idx) {
     uint8_t c = static_cast<uint8_t>(string[idx]);
-    if (c == 0) {
-      break;
-    } else if (c >= 32 && c <= 126) {
+    if (c >= 32 && c <= 126) {
       if (c == '\\' || c == '"') OutputChar('\\');
       OutputChar(static_cast<char>(c));
     } else if (c < 32 || c == 127) {
@@ -243,7 +241,7 @@ void JsonWriter::EscapeString(const std::string& string) {
 void JsonWriter::ContainerBegins(Json::Type type) {
   if (!got_key_) ValueEnd();
   OutputIndent();
-  OutputChar(type == Json::Type::OBJECT ? '{' : '[');
+  OutputChar(type == Json::Type::kObject ? '{' : '[');
   container_empty_ = true;
   got_key_ = false;
   depth_++;
@@ -253,7 +251,7 @@ void JsonWriter::ContainerEnds(Json::Type type) {
   if (indent_ && !container_empty_) OutputChar('\n');
   depth_--;
   if (!container_empty_) OutputIndent();
-  OutputChar(type == Json::Type::OBJECT ? '}' : ']');
+  OutputChar(type == Json::Type::kObject ? '}' : ']');
   container_empty_ = false;
   got_key_ = false;
 }
@@ -281,43 +279,44 @@ void JsonWriter::ValueString(const std::string& string) {
 }
 
 void JsonWriter::DumpObject(const Json::Object& object) {
-  ContainerBegins(Json::Type::OBJECT);
+  ContainerBegins(Json::Type::kObject);
   for (const auto& p : object) {
     ObjectKey(p.first);
     DumpValue(p.second);
   }
-  ContainerEnds(Json::Type::OBJECT);
+  ContainerEnds(Json::Type::kObject);
 }
 
 void JsonWriter::DumpArray(const Json::Array& array) {
-  ContainerBegins(Json::Type::ARRAY);
+  ContainerBegins(Json::Type::kArray);
   for (const auto& v : array) {
     DumpValue(v);
   }
-  ContainerEnds(Json::Type::ARRAY);
+  ContainerEnds(Json::Type::kArray);
 }
 
 void JsonWriter::DumpValue(const Json& value) {
   switch (value.type()) {
-    case Json::Type::OBJECT:
-      DumpObject(value.object_value());
+    case Json::Type::kObject:
+      DumpObject(value.object());
       break;
-    case Json::Type::ARRAY:
-      DumpArray(value.array_value());
+    case Json::Type::kArray:
+      DumpArray(value.array());
       break;
-    case Json::Type::STRING:
-      ValueString(value.string_value());
+    case Json::Type::kString:
+      ValueString(value.string());
       break;
-    case Json::Type::NUMBER:
-      ValueRaw(value.string_value());
+    case Json::Type::kNumber:
+      ValueRaw(value.string());
       break;
-    case Json::Type::JSON_TRUE:
-      ValueRaw(std::string("true", 4));
+    case Json::Type::kBoolean:
+      if (value.boolean()) {
+        ValueRaw(std::string("true", 4));
+      } else {
+        ValueRaw(std::string("false", 5));
+      }
       break;
-    case Json::Type::JSON_FALSE:
-      ValueRaw(std::string("false", 5));
-      break;
-    case Json::Type::JSON_NULL:
+    case Json::Type::kNull:
       ValueRaw(std::string("null", 4));
       break;
     default:
@@ -333,8 +332,8 @@ std::string JsonWriter::Dump(const Json& value, int indent) {
 
 }  // namespace
 
-std::string Json::Dump(int indent) const {
-  return JsonWriter::Dump(*this, indent);
+std::string JsonDump(const Json& json, int indent) {
+  return JsonWriter::Dump(json, indent);
 }
 
 }  // namespace grpc_core

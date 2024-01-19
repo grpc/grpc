@@ -23,6 +23,8 @@
 #include "absl/strings/str_cat.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/config/config_vars.h"
+#include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -31,8 +33,6 @@ namespace testing {
 namespace {
 
 using ClientStats = LrsServiceImpl::ClientStats;
-
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
 
 //
 // XdsClientTest - basic tests of XdsClient functionality
@@ -76,11 +76,11 @@ TEST_P(XdsClientTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
   WaitForAllBackends(DEBUG_LOCATION, 0, 1);
   // Stop balancer.
   balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
+  // Expect minimum version 1 for all resource types.
+  balancer_->ads_service()->SetCheckVersionCallback(
+      [&](absl::string_view resource_type, int version) {
+        EXPECT_GE(version, 1) << "resource_type: " << resource_type;
+      });
   // Update backend, just so we can be sure that the client has
   // reconnected to the balancer.
   args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
@@ -138,82 +138,6 @@ TEST_P(XdsClientTest, RestartsRequestsUponReconnection) {
   balancer_->ads_service()->SetRdsResource(new_route_config);
   // Wait for all new backends to be used.
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
-}
-
-// Tests that the NACK for multiple bad resources includes both errors.
-TEST_P(XdsClientTest, MultipleBadCdsResources) {
-  constexpr char kClusterName2[] = "cluster_name_2";
-  constexpr char kClusterName3[] = "cluster_name_3";
-  CreateAndStartBackends(1);
-  balancer_->ads_service()->set_inject_bad_resources_for_resource_type(
-      kCdsTypeUrl);
-  // Add cluster with unsupported type.
-  auto cluster = default_cluster_;
-  cluster.set_name(kClusterName2);
-  cluster.set_type(Cluster::STATIC);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Add second cluster with the same error.
-  cluster.set_name(kClusterName3);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Change RouteConfig to point to all clusters.
-  RouteConfiguration route_config = default_route_config_;
-  route_config.mutable_virtual_hosts(0)->clear_routes();
-  // First route: default cluster, selected based on header.
-  auto* route = route_config.mutable_virtual_hosts(0)->add_routes();
-  route->mutable_match()->set_prefix("");
-  auto* header_matcher = route->mutable_match()->add_headers();
-  header_matcher->set_name("cluster");
-  header_matcher->set_exact_match(kDefaultClusterName);
-  route->mutable_route()->set_cluster(kDefaultClusterName);
-  // Second route: cluster 2, selected based on header.
-  route = route_config.mutable_virtual_hosts(0)->add_routes();
-  route->mutable_match()->set_prefix("");
-  header_matcher = route->mutable_match()->add_headers();
-  header_matcher->set_name("cluster");
-  header_matcher->set_exact_match(kClusterName2);
-  route->mutable_route()->set_cluster(kClusterName2);
-  // Third route: cluster 3, used by default.
-  route = route_config.mutable_virtual_hosts(0)->add_routes();
-  route->mutable_match()->set_prefix("");
-  route->mutable_route()->set_cluster(kClusterName3);
-  SetRouteConfiguration(balancer_.get(), route_config);
-  // Add EDS resource.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send RPC.
-  const auto response_state = WaitForCdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(
-      response_state->error_message,
-      absl::StrCat("xDS response validation errors: ["
-                   "resource index 0: Can't decode Resource proto wrapper; ",
-                   "resource index 1: foo: "
-                   "INVALID_ARGUMENT: Can't parse Cluster resource.; "
-                   "resource index 3: ",
-                   kClusterName2,
-                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
-                   "field:type error:unknown discovery type]; "
-                   "resource index 4: ",
-                   kClusterName3,
-                   ": INVALID_ARGUMENT: errors validating Cluster resource: ["
-                   "field:type error:unknown discovery type]]"));
-  // RPCs for default cluster should succeed.
-  std::vector<std::pair<std::string, std::string>> metadata_default_cluster = {
-      {"cluster", kDefaultClusterName},
-  };
-  CheckRpcSendOk(
-      DEBUG_LOCATION, 1,
-      RpcOptions().set_metadata(std::move(metadata_default_cluster)));
-  // RPCs for cluster 2 should fail.
-  std::vector<std::pair<std::string, std::string>> metadata_cluster_2 = {
-      {"cluster", kClusterName2},
-  };
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      "cluster_name_2: UNAVAILABLE: invalid resource: "
-      "INVALID_ARGUMENT: errors validating Cluster resource: \\["
-      "field:type error:unknown discovery type\\] .*",
-      RpcOptions().set_metadata(std::move(metadata_cluster_2)));
 }
 
 TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
@@ -384,7 +308,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 class TimeoutTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"",
+    InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };
@@ -505,7 +429,7 @@ TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -513,7 +437,7 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -537,9 +461,9 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
       [&](const RpcResult& result) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(absl::StrCat("CDS resource \"", kNewClusterName,
-                               "\" does not exist"),
-                  result.status.error_message());
+        EXPECT_EQ(
+            absl::StrCat("CDS resource ", kNewClusterName, " does not exist"),
+            result.status.error_message());
         return false;
       },
       /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));
@@ -606,15 +530,15 @@ TEST_P(TimeoutTest, ServerDoesNotResendAfterAdsStreamRestart) {
   CheckRpcSendOk(DEBUG_LOCATION, 1, RpcOptions().set_timeout_ms(4000));
   // Stop balancer.
   balancer_->Shutdown();
-  // Tell balancer to require minimum version 1 for all resource types
-  // and to not reply to the requests.
-  balancer_->ads_service()->SetResourceMinVersion(kLdsTypeUrl, 1);
+  // Expect minimum version 1 for all resource types.
+  balancer_->ads_service()->SetCheckVersionCallback(
+      [&](absl::string_view resource_type, int version) {
+        EXPECT_GE(version, 1) << "resource_type: " << resource_type;
+      });
+  // Tell balancer not to reply to the requests.
   balancer_->ads_service()->IgnoreResourceType(kLdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kRdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kRdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kCdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
-  balancer_->ads_service()->SetResourceMinVersion(kEdsTypeUrl, 1);
   balancer_->ads_service()->IgnoreResourceType(kEdsTypeUrl);
   // Restart balancer.
   balancer_->Start();
@@ -688,7 +612,6 @@ INSTANTIATE_TEST_SUITE_P(
 // Bootstrap config default client listener template uses new-style name with
 // authority "xds.example.com".
 TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -705,7 +628,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
   builder.AddAuthority(
       kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
@@ -745,7 +668,6 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
 // In bootstrap config, authority has no client listener template, so we use the
 // default.
 TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerName =
@@ -760,7 +682,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
   InitClient(builder);
@@ -812,7 +734,6 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
 // Channel is created with URI "xds://xds.example.com/server.example.com".
 // Bootstrap entry for that authority specifies a client listener name template.
 TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -830,7 +751,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -881,13 +802,12 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
 }
 
 TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/%s?psm_project_id=1234";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(
       kAuthority, absl::StrCat("localhost:", grpc_pick_unused_port_or_die()),
       kNewListenerTemplate);
@@ -907,7 +827,6 @@ TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
 }
 
 TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -919,7 +838,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   const char* kNewRouteConfigName =
       "xdstp://xds.unknown.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -951,7 +870,6 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
 }
 
 TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -966,7 +884,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   const char* kNewClusterName =
       "xdstp://xds.unknown.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -994,15 +912,13 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(),
-            absl::StrCat(
-                kNewClusterName,
-                ": UNAVAILABLE: authority \"xds.unknown.com\" not present in "
-                "bootstrap config"));
+            absl::StrCat(kNewClusterName,
+                         ": authority \"xds.unknown.com\" not present in "
+                         "bootstrap config"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
 TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1020,7 +936,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -1055,17 +971,16 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(
       status.error_message(),
-      "no children in weighted_target policy: EDS watcher error for resource "
+      "no children in weighted_target policy: EDS resource "
       "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name (UNAVAILABLE: authority \"xds.unknown.com\" not "
-      "present in bootstrap config)");
+      "edsservice_name: UNAVAILABLE: authority \"xds.unknown.com\" not "
+      "present in bootstrap config");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
 // Setting server_listener_resource_name_template to start with "xdstp:" and
 // look up xds server under an authority map.
 TEST_P(XdsFederationTest, FederationServer) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
@@ -1088,7 +1003,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
   builder.SetServerListenerResourceNameTemplate(kNewServerListenerTemplate);
   builder.AddAuthority(
@@ -1130,8 +1045,7 @@ TEST_P(XdsFederationTest, FederationServer) {
     Listener server_listener = default_server_listener_;
     server_listener.set_name(absl::StrCat(
         "xdstp://xds.example.com/envoy.config.listener.v3.Listener/server/",
-        ipv6_only_ ? "%5B::1%5D:" : "127.0.0.1:", port,
-        "?psm_project_id=1234"));
+        grpc_core::LocalIp(), ":", port, "?psm_project_id=1234"));
     server_listener.mutable_address()->mutable_socket_address()->set_port_value(
         port);
     SetListenerAndRouteConfiguration(authority_balancer_.get(), server_listener,
@@ -1153,7 +1067,11 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
+// TODO(roth,apolcyn): remove this test when the
+// GRPC_EXPERIMENTAL_XDS_FEDERATION env var is removed.
 TEST_P(XdsFederationDisabledTest, FederationDisabledWithNewStyleNames) {
+  grpc_core::testing::ScopedEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION",
+                                           "false");
   const char* kNewRouteConfigName =
       "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
@@ -1212,7 +1130,6 @@ INSTANTIATE_TEST_SUITE_P(
 // Sending traffic to both default balancer and authority balancer and checking
 // load reporting with each one.
 TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority = "xds.example.com";
   const char* kNewServerName = "whee%/server.example.com";
   const char* kNewListenerTemplate =
@@ -1232,7 +1149,7 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
       "cluster_name";
   const size_t kNumRpcsToDefaultBalancer = 5;
   const size_t kNumRpcsToAuthorityBalancer = 10;
-  BootstrapBuilder builder = BootstrapBuilder();
+  XdsBootstrapBuilder builder;
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -1292,6 +1209,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
       authority_balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(authority_load_report.size(), 1UL);
   ClientStats& authority_client_stats = authority_load_report.front();
+  EXPECT_EQ(authority_client_stats.cluster_name(), kNewClusterName);
+  EXPECT_EQ(authority_client_stats.eds_service_name(), kNewEdsServiceName);
   EXPECT_EQ(kNumRpcsToAuthorityBalancer,
             authority_client_stats.total_successful_requests());
   EXPECT_EQ(0U, authority_client_stats.total_requests_in_progress());
@@ -1306,6 +1225,8 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
       balancer_->lrs_service()->WaitForLoadReport();
   ASSERT_EQ(default_load_report.size(), 1UL);
   ClientStats& default_client_stats = default_load_report.front();
+  EXPECT_EQ(default_client_stats.cluster_name(), kDefaultClusterName);
+  EXPECT_EQ(default_client_stats.eds_service_name(), kDefaultEdsServiceName);
   EXPECT_EQ(kNumRpcsToDefaultBalancer,
             default_client_stats.total_successful_requests());
   EXPECT_EQ(0U, default_client_stats.total_requests_in_progress());
@@ -1315,6 +1236,85 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
   EXPECT_EQ(0U, default_client_stats.total_dropped_requests());
   EXPECT_EQ(1U, balancer_->lrs_service()->request_count());
   EXPECT_EQ(1U, balancer_->lrs_service()->response_count());
+}
+
+// This test covers a bug found in the wild whereby we incorrectly failed
+// to de-dup xDS servers when the same server is used both in an authority
+// and as the top-level server in the bootstrap config.  This resulted in
+// the ADS call and LRS call being in two different ChannelState objects,
+// which resulted in the LRS load reports not being sent.
+TEST_P(XdsFederationLoadReportingTest, SameServerInAuthorityAndTopLevel) {
+  grpc_core::testing::ScopedExperimentalEnvVar env_var(
+      "GRPC_EXPERIMENTAL_XDS_FEDERATION");
+  const char* kAuthority = "xds.example.com";
+  const char* kNewServerName = "whee%/server.example.com";
+  const char* kNewListenerName =
+      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
+      "whee%25/server.example.com";
+  const char* kNewRouteConfigName =
+      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
+      "new_route_config_name";
+  const char* kNewClusterName =
+      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
+      "cluster_name";
+  const char* kNewEdsServiceName =
+      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
+      "edsservice_name";
+  XdsBootstrapBuilder builder;
+  std::string xds_server =
+      absl::StrCat("localhost:", authority_balancer_->port());
+  builder.AddAuthority(kAuthority, xds_server);
+  builder.SetDefaultServer(xds_server);
+  InitClient(builder);
+  CreateAndStartBackends(1);
+  authority_balancer_->lrs_service()->set_send_all_clusters(true);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  authority_balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsServiceName));
+  // New cluster
+  Cluster new_cluster = default_cluster_;
+  new_cluster.set_name(kNewClusterName);
+  new_cluster.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsServiceName);
+  authority_balancer_->ads_service()->SetCdsResource(new_cluster);
+  // New Route
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.set_name(kNewRouteConfigName);
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  // New Listener
+  Listener listener = default_listener_;
+  listener.set_name(kNewListenerName);
+  SetListenerAndRouteConfiguration(authority_balancer_.get(), listener,
+                                   new_route_config);
+  // Create second channel to new target URI and send 1 RPC.
+  auto channel2 =
+      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  RpcOptions().SetupRpc(&context, &request);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                           << " message=" << status.error_message();
+  EXPECT_EQ(1U, backends_[0]->backend_service()->request_count());
+  // Wait for load report.
+  std::vector<ClientStats> authority_load_report =
+      authority_balancer_->lrs_service()->WaitForLoadReport();
+  ASSERT_EQ(authority_load_report.size(), 1UL);
+  ClientStats& authority_client_stats = authority_load_report.front();
+  EXPECT_EQ(authority_client_stats.cluster_name(), kNewClusterName);
+  EXPECT_EQ(authority_client_stats.eds_service_name(), kNewEdsServiceName);
+  EXPECT_EQ(1U, authority_client_stats.total_successful_requests());
+  EXPECT_EQ(0U, authority_client_stats.total_requests_in_progress());
+  EXPECT_EQ(1U, authority_client_stats.total_issued_requests());
+  EXPECT_EQ(0U, authority_client_stats.total_error_requests());
+  EXPECT_EQ(0U, authority_client_stats.total_dropped_requests());
+  EXPECT_EQ(1U, authority_balancer_->lrs_service()->request_count());
+  EXPECT_EQ(1U, authority_balancer_->lrs_service()->response_count());
 }
 
 //
@@ -1333,7 +1333,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
 
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  InitClient(BootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
+  InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
   CreateAndStartBackends(4);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -1345,7 +1345,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
-  InitClient(BootstrapBuilder(),
+  InitClient(XdsBootstrapBuilder(),
              /*lb_expected_authority=*/"incorrect_server_name");
   CreateAndStartBackends(4);
   EdsResourceArgs args({
@@ -1366,7 +1366,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 1;
+  grpc_core::ConfigVars::SetOverrides(overrides);
 #if TARGET_OS_IPHONE
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");

@@ -26,6 +26,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -58,18 +59,25 @@ struct PosixTcpOptions {
   static constexpr int kMaxChunkSize = 32 * 1024 * 1024;
   static constexpr int kDefaultMaxSends = 4;
   static constexpr size_t kDefaultSendBytesThreshold = 16 * 1024;
+  // Let the system decide the proper buffer size.
+  static constexpr int kReadBufferSizeUnset = -1;
+  static constexpr int kDscpNotSet = -1;
   int tcp_read_chunk_size = kDefaultReadChunkSize;
   int tcp_min_read_chunk_size = kDefaultMinReadChunksize;
   int tcp_max_read_chunk_size = kDefaultMaxReadChunksize;
   int tcp_tx_zerocopy_send_bytes_threshold = kDefaultSendBytesThreshold;
   int tcp_tx_zerocopy_max_simultaneous_sends = kDefaultMaxSends;
+  int tcp_receive_buffer_size = kReadBufferSizeUnset;
   bool tcp_tx_zero_copy_enabled = kZerocpTxEnabledDefault;
   int keep_alive_time_ms = 0;
   int keep_alive_timeout_ms = 0;
   bool expand_wildcard_addrs = false;
   bool allow_reuse_port = false;
+  int dscp = kDscpNotSet;
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
+  grpc_event_engine::experimental::MemoryAllocatorFactory*
+      memory_allocator_factory = nullptr;
   PosixTcpOptions() = default;
   // Move ctor
   PosixTcpOptions(PosixTcpOptions&& other) noexcept {
@@ -84,6 +92,8 @@ struct PosixTcpOptions {
     }
     socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
+    memory_allocator_factory =
+        std::exchange(other.memory_allocator_factory, nullptr);
     CopyIntegerOptions(other);
     return *this;
   }
@@ -93,6 +103,7 @@ struct PosixTcpOptions {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
+    memory_allocator_factory = other.memory_allocator_factory;
     CopyIntegerOptions(other);
   }
   // Copy assignment
@@ -108,6 +119,7 @@ struct PosixTcpOptions {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
+    memory_allocator_factory = other.memory_allocator_factory;
     CopyIntegerOptions(other);
     return *this;
   }
@@ -132,6 +144,7 @@ struct PosixTcpOptions {
     keep_alive_timeout_ms = other.keep_alive_timeout_ms;
     expand_wildcard_addrs = other.expand_wildcard_addrs;
     allow_reuse_port = other.allow_reuse_port;
+    dscp = other.dscp;
   }
 };
 
@@ -178,6 +191,9 @@ class PosixSocketWrapper {
 
   // Set SO_REUSEPORT
   absl::Status SetSocketReusePort(int reuse);
+
+  // Set Differentiated Services Code Point (DSCP)
+  absl::Status SetSocketDscp(int dscp);
 
   // Override default Tcp user timeout values if necessary.
   void TrySetSocketTcpUserTimeout(const PosixTcpOptions& options,
@@ -237,9 +253,6 @@ class PosixSocketWrapper {
     // AF_INET6, which also supports ::ffff-mapped IPv4 addresses.
     DSMODE_DUALSTACK
   };
-
-  // Tries to set the socket to dualstack. Returns true on success.
-  bool SetSocketDualStack();
 
   // Returns the underlying file-descriptor.
   int Fd() const { return fd_; }

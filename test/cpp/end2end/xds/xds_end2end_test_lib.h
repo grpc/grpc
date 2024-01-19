@@ -35,6 +35,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/ext/call_metric_recorder.h>
+#include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
 
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -43,10 +44,13 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
+#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
 #include "test/core/util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
+#include "test/cpp/end2end/xds/xds_utils.h"
 
 namespace grpc {
 namespace testing {
@@ -102,6 +106,13 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_rbac_audit_condition(
+      ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
+          audit_condition) {
+    rbac_audit_condition_ = audit_condition;
+    return *this;
+  }
+
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
@@ -112,6 +123,10 @@ class XdsTestType {
   BootstrapSource bootstrap_source() const { return bootstrap_source_; }
   ::envoy::config::rbac::v3::RBAC_Action rbac_action() const {
     return rbac_action_;
+  }
+  ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
+  rbac_audit_condition() const {
+    return rbac_audit_condition_;
   }
 
   std::string AsString() const {
@@ -133,6 +148,14 @@ class XdsTestType {
     } else if (rbac_action_ == ::envoy::config::rbac::v3::RBAC_Action_DENY) {
       retval += "RbacDeny";
     }
+    if (rbac_audit_condition_ !=
+        ::envoy::config::rbac::v3::
+            RBAC_AuditLoggingOptions_AuditCondition_NONE) {
+      retval += absl::StrCat("AuditCondition",
+                             ::envoy::config::rbac::v3::
+                                 RBAC_AuditLoggingOptions_AuditCondition_Name(
+                                     rbac_audit_condition_));
+    }
     return retval;
   }
 
@@ -150,6 +173,9 @@ class XdsTestType {
   BootstrapSource bootstrap_source_ = kBootstrapFromChannelArg;
   ::envoy::config::rbac::v3::RBAC_Action rbac_action_ =
       ::envoy::config::rbac::v3::RBAC_Action_LOG;
+  ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
+      rbac_audit_condition_ = ::envoy::config::rbac::v3::
+          RBAC_AuditLoggingOptions_AuditCondition_NONE;
 };
 
 // A base class for xDS end-to-end tests.
@@ -176,29 +202,9 @@ class XdsTestType {
 // the indexes in the range [start_index, stop_index).  If stop_index
 // is 0, backends_.size() is used.  Backends may or may not be
 // xDS-enabled, at the discretion of the test.
-class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
+class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
+                       public XdsResourceUtils {
  protected:
-  using Cluster = ::envoy::config::cluster::v3::Cluster;
-  using ClusterLoadAssignment =
-      ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-  using Listener = ::envoy::config::listener::v3::Listener;
-  using RouteConfiguration = ::envoy::config::route::v3::RouteConfiguration;
-  using HttpConnectionManager = ::envoy::extensions::filters::network::
-      http_connection_manager::v3::HttpConnectionManager;
-
-  // Default values for locality fields.
-  static const char kDefaultLocalityRegion[];
-  static const char kDefaultLocalityZone[];
-  static const uint32_t kDefaultLocalityWeight = 3;
-  static const int kDefaultLocalityPriority = 0;
-
-  // Default resource names.
-  static const char kServerName[];
-  static const char kDefaultRouteConfigurationName[];
-  static const char kDefaultClusterName[];
-  static const char kDefaultEdsServiceName[];
-  static const char kDefaultServerRouteConfigurationName[];
-
   // TLS certificate paths.
   static const char kCaCertPath[];
   static const char kServerCertPath[];
@@ -302,10 +308,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
           for (const auto& entry : peer_identity) {
             last_peer_identity_.emplace_back(entry.data(), entry.size());
           }
-          if (load_report_.has_value()) {
-            context->ExperimentalGetCallMetricRecorder()
-                ->RecordCpuUtilizationMetric(load_report_->cpu_utilization())
-                .RecordQpsMetric(load_report_->rps_fractional());
+        }
+        if (request->has_param() && request->param().has_backend_metrics()) {
+          const auto& request_metrics = request->param().backend_metrics();
+          auto* recorder = context->ExperimentalGetCallMetricRecorder();
+          for (const auto& p : request_metrics.named_metrics()) {
+            char* key = static_cast<char*>(
+                grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
+            strncpy(key, p.first.data(), p.first.size());
+            key[p.first.size()] = '\0';
+            recorder->RecordNamedMetric(key, p.second);
           }
         }
         return status;
@@ -334,21 +346,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         return last_peer_identity_;
       }
 
-      // TODO(roth): Once the backend utilization APIs are updated, change
-      // this to use those instead of manually constructing the data for
-      // each call.
-      void set_load_report(
-          absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report) {
-        grpc_core::MutexLock lock(&mu_);
-        load_report_ = std::move(load_report);
-      }
-
      private:
       grpc_core::Mutex mu_;
       std::set<std::string> clients_ ABSL_GUARDED_BY(&mu_);
       std::vector<std::string> last_peer_identity_ ABSL_GUARDED_BY(&mu_);
-      absl::optional<xds::data::orca::v3::OrcaLoadReport> load_report_
-          ABSL_GUARDED_BY(&mu_);
     };
 
     // If use_xds_enabled_server is true, the server will use xDS.
@@ -365,6 +366,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     BackendServiceImpl<grpc::testing::EchoTest2Service::Service>*
     backend_service2() {
       return &backend_service2_;
+    }
+    grpc::experimental::ServerMetricRecorder* server_metric_recorder() const {
+      return server_metric_recorder_.get();
     }
 
     // If XdsTestType::use_xds_credentials() and use_xds_enabled_server()
@@ -386,6 +390,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
         backend_service1_;
     BackendServiceImpl<grpc::testing::EchoTest2Service::Service>
         backend_service2_;
+    std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
   };
 
   // A server thread for the xDS server.
@@ -404,70 +409,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
-  };
-
-  // A builder for the xDS bootstrap config.
-  class BootstrapBuilder {
-   public:
-    BootstrapBuilder() {}
-    BootstrapBuilder& SetIgnoreResourceDeletion() {
-      ignore_resource_deletion_ = true;
-      return *this;
-    }
-    BootstrapBuilder& SetDefaultServer(const std::string& server) {
-      top_server_ = server;
-      return *this;
-    }
-    BootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
-        const std::string& client_default_listener_resource_name_template) {
-      client_default_listener_resource_name_template_ =
-          client_default_listener_resource_name_template;
-      return *this;
-    }
-    BootstrapBuilder& AddCertificateProviderPlugin(
-        const std::string& key, const std::string& name,
-        const std::string& plugin_config = "") {
-      plugins_[key] = {name, plugin_config};
-      return *this;
-    }
-    BootstrapBuilder& AddAuthority(
-        const std::string& authority, const std::string& servers = "",
-        const std::string& client_listener_resource_name_template = "") {
-      authorities_[authority] = {servers,
-                                 client_listener_resource_name_template};
-      return *this;
-    }
-    BootstrapBuilder& SetServerListenerResourceNameTemplate(
-        const std::string& server_listener_resource_name_template = "") {
-      server_listener_resource_name_template_ =
-          server_listener_resource_name_template;
-      return *this;
-    }
-
-    std::string Build();
-
-   private:
-    struct PluginInfo {
-      std::string name;
-      std::string plugin_config;
-    };
-    struct AuthorityInfo {
-      std::string server;
-      std::string client_listener_resource_name_template;
-    };
-
-    std::string MakeXdsServersText(absl::string_view server_uri);
-    std::string MakeNodeText();
-    std::string MakeCertificateProviderText();
-    std::string MakeAuthorityText();
-
-    bool ignore_resource_deletion_ = false;
-    std::string top_server_;
-    std::string client_default_listener_resource_name_template_;
-    std::map<std::string /*key*/, PluginInfo> plugins_;
-    std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;
-    std::string server_listener_resource_name_template_ =
-        "grpc/server?xds.resource.listening_address=%s";
   };
 
   // RPC services used to talk to the backends.
@@ -498,47 +439,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // balancer_, which is already populated with default resources.
   std::unique_ptr<BalancerServerThread> CreateAndStartBalancer();
 
-  // Returns the name of the server-side xDS Listener resource for a
-  // backend on the specified port.
-  std::string GetServerListenerName(int port);
-
-  // Returns a copy of listener_template with the server-side resource
-  // name and the port in the socket address populated.
-  Listener PopulateServerListenerNameAndPort(const Listener& listener_template,
-                                             int port);
-
-  // Interface for accessing HttpConnectionManager config in Listener.
-  class HcmAccessor {
-   public:
-    virtual ~HcmAccessor() = default;
-    virtual HttpConnectionManager Unpack(const Listener& listener) const = 0;
-    virtual void Pack(const HttpConnectionManager& hcm,
-                      Listener* listener) const = 0;
-  };
-
-  // Client-side impl.
-  class ClientHcmAccessor : public HcmAccessor {
-   public:
-    HttpConnectionManager Unpack(const Listener& listener) const override;
-    void Pack(const HttpConnectionManager& hcm,
-              Listener* listener) const override;
-  };
-
-  // Server-side impl.
-  class ServerHcmAccessor : public HcmAccessor {
-   public:
-    HttpConnectionManager Unpack(const Listener& listener) const override;
-    void Pack(const HttpConnectionManager& hcm,
-              Listener* listener) const override;
-  };
-
   // Sets the Listener and RouteConfiguration resource on the specified
   // balancer.  If RDS is in use, they will be set as separate resources;
   // otherwise, the RouteConfig will be inlined into the Listener.
   void SetListenerAndRouteConfiguration(
       BalancerServerThread* balancer, Listener listener,
       const RouteConfiguration& route_config,
-      const HcmAccessor& hcm_accessor = ClientHcmAccessor());
+      const HcmAccessor& hcm_accessor = ClientHcmAccessor()) {
+    XdsResourceUtils::SetListenerAndRouteConfiguration(
+        balancer->ads_service(), std::move(listener), route_config,
+        GetParam().enable_rds_testing(), hcm_accessor);
+  }
 
   // A convenient wrapper for setting the Listener and
   // RouteConfiguration resources on the server side.
@@ -556,48 +467,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // (either listener_to_copy, or if that is null, default_listener_).
   void SetRouteConfiguration(BalancerServerThread* balancer,
                              const RouteConfiguration& route_config,
-                             const Listener* listener_to_copy = nullptr);
-
-  // Arguments for constructing an EDS resource.
-  struct EdsResourceArgs {
-    // An individual endpoint for a backend running on a specified port.
-    struct Endpoint {
-      explicit Endpoint(int port,
-                        ::envoy::config::core::v3::HealthStatus health_status =
-                            ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-                        int lb_weight = 1)
-          : port(port), health_status(health_status), lb_weight(lb_weight) {}
-
-      int port;
-      ::envoy::config::core::v3::HealthStatus health_status;
-      int lb_weight;
-    };
-
-    // A locality.
-    struct Locality {
-      Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
-               uint32_t lb_weight = kDefaultLocalityWeight,
-               int priority = kDefaultLocalityPriority)
-          : sub_zone(std::move(sub_zone)),
-            endpoints(std::move(endpoints)),
-            lb_weight(lb_weight),
-            priority(priority) {}
-
-      const std::string sub_zone;
-      std::vector<Endpoint> endpoints;
-      uint32_t lb_weight;
-      int priority;
-    };
-
-    EdsResourceArgs() = default;
-    explicit EdsResourceArgs(std::vector<Locality> locality_list)
-        : locality_list(std::move(locality_list)) {}
-
-    std::vector<Locality> locality_list;
-    std::map<std::string, uint32_t> drop_categories;
-    ::envoy::type::v3::FractionalPercent::DenominatorType drop_denominator =
-        ::envoy::type::v3::FractionalPercent::MILLION;
-  };
+                             const Listener* listener_to_copy = nullptr) {
+    XdsResourceUtils::SetRouteConfiguration(
+        balancer->ads_service(), route_config, GetParam().enable_rds_testing(),
+        listener_to_copy);
+  }
 
   // Helper method for generating an endpoint for a backend, for use in
   // constructing an EDS resource.
@@ -605,9 +479,15 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1) {
+      int lb_weight = 1, std::vector<size_t> additional_backend_indxees = {}) {
+    std::vector<int> additional_ports;
+    additional_ports.reserve(additional_backend_indxees.size());
+    for (size_t idx : additional_backend_indxees) {
+      additional_ports.push_back(backends_[idx]->port());
+    }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
-                                     health_status, lb_weight);
+                                     health_status, lb_weight,
+                                     additional_ports);
   }
 
   // Creates a vector of endpoints for a specified range of backends,
@@ -623,11 +503,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   EdsResourceArgs::Endpoint MakeNonExistantEndpoint() {
     return EdsResourceArgs::Endpoint(grpc_pick_unused_port_or_die());
   }
-
-  // Constructs an EDS resource.
-  ClusterLoadAssignment BuildEdsResource(
-      const EdsResourceArgs& args,
-      const char* eds_service_name = kDefaultEdsServiceName);
 
   //
   // Backend management
@@ -689,7 +564,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Initializes global state for the client, such as the bootstrap file
   // and channel args for the XdsClient.  Then calls ResetStub().
   // All tests must call this exactly once at the start of the test.
-  void InitClient(BootstrapBuilder builder = BootstrapBuilder(),
+  void InitClient(XdsBootstrapBuilder builder = XdsBootstrapBuilder(),
                   std::string lb_expected_authority = "",
                   int xds_resource_does_not_exist_timeout_ms = 0);
 
@@ -721,6 +596,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
+    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
 
     RpcOptions() {}
 
@@ -777,6 +653,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
 
     RpcOptions& set_server_expected_error(StatusCode code) {
       server_expected_error = code;
+      return *this;
+    }
+
+    RpcOptions& set_backend_metrics(
+        absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+      backend_metrics = std::move(metrics);
       return *this;
     }
 
@@ -1039,6 +921,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
     GPR_ASSERT(p >= 0 && p <= 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
+    num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.
     gpr_log(GPR_INFO,
             "Sending %" PRIuPTR
             " RPCs for percentage=%.3f error_tolerance=%.3f",
@@ -1060,8 +943,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType> {
   // Returns client credentials suitable for using as fallback
   // credentials for XdsCredentials.
   static std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials();
-
-  bool ipv6_only_ = false;
 
   std::unique_ptr<BalancerServerThread> balancer_;
 

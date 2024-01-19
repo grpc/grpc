@@ -21,31 +21,38 @@ from tests.fork import methods
 
 
 def _args():
-
     def parse_bool(value):
-        if value == 'true':
+        if value == "true":
             return True
-        if value == 'false':
+        if value == "false":
             return False
-        raise argparse.ArgumentTypeError('Only true/false allowed')
+        raise argparse.ArgumentTypeError("Only true/false allowed")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--server_host',
-                        default="localhost",
-                        type=str,
-                        help='the host to which to connect')
-    parser.add_argument('--server_port',
-                        type=int,
-                        required=True,
-                        help='the port to which to connect')
-    parser.add_argument('--test_case',
-                        default='large_unary',
-                        type=str,
-                        help='the test case to execute')
-    parser.add_argument('--use_tls',
-                        default=False,
-                        type=parse_bool,
-                        help='require a secure connection')
+    parser.add_argument(
+        "--server_host",
+        default="localhost",
+        type=str,
+        help="the host to which to connect",
+    )
+    parser.add_argument(
+        "--server_port",
+        type=int,
+        required=True,
+        help="the port to which to connect",
+    )
+    parser.add_argument(
+        "--test_case",
+        default="large_unary",
+        type=str,
+        help="the test case to execute",
+    )
+    parser.add_argument(
+        "--use_tls",
+        default=False,
+        type=parse_bool,
+        help="require a secure connection",
+    )
     return parser.parse_args()
 
 
@@ -60,13 +67,13 @@ def _test_case_from_arg(test_case_arg):
 def test_fork():
     logging.basicConfig(level=logging.INFO)
     args = vars(_args())
-    if args['test_case'] == "all":
+    if args["test_case"] == "all":
         for test_case in methods.TestCase:
             test_case.run_test(args)
     else:
-        test_case = _test_case_from_arg(args['test_case'])
+        test_case = _test_case_from_arg(args["test_case"])
         test_case.run_test(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_fork()

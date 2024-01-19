@@ -30,13 +30,9 @@
 #include <stddef.h>
 
 #include <atomic>
-#include <limits>
+#include <iosfwd>
 #include <memory>
-#include <new>
 #include <utility>
-
-#include "absl/meta/type_traits.h"
-#include "absl/utility/utility.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 
@@ -45,10 +41,14 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
+#define GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
+// #define GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
+
 namespace grpc_core {
 
 namespace arena_detail {
 
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
 struct PoolAndSize {
   size_t alloc_size;
   size_t pool_index;
@@ -110,14 +110,29 @@ PoolAndSize ChoosePoolForAllocationSize(
     size_t n, absl::integer_sequence<size_t, kBucketSizes...>) {
   return ChoosePoolForAllocationSizeImpl<0, kBucketSizes...>::Fn(n);
 }
+#else
+template <typename T, typename A, typename B>
+struct IfArray {
+  using Result = A;
+};
+
+template <typename T, typename A, typename B>
+struct IfArray<T[], A, B> {
+  using Result = B;
+};
+#endif
 
 }  // namespace arena_detail
 
 class Arena {
-  using PoolSizes = absl::integer_sequence<size_t, 256, 512, 768>;
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
+  // Selected pool sizes.
+  // How to tune: see tools/codegen/core/optimize_arena_pool_sizes.py
+  using PoolSizes = absl::integer_sequence<size_t, 80, 304, 528, 1024>;
   struct FreePoolNode {
     FreePoolNode* next;
   };
+#endif
 
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
@@ -129,6 +144,13 @@ class Arena {
   static std::pair<Arena*, void*> CreateWithAlloc(
       size_t initial_size, size_t alloc_size,
       MemoryAllocator* memory_allocator);
+
+  // Destroy all `ManagedNew` allocated objects.
+  // Allows safe destruction of these objects even if they need context held by
+  // the arena.
+  // Idempotent.
+  // TODO(ctiller): eliminate ManagedNew.
+  void DestroyManagedNewObjects();
 
   // Destroy an arena.
   void Destroy();
@@ -158,7 +180,7 @@ class Arena {
   template <typename T, typename... Args>
   T* New(Args&&... args) {
     T* t = static_cast<T*>(Alloc(sizeof(T)));
-    Construct(t, std::forward<Args>(args)...);
+    new (t) T(std::forward<Args>(args)...);
     return t;
   }
 
@@ -170,6 +192,7 @@ class Arena {
     return &p->t;
   }
 
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
   class PooledDeleter {
    public:
     explicit PooledDeleter(std::atomic<FreePoolNode*>* free_list)
@@ -209,6 +232,7 @@ class Arena {
         &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
     return PoolPtr<T>(
         new (AllocPooled(
+            sizeof(T),
             arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
             free_list)) T(std::forward<Args>(args)...),
         PooledDeleter(free_list));
@@ -229,11 +253,116 @@ class Arena {
       return PoolPtr<T[]>(new (Alloc(where.alloc_size)) T[n],
                           PooledDeleter(nullptr));
     } else {
-      return PoolPtr<T[]>(
-          new (AllocPooled(where.alloc_size, &pools_[where.pool_index])) T[n],
-          PooledDeleter(&pools_[where.pool_index]));
+      return PoolPtr<T[]>(new (AllocPooled(where.alloc_size, where.alloc_size,
+                                           &pools_[where.pool_index])) T[n],
+                          PooledDeleter(&pools_[where.pool_index]));
     }
   }
+
+  // Like MakePooled, but with manual memory management.
+  // The caller is responsible for calling DeletePooled() on the returned
+  // pointer, and expected to call it with the same type T as was passed to this
+  // function (else the free list returned to the arena will be corrupted).
+  template <typename T, typename... Args>
+  T* NewPooled(Args&&... args) {
+    auto* free_list =
+        &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
+    return new (AllocPooled(
+        sizeof(T),
+        arena_detail::AllocationSizeFromObjectSize<sizeof(T)>(PoolSizes()),
+        free_list)) T(std::forward<Args>(args)...);
+  }
+
+  template <typename T>
+  void DeletePooled(T* p) {
+    auto* free_list =
+        &pools_[arena_detail::PoolFromObjectSize<sizeof(T)>(PoolSizes())];
+    p->~T();
+    FreePooled(p, free_list);
+  }
+#else
+  class PooledDeleter {
+   public:
+    PooledDeleter() = default;
+    explicit PooledDeleter(std::nullptr_t) : delete_(false) {}
+    template <typename T>
+    void operator()(T* p) {
+      // TODO(ctiller): promise based filter hijacks ownership of some pointers
+      // to make them appear as PoolPtr without really transferring ownership,
+      // by setting the arena to nullptr.
+      // This is a transitional hack and should be removed once promise based
+      // filter is removed.
+      if (delete_) delete p;
+    }
+
+    bool has_freelist() const { return delete_; }
+
+   private:
+    bool delete_ = true;
+  };
+
+  class ArrayPooledDeleter {
+   public:
+    ArrayPooledDeleter() = default;
+    explicit ArrayPooledDeleter(std::nullptr_t) : delete_(false) {}
+    template <typename T>
+    void operator()(T* p) {
+      // TODO(ctiller): promise based filter hijacks ownership of some pointers
+      // to make them appear as PoolPtr without really transferring ownership,
+      // by setting the arena to nullptr.
+      // This is a transitional hack and should be removed once promise based
+      // filter is removed.
+      if (delete_) delete[] p;
+    }
+
+    bool has_freelist() const { return delete_; }
+
+   private:
+    bool delete_ = true;
+  };
+
+  template <typename T>
+  using PoolPtr =
+      std::unique_ptr<T, typename arena_detail::IfArray<
+                             T, PooledDeleter, ArrayPooledDeleter>::Result>;
+
+  // Make a unique_ptr to T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
+  template <typename T, typename... Args>
+  static PoolPtr<T> MakePooled(Args&&... args) {
+    return PoolPtr<T>(new T(std::forward<Args>(args)...), PooledDeleter());
+  }
+
+  // Make a unique_ptr to an array of T that is allocated from the arena.
+  // When the pointer is released, the memory may be reused for other
+  // MakePooled(.*) calls.
+  // One can use MakePooledArray<char> to allocate a buffer of bytes.
+  // CAUTION: The amount of memory allocated is rounded up to the nearest
+  //          value in Arena::PoolSizes, and so this may pessimize total
+  //          arena size.
+  template <typename T>
+  PoolPtr<T[]> MakePooledArray(size_t n) {
+    return PoolPtr<T[]>(new T[n], ArrayPooledDeleter());
+  }
+
+  // Like MakePooled, but with manual memory management.
+  // The caller is responsible for calling DeletePooled() on the returned
+  // pointer, and expected to call it with the same type T as was passed to this
+  // function (else the free list returned to the arena will be corrupted).
+  template <typename T, typename... Args>
+  T* NewPooled(Args&&... args) {
+    return new T(std::forward<Args>(args)...);
+  }
+
+  template <typename T>
+  void DeletePooled(T* p) {
+    delete p;
+  }
+#endif
 
  private:
   struct Zone {
@@ -275,8 +404,25 @@ class Arena {
 
   void* AllocZone(size_t size);
 
-  void* AllocPooled(size_t alloc_size, std::atomic<FreePoolNode*>* head);
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
+  void* AllocPooled(size_t obj_size, size_t alloc_size,
+                    std::atomic<FreePoolNode*>* head);
   static void FreePooled(void* p, std::atomic<FreePoolNode*>* head);
+#endif
+
+  void TracePoolAlloc(size_t size, void* ptr) {
+    (void)size;
+    (void)ptr;
+#ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
+    gpr_log(GPR_ERROR, "ARENA %p ALLOC %" PRIdPTR " @ %p", this, size, ptr);
+#endif
+  }
+  static void TracePoolFree(void* ptr) {
+    (void)ptr;
+#ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
+    gpr_log(GPR_ERROR, "FREE %p", ptr);
+#endif
+  }
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
@@ -290,7 +436,9 @@ class Arena {
   // last zone; the zone list is reverse-walked during arena destruction only.
   std::atomic<Zone*> last_zone_{nullptr};
   std::atomic<ManagedNewObject*> managed_new_head_{nullptr};
+#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
   std::atomic<FreePoolNode*> pools_[PoolSizes::size()]{};
+#endif
   // The backing memory quota
   MemoryAllocator* const memory_allocator_;
 };

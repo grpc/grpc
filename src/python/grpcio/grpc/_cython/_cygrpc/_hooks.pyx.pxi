@@ -17,6 +17,9 @@ cdef object _custom_op_on_c_call(int op, grpc_call *call):
   raise NotImplementedError("No custom hooks are implemented")
 
 def install_context_from_request_call_event(RequestCallEvent event):
+  maybe_save_server_trace_context(event)
+
+def install_context_from_request_call_event_aio(GrpcCallWrapper event):
   pass
 
 def uninstall_context():
@@ -29,6 +32,9 @@ cdef class CensusContext:
   pass
 
 def set_census_context_on_call(_CallState call_state, CensusContext census_ctx):
+  pass
+
+def set_instrumentation_context_on_call_aio(GrpcCallWrapper call_state, CensusContext census_ctx):
   pass
 
 def get_deadline_from_context():

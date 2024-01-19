@@ -25,18 +25,22 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/cpu.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/event_engine/executor/executor.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
+#include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
+#include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -47,21 +51,21 @@ namespace experimental {
 
 // ---- IOCPWorkClosure ----
 
-WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(Executor* executor,
+WindowsEventEngine::IOCPWorkClosure::IOCPWorkClosure(ThreadPool* thread_pool,
                                                      IOCP* iocp)
-    : executor_(executor), iocp_(iocp) {
-  executor_->Run(this);
+    : thread_pool_(thread_pool), iocp_(iocp) {
+  thread_pool_->Run(this);
 }
 
 void WindowsEventEngine::IOCPWorkClosure::Run() {
   auto result = iocp_->Work(std::chrono::seconds(60), [this] {
     workers_.fetch_add(1);
-    executor_->Run(this);
+    thread_pool_->Run(this);
   });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
     // iocp received no messages. restart the worker
     workers_.fetch_add(1);
-    executor_->Run(this);
+    thread_pool_->Run(this);
   }
   if (workers_.fetch_sub(1) == 1) done_signal_.Notify();
 }
@@ -96,33 +100,51 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
 };
 
 WindowsEventEngine::WindowsEventEngine()
-    : executor_(std::make_shared<ThreadPool>()),
-      iocp_(executor_.get()),
-      timer_manager_(executor_),
-      iocp_worker_(executor_.get(), &iocp_) {
+    : thread_pool_(
+          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+      iocp_(thread_pool_.get()),
+      timer_manager_(thread_pool_),
+      iocp_worker_(thread_pool_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
   GPR_ASSERT(status == 0);
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
+  GRPC_EVENT_ENGINE_TRACE("~WindowsEventEngine::%p", this);
   {
-    grpc_core::MutexLock lock(&task_mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
-      for (auto handle : known_handles_) {
-        gpr_log(GPR_ERROR,
-                "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
-                this, HandleToString<EventEngine::TaskHandle>(handle).c_str());
+    task_mu_.Lock();
+    if (!known_handles_.empty()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+        for (auto handle : known_handles_) {
+          gpr_log(GPR_ERROR,
+                  "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
+                  this,
+                  HandleToString<EventEngine::TaskHandle>(handle).c_str());
+        }
+      }
+      // Allow a small grace period for timers to be run before shutting down.
+      auto deadline =
+          timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
+      while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+          GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
+                               known_handles_.size());
+        }
+        task_mu_.Unlock();
+        absl::SleepFor(absl::Milliseconds(200));
+        task_mu_.Lock();
       }
     }
     GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();
   iocp_.Shutdown();
   GPR_ASSERT(WSACleanup() == 0);
   timer_manager_.Shutdown();
-  executor_->Quiesce();
+  thread_pool_->Quiesce();
 }
 
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
@@ -149,11 +171,11 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfter(
 }
 
 void WindowsEventEngine::Run(absl::AnyInvocable<void()> closure) {
-  executor_->Run(std::move(closure));
+  thread_pool_->Run(std::move(closure));
 }
 
 void WindowsEventEngine::Run(EventEngine::Closure* closure) {
-  executor_->Run(closure);
+  thread_pool_->Run(closure);
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
@@ -174,9 +196,48 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   return handle;
 }
 
-std::unique_ptr<EventEngine::DNSResolver> WindowsEventEngine::GetDNSResolver(
-    EventEngine::DNSResolver::ResolverOptions const& /*options*/) {
-  grpc_core::Crash("unimplemented");
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+
+WindowsEventEngine::WindowsDNSResolver::WindowsDNSResolver(
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver)
+    : ares_resolver_(std::move(ares_resolver)) {}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupHostname(
+    LookupHostnameCallback on_resolve, absl::string_view name,
+    absl::string_view default_port) {
+  ares_resolver_->LookupHostname(std::move(on_resolve), name, default_port);
+}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupSRV(
+    LookupSRVCallback on_resolve, absl::string_view name) {
+  ares_resolver_->LookupSRV(std::move(on_resolve), name);
+}
+
+void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
+    LookupTXTCallback on_resolve, absl::string_view name) {
+  ares_resolver_->LookupTXT(std::move(on_resolve), name);
+}
+
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+
+absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
+WindowsEventEngine::GetDNSResolver(
+    EventEngine::DNSResolver::ResolverOptions const& options) {
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
+  }
+  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+      std::move(*ares_resolver));
+#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  GRPC_EVENT_ENGINE_DNS_TRACE(
+      "WindowsEventEngine:%p creating NativeWindowsDNSResolver", this);
+  return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
@@ -197,18 +258,21 @@ void WindowsEventEngine::OnConnectCompleted(
     const auto& overlapped_result = state->socket->write_info()->result();
     // return early if we cannot cancel the connection timeout timer.
     if (!Cancel(state->timer_handle)) return;
-    if (overlapped_result.wsa_error != 0) {
+    if (!overlapped_result.error_status.ok()) {
+      state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
+      endpoint = overlapped_result.error_status;
+    } else if (overlapped_result.wsa_error != 0) {
       state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = GRPC_WSA_ERROR(overlapped_result.wsa_error, "ConnectEx");
     } else {
-      // This code should be running in an executor thread already, so the
-      // callback can be run directly.
       ChannelArgsEndpointConfig cfg;
       endpoint = std::make_unique<WindowsEndpoint>(
           state->address, std::move(state->socket), std::move(state->allocator),
-          cfg, executor_.get());
+          cfg, thread_pool_.get(), shared_from_this());
     }
   }
+  // This code should be running in a thread pool thread already, so the
+  // callback can be run directly.
   cb(std::move(endpoint));
 }
 
@@ -224,7 +288,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     Run([on_connect = std::move(on_connect), status = uri.status()]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   GRPC_EVENT_ENGINE_TRACE("EventEngine::%p connecting to %s", this,
                           uri->c_str());
@@ -241,14 +305,14 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   status = PrepareSocket(sock);
   if (!status.ok()) {
     Run([on_connect = std::move(on_connect), status]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // Grab the function pointer for ConnectEx for that specific socket It may
   // change depending on the interface.
@@ -265,7 +329,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
              "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER)")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
   // bind the local address
   auto local_address = ResolvedAddressMakeWild6(0);
@@ -275,45 +339,21 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
          status = GRPC_WSA_ERROR(WSAGetLastError(), "bind")]() mutable {
       on_connect(status);
     });
-    return EventEngine::kInvalidConnectionHandle;
+    return EventEngine::ConnectionHandle::kInvalid;
   }
-  // Connect
-  auto watched_socket = iocp_.Watch(sock);
-  auto* info = watched_socket->write_info();
-  bool success =
-      ConnectEx(watched_socket->raw_socket(), address.address(), address.size(),
-                nullptr, 0, nullptr, info->overlapped());
-  // It wouldn't be unusual to get a success immediately. But we'll still get an
-  // IOCP notification, so let's ignore it.
-  if (!success) {
-    int last_error = WSAGetLastError();
-    if (last_error != ERROR_IO_PENDING) {
-      Run([on_connect = std::move(on_connect),
-           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
-        on_connect(status);
-      });
-      watched_socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
-      return EventEngine::kInvalidConnectionHandle;
-    }
-  }
-  GPR_ASSERT(watched_socket != nullptr);
+  // Prepare the socket to receive a connection
   auto connection_state = std::make_shared<ConnectionState>();
   grpc_core::MutexLock lock(&connection_state->mu);
+  connection_state->socket = iocp_.Watch(sock);
+  GPR_ASSERT(connection_state->socket != nullptr);
+  auto* info = connection_state->socket->write_info();
   connection_state->address = address;
-  connection_state->socket = std::move(watched_socket);
-  connection_state->on_connected_user_callback = std::move(on_connect);
   connection_state->allocator = std::move(memory_allocator);
+  connection_state->on_connected_user_callback = std::move(on_connect);
   connection_state->on_connected =
       SelfDeletingClosure::Create([this, connection_state]() mutable {
         OnConnectCompleted(std::move(connection_state));
       });
-  {
-    grpc_core::MutexLock conn_lock(&connection_mu_);
-    connection_state->connection_handle =
-        ConnectionHandle{reinterpret_cast<intptr_t>(connection_state.get()),
-                         aba_token_.fetch_add(1)};
-    known_connection_handles_.insert(connection_state->connection_handle);
-  }
   connection_state->timer_handle =
       RunAfter(timeout, [this, connection_state]() {
         grpc_core::MutexLock lock(&connection_state->mu);
@@ -321,16 +361,41 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
           connection_state->on_connected_user_callback(
               absl::DeadlineExceededError("Connection timed out"));
         }
-        // else: The connection attempt could not be canceled. We can assume the
-        // connection callback will be called.
+        // else: The connection attempt could not be canceled. We can assume
+        // the connection callback will be called.
       });
+  // Connect
   connection_state->socket->NotifyOnWrite(connection_state->on_connected);
+  bool success =
+      ConnectEx(connection_state->socket->raw_socket(), address.address(),
+                address.size(), nullptr, 0, nullptr, info->overlapped());
+  // It wouldn't be unusual to get a success immediately. But we'll still get an
+  // IOCP notification, so let's ignore it.
+  if (!success) {
+    int last_error = WSAGetLastError();
+    if (last_error != ERROR_IO_PENDING) {
+      if (!Cancel(connection_state->timer_handle)) {
+        return EventEngine::ConnectionHandle::kInvalid;
+      }
+      connection_state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
+      Run([connection_state = std::move(connection_state),
+           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
+        grpc_core::MutexLock lock(&connection_state->mu);
+        connection_state->on_connected_user_callback(status);
+      });
+      return EventEngine::ConnectionHandle::kInvalid;
+    }
+  }
+  connection_state->connection_handle =
+      ConnectionHandle{reinterpret_cast<intptr_t>(connection_state.get()),
+                       aba_token_.fetch_add(1)};
+  grpc_core::MutexLock connection_handle_lock(&connection_mu_);
+  known_connection_handles_.insert(connection_state->connection_handle);
   return connection_state->connection_handle;
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
-  if (TaskHandleComparator<ConnectionHandle>::Eq()(
-          handle, EventEngine::kInvalidConnectionHandle)) {
+  if (handle == EventEngine::ConnectionHandle::kInvalid) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
     return false;
@@ -366,7 +431,7 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
 bool WindowsEventEngine::CancelConnectInternalStateLocked(
     ConnectionState* connection_state) {
   connection_state->socket->Shutdown(DEBUG_LOCATION, "CancelConnect");
-  // Release the connection_state shared_ptr. connection_state is now invalid.
+  // Release the connection_state shared_ptr owned by the connected callback.
   delete connection_state->on_connected;
   GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",
                           HandleToString<EventEngine::ConnectionHandle>(
@@ -377,13 +442,15 @@ bool WindowsEventEngine::CancelConnectInternalStateLocked(
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 WindowsEventEngine::CreateListener(
-    Listener::AcceptCallback /* on_accept */,
-    absl::AnyInvocable<void(absl::Status)> /* on_shutdown */,
-    const EndpointConfig& /* config */,
-    std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
-  grpc_core::Crash("unimplemented");
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+  return std::make_unique<WindowsEventEngineListener>(
+      &iocp_, std::move(on_accept), std::move(on_shutdown),
+      std::move(memory_allocator_factory), shared_from_this(),
+      thread_pool_.get(), config);
 }
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

@@ -39,8 +39,8 @@ _GDB_TIMEOUT_S = 60
 
 
 def _channel(args):
-    target = '{}:{}'.format(args['server_host'], args['server_port'])
-    if args['use_tls']:
+    target = "{}:{}".format(args["server_host"], args["server_port"])
+    if args["use_tls"]:
         channel_credentials = grpc.ssl_channel_credentials()
         channel = grpc.secure_channel(target, channel_credentials)
     else:
@@ -50,11 +50,15 @@ def _channel(args):
 
 def _validate_payload_type_and_length(response, expected_type, expected_length):
     if response.payload.type is not expected_type:
-        raise ValueError('expected payload type %s, got %s' %
-                         (expected_type, type(response.payload.type)))
+        raise ValueError(
+            "expected payload type %s, got %s"
+            % (expected_type, type(response.payload.type))
+        )
     elif len(response.payload.body) != expected_length:
-        raise ValueError('expected payload body size %d, got %d' %
-                         (expected_length, len(response.payload.body)))
+        raise ValueError(
+            "expected payload body size %d, got %d"
+            % (expected_length, len(response.payload.body))
+        )
 
 
 def _async_unary(stub):
@@ -62,7 +66,8 @@ def _async_unary(stub):
     request = messages_pb2.SimpleRequest(
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
-        payload=messages_pb2.Payload(body=b'\x00' * 271828))
+        payload=messages_pb2.Payload(body=b"\x00" * 271828),
+    )
 
     response_future = stub.UnaryCall.future(request, timeout=_RPC_TIMEOUT_S)
     response = response_future.result()
@@ -74,13 +79,13 @@ def _blocking_unary(stub):
     request = messages_pb2.SimpleRequest(
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
-        payload=messages_pb2.Payload(body=b'\x00' * 271828))
+        payload=messages_pb2.Payload(body=b"\x00" * 271828),
+    )
     response = stub.UnaryCall(request, timeout=_RPC_TIMEOUT_S)
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
 
 class _Pipe(object):
-
     def __init__(self):
         self._condition = threading.Condition()
         self._values = []
@@ -119,7 +124,6 @@ class _Pipe(object):
 
 
 class _ChildProcess(object):
-
     def __init__(self, task, args=None):
         if args is None:
             args = ()
@@ -134,13 +138,14 @@ class _ChildProcess(object):
 
     def _child_main(self):
         import faulthandler
+
         faulthandler.enable(all_threads=True)
 
         try:
             self._task(*self._args)
         except grpc.RpcError as rpc_error:
             traceback.print_exc()
-            self._exceptions.put('RpcError: %s' % rpc_error)
+            self._exceptions.put("RpcError: %s" % rpc_error)
         except Exception as e:  # pylint: disable=broad-except
             traceback.print_exc()
             self._exceptions.put(e)
@@ -217,9 +222,11 @@ class _ChildProcess(object):
         finally:
             for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
                 stream.seek(0)
-                sys.stderr.write("gdb {}:\n{}\n".format(
-                    stream_name,
-                    stream.read().decode("ascii")))
+                sys.stderr.write(
+                    "gdb {}:\n{}\n".format(
+                        stream_name, stream.read().decode("ascii")
+                    )
+                )
                 stream.close()
             sys.stderr.flush()
 
@@ -228,24 +235,26 @@ class _ChildProcess(object):
         sys.stderr.write("Exit code: {}\n".format(self._rc))
         if not terminated:
             self._print_backtraces()
-            raise RuntimeError('Child process did not terminate')
+            raise RuntimeError("Child process did not terminate")
         if self._rc != 0:
-            raise ValueError('Child process failed with exitcode %d' % self._rc)
+            raise ValueError("Child process failed with exitcode %d" % self._rc)
         try:
             exception = self._exceptions.get(block=False)
-            raise ValueError('Child process failed: "%s": "%s"' %
-                             (repr(exception), exception))
+            raise ValueError(
+                'Child process failed: "%s": "%s"'
+                % (repr(exception), exception)
+            )
         except queue.Empty:
             pass
 
 
 def _async_unary_same_channel(channel):
-
     def child_target():
         try:
             _async_unary(stub)
             raise Exception(
-                'Child should not be able to re-use channel after fork')
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
@@ -258,7 +267,6 @@ def _async_unary_same_channel(channel):
 
 
 def _async_unary_new_channel(channel, args):
-
     def child_target():
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
@@ -274,12 +282,12 @@ def _async_unary_new_channel(channel, args):
 
 
 def _blocking_unary_same_channel(channel):
-
     def child_target():
         try:
             _blocking_unary(stub)
             raise Exception(
-                'Child should not be able to re-use channel after fork')
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
@@ -291,7 +299,6 @@ def _blocking_unary_same_channel(channel):
 
 
 def _blocking_unary_new_channel(channel, args):
-
     def child_target():
         with _channel(args) as child_channel:
             child_stub = test_pb2_grpc.TestServiceStub(child_channel)
@@ -307,7 +314,6 @@ def _blocking_unary_new_channel(channel, args):
 
 # Verify that the fork channel registry can handle already closed channels
 def _close_channel_before_fork(channel, args):
-
     def child_target():
         new_channel.close()
         with _channel(args) as child_channel:
@@ -327,12 +333,10 @@ def _close_channel_before_fork(channel, args):
 
 
 def _connectivity_watch(channel, args):
-
     parent_states = []
     parent_channel_ready_event = threading.Event()
 
     def child_target():
-
         child_channel_ready_event = threading.Event()
 
         def child_connectivity_callback(state):
@@ -344,11 +348,12 @@ def _connectivity_watch(channel, args):
             child_channel.subscribe(child_connectivity_callback)
             _async_unary(child_stub)
             if not child_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-                raise ValueError('Channel did not move to READY')
+                raise ValueError("Channel did not move to READY")
             if len(parent_states) > 1:
                 raise ValueError(
-                    'Received connectivity updates on parent callback',
-                    parent_states)
+                    "Received connectivity updates on parent callback",
+                    parent_states,
+                )
             child_channel.unsubscribe(child_connectivity_callback)
 
     def parent_connectivity_callback(state):
@@ -362,13 +367,14 @@ def _connectivity_watch(channel, args):
     child_process.start()
     _async_unary(stub)
     if not parent_channel_ready_event.wait(timeout=_RPC_TIMEOUT_S):
-        raise ValueError('Channel did not move to READY')
+        raise ValueError("Channel did not move to READY")
     channel.unsubscribe(parent_connectivity_callback)
     child_process.finish()
 
 
 def _ping_pong_with_child_processes_after_first_response(
-        channel, args, child_target, run_after_close=True):
+    channel, args, child_target, run_after_close=True
+):
     request_response_sizes = (
         31415,
         9,
@@ -386,31 +392,38 @@ def _ping_pong_with_child_processes_after_first_response(
     parent_bidi_call = stub.FullDuplexCall(pipe)
     child_processes = []
     first_message_received = False
-    for response_size, payload_size in zip(request_response_sizes,
-                                           request_payload_sizes):
+    for response_size, payload_size in zip(
+        request_response_sizes, request_payload_sizes
+    ):
         request = messages_pb2.StreamingOutputCallRequest(
             response_type=messages_pb2.COMPRESSABLE,
-            response_parameters=(messages_pb2.ResponseParameters(
-                size=response_size),),
-            payload=messages_pb2.Payload(body=b'\x00' * payload_size))
+            response_parameters=(
+                messages_pb2.ResponseParameters(size=response_size),
+            ),
+            payload=messages_pb2.Payload(body=b"\x00" * payload_size),
+        )
         pipe.add(request)
         if first_message_received:
-            child_process = _ChildProcess(child_target,
-                                          (parent_bidi_call, channel, args))
+            child_process = _ChildProcess(
+                child_target, (parent_bidi_call, channel, args)
+            )
             child_process.start()
             child_processes.append(child_process)
         response = next(parent_bidi_call)
         first_message_received = True
-        child_process = _ChildProcess(child_target,
-                                      (parent_bidi_call, channel, args))
+        child_process = _ChildProcess(
+            child_target, (parent_bidi_call, channel, args)
+        )
         child_process.start()
         child_processes.append(child_process)
-        _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE,
-                                          response_size)
+        _validate_payload_type_and_length(
+            response, messages_pb2.COMPRESSABLE, response_size
+        )
     pipe.close()
     if run_after_close:
-        child_process = _ChildProcess(child_target,
-                                      (parent_bidi_call, channel, args))
+        child_process = _ChildProcess(
+            child_target, (parent_bidi_call, channel, args)
+        )
         child_process.start()
         child_processes.append(child_process)
     for child_process in child_processes:
@@ -418,99 +431,109 @@ def _ping_pong_with_child_processes_after_first_response(
 
 
 def _in_progress_bidi_continue_call(channel):
-
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _async_unary(stub)
             raise Exception(
-                'Child should not be able to re-use channel after fork')
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
         inherited_code = parent_bidi_call.code()
         inherited_details = parent_bidi_call.details()
         if inherited_code != grpc.StatusCode.CANCELLED:
-            raise ValueError('Expected inherited code CANCELLED, got %s' %
-                             inherited_code)
-        if inherited_details != 'Channel closed due to fork':
             raise ValueError(
-                'Expected inherited details Channel closed due to fork, got %s'
-                % inherited_details)
+                "Expected inherited code CANCELLED, got %s" % inherited_code
+            )
+        if inherited_details != "Channel closed due to fork":
+            raise ValueError(
+                "Expected inherited details Channel closed due to fork, got %s"
+                % inherited_details
+            )
 
     # Don't run child_target after closing the parent call, as the call may have
     # received a status from the  server before fork occurs.
-    _ping_pong_with_child_processes_after_first_response(channel,
-                                                         None,
-                                                         child_target,
-                                                         run_after_close=False)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, None, child_target, run_after_close=False
+    )
 
 
 def _in_progress_bidi_same_channel_async_call(channel):
-
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _async_unary(stub)
             raise Exception(
-                'Child should not be able to re-use channel after fork')
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
     _ping_pong_with_child_processes_after_first_response(
-        channel, None, child_target)
+        channel, None, child_target
+    )
 
 
 def _in_progress_bidi_same_channel_blocking_call(channel):
-
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _blocking_unary(stub)
             raise Exception(
-                'Child should not be able to re-use channel after fork')
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
     _ping_pong_with_child_processes_after_first_response(
-        channel, None, child_target)
+        channel, None, child_target
+    )
 
 
 def _in_progress_bidi_new_channel_async_call(channel, args):
-
     def child_target(parent_bidi_call, parent_channel, args):
         with _channel(args) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
             _async_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
-        channel, args, child_target)
+        channel, args, child_target
+    )
 
 
 def _in_progress_bidi_new_channel_blocking_call(channel, args):
-
     def child_target(parent_bidi_call, parent_channel, args):
         with _channel(args) as channel:
             stub = test_pb2_grpc.TestServiceStub(channel)
             _blocking_unary(stub)
 
     _ping_pong_with_child_processes_after_first_response(
-        channel, args, child_target)
+        channel, args, child_target
+    )
 
 
 @enum.unique
 class TestCase(enum.Enum):
-
-    CONNECTIVITY_WATCH = 'connectivity_watch'
-    CLOSE_CHANNEL_BEFORE_FORK = 'close_channel_before_fork'
-    ASYNC_UNARY_SAME_CHANNEL = 'async_unary_same_channel'
-    ASYNC_UNARY_NEW_CHANNEL = 'async_unary_new_channel'
-    BLOCKING_UNARY_SAME_CHANNEL = 'blocking_unary_same_channel'
-    BLOCKING_UNARY_NEW_CHANNEL = 'blocking_unary_new_channel'
-    IN_PROGRESS_BIDI_CONTINUE_CALL = 'in_progress_bidi_continue_call'
-    IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL = 'in_progress_bidi_same_channel_async_call'
-    IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL = 'in_progress_bidi_same_channel_blocking_call'
-    IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL = 'in_progress_bidi_new_channel_async_call'
-    IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL = 'in_progress_bidi_new_channel_blocking_call'
+    CONNECTIVITY_WATCH = "connectivity_watch"
+    CLOSE_CHANNEL_BEFORE_FORK = "close_channel_before_fork"
+    ASYNC_UNARY_SAME_CHANNEL = "async_unary_same_channel"
+    ASYNC_UNARY_NEW_CHANNEL = "async_unary_new_channel"
+    BLOCKING_UNARY_SAME_CHANNEL = "blocking_unary_same_channel"
+    BLOCKING_UNARY_NEW_CHANNEL = "blocking_unary_new_channel"
+    IN_PROGRESS_BIDI_CONTINUE_CALL = "in_progress_bidi_continue_call"
+    IN_PROGRESS_BIDI_SAME_CHANNEL_ASYNC_CALL = (
+        "in_progress_bidi_same_channel_async_call"
+    )
+    IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL = (
+        "in_progress_bidi_same_channel_blocking_call"
+    )
+    IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL = (
+        "in_progress_bidi_new_channel_async_call"
+    )
+    IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL = (
+        "in_progress_bidi_new_channel_blocking_call"
+    )
 
     def run_test(self, args):
         _LOGGER.info("Running %s", self)
@@ -538,8 +561,9 @@ class TestCase(enum.Enum):
         elif self is TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL:
             _in_progress_bidi_new_channel_blocking_call(channel, args)
         else:
-            raise NotImplementedError('Test case "%s" not implemented!' %
-                                      self.name)
+            raise NotImplementedError(
+                'Test case "%s" not implemented!' % self.name
+            )
         channel.close()
 
 

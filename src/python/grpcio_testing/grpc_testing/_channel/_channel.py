@@ -21,7 +21,6 @@ from grpc_testing._channel import _multi_callable
 # test infrastructure.
 # pylint: disable=unused-argument
 class TestingChannel(grpc_testing.Channel):
-
     def __init__(self, time, state):
         self._time = time
         self._state = state
@@ -32,28 +31,24 @@ class TestingChannel(grpc_testing.Channel):
     def unsubscribe(self, callback):
         raise NotImplementedError()
 
-    def unary_unary(self,
-                    method,
-                    request_serializer=None,
-                    response_deserializer=None):
+    def unary_unary(
+        self, method, request_serializer=None, response_deserializer=None
+    ):
         return _multi_callable.UnaryUnary(method, self._state)
 
-    def unary_stream(self,
-                     method,
-                     request_serializer=None,
-                     response_deserializer=None):
+    def unary_stream(
+        self, method, request_serializer=None, response_deserializer=None
+    ):
         return _multi_callable.UnaryStream(method, self._state)
 
-    def stream_unary(self,
-                     method,
-                     request_serializer=None,
-                     response_deserializer=None):
+    def stream_unary(
+        self, method, request_serializer=None, response_deserializer=None
+    ):
         return _multi_callable.StreamUnary(method, self._state)
 
-    def stream_stream(self,
-                      method,
-                      request_serializer=None,
-                      response_deserializer=None):
+    def stream_stream(
+        self, method, request_serializer=None, response_deserializer=None
+    ):
         return _multi_callable.StreamStream(method, self._state)
 
     def _close(self):

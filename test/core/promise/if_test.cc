@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/if.h"
 
-#include <utility>
-
 #include "gtest/gtest.h"
 
 namespace grpc_core {

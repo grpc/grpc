@@ -25,6 +25,8 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_replace.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -44,8 +46,6 @@
 #include <netinet/in.h>  // IWYU pragma: keep
 #include <sys/socket.h>  // IWYU pragma: keep
 #include <unistd.h>      // IWYU pragma: keep
-
-#include "absl/strings/str_cat.h"
 #endif
 
 namespace grpc_event_engine {
@@ -148,7 +148,8 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
     }
   });
   if (PosixSocketWrapper::IsSocketReusePortSupported() &&
-      options.allow_reuse_port && socket.addr.address()->sa_family != AF_UNIX) {
+      options.allow_reuse_port && socket.addr.address()->sa_family != AF_UNIX &&
+      !ResolvedAddressIsVSock(socket.addr)) {
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReusePort(1));
   }
 
@@ -164,7 +165,8 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNonBlocking(1));
   GRPC_RETURN_IF_ERROR(socket.sock.SetSocketCloexec(1));
 
-  if (socket.addr.address()->sa_family != AF_UNIX) {
+  if (socket.addr.address()->sa_family != AF_UNIX &&
+      !ResolvedAddressIsVSock(socket.addr)) {
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
     socket.sock.TrySetSocketTcpUserTimeout(options, false);
@@ -174,8 +176,16 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
       GRPC_FD_SERVER_LISTENER_USAGE, options));
 
   if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
+    auto sockaddr_str = ResolvedAddressToString(socket.addr);
+    if (!sockaddr_str.ok()) {
+      gpr_log(GPR_ERROR, "Could not convert sockaddr to string: %s",
+              sockaddr_str.status().ToString().c_str());
+      sockaddr_str = "<unparsable>";
+    }
+    sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
     return absl::FailedPreconditionError(
-        absl::StrCat("Error in bind: ", std::strerror(errno)));
+        absl::StrCat("Error in bind for address '", *sockaddr_str,
+                     "': ", std::strerror(errno)));
   }
 
   if (listen(fd, GetMaxAcceptQueueSize()) < 0) {

@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -22,9 +21,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,13 +35,13 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -209,8 +206,6 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  // TODO(vigneshbabu): remove when the experiment is over
-  grpc_core::ForceEnableExperiment("event_engine_client", true);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();

@@ -17,7 +17,6 @@ import grpc
 
 
 class _ConcreteValue(grpc.Future):
-
     def __init__(self, result):
         self._result = result
 
@@ -46,21 +45,24 @@ class _ConcreteValue(grpc.Future):
         fn(self._result)
 
 
-class DefaultValueClientInterceptor(grpc.UnaryUnaryClientInterceptor,
-                                    grpc.StreamUnaryClientInterceptor):
-
+class DefaultValueClientInterceptor(
+    grpc.UnaryUnaryClientInterceptor, grpc.StreamUnaryClientInterceptor
+):
     def __init__(self, value):
         self._default = _ConcreteValue(value)
 
-    def _intercept_call(self, continuation, client_call_details,
-                        request_or_iterator):
+    def _intercept_call(
+        self, continuation, client_call_details, request_or_iterator
+    ):
         response = continuation(client_call_details, request_or_iterator)
         return self._default if response.exception() else response
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
         return self._intercept_call(continuation, client_call_details, request)
 
-    def intercept_stream_unary(self, continuation, client_call_details,
-                               request_iterator):
-        return self._intercept_call(continuation, client_call_details,
-                                    request_iterator)
+    def intercept_stream_unary(
+        self, continuation, client_call_details, request_iterator
+    ):
+        return self._intercept_call(
+            continuation, client_call_details, request_iterator
+        )

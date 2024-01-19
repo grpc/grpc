@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
 #include "test/core/util/tls_utils.h"
 
 #include <stdio.h>
@@ -138,8 +137,8 @@ void DestroyExternalVerifier(void* arg) {
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
-  // Spawn a detached thread to destroy the verifier, to make sure that we don't
-  // try to join the worker thread from within the worker thread.
+  // Spawn a detached thread to destroy the verifier, to make sure that we
+  // don't try to join the worker thread from within the worker thread.
   Thread destroy_thread("DestroyExternalVerifier", DestroyExternalVerifier,
                         self, nullptr, Thread::Options().set_joinable(false));
   destroy_thread.Start();
@@ -178,6 +177,28 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
                        "AsyncExternalVerifier failed");
     }
   }
+}
+
+int PeerPropertyExternalVerifier::Verify(
+    void* user_data, grpc_tls_custom_verification_check_request* request,
+    grpc_tls_on_custom_verification_check_done_cb, void*,
+    grpc_status_code* sync_status, char** sync_error_details) {
+  auto* self = static_cast<PeerPropertyExternalVerifier*>(user_data);
+  if (request->peer_info.verified_root_cert_subject !=
+      self->expected_verified_root_cert_subject_) {
+    *sync_status = GRPC_STATUS_UNAUTHENTICATED;
+    *sync_error_details = gpr_strdup("PeerPropertyExternalVerifier failed");
+    return true;
+  } else {
+    *sync_status = GRPC_STATUS_OK;
+    return true;  // Synchronous call
+  }
+  return true;  // Synchronous call
+}
+
+void PeerPropertyExternalVerifier::Destruct(void* user_data) {
+  auto* self = static_cast<PeerPropertyExternalVerifier*>(user_data);
+  delete self;
 }
 
 }  // namespace testing

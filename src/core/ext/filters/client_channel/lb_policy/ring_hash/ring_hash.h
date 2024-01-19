@@ -26,10 +26,25 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
-UniqueTypeName RequestHashAttributeName();
+class RequestHashAttribute
+    : public ServiceConfigCallData::CallAttributeInterface {
+ public:
+  static UniqueTypeName TypeName();
+
+  explicit RequestHashAttribute(uint64_t request_hash)
+      : request_hash_(request_hash) {}
+
+  uint64_t request_hash() const { return request_hash_; }
+
+ private:
+  UniqueTypeName type() const override { return TypeName(); }
+
+  uint64_t request_hash_;
+};
 
 // Helper Parsing method to parse ring hash policy configs; for example, ring
 // hash size validity.

@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,121 +14,214 @@
 
 #include "src/core/lib/promise/observable.h"
 
-#include <functional>
+#include <cstdint>
+#include <limits>
+#include <thread>
+#include <vector>
 
-#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/seq.h"
-#include "test/core/promise/test_wakeup_schedulers.h"
+#include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
 
-using testing::MockFunction;
+using testing::Mock;
 using testing::StrictMock;
 
 namespace grpc_core {
+namespace {
 
-// A simple Barrier type: stalls progress until it is 'cleared'.
-class Barrier {
+class MockActivity : public Activity, public Wakeable {
  public:
-  struct Result {};
+  MOCK_METHOD(void, WakeupRequested, ());
 
-  Promise<Result> Wait() {
-    return [this]() -> Poll<Result> {
-      MutexLock lock(&mu_);
-      if (cleared_) {
-        return Result{};
-      } else {
-        return wait_set_.AddPending(Activity::current()->MakeOwningWaker());
-      }
-    };
+  void ForceImmediateRepoll(WakeupMask) override { WakeupRequested(); }
+  void Orphan() override {}
+  Waker MakeOwningWaker() override { return Waker(this, 0); }
+  Waker MakeNonOwningWaker() override { return Waker(this, 0); }
+  void Wakeup(WakeupMask) override { WakeupRequested(); }
+  void WakeupAsync(WakeupMask) override { WakeupRequested(); }
+  void Drop(WakeupMask) override {}
+  std::string DebugTag() const override { return "MockActivity"; }
+  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
+
+  void Activate() {
+    if (scoped_activity_ != nullptr) return;
+    scoped_activity_ = std::make_unique<ScopedActivity>(this);
   }
 
-  void Clear() {
-    mu_.Lock();
-    cleared_ = true;
-    auto wakeup = wait_set_.TakeWakeupSet();
-    mu_.Unlock();
-    wakeup.Wakeup();
-  }
+  void Deactivate() { scoped_activity_.reset(); }
 
  private:
-  Mutex mu_;
-  WaitSet wait_set_ ABSL_GUARDED_BY(mu_);
-  bool cleared_ ABSL_GUARDED_BY(mu_) = false;
+  std::unique_ptr<ScopedActivity> scoped_activity_;
 };
 
-TEST(ObservableTest, CanPushAndGet) {
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  Observable<int> observable;
-  auto observer = observable.MakeObserver();
-  auto activity = MakeActivity(
-      [&observer]() {
-        return Seq(observer.Get(), [](absl::optional<int> i) {
-          return i == 42 ? absl::OkStatus() : absl::UnknownError("expected 42");
-        });
-      },
-      InlineWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  observable.Push(42);
+MATCHER(IsPending, "") {
+  if (arg.ready()) {
+    *result_listener << "is ready";
+    return false;
+  }
+  return true;
 }
 
-TEST(ObservableTest, CanNext) {
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  Observable<int> observable;
-  auto observer = observable.MakeObserver();
-  auto activity = MakeActivity(
-      [&observer]() {
-        return Seq(
-            observer.Get(),
-            [&observer](absl::optional<int> i) {
-              EXPECT_EQ(i, 42);
-              return observer.Next();
-            },
-            [](absl::optional<int> i) {
-              return i == 1 ? absl::OkStatus()
-                            : absl::UnknownError("expected 1");
+MATCHER(IsReady, "") {
+  if (arg.pending()) {
+    *result_listener << "is pending";
+    return false;
+  }
+  return true;
+}
+
+MATCHER_P(IsReady, value, "") {
+  if (arg.pending()) {
+    *result_listener << "is pending";
+    return false;
+  }
+  if (arg.value() != value) {
+    *result_listener << "is " << ::testing::PrintToString(arg.value());
+    return false;
+  }
+  return true;
+}
+
+TEST(ObservableTest, ImmediateNext) {
+  Observable<int> observable(1);
+  auto next = observable.Next(0);
+  EXPECT_THAT(next(), IsReady(1));
+}
+
+TEST(ObservableTest, SetBecomesImmediateNext1) {
+  Observable<int> observable(0);
+  auto next = observable.Next(0);
+  observable.Set(1);
+  EXPECT_THAT(next(), IsReady(1));
+}
+
+TEST(ObservableTest, SetBecomesImmediateNext2) {
+  Observable<int> observable(0);
+  observable.Set(1);
+  auto next = observable.Next(0);
+  EXPECT_THAT(next(), IsReady(1));
+}
+
+TEST(ObservableTest, SameValueGetsPending) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  Observable<int> observable(1);
+  auto next = observable.Next(1);
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_THAT(next(), IsPending());
+}
+
+TEST(ObservableTest, ChangeValueWakesUp) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  Observable<int> observable(1);
+  auto next = observable.Next(1);
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  observable.Set(2);
+  Mock::VerifyAndClearExpectations(&activity);
+  EXPECT_THAT(next(), IsReady(2));
+}
+
+TEST(ObservableTest, MultipleActivitiesWakeUp) {
+  StrictMock<MockActivity> activity1;
+  StrictMock<MockActivity> activity2;
+  Observable<int> observable(1);
+  auto next1 = observable.Next(1);
+  auto next2 = observable.Next(1);
+  {
+    activity1.Activate();
+    EXPECT_THAT(next1(), IsPending());
+  }
+  {
+    activity2.Activate();
+    EXPECT_THAT(next2(), IsPending());
+  }
+  EXPECT_CALL(activity1, WakeupRequested());
+  EXPECT_CALL(activity2, WakeupRequested());
+  observable.Set(2);
+  Mock::VerifyAndClearExpectations(&activity1);
+  Mock::VerifyAndClearExpectations(&activity2);
+  EXPECT_THAT(next1(), IsReady(2));
+  EXPECT_THAT(next2(), IsReady(2));
+}
+
+class ThreadWakeupScheduler {
+ public:
+  template <typename ActivityType>
+  class BoundScheduler {
+   public:
+    explicit BoundScheduler(ThreadWakeupScheduler) {}
+    void ScheduleWakeup() {
+      std::thread t(
+          [this] { static_cast<ActivityType*>(this)->RunScheduledWakeup(); });
+      t.detach();
+    }
+  };
+};
+
+TEST(ObservableTest, Stress) {
+  static constexpr uint64_t kEnd = std::numeric_limits<uint64_t>::max();
+  std::vector<uint64_t> values1;
+  std::vector<uint64_t> values2;
+  uint64_t current1 = 0;
+  uint64_t current2 = 0;
+  Notification done1;
+  Notification done2;
+  Observable<uint64_t> observable(0);
+  auto activity1 = MakeActivity(
+      Loop([&observable, &current1, &values1] {
+        return Map(
+            observable.Next(current1),
+            [&values1, &current1](uint64_t value) -> LoopCtl<absl::Status> {
+              values1.push_back(value);
+              current1 = value;
+              if (value == kEnd) return absl::OkStatus();
+              return Continue{};
             });
-      },
-      InlineWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  observable.Push(42);
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  observable.Push(1);
-}
-
-TEST(ObservableTest, CanWatch) {
-  StrictMock<MockFunction<void(absl::Status)>> on_done;
-  Observable<int> observable;
-  Barrier barrier;
-  auto activity = MakeActivity(
-      [&observable, &barrier]() {
-        return observable.Watch(
-            [&barrier](int x,
-                       WatchCommitter* committer) -> Promise<absl::Status> {
-              if (x == 3) {
-                committer->Commit();
-                return Seq(barrier.Wait(), Immediate(absl::OkStatus()));
-              } else {
-                return Never<absl::Status>();
-              }
+      }),
+      ThreadWakeupScheduler(), [&done1](absl::Status status) {
+        EXPECT_TRUE(status.ok()) << status.ToString();
+        done1.Notify();
+      });
+  auto activity2 = MakeActivity(
+      Loop([&observable, &current2, &values2] {
+        return Map(
+            observable.Next(current2),
+            [&values2, &current2](uint64_t value) -> LoopCtl<absl::Status> {
+              values2.push_back(value);
+              current2 = value;
+              if (value == kEnd) return absl::OkStatus();
+              return Continue{};
             });
-      },
-      InlineWakeupScheduler(),
-      [&on_done](absl::Status status) { on_done.Call(std::move(status)); });
-  observable.Push(1);
-  observable.Push(2);
-  observable.Push(3);
-  observable.Push(4);
-  EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  barrier.Clear();
+      }),
+      ThreadWakeupScheduler(), [&done2](absl::Status status) {
+        EXPECT_TRUE(status.ok()) << status.ToString();
+        done2.Notify();
+      });
+  for (uint64_t i = 0; i < 1000000; i++) {
+    observable.Set(i);
+  }
+  observable.Set(kEnd);
+  done1.WaitForNotification();
+  done2.WaitForNotification();
+  ASSERT_GE(values1.size(), 1);
+  ASSERT_GE(values2.size(), 1);
+  EXPECT_EQ(values1.back(), kEnd);
+  EXPECT_EQ(values2.back(), kEnd);
 }
 
+}  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  gpr_log_verbosity_init();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -36,14 +36,15 @@ class MockActivity : public Activity, public Wakeable {
  public:
   MOCK_METHOD(void, WakeupRequested, ());
 
-  void ForceImmediateRepoll() override { WakeupRequested(); }
+  void ForceImmediateRepoll(WakeupMask) override { WakeupRequested(); }
   void Orphan() override {}
-  Waker MakeOwningWaker() override { return Waker(this, nullptr); }
-  Waker MakeNonOwningWaker() override { return Waker(this, nullptr); }
-  void Wakeup(void*) override { WakeupRequested(); }
-  void Drop(void*) override {}
+  Waker MakeOwningWaker() override { return Waker(this, 0); }
+  Waker MakeNonOwningWaker() override { return Waker(this, 0); }
+  void Wakeup(WakeupMask) override { WakeupRequested(); }
+  void WakeupAsync(WakeupMask) override { WakeupRequested(); }
+  void Drop(WakeupMask) override {}
   std::string DebugTag() const override { return "MockActivity"; }
-  std::string ActivityDebugTag(void*) const override { return DebugTag(); }
+  std::string ActivityDebugTag(WakeupMask) const override { return DebugTag(); }
 
   void Activate() {
     if (scoped_activity_ != nullptr) return;
@@ -94,6 +95,8 @@ TEST(MpscTest, SendingLotsOfThingsGivesPushback) {
   EXPECT_EQ(NowOrNever(sender.Send(MakePayload(1))), true);
   EXPECT_EQ(NowOrNever(sender.Send(MakePayload(2))), absl::nullopt);
   activity1.Deactivate();
+
+  EXPECT_CALL(activity1, WakeupRequested());
 }
 
 TEST(MpscTest, ReceivingAfterBlockageWakesUp) {
@@ -144,6 +147,32 @@ TEST(MpscTest, ClosureIsVisibleToSenders) {
   MpscSender<Payload> sender = receiver->MakeSender();
   receiver.reset();
   EXPECT_EQ(NowOrNever(sender.Send(MakePayload(1))), false);
+}
+
+TEST(MpscTest, ImmediateSendWorks) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7)), true);
+
+  activity.Activate();
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(1));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(2));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(3));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(4));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(5));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(6));
+  EXPECT_EQ(NowOrNever(receiver.Next()), MakePayload(7));
+  auto receive2 = receiver.Next();
+  EXPECT_EQ(receive2(), Poll<Payload>(Pending{}));
+  activity.Deactivate();
 }
 
 }  // namespace

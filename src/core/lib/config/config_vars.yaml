@@ -1,0 +1,128 @@
+# Copyright 2022 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# File format:
+#
+# Each config var gets a name, and a type (one of string, int, bool).
+#
+# A default value is provided. Defaults prefixed by '$' are read as expressions,
+# otherwise they're assumed literals.
+# A description field must be present.
+#
+# Optionally, a force-load-on-access: true flag can be added to force checking
+# the environment variables every time the value is queried, to match legacy
+# behavior for some environment variables.
+#
+# Optionally, fuzz: true can be added to enable fuzzers to explore variations
+# in this config var with their regular fuzzing work - or fuzz: FunctionName 
+# can be used to specify that the config space be explored, but FunctionName should be called to pre-format/validate the value for fuzzing.
+# Such functions should be listed in fuzz_config_vars_helpers.h.
+
+- name: experiments
+  type: comma_separated_string
+  description:
+    A comma separated list of currently active experiments. Experiments may be
+    prefixed with a '-' to disable them.
+  default:
+  fuzz_type: uint64
+  fuzz: ValidateExperimentsStringForFuzzing
+- name: client_channel_backup_poll_interval_ms
+  type: int
+  default: 5000
+  description:
+    Declares the interval in ms between two backup polls on client channels.
+    These polls are run in the timer thread so that gRPC can process
+    connection failures while there is no active polling thread.
+    They help reconnect disconnected client channels (mostly due to
+    idleness), so that the next RPC on this channel won't fail. Set to 0 to
+    turn off the backup polls.
+- name: dns_resolver
+  default:
+  type: string
+  description:
+    Declares which DNS resolver to use. The default is ares if gRPC is built
+    with c-ares support. Otherwise, the value of this environment variable is
+    ignored.
+  fuzz: true
+- name: trace
+  type: comma_separated_string
+  default:
+  description:
+    A comma separated list of tracers that provide additional insight into
+    how gRPC C core is processing requests via debug logs.
+  fuzz: true
+- name: verbosity
+  type: string
+  prelude: |
+    #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
+    #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
+    #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
+  default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
+  description:
+    Default gRPC logging verbosity
+  fuzz: true
+- name: stacktrace_minloglevel
+  type: string
+  default:
+  description:
+    Messages logged at the same or higher level than this will print stacktrace
+  fuzz: true
+- name: enable_fork_support
+  type: bool
+  description: Enable fork support
+  prelude: |
+    #ifdef GRPC_ENABLE_FORK_SUPPORT
+    #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
+    #else
+    #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
+    #endif  // GRPC_ENABLE_FORK_SUPPORT
+  default: $GRPC_ENABLE_FORK_SUPPORT_DEFAULT
+  fuzz: true
+- name: poll_strategy
+  type: string
+  description:
+    Declares which polling engines to try when starting gRPC.
+    This is a comma-separated list of engines, which are tried in priority
+    order first -> last.
+  default: all
+- name: abort_on_leaks
+  type: bool
+  default: false
+  description:
+    A debugging aid to cause a call to abort() when gRPC objects are leaked
+    past grpc_shutdown()
+- name: system_ssl_roots_dir
+  type: string
+  default:
+  description: Custom directory to SSL Roots
+  force-load-on-access: true
+- name: default_ssl_roots_file_path
+  type: string
+  default:
+  description: Path to the default SSL roots file.
+  force-load-on-access: true
+- name: not_use_system_ssl_roots
+  type: bool
+  default: false
+  description: Disable loading system root certificates.
+- name: ssl_cipher_suites
+  type: string
+  description: A colon separated list of cipher suites to use with OpenSSL
+  default: "TLS_AES_128_GCM_SHA256:\
+    TLS_AES_256_GCM_SHA384:\
+    TLS_CHACHA20_POLY1305_SHA256:\
+    ECDHE-ECDSA-AES128-GCM-SHA256:\
+    ECDHE-ECDSA-AES256-GCM-SHA384:\
+    ECDHE-RSA-AES128-GCM-SHA256:\
+    ECDHE-RSA-AES256-GCM-SHA384"

@@ -3,6 +3,10 @@
 
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
+# Disable progress bar to avoid getting the
+# '"Access is denied" 0x5 occurred while reading the console output buffer'
+# error when running on kokoro (i.e. in non-interactive mode)
+$global:ProgressPreference = 'SilentlyContinue'
 
 trap {
     $ErrorActionPreference = "Continue"

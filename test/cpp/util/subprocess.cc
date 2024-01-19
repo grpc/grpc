@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include "test/core/util/subprocess.h"
+#include "src/core/lib/gpr/subprocess.h"
 
 namespace grpc {
 

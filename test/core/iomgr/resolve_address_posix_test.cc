@@ -34,7 +34,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -188,30 +188,21 @@ TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
   // In case that there are more than one argument on the command line,
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
-  if (strlen(resolver.get()) != 0) {
-    gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            resolver.get());
-  }
+  grpc_core::ConfigVars::Overrides overrides;
   if (resolver_type == "native") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
+    overrides.dns_resolver = "native";
   } else if (resolver_type == "ares") {
-    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
+    overrides.dns_resolver = "ares";
   } else {
     gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
     ASSERT_TRUE(false);
   }
+  grpc_core::ConfigVars::SetOverrides(overrides);
 
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
     test_named_and_numeric_scope_ids();
-    // c-ares resolver doesn't support UDS (ability for native DNS resolver
-    // to handle this is only expected to be used by servers, which
-    // unconditionally use the native DNS resolver).
-    grpc_core::UniquePtr<char> resolver =
-        GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   }
   grpc_shutdown();
 }

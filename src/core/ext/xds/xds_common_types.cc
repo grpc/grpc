@@ -22,7 +22,6 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <utility>
 
@@ -39,15 +38,17 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/arena.h"
-#include "upb/json_encode.h"
-#include "upb/status.h"
-#include "upb/upb.hpp"
+#include "upb/base/status.hpp"
+#include "upb/json/encode.h"
+#include "upb/mem/arena.h"
 #include "xds/type/v3/typed_struct.upb.h"
+
+#include <grpc/support/json.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/lib/json/json_reader.h"
 
 namespace grpc_core {
 
@@ -383,13 +384,16 @@ CommonTlsContext CommonTlsContext::Parse(
           CertificateProviderInstanceParse(
               context, tls_certificate_certificate_provider_instance, errors);
     } else {
-      if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificates(
-              common_tls_context_proto)) {
+      size_t size;
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificates(
+          common_tls_context_proto, &size);
+      if (size != 0) {
         ValidationErrors::ScopedField field(errors, ".tls_certificates");
         errors->AddError("feature unsupported");
       }
-      if (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_has_tls_certificate_sds_secret_configs(
-              common_tls_context_proto)) {
+      envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_tls_certificate_sds_secret_configs(
+          common_tls_context_proto, &size);
+      if (size != 0) {
         ValidationErrors::ScopedField field(
             errors, ".tls_certificate_sds_secret_configs");
         errors->AddError("feature unsupported");
@@ -420,17 +424,19 @@ absl::StatusOr<Json> ParseProtobufStructToJson(
     const google_protobuf_Struct* resource) {
   upb::Status status;
   const auto* msg_def = google_protobuf_Struct_getmsgdef(context.symtab);
-  size_t json_size = upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                                    nullptr, 0, status.ptr());
+  size_t json_size =
+      upb_JsonEncode(reinterpret_cast<const upb_Message*>(resource), msg_def,
+                     context.symtab, 0, nullptr, 0, status.ptr());
   if (json_size == static_cast<size_t>(-1)) {
     return absl::InvalidArgumentError(
         absl::StrCat("error encoding google::Protobuf::Struct as JSON: ",
                      upb_Status_ErrorMessage(status.ptr())));
   }
   void* buf = upb_Arena_Malloc(context.arena, json_size + 1);
-  upb_JsonEncode(resource, msg_def, context.symtab, 0,
-                 reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
-  auto json = Json::Parse(reinterpret_cast<char*>(buf));
+  upb_JsonEncode(reinterpret_cast<const upb_Message*>(resource), msg_def,
+                 context.symtab, 0, reinterpret_cast<char*>(buf), json_size + 1,
+                 status.ptr());
+  auto json = JsonParse(reinterpret_cast<char*>(buf));
   if (!json.ok()) {
     // This should never happen.
     return absl::InternalError(
@@ -485,7 +491,7 @@ absl::optional<XdsExtension> ExtractXdsExtension(
         errors, absl::StrCat(".value[", extension.type, "]"));
     auto* protobuf_struct = xds_type_v3_TypedStruct_value(typed_struct);
     if (protobuf_struct == nullptr) {
-      extension.value = Json::Object();  // Default to empty object.
+      extension.value = Json::FromObject({});  // Default to empty object.
     } else {
       auto json = ParseProtobufStructToJson(context, protobuf_struct);
       if (!json.ok()) {

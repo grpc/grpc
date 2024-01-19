@@ -21,7 +21,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,6 +34,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -43,15 +43,17 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/transport/status_conversion.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
+
+const NoInterceptor HttpClientFilter::Call::OnServerToClientMessage;
+const NoInterceptor HttpClientFilter::Call::OnClientToServerMessage;
+const NoInterceptor HttpClientFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
@@ -91,7 +93,8 @@ HttpSchemeMetadata::ValueType SchemeFromArgs(const ChannelArgs& args) {
   return scheme;
 }
 
-Slice UserAgentFromArgs(const ChannelArgs& args, const char* transport_name) {
+Slice UserAgentFromArgs(const ChannelArgs& args,
+                        absl::string_view transport_name) {
   std::vector<std::string> fields;
   auto add = [&fields](absl::string_view x) {
     if (!x.empty()) fields.push_back(std::string(x));
@@ -106,40 +109,27 @@ Slice UserAgentFromArgs(const ChannelArgs& args, const char* transport_name) {
 }
 }  // namespace
 
-ArenaPromise<ServerMetadataHandle> HttpClientFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  auto& md = call_args.client_initial_metadata;
-  if (test_only_use_put_requests_) {
-    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
+void HttpClientFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
+                                                     HttpClientFilter* filter) {
+  if (filter->test_only_use_put_requests_) {
+    md.Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
   } else {
-    md->Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
+    md.Set(HttpMethodMetadata(), HttpMethodMetadata::kPost);
   }
-  md->Set(HttpSchemeMetadata(), scheme_);
-  md->Set(TeMetadata(), TeMetadata::kTrailers);
-  md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
-  md->Set(UserAgentMetadata(), user_agent_.Ref());
+  md.Set(HttpSchemeMetadata(), filter->scheme_);
+  md.Set(TeMetadata(), TeMetadata::kTrailers);
+  md.Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+  md.Set(UserAgentMetadata(), filter->user_agent_.Ref());
+}
 
-  auto* initial_metadata_err =
-      GetContext<Arena>()->New<Latch<ServerMetadataHandle>>();
+absl::Status HttpClientFilter::Call::OnServerInitialMetadata(
+    ServerMetadata& md) {
+  return CheckServerMetadata(&md);
+}
 
-  call_args.server_initial_metadata->InterceptAndMap(
-      [initial_metadata_err](
-          ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
-        auto r = CheckServerMetadata(md.get());
-        if (!r.ok()) {
-          initial_metadata_err->Set(ServerMetadataFromStatus(r));
-          return absl::nullopt;
-        }
-        return std::move(md);
-      });
-
-  return Race(Map(next_promise_factory(std::move(call_args)),
-                  [](ServerMetadataHandle md) -> ServerMetadataHandle {
-                    auto r = CheckServerMetadata(md.get());
-                    if (!r.ok()) return ServerMetadataFromStatus(r);
-                    return md;
-                  }),
-              initial_metadata_err->Wait());
+absl::Status HttpClientFilter::Call::OnServerTrailingMetadata(
+    ServerMetadata& md) {
+  return CheckServerMetadata(&md);
 }
 
 HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
@@ -151,12 +141,13 @@ HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
 
 absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
-  auto* transport = args.GetObject<grpc_transport>();
+  auto* transport = args.GetObject<Transport>();
   if (transport == nullptr) {
     return absl::InvalidArgumentError("HttpClientFilter needs a transport");
   }
   return HttpClientFilter(
-      SchemeFromArgs(args), UserAgentFromArgs(args, transport->vtable->name),
+      SchemeFromArgs(args),
+      UserAgentFromArgs(args, transport->GetTransportName()),
       args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS).value_or(false));
 }
 

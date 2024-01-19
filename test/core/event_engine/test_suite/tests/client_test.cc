@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <thread>
 #include <tuple>
@@ -34,7 +31,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -69,7 +66,6 @@ using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
-using ::grpc_event_engine::experimental::WaitForSingleOwner;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -96,7 +92,6 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
       *URIToResolvedAddress(target_addr), config,
       memory_quota->CreateMemoryAllocator("conn-1"), 24h);
   signal.WaitForNotification();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create a connection using the test EventEngine to a listener created
@@ -171,7 +166,6 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   client_endpoint.reset();
   server_endpoint.reset();
   listener.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // Create 1 listener bound to N IPv6 addresses and M connections where M > N and
@@ -180,7 +174,7 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   grpc_core::ExecCtx ctx;
   static constexpr int kNumListenerAddresses = 10;  // N
   static constexpr int kNumConnections = 10;        // M
-  auto oracle_ee = this->NewOracleEventEngine();
+  std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
@@ -298,7 +292,6 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     t.join();
   }
   server_endpoint.reset();
-  WaitForSingleOwner(std::move(test_ee));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix

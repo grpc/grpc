@@ -17,7 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <type_traits>
+#include <memory>
+#include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
@@ -99,7 +100,7 @@ class If {
           !kSetState,
           "shouldn't need to set state coming through the initial branch");
       auto r = evaluating.condition();
-      if (auto* p = absl::get_if<kPollReadyIdx>(&r)) {
+      if (auto* p = r.value_if_ready()) {
         return ChooseIf(CallPoll<true>{self}, std::move(*p),
                         &evaluating.if_true, &evaluating.if_false);
       }
@@ -109,7 +110,7 @@ class If {
     template <class Promise>
     PollResult operator()(Promise& promise) const {
       auto r = promise();
-      if (kSetState && absl::holds_alternative<Pending>(r)) {
+      if (kSetState && r.pending()) {
         self->state_.template emplace<Promise>(std::move(promise));
       }
       return r;
@@ -162,6 +163,9 @@ class If<bool, T, F> {
   }
 
   Poll<Result> operator()() {
+#ifndef NDEBUG
+    asan_canary_ = std::make_unique<int>(1 + *asan_canary_);
+#endif
     if (condition_) {
       return if_true_();
     } else {
@@ -175,6 +179,10 @@ class If<bool, T, F> {
     TruePromise if_true_;
     FalsePromise if_false_;
   };
+  // Make failure to destruct show up in ASAN builds.
+#ifndef NDEBUG
+  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+#endif
 };
 
 }  // namespace promise_detail
@@ -184,6 +192,10 @@ class If<bool, T, F> {
 // If it returns failure, returns failure for the entire combinator.
 // If it returns true, evaluates the second promise.
 // If it returns false, evaluates the third promise.
+// If C is a constant, it's guaranteed that one of the promise factories
+// if_true or if_false will be evaluated before returning from this function.
+// This makes it safe to capture lambda arguments in the promise factory by
+// reference.
 template <typename C, typename T, typename F>
 promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
   return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),

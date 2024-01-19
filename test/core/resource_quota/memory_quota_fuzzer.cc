@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -39,6 +40,7 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/resource_quota/memory_quota_fuzzer.pb.h"
+#include "test/core/util/fuzz_config_vars.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -89,10 +91,9 @@ class Fuzzer {
           memory_quotas_.erase(action.quota());
           break;
         case memory_quota_fuzzer::Action::kCreateAllocator:
-          WithQuota(action.quota(), [this, action, i](MemoryQuota* q) {
-            memory_allocators_.emplace(
-                action.allocator(),
-                q->CreateMemoryOwner(absl::StrCat("allocator-step-", i)));
+          WithQuota(action.quota(), [this, action](MemoryQuota* q) {
+            memory_allocators_.emplace(action.allocator(),
+                                       q->CreateMemoryOwner());
           });
           break;
         case memory_quota_fuzzer::Action::kDeleteAllocator:
@@ -190,6 +191,8 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
   if (squelch) gpr_set_log_function(dont_log);
+  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
+  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   gpr_log_verbosity_init();
   grpc_tracer_init();
   grpc_core::testing::Fuzzer().Run(msg);

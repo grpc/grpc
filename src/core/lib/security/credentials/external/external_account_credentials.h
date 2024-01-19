@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -45,12 +47,16 @@ namespace grpc_core {
 class ExternalAccountCredentials
     : public grpc_oauth2_token_fetcher_credentials {
  public:
+  struct ServiceAccountImpersonation {
+    int32_t token_lifetime_seconds;
+  };
   // External account credentials json interface.
   struct Options {
     std::string type;
     std::string audience;
     std::string subject_token_type;
     std::string service_account_impersonation_url;
+    ServiceAccountImpersonation service_account_impersonation;
     std::string token_url;
     std::string token_info_url;
     Json credential_source;
@@ -94,6 +100,10 @@ class ExternalAccountCredentials
   virtual void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
       std::function<void(std::string, grpc_error_handle)> cb) = 0;
+
+  virtual absl::string_view CredentialSourceType();
+
+  std::string MetricsHeaderValue();
 
  private:
   // This method implements the common token fetch logic and it will be called

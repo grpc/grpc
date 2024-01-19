@@ -21,14 +21,15 @@ import helloworld_pb2
 import helloworld_pb2_grpc
 
 
-def unary_call(stub: helloworld_pb2_grpc.GreeterStub, request_id: int,
-               message: str):
+def unary_call(
+    stub: helloworld_pb2_grpc.GreeterStub, request_id: int, message: str
+):
     print("call:", request_id)
     try:
         response = stub.SayHello(helloworld_pb2.HelloRequest(name=message))
         print(f"Greeter client received: {response.message}")
     except grpc.RpcError as rpc_error:
-        print('Call failed with code: ', rpc_error.code())
+        print("Call failed with code: ", rpc_error.code())
 
 
 def run():
@@ -44,16 +45,19 @@ def run():
         send a data/header frame.
     For more details, check: https://github.com/grpc/grpc/blob/master/doc/keepalive.md
     """
-    channel_options = [('grpc.keepalive_time_ms', 8000),
-                       ('grpc.keepalive_timeout_ms', 5000),
-                       ('grpc.http2.max_pings_without_data', 5),
-                       ('grpc.keepalive_permit_without_calls', 1)]
+    channel_options = [
+        ("grpc.keepalive_time_ms", 8000),
+        ("grpc.keepalive_timeout_ms", 5000),
+        ("grpc.http2.max_pings_without_data", 5),
+        ("grpc.keepalive_permit_without_calls", 1),
+    ]
 
-    with grpc.insecure_channel(target='localhost:50051',
-                               options=channel_options) as channel:
+    with grpc.insecure_channel(
+        target="localhost:50051", options=channel_options
+    ) as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
         # Should succeed
-        unary_call(stub, 1, 'you')
+        unary_call(stub, 1, "you")
 
         # Run 30s, run this with GRPC_VERBOSITY=DEBUG GRPC_TRACE=http_keepalive to observe logs.
         # Client will be closed after receveing GOAWAY from server.
@@ -62,6 +66,6 @@ def run():
             sleep(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     run()

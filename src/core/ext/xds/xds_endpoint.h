@@ -23,7 +23,6 @@
 
 #include <algorithm>
 #include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,7 +31,7 @@
 #include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "upb/def.h"
+#include "upb/reflection/def.h"
 
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -41,7 +40,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -50,7 +49,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
     struct Locality {
       RefCountedPtr<XdsLocalityName> name;
       uint32_t lb_weight;
-      ServerAddressList endpoints;
+      EndpointAddressesList endpoints;
 
       bool operator==(const Locality& other) const {
         return *name == *other.name && lb_weight == other.lb_weight &&
@@ -63,6 +62,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
     std::map<XdsLocalityName*, Locality, XdsLocalityName::Less> localities;
 
     bool operator==(const Priority& other) const;
+    bool operator!=(const Priority& other) const { return !(*this == other); }
     std::string ToString() const;
   };
   using PriorityList = std::vector<Priority>;
@@ -122,7 +122,10 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   RefCountedPtr<DropConfig> drop_config;
 
   bool operator==(const XdsEndpointResource& other) const {
-    return priorities == other.priorities && *drop_config == *other.drop_config;
+    if (priorities != other.priorities) return false;
+    if (drop_config == nullptr) return other.drop_config == nullptr;
+    if (other.drop_config == nullptr) return false;
+    return *drop_config == *other.drop_config;
   }
   std::string ToString() const;
 };

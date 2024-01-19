@@ -43,6 +43,7 @@ def grpc_bad_client_tests():
         srcs = ["bad_client.cc"],
         hdrs = ["bad_client.h"],
         language = "C++",
+        testonly = 1,
         deps = [
             "//test/core/util:grpc_test_util",
             "//:grpc",
@@ -56,6 +57,7 @@ def grpc_bad_client_tests():
             name = "%s_bad_client_test" % t,
             srcs = ["tests/%s.cc" % t],
             deps = [":bad_client_test"],
+            tags = ["bad_client_test"],
             external_deps = [
                 "gtest",
             ],

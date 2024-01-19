@@ -21,45 +21,44 @@ import grpc
 
 
 class TestPointerWrapper(object):
-
     def __int__(self):
         return 123456
 
 
 TEST_CHANNEL_ARGS = (
-    ('arg1', b'bytes_val'),
-    ('arg2', 'str_val'),
-    ('arg3', 1),
-    (b'arg4', 'str_val'),
-    ('arg6', TestPointerWrapper()),
+    ("arg1", b"bytes_val"),
+    ("arg2", "str_val"),
+    ("arg3", 1),
+    (b"arg4", "str_val"),
+    ("arg6", TestPointerWrapper()),
 )
 
 INVALID_TEST_CHANNEL_ARGS = [
-    {
-        'foo': 'bar'
-    },
-    (('key',),),
-    'str',
+    {"foo": "bar"},
+    (("key",),),
+    "str",
 ]
 
 
 class ChannelArgsTest(unittest.TestCase):
-
     def test_client(self):
-        grpc.insecure_channel('localhost:8080', options=TEST_CHANNEL_ARGS)
+        grpc.insecure_channel("localhost:8080", options=TEST_CHANNEL_ARGS)
 
     def test_server(self):
-        grpc.server(futures.ThreadPoolExecutor(max_workers=1),
-                    options=TEST_CHANNEL_ARGS)
+        grpc.server(
+            futures.ThreadPoolExecutor(max_workers=1), options=TEST_CHANNEL_ARGS
+        )
 
     def test_invalid_client_args(self):
         for invalid_arg in INVALID_TEST_CHANNEL_ARGS:
-            self.assertRaises(ValueError,
-                              grpc.insecure_channel,
-                              'localhost:8080',
-                              options=invalid_arg)
+            self.assertRaises(
+                ValueError,
+                grpc.insecure_channel,
+                "localhost:8080",
+                options=invalid_arg,
+            )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

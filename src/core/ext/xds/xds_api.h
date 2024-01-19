@@ -30,8 +30,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
-#include "upb/arena.h"
-#include "upb/def.hpp"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.hpp"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -75,8 +75,9 @@ class XdsApi {
                                absl::string_view serialized_resource) = 0;
 
     // Called when a resource is wrapped in a Resource wrapper proto but
-    // we fail to deserialize the wrapper proto.
-    virtual void ResourceWrapperParsingFailed(size_t idx) = 0;
+    // we fail to parse the Resource wrapper.
+    virtual void ResourceWrapperParsingFailed(size_t idx,
+                                              absl::string_view message) = 0;
   };
 
   struct ClusterLoadReport {
@@ -147,7 +148,7 @@ class XdsApi {
                 "");
 
   XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node,
-         upb::SymbolTable* symtab, std::string user_agent_name,
+         upb::DefPool* def_pool, std::string user_agent_name,
          std::string user_agent_version);
 
   // Creates an ADS request.
@@ -183,7 +184,7 @@ class XdsApi {
   XdsClient* client_;
   TraceFlag* tracer_;
   const XdsBootstrap::Node* node_;  // Do not own.
-  upb::SymbolTable* symtab_;        // Do not own.
+  upb::DefPool* def_pool_;          // Do not own.
   const std::string user_agent_name_;
   const std::string user_agent_version_;
 };

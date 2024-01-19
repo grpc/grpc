@@ -7,10 +7,10 @@ Pod::Spec.new do |s|
     s.summary = "Shared common test utils"
     s.source = { :git => 'https://github.com/grpc/grpc.git' }
 
-    s.ios.deployment_target = '9.0'
-    s.osx.deployment_target = '10.10'
-    s.tvos.deployment_target = '10.0'
-    s.watchos.deployment_target = '4.0'
+    s.ios.deployment_target = '10.0'
+    s.osx.deployment_target = '10.12'
+    s.tvos.deployment_target = '12.0'
+    s.watchos.deployment_target = '6.0'
     s.framework = 'XCTest'
 
     s.dependency "gRPC-ProtoRPC"

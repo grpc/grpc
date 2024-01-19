@@ -66,7 +66,7 @@ class DefaultEngineTest : public testing::Test {
       return false;
     };
     bool IsWorkerThread() override { return false; };
-    std::unique_ptr<DNSResolver> GetDNSResolver(
+    absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver(
         const DNSResolver::ResolverOptions& /* options */) override {
       return nullptr;
     };

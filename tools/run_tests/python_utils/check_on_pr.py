@@ -24,8 +24,8 @@ import traceback
 import jwt
 import requests
 
-_GITHUB_API_PREFIX = 'https://api.github.com'
-_GITHUB_REPO = 'grpc/grpc'
+_GITHUB_API_PREFIX = "https://api.github.com"
+_GITHUB_REPO = "grpc/grpc"
 _GITHUB_APP_ID = 22338
 _INSTALLATION_ID = 519109
 
@@ -34,82 +34,90 @@ _ACCESS_TOKEN_FETCH_RETRIES = 6
 _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S = 15
 
 _CHANGE_LABELS = {
-    -1: 'improvement',
-    0: 'none',
-    1: 'low',
-    2: 'medium',
-    3: 'high',
+    -1: "improvement",
+    0: "none",
+    1: "low",
+    2: "medium",
+    3: "high",
 }
 
 _INCREASE_DECREASE = {
-    -1: 'decrease',
-    0: 'neutral',
-    1: 'increase',
+    -1: "decrease",
+    0: "neutral",
+    1: "increase",
 }
 
 
 def _jwt_token():
     github_app_key = open(
-        os.path.join(os.environ['KOKORO_KEYSTORE_DIR'],
-                     '73836_grpc_checks_private_key'), 'rb').read()
+        os.path.join(
+            os.environ["KOKORO_KEYSTORE_DIR"], "73836_grpc_checks_private_key"
+        ),
+        "rb",
+    ).read()
     return jwt.encode(
         {
-            'iat': int(time.time()),
-            'exp': int(time.time() + 60 * 10),  # expire in 10 minutes
-            'iss': _GITHUB_APP_ID,
+            "iat": int(time.time()),
+            "exp": int(time.time() + 60 * 10),  # expire in 10 minutes
+            "iss": _GITHUB_APP_ID,
         },
         github_app_key,
-        algorithm='RS256')
+        algorithm="RS256",
+    )
 
 
 def _access_token():
     global _ACCESS_TOKEN_CACHE
-    if _ACCESS_TOKEN_CACHE == None or _ACCESS_TOKEN_CACHE['exp'] < time.time():
+    if _ACCESS_TOKEN_CACHE == None or _ACCESS_TOKEN_CACHE["exp"] < time.time():
         for i in range(_ACCESS_TOKEN_FETCH_RETRIES):
             resp = requests.post(
-                url='https://api.github.com/app/installations/%s/access_tokens'
+                url="https://api.github.com/app/installations/%s/access_tokens"
                 % _INSTALLATION_ID,
                 headers={
-                    'Authorization': 'Bearer %s' % _jwt_token(),
-                    'Accept': 'application/vnd.github.machine-man-preview+json',
-                })
+                    "Authorization": "Bearer %s" % _jwt_token(),
+                    "Accept": "application/vnd.github.machine-man-preview+json",
+                },
+            )
 
             try:
                 _ACCESS_TOKEN_CACHE = {
-                    'token': resp.json()['token'],
-                    'exp': time.time() + 60
+                    "token": resp.json()["token"],
+                    "exp": time.time() + 60,
                 }
                 break
             except (KeyError, ValueError):
                 traceback.print_exc()
-                print('HTTP Status %d %s' % (resp.status_code, resp.reason))
+                print("HTTP Status %d %s" % (resp.status_code, resp.reason))
                 print("Fetch access token from Github API failed:")
                 print(resp.text)
                 if i != _ACCESS_TOKEN_FETCH_RETRIES - 1:
-                    print('Retrying after %.2f second.' %
-                          _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
+                    print(
+                        "Retrying after %.2f second."
+                        % _ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S
+                    )
                     time.sleep(_ACCESS_TOKEN_FETCH_RETRIES_INTERVAL_S)
         else:
             print("error: Unable to fetch access token, exiting...")
             sys.exit(0)
 
-    return _ACCESS_TOKEN_CACHE['token']
+    return _ACCESS_TOKEN_CACHE["token"]
 
 
-def _call(url, method='GET', json=None):
-    if not url.startswith('https://'):
+def _call(url, method="GET", json=None):
+    if not url.startswith("https://"):
         url = _GITHUB_API_PREFIX + url
     headers = {
-        'Authorization': 'Bearer %s' % _access_token(),
-        'Accept': 'application/vnd.github.antiope-preview+json',
+        "Authorization": "Bearer %s" % _access_token(),
+        "Accept": "application/vnd.github.antiope-preview+json",
     }
     return requests.request(method=method, url=url, headers=headers, json=json)
 
 
 def _latest_commit():
     resp = _call(
-        '/repos/%s/pulls/%s/commits' %
-        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']))
+        "/repos/%s/pulls/%s/commits"
+        % (_GITHUB_REPO, os.environ["KOKORO_GITHUB_PULL_REQUEST_NUMBER"])
+    )
     return resp.json()[-1]
 
 
@@ -127,38 +135,43 @@ def check_on_pr(name, summary, success=True):
       summary: A str in Markdown to be used as the detail information of the check.
       success: A bool indicates whether the check is succeed or not.
     """
-    if 'KOKORO_GIT_COMMIT' not in os.environ:
-        print('Missing KOKORO_GIT_COMMIT env var: not checking')
+    if "KOKORO_GIT_COMMIT" not in os.environ:
+        print("Missing KOKORO_GIT_COMMIT env var: not checking")
         return
-    if 'KOKORO_KEYSTORE_DIR' not in os.environ:
-        print('Missing KOKORO_KEYSTORE_DIR env var: not checking')
+    if "KOKORO_KEYSTORE_DIR" not in os.environ:
+        print("Missing KOKORO_KEYSTORE_DIR env var: not checking")
         return
-    if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
-        print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
+    if "KOKORO_GITHUB_PULL_REQUEST_NUMBER" not in os.environ:
+        print("Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking")
         return
     MAX_SUMMARY_LEN = 65400
     if len(summary) > MAX_SUMMARY_LEN:
         # Drop some hints to the log should someone come looking for what really happened!
-        print('Clipping too long summary')
+        print("Clipping too long summary")
         print(summary)
-        summary = summary[:MAX_SUMMARY_LEN] + '\n\n\n... CLIPPED (too long)'
-    completion_time = str(
-        datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + 'Z'
-    resp = _call('/repos/%s/check-runs' % _GITHUB_REPO,
-                 method='POST',
-                 json={
-                     'name': name,
-                     'head_sha': os.environ['KOKORO_GIT_COMMIT'],
-                     'status': 'completed',
-                     'completed_at': completion_time,
-                     'conclusion': 'success' if success else 'failure',
-                     'output': {
-                         'title': name,
-                         'summary': summary,
-                     }
-                 })
-    print('Result of Creating/Updating Check on PR:',
-          json.dumps(resp.json(), indent=2))
+        summary = summary[:MAX_SUMMARY_LEN] + "\n\n\n... CLIPPED (too long)"
+    completion_time = (
+        str(datetime.datetime.utcnow().replace(microsecond=0).isoformat()) + "Z"
+    )
+    resp = _call(
+        "/repos/%s/check-runs" % _GITHUB_REPO,
+        method="POST",
+        json={
+            "name": name,
+            "head_sha": os.environ["KOKORO_GIT_COMMIT"],
+            "status": "completed",
+            "completed_at": completion_time,
+            "conclusion": "success" if success else "failure",
+            "output": {
+                "title": name,
+                "summary": summary,
+            },
+        },
+    )
+    print(
+        "Result of Creating/Updating Check on PR:",
+        json.dumps(resp.json(), indent=2),
+    )
 
 
 def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
@@ -176,28 +189,30 @@ def label_significance_on_pr(name, change, labels=_CHANGE_LABELS):
     if change > max(list(labels.keys())):
         change = max(list(labels.keys()))
     value = labels[change]
-    if 'KOKORO_GIT_COMMIT' not in os.environ:
-        print('Missing KOKORO_GIT_COMMIT env var: not checking')
+    if "KOKORO_GIT_COMMIT" not in os.environ:
+        print("Missing KOKORO_GIT_COMMIT env var: not checking")
         return
-    if 'KOKORO_KEYSTORE_DIR' not in os.environ:
-        print('Missing KOKORO_KEYSTORE_DIR env var: not checking')
+    if "KOKORO_KEYSTORE_DIR" not in os.environ:
+        print("Missing KOKORO_KEYSTORE_DIR env var: not checking")
         return
-    if 'KOKORO_GITHUB_PULL_REQUEST_NUMBER' not in os.environ:
-        print('Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking')
+    if "KOKORO_GITHUB_PULL_REQUEST_NUMBER" not in os.environ:
+        print("Missing KOKORO_GITHUB_PULL_REQUEST_NUMBER env var: not checking")
         return
     existing = _call(
-        '/repos/%s/issues/%s/labels' %
-        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
-        method='GET').json()
-    print('Result of fetching labels on PR:', existing)
-    new = [x['name'] for x in existing if not x['name'].startswith(name + '/')]
-    new.append(name + '/' + value)
+        "/repos/%s/issues/%s/labels"
+        % (_GITHUB_REPO, os.environ["KOKORO_GITHUB_PULL_REQUEST_NUMBER"]),
+        method="GET",
+    ).json()
+    print("Result of fetching labels on PR:", existing)
+    new = [x["name"] for x in existing if not x["name"].startswith(name + "/")]
+    new.append(name + "/" + value)
     resp = _call(
-        '/repos/%s/issues/%s/labels' %
-        (_GITHUB_REPO, os.environ['KOKORO_GITHUB_PULL_REQUEST_NUMBER']),
-        method='PUT',
-        json=new)
-    print('Result of setting labels on PR:', resp.text)
+        "/repos/%s/issues/%s/labels"
+        % (_GITHUB_REPO, os.environ["KOKORO_GITHUB_PULL_REQUEST_NUMBER"]),
+        method="PUT",
+        json=new,
+    )
+    print("Result of setting labels on PR:", resp.text)
 
 
 def label_increase_decrease_on_pr(name, change, significant):

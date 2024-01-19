@@ -19,10 +19,10 @@ from grpc.framework.foundation import stream
 class TestConsumer(stream.Consumer):
     """A stream.Consumer instrumented for testing.
 
-  Attributes:
-    calls: A sequence of value-termination pairs describing the history of calls
-      made on this object.
-  """
+    Attributes:
+      calls: A sequence of value-termination pairs describing the history of calls
+        made on this object.
+    """
 
     def __init__(self):
         self.calls = []

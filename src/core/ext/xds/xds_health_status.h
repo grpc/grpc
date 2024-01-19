@@ -21,14 +21,16 @@
 
 #include <stdint.h>
 
-#include <memory>
-#include <string>
-
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/lib/resolver/endpoint_addresses.h"
+
+// Channel arg key for xDS health status.
+// Value is an XdsHealthStatus::HealthStatus enum.
+#define GRPC_ARG_XDS_HEALTH_STATUS \
+  GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_health_status"
 
 namespace grpc_core {
 
@@ -68,6 +70,8 @@ class XdsHealthStatusSet {
     return status_mask_ == other.status_mask_;
   }
 
+  bool Empty() const { return status_mask_ == 0; }
+
   void Clear() { status_mask_ = 0; }
 
   void Add(XdsHealthStatus status) { status_mask_ |= (0x1 << status.status()); }
@@ -76,32 +80,10 @@ class XdsHealthStatusSet {
     return status_mask_ & (0x1 << status.status());
   }
 
+  std::string ToString() const;
+
  private:
   int status_mask_ = 0;
-};
-
-bool operator<(const XdsHealthStatus& hs1, const XdsHealthStatus& hs2);
-
-class XdsEndpointHealthStatusAttribute
-    : public ServerAddress::AttributeInterface {
- public:
-  static const char* kKey;
-
-  explicit XdsEndpointHealthStatusAttribute(XdsHealthStatus status)
-      : status_(status) {}
-
-  XdsHealthStatus status() const { return status_; }
-
-  std::unique_ptr<AttributeInterface> Copy() const override {
-    return std::make_unique<XdsEndpointHealthStatusAttribute>(status_);
-  }
-
-  int Cmp(const AttributeInterface* other) const override;
-
-  std::string ToString() const override;
-
- private:
-  XdsHealthStatus status_;
 };
 
 }  // namespace grpc_core

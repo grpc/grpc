@@ -24,10 +24,10 @@ from grpc.framework.foundation import logging_pool
 from tests.unit.framework.common import bound_socket
 from tests.unit.framework.common import test_constants
 
-_REQUEST = b'\x00\x00\x00'
-_RESPONSE = b'\x00\x00\x01'
+_REQUEST = b"\x00\x00\x00"
+_RESPONSE = b"\x00\x00\x01"
 
-_UNARY_UNARY = '/test/UnaryUnary'
+_UNARY_UNARY = "/test/UnaryUnary"
 
 
 def _handle_unary_unary(unused_request, unused_servicer_context):
@@ -35,16 +35,19 @@ def _handle_unary_unary(unused_request, unused_servicer_context):
 
 
 class ReconnectTest(unittest.TestCase):
-
     def test_reconnect(self):
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        handler = grpc.method_handlers_generic_handler('test', {
-            'UnaryUnary':
-                grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
-        })
-        options = (('grpc.so_reuseport', 1),)
+        handler = grpc.method_handlers_generic_handler(
+            "test",
+            {
+                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
+                    _handle_unary_unary
+                )
+            },
+        )
+        options = (("grpc.so_reuseport", 1),)
         with bound_socket() as (host, port):
-            addr = '{}:{}'.format(host, port)
+            addr = "{}:{}".format(host, port)
             server = grpc.server(server_pool, (handler,), options=options)
             server.add_insecure_port(addr)
             server.start()
@@ -64,6 +67,6 @@ class ReconnectTest(unittest.TestCase):
         channel.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)

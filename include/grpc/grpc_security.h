@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdbool.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
@@ -816,6 +818,40 @@ GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 /**
  * EXPERIMENTAL API - Subject to change
  *
+ * Sets the minimum TLS version that will be negotiated during the TLS
+ * handshake. If not set, the underlying SSL library will set it to TLS v1.2.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_min_tls_version(
+    grpc_tls_credentials_options* options, grpc_tls_version min_tls_version);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets the maximum TLS version that will be negotiated during the TLS
+ * handshake. If not set, the underlying SSL library will set it to TLS v1.3.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_max_tls_version(
+    grpc_tls_credentials_options* options, grpc_tls_version max_tls_version);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Copies a grpc_tls_credentials_options.
+ */
+GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_copy(
+    grpc_tls_credentials_options* options);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Destroys a grpc_tls_credentials_options.
+ */
+GRPCAPI void grpc_tls_credentials_options_destroy(
+    grpc_tls_credentials_options* options);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  */
@@ -876,7 +912,10 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type);
-/**
+
+/** Deprecated in favor of grpc_tls_credentials_options_set_crl_provider. The
+ * crl provider interface provides a significantly more flexible approach to
+ * using CRLs. See gRFC A69 for details.
  * EXPERIMENTAL API - Subject to change
  *
  * If set, gRPC will read all hashed x.509 CRL files in the directory and
@@ -895,6 +934,23 @@ GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
  */
 GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
     grpc_tls_credentials_options* options, int verify_server_cert);
+
+/**
+ * EXPERIMENTAL API - Subject to change
+ *
+ * Sets whether or not a TLS server should send a list of CA names in the
+ * ServerHello. This list of CA names is read from the server's trust bundle, so
+ * that the client can use this list as a hint to know which certificate it
+ * should send to the server.
+ *
+ * WARNING: This API is extremely dangerous and should not be used. If the
+ * server's trust bundle is too large, then the TLS server will be unable to
+ * form a ServerHello, and hence will be unusable. The definition of "too large"
+ * depends on the underlying SSL library being used and on the size of the CN
+ * fields of the certificates in the trust bundle.
+ */
+GRPCAPI void grpc_tls_credentials_options_set_send_client_ca_list(
+    grpc_tls_credentials_options* options, bool send_client_ca_list);
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -931,6 +987,10 @@ typedef struct grpc_tls_custom_verification_check_request {
      * grpc_security_constants.h.
      * TODO(ZhenLian): Consider fixing this in the future. */
     const char* peer_cert_full_chain;
+    /* The verified root cert subject.
+     * This value will only be filled if the cryptographic peer certificate
+     * verification was successful */
+    const char* verified_root_cert_subject;
   } peer_info;
 } grpc_tls_custom_verification_check_request;
 

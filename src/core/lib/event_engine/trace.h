@@ -21,6 +21,7 @@
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_event_engine_trace;
+extern grpc_core::TraceFlag grpc_event_engine_dns_trace;
 extern grpc_core::TraceFlag grpc_event_engine_endpoint_data_trace;
 extern grpc_core::TraceFlag grpc_event_engine_poller_trace;
 extern grpc_core::TraceFlag grpc_event_engine_endpoint_trace;
@@ -38,6 +39,11 @@ extern grpc_core::TraceFlag grpc_event_engine_endpoint_trace;
 #define GRPC_EVENT_ENGINE_POLLER_TRACE(format, ...)                   \
   if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_poller_trace)) {      \
     gpr_log(GPR_DEBUG, "(event_engine poller) " format, __VA_ARGS__); \
+  }
+
+#define GRPC_EVENT_ENGINE_DNS_TRACE(format, ...)                   \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_dns_trace)) {      \
+    gpr_log(GPR_DEBUG, "(event_engine dns) " format, __VA_ARGS__); \
   }
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_TRACE_H

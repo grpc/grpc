@@ -21,7 +21,6 @@ class SimpleFuture(object):
     """A simple future mechanism."""
 
     def __init__(self, function, *args, **kwargs):
-
         def wrapped_function():
             try:
                 self._result = function(*args, **kwargs)
@@ -36,8 +35,8 @@ class SimpleFuture(object):
     def result(self):
         """The resulting value of this future.
 
-    Re-raises any exceptions.
-    """
+        Re-raises any exceptions.
+        """
         self._thread.join()
         if self._error:
             # TODO(atash): re-raise exceptions in a way that preserves tracebacks
@@ -46,7 +45,7 @@ class SimpleFuture(object):
 
 
 class CompletionQueuePollFuture(SimpleFuture):
-
     def __init__(self, completion_queue, deadline):
-        super(CompletionQueuePollFuture,
-              self).__init__(lambda: completion_queue.poll(deadline=deadline))
+        super(CompletionQueuePollFuture, self).__init__(
+            lambda: completion_queue.poll(deadline=deadline)
+        )

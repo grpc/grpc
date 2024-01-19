@@ -80,6 +80,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
+        "//:subprocess",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -114,6 +115,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++_unsecure",
+        "//:subprocess",
         "//test/core/util:grpc_test_util_base",
         "//test/core/util:grpc_test_util_unsecure",
     ],
@@ -391,5 +393,51 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "proto_buffer_reader_test",
+    srcs = [
+        "proto_buffer_reader_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "proto_buffer_writer_test",
+    srcs = [
+        "proto_buffer_writer_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "get_grpc_test_runfile_dir",
+    srcs = [
+        "get_grpc_test_runfile_dir.cc",
+    ],
+    hdrs = [
+        "get_grpc_test_runfile_dir.h",
+    ],
+    external_deps = [
+        "absl/types:optional",
+    ],
+    deps = [
+        "//src/core:env",
     ],
 )

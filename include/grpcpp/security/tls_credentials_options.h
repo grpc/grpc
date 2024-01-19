@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/security/tls_certificate_provider.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
+#include <grpcpp/security/tls_crl_provider.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {
@@ -43,6 +44,7 @@ class TlsCredentialsOptions {
   // @param certificate_provider the provider which fetches TLS credentials that
   // will be used in the TLS handshake
   TlsCredentialsOptions();
+  ~TlsCredentialsOptions();
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
   void set_certificate_provider(
@@ -97,16 +99,34 @@ class TlsCredentialsOptions {
   // verifiers other than the host name verifier is used.
   void set_check_call_host(bool check_call_host);
 
-  // TODO(zhenlian): This is an experimental API is likely to change in the
-  // future. Before de-experiementalizing, verify the API is up to date.
+  // Deprecated in favor of set_crl_provider. The
+  // crl provider interface provides a significantly more flexible approach to
+  // using CRLs. See gRFC A69 for details.
   // If set, gRPC will read all hashed x.509 CRL files in the directory and
   // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
   // version > 1.1.
   void set_crl_directory(const std::string& path);
 
+  void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
+
+  // Sets the minimum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.2.
+  // @param tls_version: The minimum TLS version.
+  void set_min_tls_version(grpc_tls_version tls_version);
+  // Sets the maximum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.3.
+  // @param tls_version: The maximum TLS version.
+  void set_max_tls_version(grpc_tls_version tls_version);
+
   // ----- Getters for member fields ----
-  // Get the internal c options. This function shall be used only internally.
-  grpc_tls_credentials_options* c_credentials_options() const {
+  // Returns a deep copy of the internal c options. The caller takes ownership
+  // of the returned pointer. This function shall be used only internally.
+  grpc_tls_credentials_options* c_credentials_options() const;
+
+ protected:
+  // Returns the internal c options. The caller does not take ownership of the
+  // returned pointer.
+  grpc_tls_credentials_options* mutable_c_credentials_options() {
     return c_credentials_options_;
   }
 
@@ -147,6 +167,18 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   // The default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE.
   void set_cert_request_type(
       grpc_ssl_client_certificate_request_type cert_request_type);
+
+  // Sets whether or not a TLS server should send a list of CA names in the
+  // ServerHello. This list of CA names is read from the server's trust bundle,
+  // so that the client can use this list as a hint to know which certificate it
+  // should send to the server.
+  //
+  // By default, this option is turned off.
+  //
+  // WARNING: This API is extremely dangerous and should not be used. If the
+  // server's trust bundle is too large, then the TLS server will be unable to
+  // form a ServerHello, and hence will be unusable.
+  void set_send_client_ca_list(bool send_client_ca_list);
 
  private:
 };

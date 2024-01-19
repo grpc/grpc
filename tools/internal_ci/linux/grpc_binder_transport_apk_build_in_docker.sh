@@ -28,6 +28,7 @@ bazel_binder_example_app/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   build \
   --define=use_strict_warning=true \
+  --copt=-Wno-unknown-warning-option \
   --fat_apk_cpu=x86_64,arm64-v8a \
   --extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app \

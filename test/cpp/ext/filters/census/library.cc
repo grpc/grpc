@@ -26,8 +26,7 @@ const ::opencensus::tags::TagKey TEST_TAG_KEY =
 const char* TEST_TAG_VALUE = "my_value";
 const char* kExpectedTraceIdKey = "expected_trace_id";
 
-ExportedTracesRecorder* StatsPluginEnd2EndTest::traces_recorder_ =
-    new ExportedTracesRecorder();
+ExportedTracesRecorder* traces_recorder_ = new ExportedTracesRecorder();
 
 }  // namespace testing
 }  // namespace grpc
