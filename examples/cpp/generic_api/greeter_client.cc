@@ -108,6 +108,5 @@ int main(int argc, char** argv) {
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   greeter.SayHello("World");
   greeter.SayHello("gRPC");
-  greeter.SayHello("");
   return 0;
 }

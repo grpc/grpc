@@ -33,6 +33,4 @@ If things go smoothly, you will see the client output:
 Ok. ReplyMessage=Hello World
 ### Send: SayHello(name=gRPC)
 Ok. ReplyMessage=Hello gRPC
-### Send: SayHello(name=)
-Failed. Code=3 Message=name is not specified
 ```
