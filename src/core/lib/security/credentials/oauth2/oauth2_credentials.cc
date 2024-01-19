@@ -314,7 +314,8 @@ grpc_oauth2_token_fetcher_credentials::GetRequestMetadata(
   auto pending_request =
       grpc_core::MakeRefCounted<grpc_oauth2_pending_get_request_metadata>();
   pending_request->pollent = grpc_core::GetContext<grpc_polling_entity>();
-  pending_request->waker = grpc_core::Activity::current()->MakeNonOwningWaker();
+  pending_request->waker =
+      grpc_core::GetContext<grpc_core::Activity>()->MakeNonOwningWaker();
   grpc_polling_entity_add_to_pollset_set(
       pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
   pending_request->next = pending_requests_;

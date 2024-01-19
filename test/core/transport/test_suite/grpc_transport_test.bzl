@@ -23,6 +23,7 @@ def grpc_transport_test(name, deps):
     grpc_cc_test(
         name = name + "_test",
         srcs = [],
+        tags = ["no_windows", "no_mac"],
         deps = [
             ":test_main",
         ] + deps,
@@ -31,7 +32,7 @@ def grpc_transport_test(name, deps):
     grpc_proto_fuzzer(
         name = name + "_fuzzer",
         srcs = ["fuzzer_main.cc"],
-        tags = ["no_windows"],
+        tags = ["no_windows", "no_mac"],
         external_deps = [
             "gtest",
         ],

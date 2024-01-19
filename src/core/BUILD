@@ -495,11 +495,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "context",
+    external_deps = ["absl/meta:type_traits"],
     language = "c++",
     public_hdrs = [
         "lib/promise/context.h",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "down_cast",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(

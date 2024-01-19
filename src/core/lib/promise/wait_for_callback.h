@@ -39,7 +39,7 @@ class WaitForCallback {
     return [state = state_]() -> Poll<Empty> {
       MutexLock lock(&state->mutex);
       if (state->done) return Empty{};
-      state->waker = Activity::current()->MakeNonOwningWaker();
+      state->waker = GetContext<Activity>()->MakeNonOwningWaker();
       return Pending{};
     };
   }

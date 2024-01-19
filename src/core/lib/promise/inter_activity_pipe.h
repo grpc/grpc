@@ -60,7 +60,7 @@ class InterActivityPipe {
       ReleasableMutexLock lock(&mu_);
       if (closed_) return false;
       if (count_ == kQueueSize) {
-        on_available_ = Activity::current()->MakeNonOwningWaker();
+        on_available_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
       queue_[(first_ + count_) % kQueueSize] = std::move(value);
@@ -77,7 +77,7 @@ class InterActivityPipe {
       ReleasableMutexLock lock(&mu_);
       if (count_ == 0) {
         if (closed_) return absl::nullopt;
-        on_occupied_ = Activity::current()->MakeNonOwningWaker();
+        on_occupied_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
       auto value = std::move(queue_[first_]);

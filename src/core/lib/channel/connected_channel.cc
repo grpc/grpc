@@ -364,7 +364,7 @@ class ConnectedChannelStream : public Orphanable {
   grpc_stream_refcount stream_refcount_;
   StreamPtr stream_;
   Arena* arena_ = GetContext<Arena>();
-  Party* const party_ = static_cast<Party*>(Activity::current());
+  Party* const party_ = GetContext<Party>();
   ExternallyObservableLatch<void> finished_;
 };
 
@@ -383,17 +383,18 @@ auto ConnectedChannelStream::RecvMessages(
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: received payload of %" PRIdPTR
                       " bytes",
-                      Activity::current()->DebugTag().c_str(),
+                      GetContext<Activity>()->DebugTag().c_str(),
                       pending_message->payload()->Length());
             }
             return Map(incoming_messages.Push(std::move(pending_message)),
                        [](bool ok) -> LoopCtl<absl::Status> {
                          if (!ok) {
                            if (grpc_call_trace.enabled()) {
-                             gpr_log(GPR_INFO,
-                                     "%s[connected] RecvMessage: failed to "
-                                     "push message towards the application",
-                                     Activity::current()->DebugTag().c_str());
+                             gpr_log(
+                                 GPR_INFO,
+                                 "%s[connected] RecvMessage: failed to "
+                                 "push message towards the application",
+                                 GetContext<Activity>()->DebugTag().c_str());
                            }
                            return absl::OkStatus();
                          }
@@ -406,7 +407,7 @@ auto ConnectedChannelStream::RecvMessages(
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: reached end of stream with "
                       "status:%s",
-                      Activity::current()->DebugTag().c_str(),
+                      GetContext<Activity>()->DebugTag().c_str(),
                       status.status().ToString().c_str());
             }
             if (cancel_on_error && !status.ok()) {
@@ -444,7 +445,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
   transport->filter_stack_transport()->InitStream(stream->stream(),
                                                   stream->stream_refcount(),
                                                   nullptr, GetContext<Arena>());
-  auto* party = static_cast<Party*>(Activity::current());
+  auto* party = GetContext<Party>();
   party->Spawn("set_polling_entity", call_args.polling_entity->Wait(),
                [transport, stream = stream->InternalRef()](
                    grpc_polling_entity polling_entity) {
@@ -474,7 +475,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
                if (grpc_call_trace.enabled()) {
                  gpr_log(GPR_DEBUG,
                          "%s[connected] Publish client initial metadata: %s",
-                         Activity::current()->DebugTag().c_str(),
+                         GetContext<Activity>()->DebugTag().c_str(),
                          server_initial_metadata->DebugString().c_str());
                }
                return Map(pipe->Push(std::move(server_initial_metadata)),
@@ -581,7 +582,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       stream->stream(), stream->stream_refcount(),
       GetContext<CallContext>()->server_call_context()->server_stream_data(),
       GetContext<Arena>());
-  auto* party = static_cast<Party*>(Activity::current());
+  auto* party = GetContext<Party>();
 
   // Arifacts we need for the lifetime of the call.
   struct CallData {
@@ -747,7 +748,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                       : nullptr;
         if (md != nullptr) {
           call_data->sent_initial_metadata = true;
-          auto* party = static_cast<Party*>(Activity::current());
+          auto* party = GetContext<Party>();
           party->Spawn("connected/send_initial_metadata",
                        GetContext<BatchBuilder>()->SendServerInitialMetadata(
                            stream->batch_target(), std::move(md)),
@@ -777,7 +778,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
               gpr_log(
                   GPR_DEBUG,
                   "%s[connected] Got trailing metadata; status=%s metadata=%s",
-                  Activity::current()->DebugTag().c_str(),
+                  GetContext<Activity>()->DebugTag().c_str(),
                   status.status().ToString().c_str(),
                   status.ok() ? (*status)->DebugString().c_str() : "<none>");
             }
