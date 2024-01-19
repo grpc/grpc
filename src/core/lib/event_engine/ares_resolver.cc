@@ -146,7 +146,7 @@ absl::Status SetRequestDNSServer(absl::string_view dns_server,
 }
 
 std::vector<EventEngine::ResolvedAddress> SortAddresses(
-    const std::vector<EventEngine::ResolvedAddress> addresses) {
+    const std::vector<EventEngine::ResolvedAddress>& addresses) {
   address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
       gpr_zalloc(sizeof(address_sorting_sortable) * addresses.size()));
   for (size_t i = 0; i < addresses.size(); i++) {
@@ -180,7 +180,7 @@ struct HostnameQueryArg : public QueryArg {
       : QueryArg(ar, id, name), port(p) {}
   int port;
   int pending_requests;
-  absl::Status error_status = absl::OkStatus();
+  absl::Status error_status;
   std::vector<EventEngine::ResolvedAddress> result;
 };
 
@@ -580,8 +580,7 @@ void AresResolver::OnAresBackupPollAlarm() {
 void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
                                           struct hostent* hostent) {
-  std::unique_ptr<HostnameQueryArg> hostname_qa(
-      static_cast<HostnameQueryArg*>(arg));
+  auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
   GPR_ASSERT(hostname_qa->pending_requests-- > 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
   auto it = ares_resolver->callback_map_.find(hostname_qa->callback_map_id);
@@ -641,8 +640,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
           break;
         }
         default:
-          gpr_log(GPR_DEBUG, "resolver:%p Received invalid type of address %d",
-                  ares_resolver, hostent->h_addrtype);
+          grpc_core::Crash(
+              absl::StrFormat("resolver:%p Received invalid type of address %d",
+                              ares_resolver, hostent->h_addrtype));
       }
     }
   }
@@ -653,17 +653,14 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
            result = SortAddresses(hostname_qa->result)]() mutable {
             callback(std::move(result));
           });
-      return;
+    } else {
+      ares_resolver->event_engine_->Run(
+          [callback = std::move(callback),
+           result = std::move(hostname_qa->error_status)]() mutable {
+            callback(std::move(result));
+          });
     }
-    ares_resolver->event_engine_->Run(
-        [callback = std::move(callback),
-         result = std::move(hostname_qa->error_status)]() mutable {
-          callback(std::move(result));
-        });
-  } else {
-    // There is still a pending request so release the ownership to the query
-    // arg.
-    (void)hostname_qa.release();
+    delete hostname_qa;
   }
 }
 
