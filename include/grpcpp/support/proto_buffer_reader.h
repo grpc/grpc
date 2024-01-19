@@ -150,7 +150,10 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       }
       int64_t take = (std::min)(backup_count(), static_cast<int64_t>(count));
       set_backup_count(backup_count() - take);
-      count -= take;
+      // This cast is safe as the size of a serialized protobuf message
+      // should be smaller than 2GiB.
+      // (https://protobuf.dev/programming-guides/encoding/#size-limit)
+      count -= static_cast<int>(take);
       if (count == 0) {
         return true;
       }
@@ -163,7 +166,8 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       set_byte_count(ByteCount() + slice_length);
       if (slice_length <= static_cast<uint64_t>(count)) {
         cord->Append(MakeCordFromSlice(grpc_slice_ref(*slice())));
-        count -= slice_length;
+        // This cast is safe as above.
+        count -= static_cast<int>(slice_length);
       } else {
         cord->Append(MakeCordFromSlice(grpc_slice_split_head(slice(), count)));
         set_backup_count(slice_length - count);

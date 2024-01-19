@@ -332,7 +332,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
                      GRPC_CHANNEL_IDLE)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: %striggering exit idle", chand_,
-                this, Activity::current()->DebugTag().c_str());
+                this, GetContext<Activity>()->DebugTag().c_str());
       }
       // Bounce into the control plane work serializer to start resolving.
       GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExitIdle");
@@ -349,7 +349,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
       auto result = CheckResolution(was_queued_);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: %sCheckResolution returns %s",
-                chand_, this, Activity::current()->DebugTag().c_str(),
+                chand_, this, GetContext<Activity>()->DebugTag().c_str(),
                 result.has_value() ? result->ToString().c_str() : "Pending");
       }
       if (!result.has_value()) return Pending{};
@@ -372,7 +372,7 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 
   void OnAddToQueueLocked() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_) {
-    waker_ = Activity::current()->MakeNonOwningWaker();
+    waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     was_queued_ = true;
   }
 
@@ -3541,7 +3541,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::MakeCallPromise(
                   gpr_log(GPR_INFO,
                           "chand=%p lb_call=%p: %sPickSubchannel() returns %s",
                           chand(), this,
-                          Activity::current()->DebugTag().c_str(),
+                          GetContext<Activity>()->DebugTag().c_str(),
                           result.has_value() ? result->ToString().c_str()
                                              : "Pending");
                 }
@@ -3624,7 +3624,7 @@ ClientChannel::PromiseBasedLoadBalancedCall::send_initial_metadata() const {
 }
 
 void ClientChannel::PromiseBasedLoadBalancedCall::OnAddToQueueLocked() {
-  waker_ = Activity::current()->MakeNonOwningWaker();
+  waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   was_queued_ = true;
 }
 

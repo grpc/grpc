@@ -495,11 +495,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "context",
+    external_deps = ["absl/meta:type_traits"],
     language = "c++",
     public_hdrs = [
         "lib/promise/context.h",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "down_cast",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(
@@ -1038,6 +1042,20 @@ grpc_cc_library(
         "wait_set",
         "//:gpr",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "observable",
+    hdrs = [
+        "lib/promise/observable.h",
+    ],
+    external_deps = ["absl/container:flat_hash_set"],
+    language = "c++",
+    deps = [
+        "activity",
+        "poll",
+        "//:gpr",
     ],
 )
 
@@ -6512,11 +6530,13 @@ grpc_cc_library(
     deps = [
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "if",
         "try_join",
         "try_seq",
         "//:gpr_platform",
+        "//:grpc_trace",
         "//:hpack_encoder",
         "//:promise",
     ],
@@ -6711,6 +6731,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "lib/transport/message.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     deps = [
         "arena",

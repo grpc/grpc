@@ -105,6 +105,7 @@ def has_grpc_service(proto_package_path: str) -> bool:
 
 
 def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
+    compiled_any = False
     for root, _, files in os.walk(os.path.join(proto_root, sub_dir)):
         proto_package_path = os.path.relpath(root, proto_root)
         if proto_package_path in EXCLUDE_PROTO_PACKAGES_LIST:
@@ -113,6 +114,7 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
         for file_name in files:
             if file_name.endswith(".proto"):
                 # Compile proto
+                compiled_any = True
                 if has_grpc_service(proto_package_path):
                     return_code = protoc.main(
                         COMPILE_BOTH + [os.path.join(root, file_name)]
@@ -127,6 +129,10 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
                     )
                 if return_code != 0:
                     raise Exception("error: {} failed".format(COMPILE_BOTH))
+    # Ensure a deterministic order.
+    TEST_IMPORTS.sort()
+    if not compiled_any:
+        raise Exception("No proto files found at {}. Did you update git submodules?".format(proto_root, sub_dir))
 
 
 def create_init_file(path: str, package_path: str = "") -> None:
