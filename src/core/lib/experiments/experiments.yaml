@@ -65,7 +65,7 @@
   allow_in_fuzzing_config: false
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2024/01/21
+  expiry: 2024/04/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: event_engine_dns
@@ -179,7 +179,7 @@
   test_tags: []
 - name: rfc_max_concurrent_streams
   description:
-    If set, enable rfc-compliant behavior (cancellation) in the advent that 
+    If set, enable rfc-compliant behavior (cancellation) in the advent that
     max concurrent streams are exceeded in chttp2.
     See https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.
   expiry: 2024/03/03
