@@ -17,27 +17,20 @@
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 
 #include <cstdint>
-#include <cstdio>
-#include <iostream>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -51,18 +44,15 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/promise/wait_for_callback.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 namespace chaotic_good {

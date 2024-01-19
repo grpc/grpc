@@ -18,15 +18,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
-#include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
 #include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -43,7 +39,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/wait_for_callback.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
