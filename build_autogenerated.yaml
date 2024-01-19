@@ -4572,6 +4572,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -7262,6 +7263,49 @@ targets:
   - gtest
   - grpcpp_channelz
   - grpc++_test_util
+- name: chaotic_good_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/test_suite/fixture.h
+  - test/core/transport/test_suite/test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/test_suite/call_content.cc
+  - test/core/transport/test_suite/call_shapes.cc
+  - test/core/transport/test_suite/chaotic_good_fixture.cc
+  - test/core/transport/test_suite/fixture.cc
+  - test/core/transport/test_suite/no_op.cc
+  - test/core/transport/test_suite/stress.cc
+  - test/core/transport/test_suite/test.cc
+  - test/core/transport/test_suite/test_main.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -10775,6 +10819,32 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: inproc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/test_suite/fixture.h
+  - test/core/transport/test_suite/test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/test_suite/call_content.cc
+  - test/core/transport/test_suite/call_shapes.cc
+  - test/core/transport/test_suite/fixture.cc
+  - test/core/transport/test_suite/inproc_fixture.cc
+  - test/core/transport/test_suite/no_op.cc
+  - test/core/transport/test_suite/stress.cc
+  - test/core/transport/test_suite/test.cc
+  - test/core/transport/test_suite/test_main.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
 - name: insecure_security_connector_test
   gtest: true
   build: test

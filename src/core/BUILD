@@ -6549,11 +6549,13 @@ grpc_cc_library(
     deps = [
         "chaotic_good_frame",
         "chaotic_good_frame_header",
+        "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "if",
         "try_join",
         "try_seq",
         "//:gpr_platform",
+        "//:grpc_trace",
         "//:hpack_encoder",
         "//:promise",
     ],

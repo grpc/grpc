@@ -35,6 +35,24 @@ namespace grpc_core {
 
 template <typename T, uint8_t kQueueSize>
 class InterActivityPipe {
+ public:
+  class NextResult {
+   public:
+    template <typename... Args>
+    explicit NextResult(Args&&... args) : value_(std::forward<Args>(args)...) {}
+    using value_type = T;
+    void reset() { value_.reset(); }
+    bool cancelled() const { return false; }
+    bool has_value() const { return value_.has_value(); }
+    const T& value() const { return value_.value(); }
+    T& value() { return value_.value(); }
+    const T& operator*() const { return *value_; }
+    T& operator*() { return *value_; }
+
+   private:
+    absl::optional<T> value_;
+  };
+
  private:
   class Center : public RefCounted<Center, NonPolymorphicRefCount> {
    public:
@@ -55,7 +73,7 @@ class InterActivityPipe {
       return true;
     }
 
-    Poll<absl::optional<T>> Next() {
+    Poll<NextResult> Next() {
       ReleasableMutexLock lock(&mu_);
       if (count_ == 0) {
         if (closed_) return absl::nullopt;
