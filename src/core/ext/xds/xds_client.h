@@ -127,7 +127,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
       const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name);
-  void RemoveClusterDropStats(const XdsBootstrap::XdsServer& xds_server,
+  void RemoveClusterDropStats(absl::string_view xds_server,
                               absl::string_view cluster_name,
                               absl::string_view eds_service_name,
                               XdsClusterDropStats* cluster_drop_stats);
@@ -139,7 +139,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       absl::string_view eds_service_name,
       RefCountedPtr<XdsLocalityName> locality);
   void RemoveClusterLocalityStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
+      absl::string_view xds_server, absl::string_view cluster_name,
       absl::string_view eds_service_name,
       const RefCountedPtr<XdsLocalityName>& locality,
       XdsClusterLocalityStats* cluster_locality_stats);
@@ -329,15 +329,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
   upb::DefPool def_pool_ ABSL_GUARDED_BY(mu_);
 
   // Map of existing xDS server channels.
-  // Key is owned by the bootstrap config.
-  std::map<const XdsBootstrap::XdsServer*, XdsChannel*> xds_server_channel_map_
+  std::map<std::string /*XdsServer key*/, XdsChannel*> xds_channel_map_
       ABSL_GUARDED_BY(mu_);
 
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  // Key is owned by the bootstrap config.
-  std::map<const XdsBootstrap::XdsServer*, LoadReportServer>
+  std::map<std::string /*XdsServer key*/, LoadReportServer, std::less<>>
       xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores started watchers whose resource name was not parsed successfully,

@@ -84,6 +84,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
     bool Equals(const XdsServer& other) const override;
 
+    std::string Key() const override;
+
     RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
       return channel_creds_config_;
     }
@@ -132,7 +134,6 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     return node_.has_value() ? &*node_ : nullptr;
   }
   const Authority* LookupAuthority(const std::string& name) const override;
-  const XdsServer* FindXdsServer(const XdsServer& server) const override;
 
   const std::string& client_default_listener_resource_name_template() const {
     return client_default_listener_resource_name_template_;
