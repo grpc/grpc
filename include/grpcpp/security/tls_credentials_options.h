@@ -45,6 +45,12 @@ class TlsCredentialsOptions {
   // will be used in the TLS handshake
   TlsCredentialsOptions();
   ~TlsCredentialsOptions();
+
+  // Copy constructor does a deep copy of the underlying pointer. No assignment
+  // permitted
+  TlsCredentialsOptions(const TlsCredentialsOptions& other);
+  TlsCredentialsOptions& operator=(const TlsCredentialsOptions& other) = delete;
+
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
   void set_certificate_provider(
