@@ -78,6 +78,7 @@ ChaoticGoodConnector::ChaoticGoodConnector()
       channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, ResourceQuota::Default());
 }
 ChaoticGoodConnector::~ChaoticGoodConnector() {
+  MutexLock lock(&mu_);
   if (connect_activity_ != nullptr) {
     connect_activity_.reset();
   }
@@ -269,24 +270,22 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   std::shared_ptr<ChaoticGoodConnector> self =
       static_cast<ChaoticGoodConnector*>(args->user_data)->shared_from_this();
   // Start receiving setting frames;
-  {
-    MutexLock lock(&self->mu_);
-    if (!error.ok() || self->is_shutdown_) {
-      if (error.ok()) {
-        error = GRPC_ERROR_CREATE("connector shutdown");
-        // We were shut down after handshaking completed successfully, so
-        // destroy the endpoint here.
-        if (args->endpoint != nullptr) {
-          grpc_endpoint_shutdown(args->endpoint, error);
-          grpc_endpoint_destroy(args->endpoint);
-          grpc_slice_buffer_destroy(args->read_buffer);
-          gpr_free(args->read_buffer);
-        }
+  MutexLock lock(&self->mu_);
+  if (!error.ok() || self->is_shutdown_) {
+    if (error.ok()) {
+      error = GRPC_ERROR_CREATE("connector shutdown");
+      // We were shut down after handshaking completed successfully, so
+      // destroy the endpoint here.
+      if (args->endpoint != nullptr) {
+        grpc_endpoint_shutdown(args->endpoint, error);
+        grpc_endpoint_destroy(args->endpoint);
+        grpc_slice_buffer_destroy(args->read_buffer);
+        gpr_free(args->read_buffer);
       }
-      self->result_->Reset();
-      MaybeNotify(DEBUG_LOCATION, self->notify_, error);
-      return;
     }
+    self->result_->Reset();
+    MaybeNotify(DEBUG_LOCATION, self->notify_, error);
+    return;
   }
   if (args->endpoint != nullptr) {
     GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
@@ -298,6 +297,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     self->memory_allocator_ =
         ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
             "connect_activity");
+
     self->connect_activity_ = MakeActivity(
         [self] {
           return TrySeq(ControlEndpointWriteSettingsFrame(self),
@@ -311,7 +311,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         MakeScopedArena(self->kInitialArenaSize, &self->memory_allocator_),
         self->event_engine_.get());
-    MutexLock lock(&self->mu_);
     self->timer_handle_ = self->event_engine_->RunAfter(
         self->args_.deadline - Timestamp::Now(), [self] {
           ApplicationCallbackExecCtx callback_exec_ctx;
@@ -320,7 +319,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         });
   } else {
     // Handshaking succeeded but there is no endpoint.
-    MutexLock lock(&self->mu_);
     self->result_->Reset();
     auto error = GRPC_ERROR_CREATE("handshake complete with empty endpoint.");
     MaybeNotify(DEBUG_LOCATION, self->notify_, error);

@@ -96,7 +96,7 @@ class ChaoticGoodConnector
   grpc_event_engine::experimental::MemoryAllocator memory_allocator_;
   std::shared_ptr<PromiseEndpoint> control_endpoint_;
   std::shared_ptr<PromiseEndpoint> data_endpoint_;
-  ActivityPtr connect_activity_;
+  ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::shared_ptr<HandshakeManager> handshake_mgr_;
   HPackCompressor hpack_compressor_;
