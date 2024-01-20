@@ -65,6 +65,12 @@
 
 namespace grpc_core {
 namespace chaotic_good {
+
+namespace {
+const size_t kInitialArenaSize = 1024;
+const Duration kConnectionDeadline = Duration::Seconds(5);
+}  // namespace
+
 using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(Server* server,
                                                      const ChannelArgs& args)
@@ -129,7 +135,9 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener)
-    : InternallyRefCounted("ActiveConnection"), listener_(listener) {}
+    : InternallyRefCounted("ActiveConnection"),
+      memory_allocator_(listener->memory_allocator_),
+      listener_(listener) {}
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
   if (receive_settings_activity_ != nullptr) receive_settings_activity_.reset();
@@ -175,6 +183,7 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
     RefCountedPtr<ActiveConnection> connection)
     : RefCounted<HandshakingState>("handshaking_state"),
+      memory_allocator_(connection->memory_allocator_),
       connection_(std::move(connection)),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()) {}
 
@@ -241,37 +250,37 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     WaitForDataEndpointSetup(RefCountedPtr<HandshakingState> self) {
-  return Race(
-      TrySeq(
-          []() {
-            // TODO(ladynana): find a way to resolve SeqState to actual value.
-            return absl::OkStatus();
-          },
-          [self]() {
-            MutexLock lock(&self->connection_->listener_->mu_);
-            auto latch = self->connection_->listener_->connectivity_map_
-                             .find(self->connection_->connection_id_)
-                             ->second;
-            return latch->Wait();
-          },
-          [](std::shared_ptr<PromiseEndpoint> ret) -> absl::Status {
-            if (ret == nullptr) {
-              return absl::UnavailableError("no data endpoint");
-            }
-            // TODO(ladynana): initialize server transport.
-            return absl::OkStatus();
-          }),
-      // Set timeout for waiting data endpoint connect.
-      TrySeq(
-          // []() {
-          Sleep(Timestamp::Now() + self->connection_->kConnectionDeadline),
-          [self]() mutable -> absl::Status {
-            MutexLock lock(&self->connection_->listener_->mu_);
-            // Delete connection id from map when timeout;
-            self->connection_->listener_->connectivity_map_.erase(
-                self->connection_->connection_id_);
-            return absl::DeadlineExceededError("Deadline exceeded.");
-          }));
+  return Race(TrySeq(
+                  []() {
+                    // TODO(ladynana): find a way to resolve SeqState to actual
+                    // value.
+                    return absl::OkStatus();
+                  },
+                  [self]() {
+                    MutexLock lock(&self->connection_->listener_->mu_);
+                    auto latch = self->connection_->listener_->connectivity_map_
+                                     .find(self->connection_->connection_id_)
+                                     ->second;
+                    return latch->Wait();
+                  },
+                  [](std::shared_ptr<PromiseEndpoint> ret) -> absl::Status {
+                    if (ret == nullptr) {
+                      return absl::UnavailableError("no data endpoint");
+                    }
+                    // TODO(ladynana): initialize server transport.
+                    return absl::OkStatus();
+                  }),
+              // Set timeout for waiting data endpoint connect.
+              TrySeq(
+                  // []() {
+                  Sleep(Timestamp::Now() + kConnectionDeadline),
+                  [self]() mutable -> absl::Status {
+                    MutexLock lock(&self->connection_->listener_->mu_);
+                    // Delete connection id from map when timeout;
+                    self->connection_->listener_->connectivity_map_.erase(
+                        self->connection_->connection_id_);
+                    return absl::DeadlineExceededError("Deadline exceeded.");
+                  }));
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -350,7 +359,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
           args->endpoint),
       SliceBuffer());
-  self->connection_->receive_settings_activity_ = MakeActivity(
+  auto activity = MakeActivity(
       [self]() {
         return TrySeq(
             EndpointReadSettingsFrame(self), [self](bool is_control_endpoint) {
@@ -365,9 +374,11 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   StatusToString(status).c_str());
         }
       },
-      MakeScopedArena(self->connection_->kInitialArenaSize,
-                      &self->connection_->listener_->memory_allocator_),
+      MakeScopedArena(kInitialArenaSize, self->memory_allocator_.get()),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
+  MutexLock lock(&self->connection_->mu_);
+  if (self->connection_->orphaned_) return;
+  self->connection_->receive_settings_activity_ = std::move(activity);
 }
 
 Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -378,7 +389,7 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
                .value();
   }
-  return Timestamp::Now() + connection_->kConnectionDeadline;
+  return Timestamp::Now() + kConnectionDeadline;
 }
 
 }  // namespace chaotic_good

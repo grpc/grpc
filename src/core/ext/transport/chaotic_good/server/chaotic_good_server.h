@@ -87,8 +87,13 @@ class ChaoticGoodServerListener final
         handshaking_state_->Shutdown();
         handshaking_state_.reset();
       }
-      listener_.reset();
-      receive_settings_activity_.reset();
+      ActivityPtr activity;
+      {
+        MutexLock lock(&mu_);
+        orphaned_ = true;
+        activity = std::move(receive_settings_activity_);
+      }
+      activity.reset();
       Unref();
     }
 
@@ -103,7 +108,6 @@ class ChaoticGoodServerListener final
       void Shutdown() {
         gpr_log(GPR_INFO, "Shutdown:%p", this);
         handshake_mgr_->Shutdown(absl::CancelledError("Shutdown"));
-        connection_.reset();
       }
 
      private:
@@ -120,18 +124,22 @@ class ChaoticGoodServerListener final
 
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
       Timestamp GetConnectionDeadline();
-      RefCountedPtr<ActiveConnection> connection_;
+      const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
+          memory_allocator_;
+      const RefCountedPtr<ActiveConnection> connection_;
       const RefCountedPtr<HandshakeManager> handshake_mgr_;
     };
 
    private:
     std::string GenerateConnectionIDLocked();
     void NewConnectionID();
-    RefCountedPtr<ChaoticGoodServerListener> listener_;
-    const size_t kInitialArenaSize = 1024;
-    const Duration kConnectionDeadline = Duration::Seconds(5);
+    const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
+        memory_allocator_;
+    const RefCountedPtr<ChaoticGoodServerListener> listener_;
     RefCountedPtr<HandshakingState> handshaking_state_;
-    ActivityPtr receive_settings_activity_;
+    Mutex mu_;
+    ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
+    bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     std::shared_ptr<PromiseEndpoint> endpoint_;
     HPackCompressor hpack_compressor_;
     HPackParser hpack_parser_;
@@ -159,15 +167,17 @@ class ChaoticGoodServerListener final
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string,
-                      std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
-      connectivity_map_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, std::shared_ptr<Latch<std::shared_ptr<
+                                       PromiseEndpoint>>>> connectivity_map_
+      ABSL_GUARDED_BY(mu_);
   std::vector<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
-  grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "server_connection");
+  std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
+      memory_allocator_ =
+          std::make_shared<grpc_event_engine::experimental::MemoryAllocator>(
+              ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+                  "server_connection"));
 };
 
 }  // namespace chaotic_good
