@@ -67,7 +67,6 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace {
-const size_t kInitialArenaSize = 1024;
 const Duration kConnectionDeadline = Duration::Seconds(5);
 }  // namespace
 
@@ -371,7 +370,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                   StatusToString(status).c_str());
         }
       },
-      MakeScopedArena(kInitialArenaSize, self->memory_allocator_.get()),
+      self->connection_->arena_.get(),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
   MutexLock lock(&self->connection_->mu_);
   if (self->connection_->orphaned_) return;

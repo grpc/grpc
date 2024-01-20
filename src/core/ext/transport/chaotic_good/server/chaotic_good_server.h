@@ -137,6 +137,7 @@ class ChaoticGoodServerListener final
     void NewConnectionID();
     const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
         memory_allocator_;
+    ScopedArenaPtr arena_ = MakeScopedArena(1024, memory_allocator_.get());
     const RefCountedPtr<ChaoticGoodServerListener> listener_;
     RefCountedPtr<HandshakingState> handshaking_state_;
     Mutex mu_;
@@ -169,9 +170,9 @@ class ChaoticGoodServerListener final
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string,
-                      std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>
-      connectivity_map_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, std::shared_ptr<Latch<std::shared_ptr<
+                                       PromiseEndpoint>>>> connectivity_map_
+      ABSL_GUARDED_BY(mu_);
   std::vector<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
