@@ -99,10 +99,8 @@ class _StatsWatcher:
         )
         self._condition = threading.Condition()
         self._no_remote_peer = 0
-        self._metadata_keys = set(key.lower() for key in metadata_keys)
-        self._include_all_metadata = "*" in [
-            key.strip() for key in metadata_keys
-        ]
+        self._metadata_keys = set(key.strip().lower() for key in metadata_keys)
+        self._include_all_metadata = "*" in self._metadata_keys
         self._metadata_by_peer = collections.defaultdict(
             messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
         )
@@ -114,9 +112,15 @@ class _StatsWatcher:
         metadata_type: messages_pb2.LoadBalancerStatsResponse.MetadataType,
     ) -> None:
         for key, value in metadata_to_add:
-            if self._include_all_metadata or key.lower() in self._metadata_keys:
+            if (
+                self._include_all_metadata
+                or key.strip().lower() in self._metadata_keys
+            ):
                 rpc_metadata.metadata.append(
-                    messages_pb2.LoadBalancerStatsResponse.MetadataEntry(key=key, value=value, type=metadata_type))
+                    messages_pb2.LoadBalancerStatsResponse.MetadataEntry(
+                        key=key, value=value, type=metadata_type
+                    )
+                )
 
     def on_rpc_complete(
         self,
@@ -311,8 +315,8 @@ def _on_rpc_done(
                 rpc_id,
                 hostname,
                 method,
-                initial_metadata = future.initial_metadata(),
-                trailing_metadata = future.trailing_metadata(),
+                initial_metadata=future.initial_metadata(),
+                trailing_metadata=future.trailing_metadata(),
             )
 
 
