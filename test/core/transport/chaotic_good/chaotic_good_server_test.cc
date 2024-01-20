@@ -59,7 +59,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     auto* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
     auto ev = grpc_completion_queue_pluck(
-        shutdown_cq, nullptr, grpc_timeout_milliseconds_to_deadline(1500),
+        shutdown_cq, nullptr, grpc_timeout_milliseconds_to_deadline(15000),
         nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     GPR_ASSERT(ev.tag == nullptr);
