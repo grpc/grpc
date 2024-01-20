@@ -253,10 +253,16 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
+  gpr_log(GPR_DEBUG,
+          "GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl(): "
+          "free_bytes_=%" PRIdPTR ", taken_bytes_=%" PRIdPTR
+          " sizeof(*this)=%" PRIdPTR,
+          free_bytes_.load(std::memory_order_relaxed),
+          taken_bytes_.load(std::memory_order_relaxed), sizeof(*this));
   GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
-  memory_quota_->Return(taken_bytes_);
+  memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {

@@ -80,6 +80,9 @@ class ChaoticGoodConnector : public SubchannelConnector {
       RefCountedPtr<ChaoticGoodConnector> self);
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
+  grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "connect_activity");
   Mutex mu_;
   Args args_;
   Result* result_ ABSL_GUARDED_BY(mu_);
@@ -101,9 +104,6 @@ class ChaoticGoodConnector : public SubchannelConnector {
   std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>> data_endpoint_latch_;
   std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
   std::string connection_id_;
-  grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "connect_activity");
 };
 }  // namespace chaotic_good
 }  // namespace grpc_core

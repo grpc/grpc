@@ -307,9 +307,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       [self]() {
         // Send data endpoint setting frame
         SettingsFrame frame;
-        ClientMetadataHandle metadata =
-            GetContext<Arena>()->MakePooled<ClientMetadata>(
-                GetContext<Arena>());
         frame.headers =
             SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                              self->connection_->data_alignment_}

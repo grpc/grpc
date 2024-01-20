@@ -83,6 +83,7 @@ class ChaoticGoodServerListener final
     const ChannelArgs& args() const { return listener_->args(); }
 
     void Orphan() override {
+      gpr_log(GPR_INFO, "ORPHAN ActiveConnection:%p", this);
       if (handshaking_state_ != nullptr) {
         handshaking_state_->Shutdown();
         handshaking_state_.reset();
@@ -95,6 +96,7 @@ class ChaoticGoodServerListener final
       }
       activity.reset();
       Unref();
+      gpr_log(GPR_INFO, "~ORPHAN ActiveConnection");
     }
 
     class HandshakingState : public RefCounted<HandshakingState> {
