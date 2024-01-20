@@ -76,19 +76,21 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(Server* server,
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {}
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
+  auto self = shared_from_this();
   EventEngine::Listener::AcceptCallback accept_cb =
-      [self = shared_from_this()](std::unique_ptr<EventEngine::Endpoint> ep,
-                                  MemoryAllocator) {
+      [self](std::unique_ptr<EventEngine::Endpoint> ep,
+             MemoryAllocator) mutable {
         MutexLock lock(&self->mu_);
         self->connection_list_.insert(self->connection_list_.end(),
                                       std::make_shared<ActiveConnection>(self));
         self->connection_list_.back()->Start(std::move(ep));
       };
-  auto shutdown_cb = [](absl::Status status) {
+  auto shutdown_cb = [self](absl::Status status) mutable {
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "Server accept connection failed: %s",
               StatusToString(status).c_str());
     }
+    self.reset();
   };
   GPR_ASSERT(event_engine_ != nullptr);
   auto ee_listener = event_engine_->CreateListener(
@@ -125,6 +127,7 @@ ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
   if (receive_settings_activity_ != nullptr) receive_settings_activity_.reset();
+  if (listener_ != nullptr) listener_.reset();
 }
 
 void ChaoticGoodServerListener::ActiveConnection::Start(
@@ -168,15 +171,26 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
     std::shared_ptr<ActiveConnection> connection)
-    : connection_(connection),
+    : connection_(std::move(connection)),
       handshake_mgr_(std::make_shared<HandshakeManager>()) {}
+
+ChaoticGoodServerListener::ActiveConnection::HandshakingState::
+    ~HandshakingState() {
+  if (connection_ != nullptr) connection_.reset();
+  if (handshake_mgr_ != nullptr) handshake_mgr_.reset();
+}
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::Start(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
   handshake_mgr_->DoHandshake(
       grpc_event_engine_endpoint_create(std::move(endpoint)),
-      connection_->args(), GetConnectionDeadline(), nullptr, OnHandshakeDone,
-      this);
+      connection_->args(), GetConnectionDeadline() + Timestamp::Now(), nullptr,
+      OnHandshakeDone, this);
+}
+
+void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
+    OnTimeout() {
+  if (timer_handle_.has_value()) timer_handle_.reset();
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -244,16 +258,15 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             return absl::OkStatus();
           }),
       // Set timeout for waiting data endpoint connect.
-      TrySeq(
-          // []() {
-          Sleep(Timestamp::Now() + self->connection_->kConnectionDeadline),
-          [self]() mutable -> absl::Status {
-            MutexLock lock(&self->connection_->listener_->mu_);
-            // Delete connection id from map when timeout;
-            self->connection_->listener_->connectivity_map_.erase(std::string(
-                self->connection_->connection_id_.as_string_view()));
-            return absl::DeadlineExceededError("Deadline exceeded.");
-          }));
+      TrySeq(Sleep(self->GetConnectionDeadline() + Timestamp::Now()),
+             [self]() mutable -> absl::Status {
+               MutexLock lock(&self->connection_->listener_->mu_);
+               // Delete connection id from map when timeout;
+               self->connection_->listener_->connectivity_map_.erase(
+                   std::string(
+                       self->connection_->connection_id_.as_string_view()));
+               return absl::DeadlineExceededError("Deadline exceeded.");
+             }));
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -334,7 +347,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
           args->endpoint),
       SliceBuffer());
-  auto memory_allocator =
+  self->connection_->memory_allocator_ =
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "server_connection");
   self->connection_->receive_settings_activity_ = MakeActivity(
@@ -346,25 +359,32 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       },
       EventEngineWakeupScheduler(
           grpc_event_engine::experimental::GetDefaultEventEngine()),
-      [](absl::Status status) {
+      [](absl::Status status) mutable {
         if (!status.ok()) {
           gpr_log(GPR_ERROR, "Server receive setting frame failed: %s",
                   StatusToString(status).c_str());
         }
       },
-      MakeScopedArena(self->connection_->kInitialArenaSize, &memory_allocator),
+      MakeScopedArena(self->connection_->kInitialArenaSize,
+                      &self->connection_->memory_allocator_),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
+  self->timer_handle_ = self->connection_->listener_->event_engine_->RunAfter(
+      self->GetConnectionDeadline(), [self]() mutable {
+        ApplicationCallbackExecCtx callback_exec_ctx;
+        ExecCtx exec_ctx;
+        self->OnTimeout();
+        self.reset();
+      });
 }
 
-Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
+Duration ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     GetConnectionDeadline() {
   if (connection_->args().Contains(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)) {
-    return Timestamp::Now() +
-           connection_->args()
-               .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-               .value();
+    return connection_->args()
+        .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
+        .value();
   }
-  return Timestamp::Now() + connection_->kConnectionDeadline;
+  return connection_->kConnectionDeadline;
 }
 }  // namespace chaotic_good
 }  // namespace grpc_core

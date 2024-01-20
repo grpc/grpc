@@ -75,7 +75,7 @@ class ChaoticGoodServerListener
         : public std::enable_shared_from_this<HandshakingState> {
      public:
       explicit HandshakingState(std::shared_ptr<ActiveConnection> connection);
-      ~HandshakingState(){};
+      ~HandshakingState();
       void Start(std::unique_ptr<
                  grpc_event_engine::experimental::EventEngine::Endpoint>
                      endpoint);
@@ -91,11 +91,14 @@ class ChaoticGoodServerListener
           std::shared_ptr<HandshakingState> self);
       static auto DataEndpointWriteSettingsFrame(
           std::shared_ptr<HandshakingState> self);
+      void OnTimeout();
 
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
-      Timestamp GetConnectionDeadline();
+      Duration GetConnectionDeadline();
       std::shared_ptr<ActiveConnection> connection_;
       std::shared_ptr<HandshakeManager> handshake_mgr_;
+      absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+          timer_handle_;
     };
 
    private:
@@ -105,6 +108,7 @@ class ChaoticGoodServerListener
     const size_t kInitialArenaSize = 1024;
     const Duration kConnectionDeadline = Duration::Seconds(5);
     std::shared_ptr<HandshakingState> handshaking_state_;
+    grpc_event_engine::experimental::MemoryAllocator memory_allocator_;
     ActivityPtr receive_settings_activity_;
     std::shared_ptr<PromiseEndpoint> endpoint_;
     HPackCompressor hpack_compressor_;
