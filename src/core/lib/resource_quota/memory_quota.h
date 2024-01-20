@@ -496,8 +496,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Indices into the various reclaimer queues, used so that we can cancel
   // reclamation should we shutdown or get rebound.
   OrphanablePtr<ReclaimerQueue::Handle>
-      reclamation_handles_[kNumReclamationPasses]
-      ABSL_GUARDED_BY(reclaimer_mu_);
+      reclamation_handles_[kNumReclamationPasses] ABSL_GUARDED_BY(
+          reclaimer_mu_);
 };
 
 // MemoryOwner is an enhanced MemoryAllocator that can also reclaim memory, and
