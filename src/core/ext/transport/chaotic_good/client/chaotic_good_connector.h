@@ -51,7 +51,9 @@ namespace grpc_core {
 namespace chaotic_good {
 class ChaoticGoodConnector : public SubchannelConnector {
  public:
-  ChaoticGoodConnector();
+  explicit ChaoticGoodConnector(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine);
   ~ChaoticGoodConnector() override;
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override {
@@ -83,6 +85,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "connect_activity");
+  ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
   Mutex mu_;
   Args args_;
   Result* result_ ABSL_GUARDED_BY(mu_);

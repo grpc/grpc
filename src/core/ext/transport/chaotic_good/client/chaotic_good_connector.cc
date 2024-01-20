@@ -68,11 +68,11 @@ void MaybeNotify(const DebugLocation& location, grpc_closure*& notify,
 }
 const int32_t kDataAlignmentBytes = 64;
 const int32_t kTimeoutSecs = 5;
-const size_t kInitialArenaSize = 1024;
 }  // namespace
 
-ChaoticGoodConnector::ChaoticGoodConnector()
-    : event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+ChaoticGoodConnector::ChaoticGoodConnector(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    : event_engine_(std::move(event_engine)),
       handshake_mgr_(std::make_shared<HandshakeManager>()),
       data_endpoint_latch_(
           std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()),
@@ -81,6 +81,7 @@ ChaoticGoodConnector::ChaoticGoodConnector()
   channel_args_ =
       channel_args_.Set(GRPC_ARG_RESOURCE_QUOTA, ResourceQuota::Default());
 }
+
 ChaoticGoodConnector::~ChaoticGoodConnector() {
   if (connect_activity_ != nullptr) {
     connect_activity_.reset();
@@ -306,13 +307,11 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                         ControlEndpointReadSettingsFrame(self),
                         []() { return absl::OkStatus(); });
         },
-        EventEngineWakeupScheduler(
-            grpc_event_engine::experimental::GetDefaultEventEngine()),
+        EventEngineWakeupScheduler(self->event_engine_),
         [self](absl::Status status) {
           MaybeNotify(DEBUG_LOCATION, self->notify_, status);
         },
-        MakeScopedArena(kInitialArenaSize, &self->memory_allocator_),
-        self->event_engine_.get());
+        self->arena_.get(), self->event_engine_.get());
     MutexLock lock(&self->mu_);
     if (!self->is_shutdown_) {
       self->connect_activity_ = std::move(activity);

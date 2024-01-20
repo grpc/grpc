@@ -1050,7 +1050,7 @@ class UnknownMap {
  public:
   explicit UnknownMap(Arena* arena) : unknown_(arena) {}
 
-  using BackingType = ChunkedVector<std::pair<Slice, Slice>, 10>;
+  using BackingType = ChunkedVector<std::pair<Slice, Slice>, 5>;
 
   void Append(absl::string_view key, Slice value);
   void Remove(absl::string_view key);
@@ -1067,7 +1067,7 @@ class UnknownMap {
 
  private:
   // Backing store for added metadata.
-  ChunkedVector<std::pair<Slice, Slice>, 10> unknown_;
+  BackingType unknown_;
 };
 
 // Given a factory template Factory, construct a type that derives from
