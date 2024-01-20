@@ -4995,6 +4995,7 @@ libs:
   - absl/utility:utility
   - cares
   - gpr
+  - address_sorting
 - name: grpc_plugin_support
   build: protoc
   language: c++

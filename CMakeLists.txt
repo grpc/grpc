@@ -5410,6 +5410,7 @@ target_link_libraries(grpc_authorization_provider
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
 )
 
 foreach(_hdr
