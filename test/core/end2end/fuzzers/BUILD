@@ -94,6 +94,7 @@ grpc_cc_library(
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util_base",
         "//test/core/util:fuzzing_channel_args",
+        "//src/core:chaotic_good_frame_header",
     ],
 )
 
