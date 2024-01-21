@@ -27,6 +27,6 @@ Duration ScheduleReads(
     grpc_endpoint* mock_endpoint,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
 
-}
+}  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H
