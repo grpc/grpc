@@ -217,6 +217,7 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
     case fuzzer_input::ChaoticGoodFrame::HEADERS_NOT_SET:
       break;
     case fuzzer_input::ChaoticGoodFrame::kHeadersRawBytes:
+      if (frame.headers_raw_bytes().size() == 0) break;
       h.header_length = frame.headers_raw_bytes().size();
       h.flags.Set(0, true);
       suffix.Append(Slice::FromCopiedString(frame.headers_raw_bytes()));
@@ -224,6 +225,7 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
     case fuzzer_input::ChaoticGoodFrame::kHeadersSimpleHeader: {
       SliceBuffer append =
           SliceBufferFromSimpleHeaders(frame.headers_simple_header());
+      if (append.Length() == 0) break;
       h.header_length = append.Length();
       h.flags.Set(0, true);
       suffix.Append(append.JoinIntoSlice());
