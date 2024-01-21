@@ -253,10 +253,16 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
+  gpr_log(GPR_DEBUG,
+          "GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl(): %p "
+          "free_bytes_=%" PRIdPTR ", taken_bytes_=%" PRIdPTR
+          " sizeof(*this)=%" PRIdPTR,
+          this, free_bytes_.load(std::memory_order_relaxed),
+          taken_bytes_.load(std::memory_order_relaxed), sizeof(*this));
   GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
-  memory_quota_->Return(taken_bytes_);
+  memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
@@ -288,6 +294,7 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
     if (reservation.has_value()) {
       size_t new_free = free_bytes_.load(std::memory_order_relaxed);
       memory_quota_->MaybeMoveAllocator(this, old_free, new_free);
+      gpr_log(GPR_INFO, "%p: Reserve(%" PRIuPTR ")", this, *reservation);
       return *reservation;
     }
 

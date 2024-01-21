@@ -77,6 +77,7 @@ struct SettingsFrame final : public FrameInterface {
                            absl::BitGenRef bitsrc, Arena* arena,
                            BufferPair buffers, FrameLimits limits) override;
   BufferPair Serialize(HPackCompressor* encoder) const override;
+  ClientMetadataHandle headers;
   std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }
