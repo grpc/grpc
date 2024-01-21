@@ -167,10 +167,12 @@ SliceBuffer SliceBufferFromSimpleHeaders(
     add_header("lb-cost-bin", headers.lb_cost_bin());
   }
   if (headers.has_chaotic_good_connection_type()) {
-    add_header("chaotic-good-connection-type", headers.chaotic_good_connection_type());
+    add_header("chaotic-good-connection-type",
+               headers.chaotic_good_connection_type());
   }
   if (headers.has_chaotic_good_connection_id()) {
-    add_header("chaotic-good-connection-id", headers.chaotic_good_connection_id());
+    add_header("chaotic-good-connection-id",
+               headers.chaotic_good_connection_id());
   }
   if (headers.has_chaotic_good_alignment()) {
     add_header("chaotic-good-alignment", headers.chaotic_good_alignment());
@@ -220,8 +222,8 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       suffix.Append(Slice::FromCopiedString(frame.headers_raw_bytes()));
       break;
     case fuzzer_input::ChaoticGoodFrame::kHeadersSimpleHeader: {
-      SliceBuffer append = SliceBufferFromSimpleHeaders(
-          frame.headers_simple_header());
+      SliceBuffer append =
+          SliceBufferFromSimpleHeaders(frame.headers_simple_header());
       h.header_length = append.Length();
       h.flags.Set(0, true);
       suffix.Append(append.JoinIntoSlice());
@@ -232,7 +234,7 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
     case fuzzer_input::ChaoticGoodFrame::DATA_NOT_SET:
       break;
     case fuzzer_input::ChaoticGoodFrame::kDataSized:
-      h.flags.Set(1,true);
+      h.flags.Set(1, true);
       h.message_length = frame.data_sized().length();
       h.message_padding = frame.data_sized().padding();
       break;
@@ -247,8 +249,8 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       suffix.Append(Slice::FromCopiedString(frame.trailers_raw_bytes()));
       break;
     case fuzzer_input::ChaoticGoodFrame::kTrailersSimpleHeader: {
-      SliceBuffer append = SliceBufferFromSimpleHeaders(
-          frame.trailers_simple_header());
+      SliceBuffer append =
+          SliceBufferFromSimpleHeaders(frame.trailers_simple_header());
       h.trailer_length = append.Length();
       h.flags.Set(2, true);
       suffix.Append(append.JoinIntoSlice());
@@ -258,7 +260,7 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
   h.Serialize(bytes);
   SliceBuffer out;
   out.Append(Slice::FromCopiedBuffer(bytes, 24));
-  out.Append(std::move(suffix));
+  out.Append(suffix);
   return out;
 }
 
@@ -491,7 +493,7 @@ Duration ScheduleConnection(
           .channel_args_preconditioning()
           .PreconditionChannelArgs(
               CreateChannelArgsFromFuzzingConfiguration(
-                  network_input.endpoint_config(), std::move(environment))
+                  network_input.endpoint_config(), environment)
                   .ToC()
                   .get());
   auto schedule = MakeSchedule(network_input);

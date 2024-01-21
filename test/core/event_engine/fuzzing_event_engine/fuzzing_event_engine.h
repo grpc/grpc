@@ -116,7 +116,9 @@ class FuzzingEventEngine : public EventEngine {
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
-  Duration max_delay_write() const { return max_delay_[static_cast<int>(RunType::kWrite)]; }
+  Duration max_delay_write() const {
+    return max_delay_[static_cast<int>(RunType::kWrite)];
+  }
 
  private:
   enum class RunType {
@@ -269,8 +271,8 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
 
   static grpc_core::NoDestruct<grpc_core::Mutex> mu_;
-  static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_ ABSL_ACQUIRED_AFTER(
-      mu_);
+  static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
+      ABSL_ACQUIRED_AFTER(mu_);
 
   Duration exponential_gate_time_increment_ ABSL_GUARDED_BY(mu_) =
       std::chrono::milliseconds(1);
