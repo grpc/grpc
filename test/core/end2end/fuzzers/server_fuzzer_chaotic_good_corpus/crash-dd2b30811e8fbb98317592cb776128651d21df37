@@ -1,0 +1,14 @@
+network_input {
+  input_segments {
+    segments {
+      client_prefix {
+      }
+    }
+  }
+}
+event_engine_actions {
+}
+config_vars {
+  stacktrace_minloglevel: "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS"
+  trace: ""
+}

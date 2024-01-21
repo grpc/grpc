@@ -92,6 +92,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
   EventEngine::Listener::AcceptCallback accept_cb =
       [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
                      MemoryAllocator) {
+        ExecCtx exec_ctx;
         MutexLock lock(&self->mu_);
         self->connection_list_.insert(self->connection_list_.end(),
                                       MakeOrphanable<ActiveConnection>(self));
@@ -202,47 +203,57 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         // Parse frame header
         auto frame_header = FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
             GRPC_SLICE_START_PTR(slice.c_slice())));
-        GPR_ASSERT(frame_header.ok());
-        return TrySeq(
-            self->connection_->endpoint_->Read(frame_header->GetFrameLength()),
-            [frame_header = *frame_header,
-             self](SliceBuffer buffer) -> absl::StatusOr<bool> {
-              // Read Setting frame.
-              SettingsFrame frame;
-              // Deserialize frame from read buffer.
-              BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
-              auto status = frame.Deserialize(
-                  &self->connection_->hpack_parser_, frame_header,
-                  absl::BitGenRef(self->connection_->bitgen_),
-                  GetContext<Arena>(), std::move(buffer_pair), FrameLimits{});
-              if (!status.ok()) return status;
-              if (frame.headers == nullptr) {
-                return absl::UnavailableError("no settings headers");
-              }
-              auto settings_metadata =
-                  SettingsMetadata::FromMetadataBatch(*frame.headers);
-              if (!settings_metadata.ok()) {
-                return settings_metadata.status();
-              }
-              const bool is_control_endpoint =
-                  settings_metadata->connection_type ==
-                  SettingsMetadata::ConnectionType::kControl;
-              if (!is_control_endpoint) {
-                if (!settings_metadata->connection_id.has_value()) {
-                  return absl::UnavailableError(
-                      "no connection id in data endpoint settings frame");
-                }
-                if (!settings_metadata->alignment.has_value()) {
-                  return absl::UnavailableError(
-                      "no alignment in data endpoint settings frame");
-                }
-                // Get connection-id and data-alignment for data endpoint.
-                self->connection_->connection_id_ =
-                    *settings_metadata->connection_id;
-                self->connection_->data_alignment_ =
-                    *settings_metadata->alignment;
-              }
-              return is_control_endpoint;
+        return If(
+            frame_header.ok(),
+            [self, &frame_header]() {
+              return TrySeq(
+                  self->connection_->endpoint_->Read(
+                      frame_header->GetFrameLength()),
+                  [frame_header = std::move(*frame_header),
+                   self](SliceBuffer buffer) -> absl::StatusOr<bool> {
+                    // Read Setting frame.
+                    SettingsFrame frame;
+                    // Deserialize frame from read buffer.
+                    BufferPair buffer_pair{std::move(buffer), SliceBuffer()};
+                    auto status = frame.Deserialize(
+                        &self->connection_->hpack_parser_, frame_header,
+                        absl::BitGenRef(self->connection_->bitgen_),
+                        GetContext<Arena>(), std::move(buffer_pair),
+                        FrameLimits{});
+                    if (!status.ok()) return status;
+                    if (frame.headers == nullptr) {
+                      return absl::UnavailableError("no settings headers");
+                    }
+                    auto settings_metadata =
+                        SettingsMetadata::FromMetadataBatch(*frame.headers);
+                    if (!settings_metadata.ok()) {
+                      return settings_metadata.status();
+                    }
+                    const bool is_control_endpoint =
+                        settings_metadata->connection_type ==
+                        SettingsMetadata::ConnectionType::kControl;
+                    if (!is_control_endpoint) {
+                      if (!settings_metadata->connection_id.has_value()) {
+                        return absl::UnavailableError(
+                            "no connection id in data endpoint settings frame");
+                      }
+                      if (!settings_metadata->alignment.has_value()) {
+                        return absl::UnavailableError(
+                            "no alignment in data endpoint settings frame");
+                      }
+                      // Get connection-id and data-alignment for data endpoint.
+                      self->connection_->connection_id_ =
+                          *settings_metadata->connection_id;
+                      self->connection_->data_alignment_ =
+                          *settings_metadata->alignment;
+                    }
+                    return is_control_endpoint;
+                  });
+            },
+            [&frame_header]() {
+              return [r = frame_header.status()]() -> absl::StatusOr<bool> {
+                return r;
+              };
             });
       });
 }

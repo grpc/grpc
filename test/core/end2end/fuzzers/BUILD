@@ -121,15 +121,10 @@ grpc_proto_fuzzer(
     ],
 )
 
-grpc_proto_fuzzer(
+grpc_cc_library(
     name = "server_fuzzer",
     srcs = ["server_fuzzer.cc"],
-    corpus = "server_fuzzer_corpus",
-    language = "C++",
-    proto = None,
-    tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
+    hdrs = ["server_fuzzer.h"],
     deps = [
         "fuzzer_input_proto",
         "fuzzing_common",
@@ -137,8 +132,39 @@ grpc_proto_fuzzer(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "server_fuzzer_chttp2",
+    srcs = ["server_fuzzer_chttp2.cc"],
+    corpus = "server_fuzzer_chttp2_corpus",
+    language = "C++",
+    proto = None,
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":server_fuzzer",
+        "//:grpc",
+    ],
+)
+
+grpc_proto_fuzzer(
+    name = "server_fuzzer_chaotic_good",
+    srcs = ["server_fuzzer_chaotic_good.cc"],
+    corpus = "server_fuzzer_chaotic_good_corpus",
+    language = "C++",
+    proto = None,
+    tags = ["no_windows"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        ":server_fuzzer",
+        "//src/core:chaotic_good_server",
     ],
 )
