@@ -51,9 +51,10 @@ class ServerFuzzer final : public BasicFuzzer {
     grpc_server_add_http2_port(server_, "0.0.0.0:1234", creds);
     grpc_server_credentials_release(creds);
     grpc_server_start(server_);
-    UpdateMinimumRunTime(
-        ScheduleConnection(msg.network_input(), engine(),
-                           FuzzingEnvironment{resource_quota()}, 1234));
+    for (const auto& input : msg.network_input()) {
+      UpdateMinimumRunTime(ScheduleConnection(
+          input, engine(), FuzzingEnvironment{resource_quota()}, 1234));
+    }
   }
 
   ~ServerFuzzer() { GPR_ASSERT(server_ == nullptr); }
