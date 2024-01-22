@@ -53,6 +53,8 @@ namespace grpc_core {
 namespace experimental {
 
 namespace {
+
+// TODO(gtcooke94) more stable form that X509_NAME_oneline
 std::string IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return "";
@@ -102,6 +104,7 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
   return CrlImpl::Create(crl);
 }
 
+// TODO(gtcooke94) this is likely the best place to do validity checks
 absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
   std::string issuer = IssuerFromCrl(crl);
   if (issuer.empty()) {

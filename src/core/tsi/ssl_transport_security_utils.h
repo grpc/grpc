@@ -142,6 +142,9 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
                                  unsigned char* unprotected_bytes,
                                  size_t* unprotected_bytes_size);
 
+// TODO(gtcooke94)
+int verify_crl_signature(X509_CRL* crl, X509* issuer);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

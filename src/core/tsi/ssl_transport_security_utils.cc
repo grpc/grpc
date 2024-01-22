@@ -247,4 +247,13 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   return result;
 }
 
+int verify_crl_signature(X509_CRL* crl, X509* issuer) {
+  EVP_PKEY* ikey = X509_get_pubkey(issuer);
+  if (ikey == nullptr) {
+    // TODO(gtcooke94)
+    // Can't verify signature, can we get here?
+  }
+  return X509_CRL_verify(crl, ikey);
+}
+
 }  // namespace grpc_core

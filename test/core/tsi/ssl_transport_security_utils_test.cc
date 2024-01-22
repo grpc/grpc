@@ -32,12 +32,26 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/load_file.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
+
+// const char* kValidCrl = "test/core/tsi/test_creds/crl_data/current.crl";
+const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
+const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
+const char* kModifiedSignature =
+    "test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl";
+const char* kModifiedContent =
+    "test/core/tsi/test_creds/crl_data/crls/invalid_content.crl";
+const char* kIntermediateCrl =
+    "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
+const char* kIntermediateCrlIssuer =
+    "test/core/tsi/test_creds/crl_data/intermediate_ca.pem";
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
@@ -316,8 +330,8 @@ TEST_P(FlowTest,
                                 &protected_output_frames_size),
             tsi_result::TSI_OK);
 
-  // If |GetParam().plaintext_size| is larger than the inner client_buffer size
-  // (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
+  // If |GetParam().plaintext_size| is larger than the inner client_buffer
+  // size (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
   // |kMaxPlaintextBytesPerTlsRecord| bytes and output the protected
   // frame. Otherwise we need to manually flush the copied data in order
   // to get the protected frame.
@@ -378,8 +392,8 @@ TEST_P(FlowTest,
                                 &protected_output_frames_size),
             tsi_result::TSI_OK);
 
-  // If |GetParam().plaintext_size| is larger than the inner server_buffer size
-  // (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
+  // If |GetParam().plaintext_size| is larger than the inner server_buffer
+  // size (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
   // |kMaxPlaintextBytesPerTlsRecord| bytes and output the protected
   // frame. Otherwise we need to manually flush the copied data in order
   // to get the protected frame.
@@ -428,6 +442,89 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
                          ValuesIn(GenerateTestData()));
 
 #endif  // OPENSSL_IS_BORINGSSL
+
+X509_CRL* read_crl(absl::string_view crl_string) {
+  BIO* crl_bio =
+      BIO_new_mem_buf(crl_string.data(), static_cast<int>(crl_string.size()));
+  // Errors on BIO
+  if (crl_bio == nullptr) {
+    return nullptr;
+  }
+  X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
+  BIO_free(crl_bio);
+  return crl;
+}
+
+X509* read_cert(absl::string_view cert_string) {
+  BIO* cert_bio =
+      BIO_new_mem_buf(cert_string.data(), static_cast<int>(cert_string.size()));
+  // Errors on BIO
+  if (cert_bio == nullptr) {
+    return nullptr;
+  }
+  X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  BIO_free(cert_bio);
+  return cert;
+}
+
+TEST(CrlUtils, VerifySignatureValid) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  ASSERT_EQ(verify_crl_signature(crl, issuer), 1);
+}
+
+TEST(CrlUtils, VerifySignatureIntermediateValid) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kIntermediateCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kIntermediateCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  ASSERT_EQ(verify_crl_signature(crl, issuer), 1);
+}
+
+TEST(CrlUtils, VerifySignatureModifiedSignature) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedSignature, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  ASSERT_EQ(verify_crl_signature(crl, issuer), 0);
+}
+
+TEST(CrlUtils, VerifySignatureModifiedContent) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedContent, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  ASSERT_EQ(crl, nullptr);
+}
+
+TEST(CrlUtils, VerifySignatureWrongIssuer) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kIntermediateCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  ASSERT_EQ(verify_crl_signature(crl, issuer), 0);
+}
+
+TEST(CrlUtils, VerifySignatureWrongIssuer2) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kIntermediateCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  ASSERT_EQ(verify_crl_signature(crl, issuer), 0);
+}
 
 }  // namespace testing
 }  // namespace grpc_core
