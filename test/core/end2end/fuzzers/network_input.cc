@@ -406,7 +406,7 @@ Duration ScheduleConnection(
           .channel_args_preconditioning()
           .PreconditionChannelArgs(
               CreateChannelArgsFromFuzzingConfiguration(
-                  network_input.endpoint_config(), std::move(environment))
+                  network_input.endpoint_config(), environment)
                   .ToC()
                   .get());
   auto schedule = MakeSchedule(network_input);
