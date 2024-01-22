@@ -175,13 +175,23 @@ python_rules_test_suite(
 # py_grpc_library targets
 
 py_library(
-    name = "grpc_library_sentinel",
-    srcs = ["grpc_library_sentinel.py"],
+    name = "grpc_library_replacement",
+    srcs = ["grpc_library_replacement.py"],
 )
 
 py_grpc_library(
     name = "helloworld_py_pb2_grpc_library_changed",
     srcs = [":helloworld_proto"],
     deps = [":helloworld_py_pb2"],
-    grpc_library = ":grpc_library_sentinel",
+    grpc_library = ":grpc_library_replacement",
+)
+
+py_test(
+    name = "grpc_library_replacement_test",
+    srcs = ["grpc_library_replacement_test.py"],
+    main = "grpc_library_replacement_test.py",
+    python_version = "PY3",
+    deps = [
+        ":helloworld_py_pb2_grpc_library_changed",
+    ],
 )
