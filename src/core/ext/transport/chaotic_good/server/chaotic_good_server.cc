@@ -172,11 +172,9 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
       has_new_id = true;
     }
   }
-  listener_->connectivity_map_.insert(
-      std::pair<std::string,
-                std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>>>(
-          connection_id_,
-          std::make_shared<Latch<std::shared_ptr<PromiseEndpoint>>>()));
+  listener_->connectivity_map_.emplace(
+      connection_id_,
+      std::make_shared<InterActivityLatch<std::shared_ptr<PromiseEndpoint>>>());
 }
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(

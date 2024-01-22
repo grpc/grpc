@@ -40,7 +40,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
@@ -170,8 +170,9 @@ class ChaoticGoodServerListener final
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string, std::shared_ptr<Latch<std::shared_ptr<
-                                       PromiseEndpoint>>>> connectivity_map_
+  absl::flat_hash_map<std::string,
+                      std::shared_ptr<InterActivityLatch<
+                          std::shared_ptr<PromiseEndpoint>>>> connectivity_map_
       ABSL_GUARDED_BY(mu_);
   std::vector<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
