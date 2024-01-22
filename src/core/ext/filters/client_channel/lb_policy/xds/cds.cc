@@ -294,6 +294,23 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   } else {
     GPR_ASSERT(cluster_name_ == new_config->cluster());
   }
+  // Start dynamic subscription if needed.
+  if (new_config->is_dynamic() && subscription_ == nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
+      gpr_log(GPR_INFO,
+              "[cdslb %p] obtaining dynamic subscription for cluster %s",
+              this, cluster_name_.c_str());
+    }
+    auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
+    if (dependency_mgr == nullptr) {
+      // Should never happen.
+      absl::Status status = absl::InternalError(
+          "xDS dependency mgr not passed to CDS LB policy");
+      ReportTransientFailure(status);
+      return status;
+    }
+    subscription_ = dependency_mgr->GetClusterSubscription(cluster_name_);
+  }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
   if (new_xds_config == nullptr) {
@@ -307,27 +324,13 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   if (it == new_xds_config->clusters.end()) {
     // Cluster not present.
     if (new_config->is_dynamic()) {
-      // This is a dynamic cluster.  Subscribe to it if not yet subscribed.
-      if (subscription_ == nullptr) {
-        auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
-        if (dependency_mgr == nullptr) {
-          // Should never happen.
-          absl::Status status = absl::InternalError(
-              "xDS dependency mgr not passed to CDS LB policy");
-          ReportTransientFailure(status);
-          return status;
-        }
-        subscription_ = dependency_mgr->GetClusterSubscription(cluster_name_);
-        // Stay in CONNECTING until we get an update that has the cluster.
-        return absl::OkStatus();
-      }
       // If we are already subscribed, it's possible that we just
       // recently subscribed but another update came through before we
       // got the new cluster, in which case it will still be missing.
       if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
         gpr_log(GPR_INFO,
                 "[cdslb %p] xDS config has no entry for dynamic cluster %s, "
-                "ignoring update",
+                "waiting for subsequent update",
                 this, cluster_name_.c_str());
       }
       // Stay in CONNECTING until we get an update that has the cluster.
