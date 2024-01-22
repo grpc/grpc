@@ -14,14 +14,13 @@
 
 import argparse
 import collections
-from concurrent import futures
+import concurrent
 import datetime
 import logging
 import signal
 import threading
 import time
 from typing import (
-    Any,
     DefaultDict,
     Dict,
     Iterable,
@@ -30,11 +29,10 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Union,
 )
 
 import grpc
-from grpc._typing import MetadataType
+from grpc import _typing as grpc_typing
 import grpc_admin
 from grpc_channelz.v1 import channelz
 
@@ -67,7 +65,6 @@ _METHOD_STR_TO_ENUM = {
 _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
 
 PerMethodMetadataType = Mapping[str, Sequence[Tuple[str, str]]]
-MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
 
 
 # FutureFromCall is both a grpc.Call and grpc.Future
@@ -103,22 +100,27 @@ class _StatsWatcher:
         )
         self._condition = threading.Condition()
         self._no_remote_peer = 0
-        self._metadata_keys = set(key.strip().lower() for key in metadata_keys)
+        self._metadata_keys = frozenset(
+            self._sanitize_metadata_key(key) for key in metadata_keys
+        )
         self._include_all_metadata = "*" in self._metadata_keys
         self._metadata_by_peer = collections.defaultdict(
             messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
         )
 
+    def _sanitize_metadata_key(self, metadata_key: str) -> str:
+        return metadata_key.strip().lower()
+
     def _add_metadata(
         self,
         rpc_metadata: messages_pb2.LoadBalancerStatsResponse.RpcMetadata,
-        metadata_to_add: MetadataType,
+        metadata_to_add: grpc_typing.MetadataType,
         metadata_type: messages_pb2.LoadBalancerStatsResponse.MetadataType,
     ) -> None:
         for key, value in metadata_to_add:
             if (
                 self._include_all_metadata
-                or key.strip().lower() in self._metadata_keys
+                or self._sanitize_metadata_key(key) in self._metadata_keys
             ):
                 rpc_metadata.metadata.append(
                     messages_pb2.LoadBalancerStatsResponse.MetadataEntry(
@@ -132,8 +134,8 @@ class _StatsWatcher:
         peer: str,
         method: str,
         *,
-        initial_metadata: MetadataType,
-        trailing_metadata: MetadataType,
+        initial_metadata: grpc_typing.MetadataType,
+        trailing_metadata: grpc_typing.MetadataType,
     ) -> None:
         """Records statistics for a single RPC."""
         if self._start <= request_id < self._end:
@@ -515,7 +517,7 @@ def _run(
         )
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
-    _global_server = grpc.server(futures.ThreadPoolExecutor())
+    _global_server = grpc.server(concurrent.futures.ThreadPoolExecutor())
     _global_server.add_insecure_port(f"0.0.0.0:{args.stats_port}")
     test_pb2_grpc.add_LoadBalancerStatsServiceServicer_to_server(
         _LoadBalancerStatsServicer(), _global_server
