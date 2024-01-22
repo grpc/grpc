@@ -6877,6 +6877,7 @@ grpc_cc_library(
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
         "if",
+        "inter_activity_latch",
         "iomgr_fwd",
         "latch",
         "memory_quota",
