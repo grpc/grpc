@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <random>
 #include <vector>
 
 namespace grpc_core {
@@ -31,29 +32,34 @@ class ProtoBitGen : public std::numeric_limits<uint64_t> {
  public:
   template <typename SourceContainer>
   explicit ProtoBitGen(const SourceContainer& c) {
+    auto& initial_round = absl::get<InitialRound>(generator_);
     for (auto r : c) {
-      results_.push_back(r);
+      initial_round.results.push_back(r);
     }
   }
 
   using result_type = uint64_t;
 
   uint64_t operator()() {
-    if (results_.empty()) {
-      ++current_;
-      return current_;
+    if (auto* initial_round = absl::get_if<InitialRound>(&generator_)) {
+      if (initial_round->current >= initial_round->results.size()) {
+        auto seed = std::move(initial_round->results);
+        std::seed_seq seq(seed.begin(), seed.end());
+        generator_.emplace<std::mt19937_64>(seq);
+      } else {
+        return initial_round->results[initial_round->current++];
+      }
     }
-    // We loop through but increment by one each round, to guarantee to see all
-    // values eventually.
-    uint64_t out =
-        results_[current_ % results_.size()] + (current_ / results_.size());
-    ++current_;
-    return out;
+    return absl::get<std::mt19937_64>(generator_)();
   }
 
  private:
-  std::vector<uint64_t> results_;
-  size_t current_ = 0;
+  struct InitialRound {
+    std::vector<uint64_t> results;
+    size_t current = 0;
+  };
+  absl::variant<InitialRound, std::mt19937_64> generator_{
+      absl::in_place_type_t<InitialRound>{}};
 };
 
 }  // namespace grpc_core
