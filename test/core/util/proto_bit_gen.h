@@ -57,6 +57,7 @@ class ProtoBitGen : public std::numeric_limits<uint64_t> {
 
  private:
   struct InitialRound {
+    InitialRound() = default;
     std::vector<uint64_t> results;
     size_t current = 0;
   };
