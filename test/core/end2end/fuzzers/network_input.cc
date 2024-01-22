@@ -242,21 +242,23 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
   }
   return grpc_empty_slice();
 }
-}  // namespace
 
-Duration ScheduleReads(
-    const fuzzer_input::NetworkInput& network_input,
-    grpc_endpoint* mock_endpoint,
-    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
+struct QueuedRead {
+  QueuedRead(int delay_ms, SliceBuffer slices)
+      : delay_ms(delay_ms), slices(std::move(slices)) {}
+  int delay_ms;
+  SliceBuffer slices;
+};
+
+std::vector<QueuedRead> MakeSchedule(
+    const fuzzer_input::NetworkInput& network_input) {
+  std::vector<QueuedRead> schedule;
   switch (network_input.value_case()) {
     case fuzzer_input::NetworkInput::kSingleReadBytes: {
-      grpc_mock_endpoint_put_read(
-          mock_endpoint, grpc_slice_from_copied_buffer(
-                             network_input.single_read_bytes().data(),
-                             network_input.single_read_bytes().size()));
-      grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-      return Duration::Milliseconds(1);
-    }
+      schedule.emplace_back(0, SliceBuffer(Slice::FromCopiedBuffer(
+                                   network_input.single_read_bytes().data(),
+                                   network_input.single_read_bytes().size())));
+    } break;
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
       SliceBuffer building;
@@ -265,13 +267,7 @@ Duration ScheduleReads(
         if (segment_delay != 0) {
           delay_ms += segment_delay;
           if (building.Length() != 0) {
-            event_engine->RunAfterExactly(
-                std::chrono::milliseconds(delay_ms),
-                [mock_endpoint, slice = building.JoinIntoSlice()]() mutable {
-                  ExecCtx exec_ctx;
-                  grpc_mock_endpoint_put_read(mock_endpoint,
-                                              slice.TakeCSlice());
-                });
+            schedule.emplace_back(delay_ms, std::move(building));
           }
           building.Clear();
         }
@@ -279,26 +275,36 @@ Duration ScheduleReads(
       }
       if (building.Length() != 0) {
         ++delay_ms;
-        event_engine->RunAfterExactly(
-            std::chrono::milliseconds(delay_ms),
-            [mock_endpoint, slice = building.JoinIntoSlice()]() mutable {
-              ExecCtx exec_ctx;
-              grpc_mock_endpoint_put_read(mock_endpoint, slice.TakeCSlice());
-            });
+        schedule.emplace_back(delay_ms, std::move(building));
       }
-      ++delay_ms;
-      event_engine->RunAfterExactly(
-          std::chrono::milliseconds(delay_ms), [mock_endpoint] {
-            ExecCtx exec_ctx;
-            grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-          });
-      return Duration::Milliseconds(delay_ms + 1);
-    }
+    } break;
     case fuzzer_input::NetworkInput::VALUE_NOT_SET:
-      grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-      return Duration::Milliseconds(1);
+      break;
   }
-  GPR_UNREACHABLE_CODE(return Duration::Milliseconds(1));
+  return schedule;
 }
 
+}  // namespace
+
+Duration ScheduleReads(
+    const fuzzer_input::NetworkInput& network_input,
+    grpc_endpoint* mock_endpoint,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
+  int delay = 0;
+  for (const auto& q : MakeSchedule(network_input)) {
+    event_engine->RunAfterExactly(
+        std::chrono::milliseconds(q.delay_ms),
+        [mock_endpoint, slices = q.slices.JoinIntoSlice()]() mutable {
+          ExecCtx exec_ctx;
+          grpc_mock_endpoint_put_read(mock_endpoint, slices.TakeCSlice());
+        });
+    delay = std::max(delay, q.delay_ms);
+  }
+  event_engine->RunAfterExactly(
+      std::chrono::milliseconds(delay + 1), [mock_endpoint] {
+        ExecCtx exec_ctx;
+        grpc_mock_endpoint_finish_put_reads(mock_endpoint);
+      });
+  return Duration::Milliseconds(delay + 2);
+}
 }  // namespace grpc_core
