@@ -170,3 +170,18 @@ py_test(
 python_rules_test_suite(
     name = "python_rules_test",
 )
+
+# Test that grpc_library attribute replaces grpcio dependency on
+# py_grpc_library targets
+
+py_library(
+    name = "grpc_library_sentinel",
+    srcs = ["grpc_library_sentinel.py"],
+)
+
+py_grpc_library(
+    name = "helloworld_py_pb2_grpc_library_changed",
+    srcs = [":helloworld_proto"],
+    deps = [":helloworld_py_pb2"],
+    grpc_library = ":grpc_library_sentinel",
+)
