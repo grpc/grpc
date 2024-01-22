@@ -265,7 +265,7 @@ std::vector<QueuedRead> MakeSchedule(
       schedule.emplace_back(0, SliceBuffer(Slice::FromCopiedBuffer(
                                    network_input.single_read_bytes().data(),
                                    network_input.single_read_bytes().size())));
-    }
+    } break;
     case fuzzer_input::NetworkInput::kInputSegments: {
       int delay_ms = 0;
       SliceBuffer building;
@@ -284,8 +284,7 @@ std::vector<QueuedRead> MakeSchedule(
         ++delay_ms;
         schedule.emplace_back(delay_ms, std::move(building));
       }
-      return schedule;
-    }
+    } break;
     case fuzzer_input::NetworkInput::VALUE_NOT_SET:
       break;
   }
