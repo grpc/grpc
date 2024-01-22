@@ -72,7 +72,7 @@ class ChaoticGoodServerListener final
   void Orphan() override {
     gpr_log(GPR_INFO, "ORPHAN");
     {
-      std::vector<OrphanablePtr<ActiveConnection>> connection_list;
+      absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
       MutexLock lock(&mu_);
       connection_list = std::move(connection_list_);
     }
@@ -83,12 +83,11 @@ class ChaoticGoodServerListener final
 
   class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
-    explicit ActiveConnection(
-        RefCountedPtr<ChaoticGoodServerListener> listener);
-    ~ActiveConnection() override;
-    void Start(
+    ActiveConnection(
+        RefCountedPtr<ChaoticGoodServerListener> listener,
         std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
             endpoint);
+    ~ActiveConnection() override;
     const ChannelArgs& args() const { return listener_->args(); }
 
     void Orphan() override {
@@ -142,6 +141,7 @@ class ChaoticGoodServerListener final
     };
 
    private:
+    void Fail(absl::string_view error);
     void NewConnectionID();
     const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
         memory_allocator_;
@@ -162,9 +162,11 @@ class ChaoticGoodServerListener final
   void Start(Server*, const std::vector<grpc_pollset*>*) override {
     StartListening().IgnoreError();
   };
+
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
   }
+
   void SetOnDestroyDone(grpc_closure* closure) override {
     MutexLock lock(&mu_);
     on_destroy_done_ = closure;
@@ -182,7 +184,7 @@ class ChaoticGoodServerListener final
                       std::shared_ptr<InterActivityLatch<
                           std::shared_ptr<PromiseEndpoint>>>> connectivity_map_
       ABSL_GUARDED_BY(mu_);
-  std::vector<OrphanablePtr<ActiveConnection>> connection_list_
+  absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
   absl::AnyInvocable<std::string()> connection_id_generator_
       ABSL_GUARDED_BY(mu_);
