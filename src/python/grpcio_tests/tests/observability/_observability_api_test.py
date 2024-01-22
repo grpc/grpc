@@ -16,8 +16,6 @@
 import logging
 import unittest
 
-import grpc_observability
-
 from tests.observability import _from_observability_import_star
 
 
