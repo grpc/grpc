@@ -401,23 +401,33 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND 
     opencensus-proto-0.3.0/src
   )
 endif()
+# Setup external proto library at third_party/xds if it doesn't exist
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
+    https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
+    xds-3a472e524827f72d1ad621c4983dd5af54c46776
+  )
+endif()
 # Setup external proto library at third_party/xds with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
-    0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899
-    xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
+    xds-3a472e524827f72d1ad621c4983dd5af54c46776
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
-    0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899
-    xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
+    https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
+    xds-3a472e524827f72d1ad621c4983dd5af54c46776
   )
 endif()
 
