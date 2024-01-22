@@ -115,7 +115,7 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/01/15
+  expiry: 2024/06/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: peer_state_based_framing
@@ -231,7 +231,7 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/02/01
+  expiry: 2024/09/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: v3_backend_metric_filter
@@ -261,7 +261,7 @@
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: ctiller@google.com
   test_tags: []
 - name: work_serializer_dispatch
