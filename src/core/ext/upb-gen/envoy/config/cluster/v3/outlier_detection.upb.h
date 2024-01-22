@@ -26,6 +26,7 @@ extern "C" {
 #endif
 
 typedef struct envoy_config_cluster_v3_OutlierDetection envoy_config_cluster_v3_OutlierDetection;
+struct google_protobuf_BoolValue;
 struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
 
@@ -392,6 +393,21 @@ UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time_j
   const upb_MiniTableField field = {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
+UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_clear_successful_active_health_check_uneject_host(envoy_config_cluster_v3_OutlierDetection* msg) {
+  const upb_MiniTableField field = {23, UPB_SIZE(92, 176), 22, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE const struct google_protobuf_BoolValue* envoy_config_cluster_v3_OutlierDetection_successful_active_health_check_uneject_host(const envoy_config_cluster_v3_OutlierDetection* msg) {
+  const struct google_protobuf_BoolValue* default_val = NULL;
+  const struct google_protobuf_BoolValue* ret;
+  const upb_MiniTableField field = {23, UPB_SIZE(92, 176), 22, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_successful_active_health_check_uneject_host(const envoy_config_cluster_v3_OutlierDetection* msg) {
+  const upb_MiniTableField field = {23, UPB_SIZE(92, 176), 22, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
 
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -646,6 +662,18 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetec
   if (sub == NULL) {
     sub = (struct google_protobuf_Duration*)_upb_Message_New(&google__protobuf__Duration_msg_init, arena);
     if (sub) envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time_jitter(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_successful_active_health_check_uneject_host(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_BoolValue* value) {
+  const upb_MiniTableField field = {23, UPB_SIZE(92, 176), 22, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE struct google_protobuf_BoolValue* envoy_config_cluster_v3_OutlierDetection_mutable_successful_active_health_check_uneject_host(envoy_config_cluster_v3_OutlierDetection* msg, upb_Arena* arena) {
+  struct google_protobuf_BoolValue* sub = (struct google_protobuf_BoolValue*)envoy_config_cluster_v3_OutlierDetection_successful_active_health_check_uneject_host(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_BoolValue*)_upb_Message_New(&google__protobuf__BoolValue_msg_init, arena);
+    if (sub) envoy_config_cluster_v3_OutlierDetection_set_successful_active_health_check_uneject_host(msg, sub);
   }
   return sub;
 }

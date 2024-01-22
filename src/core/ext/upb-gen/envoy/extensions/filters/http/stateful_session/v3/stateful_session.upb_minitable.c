@@ -19,17 +19,20 @@ static const upb_MiniTableSub envoy_extensions_filters_http_stateful_session_v3_
   {.submsg = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
 };
 
-static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[1] = {
+static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[2] = {
   {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init = {
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession_submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[0],
-  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_psm_1bt_maxmaxb},
+    {0x000100003f000010, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 

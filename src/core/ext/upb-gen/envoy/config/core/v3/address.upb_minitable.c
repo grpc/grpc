@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "envoy/config/core/v3/address.upb_minitable.h"
+#include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/core/v3/socket_option.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "envoy/annotations/deprecation.upb_minitable.h"
@@ -123,26 +124,28 @@ const upb_MiniTable envoy__config__core__v3__ExtraSourceAddress_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_core_v3_BindConfig_submsgs[5] = {
+static const upb_MiniTableSub envoy_config_core_v3_BindConfig_submsgs[6] = {
   {.submsg = &envoy__config__core__v3__SocketAddress_msg_init},
   {.submsg = &google__protobuf__BoolValue_msg_init},
   {.submsg = &envoy__config__core__v3__SocketOption_msg_init},
   {.submsg = &envoy__config__core__v3__SocketAddress_msg_init},
   {.submsg = &envoy__config__core__v3__ExtraSourceAddress_msg_init},
+  {.submsg = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_core_v3_BindConfig__fields[5] = {
+static const upb_MiniTableField envoy_config_core_v3_BindConfig__fields[6] = {
   {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 24), 0, 2, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(16, 32), 0, 3, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(20, 40), 0, 4, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(24, 48), 3, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__BindConfig_msg_init = {
   &envoy_config_core_v3_BindConfig_submsgs[0],
   &envoy_config_core_v3_BindConfig__fields[0],
-  UPB_SIZE(24, 48), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 56), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_psm_1bt_max128b},
@@ -150,7 +153,7 @@ const upb_MiniTable envoy__config__core__v3__BindConfig_msg_init = {
     {0x001800003f02001a, &upb_prm_1bt_maxmaxb},
     {0x002000003f030022, &upb_prm_1bt_max128b},
     {0x002800003f04002a, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0030000003050032, &upb_psm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

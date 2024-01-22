@@ -328,6 +328,17 @@ UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_has_endpoi
   const upb_MiniTableField field = {4, UPB_SIZE(12, 24), 2, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
+UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_clear_weighted_priority_health(envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(16, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_weighted_priority_health(const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(16, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload** envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_mutable_drop_overloads(envoy_config_endpoint_v3_ClusterLoadAssignment_Policy* msg, size_t* size) {
   upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -378,6 +389,10 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_endpoint_v3_ClusterLoad
     if (sub) envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_set_endpoint_stale_after(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_set_weighted_priority_health(envoy_config_endpoint_v3_ClusterLoadAssignment_Policy *msg, bool value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(16, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* envoy.config.endpoint.v3.ClusterLoadAssignment.Policy.DropOverload */

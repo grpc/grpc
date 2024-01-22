@@ -73,7 +73,8 @@ struct xds_core_v3_ContextParams;
 typedef enum {
   envoy_config_core_v3_HeaderValueOption_APPEND_IF_EXISTS_OR_ADD = 0,
   envoy_config_core_v3_HeaderValueOption_ADD_IF_ABSENT = 1,
-  envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD = 2
+  envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD = 2,
+  envoy_config_core_v3_HeaderValueOption_OVERWRITE_IF_EXISTS = 3
 } envoy_config_core_v3_HeaderValueOption_HeaderAppendAction;
 
 typedef enum {
@@ -1489,6 +1490,17 @@ UPB_INLINE upb_StringView envoy_config_core_v3_HeaderValue_value(const envoy_con
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_config_core_v3_HeaderValue_clear_raw_value(envoy_config_core_v3_HeaderValue* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE upb_StringView envoy_config_core_v3_HeaderValue_raw_value(const envoy_config_core_v3_HeaderValue* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_config_core_v3_HeaderValue_set_key(envoy_config_core_v3_HeaderValue *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -1496,6 +1508,10 @@ UPB_INLINE void envoy_config_core_v3_HeaderValue_set_key(envoy_config_core_v3_He
 }
 UPB_INLINE void envoy_config_core_v3_HeaderValue_set_value(envoy_config_core_v3_HeaderValue *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE void envoy_config_core_v3_HeaderValue_set_raw_value(envoy_config_core_v3_HeaderValue *msg, upb_StringView value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 

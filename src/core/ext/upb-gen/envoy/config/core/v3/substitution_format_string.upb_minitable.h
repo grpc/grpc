@@ -17,6 +17,7 @@
 extern "C" {
 #endif
 
+extern const upb_MiniTable envoy__config__core__v3__JsonFormatOptions_msg_init;
 extern const upb_MiniTable envoy__config__core__v3__SubstitutionFormatString_msg_init;
 
 extern const upb_MiniTableFile envoy_config_core_v3_substitution_format_string_proto_upb_file_layout;

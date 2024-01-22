@@ -79,7 +79,7 @@ _GRPC_DEP_NAMES = [
     "com_envoyproxy_protoc_gen_validate",
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
-    "com_github_cncf_udpa",
+    "com_github_cncf_xds",
     "google_cloud_cpp",
 ]
 

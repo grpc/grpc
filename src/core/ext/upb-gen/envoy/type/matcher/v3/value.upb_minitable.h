@@ -20,6 +20,7 @@ extern "C" {
 extern const upb_MiniTable envoy__type__matcher__v3__ValueMatcher_msg_init;
 extern const upb_MiniTable envoy__type__matcher__v3__ValueMatcher__NullMatch_msg_init;
 extern const upb_MiniTable envoy__type__matcher__v3__ListMatcher_msg_init;
+extern const upb_MiniTable envoy__type__matcher__v3__OrMatcher_msg_init;
 
 extern const upb_MiniTableFile envoy_type_matcher_v3_value_proto_upb_file_layout;
 

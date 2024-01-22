@@ -350,20 +350,21 @@ static const upb_MiniTableSub envoy_data_accesslog_v3_TLSProperties_CertificateP
   {.submsg = &envoy__data__accesslog__v3__TLSProperties__CertificateProperties__SubjectAltName_msg_init},
 };
 
-static const upb_MiniTableField envoy_data_accesslog_v3_TLSProperties_CertificateProperties__fields[2] = {
+static const upb_MiniTableField envoy_data_accesslog_v3_TLSProperties_CertificateProperties__fields[3] = {
   {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__data__accesslog__v3__TLSProperties__CertificateProperties_msg_init = {
   &envoy_data_accesslog_v3_TLSProperties_CertificateProperties_submsgs[0],
   &envoy_data_accesslog_v3_TLSProperties_CertificateProperties__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000000003f00000a, &upb_prm_1bt_max64b},
     {0x000800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x001800003f00001a, &upb_pss_1bt},
   })
 };
 

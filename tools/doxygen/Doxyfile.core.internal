@@ -1208,6 +1208,9 @@ src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h \
+src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h \
+src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c \
+src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h \
 src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h \
 src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c \
 src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h \
@@ -1671,6 +1674,8 @@ src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c \
+src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h \
 src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \

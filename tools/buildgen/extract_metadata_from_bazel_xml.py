@@ -88,6 +88,9 @@ EXTERNAL_PROTO_LIBRARIES = {
     "com_github_cncf_udpa": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
+    "com_github_cncf_xds": ExternalProtoLibrary(
+        destination="third_party/xds", proto_prefix="third_party/xds/"
+    ),
     "opencensus_proto": ExternalProtoLibrary(
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
@@ -575,6 +578,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
         ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
