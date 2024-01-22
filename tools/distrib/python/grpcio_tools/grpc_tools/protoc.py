@@ -19,8 +19,8 @@ import sys
 
 from grpc_tools import _protoc_compiler
 
-if sys.version_info.major == 3 and sys.version_info.minor >= 9:
-    from importlib.resources import files
+if sys.version_info >= (3, 9, 0):
+    from importlib import resources
 else:
     import pkg_resources
 
@@ -68,12 +68,15 @@ if sys.version_info >= (3, 5, 0):
                     ]
                 )
 
-                if sys.version_info.major == 3 and sys.version_info.minor >= 9:
-                    proto_include = (files("grpc_tools") / "_proto").resolve()
+                if sys.version_info >= (3, 9, 0):
+                    proto_include = (
+                        resources.files("grpc_tools") / "_proto"
+                    ).resolve()
                     sys.path.append(proto_include)
                 else:
                     proto_include = pkg_resources.resource_filename(
-                        "grpc_tools", "_proto")
+                        "grpc_tools", "_proto"
+                    )
                     sys.path.append(
                         pkg_resources.resource_filename("grpc_tools", "_proto")
                     )
@@ -197,8 +200,8 @@ if sys.version_info >= (3, 5, 0):
         _maybe_install_proto_finders()
 
 if __name__ == "__main__":
-    if sys.version_info.major == 3 and sys.version_info.minor >= 9:
-        proto_include = (files("grpc_tools") / "_proto").resolve()
+    if sys.version_info >= (3, 9, 0):
+        proto_include = (resources.files("grpc_tools") / "_proto").resolve()
     else:
         proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
     sys.exit(main(sys.argv + ["-I{}".format(proto_include)]))
