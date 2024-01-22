@@ -24,6 +24,8 @@
 #include <random>
 #include <vector>
 
+#include "absl/types/variant.h"
+
 namespace grpc_core {
 
 // Set of random numbers from a proto file (or other container) forming a bit
