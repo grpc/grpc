@@ -671,8 +671,12 @@ typedef unsigned __int64 uint64_t;
 #endif
 
 #ifndef GRPC_REINITIALIZES
+#if defined(__clang__)
 #if GPR_HAS_CPP_ATTRIBUTE(clang::reinitializes)
 #define GRPC_REINITIALIZES [[clang::reinitializes]]
+#else
+#define GRPC_REINITIALIZES
+#endif
 #else
 #define GRPC_REINITIALIZES
 #endif
