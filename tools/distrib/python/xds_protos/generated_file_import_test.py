@@ -1,5 +1,5 @@
-from bazel.cc_proto_descriptor_library.testdata import test-extension_pb2
 from bazel.cc_proto_descriptor_library.testdata import test1_pb2
+from bazel.cc_proto_descriptor_library.testdata import test_extension_pb2
 from bazel.cc_proto_descriptor_library.testdata import test_pb2
 from contrib.envoy.extensions.compression.qatzip.compressor.v3alpha import qatzip_pb2
 from contrib.envoy.extensions.config.v3alpha import kv_store_xds_delegate_config_pb2
