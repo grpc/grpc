@@ -68,8 +68,12 @@ _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
 
 PerMethodMetadataType = Mapping[str, Sequence[Tuple[str, str]]]
 MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
-# _UnaryOutcome is both a grpc.Call and grpc.Future
-_UnaryOutcome = Any
+
+
+# FutureFromCall is both a grpc.Call and grpc.Future
+class FutureFromCallType(grpc.Call, grpc.Future):
+    pass
+
 
 _CONFIG_CHANGE_TIMEOUT = datetime.timedelta(milliseconds=500)
 
@@ -259,7 +263,7 @@ def _start_rpc(
     request_id: int,
     stub: test_pb2_grpc.TestServiceStub,
     timeout: float,
-    futures: Mapping[int, Tuple[_UnaryOutcome, str]],
+    futures: Mapping[int, Tuple[FutureFromCallType, str]],
 ) -> None:
     logger.debug(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
@@ -276,7 +280,7 @@ def _start_rpc(
 
 
 def _on_rpc_done(
-    rpc_id: int, future: _UnaryOutcome, method: str, print_response: bool
+    rpc_id: int, future: FutureFromCallType, method: str, print_response: bool
 ) -> None:
     exception = future.exception()
     hostname = ""
@@ -321,7 +325,7 @@ def _on_rpc_done(
 
 
 def _remove_completed_rpcs(
-    rpc_futures: Mapping[int, _UnaryOutcome], print_response: bool
+    rpc_futures: Mapping[int, FutureFromCallType], print_response: bool
 ) -> None:
     logger.debug("Removing completed RPCs")
     done = []
@@ -382,7 +386,7 @@ def _run_single_channel(config: _ChannelConfiguration) -> None:
         channel = grpc.insecure_channel(server)
     with channel:
         stub = test_pb2_grpc.TestServiceStub(channel)
-        futures: Dict[int, Tuple[_UnaryOutcome, str]] = {}
+        futures: Dict[int, Tuple[FutureFromCallType, str]] = {}
         while not _stop_event.is_set():
             with config.condition:
                 if config.qps == 0:
