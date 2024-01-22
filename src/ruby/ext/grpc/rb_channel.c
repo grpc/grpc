@@ -117,6 +117,7 @@ static bg_watched_channel* bg_watched_channel_list_create_and_add(
     grpc_channel* channel);
 static void bg_watched_channel_list_free_and_remove(bg_watched_channel* bg);
 static void run_poll_channels_loop_unblocking_func(void* arg);
+static void* run_poll_channels_loop_unblocking_func_wrapper(void* arg);
 
 // Needs to be called under global_connection_polling_mu
 static void grpc_rb_channel_watch_connection_state_op_complete(
@@ -689,8 +690,12 @@ static void* run_poll_channels_loop_no_gil(void* arg) {
   return NULL;
 }
 
-// Notify the channel polling loop to cleanup and shutdown.
 static void run_poll_channels_loop_unblocking_func(void* arg) {
+  run_poll_channels_loop_unblocking_func_wrapper(arg);
+}
+
+// Notify the channel polling loop to cleanup and shutdown.
+static void* run_poll_channels_loop_unblocking_func_wrapper(void* arg) {
   bg_watched_channel* bg = NULL;
   (void)arg;
 
@@ -701,7 +706,7 @@ static void run_poll_channels_loop_unblocking_func(void* arg) {
   // early out after first time through
   if (g_abort_channel_polling) {
     gpr_mu_unlock(&global_connection_polling_mu);
-    return;
+    return NULL;
   }
   g_abort_channel_polling = 1;
 
@@ -723,10 +728,11 @@ static void run_poll_channels_loop_unblocking_func(void* arg) {
   gpr_log(GPR_DEBUG,
           "GRPC_RUBY: run_poll_channels_loop_unblocking_func - end aborting "
           "connection polling");
+  return NULL;
 }
 
 // Poll channel connectivity states in background thread without the GIL.
-static VALUE run_poll_channels_loop(VALUE arg) {
+static VALUE run_poll_channels_loop(void* arg) {
   (void)arg;
   gpr_log(
       GPR_DEBUG,
@@ -783,8 +789,8 @@ void grpc_rb_channel_polling_thread_stop() {
             "GRPC_RUBY: channel polling thread stop: thread was not started");
     return;
   }
-  rb_thread_call_without_gvl(run_poll_channels_loop_unblocking_func, NULL, NULL,
-                             NULL);
+  rb_thread_call_without_gvl(run_poll_channels_loop_unblocking_func_wrapper,
+                             NULL, NULL, NULL);
   rb_funcall(g_channel_polling_thread, rb_intern("join"), 0);
   // state associated with the channel polling thread is destroyed, reset so
   // we can start again later
