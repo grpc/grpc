@@ -113,7 +113,9 @@ class SliceBuffer {
   }
 
   /// Removes and unrefs all slices in the SliceBuffer.
-  void Clear() { grpc_slice_buffer_reset_and_unref(&slice_buffer_); }
+  GRPC_REINITIALIZES void Clear() {
+    grpc_slice_buffer_reset_and_unref(&slice_buffer_);
+  }
 
   /// Removes the first slice in the SliceBuffer and returns it.
   Slice TakeFirst();
