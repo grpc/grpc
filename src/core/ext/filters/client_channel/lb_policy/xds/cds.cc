@@ -298,14 +298,14 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   if (new_config->is_dynamic() && subscription_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
       gpr_log(GPR_INFO,
-              "[cdslb %p] obtaining dynamic subscription for cluster %s",
-              this, cluster_name_.c_str());
+              "[cdslb %p] obtaining dynamic subscription for cluster %s", this,
+              cluster_name_.c_str());
     }
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
       // Should never happen.
-      absl::Status status = absl::InternalError(
-          "xDS dependency mgr not passed to CDS LB policy");
+      absl::Status status =
+          absl::InternalError("xDS dependency mgr not passed to CDS LB policy");
       ReportTransientFailure(status);
       return status;
     }
