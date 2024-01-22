@@ -54,7 +54,16 @@ class ChaoticGoodServerListener final
     : public Server::ListenerInterface,
       public RefCounted<ChaoticGoodServerListener> {
  public:
-  ChaoticGoodServerListener(Server* server, const ChannelArgs& args);
+  static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
+    return [bitgen = absl::BitGen()]() mutable {
+      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(bitgen)));
+    };
+  }
+
+  ChaoticGoodServerListener(
+      Server* server, const ChannelArgs& args,
+      absl::AnyInvocable<std::string()> connection_id_generator =
+          DefaultConnectionIDGenerator());
   ~ChaoticGoodServerListener() override;
   // Bind address to EventEngine listener.
   absl::StatusOr<int> Bind(const char* addr);
@@ -133,7 +142,6 @@ class ChaoticGoodServerListener final
     };
 
    private:
-    std::string GenerateConnectionIDLocked();
     void NewConnectionID();
     const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
         memory_allocator_;
@@ -175,6 +183,8 @@ class ChaoticGoodServerListener final
                           std::shared_ptr<PromiseEndpoint>>>> connectivity_map_
       ABSL_GUARDED_BY(mu_);
   std::vector<OrphanablePtr<ActiveConnection>> connection_list_
+      ABSL_GUARDED_BY(mu_);
+  absl::AnyInvocable<std::string()> connection_id_generator_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>

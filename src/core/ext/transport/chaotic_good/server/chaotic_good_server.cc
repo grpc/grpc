@@ -71,8 +71,9 @@ const Duration kConnectionDeadline = Duration::Seconds(5);
 }  // namespace
 
 using grpc_event_engine::experimental::EventEngine;
-ChaoticGoodServerListener::ChaoticGoodServerListener(Server* server,
-                                                     const ChannelArgs& args)
+ChaoticGoodServerListener::ChaoticGoodServerListener(
+    Server* server, const ChannelArgs& args,
+    absl::AnyInvocable<std::string()> connection_id_generator)
     : RefCounted<ChaoticGoodServerListener>("ChaoticGoodServerListener"),
       server_(server),
       args_(args),
@@ -150,25 +151,11 @@ void ChaoticGoodServerListener::ActiveConnection::Start(
   handshaking_state_->Start(std::move(endpoint));
 }
 
-std::string
-ChaoticGoodServerListener::ActiveConnection::GenerateConnectionIDLocked() {
-  std::string random_string;
-  int random_length = 8;
-  std::string charset =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  std::uniform_int_distribution<> distribution(0, charset.size() - 1);
-  random_string.reserve(random_length);
-  for (int i = 0; i < random_length; i++) {
-    random_string += charset[distribution(bitgen_)];
-  }
-  return random_string;
-}
-
 void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
   bool has_new_id = false;
   MutexLock lock(&listener_->mu_);
   while (!has_new_id) {
-    connection_id_ = GenerateConnectionIDLocked();
+    connection_id_ = listener_->connection_id_generator_();
     if (!listener_->connectivity_map_.contains(connection_id_)) {
       has_new_id = true;
     }
