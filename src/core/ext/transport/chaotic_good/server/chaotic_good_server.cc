@@ -166,9 +166,15 @@ void ChaoticGoodServerListener::ActiveConnection::Fail(
     absl::string_view error) {
   gpr_log(GPR_ERROR, "ActiveConnection::Fail:%p %s", this,
           std::string(error).c_str());
-  auto self = Ref();
-  MutexLock lock(&listener_->mu_);
-  listener_->connection_list_.erase(this);
+  // Can easily be holding various locks here: bounce through EE to ensure no
+  // deadlocks.
+  listener_->event_engine_->Run([self = Ref()]() {
+    ExecCtx exec_ctx;
+    OrphanablePtr<ActiveConnection> con;
+    MutexLock lock(&self->listener_->mu_);
+    auto v = self->listener_->connection_list_.extract(self.get());
+    if (!v.empty()) con = std::move(v.value());
+  });
 }
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
@@ -320,9 +326,14 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       [self]() mutable {
         MutexLock lock(&self->connection_->listener_->mu_);
         // Set endpoint to latch
-        self->connection_->listener_->connectivity_map_
-            .find(self->connection_->connection_id_)
-            ->second->Set(std::move(self->connection_->endpoint_));
+        auto it = self->connection_->listener_->connectivity_map_.find(
+            self->connection_->connection_id_);
+        if (it == self->connection_->listener_->connectivity_map_.end()) {
+          return absl::InternalError(
+              absl::StrCat("Connection not in map: ",
+                           absl::CEscape(self->connection_->connection_id_)));
+        }
+        it->second->Set(std::move(self->connection_->endpoint_));
         return absl::OkStatus();
       });
 }

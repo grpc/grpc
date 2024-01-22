@@ -1,0 +1,25 @@
+network_input {
+  single_read_bytes: "\005\000"
+  connect_delay_ms: 4352
+  endpoint_config {
+    args {
+      resource_quota {
+      }
+    }
+  }
+}
+api_actions {
+  resize_resource_quota: 0
+}
+api_actions {
+  create_call {
+    host {
+      value: "\001\000\000\024"
+    }
+  }
+}
+config_vars {
+  verbosity: ""
+}
+channel_args {
+}
