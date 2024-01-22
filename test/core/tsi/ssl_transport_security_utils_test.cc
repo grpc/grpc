@@ -52,6 +52,9 @@ const char* kIntermediateCrl =
     "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
 const char* kIntermediateCrlIssuer =
     "test/core/tsi/test_creds/crl_data/intermediate_ca.pem";
+const char* kLeafCert =
+    "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.pem";
+const char* kEvilCa = "test/core/tsi/test_creds/crl_data/evil_ca.pem";
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
@@ -474,7 +477,7 @@ TEST(CrlUtils, VerifySignatureValid) {
   ASSERT_TRUE(issuer_slice.ok());
   X509_CRL* crl = read_crl(crl_slice->as_string_view());
   X509* issuer = read_cert(issuer_slice->as_string_view());
-  ASSERT_EQ(verify_crl_signature(crl, issuer), 1);
+  EXPECT_EQ(verify_crl_signature(crl, issuer), 1);
 }
 
 TEST(CrlUtils, VerifySignatureIntermediateValid) {
@@ -484,7 +487,7 @@ TEST(CrlUtils, VerifySignatureIntermediateValid) {
   ASSERT_TRUE(issuer_slice.ok());
   X509_CRL* crl = read_crl(crl_slice->as_string_view());
   X509* issuer = read_cert(issuer_slice->as_string_view());
-  ASSERT_EQ(verify_crl_signature(crl, issuer), 1);
+  EXPECT_EQ(verify_crl_signature(crl, issuer), 1);
 }
 
 TEST(CrlUtils, VerifySignatureModifiedSignature) {
@@ -494,7 +497,7 @@ TEST(CrlUtils, VerifySignatureModifiedSignature) {
   ASSERT_TRUE(issuer_slice.ok());
   X509_CRL* crl = read_crl(crl_slice->as_string_view());
   X509* issuer = read_cert(issuer_slice->as_string_view());
-  ASSERT_EQ(verify_crl_signature(crl, issuer), 0);
+  EXPECT_EQ(verify_crl_signature(crl, issuer), 0);
 }
 
 TEST(CrlUtils, VerifySignatureModifiedContent) {
@@ -503,7 +506,7 @@ TEST(CrlUtils, VerifySignatureModifiedContent) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_TRUE(issuer_slice.ok());
   X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  ASSERT_EQ(crl, nullptr);
+  EXPECT_EQ(crl, nullptr);
 }
 
 TEST(CrlUtils, VerifySignatureWrongIssuer) {
@@ -513,7 +516,7 @@ TEST(CrlUtils, VerifySignatureWrongIssuer) {
   ASSERT_TRUE(issuer_slice.ok());
   X509_CRL* crl = read_crl(crl_slice->as_string_view());
   X509* issuer = read_cert(issuer_slice->as_string_view());
-  ASSERT_EQ(verify_crl_signature(crl, issuer), 0);
+  EXPECT_EQ(verify_crl_signature(crl, issuer), 0);
 }
 
 TEST(CrlUtils, VerifySignatureWrongIssuer2) {
@@ -523,7 +526,39 @@ TEST(CrlUtils, VerifySignatureWrongIssuer2) {
   ASSERT_TRUE(issuer_slice.ok());
   X509_CRL* crl = read_crl(crl_slice->as_string_view());
   X509* issuer = read_cert(issuer_slice->as_string_view());
-  ASSERT_EQ(verify_crl_signature(crl, issuer), 0);
+  EXPECT_EQ(verify_crl_signature(crl, issuer), 0);
+}
+
+TEST(CrlUtils, VerifyIssuerNamesMatch) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  EXPECT_EQ(verify_crl_cert_issuer_names_match(crl, issuer), 0);
+}
+
+TEST(CrlUtils, VerifyIssuerNamesDontMatch) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kLeafCert, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  EXPECT_NE(verify_crl_cert_issuer_names_match(crl, issuer), 0);
+}
+
+TEST(CrlUtils, DuplicatedIssuerName) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
+  ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kEvilCa, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  // The issuer names will match, but it should fail a signature check
+  EXPECT_EQ(verify_crl_cert_issuer_names_match(crl, issuer), 0);
+  EXPECT_EQ(verify_crl_signature(crl, issuer), 0);
 }
 
 }  // namespace testing

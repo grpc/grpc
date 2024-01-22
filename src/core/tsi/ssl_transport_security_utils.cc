@@ -256,4 +256,8 @@ int verify_crl_signature(X509_CRL* crl, X509* issuer) {
   return X509_CRL_verify(crl, ikey);
 }
 
+int verify_crl_cert_issuer_names_match(X509_CRL* crl, X509* issuer) {
+  return X509_NAME_cmp(X509_get_issuer_name(issuer), X509_CRL_get_issuer(crl));
+}
+
 }  // namespace grpc_core
