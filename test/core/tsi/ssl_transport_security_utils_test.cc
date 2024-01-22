@@ -549,7 +549,7 @@ TEST(CrlUtils, VerifyIssuerNamesDontMatch) {
   EXPECT_NE(verify_crl_cert_issuer_names_match(crl, issuer), 0);
 }
 
-TEST(CrlUtils, DuplicatedIssuerName) {
+TEST(CrlUtils, DuplicatedIssuerNamePassesButSignatureCheckFails) {
   absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
   ASSERT_TRUE(crl_slice.ok()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kEvilCa, false);

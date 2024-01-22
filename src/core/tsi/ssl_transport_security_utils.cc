@@ -252,8 +252,12 @@ int verify_crl_signature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // TODO(gtcooke94)
     // Can't verify signature, can we get here?
+    EVP_PKEY_free(ikey);
+    return 0;
   }
-  return X509_CRL_verify(crl, ikey);
+  int ret = X509_CRL_verify(crl, ikey);
+  EVP_PKEY_free(ikey);
+  return ret
 }
 
 int verify_crl_cert_issuer_names_match(X509_CRL* crl, X509* issuer) {
