@@ -54,7 +54,7 @@ namespace experimental {
 
 namespace {
 
-// TODO(gtcooke94) more stable form that X509_NAME_oneline
+// TODO(gtcooke94) does this belong here, export for use elsewhere?
 std::string IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return "";

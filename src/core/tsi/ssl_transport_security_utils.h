@@ -151,6 +151,9 @@ int verify_crl_cert_issuer_names_match(X509_CRL* crl, X509* issuer);
 // TODO(gtcooke94)
 bool verify_crl_sign_bit(X509* issuer);
 
+// TODO(gtcooke94)
+std::string IssuerFromCert(X509* cert);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

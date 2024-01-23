@@ -269,4 +269,21 @@ bool verify_crl_sign_bit(X509* issuer) {
   return (X509_get_key_usage(issuer) & KU_CRL_SIGN) != 0;
 }
 
+// TODO(gtcooke94) can we directly depend on crl_provider?
+std::string IssuerFromCert(X509* cert) {
+  if (cert == nullptr) {
+    return "";
+  }
+  X509_NAME* issuer = X509_get_issuer_name(cert);
+  int len;
+  unsigned char* buf;
+  buf = nullptr;
+  len = i2d_X509_NAME(issuer, &buf);
+  // TODO(gtcooke94) what to do here and for nullptr buf
+  if (len < 0) return "";
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
+
 }  // namespace grpc_core
