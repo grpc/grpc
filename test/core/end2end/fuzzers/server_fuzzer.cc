@@ -92,7 +92,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
     return 42;
   }();
-  GPR_ASSERT(once == 42);
+  GPR_ASSERT(once == 42);  // avoid unused variable warning
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::testing::ServerFuzzer(msg).Run(msg.api_actions());
