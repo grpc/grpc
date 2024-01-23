@@ -251,10 +251,10 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
 int verify_crl_signature(X509_CRL* crl, X509* issuer) {
   EVP_PKEY* ikey = X509_get_pubkey(issuer);
   if (ikey == nullptr) {
-    // TODO(gtcooke94)
-    // Can't verify signature, can we get here?
+    // Can't verify signature because we couldn't get the pubkey, fail the
+    // check.
     EVP_PKEY_free(ikey);
-    return 0;
+    return 1;
   }
   int ret = X509_CRL_verify(crl, ikey);
   EVP_PKEY_free(ikey);
@@ -278,8 +278,7 @@ std::string IssuerFromCert(X509* cert) {
   unsigned char* buf;
   buf = nullptr;
   len = i2d_X509_NAME(issuer, &buf);
-  // TODO(gtcooke94) what to do here and for nullptr buf
-  if (len < 0) return "";
+  if (len < 0 || buf == nullptr) return "";
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
