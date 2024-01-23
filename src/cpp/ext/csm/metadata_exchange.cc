@@ -501,10 +501,7 @@ size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
     bool is_client,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
     const {
-  if (is_client) {
-    return 2;
-  }
-  return 0;
+  return is_client ? 2 : 0;
 }
 
 }  // namespace internal
