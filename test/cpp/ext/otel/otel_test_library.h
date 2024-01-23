@@ -54,31 +54,94 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
   void OnInitialized() noexcept override {}
 };
 
+struct OpenTelemetryPluginTestConfiguration {
+ public:
+  OpenTelemetryPluginTestConfiguration& set_metric_names(
+      absl::flat_hash_set<absl::string_view> names) {
+    metric_names = std::move(names);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_resource(
+      const opentelemetry::sdk::resource::Resource& res) {
+    resource = res;
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_labels_injector(
+      std::unique_ptr<grpc::internal::LabelsInjector> injector) {
+    labels_injector = std::move(injector);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_test_no_meter_provider(bool flag) {
+    test_no_meter_provider = flag;
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_labels_to_inject(
+      std::map<std::string, std::string> labels) {
+    labels_to_inject = std::move(labels);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_target_selector(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const> func) {
+    target_selector = std::move(func);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_server_selector(
+      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*channel_args*/)
+                             const>
+          func) {
+    server_selector = std::move(func);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_target_attribute_filter(
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const> func) {
+    target_attribute_filter = std::move(func);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_generic_method_attribute_filter(
+      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+          func) {
+    generic_method_attribute_filter = std::move(func);
+    return *this;
+  }
+
+  OpenTelemetryPluginTestConfiguration& set_plugin_options(
+      std::vector<
+          std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+          options) {
+    plugin_options = std::move(options);
+    return *this;
+  }
+
+  absl::flat_hash_set<absl::string_view> metric_names;
+  opentelemetry::sdk::resource::Resource resource =
+      opentelemetry::sdk::resource::Resource::Create({});
+  std::unique_ptr<grpc::internal::LabelsInjector> labels_injector;
+  bool test_no_meter_provider = false;
+  std::map<std::string, std::string> labels_to_inject;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector;
+  absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*channel_args*/) const>
+      server_selector;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+      target_attribute_filter;
+  absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+      generic_method_attribute_filter;
+  std::vector<
+      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
+      plugin_options;
+};
+
 class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
  protected:
   // Note that we can't use SetUp() here since we want to send in parameters.
-  void Init(
-      const absl::flat_hash_set<absl::string_view>& metric_names,
-      opentelemetry::sdk::resource::Resource resource =
-          opentelemetry::sdk::resource::Resource::Create({}),
-      std::unique_ptr<grpc::internal::LabelsInjector> labels_injector = nullptr,
-      bool test_no_meter_provider = false,
-      const std::map<std::string, std::string>& labels_to_inject = {},
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector = absl::AnyInvocable<bool(absl::string_view) const>(),
-      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*channel_args*/)
-                             const>
-          server_selector = absl::AnyInvocable<
-              bool(const grpc_core::ChannelArgs& /*channel_args*/) const>(),
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_attribute_filter =
-              absl::AnyInvocable<bool(absl::string_view) const>(),
-      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
-          generic_method_attribute_filter = absl::AnyInvocable<
-              bool(absl::string_view /*generic_method*/) const>(),
-      std::vector<
-          std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-          plugin_options = {});
+  void Init(OpenTelemetryPluginTestConfiguration config);
 
   void TearDown() override;
 

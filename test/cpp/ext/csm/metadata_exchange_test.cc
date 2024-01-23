@@ -125,9 +125,9 @@ class MetadataExchangeTest
     : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
  protected:
-  void Init(const absl::flat_hash_set<absl::string_view>& metric_names,
+  void Init(absl::flat_hash_set<absl::string_view> metric_names,
             bool enable_client_side_injector = true,
-            const std::map<std::string, std::string>& labels_to_inject = {}) {
+            std::map<std::string, std::string> labels_to_inject = {}) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
         "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
@@ -146,16 +146,17 @@ class MetadataExchangeTest
         grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", kBootstrap);
         break;
     }
-    OpenTelemetryPluginEnd2EndTest::Init(
-        metric_names, /*resource=*/GetParam().GetTestResource(),
-        /*labels_injector=*/
-        std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
-            GetParam().GetTestResource().GetAttributes()),
-        /*test_no_meter_provider=*/false, labels_to_inject,
-        /*target_selector=*/
-        [enable_client_side_injector](absl::string_view /*target*/) {
-          return enable_client_side_injector;
-        });
+    OpenTelemetryPluginEnd2EndTest::Init(std::move(
+        OpenTelemetryPluginTestConfiguration()
+            .set_metric_names(std::move(metric_names))
+            .set_labels_injector(
+                std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
+                    GetParam().GetTestResource().GetAttributes()))
+            .set_labels_to_inject(std::move(labels_to_inject))
+            .set_target_selector(
+                [enable_client_side_injector](absl::string_view /*target*/) {
+                  return enable_client_side_injector;
+                })));
   }
 
   ~MetadataExchangeTest() override {
