@@ -84,7 +84,7 @@ class _StatsWatcher:
     _no_remote_peer: int
     _lock: threading.Lock
     _condition: threading.Condition
-    _metadata_keys: frozenset[str]
+    _metadata_keys: frozenset
     _include_all_metadata: bool
     _metadata_by_peer: DefaultDict[
         str, messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
