@@ -103,7 +103,7 @@ void RunServerFuzzer(
     ForceEnableExperiment("event_engine_listener", true);
     return 42;
   }();
-  GPR_ASSERT(once == 42);
+  GPR_ASSERT(once == 42);  // avoid unused variable warning
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());

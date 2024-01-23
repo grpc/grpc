@@ -36,7 +36,7 @@ tools/buildgen/build_cleaner.py build_handwritten.yaml
 
 # /usr/local/google/home/rbellevi/dev/tmp/grpc/venv/bin/python3: No module named virtualenv
 # Generate xds-protos
-[[ -d generate_projects_virtual_environment ]] || python3 -m virtualenv generate_projects_virtual_environment
+[[ -d generate_projects_virtual_environment ]] || { python3 -m pip install virtualenv --upgrade && python3 -m virtualenv generate_projects_virtual_environment; }
 generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.59.0
 generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
 
