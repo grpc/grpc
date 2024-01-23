@@ -32,6 +32,7 @@
 # - bugprone-not-null-terminated-result
 # - bugprone-signed-char-misuse
 # - bugprone-sizeof-expression
+# - bugprone-switch-missing-default-case
 # - bugprone-too-small-loop-variable
 # - bugprone-unchecked-optional-access
 # - clang-diagnostic-deprecated-declarations
@@ -50,8 +51,10 @@
 # - modernize-use-equals-default
 # - modernize-use-equals-delete
 # - modernize-use-using
+# - performance-avoid-endl
 # - performance-no-automatic-move
 # - performance-no-int-to-ptr
+# - performance-noexcept-swap
 # - performance-unnecessary-copy-initialization
 # - performance-unnecessary-value-param
 # - readability-else-after-return
@@ -67,6 +70,7 @@ Checks: '-*,
   -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-empty-catch,
   -bugprone-exception-escape,
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-infinite-loop,
@@ -75,6 +79,7 @@ Checks: '-*,
   -bugprone-reserved-identifier,
   -bugprone-signed-char-misuse,
   -bugprone-sizeof-expression,
+  -bugprone-switch-missing-default-case,
   -bugprone-too-small-loop-variable,
   -bugprone-unchecked-optional-access,
   google-*,
@@ -82,8 +87,10 @@ Checks: '-*,
   -google-runtime-int,
   -google-runtime-references,
   performance-*,
+  -performance-avoid-endl,
   -performance-no-automatic-move,
   -performance-no-int-to-ptr,
+  -performance-noexcept-swap,
   -performance-unnecessary-copy-initialization,
   -performance-unnecessary-value-param,
   clang-diagnostic-deprecated-declarations,

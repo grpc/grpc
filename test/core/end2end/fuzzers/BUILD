@@ -92,6 +92,7 @@ grpc_cc_library(
         "fuzzer_input_proto",
         "//:chttp2_frame",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:fuzzing_channel_args",
         "//test/core/util:grpc_test_util_base",
     ],
 )
@@ -136,7 +137,6 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/util:fuzz_config_vars",
-        "//test/core/util:fuzzing_channel_args",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

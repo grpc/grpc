@@ -139,6 +139,9 @@ message InputSegments {
 }
 
 message NetworkInput {
+    int32 connect_delay_ms = 3;
+    int32 connect_timeout_ms = 4;
+    grpc.testing.FuzzingChannelArgs endpoint_config = 5;
     oneof value {
         bytes single_read_bytes = 1;
         InputSegments input_segments = 2;
