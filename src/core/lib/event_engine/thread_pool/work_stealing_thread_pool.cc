@@ -458,7 +458,11 @@ WorkStealingThreadPool::ThreadState::ThreadState(
       busy_count_idx_(pool_->busy_thread_count()->NextIndex()) {}
 
 void WorkStealingThreadPool::ThreadState::ThreadBody() {
+#ifdef GPR_POSIX_SYNC
   std::signal(kDumpStackSignal, DumpSignalHandler);
+#elif defined(GPR_WINDOWS)
+  signal(kDumpStackSignal, DumpSignalHandler);
+#endif
   pool_->TrackThread(gpr_thd_currentid());
   g_local_queue = new BasicWorkQueue(pool_.get());
   pool_->theft_registry()->Enroll(g_local_queue);

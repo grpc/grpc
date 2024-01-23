@@ -289,7 +289,7 @@ TYPED_TEST(ThreadPoolTest, WorkerThreadLocalRunWorksWithOtherPools) {
 TYPED_TEST(ThreadPoolTest, DISABLED_TestDumpStack) {
   TypeParam p1(8);
   for (size_t i = 0; i < 8; i++) {
-    p1.Run([i]() { absl::SleepFor(absl::Seconds(90)); });
+    p1.Run([]() { absl::SleepFor(absl::Seconds(90)); });
   }
   absl::SleepFor(absl::Seconds(2));
   p1.Quiesce();
