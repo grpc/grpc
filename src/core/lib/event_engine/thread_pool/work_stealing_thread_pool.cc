@@ -24,7 +24,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <csignal>
 #include <memory>
 #include <utility>
 
@@ -43,6 +42,12 @@
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
+
+#ifdef GPR_POSIX_SYNC
+#include <csignal>
+#elif defined(GPR_WINDOWS)
+#include <signal.h>
+#endif
 
 // IWYU pragma: no_include <ratio>
 
@@ -121,11 +126,16 @@ constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
     grpc_core::Duration::Seconds(1)};
 constexpr grpc_core::Duration kBlockUntilThreadCountTimeout{
     grpc_core::Duration::Seconds(60)};
+
+#ifdef GPR_POSIX_SYNC
 constexpr int kDumpStackSignal = SIGUSR1;
+#elif defined(GPR_WINDOWS)
+constexpr int kDumpStackSignal = SIGTERM;
+#endif
 
 std::atomic<size_t> g_reported_dump_count{0};
 
-void DumpSignalHandler(int sig) {
+void DumpSignalHandler(int /* sig */) {
   const auto trace = grpc_core::GetCurrentStackTrace();
   if (!trace.has_value()) {
     gpr_log(GPR_ERROR, "DumpStack::%" PRIdPTR ": Stack trace not available",
