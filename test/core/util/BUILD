@@ -49,7 +49,6 @@ TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
 
 grpc_cc_library(
     name = "proto_bit_gen",
-    external_deps = ["absl/types:variant"],
     language = "c++",
     public_hdrs = ["proto_bit_gen.h"],
     deps = ["//:gpr_platform"],
