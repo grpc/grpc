@@ -462,12 +462,18 @@ void ServiceMeshLabelsInjector::AddLabels(
 }
 
 bool ServiceMeshLabelsInjector::AddOptionalLabels(
+    Entity entity,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
         optional_labels_span,
     opentelemetry::nostd::function_ref<
         bool(opentelemetry::nostd::string_view,
              opentelemetry::common::AttributeValue)>
         callback) const {
+  if (entity == Entity::kServer) {
+    // Currently the CSM optional labels are only set on client.
+    return true;
+  }
+  GPR_ASSERT(entity == Entity::kClient);
   // According to the CSM Observability Metric spec, if the control plane fails
   // to provide these labels, the client will set their values to "unknown".
   // These default values are set below.
@@ -493,9 +499,18 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
 }
 
 size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
+    Entity entity,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
     const {
-  return 2;
+  switch (entity) {
+    case Entity::kServer:
+      return 0;
+    case Entity::kClient:
+      return 2;
+    default:
+      grpc_core::Crash(
+          absl::StrFormat("Unknown entity type: %d", static_cast<int>(entity)));
+  }
 }
 
 }  // namespace internal
