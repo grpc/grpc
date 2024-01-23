@@ -90,14 +90,33 @@ class OpenTelemetryPluginOption(abc.ABC):
 
 # pylint: disable=no-self-use
 class OpenTelemetryPlugin:
-    """Describes a Plugin for OpenTelemetry observability."""
+    """Describes a Plugin for OpenTelemetry observability.
+
+    This is class is part of an EXPERIMENTAL API.
+    """
 
     def get_plugin_options(
         self,
     ) -> Iterable[OpenTelemetryPluginOption]:
+        """
+        This function will be used to get plugin options which are enabled for
+        this OpenTelemetryPlugin instance.
+
+        Returns:
+            An Iterable of class OpenTelemetryPluginOption which will be enabled for
+            this OpenTelemetryPlugin.
+        """
         return []
 
     def get_meter_provider(self) -> Optional[MeterProvider]:
+        """
+        This function will be used to get the MeterProvider for this OpenTelemetryPlugin
+        instance.
+
+        Returns:
+            A MeterProvider which will be used to collect telemetry data, or None which
+            means no metrics will be collected.
+        """
         return None
 
     def target_attribute_filter(
