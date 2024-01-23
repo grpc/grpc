@@ -17,7 +17,7 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nDenvoy/extensions/access_loggers/open_telemetry/v3/logs_service.proto\x12\x31\x65nvoy.extensions.access_loggers.open_telemetry.v3\x1a\x31\x65nvoy/extensions/access_loggers/grpc/v3/als.proto\x1a*opentelemetry/proto/common/v1/common.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xc5\x02\n\x1cOpenTelemetryAccessLogConfig\x12\x63\n\rcommon_config\x18\x01 \x01(\x0b\x32\x42.envoy.extensions.access_loggers.grpc.v3.CommonGrpcAccessLogConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12H\n\x13resource_attributes\x18\x04 \x01(\x0b\x32+.opentelemetry.proto.common.v1.KeyValueList\x12\x35\n\x04\x62ody\x18\x02 \x01(\x0b\x32\'.opentelemetry.proto.common.v1.AnyValue\x12?\n\nattributes\x18\x03 \x01(\x0b\x32+.opentelemetry.proto.common.v1.KeyValueListB\xc8\x01\n?io.envoyproxy.envoy.extensions.access_loggers.open_telemetry.v3B\x10LogsServiceProtoP\x01Zigithub.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/open_telemetry/v3;open_telemetryv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nDenvoy/extensions/access_loggers/open_telemetry/v3/logs_service.proto\x12\x31\x65nvoy.extensions.access_loggers.open_telemetry.v3\x1a\x31\x65nvoy/extensions/access_loggers/grpc/v3/als.proto\x1a*opentelemetry/proto/common/v1/common.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\xe5\x02\n\x1cOpenTelemetryAccessLogConfig\x12\x63\n\rcommon_config\x18\x01 \x01(\x0b\x32\x42.envoy.extensions.access_loggers.grpc.v3.CommonGrpcAccessLogConfigB\x08\xfa\x42\x05\x8a\x01\x02\x10\x01\x12\x1e\n\x16\x64isable_builtin_labels\x18\x05 \x01(\x08\x12H\n\x13resource_attributes\x18\x04 \x01(\x0b\x32+.opentelemetry.proto.common.v1.KeyValueList\x12\x35\n\x04\x62ody\x18\x02 \x01(\x0b\x32\'.opentelemetry.proto.common.v1.AnyValue\x12?\n\nattributes\x18\x03 \x01(\x0b\x32+.opentelemetry.proto.common.v1.KeyValueListB\xc8\x01\n?io.envoyproxy.envoy.extensions.access_loggers.open_telemetry.v3B\x10LogsServiceProtoP\x01Zigithub.com/envoyproxy/go-control-plane/envoy/extensions/access_loggers/open_telemetry/v3;open_telemetryv3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,5 +28,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _OPENTELEMETRYACCESSLOGCONFIG.fields_by_name['common_config']._options = None
   _OPENTELEMETRYACCESSLOGCONFIG.fields_by_name['common_config']._serialized_options = b'\372B\005\212\001\002\020\001'
   _globals['_OPENTELEMETRYACCESSLOGCONFIG']._serialized_start=275
-  _globals['_OPENTELEMETRYACCESSLOGCONFIG']._serialized_end=600
+  _globals['_OPENTELEMETRYACCESSLOGCONFIG']._serialized_end=632
 # @@protoc_insertion_point(module_scope)

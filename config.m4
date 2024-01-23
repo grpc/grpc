@@ -189,6 +189,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c \
@@ -353,6 +354,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
