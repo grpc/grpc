@@ -84,7 +84,7 @@ class _StatsWatcher:
     _no_remote_peer: int
     _lock: threading.Lock
     _condition: threading.Condition
-    _metadata_keys: Set[str]
+    _metadata_keys: frozenset[str]
     _include_all_metadata: bool
     _metadata_by_peer: DefaultDict[
         str, messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
@@ -146,22 +146,23 @@ class _StatsWatcher:
                 else:
                     self._rpcs_by_peer[peer] += 1
                     self._rpcs_by_method[method][peer] += 1
-                    rpc_metadata = (
-                        messages_pb2.LoadBalancerStatsResponse.RpcMetadata()
-                    )
-                    self._add_metadata(
-                        rpc_metadata,
-                        initial_metadata,
-                        messages_pb2.LoadBalancerStatsResponse.MetadataType.INITIAL,
-                    )
-                    self._add_metadata(
-                        rpc_metadata,
-                        trailing_metadata,
-                        messages_pb2.LoadBalancerStatsResponse.MetadataType.TRAILING,
-                    )
-                    self._metadata_by_peer[peer].rpc_metadata.append(
-                        rpc_metadata
-                    )
+                    if self._metadata_keys:
+                        rpc_metadata = (
+                            messages_pb2.LoadBalancerStatsResponse.RpcMetadata()
+                        )
+                        self._add_metadata(
+                            rpc_metadata,
+                            initial_metadata,
+                            messages_pb2.LoadBalancerStatsResponse.MetadataType.INITIAL,
+                        )
+                        self._add_metadata(
+                            rpc_metadata,
+                            trailing_metadata,
+                            messages_pb2.LoadBalancerStatsResponse.MetadataType.TRAILING,
+                        )
+                        self._metadata_by_peer[peer].rpc_metadata.append(
+                            rpc_metadata
+                        )
                 self._rpcs_needed -= 1
                 self._condition.notify()
 
