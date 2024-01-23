@@ -168,6 +168,11 @@ thread_local WorkQueue* g_local_queue = nullptr;
 
 WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
     : pool_{std::make_shared<WorkStealingThreadPoolImpl>(reserve_threads)} {
+  static bool logged = false;
+  if (g_log_verbose_failures && !logged) {
+    logged = true;
+    gpr_log(GPR_INFO, "WorkStealingThreadPool verbose failures are enabled");
+  }
   pool_->Start();
 }
 

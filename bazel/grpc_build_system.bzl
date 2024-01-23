@@ -300,7 +300,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     poller_config = []
 
     # See work_stealing_thread_pool.cc for details.
-    default_env = {"GRPC_THREAD_POOL_VERBOSE_FAILURE": "true"}
+    default_env = {"GRPC_THREAD_POOL_VERBOSE_FAILURES": "true"}
 
     if not uses_polling:
         tags = tags + ["no_uses_polling"]

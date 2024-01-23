@@ -151,8 +151,12 @@ class LivingThreadCount {
     --living_count_;
     cv_.SignalAll();
   }
+  // Blocks the calling thread until the desired number of threads is reached.
+  // If the thread count does not change for some given `stuck_timeout`
+  // duration, this method returns error. If the thread count does change, the
+  // timeout clock is reset.
   absl::Status BlockUntilThreadCount(size_t desired_threads, const char* why,
-                                     grpc_core::Duration timeout)
+                                     grpc_core::Duration stuck_timeout)
       ABSL_LOCKS_EXCLUDED(mu_);
   size_t count() ABSL_LOCKS_EXCLUDED(mu_) {
     grpc_core::MutexLock lock(&mu_);
