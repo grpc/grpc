@@ -35,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
     "promise_based_client_call": "promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
+    "chaotic_good": "chaotic_good,promise_based_client_call,promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
     "promise_based_inproc_transport": "promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
     "registered_methods_map": "registered_methods_map",
@@ -70,6 +71,7 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
+                "chaotic_good",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -149,6 +151,7 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
+                "chaotic_good",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -225,6 +228,7 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
+                "chaotic_good",
                 "event_engine_client",
                 "promise_based_client_call",
                 "promise_based_server_call",

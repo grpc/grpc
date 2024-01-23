@@ -535,6 +535,37 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
+class ChaoticGoodFixture final : public grpc_core::CoreTestFixture {
+ public:
+  explicit ChaoticGoodFixture(std::string localaddr = grpc_core::JoinHostPort(
+                                  "localhost", grpc_pick_unused_port_or_die()))
+      : localaddr_(std::move(localaddr)) {}
+
+ protected:
+  const std::string& localaddr() const { return localaddr_; }
+
+ private:
+  grpc_server* MakeServer(
+      const grpc_core::ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
+    GPR_ASSERT(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
+    pre_server_start(server);
+    grpc_server_start(server);
+    return server;
+  }
+
+  grpc_channel* MakeClient(const grpc_core::ChannelArgs& args,
+                           grpc_completion_queue*) override {
+    auto* client =
+        grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
+    return client;
+  }
+
+  std::string localaddr_;
+};
+
 #ifdef GRPC_POSIX_WAKEUP_FD
 class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
  public:
@@ -951,9 +982,22 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
   };
 }
 
+std::vector<CoreTestConfiguration> ChaoticGoodFixtures() {
+  return std::vector<CoreTestConfiguration>{CoreTestConfiguration{
+      "ChaoticGoodFullStack", FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL, nullptr,
+      [](const ChannelArgs& /*client_args*/,
+         const ChannelArgs& /*server_args*/) {
+        return std::make_unique<ChaoticGoodFixture>();
+      }}};
+}
+
 std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs;
-  configs = DefaultConfigs();
+  if (IsChaoticGoodEnabled()) {
+    configs = ChaoticGoodFixtures();
+  } else {
+    configs = DefaultConfigs();
+  }
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;
