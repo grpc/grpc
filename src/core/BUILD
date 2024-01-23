@@ -1707,9 +1707,11 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/time",
+        "absl/types:optional",
     ],
     deps = [
         "common_event_engine_closures",
+        "env",
         "event_engine_basic_work_queue",
         "event_engine_thread_count",
         "event_engine_thread_local",
@@ -1723,7 +1725,6 @@ grpc_cc_library(
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 

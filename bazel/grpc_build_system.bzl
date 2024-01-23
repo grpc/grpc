@@ -299,6 +299,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     """
     poller_config = []
 
+    # See work_stealing_thread_pool.cc for details.
+    default_env = {"GRPC_THREAD_POOL_VERBOSE_FAILURE": "true"}
+
     if not uses_polling:
         tags = tags + ["no_uses_polling"]
 
@@ -309,7 +312,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             "tags": tags,
             "args": args,
             "flaky": flaky,
-            "env": {},
+            "env": default_env,
         })
     else:
         # On linux we run the same test with the default EventEngine, once for each
@@ -329,7 +332,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "args": args,
                 "env": {
                     "GRPC_POLL_STRATEGY": poller,
-                },
+                } | default_env,
                 "flaky": flaky,
             })
 
@@ -346,7 +349,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "deps": deps,
                 "tags": tags + ["no_linux"],
                 "args": args,
-                "env": {},
+                "env": default_env,
                 "flaky": flaky,
             })
         else:
@@ -366,7 +369,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "deps": deps,
                     "tags": test_tags,
                     "args": test_args,
-                    "env": {},
+                    "env": default_env,
                     "flaky": flaky,
                 })
 

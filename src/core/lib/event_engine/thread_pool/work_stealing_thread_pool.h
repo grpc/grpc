@@ -196,7 +196,7 @@ class WorkStealingThreadPool final : public ThreadPool {
     std::atomic<bool> throttled_{false};
     WorkSignal work_signal_;
     Lifeguard lifeguard_;
-
+    // Set of threads for verbose failure debugging
     grpc_core::Mutex thd_set_mu_;
     absl::flat_hash_set<gpr_thd_id> thds_ ABSL_GUARDED_BY(thd_set_mu_);
   };

@@ -29,6 +29,7 @@
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 
@@ -39,6 +40,7 @@
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time.h"
@@ -91,6 +93,13 @@
 // non-existent Lifeguard thread to finish. Trying a simple
 // `lifeguard_thread_.Join()` leads to memory access errors. This implementation
 // uses Notifications to coordinate startup and shutdown states.
+//
+// ## Debugging
+//
+// Set the environment variable GRPC_THREAD_POOL_VERBOSE_FAILURES=anything to
+// enable advanced debugging. When the pool takes too long to quiesce, a
+// backtrace will be printed for every running thread, and the process will
+// abort.
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -132,6 +141,9 @@ constexpr int kDumpStackSignal = SIGUSR1;
 #elif defined(GPR_WINDOWS)
 constexpr int kDumpStackSignal = SIGTERM;
 #endif
+
+const bool g_log_verbose_failures =
+    grpc_core::GetEnv("GRPC_THREAD_POOL_VERBOSE_FAILURES").has_value();
 
 std::atomic<size_t> g_reported_dump_count{0};
 
@@ -255,7 +267,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   auto threads_were_shut_down = living_thread_count_.BlockUntilThreadCount(
       is_threadpool_thread ? 1 : 0, "shutting down",
       kBlockUntilThreadCountTimeout);
-  if (!threads_were_shut_down.ok()) {
+  if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
   GPR_ASSERT(queue_.Empty());
@@ -299,7 +311,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
   work_signal_.SignalAll();
   auto threads_were_shut_down = living_thread_count_.BlockUntilThreadCount(
       0, "forking", kBlockUntilThreadCountTimeout);
-  if (!threads_were_shut_down.ok()) {
+  if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
   lifeguard_.BlockUntilShutdownAndReset();
@@ -458,12 +470,14 @@ WorkStealingThreadPool::ThreadState::ThreadState(
       busy_count_idx_(pool_->busy_thread_count()->NextIndex()) {}
 
 void WorkStealingThreadPool::ThreadState::ThreadBody() {
+  if (g_log_verbose_failures) {
 #ifdef GPR_POSIX_SYNC
-  std::signal(kDumpStackSignal, DumpSignalHandler);
+    std::signal(kDumpStackSignal, DumpSignalHandler);
 #elif defined(GPR_WINDOWS)
-  signal(kDumpStackSignal, DumpSignalHandler);
+    signal(kDumpStackSignal, DumpSignalHandler);
 #endif
-  pool_->TrackThread(gpr_thd_currentid());
+    pool_->TrackThread(gpr_thd_currentid());
+  }
   g_local_queue = new BasicWorkQueue(pool_.get());
   pool_->theft_registry()->Enroll(g_local_queue);
   ThreadLocal::SetIsEventEngineThread(true);
@@ -486,7 +500,9 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
   GPR_ASSERT(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
   delete g_local_queue;
-  pool_->UntrackThread(gpr_thd_currentid());
+  if (g_log_verbose_failures) {
+    pool_->UntrackThread(gpr_thd_currentid());
+  }
 }
 
 void WorkStealingThreadPool::ThreadState::SleepIfRunning() {
