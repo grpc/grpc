@@ -46,16 +46,11 @@
 static constexpr absl::string_view kCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/current.crl";
 static constexpr absl::string_view kCrlName = "current.crl";
-static constexpr absl::string_view kCrlIntermediateIssuerPath =
+static constexpr absl::string_view intermediate_crl_issuerPath =
     "test/core/tsi/test_creds/crl_data/intermediate_ca.pem";
 static constexpr absl::string_view kCrlDirectory =
     "test/core/tsi/test_creds/crl_data/crls";
 static constexpr absl::string_view kRootCert =
-    "test/core/tsi/test_creds/crl_data/ca.pem";
-
-static constexpr absl::string_view crl_issuer =
-    "test/core/tsi/test_creds/crl_data/ca.pem";
-static constexpr absl::string_view kCrlIntermediateIssuer =
     "test/core/tsi/test_creds/crl_data/ca.pem";
 
 using ::grpc_core::experimental::CertificateInfoImpl;
@@ -91,9 +86,38 @@ class FakeDirectoryReader : public DirectoryReader {
       std::vector<std::string>();
 };
 
-class DirectoryReloaderCrlProviderTest : public ::testing::Test {
+class CrlProviderTest : public ::testing::Test {
  public:
   void SetUp() override {
+    std::string cert_string = GetFileContents(kRootCert.data());
+    X509* issuer = read_cert(cert_string);
+    crl_issuer = IssuerFromCert(issuer);
+    std::string intermediate_string =
+        GetFileContents(intermediate_crl_issuerPath.data());
+    X509* intermediate_issuer = read_cert(intermediate_string);
+    intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
+  }
+
+ protected:
+  std::string crl_issuer;
+  std::string intermediate_crl_issuer;
+  X509* read_cert(absl::string_view cert_string) {
+    BIO* cert_bio = BIO_new_mem_buf(cert_string.data(),
+                                    static_cast<int>(cert_string.size()));
+    // Errors on BIO
+    if (cert_bio == nullptr) {
+      return nullptr;
+    }
+    X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+    BIO_free(cert_bio);
+    return cert;
+  }
+};
+
+class DirectoryReloaderCrlProviderTest : public CrlProviderTest {
+ public:
+  void SetUp() override {
+    CrlProviderTest::SetUp();
     event_engine_ =
         std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
             grpc_event_engine::experimental::FuzzingEventEngine::Options(),
@@ -143,34 +167,6 @@ class DirectoryReloaderCrlProviderTest : public ::testing::Test {
       event_engine_;
 };
 
-class CrlProviderTest : public ::testing::Test {
- public:
-  void SetUp() override {
-    std::string cert_string = GetFileContents(kRootCert.data());
-    X509* issuer = read_cert(cert_string);
-    crl_issuer = IssuerFromCert(issuer);
-    std::string intermediate_string =
-        GetFileContents(kCrlIntermediateIssuerPath.data());
-    X509* intermediate_issuer = read_cert(intermediate_string);
-    intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
-  }
-
- protected:
-  std::string crl_issuer;
-  std::string intermediate_crl_issuer;
-  X509* read_cert(absl::string_view cert_string) {
-    BIO* cert_bio = BIO_new_mem_buf(cert_string.data(),
-                                    static_cast<int>(cert_string.size()));
-    // Errors on BIO
-    if (cert_bio == nullptr) {
-      return nullptr;
-    }
-    X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
-    BIO_free(cert_bio);
-    return cert;
-  }
-};
-
 TEST_F(CrlProviderTest, CanParseCrl) {
   std::string crl_string = GetFileContents(kCrlPath.data());
   absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
@@ -216,10 +212,10 @@ TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupGood) {
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
   EXPECT_EQ(crl->Issuer(), crl_issuer);
-  CertificateInfoImpl intermediate(kCrlIntermediateIssuer);
+  CertificateInfoImpl intermediate(intermediate_crl_issuer);
   auto intermediate_crl = (*provider)->GetCrl(intermediate);
   ASSERT_NE(intermediate_crl, nullptr);
-  EXPECT_EQ(intermediate_crl->Issuer(), kCrlIntermediateIssuer);
+  EXPECT_EQ(intermediate_crl->Issuer(), intermediate_crl_issuer);
 }
 
 TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupMissingIssuer) {
