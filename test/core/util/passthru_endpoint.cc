@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <functional>
 #include <memory>
 #include <string>
 
@@ -31,119 +30,250 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint;
+using ::grpc_event_engine::experimental::SliceBuffer;
+
+// DO NOT SUBMIT(hork): NOTES
+// * me_get_peer was wrong
 
 typedef struct passthru_endpoint passthru_endpoint;
 
-typedef struct {
-  bool is_armed;
-  grpc_endpoint* ep;
-  grpc_slice_buffer* slices;
-  grpc_closure* cb;
-} pending_op;
+class HalfEndpoint;
 
+struct pending_op {
+  bool is_armed = false;
+  HalfEndpoint* ep = nullptr;
+  SliceBuffer* slices = nullptr;
+  absl::AnyInvocable<void(absl::Status)> cb;
+};
+
+// TODO(hork):
 typedef struct {
   absl::optional<EventEngine::TaskHandle> timer_handle;
   uint64_t allowed_write_bytes;
   uint64_t allowed_read_bytes;
   std::vector<grpc_passthru_endpoint_channel_action> actions;
-  std::function<void()> on_complete;
 } grpc_passthru_endpoint_channel_effects;
 
-typedef struct {
-  grpc_endpoint base;
-  passthru_endpoint* parent;
-  grpc_slice_buffer read_buffer;
-  grpc_slice_buffer write_buffer;
-  grpc_slice_buffer* on_read_out;
-  grpc_closure* on_read;
-  pending_op pending_read_op;
-  pending_op pending_write_op;
-  uint64_t bytes_read_so_far;
-  uint64_t bytes_written_so_far;
-} half;
+struct SharedEndpointState : std::enable_shared_from_this<SharedEndpointState> {
+  SharedEndpointState(grpc_passthru_endpoint_stats* stats_arg,
+                      bool simulate_channel_actions_arg)
+      : channel_effects(new grpc_passthru_endpoint_channel_effects()),
+        simulate_channel_actions(simulate_channel_actions_arg),
+        event_engine(GetDefaultEventEngine()) {
+    if (stats_arg == nullptr) {
+      stats = grpc_passthru_endpoint_stats_create();
+    } else {
+      gpr_ref(&stats_arg->refs);
+      stats = stats_arg;
+    }
+    if (!simulate_channel_actions) {
+      channel_effects->allowed_read_bytes = UINT64_MAX;
+      channel_effects->allowed_write_bytes = UINT64_MAX;
+    }
+  }
 
-struct passthru_endpoint {
-  gpr_mu mu;
-  int halves;
-  grpc_passthru_endpoint_stats* stats;
-  grpc_passthru_endpoint_channel_effects* channel_effects;
+  ~SharedEndpointState() {
+    grpc_passthru_endpoint_stats_destroy(stats);
+    delete channel_effects;
+  }
+
+  void DoNextSchedChannelAction(absl::Status error) ABSL_LOCKS_EXCLUDED(mu);
+  void SchedNextChannelActionLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+    if (channel_effects->actions.empty()) {
+      grpc_error_handle err = GRPC_ERROR_CREATE("Channel actions complete");
+      shutdown_locked(m, err);
+      return;
+    }
+    channel_effects->timer_handle = event_engine->RunAfter(
+        grpc_core::Duration::Milliseconds(channel_effects->actions[0].wait_ms),
+        [this] {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          DoNextSchedChannelAction(absl::OkStatus());
+        });
+  }
+
+  grpc_core::Mutex mu;
+  bool shutdown = false;
+  grpc_passthru_endpoint_stats* stats = nullptr;
+  grpc_passthru_endpoint_channel_effects* channel_effects = nullptr;
   bool simulate_channel_actions;
-  bool shutdown;
-  half client;
-  half server;
+  grpc_endpoint* client;
+  grpc_endpoint* server;
+  // Easy accessors. Pointers are owned by the grpc_endpoints above
+  HalfEndpoint* half_endpoint_client;
+  HalfEndpoint* half_endpoint_server;
+  std::shared_ptr<EventEngine> event_engine;
 };
 
-static void do_pending_read_op_locked(half* m, grpc_error_handle error) {
-  GPR_ASSERT(m->pending_read_op.is_armed);
-  GPR_ASSERT(m->bytes_read_so_far <=
-             m->parent->channel_effects->allowed_read_bytes);
-  if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb,
-                            GRPC_ERROR_CREATE("Already shutdown"));
-    // Move any pending data into pending_read_op.slices so that it may be
-    // free'ed by the executing callback.
-    grpc_slice_buffer_move_into(&m->read_buffer, m->pending_read_op.slices);
-    m->pending_read_op.is_armed = false;
-    return;
+class HalfEndpoint : public EventEngine::Endpoint {
+ public:
+  explicit HalfEndpoint(absl::string_view name,
+                        std::shared_ptr<SharedEndpointState> shared_state)
+      : shared_state_(std::move(shared_state)),
+        local_addr_uri_(absl::StrFormat("fake:passthru_endpoint_%s_%p", name,
+                                        shared_state_.get())) {
+    auto addr =
+        grpc_event_engine::experimental::URIToResolvedAddress(local_addr_uri_);
+    if (!addr.ok()) {
+      grpc_core::Crash("Invalid ResolvedAddress URI: %s",
+                       local_addr_uri_.c_str());
+    }
+    local_resolved_addr_ = *addr;
   }
 
-  if (m->bytes_read_so_far == m->parent->channel_effects->allowed_read_bytes) {
-    // Keep it in pending state.
-    return;
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const ReadArgs* args) override {
+    grpc_core::MutexLock lock(&shared_state_->mu);
+    if (shared_state_->shutdown) {
+      shared_state_->event_engine->Run(
+          [on_read = std::move(on_read)]() mutable {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            on_read(GRPC_ERROR_CREATE("Already shutdown"));
+          });
+      return false;
+    }
+    GPR_ASSERT(!pending_read_op_.is_armed);
+    if (read_buffer_.Count() > 0) {
+      GPR_ASSERT(!on_read_);
+      pending_read_op_.is_armed = true;
+      pending_read_op_.cb = std::move(on_read);
+      pending_read_op_.ep = this;
+      pending_read_op_.slices = buffer;
+      DoPendingReadOpLocked(absl::OkStatus());
+    } else {
+      on_read_ = std::move(on_read);
+      on_read_out_ = buffer;
+    }
+    return false;
   }
-  // This delayed processing should only be invoked when read_buffer has
-  // something in it.
-  GPR_ASSERT(m->read_buffer.count > 0);
-  uint64_t readable_length = std::min<uint64_t>(
-      m->read_buffer.length,
-      m->parent->channel_effects->allowed_read_bytes - m->bytes_read_so_far);
-  GPR_ASSERT(readable_length > 0);
-  grpc_slice_buffer_move_first(&m->read_buffer, readable_length,
-                               m->pending_read_op.slices);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->pending_read_op.cb, error);
-  if (m->parent->simulate_channel_actions) {
-    m->bytes_read_so_far += readable_length;
-  }
-  m->pending_read_op.is_armed = false;
-}
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/,
-                    int /*min_progress_size*/) {
-  half* m = reinterpret_cast<half*>(ep);
-  gpr_mu_lock(&m->parent->mu);
-  if (m->parent->shutdown) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
-                            GRPC_ERROR_CREATE("Already shutdown"));
-  } else if (m->read_buffer.count > 0) {
-    GPR_ASSERT(!m->pending_read_op.is_armed);
-    GPR_ASSERT(!m->on_read);
-    m->pending_read_op.is_armed = true;
-    m->pending_read_op.cb = cb;
-    m->pending_read_op.ep = ep;
-    m->pending_read_op.slices = slices;
-    do_pending_read_op_locked(m, absl::OkStatus());
-  } else {
-    GPR_ASSERT(!m->pending_read_op.is_armed);
-    m->on_read = cb;
-    m->on_read_out = slices;
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const WriteArgs* args) override {
+    grpc_core::Crash("DO NOT SUBMIT - implement");
   }
-  gpr_mu_unlock(&m->parent->mu);
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return GetOther()->GetLocalAddress();
+  }
+
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return local_resolved_addr_;
+  }
+
+  // Custom Methods
+
+  const HalfEndpoint* GetOther() const {
+    if (shared_state_->half_endpoint_client == this)
+      return shared_state_->half_endpoint_server;
+    return shared_state_->half_endpoint_client;
+  }
+
+  void FlushPendingOpsLocked(absl::Status error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu) {
+    if (pending_read_op_.is_armed) DoPendingReadOpLocked(error);
+    if (pending_write_op_.is_armed) DoPendingWriteOpLocked(error);
+  }
+
+  void DoPendingReadOpLocked(absl::Status error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu) {
+    GPR_ASSERT(pending_read_op_.is_armed);
+    GPR_ASSERT(bytes_read_so_far_ <=
+               shared_state_->channel_effects->allowed_read_bytes);
+    if (shared_state_->shutdown) {
+      shared_state_->event_engine->Run(
+          [cb = std::move(pending_read_op_.cb)]() mutable {
+            grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+            grpc_core::ExecCtx exec_ctx;
+            cb(GRPC_ERROR_CREATE("Already shutdown"));
+          });
+      // Move any pending data into pending_read_op.slices so that it may be
+      // free'ed by the executing callback.
+
+      // DO NOT SUBMIT(hork): EE slice ops
+      grpc_slice_buffer_move_into(&read_buffer_, pending_read_op_.slices);
+      pending_read_op_.is_armed = false;
+      return;
+    }
+    if (bytes_read_so_far_ ==
+        shared_state_->channel_effects->allowed_read_bytes) {
+      // Keep it in pending state.
+      return;
+    }
+    // This delayed processing should only be invoked when read_buffer has
+    // something in it.
+    GPR_ASSERT(read_buffer_.Count() > 0);
+    uint64_t readable_length =
+        std::min<uint64_t>(read_buffer_.Length(),
+                           shared_state_->channel_effects->allowed_read_bytes -
+                               bytes_read_so_far_);
+    GPR_ASSERT(readable_length > 0);
+    // DO NOT SUBMIT(hork): EE slice ops
+    grpc_slice_buffer_move_first(&read_buffer_, readable_length,
+                                 pending_read_op_.slices);
+    shared_state_->event_engine->Run(
+        [cb = std::move(pending_read_op_.cb), error]() mutable {
+          grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+          grpc_core::ExecCtx exec_ctx;
+          cb(error);
+        });
+    if (shared_state_->simulate_channel_actions) {
+      bytes_read_so_far_ += readable_length;
+    }
+    pending_read_op_.is_armed = false;
+  }
+
+  void DoPendingWriteOpLocked(absl::Status error) {
+    grpc_core::Crash("DO NOT SUBMIT - implement");
+  }
+
+ private:
+  std::shared_ptr<SharedEndpointState> shared_state_;
+  SliceBuffer read_buffer_;
+  SliceBuffer write_buffer_;
+  SliceBuffer* on_read_out_ = nullptr;
+  absl::AnyInvocable<void(absl::Status)> on_read_;
+  pending_op pending_read_op_;
+  pending_op pending_write_op_;
+  uint64_t bytes_read_so_far_ = 0;
+  uint64_t bytes_written_so_far_ = 0;
+  std::string local_addr_uri_;
+  EventEngine::ResolvedAddress local_resolved_addr_;
+};
+
+// ---- SharedEndpointState implementation --------------------------------
+
+void SharedEndpointState::DoNextSchedChannelAction(absl::Status error) {
+  grpc_core::MutexLock lock(&mu);
+  GPR_ASSERT(channel_effects->actions.empty());
+  auto curr_action = channel_effects->actions[0];
+  channel_effects->actions.erase(channel_effects->actions.begin());
+  channel_effects->allowed_read_bytes += curr_action.add_n_readable_bytes;
+  channel_effects->allowed_write_bytes += curr_action.add_n_writable_bytes;
+  static_cast<HalfEndpoint*>(grpc_get_wrapped_event_engine_endpoint(client))
+      ->FlushPendingOpsLocked(error);
+  static_cast<HalfEndpoint*>(grpc_get_wrapped_event_engine_endpoint(server))
+      ->FlushPendingOpsLocked(error);
+  SchedNextChannelActionLocked();
 }
 
 // Copy src slice and split the copy at n bytes into two separate slices
@@ -160,11 +290,6 @@ void grpc_slice_copy_split(grpc_slice src, uint64_t n, grpc_slice& split1,
   split2 = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(src) - n);
   memcpy(GRPC_SLICE_START_PTR(split2), GRPC_SLICE_START_PTR(src) + n,
          GRPC_SLICE_LENGTH(src) - n);
-}
-
-static half* other_half(half* h) {
-  if (h == &h->parent->client) return &h->parent->server;
-  return &h->parent->client;
 }
 
 static void do_pending_write_op_locked(half* m, grpc_error_handle error) {
@@ -301,24 +426,7 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   gpr_mu_unlock(&m->parent->mu);
 }
 
-void flush_pending_ops_locked(half* m, grpc_error_handle error) {
-  if (m->pending_read_op.is_armed) {
-    do_pending_read_op_locked(m, error);
-  }
-  if (m->pending_write_op.is_armed) {
-    do_pending_write_op_locked(m, error);
-  }
-}
-
-static void me_add_to_pollset(grpc_endpoint* /*ep*/,
-                              grpc_pollset* /*pollset*/) {}
-
-static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
-                                  grpc_pollset_set* /*pollset*/) {}
-
-static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
-                                       grpc_pollset_set* /*pollset*/) {}
-
+// DO NOT SUBMIT(hork): this needs to move to ~HalfEndpoint
 static void shutdown_locked(half* m, grpc_error_handle why) {
   m->parent->shutdown = true;
   flush_pending_ops_locked(m, absl::OkStatus());
@@ -336,125 +444,28 @@ static void shutdown_locked(half* m, grpc_error_handle why) {
   }
 }
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  half* m = reinterpret_cast<half*>(ep);
-  gpr_mu_lock(&m->parent->mu);
-  shutdown_locked(m, why);
-  gpr_mu_unlock(&m->parent->mu);
-}
-
-void grpc_passthru_endpoint_destroy(passthru_endpoint* p) {
-  gpr_mu_destroy(&p->mu);
-  grpc_passthru_endpoint_stats_destroy(p->stats);
-  delete p->channel_effects;
-  grpc_slice_buffer_destroy(&p->client.read_buffer);
-  grpc_slice_buffer_destroy(&p->server.read_buffer);
-  grpc_slice_buffer_destroy(&p->client.write_buffer);
-  grpc_slice_buffer_destroy(&p->server.write_buffer);
-  gpr_free(p);
-}
-
-static void do_next_sched_channel_action(void* arg, grpc_error_handle error);
-
-static void me_destroy(grpc_endpoint* ep) {
-  passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
-  gpr_mu_lock(&p->mu);
-  if (0 == --p->halves && p->channel_effects->actions.empty()) {
-    // no pending channel actions exist
-    gpr_mu_unlock(&p->mu);
-    grpc_passthru_endpoint_destroy(p);
-  } else {
-    if (p->halves == 0 && p->simulate_channel_actions) {
-      if (p->channel_effects->timer_handle.has_value()) {
-        if (GetDefaultEventEngine()->Cancel(
-                *p->channel_effects->timer_handle)) {
-          gpr_mu_unlock(&p->mu);
-          // This will destroy the passthru endpoint so just return after that.
-          do_next_sched_channel_action(ep, absl::CancelledError());
-          return;
-        }
-        p->channel_effects->timer_handle.reset();
-      }
-    }
-    gpr_mu_unlock(&p->mu);
-  }
-}
-
-static absl::string_view me_get_peer(grpc_endpoint* ep) {
-  passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
-  return (reinterpret_cast<half*>(ep)) == &p->client
-             ? "fake:mock_client_endpoint"
-             : "fake:mock_server_endpoint";
-}
-
-static absl::string_view me_get_local_address(grpc_endpoint* ep) {
-  passthru_endpoint* p = (reinterpret_cast<half*>(ep))->parent;
-  return (reinterpret_cast<half*>(ep)) == &p->client
-             ? "fake:mock_client_endpoint"
-             : "fake:mock_server_endpoint";
-}
-
-static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
-
-static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
-
 static const grpc_endpoint_vtable vtable = {
-    me_read,
     me_write,
-    me_add_to_pollset,
-    me_add_to_pollset_set,
-    me_delete_from_pollset_set,
-    me_shutdown,
-    me_destroy,
-    me_get_peer,
-    me_get_local_address,
-    me_get_fd,
-    me_can_track_err,
 };
 
-static void half_init(half* m, passthru_endpoint* parent,
-                      const char* half_name) {
-  m->base.vtable = &vtable;
-  m->parent = parent;
-  grpc_slice_buffer_init(&m->read_buffer);
-  grpc_slice_buffer_init(&m->write_buffer);
-  m->pending_write_op.slices = nullptr;
-  m->on_read = nullptr;
-  m->bytes_read_so_far = 0;
-  m->bytes_written_so_far = 0;
-  m->pending_write_op.is_armed = false;
-  m->pending_read_op.is_armed = false;
-  std::string name =
-      absl::StrFormat("passthru_endpoint_%s_%p", half_name, parent);
-}
-
+// DO NOT SUBMIT(hork): good
 void grpc_passthru_endpoint_create(grpc_endpoint** client,
                                    grpc_endpoint** server,
                                    grpc_passthru_endpoint_stats* stats,
                                    bool simulate_channel_actions) {
-  passthru_endpoint* m =
-      static_cast<passthru_endpoint*>(gpr_malloc(sizeof(*m)));
-  m->halves = 2;
-  m->shutdown = false;
-  if (stats == nullptr) {
-    m->stats = grpc_passthru_endpoint_stats_create();
-  } else {
-    gpr_ref(&stats->refs);
-    m->stats = stats;
-  }
-  m->channel_effects = new grpc_passthru_endpoint_channel_effects();
-  m->simulate_channel_actions = simulate_channel_actions;
-  if (!simulate_channel_actions) {
-    m->channel_effects->allowed_read_bytes = UINT64_MAX;
-    m->channel_effects->allowed_write_bytes = UINT64_MAX;
-  }
-  half_init(&m->client, m, "client");
-  half_init(&m->server, m, "server");
-  gpr_mu_init(&m->mu);
-  *client = &m->client.base;
-  *server = &m->server.base;
+  auto shared_endpoint_state =
+      std::make_shared<SharedEndpointState>(stats, simulate_channel_actions);
+  auto* half_client = grpc_event_engine_endpoint_create(
+      std::make_unique<HalfEndpoint>("client", shared_endpoint_state));
+  auto* half_server = grpc_event_engine_endpoint_create(
+      std::make_unique<HalfEndpoint>("server", shared_endpoint_state));
+  shared_endpoint_state->client = half_client;
+  shared_endpoint_state->server = half_server;
+  *client = half_client;
+  *server = half_server;
 }
 
+// DO NOT SUBMIT(hork): good
 grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
   grpc_passthru_endpoint_stats* stats =
       static_cast<grpc_passthru_endpoint_stats*>(
@@ -464,62 +475,9 @@ grpc_passthru_endpoint_stats* grpc_passthru_endpoint_stats_create() {
   return stats;
 }
 
+// DO NOT SUBMIT(hork): good
 void grpc_passthru_endpoint_stats_destroy(grpc_passthru_endpoint_stats* stats) {
   if (gpr_unref(&stats->refs)) {
     gpr_free(stats);
   }
-}
-
-static void sched_next_channel_action_locked(half* m);
-
-static void do_next_sched_channel_action(void* arg, grpc_error_handle error) {
-  half* m = reinterpret_cast<half*>(arg);
-  gpr_mu_lock(&m->parent->mu);
-  GPR_ASSERT(!m->parent->channel_effects->actions.empty());
-  if (m->parent->halves == 0) {
-    gpr_mu_unlock(&m->parent->mu);
-    grpc_passthru_endpoint_destroy(m->parent);
-    return;
-  }
-  auto curr_action = m->parent->channel_effects->actions[0];
-  m->parent->channel_effects->actions.erase(
-      m->parent->channel_effects->actions.begin());
-  m->parent->channel_effects->allowed_read_bytes +=
-      curr_action.add_n_readable_bytes;
-  m->parent->channel_effects->allowed_write_bytes +=
-      curr_action.add_n_writable_bytes;
-  flush_pending_ops_locked(m, error);
-  flush_pending_ops_locked(other_half(m), error);
-  sched_next_channel_action_locked(m);
-  gpr_mu_unlock(&m->parent->mu);
-}
-
-static void sched_next_channel_action_locked(half* m) {
-  if (m->parent->channel_effects->actions.empty()) {
-    grpc_error_handle err = GRPC_ERROR_CREATE("Channel actions complete");
-    shutdown_locked(m, err);
-    return;
-  }
-  m->parent->channel_effects->timer_handle = GetDefaultEventEngine()->RunAfter(
-      grpc_core::Duration::Milliseconds(
-          m->parent->channel_effects->actions[0].wait_ms),
-      [m] {
-        grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-        grpc_core::ExecCtx exec_ctx;
-        do_next_sched_channel_action(m, absl::OkStatus());
-      });
-}
-
-void start_scheduling_grpc_passthru_endpoint_channel_effects(
-    grpc_endpoint* ep,
-    const std::vector<grpc_passthru_endpoint_channel_action>& actions) {
-  half* m = reinterpret_cast<half*>(ep);
-  gpr_mu_lock(&m->parent->mu);
-  if (!m->parent->simulate_channel_actions || m->parent->shutdown) {
-    gpr_mu_unlock(&m->parent->mu);
-    return;
-  }
-  m->parent->channel_effects->actions = actions;
-  sched_next_channel_action_locked(m);
-  gpr_mu_unlock(&m->parent->mu);
 }
