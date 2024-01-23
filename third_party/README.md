@@ -114,11 +114,6 @@ Updating the protobuf dependency is now part of the internal release process (se
 
 Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 
-In addition, please perform the following two steps to generate the Python `xds-protos` package:
-
-1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
-2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
-
 ### Updating third_party/upb
 
 Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
