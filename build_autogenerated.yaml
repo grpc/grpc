@@ -383,6 +383,8 @@ libs:
   - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h
@@ -682,6 +684,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h
@@ -1372,6 +1375,7 @@ libs:
   - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
@@ -1536,6 +1540,7 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c
+  - src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c
@@ -6782,6 +6787,8 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h
   - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h
   - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h
@@ -6965,6 +6972,7 @@ targets:
   - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
@@ -19088,12 +19096,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: fff067a5d6d776fc88549b5dd4773a6f8f0187b26a859de8b29bd4226a28ee63
+  hash: ddd3beedda1178a79e0d988f76f362002aced09749452515853f106e22bd2249
   proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-9d6ffa70677c4dbf23f6ed569676206c4e2edff4
+  strip_prefix: data-plane-api-78f198cf96ecdc7120ef640406770aa01af775c4
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/9d6ffa70677c4dbf23f6ed569676206c4e2edff4.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/78f198cf96ecdc7120ef640406770aa01af775c4.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/78f198cf96ecdc7120ef640406770aa01af775c4.tar.gz
 - destination: third_party/googleapis
   hash: 5bb6b0253ccf64b53d6c7249625a7e3f6c3bc6402abd52d3778bfa48258703a0
   proto_prefix: third_party/googleapis/
@@ -19109,10 +19117,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
   - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
 - destination: third_party/xds
-  hash: 0d33b83f8c6368954e72e7785539f0d272a8aba2f6e2e336ed15fd1514bc9899
+  hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
   proto_prefix: third_party/xds/
-  strip_prefix: xds-e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7
+  strip_prefix: xds-3a472e524827f72d1ad621c4983dd5af54c46776
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
-  - https://github.com/cncf/xds/archive/e9ce68804cb4e64cab5a52e3c8baf840d4ff87b7.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+  - https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
 tests: []

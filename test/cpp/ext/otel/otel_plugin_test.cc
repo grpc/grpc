@@ -754,6 +754,7 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
       const override {}
 
   bool AddOptionalLabels(
+      bool /*is_client*/,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       /*optional_labels_span*/,
       opentelemetry::nostd::function_ref<
@@ -764,6 +765,7 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
   }
 
   size_t GetOptionalLabelsSize(
+      bool /*is_client*/,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       /*optional_labels_span*/) const override {
     return 0;

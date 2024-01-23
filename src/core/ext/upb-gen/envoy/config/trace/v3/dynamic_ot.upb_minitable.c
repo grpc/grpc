@@ -9,6 +9,7 @@
 #include "upb/generated_code_support.h"
 #include "envoy/config/trace/v3/dynamic_ot.upb_minitable.h"
 #include "google/protobuf/struct.upb_minitable.h"
+#include "envoy/annotations/deprecation.upb_minitable.h"
 #include "udpa/annotations/migrate.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "udpa/annotations/versioning.upb_minitable.h"
