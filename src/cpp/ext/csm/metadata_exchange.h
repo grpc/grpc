@@ -52,7 +52,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
 
   // Add optional labels to the traced calls.
   bool AddOptionalLabels(
-      Entity entity,
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span,
       opentelemetry::nostd::function_ref<
@@ -62,7 +62,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
 
   // Gets the size of the actual optional labels.
   size_t GetOptionalLabelsSize(
-      Entity entity,
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span) const override;
 

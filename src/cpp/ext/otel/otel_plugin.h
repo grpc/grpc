@@ -66,15 +66,6 @@ class LabelsIterable {
 // through the OpenTelemetry plugin.
 class LabelsInjector {
  public:
-  // Some optional labels may only be set on client or server. We use this enum
-  // to specify the entity of the caller for the APIs that need this
-  // information.
-  enum class Entity {
-    kUnknown = 0,
-    kClient,
-    kServer,
-  };
-
   virtual ~LabelsInjector() {}
   // Read the incoming initial metadata to get the set of labels to be added to
   // metrics.
@@ -93,7 +84,7 @@ class LabelsInjector {
   // corresponds to the CallAttemptTracer::OptionalLabelComponent enum. Returns
   // false when callback returns false.
   virtual bool AddOptionalLabels(
-      Entity entity,
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span,
       opentelemetry::nostd::function_ref<
@@ -104,7 +95,7 @@ class LabelsInjector {
   // Gets the actual size of the optional labels that the Plugin is going to
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
-      Entity entity,
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span) const = 0;
 };

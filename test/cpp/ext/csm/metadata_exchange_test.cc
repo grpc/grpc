@@ -171,7 +171,7 @@ class MetadataExchangeTest
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
           attributes,
-      ::grpc::internal::LabelsInjector::Entity entity) {
+      bool is_client) {
     EXPECT_EQ(
         absl::get<std::string>(attributes.at("csm.workload_canonical_service")),
         "canonical_service");
@@ -179,24 +179,18 @@ class MetadataExchangeTest
     EXPECT_EQ(absl::get<std::string>(
                   attributes.at("csm.remote_workload_canonical_service")),
               "canonical_service");
-    switch (entity) {
-      case ::grpc::internal::LabelsInjector::Entity::kClient:
-        EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
-                  "unknown");
-        EXPECT_EQ(
-            absl::get<std::string>(attributes.at("csm.service_namespace_name")),
-            "unknown");
-        break;
-      case ::grpc::internal::LabelsInjector::Entity::kServer:
-        // The CSM optional labels should not be present in server metrics.
-        EXPECT_THAT(attributes, ::testing::Not(::testing::Contains(
-                                    ::testing::Key("csm.service_name"))));
-        EXPECT_THAT(attributes,
-                    ::testing::Not(::testing::Contains(
-                        ::testing::Key("csm.service_namespace_name"))));
-        break;
-      default:
-        FAIL() << "Unknown entity type: " << static_cast<int>(entity);
+    if (is_client) {
+      EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
+                "unknown");
+      EXPECT_EQ(
+          absl::get<std::string>(attributes.at("csm.service_namespace_name")),
+          "unknown");
+    } else {
+      // The CSM optional labels should not be present in server metrics.
+      EXPECT_THAT(attributes, ::testing::Not(::testing::Contains(
+                                  ::testing::Key("csm.service_name"))));
+      EXPECT_THAT(attributes, ::testing::Not(::testing::Contains(::testing::Key(
+                                  "csm.service_namespace_name"))));
     }
     switch (GetParam().type()) {
       case TestScenario::ResourceType::kGke:
@@ -298,8 +292,7 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyServiceMeshAttributes(
-      attributes, ::grpc::internal::LabelsInjector::Entity::kClient);
+  VerifyServiceMeshAttributes(attributes, /*is_client=*/true);
 }
 
 // Verify that grpc.server.call.started does not get service mesh attributes
@@ -344,8 +337,7 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyServiceMeshAttributes(
-      attributes, ::grpc::internal::LabelsInjector::Entity::kServer);
+  VerifyServiceMeshAttributes(attributes, /*is_client=*/false);
 }
 
 // Test that the server records unknown when the client does not send metadata

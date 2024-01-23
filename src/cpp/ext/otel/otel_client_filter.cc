@@ -134,7 +134,7 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
         1, KeyValueIterable(
                /*injected_labels_iterable=*/nullptr, {}, additional_labels,
                /*active_plugin_options_view=*/nullptr,
-               /*optional_labels_span=*/{}, LabelsInjector::Entity::kClient));
+               /*optional_labels_span=*/{}, /*is_client=*/true));
   }
 }
 
@@ -213,7 +213,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
   KeyValueIterable labels(
       injected_labels_.get(), injected_labels_from_plugin_options_,
       additional_labels, &parent_->parent_->active_plugin_options_view(),
-      optional_labels_array_, LabelsInjector::Entity::kClient);
+      optional_labels_array_, /*is_client=*/true);
   if (OpenTelemetryPluginState().client.attempt.duration != nullptr) {
     OpenTelemetryPluginState().client.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
