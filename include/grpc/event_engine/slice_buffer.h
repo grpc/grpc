@@ -112,6 +112,10 @@ class SliceBuffer {
   /// Removes the first slice in the SliceBuffer and returns it.
   Slice TakeFirst();
 
+  /// Appends a SliceBuffer into the SliceBuffer and makes an attempt to merge
+  /// this slice with the last slice in the SliceBuffer.
+  void TakeAndAppend(SliceBuffer& other);
+
   /// Prepends the slice to the the front of the SliceBuffer.
   void Prepend(Slice slice);
 

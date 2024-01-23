@@ -37,6 +37,10 @@ Slice SliceBuffer::TakeFirst() {
   return Slice(grpc_slice_buffer_take_first(&slice_buffer_));
 }
 
+void SliceBuffer::TakeAndAppend(SliceBuffer& other) {
+  grpc_slice_buffer_move_into(&other.slice_buffer_, &slice_buffer_);
+}
+
 void SliceBuffer::Prepend(Slice slice) {
   grpc_slice_buffer_undo_take_first(&slice_buffer_, slice.TakeCSlice());
 }
