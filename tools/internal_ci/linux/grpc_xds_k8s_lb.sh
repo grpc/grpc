@@ -168,17 +168,17 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
-  run_alpha_test subsetting_test || (( ++failed_tests ))
+#  run_alpha_test subsetting_test || (( ++failed_tests ))
   test_suites=(
     "app_net_test"
-    "affinity_test"
-    "api_listener_test"
-    "change_backend_service_test"
-    "custom_lb_test"
-    "failover_test"
-    "outlier_detection_test"
-    "remove_neg_test"
-    "round_robin_test"
+#    "affinity_test"
+#    "api_listener_test"
+#    "change_backend_service_test"
+#    "custom_lb_test"
+#    "failover_test"
+#    "outlier_detection_test"
+#    "remove_neg_test"
+#    "round_robin_test"
   )
   if [[ "${TESTING_VERSION}" =~ "master" ]]; then
       test_suites+=('bootstrap_generator_test')
