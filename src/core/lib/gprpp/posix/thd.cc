@@ -213,7 +213,7 @@ void Thread::Kill(gpr_thd_id tid) {
   }
 }
 #else  // GPR_ANDROID
-void Thread::Kill(gpr_thd_id tid) {
+void Thread::Kill(gpr_thd_id /* tid */) {
   gpr_log(GPR_DEBUG, "Thread::Kill is not supported on Android.");
 }
 #endif
