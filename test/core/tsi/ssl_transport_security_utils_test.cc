@@ -561,6 +561,20 @@ TEST(CrlUtils, DuplicatedIssuerNamePassesButSignatureCheckFails) {
   EXPECT_EQ(verify_crl_signature(crl, issuer), 0);
 }
 
+TEST(CrlUtils, VerifyCrlSignBitExists) {
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  EXPECT_TRUE(verify_crl_sign_bit(issuer));
+}
+
+TEST(CrlUtils, VerifyCrlSignBitMissing) {
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kLeafCert, false);
+  ASSERT_TRUE(issuer_slice.ok());
+  X509* issuer = read_cert(issuer_slice->as_string_view());
+  EXPECT_FALSE(verify_crl_sign_bit(issuer));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

@@ -23,6 +23,7 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -257,11 +258,15 @@ int verify_crl_signature(X509_CRL* crl, X509* issuer) {
   }
   int ret = X509_CRL_verify(crl, ikey);
   EVP_PKEY_free(ikey);
-  return ret
+  return ret;
 }
 
 int verify_crl_cert_issuer_names_match(X509_CRL* crl, X509* issuer) {
   return X509_NAME_cmp(X509_get_issuer_name(issuer), X509_CRL_get_issuer(crl));
+}
+
+bool verify_crl_sign_bit(X509* issuer) {
+  return (X509_get_key_usage(issuer) & KU_CRL_SIGN) != 0;
 }
 
 }  // namespace grpc_core
