@@ -28,6 +28,7 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -165,6 +166,17 @@ SliceBuffer SliceBufferFromSimpleHeaders(
   if (headers.has_lb_cost_bin()) {
     add_header("lb-cost-bin", headers.lb_cost_bin());
   }
+  if (headers.has_chaotic_good_connection_type()) {
+    add_header("chaotic-good-connection-type",
+               headers.chaotic_good_connection_type());
+  }
+  if (headers.has_chaotic_good_connection_id()) {
+    add_header("chaotic-good-connection-id",
+               headers.chaotic_good_connection_id());
+  }
+  if (headers.has_chaotic_good_alignment()) {
+    add_header("chaotic-good-alignment", headers.chaotic_good_alignment());
+  }
   SliceBuffer buffer;
   buffer.Append(Slice::FromCopiedBuffer(temp.data(), temp.size()));
   return buffer;
@@ -181,6 +193,77 @@ SliceBuffer SliceBufferFromHeaderPayload(const T& payload) {
       break;
   }
   return SliceBuffer();
+}
+
+SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
+  chaotic_good::FrameHeader h;
+  SliceBuffer suffix;
+  h.stream_id = frame.stream_id();
+  switch (frame.type()) {
+    case fuzzer_input::ChaoticGoodFrame::SETTINGS:
+      h.type = chaotic_good::FrameType::kSettings;
+      break;
+    case fuzzer_input::ChaoticGoodFrame::FRAGMENT:
+      h.type = chaotic_good::FrameType::kFragment;
+      break;
+    case fuzzer_input::ChaoticGoodFrame::CANCEL:
+      h.type = chaotic_good::FrameType::kCancel;
+      break;
+    default:
+      break;
+  }
+  switch (frame.headers_case()) {
+    case fuzzer_input::ChaoticGoodFrame::kHeadersNone:
+    case fuzzer_input::ChaoticGoodFrame::HEADERS_NOT_SET:
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kHeadersRawBytes:
+      if (frame.headers_raw_bytes().empty()) break;
+      h.header_length = frame.headers_raw_bytes().size();
+      h.flags.Set(0, true);
+      suffix.Append(Slice::FromCopiedString(frame.headers_raw_bytes()));
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kHeadersSimpleHeader: {
+      SliceBuffer append =
+          SliceBufferFromSimpleHeaders(frame.headers_simple_header());
+      if (append.Length() == 0) break;
+      h.header_length = append.Length();
+      h.flags.Set(0, true);
+      suffix.Append(append.JoinIntoSlice());
+    } break;
+  }
+  switch (frame.data_case()) {
+    case fuzzer_input::ChaoticGoodFrame::kDataNone:
+    case fuzzer_input::ChaoticGoodFrame::DATA_NOT_SET:
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kDataSized:
+      h.flags.Set(1, true);
+      h.message_length = frame.data_sized().length();
+      h.message_padding = frame.data_sized().padding();
+      break;
+  }
+  switch (frame.trailers_case()) {
+    case fuzzer_input::ChaoticGoodFrame::kTrailersNone:
+    case fuzzer_input::ChaoticGoodFrame::TRAILERS_NOT_SET:
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kTrailersRawBytes:
+      h.trailer_length = frame.trailers_raw_bytes().size();
+      h.flags.Set(2, true);
+      suffix.Append(Slice::FromCopiedString(frame.trailers_raw_bytes()));
+      break;
+    case fuzzer_input::ChaoticGoodFrame::kTrailersSimpleHeader: {
+      SliceBuffer append =
+          SliceBufferFromSimpleHeaders(frame.trailers_simple_header());
+      h.trailer_length = append.Length();
+      h.flags.Set(2, true);
+      suffix.Append(append.JoinIntoSlice());
+    } break;
+  }
+  uint8_t bytes[24];
+  h.Serialize(bytes);
+  SliceBuffer out;
+  out.Append(Slice::FromCopiedBuffer(bytes, 24));
+  out.Append(suffix);
+  return out;
 }
 
 grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
@@ -244,6 +327,11 @@ grpc_slice SliceFromSegment(const fuzzer_input::InputSegment& segment) {
       zeros.resize(std::min<size_t>(segment.repeated_zeros(), 128 * 1024), 0);
       return grpc_slice_from_copied_buffer(zeros.data(), zeros.size());
     }
+    case fuzzer_input::InputSegment::kChaoticGood: {
+      return ChaoticGoodFrame(segment.chaotic_good())
+          .JoinIntoSlice()
+          .TakeCSlice();
+    } break;
     case fuzzer_input::InputSegment::PAYLOAD_NOT_SET:
       break;
   }

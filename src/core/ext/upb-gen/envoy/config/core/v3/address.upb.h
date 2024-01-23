@@ -12,6 +12,7 @@
 
 #include "envoy/config/core/v3/address.upb_minitable.h"
 
+#include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/core/v3/socket_option.upb_minitable.h"
 #include "google/protobuf/wrappers.upb_minitable.h"
 #include "envoy/annotations/deprecation.upb_minitable.h"
@@ -36,6 +37,7 @@ typedef struct envoy_config_core_v3_Address envoy_config_core_v3_Address;
 typedef struct envoy_config_core_v3_CidrRange envoy_config_core_v3_CidrRange;
 struct envoy_config_core_v3_SocketOption;
 struct envoy_config_core_v3_SocketOptionsOverride;
+struct envoy_config_core_v3_TypedExtensionConfig;
 struct google_protobuf_BoolValue;
 struct google_protobuf_UInt32Value;
 
@@ -721,6 +723,21 @@ UPB_INLINE bool envoy_config_core_v3_BindConfig_has_extra_source_addresses(const
   envoy_config_core_v3_BindConfig_extra_source_addresses(msg, &size);
   return size != 0;
 }
+UPB_INLINE void envoy_config_core_v3_BindConfig_clear_local_address_selector(envoy_config_core_v3_BindConfig* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 3, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_core_v3_BindConfig_local_address_selector(const envoy_config_core_v3_BindConfig* msg) {
+  const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
+  const struct envoy_config_core_v3_TypedExtensionConfig* ret;
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 3, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_core_v3_BindConfig_has_local_address_selector(const envoy_config_core_v3_BindConfig* msg) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 3, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
 
 UPB_INLINE void envoy_config_core_v3_BindConfig_set_source_address(envoy_config_core_v3_BindConfig *msg, envoy_config_core_v3_SocketAddress* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -822,6 +839,18 @@ UPB_INLINE struct envoy_config_core_v3_ExtraSourceAddress* envoy_config_core_v3_
   struct envoy_config_core_v3_ExtraSourceAddress* sub = (struct envoy_config_core_v3_ExtraSourceAddress*)_upb_Message_New(&envoy__config__core__v3__ExtraSourceAddress_msg_init, arena);
   if (!arr || !sub) return NULL;
   _upb_Array_Set(arr, arr->size - 1, &sub, sizeof(sub));
+  return sub;
+}
+UPB_INLINE void envoy_config_core_v3_BindConfig_set_local_address_selector(envoy_config_core_v3_BindConfig *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  const upb_MiniTableField field = {6, UPB_SIZE(24, 48), 3, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_core_v3_BindConfig_mutable_local_address_selector(envoy_config_core_v3_BindConfig* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_core_v3_BindConfig_local_address_selector(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy__config__core__v3__TypedExtensionConfig_msg_init, arena);
+    if (sub) envoy_config_core_v3_BindConfig_set_local_address_selector(msg, sub);
+  }
   return sub;
 }
 

@@ -54,16 +54,17 @@ static const upb_MiniTableSub envoy_config_endpoint_v3_ClusterLoadAssignment_Pol
   {.submsg = &google__protobuf__Duration_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[3] = {
+static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[4] = {
   {2, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(8, 16), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(12, 24), 2, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, UPB_SIZE(16, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[0],
-  UPB_SIZE(16, 32), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -71,7 +72,7 @@ const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_m
     {0x001000000101001a, &upb_psm_1bt_maxmaxb},
     {0x0018000002020022, &upb_psm_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000100003f000030, &upb_psb1_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
