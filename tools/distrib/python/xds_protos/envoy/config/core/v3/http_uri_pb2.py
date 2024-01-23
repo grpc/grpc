@@ -17,7 +17,7 @@ from udpa.annotations import versioning_pb2 as udpa_dot_annotations_dot_versioni
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#envoy/config/core/v3/http_uri.proto\x12\x14\x65nvoy.config.core.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xb0\x01\n\x07HttpUri\x12\x14\n\x03uri\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1a\n\x07\x63luster\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00\x12\x36\n\x07timeout\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationB\n\xfa\x42\x07\xaa\x01\x04\x08\x01\x32\x00: \x9a\xc5\x88\x1e\x1b\n\x19\x65nvoy.api.v2.core.HttpUriB\x19\n\x12http_upstream_type\x12\x03\xf8\x42\x01\x42\x80\x01\n\"io.envoyproxy.envoy.config.core.v3B\x0cHttpUriProtoP\x01ZBgithub.com/envoyproxy/go-control-plane/envoy/config/core/v3;corev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n#envoy/config/core/v3/http_uri.proto\x12\x14\x65nvoy.config.core.v3\x1a\x1egoogle/protobuf/duration.proto\x1a\x1dudpa/annotations/status.proto\x1a!udpa/annotations/versioning.proto\x1a\x17validate/validate.proto\"\xb8\x01\n\x07HttpUri\x12\x14\n\x03uri\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1a\n\x07\x63luster\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01H\x00\x12>\n\x07timeout\x18\x03 \x01(\x0b\x32\x19.google.protobuf.DurationB\x12\xfa\x42\x0f\xaa\x01\x0c\x08\x01\x1a\x06\x08\x80\x80\x80\x80\x10\x32\x00: \x9a\xc5\x88\x1e\x1b\n\x19\x65nvoy.api.v2.core.HttpUriB\x19\n\x12http_upstream_type\x12\x03\xf8\x42\x01\x42\x80\x01\n\"io.envoyproxy.envoy.config.core.v3B\x0cHttpUriProtoP\x01ZBgithub.com/envoyproxy/go-control-plane/envoy/config/core/v3;corev3\xba\x80\xc8\xd1\x06\x02\x10\x02\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,9 +32,9 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _HTTPURI.fields_by_name['cluster']._options = None
   _HTTPURI.fields_by_name['cluster']._serialized_options = b'\372B\004r\002\020\001'
   _HTTPURI.fields_by_name['timeout']._options = None
-  _HTTPURI.fields_by_name['timeout']._serialized_options = b'\372B\007\252\001\004\010\0012\000'
+  _HTTPURI.fields_by_name['timeout']._serialized_options = b'\372B\017\252\001\014\010\001\032\006\010\200\200\200\200\0202\000'
   _HTTPURI._options = None
   _HTTPURI._serialized_options = b'\232\305\210\036\033\n\031envoy.api.v2.core.HttpUri'
   _globals['_HTTPURI']._serialized_start=185
-  _globals['_HTTPURI']._serialized_end=361
+  _globals['_HTTPURI']._serialized_end=369
 # @@protoc_insertion_point(module_scope)
