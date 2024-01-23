@@ -56,13 +56,15 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
           additional_labels,
       const ActivePluginOptionsView* active_plugin_options_view,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span)
+          optional_labels_span,
+      bool is_client)
       : injected_labels_iterable_(injected_labels_iterable),
         injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
         active_plugin_options_view_(active_plugin_options_view),
-        optional_labels_(optional_labels_span) {}
+        optional_labels_(optional_labels_span),
+        is_client_(is_client) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
@@ -79,7 +81,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     }
     if (OpenTelemetryPluginState().labels_injector != nullptr &&
         !OpenTelemetryPluginState().labels_injector->AddOptionalLabels(
-            optional_labels_, callback)) {
+            is_client_, optional_labels_, callback)) {
       return false;
     }
     if (active_plugin_options_view_ != nullptr &&
@@ -88,7 +90,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
                 const InternalOpenTelemetryPluginOption& plugin_option,
                 size_t /*index*/) {
               return plugin_option.labels_injector()->AddOptionalLabels(
-                  optional_labels_, callback);
+                  is_client_, optional_labels_, callback);
             })) {
       return false;
     }
@@ -126,14 +128,14 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
     size += additional_labels_.size();
     if (OpenTelemetryPluginState().labels_injector != nullptr) {
       size += OpenTelemetryPluginState().labels_injector->GetOptionalLabelsSize(
-          optional_labels_);
+          is_client_, optional_labels_);
     }
     if (active_plugin_options_view_ != nullptr) {
       active_plugin_options_view_->ForEach(
           [&size, this](const InternalOpenTelemetryPluginOption& plugin_option,
                         size_t /*index*/) {
             size += plugin_option.labels_injector()->GetOptionalLabelsSize(
-                optional_labels_);
+                is_client_, optional_labels_);
             return true;
           });
     }
@@ -149,6 +151,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   const ActivePluginOptionsView* active_plugin_options_view_;
   absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       optional_labels_;
+  bool is_client_;
 };
 
 }  // namespace internal
