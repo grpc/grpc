@@ -170,7 +170,7 @@ class MaintenanceServices {
   }
 
   std::unique_ptr<ServerBuilder> InitializeServerBuilder(int port) {
-    auto builder = std::make_unique<ServerBuilder>();
+    auto builder = std::make_unique<XdsServerBuilder>();
     builder->RegisterService(&health_check_service_);
     builder->RegisterService(&update_health_service_);
     builder->RegisterService(&hook_service_);
