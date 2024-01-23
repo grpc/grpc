@@ -151,7 +151,8 @@ class LivingThreadCount {
     --living_count_;
     cv_.SignalAll();
   }
-  void BlockUntilThreadCount(size_t desired_threads, const char* why)
+  absl::Status BlockUntilThreadCount(size_t desired_threads, const char* why,
+                                     grpc_core::Duration timeout)
       ABSL_LOCKS_EXCLUDED(mu_);
   size_t count() ABSL_LOCKS_EXCLUDED(mu_) {
     grpc_core::MutexLock lock(&mu_);

@@ -146,6 +146,14 @@ class ThreadInternalsWindows
 
 namespace grpc_core {
 
+void Thread::Signal(gpr_thd_id /* tid */, int /* sig */) {
+  gpr_log(GPR_DEBUG, "Thread signals are not supported on Windows.");
+}
+
+void Thread::Kill(gpr_thd_id /* tid */) {
+  gpr_log(GPR_DEBUG, "Thread::Kill is not supported on Windows.");
+}
+
 Thread::Thread(const char* /* thd_name */, void (*thd_body)(void* arg),
                void* arg, bool* success, const Options& options)
     : options_(options) {

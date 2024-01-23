@@ -1715,6 +1715,7 @@ grpc_cc_library(
         "event_engine_thread_local",
         "event_engine_trace",
         "event_engine_work_queue",
+        "examine_stack",
         "forkable",
         "no_destruct",
         "notification",

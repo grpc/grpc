@@ -20,6 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <csignal>
 #include <string>
 
 #include <grpc/support/time.h>
@@ -43,6 +44,7 @@
 
 namespace grpc_core {
 namespace {
+
 class ThreadInternalsPosix;
 
 struct thd_arg {
@@ -191,6 +193,22 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 };
 
 }  // namespace
+
+void Thread::Signal(gpr_thd_id tid, int sig) {
+  auto kill_err = pthread_kill((pthread_t)tid, sig);
+  if (kill_err != 0) {
+    gpr_log(GPR_ERROR, "pthread_kill for tid %lu failed: %s", tid,
+            StrError(kill_err).c_str());
+  }
+}
+
+void Thread::Kill(gpr_thd_id tid) {
+  auto cancel_err = pthread_cancel((pthread_t)tid);
+  if (cancel_err != 0) {
+    gpr_log(GPR_ERROR, "pthread_cancel for tid %lu failed: %s", tid,
+            StrError(cancel_err).c_str());
+  }
+}
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)

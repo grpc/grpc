@@ -27,17 +27,23 @@ namespace experimental {
 
 // -------- LivingThreadCount --------
 
-void LivingThreadCount::BlockUntilThreadCount(size_t desired_threads,
-                                              const char* why) {
-  constexpr grpc_core::Duration log_rate = grpc_core::Duration::Seconds(3);
+absl::Status LivingThreadCount::BlockUntilThreadCount(
+    size_t desired_threads, const char* why, grpc_core::Duration timeout) {
+  const grpc_core::Timestamp start = grpc_core::Timestamp::Now();
+  constexpr grpc_core::Duration log_rate = grpc_core::Duration::Seconds(5);
   while (true) {
-    auto curr_threads = WaitForCountChange(desired_threads, log_rate);
-    if (curr_threads == desired_threads) break;
+    auto elapsed = grpc_core::Timestamp::Now() - start;
+    if (elapsed > timeout) {
+      return absl::DeadlineExceededError(
+          absl::StrFormat("Timed out after %f seconds", timeout.seconds()));
+    }
+    auto curr_threads = WaitForCountChange(desired_threads, log_rate / 2);
+    if (curr_threads == desired_threads) return absl::OkStatus();
     GRPC_LOG_EVERY_N_SEC_DELAYED(
         log_rate.seconds(), GPR_DEBUG,
         "Waiting for thread pool to idle before %s. (%" PRIdPTR " to %" PRIdPTR
-        ")",
-        why, curr_threads, desired_threads);
+        "). Timing out in %0.f seconds.",
+        why, curr_threads, desired_threads, (timeout - elapsed).seconds());
   }
 }
 
