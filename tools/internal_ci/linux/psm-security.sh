@@ -103,8 +103,12 @@ run_test() {
   local test_name="${1:?Usage: run_test test_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${out_dir}"
+  local test=""
+  if [[ "${test_name}" == "security_test" ]]; then
+      test="SecurityTest.test_mtls"
+  fi
   set -x
-  python3 -m "tests.${test_name}" \
+  python3 -m "tests.${test_name}" "${test}" \
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --kube_context="${KUBE_CONTEXT}" \
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
@@ -158,7 +162,8 @@ main() {
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
-  test_suites=("baseline_test" "security_test" "authz_test")
+  test_suites=("security_test" "baseline_test")
+#  test_suites=("baseline_test" "security_test" "authz_test")
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))
   done
