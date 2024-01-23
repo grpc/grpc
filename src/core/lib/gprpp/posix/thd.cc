@@ -20,6 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
+
 #include <csignal>
 #include <string>
 
@@ -197,18 +199,24 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 void Thread::Signal(gpr_thd_id tid, int sig) {
   auto kill_err = pthread_kill((pthread_t)tid, sig);
   if (kill_err != 0) {
-    gpr_log(GPR_ERROR, "pthread_kill for tid %lu failed: %s", tid,
+    gpr_log(GPR_ERROR, "pthread_kill for tid %" PRIdPTR " failed: %s", tid,
             StrError(kill_err).c_str());
   }
 }
 
+#ifndef GPR_ANDROID
 void Thread::Kill(gpr_thd_id tid) {
   auto cancel_err = pthread_cancel((pthread_t)tid);
   if (cancel_err != 0) {
-    gpr_log(GPR_ERROR, "pthread_cancel for tid %lu failed: %s", tid,
+    gpr_log(GPR_ERROR, "pthread_cancel for tid %" PRIdPTR " failed: %s", tid,
             StrError(cancel_err).c_str());
   }
 }
+#else  // GPR_ANDROID
+void Thread::Kill(gpr_thd_id tid) {
+  gpr_log(GPR_DEBUG, "Thread::Kill is not supported on Android.");
+}
+#endif
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)
