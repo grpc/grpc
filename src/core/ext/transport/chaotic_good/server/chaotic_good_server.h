@@ -180,10 +180,10 @@ class ChaoticGoodServerListener final
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string,
-                      std::shared_ptr<InterActivityLatch<
-                          std::shared_ptr<PromiseEndpoint>>>> connectivity_map_
-      ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<
+      std::string,
+      std::shared_ptr<InterActivityLatch<std::shared_ptr<PromiseEndpoint>>>>
+      connectivity_map_ ABSL_GUARDED_BY(mu_);
   absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
   absl::AnyInvocable<std::string()> connection_id_generator_

@@ -550,8 +550,8 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 };
 #endif
 
-std::vector<CoreTestConfiguration> AllConfigs() {
-  std::vector<CoreTestConfiguration> configs {
+std::vector<CoreTestConfiguration> DefaultConfigs() {
+  return std::vector<CoreTestConfiguration> {
 #ifdef GRPC_POSIX_SOCKET
     CoreTestConfiguration{"Chttp2Fd",
                           FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
@@ -949,6 +949,11 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
 #endif
   };
+}
+
+std::vector<CoreTestConfiguration> AllConfigs() {
+  std::vector<CoreTestConfiguration> configs;
+  configs = DefaultConfigs();
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;
