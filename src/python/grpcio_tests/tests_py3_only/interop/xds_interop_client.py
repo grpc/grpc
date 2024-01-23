@@ -14,7 +14,7 @@
 
 import argparse
 import collections
-import concurrent
+import concurrent.futures
 import datetime
 import logging
 import signal
@@ -108,7 +108,8 @@ class _StatsWatcher:
             messages_pb2.LoadBalancerStatsResponse.MetadataByPeer
         )
 
-    def _sanitize_metadata_key(self, metadata_key: str) -> str:
+    @classmethod
+    def _sanitize_metadata_key(cls, metadata_key: str) -> str:
         return metadata_key.strip().lower()
 
     def _add_metadata(
