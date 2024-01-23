@@ -410,3 +410,17 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 }  // namespace chaotic_good
 }  // namespace grpc_core
+
+int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
+  grpc_core::ExecCtx exec_ctx;
+  auto* core_server = grpc_core::Server::FromC(server);
+  auto* listener = new grpc_core::chaotic_good::ChaoticGoodServerListener(
+      core_server, core_server->channel_args());
+  auto bind_result = listener->Bind(addr);
+  if (!bind_result.ok()) {
+    gpr_log(GPR_ERROR, "Failed to bind to %s: %s", addr,
+            bind_result.status().ToString().c_str());
+    return 0;
+  }
+  return bind_result.value();
+}

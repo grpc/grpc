@@ -111,4 +111,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
+grpc_channel* grpc_chaotic_good_channel_create(const char* target,
+                                               const grpc_channel_args* args);
+
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_CHAOTIC_GOOD_CONNECTOR_H

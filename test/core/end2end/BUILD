@@ -221,6 +221,8 @@ grpc_cc_library(
         "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
         "//src/core:no_destruct",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
         "//test/core/util:grpc_test_util",
     ],
     alwayslink = 1,

@@ -199,4 +199,6 @@ class ChaoticGoodServerListener final
 }  // namespace chaotic_good
 }  // namespace grpc_core
 
+int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr);
+
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H

@@ -26,6 +26,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
@@ -33,6 +35,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -51,8 +54,10 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {
@@ -324,5 +329,56 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     MaybeNotify(DEBUG_LOCATION, self->notify_, error);
   }
 }
+
+namespace {
+
+class ChaoticGoodChannelFactory final : public ClientChannelFactory {
+ public:
+  RefCountedPtr<Subchannel> CreateSubchannel(
+      const grpc_resolved_address& address, const ChannelArgs& args) override {
+    return Subchannel::Create(
+        MakeOrphanable<ChaoticGoodConnector>(
+            args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+        address, args);
+  }
+};
+
+}  // namespace
 }  // namespace chaotic_good
 }  // namespace grpc_core
+
+grpc_channel* grpc_chaotic_good_channel_create(const char* target,
+                                               const grpc_channel_args* args) {
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_API_TRACE("grpc_chaotic_good_channel_create(target=%s,  args=%p)", 2,
+                 (target, (void*)args));
+  grpc_channel* channel = nullptr;
+  grpc_error_handle error;
+  // Create channel.
+  std::string canonical_target = grpc_core::CoreConfiguration::Get()
+                                     .resolver_registry()
+                                     .AddDefaultPrefixIfNeeded(target);
+  auto r = grpc_core::Channel::Create(
+      target,
+      grpc_core::CoreConfiguration::Get()
+          .channel_args_preconditioning()
+          .PreconditionChannelArgs(args)
+          .Set(GRPC_ARG_SERVER_URI, canonical_target)
+          .SetObject(
+              grpc_core::NoDestructSingleton<
+                  grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get()),
+      GRPC_CLIENT_CHANNEL, nullptr);
+  if (r.ok()) {
+    return r->release()->c_ptr();
+  }
+  error = absl_status_to_grpc_error(r.status());
+  intptr_t integer;
+  grpc_status_code status = GRPC_STATUS_INTERNAL;
+  if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
+                         &integer)) {
+    status = static_cast<grpc_status_code>(integer);
+  }
+  channel = grpc_lame_client_channel_create(
+      target, status, "Failed to create secure client channel");
+  return channel;
+}
