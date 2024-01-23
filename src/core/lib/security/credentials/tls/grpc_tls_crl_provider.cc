@@ -59,11 +59,14 @@ std::string IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return "";
   }
-  char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
-  std::string ret;
-  if (buf != nullptr) {
-    ret = buf;
-  }
+  X509_NAME* issuer = X509_CRL_get_issuer(crl);
+  int len;
+  unsigned char* buf;
+  buf = nullptr;
+  len = i2d_X509_NAME(issuer, &buf);
+  // TODO(gtcooke94) what to do here and for nullptr buf
+  if (len < 0) return "";
+  std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
 }
