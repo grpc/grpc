@@ -46,7 +46,7 @@
 static constexpr absl::string_view kCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/current.crl";
 static constexpr absl::string_view kCrlName = "current.crl";
-static constexpr absl::string_view intermediate_crl_issuerPath =
+static constexpr absl::string_view kCrlIntermediateIssuerPath =
     "test/core/tsi/test_creds/crl_data/intermediate_ca.pem";
 static constexpr absl::string_view kCrlDirectory =
     "test/core/tsi/test_creds/crl_data/crls";
@@ -93,7 +93,7 @@ class CrlProviderTest : public ::testing::Test {
     X509* issuer = read_cert(cert_string);
     crl_issuer = IssuerFromCert(issuer);
     std::string intermediate_string =
-        GetFileContents(intermediate_crl_issuerPath.data());
+        GetFileContents(kCrlIntermediateIssuerPath.data());
     X509* intermediate_issuer = read_cert(intermediate_string);
     intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
   }

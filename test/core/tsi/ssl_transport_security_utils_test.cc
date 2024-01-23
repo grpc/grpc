@@ -41,7 +41,6 @@
 namespace grpc_core {
 namespace testing {
 
-// const char* kValidCrl = "test/core/tsi/test_creds/crl_data/current.crl";
 const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
 const char* kModifiedSignature =

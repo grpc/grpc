@@ -902,14 +902,6 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   return ok;
 }
 
-// TODO(gtcooke94) - CRL post verification like RootCertExtractCallback
-// Can get SSL and SSL_CTX from the X509_STORE_CTX, so then can get CrlProvider.
-// Do own loop over the verified chain, check the CRLs.
-// Need info in the certs to fully validate the CRLs, so can't do it all before
-// Also need the public keys from the issuers that are in the chain that ends in
-// something you trust, that keeps you from having to do path building to a
-// trust anchor from the CRL itself
-
 // The verification callback is used for clients that don't really care about
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
@@ -1012,7 +1004,6 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   auto* provider = static_cast<grpc_core::experimental::CrlProvider*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
 
-  // char* buf = X509_NAME_oneline(X509_get_issuer_name(cert), nullptr, 0);
   std::string issuer_name = grpc_core::IssuerFromCert(cert);
   if (issuer_name == "") {
     gpr_log(GPR_ERROR, "Certificate has empty issuer, cannot do CRL lookup");

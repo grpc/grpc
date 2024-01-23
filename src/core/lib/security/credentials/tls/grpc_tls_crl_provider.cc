@@ -53,8 +53,6 @@ namespace grpc_core {
 namespace experimental {
 
 namespace {
-
-// TODO(gtcooke94) does this belong here, export for use elsewhere?
 std::string IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return "";
@@ -64,8 +62,7 @@ std::string IssuerFromCrl(X509_CRL* crl) {
   unsigned char* buf;
   buf = nullptr;
   len = i2d_X509_NAME(issuer, &buf);
-  // TODO(gtcooke94) what to do here and for nullptr buf
-  if (len < 0) return "";
+  if (len < 0 || buf == nullptr) return "";
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
@@ -107,7 +104,6 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
   return CrlImpl::Create(crl);
 }
 
-// TODO(gtcooke94) this is likely the best place to do validity checks
 absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
   std::string issuer = IssuerFromCrl(crl);
   if (issuer.empty()) {
