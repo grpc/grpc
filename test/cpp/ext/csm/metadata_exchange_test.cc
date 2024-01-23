@@ -147,7 +147,7 @@ class MetadataExchangeTest
         break;
     }
     OpenTelemetryPluginEnd2EndTest::Init(std::move(
-        OpenTelemetryPluginTestConfiguration()
+        Options()
             .set_metric_names(std::move(metric_names))
             .set_labels_injector(
                 std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(

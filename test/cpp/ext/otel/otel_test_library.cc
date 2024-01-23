@@ -82,8 +82,7 @@ const grpc_channel_filter AddServiceLabelsFilter::kFilter =
                                       grpc_core::FilterEndpoint::kClient>(
         "add_service_labels_filter");
 
-void OpenTelemetryPluginEnd2EndTest::Init(
-    OpenTelemetryPluginTestConfiguration config) {
+void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start
   // of each test to avoid test results from one test carrying over to another
   // test. (Some measurements can get arbitrarily delayed.)
@@ -99,7 +98,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(
   for (const auto& metric_name : config.metric_names) {
     ot_builder.EnableMetric(metric_name);
   }
-  if (!config.test_no_meter_provider) {
+  if (config.use_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
     reader_.reset(new grpc::testing::MockMetricReader);

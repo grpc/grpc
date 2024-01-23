@@ -51,9 +51,9 @@ TEST(OpenTelemetryPluginBuildTest, Basic) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
-      {grpc::OpenTelemetryPluginBuilder::
-           kClientAttemptStartedInstrumentName})));
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -81,9 +81,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
-      {grpc::OpenTelemetryPluginBuilder::
-           kClientAttemptDurationInstrumentName})));
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -115,7 +115,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ClientAttemptSentTotalCompressedMessageSize) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::
            kClientAttemptSentTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
@@ -151,7 +151,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ClientAttemptRcvdTotalCompressedMessageSize) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::
            kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
@@ -186,7 +186,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
@@ -211,7 +211,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
@@ -240,7 +240,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ServerCallSentTotalCompressedMessageSize) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::
            kServerCallSentTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
@@ -272,7 +272,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ServerCallRcvdTotalCompressedMessageSize) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::
            kServerCallRcvdTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
@@ -305,17 +305,17 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 // Make sure that no meter provider results in normal operations.
 TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptStartedInstrumentName})
-                    .set_test_no_meter_provider(true)));
+                    .set_use_meter_provider(false)));
   SendRPC();
 }
 
 // Test that a channel selector returning true records metrics on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptStartedInstrumentName})
                     .set_target_selector(
@@ -350,7 +350,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
 // channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptStartedInstrumentName})
                     .set_target_selector(
@@ -366,7 +366,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
 
 // Test that a server selector returning true records metrics on the server.
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsTrue) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration()
+  Init(std::move(Options()
                      .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                             kServerCallDurationInstrumentName})
                      .set_server_selector(
@@ -392,7 +392,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsTrue) {
 // Test that a server selector returning false does not record metrics on the
 // server.
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsFalse) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration()
+  Init(std::move(Options()
                      .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                             kServerCallDurationInstrumentName})
                      .set_server_selector(
@@ -412,7 +412,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsFalse) {
 // target as is on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptStartedInstrumentName})
                     .set_target_attribute_filter(
@@ -447,7 +447,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
 // target as "other".
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptStartedInstrumentName})
                     .set_target_attribute_filter(
@@ -480,9 +480,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
 
 // Test that generic method names are scrubbed properly on the client side.
 TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
-      {grpc::OpenTelemetryPluginBuilder::
-           kClientAttemptStartedInstrumentName})));
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptStartedInstrumentName})));
   SendGenericRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -514,7 +514,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericClientRpcWithMethodAttributeFilterReturningFalse) {
   Init(std::move(
-      OpenTelemetryPluginTestConfiguration()
+      Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kClientAttemptStartedInstrumentName})
           .set_generic_method_attribute_filter(
@@ -550,7 +550,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericClientRpcWithMethodAttributeFilterReturningTrue) {
   Init(std::move(
-      OpenTelemetryPluginTestConfiguration()
+      Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kClientAttemptStartedInstrumentName})
           .set_generic_method_attribute_filter(
@@ -583,7 +583,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 // Test that generic method names are scrubbed properly on the server side.
 TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
-  Init(std::move(OpenTelemetryPluginTestConfiguration().set_metric_names(
+  Init(std::move(Options().set_metric_names(
       {grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
   SendGenericRPC();
   const char* kMetricName = "grpc.server.call.duration";
@@ -615,7 +615,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericServerRpcWithMethodAttributeFilterReturningFalse) {
   Init(std::move(
-      OpenTelemetryPluginTestConfiguration()
+      Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kServerCallDurationInstrumentName})
           .set_generic_method_attribute_filter(
@@ -650,7 +650,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericServerRpcWithMethodAttributeFilterReturningTrue) {
   Init(std::move(
-      OpenTelemetryPluginTestConfiguration()
+      Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kServerCallDurationInstrumentName})
           .set_generic_method_attribute_filter(
@@ -780,7 +780,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
       /*enabled_on_client*/ true, /*enabled_on_server*/ true,
       std::make_pair("key", "value")));
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptDurationInstrumentName,
                                        grpc::OpenTelemetryPluginBuilder::
@@ -817,7 +817,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
       /*enabled_on_client*/ true, /*enabled_on_server*/ false,
       std::make_pair("key", "value")));
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptDurationInstrumentName,
                                        grpc::OpenTelemetryPluginBuilder::
@@ -855,7 +855,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
       /*enabled_on_client*/ false, /*enabled_on_server*/ true,
       std::make_pair("key", "value")));
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptDurationInstrumentName,
                                        grpc::OpenTelemetryPluginBuilder::
@@ -907,7 +907,7 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
       /*enabled_on_client*/ false, /*enabled_on_server*/ true,
       std::make_pair("key5", "value5")));
   Init(
-      std::move(OpenTelemetryPluginTestConfiguration()
+      std::move(Options()
                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                            kClientAttemptDurationInstrumentName,
                                        grpc::OpenTelemetryPluginBuilder::
