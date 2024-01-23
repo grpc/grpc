@@ -18,6 +18,11 @@ py_library(
     srcs = ["_test_server.py"],
 )
 
+py_library(
+    name = "_from_observability_import_star",
+    srcs = ["_from_observability_import_star.py"],
+)
+
 py_test(
     name = "_observability_test",
     size = "small",
@@ -40,6 +45,20 @@ py_test(
     main = "_open_telemetry_observability_test.py",
     deps = [
         ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
+    ],
+)
+
+py_test(
+    name = "_observability_api_test",
+    size = "small",
+    srcs = ["_observability_api_test.py"],
+    imports = ["../../"],
+    main = "_observability_api_test.py",
+    deps = [
+        ":_from_observability_import_star",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests/testing",
