@@ -205,7 +205,7 @@ message NetworkInput {
 }
 
 message Msg {
-    NetworkInput network_input = 1;
+    repeated NetworkInput network_input = 1;
     repeated api_fuzzer.Action api_actions = 2;
     fuzzing_event_engine.Actions event_engine_actions = 3;
     grpc.testing.FuzzConfigVars config_vars = 4;
