@@ -271,7 +271,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   work_signal()->SignalAll();
   auto threads_were_shut_down = living_thread_count_.BlockUntilThreadCount(
       is_threadpool_thread ? 1 : 0, "shutting down",
-      kBlockUntilThreadCountTimeout);
+      g_log_verbose_failures ? kBlockUntilThreadCountTimeout
+                             : grpc_core::Duration::Infinity());
   if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
