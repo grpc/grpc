@@ -14,6 +14,7 @@
 
 #include "envoy/config/common/matcher/v3/matcher.upb_minitable.h"
 #include "envoy/config/core/v3/base.upb_minitable.h"
+#include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/core/v3/grpc_service.upb_minitable.h"
 #include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
@@ -45,6 +46,7 @@ typedef struct envoy_config_tap_v3_StreamingGrpcSink envoy_config_tap_v3_Streami
 struct envoy_config_common_matcher_v3_MatchPredicate;
 struct envoy_config_core_v3_GrpcService;
 struct envoy_config_core_v3_RuntimeFractionalPercent;
+struct envoy_config_core_v3_TypedExtensionConfig;
 struct envoy_config_route_v3_HeaderMatcher;
 struct google_protobuf_Duration;
 struct google_protobuf_UInt32Value;
@@ -1128,6 +1130,7 @@ typedef enum {
   envoy_config_tap_v3_OutputSink_output_sink_type_file_per_tap = 3,
   envoy_config_tap_v3_OutputSink_output_sink_type_streaming_grpc = 4,
   envoy_config_tap_v3_OutputSink_output_sink_type_buffered_admin = 5,
+  envoy_config_tap_v3_OutputSink_output_sink_type_custom_sink = 6,
   envoy_config_tap_v3_OutputSink_output_sink_type_NOT_SET = 0
 } envoy_config_tap_v3_OutputSink_output_sink_type_oneofcases;
 UPB_INLINE envoy_config_tap_v3_OutputSink_output_sink_type_oneofcases envoy_config_tap_v3_OutputSink_output_sink_type_case(const envoy_config_tap_v3_OutputSink* msg) {
@@ -1205,6 +1208,21 @@ UPB_INLINE bool envoy_config_tap_v3_OutputSink_has_buffered_admin(const envoy_co
   const upb_MiniTableField field = {5, 8, -5, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
+UPB_INLINE void envoy_config_tap_v3_OutputSink_clear_custom_sink(envoy_config_tap_v3_OutputSink* msg) {
+  const upb_MiniTableField field = {6, 8, -5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_tap_v3_OutputSink_custom_sink(const envoy_config_tap_v3_OutputSink* msg) {
+  const struct envoy_config_core_v3_TypedExtensionConfig* default_val = NULL;
+  const struct envoy_config_core_v3_TypedExtensionConfig* ret;
+  const upb_MiniTableField field = {6, 8, -5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_config_tap_v3_OutputSink_has_custom_sink(const envoy_config_tap_v3_OutputSink* msg) {
+  const upb_MiniTableField field = {6, 8, -5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
+}
 
 UPB_INLINE void envoy_config_tap_v3_OutputSink_set_format(envoy_config_tap_v3_OutputSink *msg, int32_t value) {
   const upb_MiniTableField field = {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
@@ -1255,6 +1273,18 @@ UPB_INLINE struct envoy_config_tap_v3_BufferedAdminSink* envoy_config_tap_v3_Out
   if (sub == NULL) {
     sub = (struct envoy_config_tap_v3_BufferedAdminSink*)_upb_Message_New(&envoy__config__tap__v3__BufferedAdminSink_msg_init, arena);
     if (sub) envoy_config_tap_v3_OutputSink_set_buffered_admin(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_tap_v3_OutputSink_set_custom_sink(envoy_config_tap_v3_OutputSink *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  const upb_MiniTableField field = {6, 8, -5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_tap_v3_OutputSink_mutable_custom_sink(envoy_config_tap_v3_OutputSink* msg, upb_Arena* arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_tap_v3_OutputSink_custom_sink(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_Message_New(&envoy__config__core__v3__TypedExtensionConfig_msg_init, arena);
+    if (sub) envoy_config_tap_v3_OutputSink_set_custom_sink(msg, sub);
   }
   return sub;
 }

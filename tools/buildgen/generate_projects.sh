@@ -36,7 +36,23 @@ tools/buildgen/build_cleaner.py build_handwritten.yaml
 
 # /usr/local/google/home/rbellevi/dev/tmp/grpc/venv/bin/python3: No module named virtualenv
 # Generate xds-protos
-[[ -d generate_projects_virtual_environment ]] || python3 -m virtualenv generate_projects_virtual_environment
+if [[ ! -d generate_projects_virtual_environment ]]; then
+  if ! python3 -m pip freeze | grep virtualenv &>/dev/null; then
+    echo "virtualenv Python module not installed. Attempting to install via pip." >/dev/stderr
+    if INSTALL_OUTPUT=$(! python3 -m pip install virtualenv --upgrade &>/dev/stdout); then
+      echo "$INSTALL_OUTPUT"
+      if echo "$INSTALL_OUTPUT" | grep "externally managed" &>/dev/null; then
+        echo >/dev/stderr
+        echo "############################" >/dev/stderr
+        echo  "Your administrator is _insisting_ on managing your packages themself. Try running \`sudo apt-get install python3-virtualenv\`" >/dev/stderr
+        echo "############################" >/dev/stderr
+      fi
+      exit 1
+    fi
+  fi 
+  python3 -m virtualenv generate_projects_virtual_environment
+fi
+
 generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.59.0
 generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
 

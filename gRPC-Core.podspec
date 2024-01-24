@@ -94,6 +94,14 @@ Pod::Spec.new do |s|
   s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
   s.libraries = 'c++'
 
+  # Exposes the privacy manifest. Depended on by any subspecs containing
+  # non-interface files.
+  s.subspec 'Privacy' do |ss|
+    ss.resource_bundles = {
+      s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+    }
+  end
+
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
   # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
@@ -185,6 +193,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency 'BoringSSL-GRPC', '0.0.31'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
@@ -533,6 +542,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
@@ -996,6 +1008,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c',
@@ -2476,6 +2490,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h',
@@ -2775,6 +2791,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
@@ -3494,6 +3511,7 @@ Pod::Spec.new do |s|
 
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Cronet-Interface", version
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',

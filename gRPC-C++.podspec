@@ -80,6 +80,14 @@ Pod::Spec.new do |s|
 
   s.header_mappings_dir = 'include/grpcpp'
 
+  # Exposes the privacy manifest. Depended on by any subspecs containing
+  # non-interface files.
+  s.subspec 'Privacy' do |ss|
+    ss.resource_bundles = {
+      s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+    }
+  end
+
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/grpcpp'
 
@@ -214,6 +222,7 @@ Pod::Spec.new do |s|
 
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20230802.0'
@@ -453,6 +462,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h',
@@ -752,6 +763,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
@@ -1701,6 +1713,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h',
@@ -2000,6 +2014,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
@@ -2738,6 +2753,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Cronet-Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/Privacy", version
 
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
 

@@ -11,7 +11,6 @@
 #include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "envoy/type/matcher/v3/string.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
 
