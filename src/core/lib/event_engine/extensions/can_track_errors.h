@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CAN_TRACK_ERRORS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CAN_TRACK_ERRORS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 
 namespace grpc_event_engine {

@@ -15,6 +15,8 @@
 #ifndef GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 #define GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 
