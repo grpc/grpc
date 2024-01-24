@@ -428,7 +428,12 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
     did_stuff = true;
   }
   if (op->set_accept_stream) {
-    Crash("set_accept_stream not supported on inproc transport");
+    if (op->set_accept_stream_fn != nullptr) {
+      Crash(absl::StrCat(
+          "set_accept_stream not supported on chaotic good transports: ",
+          grpc_transport_op_string(op)));
+    }
+    did_stuff = true;
   }
   if (!did_stuff) {
     Crash(absl::StrCat("unimplemented transport perform op: ",

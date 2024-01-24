@@ -39,7 +39,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/wait_for_callback.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -91,12 +91,11 @@ class ChaoticGoodConnector : public SubchannelConnector {
   Result* result_ ABSL_GUARDED_BY(mu_);
   grpc_closure* notify_;
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  ChannelArgs channel_args_;
   absl::StatusOr<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
       resolved_addr_;
 
-  std::shared_ptr<PromiseEndpoint> control_endpoint_;
-  std::shared_ptr<PromiseEndpoint> data_endpoint_;
+  PromiseEndpoint control_endpoint_;
+  PromiseEndpoint data_endpoint_;
   ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
@@ -104,8 +103,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
   HPackCompressor hpack_compressor_;
   HPackParser hpack_parser_;
   absl::BitGen bitgen_;
-  std::shared_ptr<Latch<std::shared_ptr<PromiseEndpoint>>> data_endpoint_latch_;
-  std::shared_ptr<WaitForCallback> wait_for_data_endpoint_callback_;
+  InterActivityLatch<void> data_endpoint_ready_;
   std::string connection_id_;
 };
 }  // namespace chaotic_good
