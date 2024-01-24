@@ -42,6 +42,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -94,7 +95,7 @@ class ChaoticGoodServerTransport final : public Transport,
   absl::string_view GetTransportName() const override { return "chaotic_good"; }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
-  void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
+  void PerformOp(grpc_transport_op*) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override { delete this; }
 
@@ -145,6 +146,8 @@ class ChaoticGoodServerTransport final : public Transport,
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ActivityPtr writer_;
   ActivityPtr reader_;
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
+      "chaotic_good_server", GRPC_CHANNEL_IDLE};
 };
 
 }  // namespace chaotic_good
