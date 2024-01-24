@@ -113,7 +113,7 @@ class Fuzzer {
         }
         break;
       case xds_client_fuzzer::Action::kDumpCsdsData:
-        xds_client_->DumpClientConfigBinary();
+        DumpClientConfigBinary();
         break;
       case xds_client_fuzzer::Action::kTriggerConnectionFailure:
         TriggerConnectionFailure(
@@ -223,6 +223,15 @@ class Fuzzer {
     if (authority_entry == nullptr) return nullptr;
     if (authority_entry->server() != nullptr) return authority_entry->server();
     return &bootstrap.server();
+  }
+
+  void DumpClientConfigBinary() {
+    upb::Arena arena;
+    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+    XdsApi::ResourceTypeMetadataMap metadata_map;
+    std::vector<std::string> strings_holder;
+    xds_client_->DumpClientConfig(client_config, &metadata_map, &strings_holder,
+                                  arena.ptr());
   }
 
   void TriggerConnectionFailure(const std::string& authority,
