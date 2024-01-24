@@ -89,21 +89,23 @@ class FakeDirectoryReader : public DirectoryReader {
 class CrlProviderTest : public ::testing::Test {
  public:
   void SetUp() override {
-    std::string cert_string = GetFileContents(kRootCert.data());
-    X509* issuer = read_cert(cert_string);
-    crl_issuer = IssuerFromCert(issuer);
+    std::string pem_cert = GetFileContents(kRootCert.data());
+    X509* issuer = ReadPemCert(pem_cert);
+    auto base_crl_issuer = IssuerFromCert(issuer);
+    ASSERT_TRUE(base_crl_issuer.ok());
+    base_crl_issuer_ = *base_crl_issuer;
     std::string intermediate_string =
         GetFileContents(kCrlIntermediateIssuerPath.data());
-    X509* intermediate_issuer = read_cert(intermediate_string);
-    intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
+    X509* intermediate_issuer = ReadPemCert(intermediate_string);
+    auto intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
+    ASSERT_TRUE(intermediate_crl_issuer.ok());
+    intermediate_crl_issuer_ = *intermediate_crl_issuer;
   }
 
  protected:
-  std::string crl_issuer;
-  std::string intermediate_crl_issuer;
-  X509* read_cert(absl::string_view cert_string) {
-    BIO* cert_bio = BIO_new_mem_buf(cert_string.data(),
-                                    static_cast<int>(cert_string.size()));
+  X509* ReadPemCert(absl::string_view pem_cert) {
+    BIO* cert_bio =
+        BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
     // Errors on BIO
     if (cert_bio == nullptr) {
       return nullptr;
@@ -112,6 +114,9 @@ class CrlProviderTest : public ::testing::Test {
     BIO_free(cert_bio);
     return cert;
   }
+
+  std::string base_crl_issuer_;
+  std::string intermediate_crl_issuer_;
 };
 
 class DirectoryReloaderCrlProviderTest : public CrlProviderTest {
@@ -172,7 +177,7 @@ TEST_F(CrlProviderTest, CanParseCrl) {
   absl::StatusOr<std::shared_ptr<Crl>> crl = Crl::Parse(crl_string);
   ASSERT_TRUE(crl.ok()) << crl.status();
   ASSERT_NE(*crl, nullptr);
-  EXPECT_EQ((*crl)->Issuer(), crl_issuer);
+  EXPECT_EQ((*crl)->Issuer(), base_crl_issuer_);
 }
 
 TEST_F(CrlProviderTest, InvalidFile) {
@@ -188,10 +193,10 @@ TEST_F(CrlProviderTest, StaticCrlProviderLookup) {
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
       experimental::CreateStaticCrlProvider(crl_strings);
   ASSERT_TRUE(provider.ok()) << provider.status();
-  CertificateInfoImpl cert(crl_issuer);
+  CertificateInfoImpl cert(base_crl_issuer_);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  EXPECT_EQ(crl->Issuer(), crl_issuer);
+  EXPECT_EQ(crl->Issuer(), base_crl_issuer_);
 }
 
 TEST_F(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
@@ -208,14 +213,14 @@ TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupGood) {
   auto provider =
       CreateCrlProvider(kCrlDirectory, std::chrono::seconds(60), nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
-  CertificateInfoImpl cert(crl_issuer);
+  CertificateInfoImpl cert(base_crl_issuer_);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  EXPECT_EQ(crl->Issuer(), crl_issuer);
-  CertificateInfoImpl intermediate(intermediate_crl_issuer);
+  EXPECT_EQ(crl->Issuer(), base_crl_issuer_);
+  CertificateInfoImpl intermediate(intermediate_crl_issuer_);
   auto intermediate_crl = (*provider)->GetCrl(intermediate);
   ASSERT_NE(intermediate_crl, nullptr);
-  EXPECT_EQ(intermediate_crl->Issuer(), intermediate_crl_issuer);
+  EXPECT_EQ(intermediate_crl->Issuer(), intermediate_crl_issuer_);
 }
 
 TEST_F(DirectoryReloaderCrlProviderTest, CrlLookupMissingIssuer) {
@@ -231,7 +236,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, ReloadsAndDeletes) {
   const std::chrono::seconds kRefreshDuration(60);
   auto provider = CreateCrlProvider(kRefreshDuration, nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
-  CertificateInfoImpl cert(crl_issuer);
+  CertificateInfoImpl cert(base_crl_issuer_);
   auto should_be_no_crl = (*provider)->GetCrl(cert);
   ASSERT_EQ(should_be_no_crl, nullptr);
   // Give the provider files to find in the directory
@@ -239,7 +244,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, ReloadsAndDeletes) {
   event_engine_->TickForDuration(kRefreshDuration);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  EXPECT_EQ(crl->Issuer(), crl_issuer);
+  EXPECT_EQ(crl->Issuer(), base_crl_issuer_);
   // Now we won't see any files in our directory
   directory_reader_->SetFilesInDirectory({});
   event_engine_->TickForDuration(kRefreshDuration);
@@ -256,10 +261,10 @@ TEST_F(DirectoryReloaderCrlProviderTest, WithCorruption) {
   auto provider =
       CreateCrlProvider(kRefreshDuration, std::move(reload_error_callback));
   ASSERT_TRUE(provider.ok()) << provider.status();
-  CertificateInfoImpl cert(crl_issuer);
+  CertificateInfoImpl cert(base_crl_issuer_);
   auto crl = (*provider)->GetCrl(cert);
   ASSERT_NE(crl, nullptr);
-  EXPECT_EQ(crl->Issuer(), crl_issuer);
+  EXPECT_EQ(crl->Issuer(), base_crl_issuer_);
   EXPECT_EQ(reload_errors.size(), 0);
   // Point the provider at a non-crl file so loading fails
   // Should result in the CRL Reloader keeping the old CRL data
@@ -267,7 +272,7 @@ TEST_F(DirectoryReloaderCrlProviderTest, WithCorruption) {
   event_engine_->TickForDuration(kRefreshDuration);
   auto crl_post_update = (*provider)->GetCrl(cert);
   ASSERT_NE(crl_post_update, nullptr);
-  EXPECT_EQ(crl_post_update->Issuer(), crl_issuer);
+  EXPECT_EQ(crl_post_update->Issuer(), base_crl_issuer_);
   EXPECT_EQ(reload_errors.size(), 1);
 }
 

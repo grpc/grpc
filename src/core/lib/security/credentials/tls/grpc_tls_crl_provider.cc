@@ -53,16 +53,20 @@ namespace grpc_core {
 namespace experimental {
 
 namespace {
-std::string IssuerFromCrl(X509_CRL* crl) {
+absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return "";
   }
   X509_NAME* issuer = X509_CRL_get_issuer(crl);
-  int len;
+  if (issuer == nullptr) {
+    return absl::InvalidArgumentError("crl cannot have null issuer");
+  }
   unsigned char* buf;
   buf = nullptr;
-  len = i2d_X509_NAME(issuer, &buf);
-  if (len < 0 || buf == nullptr) return "";
+  int len = i2d_X509_NAME(issuer, &buf);
+  if (len < 0 || buf == nullptr) {
+    return absl::InvalidArgumentError("crl cannot have null issuer");
+  }
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
@@ -105,11 +109,11 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
 }
 
 absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
-  std::string issuer = IssuerFromCrl(crl);
-  if (issuer.empty()) {
-    return absl::InvalidArgumentError("Issuer of crl cannot be empty");
+  absl::StatusOr<std::string> issuer = IssuerFromCrl(crl);
+  if (!issuer.ok()) {
+    return issuer.status();
   }
-  return std::make_unique<CrlImpl>(crl, issuer);
+  return std::make_unique<CrlImpl>(crl, *issuer);
 }
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }

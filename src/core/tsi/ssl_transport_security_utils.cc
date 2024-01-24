@@ -25,6 +25,9 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+
 #include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
@@ -248,7 +251,10 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   return result;
 }
 
-int verify_crl_signature(X509_CRL* crl, X509* issuer) {
+int VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
+  if (issuer == nullptr || crl == nullptr) {
+    return 1;
+  }
   EVP_PKEY* ikey = X509_get_pubkey(issuer);
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
@@ -261,23 +267,36 @@ int verify_crl_signature(X509_CRL* crl, X509* issuer) {
   return ret;
 }
 
-int verify_crl_cert_issuer_names_match(X509_CRL* crl, X509* issuer) {
-  return X509_NAME_cmp(X509_get_issuer_name(issuer), X509_CRL_get_issuer(crl));
+int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer) {
+  if (issuer == nullptr || crl == nullptr) {
+    return 1;
+  }
+  X509_NAME* issuer_name = X509_get_issuer_name(issuer);
+  if (issuer == nullptr) {
+    return 1;
+  }
+  X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
+  if (crl_issuer_name == nullptr) {
+    return 1;
+  }
+  return X509_NAME_cmp(issuer_name, crl_issuer_name);
 }
 
-bool verify_crl_sign_bit(X509* issuer) {
+bool VerifyCrlSignBit(X509* issuer) {
+  if (issuer == nullptr) {
+    return false;
+  }
   return (X509_get_key_usage(issuer) & KU_CRL_SIGN) != 0;
 }
 
-std::string IssuerFromCert(X509* cert) {
+absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   if (cert == nullptr) {
-    return "";
+    return absl::InvalidArgumentError("cert cannot be null");
   }
   X509_NAME* issuer = X509_get_issuer_name(cert);
-  int len;
   unsigned char* buf;
   buf = nullptr;
-  len = i2d_X509_NAME(issuer, &buf);
+  int len = i2d_X509_NAME(issuer, &buf);
   if (len < 0 || buf == nullptr) return "";
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
