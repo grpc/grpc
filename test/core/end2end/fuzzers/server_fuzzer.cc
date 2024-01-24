@@ -21,10 +21,10 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
@@ -41,15 +41,24 @@ namespace testing {
 
 class ServerFuzzer final : public BasicFuzzer {
  public:
-  explicit ServerFuzzer(const fuzzer_input::Msg& msg)
+  explicit ServerFuzzer(
+      const fuzzer_input::Msg& msg,
+      absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
+          server_setup)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     // TODO(ctiller): add more registered methods (one for POST, one for PUT)
     grpc_server_register_method(server_, "/reg", nullptr, {}, 0);
-    auto* creds = grpc_insecure_server_credentials_create();
-    grpc_server_add_http2_port(server_, "0.0.0.0:1234", creds);
-    grpc_server_credentials_release(creds);
+    server_setup(
+        server_, 1234,
+        CoreConfiguration::Get()
+            .channel_args_preconditioning()
+            .PreconditionChannelArgs(
+                CreateChannelArgsFromFuzzingConfiguration(
+                    msg.channel_args(), FuzzingEnvironment{resource_quota()})
+                    .ToC()
+                    .get()));
     grpc_server_start(server_);
     for (const auto& input : msg.network_input()) {
       UpdateMinimumRunTime(ScheduleConnection(
@@ -81,19 +90,23 @@ class ServerFuzzer final : public BasicFuzzer {
 };
 
 }  // namespace testing
-}  // namespace grpc_core
 
-DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
-  if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
+void RunServerFuzzer(
+    const fuzzer_input::Msg& msg,
+    absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
+        server_setup) {
+  if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
   static const int once = []() {
-    grpc_core::ForceEnableExperiment("event_engine_client", true);
-    grpc_core::ForceEnableExperiment("event_engine_listener", true);
+    ForceEnableExperiment("event_engine_client", true);
+    ForceEnableExperiment("event_engine_listener", true);
     return 42;
   }();
   GPR_ASSERT(once == 42);  // avoid unused variable warning
-  grpc_core::ApplyFuzzConfigVars(msg.config_vars());
-  grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
-  grpc_core::testing::ServerFuzzer(msg).Run(msg.api_actions());
+  ApplyFuzzConfigVars(msg.config_vars());
+  TestOnlyReloadExperimentsFromConfigVariables();
+  testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());
 }
+
+}  // namespace grpc_core
