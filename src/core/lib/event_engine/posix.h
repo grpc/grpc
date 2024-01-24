@@ -16,12 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <memory>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/extensions/supports_fd.h>
@@ -29,25 +23,29 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 /// This defines an interface that posix specific EventEngines endpoints
 /// may implement to support additional file descriptor related functionality.
-class PosixEndpointWithFdSupport : public EventEngine::Endpoint,
-                                   public EndpointSupportsFdExtension,
-                                   public EndpointCanTrackErrorsExtension {};
+class PosixEndpointWithFdSupport
+    : public EventEngine::Endpoint,
+      public ExtensibleQueryGenerator<EndpointSupportsFdExtension,
+                                      EndpointCanTrackErrorsExtension> {};
 
 /// Defines an interface that posix EventEngine listeners may implement to
 /// support additional file descriptor related functionality.
-class PosixListenerWithFdSupport : public EventEngine::Listener,
-                                   public ListenerSupportsFdExtension {};
+class PosixListenerWithFdSupport
+    : public EventEngine::Listener,
+      public ExtensibleQueryGenerator<ListenerSupportsFdExtension> {};
 
 /// Defines an interface that posix EventEngines may implement to
 /// support additional file descriptor related functionality.
-class PosixEventEngineWithFdSupport : public EventEngine,
-                                      public EventEngineSupportsFdExtension {
+class PosixEventEngineWithFdSupport
+    : public EventEngine,
+      public ExtensibleQueryGenerator<EventEngineSupportsFdExtension> {
  public:
 };
 

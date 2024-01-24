@@ -47,8 +47,8 @@ class TestExtension {
 };
 
 class ExtendedTestEndpoint
-    : public ExtendedEndpoint<TestExtension<0>, TestExtension<1>,
-                              TestExtension<2>> {
+    : public ExtensibleQueryGenerator<TestExtension<0>, TestExtension<1>,
+                                      TestExtension<2>> {
  public:
   ExtendedTestEndpoint() = default;
   ~ExtendedTestEndpoint() override = default;

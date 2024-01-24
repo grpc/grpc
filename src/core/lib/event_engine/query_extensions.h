@@ -45,34 +45,34 @@ struct QueryExtensionRecursion<Querying> {
 
 // A helper class to derive from some set of base classes and export
 // QueryExtension for them all.
-// Endpoint implementations which need to support different extensions just need
-// to derive from ExtendedEndpoint class.
+// EventEngine Extensible object implementations which need to support different
+// extensions just need to derive from the ExtensibleTypes class.
 template <typename... Exports>
-class ExtendedEndpoint : public EventEngine::Endpoint, public Exports... {
+class ExtensibleQueryGenerator : public Extensible, public Exports... {
  public:
   void* QueryExtension(absl::string_view id) override {
-    return endpoint_detail::QueryExtensionRecursion<ExtendedEndpoint,
+    return endpoint_detail::QueryExtensionRecursion<ExtensibleQueryGenerator,
                                                     Exports...>::Query(id,
                                                                        this);
   }
 };
 
-/// A helper method which returns a valid pointer if the extension is supported
-/// by the endpoint.
+/// A helper method which returns a valid pointer if the extension is
+/// supported by the endpoint.
 template <typename T>
 T* QueryExtension(EventEngine::Endpoint* endpoint) {
   return static_cast<T*>(endpoint->QueryExtension(T::EndpointExtensionName()));
 }
 
-/// A helper method which returns a valid pointer if the extension is supported
-/// by the listener.
+/// A helper method which returns a valid pointer if the extension is
+/// supported by the listener.
 template <typename T>
 T* QueryExtension(EventEngine::Listener* listener) {
   return static_cast<T*>(listener->QueryExtension(T::EndpointExtensionName()));
 }
 
-/// A helper method which returns a valid pointer if the extension is supported
-/// by the EventEngine.
+/// A helper method which returns a valid pointer if the extension is
+/// supported by the EventEngine.
 template <typename T>
 T* QueryExtension(EventEngine* engine) {
   return static_cast<T*>(engine->QueryExtension(T::EndpointExtensionName()));

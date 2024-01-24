@@ -612,12 +612,6 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     std::move(allocator), options)) {}
 
-  void* QueryExtension(absl::string_view id) override {
-    if (id == EndpointSupportsFdExtension::EndpointExtensionName())
-      return static_cast<EndpointSupportsFdExtension*>(this);
-    return nullptr;
-  }
-
   bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,

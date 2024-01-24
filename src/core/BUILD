@@ -1739,6 +1739,7 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
+        "event_engine_query_extensions",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
