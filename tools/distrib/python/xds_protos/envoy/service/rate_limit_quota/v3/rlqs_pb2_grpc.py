@@ -31,6 +31,14 @@ class RateLimitQuotaServiceStub(object):
     <envoy_v3_api_field_service.rate_limit_quota.v3.RateLimitQuotaResponse.BucketAction.abandon_action>`
     it.
 
+    If for any reason the RLQS client doesn't receive the initial assignment for the reported bucket,
+    in order to prevent memory exhaustion, the data plane will limit the time such bucket
+    is retained. The exact time to wait for the initial assignment is chosen by the filter,
+    and may vary based on the implementation.
+    Once the duration ends, the data plane will stop reporting bucket usage, reject any enqueued
+    requests, and purge the bucket from the memory. Subsequent requests matched into the bucket
+    will re-initialize the bucket in the "no assignment" state, restarting the reports.
+
     Refer to Rate Limit Quota :ref:`configuration overview <config_http_filters_rate_limit_quota>`
     for further details.
 
@@ -75,6 +83,14 @@ class RateLimitQuotaServiceServicer(object):
     and the data plane instance should :ref:`abandon
     <envoy_v3_api_field_service.rate_limit_quota.v3.RateLimitQuotaResponse.BucketAction.abandon_action>`
     it.
+
+    If for any reason the RLQS client doesn't receive the initial assignment for the reported bucket,
+    in order to prevent memory exhaustion, the data plane will limit the time such bucket
+    is retained. The exact time to wait for the initial assignment is chosen by the filter,
+    and may vary based on the implementation.
+    Once the duration ends, the data plane will stop reporting bucket usage, reject any enqueued
+    requests, and purge the bucket from the memory. Subsequent requests matched into the bucket
+    will re-initialize the bucket in the "no assignment" state, restarting the reports.
 
     Refer to Rate Limit Quota :ref:`configuration overview <config_http_filters_rate_limit_quota>`
     for further details.
@@ -130,6 +146,14 @@ class RateLimitQuotaService(object):
     and the data plane instance should :ref:`abandon
     <envoy_v3_api_field_service.rate_limit_quota.v3.RateLimitQuotaResponse.BucketAction.abandon_action>`
     it.
+
+    If for any reason the RLQS client doesn't receive the initial assignment for the reported bucket,
+    in order to prevent memory exhaustion, the data plane will limit the time such bucket
+    is retained. The exact time to wait for the initial assignment is chosen by the filter,
+    and may vary based on the implementation.
+    Once the duration ends, the data plane will stop reporting bucket usage, reject any enqueued
+    requests, and purge the bucket from the memory. Subsequent requests matched into the bucket
+    will re-initialize the bucket in the "no assignment" state, restarting the reports.
 
     Refer to Rate Limit Quota :ref:`configuration overview <config_http_filters_rate_limit_quota>`
     for further details.

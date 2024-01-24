@@ -21,6 +21,11 @@ extern "C" {
 
 extern _upb_DefPool_Init envoy_config_core_v3_substitution_format_string_proto_upbdefinit;
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_JsonFormatOptions_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_substitution_format_string_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.JsonFormatOptions");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_SubstitutionFormatString_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_substitution_format_string_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.SubstitutionFormatString");

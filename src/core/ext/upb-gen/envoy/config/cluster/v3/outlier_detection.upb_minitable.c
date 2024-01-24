@@ -17,7 +17,7 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[21] = {
+static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[22] = {
   {.submsg = &google__protobuf__UInt32Value_msg_init},
   {.submsg = &google__protobuf__Duration_msg_init},
   {.submsg = &google__protobuf__Duration_msg_init},
@@ -39,9 +39,10 @@ static const upb_MiniTableSub envoy_config_cluster_v3_OutlierDetection_submsgs[2
   {.submsg = &google__protobuf__UInt32Value_msg_init},
   {.submsg = &google__protobuf__Duration_msg_init},
   {.submsg = &google__protobuf__Duration_msg_init},
+  {.submsg = &google__protobuf__BoolValue_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields[22] = {
+static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields[23] = {
   {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 16), 2, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(12, 24), 3, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -64,12 +65,13 @@ static const upb_MiniTableField envoy_config_cluster_v3_OutlierDetection__fields
   {20, UPB_SIZE(80, 152), 19, 18, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {21, UPB_SIZE(84, 160), 20, 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {22, UPB_SIZE(88, 168), 21, 20, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {23, UPB_SIZE(92, 176), 22, 21, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__cluster__v3__OutlierDetection_msg_init = {
   &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
   &envoy_config_cluster_v3_OutlierDetection__fields[0],
-  UPB_SIZE(96, 176), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(96, 184), 23, kUpb_ExtMode_NonExtendable, 23, UPB_FASTTABLE_MASK(248), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_psm_1bt_maxmaxb},
@@ -94,7 +96,7 @@ const upb_MiniTable envoy__config__cluster__v3__OutlierDetection_msg_init = {
     {0x00980000131201a2, &upb_psm_2bt_maxmaxb},
     {0x00a00000141301aa, &upb_psm_2bt_maxmaxb},
     {0x00a80000151401b2, &upb_psm_2bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x00b00000161501ba, &upb_psm_2bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
