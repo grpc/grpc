@@ -348,11 +348,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "f8903111260a18d2cc4618cd5bf35a22bcc28f372ebe4f04024b49e88a2e16c1",
-            strip_prefix = "abseil-cpp-20240116.rc1",
+            sha256 = "338420448b140f0dfd1a1ea3c3ce71b3bc172071f24f4d9a57d59b45037da440",
+            strip_prefix = "abseil-cpp-20240116.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240116.rc1.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20240116.rc1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240116.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20240116.0.tar.gz",
             ],
         )
 
