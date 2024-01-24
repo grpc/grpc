@@ -351,13 +351,13 @@ class XdsUpdateClientConfigureServiceImpl
       }
       if (request_payload_size > 0 &&
           config.type == ClientConfigureRequest::EMPTY_CALL) {
-        gpr_log(GPR_WARNING,
+        gpr_log(GPR_DEBUG,
                 "request_payload_size should not be set "
                 "for EMPTY_CALL");
       }
       if (response_payload_size > 0 &&
           config.type == ClientConfigureRequest::EMPTY_CALL) {
-        gpr_log(GPR_WARNING,
+        gpr_log(GPR_DEBUG,
                 "response_payload_size should not be set "
                 "for EMPTY_CALL");
       }
@@ -509,13 +509,13 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     }
     if (request_payload_size > 0 &&
         config.type == ClientConfigureRequest::EMPTY_CALL) {
-      gpr_log(GPR_WARNING,
+      gpr_log(GPR_DEBUG,
               "request_payload_size should not be set "
               "for EMPTY_CALL");
     }
     if (response_payload_size > 0 &&
         config.type == ClientConfigureRequest::EMPTY_CALL) {
-      gpr_log(GPR_WARNING,
+      gpr_log(GPR_DEBUG,
               "response_payload_size should not be set "
               "for EMPTY_CALL");
     }
