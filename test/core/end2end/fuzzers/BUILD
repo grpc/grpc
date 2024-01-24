@@ -91,6 +91,7 @@ grpc_cc_library(
     deps = [
         "fuzzer_input_proto",
         "//:chttp2_frame",
+        "//src/core:chaotic_good_frame_header",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:fuzzing_channel_args",
         "//test/core/util:grpc_test_util_base",
