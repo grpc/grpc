@@ -136,14 +136,16 @@ constexpr grpc_core::Duration kLifeguardMaxSleepBetweenChecks{
 constexpr grpc_core::Duration kBlockUntilThreadCountTimeout{
     grpc_core::Duration::Seconds(60)};
 
+const bool g_log_verbose_failures =
+    grpc_core::GetEnv("GRPC_THREAD_POOL_VERBOSE_FAILURES").has_value();
+
 #ifdef GPR_POSIX_SYNC
 constexpr int kDumpStackSignal = SIGUSR1;
 #elif defined(GPR_WINDOWS)
 constexpr int kDumpStackSignal = SIGTERM;
+#else
+g_log_verbose_failures = false;
 #endif
-
-const bool g_log_verbose_failures =
-    grpc_core::GetEnv("GRPC_THREAD_POOL_VERBOSE_FAILURES").has_value();
 
 std::atomic<size_t> g_reported_dump_count{0};
 
