@@ -46,12 +46,12 @@ struct QueryExtensionRecursion<Querying> {
 // A helper class to derive from some set of base classes and export
 // QueryExtension for them all.
 // EventEngine Extensible object implementations which need to support different
-// extensions just need to derive from the ExtensibleTypes class.
-template <typename... Exports>
-class ExtensibleQueryGenerator : public Extensible, public Exports... {
+// extensions just need to derive from this class.
+template <typename EEClass, typename... Exports>
+class ExtendedType : public EEClass, public Exports... {
  public:
   void* QueryExtension(absl::string_view id) override {
-    return endpoint_detail::QueryExtensionRecursion<ExtensibleQueryGenerator,
+    return endpoint_detail::QueryExtensionRecursion<ExtendedType,
                                                     Exports...>::Query(id,
                                                                        this);
   }

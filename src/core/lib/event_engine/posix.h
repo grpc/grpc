@@ -31,23 +31,19 @@ namespace experimental {
 /// This defines an interface that posix specific EventEngines endpoints
 /// may implement to support additional file descriptor related functionality.
 class PosixEndpointWithFdSupport
-    : public EventEngine::Endpoint,
-      public ExtensibleQueryGenerator<EndpointSupportsFdExtension,
-                                      EndpointCanTrackErrorsExtension> {};
+    : public ExtendedType<EventEngine::Endpoint, EndpointSupportsFdExtension,
+                          EndpointCanTrackErrorsExtension> {};
 
 /// Defines an interface that posix EventEngine listeners may implement to
 /// support additional file descriptor related functionality.
 class PosixListenerWithFdSupport
-    : public EventEngine::Listener,
-      public ExtensibleQueryGenerator<ListenerSupportsFdExtension> {};
+    : public ExtendedType<EventEngine::Listener, ListenerSupportsFdExtension> {
+};
 
 /// Defines an interface that posix EventEngines may implement to
 /// support additional file descriptor related functionality.
 class PosixEventEngineWithFdSupport
-    : public EventEngine,
-      public ExtensibleQueryGenerator<EventEngineSupportsFdExtension> {
- public:
-};
+    : public ExtendedType<EventEngine, EventEngineSupportsFdExtension> {};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
