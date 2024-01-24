@@ -146,6 +146,7 @@ const bool g_log_verbose_failures =
 constexpr int kDumpStackSignal = SIGTERM;
 #else
 constexpr bool g_log_verbose_failures = false;
+constexpr int kDumpStackSignal = -1;
 #endif
 
 std::atomic<size_t> g_reported_dump_count{0};
