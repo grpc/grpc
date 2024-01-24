@@ -288,7 +288,6 @@ size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
     if (reservation.has_value()) {
       size_t new_free = free_bytes_.load(std::memory_order_relaxed);
       memory_quota_->MaybeMoveAllocator(this, old_free, new_free);
-      gpr_log(GPR_INFO, "%p: Reserve(%" PRIuPTR ")", this, *reservation);
       return *reservation;
     }
 

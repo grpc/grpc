@@ -77,8 +77,7 @@ using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : RefCounted<ChaoticGoodServerListener>("ChaoticGoodServerListener"),
-      server_(server),
+    : server_(server),
       args_(args),
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
       connection_id_generator_(std::move(connection_id_generator)) {}
@@ -175,8 +174,7 @@ void ChaoticGoodServerListener::ActiveConnection::Fail(
 
 ChaoticGoodServerListener::ActiveConnection::HandshakingState::HandshakingState(
     RefCountedPtr<ActiveConnection> connection)
-    : RefCounted<HandshakingState>("handshaking_state"),
-      memory_allocator_(connection->memory_allocator_),
+    : memory_allocator_(connection->memory_allocator_),
       connection_(std::move(connection)),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()) {}
 
