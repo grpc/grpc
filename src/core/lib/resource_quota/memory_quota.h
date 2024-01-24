@@ -408,7 +408,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 
   // Release some bytes that were previously reserved.
   void Release(size_t n) override {
-    gpr_log(GPR_INFO, "%p: Release(%" PRIuPTR ")", this, n);
     // Add the released memory to our free bytes counter... if this increases
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.
@@ -496,8 +495,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   // Indices into the various reclaimer queues, used so that we can cancel
   // reclamation should we shutdown or get rebound.
   OrphanablePtr<ReclaimerQueue::Handle>
-      reclamation_handles_[kNumReclamationPasses]
-      ABSL_GUARDED_BY(reclaimer_mu_);
+      reclamation_handles_[kNumReclamationPasses] ABSL_GUARDED_BY(
+          reclaimer_mu_);
 };
 
 // MemoryOwner is an enhanced MemoryAllocator that can also reclaim memory, and
