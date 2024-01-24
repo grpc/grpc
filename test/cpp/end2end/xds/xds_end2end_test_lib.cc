@@ -511,7 +511,7 @@ void XdsEnd2endTest::InitClient(XdsBootstrapBuilder builder,
     // because it's not expecting the client to connect.  It also
     // ensures that each test can independently set the global channel
     // args for the xDS channel.
-    grpc_core::internal::UnsetGlobalXdsClientForTest();
+    grpc_core::internal::UnsetGlobalXdsClientsForTest();
   }
   // Create channel and stub.
   ResetStub();

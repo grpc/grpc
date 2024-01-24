@@ -19,8 +19,10 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -91,8 +93,22 @@ namespace {
 
 Mutex* g_mu = new Mutex;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
-GrpcXdsClient* g_xds_client ABSL_GUARDED_BY(*g_mu) = nullptr;
+// Key bytes live in clients so they outlive the entries in this map
+std::map<absl::string_view, WeakRefCountedPtr<GrpcXdsClient>, std::less<>>*
+    g_xds_client_map ABSL_GUARDED_BY(*g_mu) = nullptr;
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
+
+std::vector<RefCountedPtr<GrpcXdsClient>> GetAllClients() {
+  std::vector<RefCountedPtr<GrpcXdsClient>> clients;
+  grpc_core::MutexLock lock(g_mu);
+  if (g_xds_client_map == nullptr) {
+    return {};
+  }
+  for (const auto& key_client : *g_xds_client_map) {
+    clients.emplace_back(key_client.second->RefAsSubclass<GrpcXdsClient>());
+  }
+  return clients;
+}
 
 }  // namespace
 
@@ -142,7 +158,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
-    const ChannelArgs& args, const char* reason) {
+    absl::string_view key, const ChannelArgs& args, const char* reason) {
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
   absl::optional<absl::string_view> bootstrap_config = args.GetString(
@@ -154,13 +170,19 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
     auto channel_args = ChannelArgs::FromC(xds_channel_args);
     return MakeRefCounted<GrpcXdsClient>(
-        std::move(*bootstrap), channel_args,
+        std::string(key), std::move(*bootstrap), channel_args,
         MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   }
   // Otherwise, use the global instance.
   MutexLock lock(g_mu);
-  if (g_xds_client != nullptr) {
-    auto xds_client = g_xds_client->RefIfNonZero(DEBUG_LOCATION, reason);
+  if (g_xds_client_map == nullptr) {
+    g_xds_client_map =
+        new std::map<absl::string_view, WeakRefCountedPtr<GrpcXdsClient>,
+                     std::less<>>;
+  }
+  auto it = g_xds_client_map->find(key);
+  if (it != g_xds_client_map->end()) {
+    auto xds_client = it->second->RefIfNonZero(DEBUG_LOCATION, reason);
     if (xds_client != nullptr) {
       return xds_client.TakeAsSubclass<GrpcXdsClient>();
     }
@@ -178,14 +200,20 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   // Instantiate XdsClient.
   auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      std::move(*bootstrap), channel_args,
+      std::string(key), std::move(*bootstrap), channel_args,
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
-  g_xds_client = xds_client.get();
+  g_xds_client_map->emplace(xds_client->key(),
+                            xds_client->WeakRefAsSubclass<GrpcXdsClient>());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "xDS client for key: %s was created",
+            std::string(key).c_str());
+  }
   return xds_client;
 }
 
 GrpcXdsClient::GrpcXdsClient(
-    std::unique_ptr<GrpcXdsBootstrap> bootstrap, const ChannelArgs& args,
+    const std::string& key, std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+    const ChannelArgs& args,
     OrphanablePtr<XdsTransportFactory> transport_factory)
     : XdsClient(
           std::move(bootstrap), std::move(transport_factory),
@@ -199,13 +227,19 @@ GrpcXdsClient::GrpcXdsClient(
                    args.GetDurationFromIntMillis(
                            GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS)
                        .value_or(Duration::Seconds(15)))),
+      key_(key),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
           static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
               .certificate_providers())) {}
 
-GrpcXdsClient::~GrpcXdsClient() {
+void GrpcXdsClient::Orphan() {
   MutexLock lock(g_mu);
-  if (g_xds_client == this) g_xds_client = nullptr;
+  if (g_xds_client_map != nullptr && g_xds_client_map->size() > 1) {
+    g_xds_client_map->erase(g_xds_client_map->find(key_));
+  } else {
+    delete g_xds_client_map;
+    g_xds_client_map = nullptr;
+  }
 }
 
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
@@ -220,9 +254,10 @@ void SetXdsChannelArgsForTest(grpc_channel_args* args) {
   g_channel_args = args;
 }
 
-void UnsetGlobalXdsClientForTest() {
+void UnsetGlobalXdsClientsForTest() {
   MutexLock lock(g_mu);
-  g_xds_client = nullptr;
+  delete g_xds_client_map;
+  g_xds_client_map = nullptr;
 }
 
 void SetXdsFallbackBootstrapConfig(const char* config) {
@@ -239,8 +274,23 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 grpc_slice grpc_dump_xds_configs(void) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  // upb::Arena arena;
+  // // Following two containers should survive till serialization
+  // std::vector<std::string> type_url_storage;
+  // std::vector<grpc_core::XdsApi::ResourceTypeMetadataMap> metadata_maps;
+  // auto response = envoy_service_status_v3_ClientStatusResponse_new(arena.ptr());
+  // for (const auto& xds_client : grpc_core::GetAllClients()) {
+  //   metadata_maps.emplace_back(xds_client->BuildResourceTypeMetadataMap());
+  //   auto client_config =
+  //       envoy_service_status_v3_ClientStatusResponse_add_config(response,
+  //                                                               arena.ptr());
+  //   xds_client->DumpClientConfig(client_config, metadata_maps.back(),
+  //                                &type_url_storage, arena.ptr());
+  //   absl::string_view key = xds_client->key();
+  //   envoy_service_status_v3_ClientConfig_set_client_scope(
+  //       client_config, upb_StringView_FromDataAndSize(key.data(), key.size()));
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
+      "", grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
   upb::Arena arena;
   // Following two containers should survive till serialization
   std::vector<std::unique_ptr<std::string>> string_pool;
