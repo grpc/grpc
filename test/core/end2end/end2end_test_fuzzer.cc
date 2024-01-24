@@ -50,12 +50,6 @@
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-namespace grpc_event_engine {
-namespace experimental {
-extern bool g_event_engine_supports_fd;
-}
-}  // namespace grpc_event_engine
-
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
@@ -74,7 +68,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   static const auto tests = []() {
     grpc_core::g_is_fuzzing_core_e2e_tests = true;
-    grpc_event_engine::experimental::g_event_engine_supports_fd = false;
     grpc_core::ForceEnableExperiment("event_engine_client", true);
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
 
