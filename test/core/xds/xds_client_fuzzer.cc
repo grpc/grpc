@@ -228,7 +228,7 @@ class Fuzzer {
   void DumpClientConfigBinary() {
     upb::Arena arena;
     auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
-    XdsApi::ResourceTypeMetadataMap metadata_map;
+    XdsApi::ResourceMetadata metadata_map;
     std::vector<std::string> strings_holder;
     xds_client_->DumpClientConfig(client_config, &metadata_map, &strings_holder,
                                   arena.ptr());

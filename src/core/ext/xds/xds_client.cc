@@ -40,8 +40,6 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
-#include "upb_utils.h"
-#include "xds_api.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
