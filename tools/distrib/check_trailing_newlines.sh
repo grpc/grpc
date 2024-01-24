@@ -17,7 +17,8 @@
 cd $(dirname $0)/../..
 
 function find_without_newline() {
-  git ls-files | sed -En '/\.(c|cc|proto|rb|py|cs|sh)$/p' |
+  git ls-files |
+    sed -En -e '/^third_party/d' -e '/\.(c|cc|proto|rb|py|cs|sh)$/p' |
     while IFS= read -r -d '' f; do
       if [[ ! -z $f ]]; then
         if [[ $(tail -c 1 "$f") != $NEWLINE ]]; then
