@@ -5,19 +5,23 @@ The examples here demonstrate how to setup gRPC Python Observability with Opente
 
 More details about how to use gRPC Python Observability APIs can be found in [OpenTelemetry Metrics gRFC](https://github.com/grpc/proposal/blob/master/A66-otel-stats.md#opentelemetry-metrics).
 
-### Requirements
-
-The examples here depends on grpcio and grpcio-observability version of 1.62.0 or newer.
-
-### Run the Server
+### Install Requirements
 
 1. Navigate to this directory:
 
 ```sh
-cd grpc/examples/python/observability
+cd examples/python/observability
 ```
 
-2. Run the server:
+2. Install requirements:
+
+```sh
+python -m pip install -r requirements.txt
+```
+
+### Run the Server
+
+Start the server:
 
 ```sh
 python -m observability_greeter_server
@@ -37,7 +41,7 @@ The example will print a list of metric names collected.
 
 Server Side:
 
-```sh
+```
 Server started, listening on 50051
 Metrics exported on Server side:
 grpc.server.call.started
@@ -48,7 +52,7 @@ grpc.server.call.duration
 
 Client Side:
 
-```sh
+```
 Greeter client received: Hello You
 Metrics exported on client side:
 grpc.client.call.duration

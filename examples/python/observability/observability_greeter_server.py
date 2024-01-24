@@ -27,7 +27,8 @@ import open_telemetry_exporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
-OTEL_EXPORT_INTERVAL_S = 0.5
+_OTEL_EXPORT_INTERVAL_S = 0.5
+_SERVER_PORT = "50051"
 
 
 class BaseOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
@@ -51,20 +52,19 @@ def serve():
     )
     reader = PeriodicExportingMetricReader(
         exporter=otel_exporter,
-        export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
+        export_interval_millis=_OTEL_EXPORT_INTERVAL_S * 1000,
     )
     provider = MeterProvider(metric_readers=[reader])
     otel_plugin = BaseOpenTelemetryPlugin(provider)
-    port = "50051"
 
     with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
         server = grpc.server(
             thread_pool=futures.ThreadPoolExecutor(max_workers=10),
         )
         helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-        server.add_insecure_port("[::]:" + port)
+        server.add_insecure_port("[::]:" + _SERVER_PORT)
         server.start()
-        print("Server started, listening on " + port)
+        print("Server started, listening on " + _SERVER_PORT)
 
         # Sleep to make sure client made RPC call and all metrics are exported.
         time.sleep(10)
