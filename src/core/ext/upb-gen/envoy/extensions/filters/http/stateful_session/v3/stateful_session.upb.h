@@ -79,6 +79,17 @@ UPB_INLINE bool envoy_extensions_filters_http_stateful_session_v3_StatefulSessio
   const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return _upb_Message_HasNonExtensionField(msg, &field);
 }
+UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_clear_strict(envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE bool envoy_extensions_filters_http_stateful_session_v3_StatefulSession_strict(const envoy_extensions_filters_http_stateful_session_v3_StatefulSession* msg) {
+  bool default_val = false;
+  bool ret;
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_session_state(envoy_extensions_filters_http_stateful_session_v3_StatefulSession *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -91,6 +102,10 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_extensions_fi
     if (sub) envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_session_state(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSession_set_strict(envoy_extensions_filters_http_stateful_session_v3_StatefulSession *msg, bool value) {
+  const upb_MiniTableField field = {2, UPB_SIZE(8, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 /* envoy.extensions.filters.http.stateful_session.v3.StatefulSessionPerRoute */

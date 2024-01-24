@@ -17,14 +17,14 @@ from udpa.annotations import status_pb2 as udpa_dot_annotations_dot_status__pb2
 from validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMcontrib/envoy/extensions/router/cluster_specifier/golang/v3alpha/golang.proto\x12\x38\x65nvoy.extensions.router.cluster_specifier.golang.v3alpha\x1a\x19google/protobuf/any.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x8c\x01\n\x06\x43onfig\x12\x1b\n\nlibrary_id\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1d\n\x0clibrary_path\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12 \n\x0f\x64\x65\x66\x61ult_cluster\x18\x03 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12$\n\x06\x63onfig\x18\x04 \x01(\x0b\x32\x14.google.protobuf.AnyB\xc8\x01\nFio.envoyproxy.envoy.extensions.router.cluster_specifier.golang.v3alphaB\x0bGolangProtoP\x01Z_github.com/envoyproxy/go-control-plane/envoy/extensions/router/cluster_specifier/golang/v3alpha\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\nMcontrib/envoy/extensions/router/cluster_specifier/golang/v3alpha/golang.proto\x12\x38\x65nvoy.extensions.router.cluster_specifier.golang.v3alpha\x1a\x19google/protobuf/any.proto\x1a\x1fxds/annotations/v3/status.proto\x1a\x1dudpa/annotations/status.proto\x1a\x17validate/validate.proto\"\x8c\x01\n\x06\x43onfig\x12\x1b\n\nlibrary_id\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12\x1d\n\x0clibrary_path\x18\x02 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12 \n\x0f\x64\x65\x66\x61ult_cluster\x18\x03 \x01(\tB\x07\xfa\x42\x04r\x02\x10\x01\x12$\n\x06\x63onfig\x18\x04 \x01(\x0b\x32\x14.google.protobuf.AnyB\xd0\x01\nFio.envoyproxy.envoy.extensions.router.cluster_specifier.golang.v3alphaB\x0bGolangProtoP\x01Zggithub.com/envoyproxy/go-control-plane/contrib/envoy/extensions/router/cluster_specifier/golang/v3alpha\xba\x80\xc8\xd1\x06\x02\x10\x02\xd2\xc6\xa4\xe1\x06\x02\x08\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'contrib.envoy.extensions.router.cluster_specifier.golang.v3alpha.golang_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
-  DESCRIPTOR._serialized_options = b'\nFio.envoyproxy.envoy.extensions.router.cluster_specifier.golang.v3alphaB\013GolangProtoP\001Z_github.com/envoyproxy/go-control-plane/envoy/extensions/router/cluster_specifier/golang/v3alpha\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
+  DESCRIPTOR._serialized_options = b'\nFio.envoyproxy.envoy.extensions.router.cluster_specifier.golang.v3alphaB\013GolangProtoP\001Zggithub.com/envoyproxy/go-control-plane/contrib/envoy/extensions/router/cluster_specifier/golang/v3alpha\272\200\310\321\006\002\020\002\322\306\244\341\006\002\010\001'
   _CONFIG.fields_by_name['library_id']._options = None
   _CONFIG.fields_by_name['library_id']._serialized_options = b'\372B\004r\002\020\001'
   _CONFIG.fields_by_name['library_path']._options = None
