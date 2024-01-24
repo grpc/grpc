@@ -24,7 +24,7 @@ class OTelMetricExporter(MetricExporter):
     """Implementation of :class:`MetricExporter` that export metrics to the
     provided metric_list.
 
-    all_metrics: A dict which key is grpc_observability._opentelemetry_measures.Metric.name,
+    all_metrics: A dict whose keys are grpc_observability._opentelemetry_measures.Metric.name,
         value is a list of labels recorded for that metric.
         An example item of this dict:
             {"grpc.client.attempt.started":
