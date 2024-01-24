@@ -408,7 +408,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
 
   // Release some bytes that were previously reserved.
   void Release(size_t n) override {
-    gpr_log(GPR_INFO, "%p: Release(%" PRIuPTR ")", this, n);
     // Add the released memory to our free bytes counter... if this increases
     // from  0 to non-zero, then we have more to do, otherwise, we're actually
     // done.

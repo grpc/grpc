@@ -66,9 +66,6 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     }
   };
 
-  SubchannelConnector()
-      : InternallyRefCounted<SubchannelConnector>("SubchannelConnector") {}
-
   // Attempts to connect.
   // When complete, populates *result and invokes notify.
   // Only one connection attempt may be in progress at any one time.

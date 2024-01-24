@@ -118,8 +118,10 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
 
 auto ChaoticGoodServerTransport::SendFragment(
     ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames) {
-  gpr_log(GPR_INFO, "CHAOTIC_GOOD: SendFragment: frame=%s",
-          frame.ToString().c_str());
+  if (grpc_chaotic_good_trace.enabled()) {
+    gpr_log(GPR_INFO, "CHAOTIC_GOOD: SendFragment: frame=%s",
+            frame.ToString().c_str());
+  }
   return Map(outgoing_frames.Send(std::move(frame)),
              [](bool success) -> absl::Status {
                if (!success) {
@@ -163,8 +165,11 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
       call_initiator.PullServerInitialMetadata(),
       [stream_id, outgoing_frames, call_initiator,
        this](absl::optional<ServerMetadataHandle> md) mutable {
-        gpr_log(GPR_INFO, "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md=%s",
-                md.has_value() ? (*md)->DebugString().c_str() : "null");
+        if (grpc_chaotic_good_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md=%s",
+                  md.has_value() ? (*md)->DebugString().c_str() : "null");
+        }
         return If(
             md.has_value(),
             [&md, stream_id, &outgoing_frames, &call_initiator, this]() {
