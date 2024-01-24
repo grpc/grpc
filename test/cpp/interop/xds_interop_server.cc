@@ -79,12 +79,14 @@ int main(int argc, char** argv) {
     return 1;
   }
   grpc::EnableDefaultHealthCheckService(false);
-  if (absl::GetFlag(FLAGS_enable_csm_observability)) {
+  bool enable_csm_observability = absl::GetFlag(FLAGS_enable_csm_observability);
+  if (enable_csm_observability) {
     EnableCsmObservability();
   }
-  grpc::testing::RunServer(
-      absl::GetFlag(FLAGS_secure_mode), port, maintenance_port, hostname,
-      absl::GetFlag(FLAGS_server_id), [](grpc::Server* /* unused */) {});
+  grpc::testing::RunServer(absl::GetFlag(FLAGS_secure_mode),
+                           enable_csm_observability, port, maintenance_port,
+                           hostname, absl::GetFlag(FLAGS_server_id),
+                           [](grpc::Server* /* unused */) {});
 
   return 0;
 }
