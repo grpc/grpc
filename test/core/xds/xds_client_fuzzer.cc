@@ -229,7 +229,7 @@ class Fuzzer {
     upb::Arena arena;
     auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
     std::vector<std::unique_ptr<std::string>> string_pool;
-    grpc_core::MutexLock lock(xds_client_->mutex());
+    MutexLock lock(xds_client_->mutex());
     xds_client_->DumpClientConfig(client_config, &string_pool, arena.ptr());
   }
 
