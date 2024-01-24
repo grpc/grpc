@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_INCLUDE_GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
-#define GRPC_INCLUDE_GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
+#ifndef GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
+#define GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
@@ -151,4 +151,4 @@ class EventEngineSupportsFdExtension {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_INCLUDE_GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
+#endif  // GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
