@@ -54,6 +54,7 @@ class PromiseEndpoint {
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint,
       SliceBuffer already_received);
+  PromiseEndpoint() = default;
   ~PromiseEndpoint() = default;
   /// Prevent copying of PromiseEndpoint; moving is fine.
   PromiseEndpoint(const PromiseEndpoint&) = delete;

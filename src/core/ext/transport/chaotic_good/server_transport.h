@@ -81,11 +81,11 @@ class ChaoticGoodServerTransport final : public Transport,
                                          public ServerTransport {
  public:
   ChaoticGoodServerTransport(
-      const ChannelArgs& args,
-      std::unique_ptr<PromiseEndpoint> control_endpoint,
-      std::unique_ptr<PromiseEndpoint> data_endpoint,
+      const ChannelArgs& args, PromiseEndpoint control_endpoint,
+      PromiseEndpoint data_endpoint,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      HPackParser hpack_parser, HPackCompressor hpack_encoder);
   ~ChaoticGoodServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }

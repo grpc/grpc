@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -248,13 +249,22 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
+  gpr_log(
+      GPR_ERROR, "CONNECT TO: %s",
+      grpc_event_engine::experimental::ResolvedAddressToString(*resolved_addr_)
+          ->c_str());
   GPR_ASSERT(resolved_addr_.value().address() != nullptr);
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect =
       [self = RefAsSubclass<ChaoticGoodConnector>()](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
               endpoint) mutable {
         if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
-          auto error = GRPC_ERROR_CREATE("connect endpoint failed");
+          auto endpoint_status = endpoint.status();
+          auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
+                                                     &endpoint_status, 1);
+          gpr_log(GPR_ERROR, "ChaoticGoodConnector::Connect:%p:%s",
+                  static_cast<SubchannelConnector*>(self.get()),
+                  error.ToString().c_str());
           MaybeNotify(DEBUG_LOCATION, self->notify_, error);
           return;
         }

@@ -169,11 +169,12 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone() {
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
-    std::unique_ptr<PromiseEndpoint> control_endpoint,
-    std::unique_ptr<PromiseEndpoint> data_endpoint,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+    PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    HPackParser hpack_parser, HPackCompressor hpack_encoder)
     : outgoing_frames_(4),
-      transport_(std::move(control_endpoint), std::move(data_endpoint)),
+      transport_(std::move(control_endpoint), std::move(data_endpoint),
+                 std::move(hpack_parser), std::move(hpack_encoder)),
       writer_{
           MakeActivity(
               // Continuously write next outgoing frames to promise endpoints.

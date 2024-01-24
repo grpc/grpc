@@ -152,7 +152,7 @@ class ChaoticGoodServerListener final
     Mutex mu_;
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
-    std::shared_ptr<PromiseEndpoint> endpoint_;
+    PromiseEndpoint endpoint_;
     HPackCompressor hpack_compressor_;
     HPackParser hpack_parser_;
     absl::BitGen bitgen_;
@@ -174,15 +174,15 @@ class ChaoticGoodServerListener final
   };
 
  private:
+  Server* const server_;
   ChannelArgs args_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
       ee_listener_;
   Mutex mu_;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<
-      std::string,
-      std::shared_ptr<InterActivityLatch<std::shared_ptr<PromiseEndpoint>>>>
+  absl::flat_hash_map<std::string,
+                      std::shared_ptr<InterActivityLatch<PromiseEndpoint>>>
       connectivity_map_ ABSL_GUARDED_BY(mu_);
   absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
