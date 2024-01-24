@@ -314,6 +314,20 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
 
+// Chaotic-good connection-type metadata trait.
+struct ChaoticGoodConnectionTypeMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "chaotic-good-connection-type"; }
+};
+
+// Chaotic-good connection-id metadata trait.
+struct ChaoticGoodConnectionIdMetadata : public SimpleSliceBasedMetadata {
+  static constexpr bool kRepeatable = false;
+  using CompressionTraits = StableValueCompressor;
+  static absl::string_view key() { return "chaotic-good-connection-id"; }
+};
+
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
@@ -368,6 +382,14 @@ struct GrpcPreviousRpcAttemptsMetadata
   static constexpr bool kRepeatable = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
+};
+
+// Chaotic-good data-alignment metadata trait.
+struct ChaoticGoodDataAlignmentMetadata
+    : public SimpleIntBasedMetadata<uint32_t, 0> {
+  static constexpr bool kRepeatable = false;
+  using CompressionTraits = NoCompressionCompressor;
+  static absl::string_view key() { return "chaotic-good-data-alignment"; }
 };
 
 // grpc-retry-pushback-ms metadata trait.
@@ -1506,7 +1528,9 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata,
     grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata,
     grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata,
-    grpc_core::XEnvoyPeerMetadata,
+    grpc_core::XEnvoyPeerMetadata, grpc_core::ChaoticGoodConnectionTypeMetadata,
+    grpc_core::ChaoticGoodConnectionIdMetadata,
+    grpc_core::ChaoticGoodDataAlignmentMetadata,
     // Non-encodable things
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
