@@ -31,4 +31,4 @@ void RunServerFuzzer(
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_FUZZERS_SERVER_FUZZER_H
