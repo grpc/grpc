@@ -64,7 +64,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     }
 
     Options& set_resource(const opentelemetry::sdk::resource::Resource& res) {
-      resource = res;
+      resource = std::make_unique<opentelemetry::sdk::resource::Resource>(res);
       return *this;
     }
 
@@ -120,8 +120,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     }
 
     absl::flat_hash_set<absl::string_view> metric_names;
-    opentelemetry::sdk::resource::Resource resource =
-        opentelemetry::sdk::resource::Resource::Create({});
+    // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
+    // assignment operator so wrapping it in a unique_ptr till it is fixed.
+    std::unique_ptr<opentelemetry::sdk::resource::Resource> resource =
+        std::make_unique<opentelemetry::sdk::resource::Resource>(
+            opentelemetry::sdk::resource::Resource::Create({}));
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector;
     bool use_meter_provider = true;
     std::map<std::string, std::string> labels_to_inject;

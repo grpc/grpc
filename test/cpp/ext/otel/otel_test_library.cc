@@ -89,7 +89,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>(
           std::make_unique<opentelemetry::sdk::metrics::ViewRegistry>(),
-          std::move(config.resource));
+          *config.resource);
   reader_.reset(new grpc::testing::MockMetricReader);
   meter_provider->AddMetricReader(reader_);
   grpc_core::CoreConfiguration::Reset();
