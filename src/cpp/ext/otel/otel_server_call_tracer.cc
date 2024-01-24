@@ -200,7 +200,8 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     OpenTelemetryPluginState().server.call.started->Add(
         1, KeyValueIterable(/*injected_labels_iterable=*/nullptr, {},
                             additional_labels,
-                            /*active_plugin_options_view=*/nullptr, {}));
+                            /*active_plugin_options_view=*/nullptr, {},
+                            /*is_client=*/false));
   }
 }
 
@@ -222,7 +223,8 @@ void OpenTelemetryServerCallTracer::RecordEnd(
   KeyValueIterable labels(
       injected_labels_.get(), injected_labels_from_plugin_options_,
       additional_labels,
-      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{});
+      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
+      /*is_client=*/false);
   if (OpenTelemetryPluginState().server.call.duration != nullptr) {
     OpenTelemetryPluginState().server.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,

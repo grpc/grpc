@@ -59,9 +59,6 @@ PromiseEndpoint::GetLocalAddress() const {
 
 void PromiseEndpoint::ReadState::Complete(absl::Status status,
                                           size_t num_bytes_requested) {
-  gpr_log(GPR_ERROR, "PromiseEndpoint::ReadState::Complete: status:%s",
-          status.ToString().c_str());
-
   if (!status.ok()) {
     // Invalidates all previous reads.
     pending_buffer.Clear();
@@ -92,6 +89,8 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     }
     if (ep->Read(
             [self = Ref(), num_bytes_requested](absl::Status status) {
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
               self->Complete(std::move(status), num_bytes_requested);
             },
             &pending_buffer, &read_args)) {

@@ -251,7 +251,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server);
 
   Mutex mu_;
-  std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
+  std::map<std::string /*XdsServer key*/, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
   bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;

@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/map.h"
@@ -79,9 +80,11 @@ class PromiseEndpoint {
                              data.c_slice_buffer());
       // If `Write()` returns true immediately, the callback will not be called.
       // We still need to call our callback to pick up the result.
-      write_state_->waker = Activity::current()->MakeNonOwningWaker();
+      write_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       completed = endpoint_->Write(
           [write_state = write_state_](absl::Status status) {
+            ApplicationCallbackExecCtx callback_exec_ctx;
+            ExecCtx exec_ctx;
             write_state->Complete(std::move(status));
           },
           &write_state_->buffer, nullptr /* uses default arguments */);
@@ -121,9 +124,11 @@ class PromiseEndpoint {
               static_cast<int64_t>(num_bytes - read_state_->buffer.Length())};
       // If `Read()` returns true immediately, the callback will not be
       // called.
-      read_state_->waker = Activity::current()->MakeNonOwningWaker();
+      read_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },
               &read_state_->pending_buffer, &read_args)) {

@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.3'
+  s.add_development_dependency 'rake-compiler-dock', '~> 1.4'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -295,6 +295,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/decode_huff.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/frame.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/frame.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_data.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_data.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_goaway.cc )
@@ -433,6 +435,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c )
+  s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c )
   s.files += %w( src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h )
@@ -896,6 +901,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c )
+  s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h )
   s.files += %w( src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c )
@@ -1412,6 +1419,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/crash.h )
   s.files += %w( src/core/lib/gprpp/debug_location.h )
   s.files += %w( src/core/lib/gprpp/directory_reader.h )
+  s.files += %w( src/core/lib/gprpp/down_cast.h )
   s.files += %w( src/core/lib/gprpp/dual_ref_counted.h )
   s.files += %w( src/core/lib/gprpp/env.h )
   s.files += %w( src/core/lib/gprpp/examine_stack.cc )
@@ -1889,6 +1897,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/batch_builder.h )
   s.files += %w( src/core/lib/transport/bdp_estimator.cc )
   s.files += %w( src/core/lib/transport/bdp_estimator.h )
+  s.files += %w( src/core/lib/transport/call_filters.cc )
+  s.files += %w( src/core/lib/transport/call_filters.h )
   s.files += %w( src/core/lib/transport/call_final_info.cc )
   s.files += %w( src/core/lib/transport/call_final_info.h )
   s.files += %w( src/core/lib/transport/connectivity_state.cc )
@@ -1904,6 +1914,10 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/http2_errors.h )
   s.files += %w( src/core/lib/transport/http_connect_handshaker.cc )
   s.files += %w( src/core/lib/transport/http_connect_handshaker.h )
+  s.files += %w( src/core/lib/transport/message.cc )
+  s.files += %w( src/core/lib/transport/message.h )
+  s.files += %w( src/core/lib/transport/metadata.cc )
+  s.files += %w( src/core/lib/transport/metadata.h )
   s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/metadata_compression_traits.h )
@@ -3007,8 +3021,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/base/status.h )
   s.files += %w( third_party/upb/upb/base/status.hpp )
   s.files += %w( third_party/upb/upb/base/string_view.h )
-  s.files += %w( third_party/upb/upb/collections/array.h )
-  s.files += %w( third_party/upb/upb/collections/map.h )
   s.files += %w( third_party/upb/upb/generated_code_support.h )
   s.files += %w( third_party/upb/upb/hash/common.c )
   s.files += %w( third_party/upb/upb/hash/common.h )
@@ -3139,7 +3151,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/reflection/service_def.h )
   s.files += %w( third_party/upb/upb/text/encode.c )
   s.files += %w( third_party/upb/upb/text/encode.h )
-  s.files += %w( third_party/upb/upb/upb.hpp )
   s.files += %w( third_party/upb/upb/wire/decode.c )
   s.files += %w( third_party/upb/upb/wire/decode.h )
   s.files += %w( third_party/upb/upb/wire/decode_fast.c )

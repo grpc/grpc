@@ -81,7 +81,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>

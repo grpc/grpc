@@ -28,7 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
 
 #include <grpc/impl/connectivity_state.h>

@@ -314,20 +314,21 @@ const upb_MiniTable envoy__config__core__v3__QueryParameter_msg_init = {
   })
 };
 
-static const upb_MiniTableField envoy_config_core_v3_HeaderValue__fields[2] = {
+static const upb_MiniTableField envoy_config_core_v3_HeaderValue__fields[3] = {
   {1, 0, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(8, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(16, 32), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__HeaderValue_msg_init = {
   NULL,
   &envoy_config_core_v3_HeaderValue__fields[0],
-  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000000003f00000a, &upb_pss_1bt},
     {0x001000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f00001a, &upb_psb_1bt},
   })
 };
 

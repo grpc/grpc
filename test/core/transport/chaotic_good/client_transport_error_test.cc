@@ -186,7 +186,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_FALSE(md.ok());
               return Empty{};
             },
@@ -231,7 +231,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_FALSE(md.ok());
               return Empty{};
             },
@@ -294,7 +294,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       "test-read-1", [&on_done1, initiator = call1.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_FALSE(md.ok());
               return Empty{};
             },
@@ -310,7 +310,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       "test-read-2", [&on_done2, initiator = call2.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_FALSE(md.ok());
               return Empty{};
             },
@@ -365,7 +365,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       "test-read", [&on_done1, initiator = call1.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_FALSE(md.ok());
               return Empty{};
             },
@@ -381,7 +381,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       "test-read", [&on_done2, initiator = call2.initiator]() mutable {
         return Seq(
             initiator.PullServerInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
+            [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
               EXPECT_FALSE(md.ok());
               return Empty{};
             },

@@ -85,7 +85,7 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/googleapis",
         proto_prefix="third_party/googleapis/",
     ),
-    "com_github_cncf_udpa": ExternalProtoLibrary(
+    "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
     "opencensus_proto": ExternalProtoLibrary(
@@ -574,7 +574,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
@@ -1074,15 +1074,20 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:upb": {
+    "@com_google_protobuf//upb:base": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb",
+        "_RENAME": "upb_base_lib",
     },
-    "@com_google_protobuf//upb/collections:collections": {
+    "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb_collections_lib",
+        "_RENAME": "upb_mem_lib",
+    },
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib",
     },
     "@com_google_protobuf//upb/json:json": {
         "language": "c",

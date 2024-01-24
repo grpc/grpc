@@ -26,7 +26,7 @@
 #include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/base/string_view.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
 

@@ -202,7 +202,7 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
 # Build/install status proto mapping
-$VENV_PYTHON "$ROOT/tools/distrib/python/xds_protos/build.py"
+# build.py is invoked as part of generate_projects.sh
 pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
 
 # Build/install csds

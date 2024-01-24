@@ -51,7 +51,7 @@ def _upload_netperf_latency_csv_to_bigquery(
         }
 
     bq = big_query_utils.create_big_query()
-    _create_results_table(bq, dataset_id, table_id)
+    _create_results_table(bq, project_id, dataset_id, table_id)
 
     if not _insert_result(
         bq, project_id, dataset_id, table_id, scenario_result, flatten=False
@@ -73,7 +73,7 @@ def _upload_scenario_result_to_bigquery(
         scenario_result = json.loads(f.read())
 
     bq = big_query_utils.create_big_query()
-    _create_results_table(bq, dataset_id, table_id)
+    _create_results_table(bq, project_id, dataset_id, table_id)
 
     if not _insert_scenario_result(
         bq,

@@ -22,11 +22,15 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+
+extern grpc_core::TraceFlag grpc_chaotic_good_trace;
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -40,6 +44,13 @@ class ChaoticGoodTransport {
 
   auto WriteFrame(const FrameInterface& frame) {
     auto buffers = frame.Serialize(&encoder_);
+    if (grpc_chaotic_good_trace.enabled()) {
+      gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
+              ResolvedAddressToString(control_endpoint_->GetPeerAddress())
+                  .value_or("<<unknown peer address>>")
+                  .c_str(),
+              frame.ToString().c_str());
+    }
     return TryJoin<absl::StatusOr>(
         control_endpoint_->Write(std::move(buffers.control)),
         data_endpoint_->Write(std::move(buffers.data)));
@@ -49,11 +60,20 @@ class ChaoticGoodTransport {
   // Resolves to StatusOr<tuple<FrameHeader, BufferPair>>.
   auto ReadFrameBytes() {
     return TrySeq(
-        control_endpoint_->ReadSlice(FrameHeader::frame_header_size_),
+        control_endpoint_->ReadSlice(FrameHeader::kFrameHeaderSize),
         [this](Slice read_buffer) {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
+          if (grpc_chaotic_good_trace.enabled()) {
+            gpr_log(GPR_INFO, "CHAOTIC_GOOD: ReadHeader from:%s %s",
+                    ResolvedAddressToString(control_endpoint_->GetPeerAddress())
+                        .value_or("<<unknown peer address>>")
+                        .c_str(),
+                    frame_header.ok()
+                        ? frame_header->ToString().c_str()
+                        : frame_header.status().ToString().c_str());
+          }
           // Read header and trailers from control endpoint.
           // Read message padding and message from data endpoint.
           return If(
@@ -80,17 +100,20 @@ class ChaoticGoodTransport {
                                      std::move(std::get<1>(*buffers))});
                     });
               },
-              [&frame_header]()
-                  -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
-                return frame_header.status();
+              [&frame_header]() {
+                return [status = frame_header.status()]() mutable
+                       -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
+                  return std::move(status);
+                };
               });
         });
   }
 
   absl::Status DeserializeFrame(FrameHeader header, BufferPair buffers,
-                                Arena* arena, FrameInterface& frame) {
+                                Arena* arena, FrameInterface& frame,
+                                FrameLimits limits) {
     return frame.Deserialize(&parser_, header, bitgen_, arena,
-                             std::move(buffers));
+                             std::move(buffers), limits);
   }
 
   // Skip a frame, but correctly handle any hpack state updates.

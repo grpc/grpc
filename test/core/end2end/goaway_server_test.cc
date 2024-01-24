@@ -45,6 +45,7 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -207,6 +208,13 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 }
 
 int main(int argc, char** argv) {
+  // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    gpr_log(
+        GPR_ERROR,
+        "Skipping iomgr-specific DNS test because EventEngine DNS is enabled");
+    return 0;
+  }
   grpc_completion_queue* cq;
   grpc_op ops[6];
   grpc_op* op;

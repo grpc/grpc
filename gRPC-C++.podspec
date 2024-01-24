@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.61.0-dev'
+  version = '1.62.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -79,6 +79,14 @@ Pod::Spec.new do |s|
   s.resource_bundles = { 'gRPCCertificates-Cpp' => ['etc/roots.pem'] }
 
   s.header_mappings_dir = 'include/grpcpp'
+
+  # Exposes the privacy manifest. Depended on by any subspecs containing
+  # non-interface files.
+  s.subspec 'Privacy' do |ss|
+    ss.resource_bundles = {
+      s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+    }
+  end
 
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/grpcpp'
@@ -214,11 +222,13 @@ Pod::Spec.new do |s|
 
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20230802.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -368,6 +378,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                       'src/core/ext/transport/chttp2/transport/decode_huff.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
+                      'src/core/ext/transport/chttp2/transport/frame.h',
                       'src/core/ext/transport/chttp2/transport/frame_data.h',
                       'src/core/ext/transport/chttp2/transport/frame_goaway.h',
                       'src/core/ext/transport/chttp2/transport/frame_ping.h',
@@ -451,6 +462,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h',
@@ -750,6 +763,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
@@ -1011,6 +1025,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/crash.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/directory_reader.h',
+                      'src/core/lib/gprpp/down_cast.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
                       'src/core/lib/gprpp/env.h',
                       'src/core/lib/gprpp/examine_stack.h',
@@ -1263,6 +1278,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/custom_metadata.h',
@@ -1272,6 +1288,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/handshaker_registry.h',
                       'src/core/lib/transport/http2_errors.h',
                       'src/core/lib/transport/http_connect_handshaker.h',
+                      'src/core/lib/transport/message.h',
+                      'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/metadata_compression_traits.h',
                       'src/core/lib/transport/parsed_metadata.h',
@@ -1395,8 +1413,6 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/base/status.h',
                       'third_party/upb/upb/base/status.hpp',
                       'third_party/upb/upb/base/string_view.h',
-                      'third_party/upb/upb/collections/array.h',
-                      'third_party/upb/upb/collections/map.h',
                       'third_party/upb/upb/generated_code_support.h',
                       'third_party/upb/upb/hash/common.h',
                       'third_party/upb/upb/hash/int_table.h',
@@ -1487,7 +1503,6 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/reflection/oneof_def.h',
                       'third_party/upb/upb/reflection/service_def.h',
                       'third_party/upb/upb/text/encode.h',
-                      'third_party/upb/upb/upb.hpp',
                       'third_party/upb/upb/wire/decode.h',
                       'third_party/upb/upb/wire/decode_fast.h',
                       'third_party/upb/upb/wire/encode.h',
@@ -1614,6 +1629,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                               'src/core/ext/transport/chttp2/transport/decode_huff.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
+                              'src/core/ext/transport/chttp2/transport/frame.h',
                               'src/core/ext/transport/chttp2/transport/frame_data.h',
                               'src/core/ext/transport/chttp2/transport/frame_goaway.h',
                               'src/core/ext/transport/chttp2/transport/frame_ping.h',
@@ -1697,6 +1713,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h',
@@ -1996,6 +2014,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
@@ -2257,6 +2276,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/crash.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/directory_reader.h',
+                              'src/core/lib/gprpp/down_cast.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',
                               'src/core/lib/gprpp/env.h',
                               'src/core/lib/gprpp/examine_stack.h',
@@ -2509,6 +2529,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',
@@ -2518,6 +2539,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/handshaker_registry.h',
                               'src/core/lib/transport/http2_errors.h',
                               'src/core/lib/transport/http_connect_handshaker.h',
+                              'src/core/lib/transport/message.h',
+                              'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/metadata_compression_traits.h',
                               'src/core/lib/transport/parsed_metadata.h',
@@ -2594,8 +2617,6 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/base/status.h',
                               'third_party/upb/upb/base/status.hpp',
                               'third_party/upb/upb/base/string_view.h',
-                              'third_party/upb/upb/collections/array.h',
-                              'third_party/upb/upb/collections/map.h',
                               'third_party/upb/upb/generated_code_support.h',
                               'third_party/upb/upb/hash/common.h',
                               'third_party/upb/upb/hash/int_table.h',
@@ -2686,7 +2707,6 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/reflection/oneof_def.h',
                               'third_party/upb/upb/reflection/service_def.h',
                               'third_party/upb/upb/text/encode.h',
-                              'third_party/upb/upb/upb.hpp',
                               'third_party/upb/upb/wire/decode.h',
                               'third_party/upb/upb/wire/decode_fast.h',
                               'third_party/upb/upb/wire/encode.h',
@@ -2733,6 +2753,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Cronet-Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/Privacy", version
 
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
 

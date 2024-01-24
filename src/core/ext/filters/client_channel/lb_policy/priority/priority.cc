@@ -292,7 +292,7 @@ PriorityLb::PriorityLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       child_failover_timeout_(std::max(
           Duration::Zero(),
-          args.args
+          channel_args()
               .GetDurationFromIntMillis(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS)
               .value_or(kDefaultChildFailoverTimeout))) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {

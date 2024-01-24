@@ -17,6 +17,7 @@ gRPC depends on several third-party libraries, their source code is available
 - gRPC C++ needs to stay buildable/installable even if the submodules are not present (e.g. the tar.gz archive with gRPC doesn't contain the submodules),
   assuming that the dependencies are already installed. This is a requirement for being able to provide a reasonable install process (e.g. using cmake)
   and to support package managers for gRPC C++.
+    - CAVEAT: upb is an exception here because of its lack of cmake support. Therefore, third_party/upb should be present to build gRPC until upb supports it.
 
 - Adding a new dependency is a lot of work (both for us and for the users).
   We currently support multiple build systems (BAZEL, cmake, make, ...) so adding a new dependency usually requires updates in multiple build systems
@@ -112,11 +113,6 @@ Updating the protobuf dependency is now part of the internal release process (se
 ### Updating third_party/envoy-api
 
 Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
-
-In addition, please perform the following two steps to generate the Python `xds-protos` package:
-
-1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
-2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
 
 ### Updating third_party/upb
 

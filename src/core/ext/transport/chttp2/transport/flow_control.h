@@ -330,7 +330,7 @@ class TransportFlowControl final {
 
  private:
   double TargetInitialWindowSizeBasedOnMemoryPressureAndBdp() const;
-  static void UpdateSetting(grpc_chttp2_setting_id id, int64_t* desired_value,
+  static void UpdateSetting(absl::string_view name, int64_t* desired_value,
                             uint32_t new_desired_value,
                             FlowControlAction* action,
                             FlowControlAction& (FlowControlAction::*set)(

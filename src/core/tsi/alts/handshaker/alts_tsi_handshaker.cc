@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>

@@ -122,6 +122,11 @@ Pod::Spec.new do |s|
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = 'src'
+
+    ss.resource_bundles = {
+      s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+    }
+
     ss.source_files = 'src/ssl/*.{h,c,cc}',
                       'src/ssl/**/*.{h,c,cc}',
                       'src/crypto/*.{h,c,cc}',

@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "grand"  # @unused
+g_stands_for = "guardian"  # @unused
 
-core_version = "37.0.0"  # @unused
+core_version = "38.0.0"  # @unused
 
-version = "1.61.0-dev"  # @unused
+version = "1.62.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1010,8 +1010,8 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:span",
         "upb_base_lib",
-        "upb_collections_lib",
-        "upb_lib",
+        "upb_mem_lib",
+        "upb_message_lib",
     ],
     language = "c++",
     deps = [
@@ -1217,8 +1217,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "upb_base_lib",
-        "upb_collections_lib",
-        "upb_lib",
+        "upb_mem_lib",
+        "upb_message_lib",
     ],
     language = "c++",
     standalone = True,
@@ -1530,6 +1530,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:call_filters",
         "//src/core:call_final_info",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
@@ -1570,6 +1571,8 @@ grpc_cc_library(
         "//src/core:loop",
         "//src/core:map",
         "//src/core:memory_quota",
+        "//src/core:message",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:per_cpu",
@@ -1577,6 +1580,7 @@ grpc_cc_library(
         "//src/core:poll",
         "//src/core:pollset_set",
         "//src/core:posix_event_engine_base_hdrs",
+        "//src/core:prioritized_race",
         "//src/core:promise_status",
         "//src/core:race",
         "//src/core:random_early_detection",
@@ -1863,7 +1867,10 @@ grpc_cc_library(
         "//src/core:lib/security/credentials/alts/grpc_alts_credentials_options.h",
         "//src/core:tsi/alts/handshaker/transport_security_common_api.h",
     ],
-    external_deps = ["upb_lib"],
+    external_deps = [
+        "upb_base_lib",
+        "upb_mem_lib",
+    ],
     language = "c++",
     visibility = ["@grpc:tsi"],
     deps = [
@@ -1879,7 +1886,8 @@ grpc_cc_library(
         "libssl",
         "libcrypto",
         "absl/strings",
-        "upb_lib",
+        "upb_base_lib",
+        "upb_mem_lib",
     ],
     language = "c++",
     tags = ["nofixdeps"],
@@ -1924,7 +1932,7 @@ grpc_cc_library(
         "absl/memory",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
+        "upb_mem_lib",
         "protobuf_headers",
         "absl/container:inlined_vector",
     ],
@@ -1999,7 +2007,7 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/memory",
         "upb_base_lib",
-        "upb_lib",
+        "upb_mem_lib",
         "absl/strings:str_format",
         "protobuf_headers",
     ],
@@ -2169,7 +2177,7 @@ grpc_cc_library(
         "absl/time",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
+        "upb_mem_lib",
     ],
     language = "c++",
     public_hdrs = [
@@ -3052,8 +3060,8 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:variant",
         "upb_base_lib",
-        "upb_collections_lib",
-        "upb_lib",
+        "upb_mem_lib",
+        "upb_message_lib",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -3429,7 +3437,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "upb_lib",
+        "upb_base_lib",
+        "upb_mem_lib",
     ],
     language = "c++",
     visibility = ["@grpc:public"],
@@ -3676,7 +3685,6 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/types:optional",
         "upb_base_lib",
-        "upb_lib",
         "upb_mem_lib",
         "upb_textformat_lib",
         "upb_json_lib",
@@ -4073,6 +4081,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:experiments",
+        "//src/core:gpr_manual_constructor",
         "//src/core:http2_errors",
         "//src/core:http2_settings",
         "//src/core:init_internally",
@@ -4361,22 +4370,22 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "xds_type_upb",
-    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
-    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "xds_orca_upb",
-    deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "xds_orca_service_upb",
-    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/service/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(

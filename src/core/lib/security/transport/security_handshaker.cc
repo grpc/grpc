@@ -671,11 +671,3 @@ void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder* builder) {
 }
 
 }  // namespace grpc_core
-
-grpc_handshaker* grpc_security_handshaker_create(
-    tsi_handshaker* handshaker, grpc_security_connector* connector,
-    const grpc_channel_args* args) {
-  return SecurityHandshakerCreate(handshaker, connector,
-                                  grpc_core::ChannelArgs::FromC(args))
-      .release();
-}

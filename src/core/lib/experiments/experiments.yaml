@@ -65,19 +65,19 @@
   allow_in_fuzzing_config: false
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2024/01/21
+  expiry: 2024/04/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2024/01/08
+  expiry: 2024/04/01
   owner: yijiem@google.com
   test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
 - name: free_large_allocator
@@ -115,7 +115,7 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/01/15
+  expiry: 2024/06/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: peer_state_based_framing
@@ -179,7 +179,7 @@
   test_tags: []
 - name: rfc_max_concurrent_streams
   description:
-    If set, enable rfc-compliant behavior (cancellation) in the advent that 
+    If set, enable rfc-compliant behavior (cancellation) in the advent that
     max concurrent streams are exceeded in chttp2.
     See https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.
   expiry: 2024/03/03
@@ -231,7 +231,7 @@
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/02/01
+  expiry: 2024/09/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
 - name: v3_backend_metric_filter
@@ -261,7 +261,7 @@
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: ctiller@google.com
   test_tags: []
 - name: work_serializer_dispatch
