@@ -61,6 +61,7 @@ class ExtendedType : public EEClass, public Exports... {
 /// supported by the endpoint.
 template <typename T>
 T* QueryExtension(EventEngine::Endpoint* endpoint) {
+  if (endpoint == nullptr) return nullptr;
   return static_cast<T*>(endpoint->QueryExtension(T::EndpointExtensionName()));
 }
 
