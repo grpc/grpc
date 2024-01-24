@@ -24,42 +24,40 @@ namespace experimental {
 
 class Extensible {
  public:
-  /// A method which allows users to query whether an Endpoint implementation
-  /// supports a specified extension. The name of the extension is provided
-  /// as an input.
+  /// A method which allows users to query whether an implementation supports a
+  /// specified extension. The name of the extension is provided as an input.
   ///
-  /// An extension could be any type with a unique string id. Each extension
-  /// may support additional capabilities and if the Endpoint implementation
-  /// supports the queried extension, it should return a valid pointer to the
-  /// extension type.
+  /// An extension could be any type with a unique string id. Each extension may
+  /// support additional capabilities and if the implementation supports the
+  /// queried extension, it should return a valid pointer to the extension type.
   ///
-  /// E.g., use case of an EventEngine::Endpoint supporting a custom
-  /// extension.
+  /// E.g., use case of an EventEngine::Endpoint supporting a custom extension.
   ///
   /// class CustomEndpointExtension {
   ///  public:
-  ///    static constexpr std::string name = "my.namespace.extension_name";
-  ///    void Process() { ... }
+  ///   static std::string EndpointExtensionName() {
+  ///     return "my.namespace.extension_name";
+  ///   }
+  ///   virtual void Process() = 0;
   /// }
   ///
-  ///
   /// class CustomEndpoint :
-  ///        public EventEngine::Endpoint, CustomEndpointExtension {
+  ///        public EventEngine::Endpoint, public CustomEndpointExtension {
   ///   public:
   ///     void* QueryExtension(absl::string_view id) override {
-  ///       if (id == CustomEndpointExtension::name) {
+  ///       if (id == CustomEndpointExtension::EndpointExtensionName()) {
   ///         return static_cast<CustomEndpointExtension*>(this);
   ///       }
   ///       return nullptr;
   ///     }
+  ///     void Process() override { ... }
   ///     ...
   /// }
   ///
-  /// auto ext_ =
-  /// static_cast<CustomEndpointExtension*>(
-  ///   endpoint->QueryExtension(CustomrEndpointExtension::name));
-  /// if (ext_ != nullptr) { ext_->Process(); }
-  ///
+  /// auto endpoint =
+  ///     static_cast<CustomEndpointExtension*>(endpoint->QueryExtension(
+  ///         CustomEndpointExtension::EndpointExtensionName()));
+  /// if (endpoint != nullptr) endpoint->Process();
   ///
   virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
 };
