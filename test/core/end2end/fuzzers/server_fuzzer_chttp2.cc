@@ -18,12 +18,11 @@
 #include "test/core/end2end/fuzzers/server_fuzzer.h"
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
-  grpc_core::RunServerFuzzer(
-      msg, [](grpc_server* server, int port_num,
-              const grpc_core::ChannelArgs& channel_args) {
-        auto* creds = grpc_insecure_server_credentials_create();
-        grpc_server_add_http2_port(
-            server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
-        grpc_server_credentials_release(creds);
-      });
+  grpc_core::RunServerFuzzer(msg, [](grpc_server* server, int port_num,
+                                     const grpc_core::ChannelArgs&) {
+    auto* creds = grpc_insecure_server_credentials_create();
+    grpc_server_add_http2_port(
+        server, absl::StrCat("0.0.0.0:", port_num).c_str(), creds);
+    grpc_server_credentials_release(creds);
+  });
 }
