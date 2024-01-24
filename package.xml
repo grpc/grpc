@@ -35,6 +35,7 @@
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/memory_allocator_impl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/slice_cast.h" role="src" />
