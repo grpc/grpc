@@ -144,13 +144,12 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
                                  unsigned char* unprotected_bytes,
                                  size_t* unprotected_bytes_size);
 
-// Verifies the CRL signature using X509_CRL_verify
-// https://www.openssl.org/docs/man3.0/man3/X509_CRL_verify.html
+// Verifies that `crl` was signed by `issuer`
 // return: 1 if valid, 0 if invalid, and -1 is there was a problem
 int VerifyCrlSignature(X509_CRL* crl, X509* issuer);
 
 // Verifies the CRL issuer and certificate issuer name match
-// return: 0 if equal, otherwise a value per X509_NAME_cmp
+// return: 0 if equal, otherwise a value != 0 depending on the comparison
 int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer);
 
 // Verifies the certificate in question has the cRLSign bit present
