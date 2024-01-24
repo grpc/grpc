@@ -78,7 +78,8 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(
     : RefCounted<ChaoticGoodServerListener>("ChaoticGoodServerListener"),
       server_(server),
       args_(args),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+      connection_id_generator_(std::move(connection_id_generator)) {}
 
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {
   event_engine_->Run([on_destroy_done = on_destroy_done_]() {
