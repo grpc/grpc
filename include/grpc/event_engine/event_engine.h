@@ -320,6 +320,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// bound port or an appropriate error status.
     virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) = 0;
     virtual absl::Status Start() = 0;
+
+    /// See Endpiont::QueryExtension for semantics.
+    virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
   };
 
   /// Factory method to create a network listener / server.
@@ -508,6 +511,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// never be run, and this method will return true. If the callback type was
   /// an absl::AnyInvocable, it will be destroyed before the method returns.
   virtual bool Cancel(TaskHandle handle) = 0;
+
+  /// See Endpiont::QueryExtension for semantics.
+  virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
 };
 
 /// Replace gRPC's default EventEngine factory.

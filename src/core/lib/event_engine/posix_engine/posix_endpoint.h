@@ -33,6 +33,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/extensions/supports_fd.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -610,6 +611,12 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       const PosixTcpOptions& options)
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     std::move(allocator), options)) {}
+
+  void* QueryExtension(absl::string_view id) override {
+    if (id == EndpointSupportsFdExtension::EndpointExtensionName())
+      return static_cast<EndpointSupportsFdExtension*>(this);
+    return nullptr;
+  }
 
   bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,

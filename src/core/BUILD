@@ -64,6 +64,7 @@ grpc_cc_library(
         "lib/event_engine/slice_buffer.cc",
     ],
     hdrs = [
+        "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/handle_containers.h",
         "lib/event_engine/resolved_address_internal.h",
         "//:include/grpc/event_engine/slice.h",

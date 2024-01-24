@@ -64,6 +64,20 @@ T* QueryExtension(EventEngine::Endpoint* endpoint) {
   return static_cast<T*>(endpoint->QueryExtension(T::EndpointExtensionName()));
 }
 
+/// A helper method which returns a valid pointer if the extension is supported
+/// by the listener.
+template <typename T>
+T* QueryExtension(EventEngine::Listener* listener) {
+  return static_cast<T*>(listener->QueryExtension(T::EndpointExtensionName()));
+}
+
+/// A helper method which returns a valid pointer if the extension is supported
+/// by the EventEngine.
+template <typename T>
+T* QueryExtension(EventEngine* engine) {
+  return static_cast<T*>(engine->QueryExtension(T::EndpointExtensionName()));
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
