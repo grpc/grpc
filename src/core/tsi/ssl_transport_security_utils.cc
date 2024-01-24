@@ -253,7 +253,7 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
 
 int VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (issuer == nullptr || crl == nullptr) {
-    return 1;
+    return -1;
   }
   EVP_PKEY* ikey = X509_get_pubkey(issuer);
   if (ikey == nullptr) {
