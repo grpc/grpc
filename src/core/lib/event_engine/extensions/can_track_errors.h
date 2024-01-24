@@ -24,6 +24,7 @@ namespace experimental {
 
 class EndpointCanTrackErrorsExtension {
  public:
+  virtual ~EndpointCanTrackErrorsExtension() = default;
   static std::string EndpointExtensionName() {
     return "io.grpc.event_engine.extension.can_track_errors";
   }

@@ -27,6 +27,7 @@ namespace experimental {
 
 class EndpointSupportsFdExtension {
  public:
+  virtual ~EndpointSupportsFdExtension() = default;
   static std::string EndpointExtensionName() {
     return "io.grpc.event_engine.extension.endpoint_supports_fd";
   }
@@ -50,6 +51,7 @@ class EndpointSupportsFdExtension {
 
 class ListenerSupportsFdExtension {
  public:
+  virtual ~ListenerSupportsFdExtension() = default;
   static std::string EndpointExtensionName() {
     return "io.grpc.event_engine.extension.listener_supports_fd";
   }
@@ -97,6 +99,7 @@ class ListenerSupportsFdExtension {
 
 class EventEngineSupportsFdExtension {
  public:
+  virtual ~EventEngineSupportsFdExtension() = default;
   static std::string EndpointExtensionName() {
     return "io.grpc.event_engine.extension.event_engine_supports_fd";
   }
