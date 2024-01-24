@@ -123,8 +123,8 @@ run_test() {
     --flagfile="${TEST_DRIVER_FLAGFILE}" \
     --flagfile="config/common-csm.cfg" \
     --kube_context="${KUBE_CONTEXT}" \
-    --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
-    --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    --server_image="gcr.io/grpc-testing/xds-interop/cpp-server:v1.61.x" \
+    --client_image="gcr.io/grpc-testing/xds-interop/python-client:test_ssa_interop_python" \
     --testing_version="${TESTING_VERSION}" \
     --nocheck_local_certs \
     --force_cleanup \
@@ -171,7 +171,7 @@ main() {
   else
     local_setup_test_driver "${script_dir}"
   fi
-  build_docker_images_if_needed
+  # build_docker_images_if_needed
   # Run tests
   cd "${TEST_DRIVER_FULL_DIR}"
   local failed_tests=0
