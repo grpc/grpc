@@ -462,12 +462,17 @@ void ServiceMeshLabelsInjector::AddLabels(
 }
 
 bool ServiceMeshLabelsInjector::AddOptionalLabels(
+    bool is_client,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
         optional_labels_span,
     opentelemetry::nostd::function_ref<
         bool(opentelemetry::nostd::string_view,
              opentelemetry::common::AttributeValue)>
         callback) const {
+  if (!is_client) {
+    // Currently the CSM optional labels are only set on client.
+    return true;
+  }
   // According to the CSM Observability Metric spec, if the control plane fails
   // to provide these labels, the client will set their values to "unknown".
   // These default values are set below.
@@ -493,9 +498,10 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
 }
 
 size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
+    bool is_client,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
     const {
-  return 2;
+  return is_client ? 2 : 0;
 }
 
 }  // namespace internal

@@ -64,7 +64,10 @@ typedef enum {
   envoy_data_accesslog_v3_UpstreamPoolReady = 7,
   envoy_data_accesslog_v3_UpstreamPeriodic = 8,
   envoy_data_accesslog_v3_UpstreamEnd = 9,
-  envoy_data_accesslog_v3_DownstreamTunnelSuccessfullyEstablished = 10
+  envoy_data_accesslog_v3_DownstreamTunnelSuccessfullyEstablished = 10,
+  envoy_data_accesslog_v3_UdpTunnelUpstreamConnected = 11,
+  envoy_data_accesslog_v3_UdpPeriodic = 12,
+  envoy_data_accesslog_v3_UdpSessionEnd = 13
 } envoy_data_accesslog_v3_AccessLogType;
 
 typedef enum {
@@ -1982,6 +1985,17 @@ UPB_INLINE upb_StringView envoy_data_accesslog_v3_TLSProperties_CertificatePrope
   _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
+UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_CertificateProperties_clear_issuer(envoy_data_accesslog_v3_TLSProperties_CertificateProperties* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
+}
+UPB_INLINE upb_StringView envoy_data_accesslog_v3_TLSProperties_CertificateProperties_issuer(const envoy_data_accesslog_v3_TLSProperties_CertificateProperties* msg) {
+  upb_StringView default_val = upb_StringView_FromString("");
+  upb_StringView ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
+  return ret;
+}
 
 UPB_INLINE envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName** envoy_data_accesslog_v3_TLSProperties_CertificateProperties_mutable_subject_alt_name(envoy_data_accesslog_v3_TLSProperties_CertificateProperties* msg, size_t* size) {
   upb_MiniTableField field = {1, 0, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -2011,6 +2025,10 @@ UPB_INLINE struct envoy_data_accesslog_v3_TLSProperties_CertificateProperties_Su
 }
 UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_CertificateProperties_set_subject(envoy_data_accesslog_v3_TLSProperties_CertificateProperties *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(4, 8), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
+}
+UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_CertificateProperties_set_issuer(envoy_data_accesslog_v3_TLSProperties_CertificateProperties *msg, upb_StringView value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 24), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 

@@ -6372,6 +6372,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_settings_metadata",
+    srcs = [
+        "ext/transport/chaotic_good/settings_metadata.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/settings_metadata.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/types:optional",
+    ],
+    deps = [
+        "arena",
+        "metadata_batch",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_frame_header",
     srcs = [
         "ext/transport/chaotic_good/frame_header.cc",
@@ -6627,6 +6646,7 @@ grpc_cc_library(
         "chaotic_good_transport",
         "context",
         "default_event_engine",
+        "error_utils",
         "event_engine_wakeup_scheduler",
         "for_each",
         "grpc_promise_endpoint",
@@ -6821,6 +6841,117 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_server",
+    srcs = [
+        "ext/transport/chaotic_good/server/chaotic_good_server.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/server/chaotic_good_server.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "channel_args",
+        "channel_args_endpoint_config",
+        "chaotic_good_frame",
+        "chaotic_good_frame_header",
+        "chaotic_good_settings_metadata",
+        "closure",
+        "context",
+        "default_event_engine",
+        "error",
+        "event_engine_tcp_socket_utils",
+        "event_engine_wakeup_scheduler",
+        "grpc_promise_endpoint",
+        "if",
+        "inter_activity_latch",
+        "iomgr_fwd",
+        "latch",
+        "memory_quota",
+        "metadata",
+        "metadata_batch",
+        "race",
+        "resource_quota",
+        "sleep",
+        "slice",
+        "slice_buffer",
+        "status_helper",
+        "time",
+        "try_seq",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:handshaker",
+        "//:hpack_encoder",
+        "//:hpack_parser",
+        "//:orphanable",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_connector",
+    srcs = [
+        "ext/transport/chaotic_good/client/chaotic_good_connector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/client/chaotic_good_connector.h",
+    ],
+    external_deps = [
+        "absl/random",
+        "absl/random:bit_gen_ref",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    deps = [
+        "activity",
+        "arena",
+        "channel_args",
+        "channel_args_endpoint_config",
+        "chaotic_good_frame",
+        "chaotic_good_frame_header",
+        "chaotic_good_settings_metadata",
+        "closure",
+        "context",
+        "default_event_engine",
+        "error",
+        "event_engine_wakeup_scheduler",
+        "grpc_promise_endpoint",
+        "latch",
+        "memory_quota",
+        "metadata_batch",
+        "notification",
+        "race",
+        "resource_quota",
+        "sleep",
+        "slice",
+        "slice_buffer",
+        "time",
+        "try_seq",
+        "wait_for_callback",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+        "//:handshaker",
+        "//:hpack_encoder",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
@@ -7050,22 +7181,22 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "xds_type_upb",
-    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
-    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "xds_orca_upb",
-    deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "xds_orca_service_upb",
-    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/service/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(
