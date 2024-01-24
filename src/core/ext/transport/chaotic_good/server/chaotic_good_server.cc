@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -59,6 +60,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -76,7 +78,6 @@ ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
     : RefCounted<ChaoticGoodServerListener>("ChaoticGoodServerListener"),
-      server_(server),
       args_(args),
       event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
 
@@ -90,7 +91,8 @@ ChaoticGoodServerListener::~ChaoticGoodServerListener() {
   });
 }
 
-absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
+absl::StatusOr<int> ChaoticGoodServerListener::Bind(
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
   EventEngine::Listener::AcceptCallback accept_cb =
       [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
                      MemoryAllocator) {
@@ -114,17 +116,10 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(const char* addr) {
     return ee_listener.status();
   }
   ee_listener_ = std::move(ee_listener.value());
-  auto resolved_addr =
-      grpc_event_engine::experimental::URIToResolvedAddress(addr);
-  GPR_ASSERT(resolved_addr.ok());
-  if (!resolved_addr.ok()) {
-    return resolved_addr.status();
-  }
-  auto port_num = ee_listener_->Bind(resolved_addr.value());
+  auto port_num = ee_listener_->Bind(addr);
   if (!port_num.ok()) {
     return port_num.status();
   }
-  server_->AddListener(OrphanablePtr<Server::ListenerInterface>(this));
   return port_num;
 }
 
@@ -413,14 +408,33 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   grpc_core::ExecCtx exec_ctx;
-  auto* core_server = grpc_core::Server::FromC(server);
-  auto* listener = new grpc_core::chaotic_good::ChaoticGoodServerListener(
-      core_server, core_server->channel_args());
-  auto bind_result = listener->Bind(addr);
-  if (!bind_result.ok()) {
-    gpr_log(GPR_ERROR, "Failed to bind to %s: %s", addr,
-            bind_result.status().ToString().c_str());
+  auto* const core_server = grpc_core::Server::FromC(server);
+  const std::string parsed_addr = grpc_core::URI::PercentDecode(addr);
+  const auto resolved_or = grpc_core::GetDNSResolver()->LookupHostnameBlocking(
+      parsed_addr, absl::StrCat(0xd20));
+  if (!resolved_or.ok()) {
+    gpr_log(GPR_ERROR, "Failed to resolve %s: %s", addr,
+            resolved_or.status().ToString().c_str());
     return 0;
   }
-  return bind_result.value();
+  int port_num = 0;
+  for (const auto& resolved_addr : resolved_or.value()) {
+    auto listener = grpc_core::MakeOrphanable<
+        grpc_core::chaotic_good::ChaoticGoodServerListener>(
+        core_server, core_server->channel_args());
+    auto bind_result = listener->Bind(
+        grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr));
+    if (!bind_result.ok()) {
+      gpr_log(GPR_ERROR, "Failed to bind to %s: %s", addr,
+              bind_result.status().ToString().c_str());
+      return 0;
+    }
+    if (port_num == 0) {
+      port_num = bind_result.value();
+    } else {
+      GPR_ASSERT(port_num == bind_result.value());
+    }
+    core_server->AddListener(std::move(listener));
+  }
+  return port_num;
 }

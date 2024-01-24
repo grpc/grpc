@@ -66,7 +66,8 @@ class ChaoticGoodServerListener final
           DefaultConnectionIDGenerator());
   ~ChaoticGoodServerListener() override;
   // Bind address to EventEngine listener.
-  absl::StatusOr<int> Bind(const char* addr);
+  absl::StatusOr<int> Bind(
+      grpc_event_engine::experimental::EventEngine::ResolvedAddress addr);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
   void Orphan() override {
@@ -173,7 +174,6 @@ class ChaoticGoodServerListener final
   };
 
  private:
-  Server* server_;
   ChannelArgs args_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>

@@ -6873,6 +6873,8 @@ grpc_cc_library(
         "context",
         "default_event_engine",
         "error",
+        "error_utils",
+        "event_engine_common",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
