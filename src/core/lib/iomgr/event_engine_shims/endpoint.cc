@@ -413,13 +413,13 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
   eeep_->wrapper = this;
-  // if (EventEngineSupportsFd()) {
-  //   fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-  //             ->GetWrappedFd();
-  // } else {
-  fd_ = -1;
-    // }
-    GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
+  if (EventEngineSupportsFd()) {
+    fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
+              ->GetWrappedFd();
+  } else {
+    fd_ = -1;
+  }
+  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
 }
 
 }  // namespace
