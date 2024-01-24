@@ -162,9 +162,7 @@ class TestClient {
       }
     }
     SimpleRequest request;
-    if (config.response_payload_size > 0) {
-      request.set_response_size(config.response_payload_size);
-    }
+    request.set_response_size(config.response_payload_size);
     if (config.request_payload_size > 0) {
       request.mutable_payload()->set_body(config.request_payload.c_str(),
                                           config.request_payload_size);
@@ -339,6 +337,10 @@ class XdsUpdateClientConfigureServiceImpl
       metadata_map[data.type()].push_back({data.key(), data.value()});
     }
     std::vector<RpcConfig> configs;
+    int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+    int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+    GPR_ASSERT(request_payload_size >= 0);
+    GPR_ASSERT(response_payload_size >= 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -347,15 +349,22 @@ class XdsUpdateClientConfigureServiceImpl
       if (metadata_iter != metadata_map.end()) {
         config.metadata = metadata_iter->second;
       }
-      if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
-        config.request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
-        std::string payload(config.request_payload_size, '0');
-        config.request_payload = payload;
+      if (request_payload_size > 0 &&
+          config.type == ClientConfigureRequest::EMPTY_CALL) {
+        gpr_log(GPR_WARNING,
+                "request_payload_size should not be set "
+                "for EMPTY_CALL");
       }
-      if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
-        config.response_payload_size =
-            absl::GetFlag(FLAGS_response_payload_size);
+      if (response_payload_size > 0 &&
+          config.type == ClientConfigureRequest::EMPTY_CALL) {
+        gpr_log(GPR_WARNING,
+                "response_payload_size should not be set "
+                "for EMPTY_CALL");
       }
+      config.request_payload_size = request_payload_size;
+      std::string payload(config.request_payload_size, '0');
+      config.request_payload = payload;
+      config.response_payload_size = response_payload_size;
       configs.push_back(std::move(config));
     }
     {
@@ -481,6 +490,10 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   std::vector<RpcConfig> configs;
   std::vector<std::string> rpc_methods =
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
+  int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+  int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+  GPR_ASSERT(request_payload_size >= 0);
+  GPR_ASSERT(response_payload_size >= 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
@@ -494,14 +507,22 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     if (metadata_iter != metadata_map.end()) {
       config.metadata = metadata_iter->second;
     }
-    if (absl::GetFlag(FLAGS_request_payload_size) > 0) {
-      config.request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
-      std::string payload(config.request_payload_size, '0');
-      config.request_payload = payload;
+    if (request_payload_size > 0 &&
+        config.type == ClientConfigureRequest::EMPTY_CALL) {
+      gpr_log(GPR_WARNING,
+              "request_payload_size should not be set "
+              "for EMPTY_CALL");
     }
-    if (absl::GetFlag(FLAGS_response_payload_size) > 0) {
-      config.response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+    if (response_payload_size > 0 &&
+        config.type == ClientConfigureRequest::EMPTY_CALL) {
+      gpr_log(GPR_WARNING,
+              "response_payload_size should not be set "
+              "for EMPTY_CALL");
     }
+    config.request_payload_size = request_payload_size;
+    std::string payload(config.request_payload_size, '0');
+    config.request_payload = payload;
+    config.response_payload_size = response_payload_size;
     configs.push_back(std::move(config));
   }
   {
