@@ -374,11 +374,15 @@ class CallInitiator {
 
   auto PullServerTrailingMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    auto receiver = std::move(spine_->server_trailing_metadata().receiver);
+    auto recv_trailing_metadata = receiver.Next();
     return PrioritizedRace(
-        Map(spine_->server_trailing_metadata().receiver.Next(),
-            [spine = spine_](
-                NextResult<ServerMetadataHandle> md) -> ServerMetadataHandle {
+        Map(std::move(recv_trailing_metadata),
+            [spine = spine_, receiver = std::move(receiver)](
+                NextResult<ServerMetadataHandle> md) mutable
+            -> ServerMetadataHandle {
               GPR_ASSERT(md.has_value());
+              spine->server_trailing_metadata().sender.Close();
               return std::move(*md);
             }),
         spine_->WaitForCancel());

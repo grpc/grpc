@@ -349,9 +349,11 @@ void ChaoticGoodServerTransport::SetAcceptor(Acceptor* acceptor) {
   GPR_ASSERT(acceptor_ == nullptr);
   GPR_ASSERT(acceptor != nullptr);
   acceptor_ = acceptor;
-  reader_ = MakeActivity(TransportReadLoop(),
-                         EventEngineWakeupScheduler(event_engine_),
-                         OnTransportActivityDone("reader"));
+  auto reader = MakeActivity(TransportReadLoop(),
+                             EventEngineWakeupScheduler(event_engine_),
+                             OnTransportActivityDone("reader"));
+  MutexLock lock(&mu_);
+  reader_ = std::move(reader);
 }
 
 ChaoticGoodServerTransport::~ChaoticGoodServerTransport() {
@@ -416,6 +418,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
 }
 
 void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
+  std::vector<ActivityPtr> cancelled;
   MutexLock lock(&mu_);
   bool did_stuff = false;
   if (op->start_connectivity_watch != nullptr) {
@@ -433,6 +436,11 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
           "set_accept_stream not supported on chaotic good transports: ",
           grpc_transport_op_string(op)));
     }
+    did_stuff = true;
+  }
+  if (!op->goaway_error.ok()) {
+    cancelled.push_back(std::move(writer_));
+    cancelled.push_back(std::move(reader_));
     did_stuff = true;
   }
   if (!did_stuff) {

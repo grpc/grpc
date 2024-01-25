@@ -3859,12 +3859,13 @@ class MaybeOpImpl {
   using State = absl::variant<Dismissed, PromiseFactory, Promise>;
 
   MaybeOpImpl() : state_(Dismissed{}) {}
-  explicit MaybeOpImpl(SetupResult result)
-      : state_(PromiseFactory(std::move(result))) {}
+  MaybeOpImpl(SetupResult result, grpc_op_type op)
+      : state_(PromiseFactory(std::move(result))), op_(op) {}
 
   MaybeOpImpl(const MaybeOpImpl&) = delete;
   MaybeOpImpl& operator=(const MaybeOpImpl&) = delete;
-  MaybeOpImpl(MaybeOpImpl&& other) noexcept : state_(MoveState(other.state_)) {}
+  MaybeOpImpl(MaybeOpImpl&& other) noexcept
+      : state_(MoveState(other.state_)), op_(other.op_) {}
   MaybeOpImpl& operator=(MaybeOpImpl&& other) noexcept {
     if (absl::holds_alternative<Dismissed>(state_)) {
       state_.template emplace<Dismissed>();
@@ -3873,6 +3874,7 @@ class MaybeOpImpl {
     // Can't move after first poll => Promise is not an option
     state_.template emplace<PromiseFactory>(
         std::move(absl::get<PromiseFactory>(other.state_)));
+    op_ = other.op_;
     return *this;
   }
 
@@ -3883,12 +3885,45 @@ class MaybeOpImpl {
       auto promise = factory.Make();
       state_.template emplace<Promise>(std::move(promise));
     }
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "%sBeginPoll %s",
+              Activity::current()->DebugTag().c_str(), OpName(op_).c_str());
+    }
     auto& promise = absl::get<Promise>(state_);
-    return poll_cast<StatusFlag>(promise());
+    auto r = poll_cast<StatusFlag>(promise());
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "%sEndPoll %s --> %s",
+              Activity::current()->DebugTag().c_str(), OpName(op_).c_str(),
+              r.pending() ? "PENDING" : (r.value().ok() ? "OK" : "FAILURE"));
+    }
+    return r;
   }
 
  private:
-  State state_;
+  GPR_NO_UNIQUE_ADDRESS State state_;
+  GPR_NO_UNIQUE_ADDRESS grpc_op_type op_;
+
+  static std::string OpName(grpc_op_type op) {
+    switch (op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        return "SendInitialMetadata";
+      case GRPC_OP_SEND_MESSAGE:
+        return "SendMessage";
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        return "SendStatusFromServer";
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+        return "SendCloseFromClient";
+      case GRPC_OP_RECV_MESSAGE:
+        return "RecvMessage";
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        return "RecvCloseOnServer";
+      case GRPC_OP_RECV_INITIAL_METADATA:
+        return "RecvInitialMetadata";
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        return "RecvStatusOnClient";
+    }
+    return absl::StrCat("UnknownOp(", op, ")");
+  }
 
   static State MoveState(State& state) {
     if (absl::holds_alternative<Dismissed>(state)) return Dismissed{};
@@ -3910,7 +3945,7 @@ auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
   if (idx == 255) {
     return MaybeOpImpl<SetupFn>();
   } else {
-    return MaybeOpImpl<SetupFn>(setup(ops[idx]));
+    return MaybeOpImpl<SetupFn>(setup(ops[idx]), ops[idx].op);
   }
 }
 }  // namespace
@@ -4040,7 +4075,6 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
             return Map(server_trailing_metadata_.receiver.AwaitClosed(),
                        [cancelled](bool result) -> Success {
                          *cancelled = result ? 1 : 0;
-                         Crash("return metadata here");
                          return Success{};
                        });
           };
