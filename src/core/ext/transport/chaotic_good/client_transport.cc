@@ -290,5 +290,26 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
   });
 }
 
+void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
+  MutexLock lock(&mu_);
+  bool did_stuff = false;
+  if (op->start_connectivity_watch != nullptr) {
+    state_tracker_.AddWatcher(op->start_connectivity_watch_state,
+                              std::move(op->start_connectivity_watch));
+    did_stuff = true;
+  }
+  if (op->stop_connectivity_watch != nullptr) {
+    state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
+    did_stuff = true;
+  }
+  if (op->set_accept_stream) {
+    Crash("set_accept_stream not supported on clients");
+  }
+  if (!did_stuff) {
+    Crash(absl::StrCat("unimplemented transport perform op: ",
+                       grpc_transport_op_string(op)));
+  }
+}
+
 }  // namespace chaotic_good
 }  // namespace grpc_core

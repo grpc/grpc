@@ -147,7 +147,7 @@ class ChaoticGoodServerTransport final : public Transport,
   ActivityPtr writer_;
   ActivityPtr reader_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
-      "chaotic_good_server", GRPC_CHANNEL_IDLE};
+      "chaotic_good_server", GRPC_CHANNEL_READY};
 };
 
 }  // namespace chaotic_good
