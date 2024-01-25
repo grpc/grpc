@@ -218,6 +218,9 @@ EXPERIMENTS = {
             "bad_client_test": [
                 "rfc_max_concurrent_streams",
             ],
+            "cancel_ares_query_test": [
+                "event_engine_dns",
+            ],
             "compression_test": [
                 "v3_compression_filter",
             ],
@@ -254,6 +257,9 @@ EXPERIMENTS = {
             "logging_test": [
                 "promise_based_server_call",
             ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
+            ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
@@ -264,9 +270,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "cancel_ares_query_test": [
-                "event_engine_dns",
-            ],
             "core_end2end_test": [
                 "event_engine_listener",
             ],
@@ -286,9 +289,6 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
-            ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
             ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
