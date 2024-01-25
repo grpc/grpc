@@ -191,17 +191,6 @@ class IntraActivityWaiter {
 // a case, if execution had not already finished, the done callback would be
 // called with absl::CancelledError().
 class Activity : public Orphanable {
-  static Activity*& refToCurrent() {
-#if !defined(_WIN32) || !defined(_DLL)
-    return g_current_activity_;
-#else
-    // Set during RunLoop to the Activity that's executing.
-    // Being set implies that mu_ is held.
-    static thread_local Activity* current_activity;
-    return current_activity;
-#endif
-  }
-
  public:
   // Force wakeup from the outside.
   // This should be rarely needed, and usages should be accompanied with a note
@@ -226,7 +215,7 @@ class Activity : public Orphanable {
   //   locked
   // - back up that assertion with a runtime check in debug builds (it's
   //   prohibitively expensive in non-debug builds)
-  static Activity* current() { return refToCurrent(); }
+  static Activity* current() { return current_ref(); }
 
   // Produce an activity-owning Waker. The produced waker will keep the activity
   // alive until it's awoken or dropped.
@@ -250,9 +239,9 @@ class Activity : public Orphanable {
   class ScopedActivity {
    public:
     explicit ScopedActivity(Activity* activity) : prior_activity_(current()) {
-      refToCurrent() = activity;
+      current_ref() = activity;
     }
-    ~ScopedActivity() { refToCurrent() = prior_activity_; }
+    ~ScopedActivity() { current_ref() = prior_activity_; }
     ScopedActivity(const ScopedActivity&) = delete;
     ScopedActivity& operator=(const ScopedActivity&) = delete;
 
@@ -261,6 +250,16 @@ class Activity : public Orphanable {
   };
 
  private:
+  static Activity*& current_ref() {
+#if !defined(_WIN32) || !defined(_DLL)
+    return g_current_activity_;
+#else
+    // Set during RunLoop to the Activity that's executing.
+    // Being set implies that mu_ is held.
+    static thread_local Activity* current_activity;
+    return current_activity;
+#endif
+  }
 #if !defined(_WIN32) || !defined(_DLL)
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
