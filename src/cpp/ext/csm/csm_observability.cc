@@ -137,14 +137,16 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
           google::cloud::otel::MakeResourceDetector()
               ->Detect()
               .GetAttributes()));
-  builder_->BuildAndRegisterGlobal();
+  auto status = builder_->BuildAndRegisterGlobal();
+  if (!status.ok()) {
+    return status;
+  }
   return CsmObservability();
 }
-
-}  // namespace experimental
 
 std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption() {
   return std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>();
 }
 
+}  // namespace experimental
 }  // namespace grpc
