@@ -1,0 +1,6 @@
+channel_args {
+  args {
+    resource_quota {
+    }
+  }
+}
