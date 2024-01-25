@@ -40,14 +40,14 @@ using envoy::service::status::v3::ClientStatusResponse;
 namespace {
 
 absl::StatusOr<ClientStatusResponse> DumpClientStatusResponse() {
-  ClientStatusResponse client_config;
+  ClientStatusResponse response;
   grpc_slice serialized_client_config = grpc_dump_xds_configs();
   std::string bytes = StringFromCopiedSlice(serialized_client_config);
   grpc_slice_unref(serialized_client_config);
-  if (!client_config.ParseFromString(bytes)) {
+  if (!response.ParseFromString(bytes)) {
     return absl::InternalError("Failed to parse ClientStatusResponse.");
   }
-  return client_config;
+  return response;
 }
 
 }  // namespace
@@ -57,19 +57,17 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
     ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>* stream) {
   ClientStatusRequest request;
   while (stream->Read(&request)) {
-    ClientStatusResponse response;
-    absl::StatusOr<ClientStatusResponse> s = DumpClientStatusResponse();
-    if (!s.ok()) {
-      if (s.status().code() == absl::StatusCode::kUnavailable) {
+    absl::StatusOr<ClientStatusResponse> response = DumpClientStatusResponse();
+    if (!response.ok()) {
+      if (response.status().code() == absl::StatusCode::kUnavailable) {
         // If the xDS client is not initialized, return empty response
-        stream->Write(response);
+        stream->Write(ClientStatusResponse());
         continue;
       }
-      return Status(static_cast<StatusCode>(s.status().raw_code()),
-                    s.status().ToString());
+      return Status(static_cast<StatusCode>(response.status().raw_code()),
+                    response.status().ToString());
     }
-    response = s.value();
-    stream->Write(response);
+    stream->Write(*response);
   }
   return Status::OK;
 }
@@ -86,7 +84,7 @@ Status ClientStatusDiscoveryService::FetchClientStatus(
     return Status(static_cast<StatusCode>(s.status().raw_code()),
                   s.status().ToString());
   }
-  *response = s.value();
+  *response = std::move(*s);
   return Status::OK;
 }
 
