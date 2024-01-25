@@ -106,7 +106,13 @@ def get_commit_detail(commit):
         detail += "."
     matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
     cl_num = matches.group(1)
-    detail += " ([commit](https://github.com/grpc/grpc/commit/" + commit + ")) ([CL](https://critique.corp.google.com/cl/" + cl_num + "))"
+    detail += (
+        " ([commit](https://github.com/grpc/grpc/commit/"
+        + commit
+        + ")) ([CL](https://critique.corp.google.com/cl/"
+        + cl_num
+        + "))"
+    )
     return detail
 
 
@@ -226,14 +232,16 @@ def get_pr_titles(gitLogs):
             langs_pr[lang].append(prline)
     commits_wo_pr = all_commits_set - merge_commits_set - sq_commits_set
     for commit in commits_wo_pr:
-      langs_pr["nopr"].append(get_commit_detail(commit))
+        langs_pr["nopr"].append(get_commit_detail(commit))
 
     return langs_pr, error_count
 
 
 def write_draft(langs_pr, file, version, date):
     file.write(content_header.format(version=version, date=date))
-    file.write("Commits with missing PR number - please lookup the PR info in the corresponding CL and add to the additional notes if necessary.\n")
+    file.write(
+        "Commits with missing PR number - please lookup the PR info in the corresponding CL and add to the additional notes if necessary.\n"
+    )
     file.write("---\n")
     file.write("\n")
     if langs_pr["nopr"]:
