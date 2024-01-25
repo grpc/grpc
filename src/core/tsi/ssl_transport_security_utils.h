@@ -144,20 +144,20 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
                                  unsigned char* unprotected_bytes,
                                  size_t* unprotected_bytes_size);
 
-// Verifies that `crl` was signed by `issuer`
-// return: 1 if valid, 0 if invalid, and -1 is there was a problem
+// Verifies that `crl` was signed by `issuer.
+// return: 1 if valid, 0 if invalid, and -1 is there was a problem.
 int VerifyCrlSignature(X509_CRL* crl, X509* issuer);
 
-// Verifies the CRL issuer and certificate issuer name match
-// return: 0 if equal, otherwise a value != 0 depending on the comparison
+// Verifies the CRL issuer and certificate issuer name match.
+// return: 0 if equal, otherwise a value != 0 depending on the comparison.
 int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer);
 
-// Verifies the certificate in question has the cRLSign bit present
-// return: true if cRLSign bit is present, 0 otherwise
+// Verifies the certificate in question has the cRLSign bit present.
+// return: true if cRLSign bit is present, 0 otherwise.
 bool VerifyCrlSignBit(X509* issuer);
 
-// Gets a stable representation of the issuer name from an X509 certificate
-// return: a std::string of the DER encoding of the X509_NAME issuer name
+// Gets a stable representation of the issuer name from an X509 certificate.
+// return: a std::string of the DER encoding of the X509_NAME issuer name.
 absl::StatusOr<std::string> IssuerFromCert(X509* cert);
 
 }  // namespace grpc_core
