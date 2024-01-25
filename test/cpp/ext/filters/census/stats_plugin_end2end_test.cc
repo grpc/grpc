@@ -32,6 +32,7 @@
 #include <grpc++/grpc++.h>
 #include <grpcpp/opencensus.h>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
@@ -662,8 +663,14 @@ TEST_F(StatsPluginEnd2EndTest,
   auto sent_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
-  EXPECT_TRUE(
-      IsAnnotationPresent(sent_span_data, "Delayed name resolution complete."));
+  // TODO(yijiem): the EventEngine DNS resolver might be faster in getting the
+  // result before TryCheckResolution and the call would not be queued:
+  // https://github.com/grpc/grpc/blob/master/src/core/ext/filters/client_channel/client_channel.cc#L2340.
+  // We could use a FakeResolver and introduce a delay to deflake this test.
+  if (!grpc_core::IsEventEngineDnsEnabled()) {
+    EXPECT_TRUE(IsAnnotationPresent(sent_span_data,
+                                    "Delayed name resolution complete."));
+  }
   // Check presence of trace annotation for removal from channel's pending
   // lb pick queue.
   auto attempt_span_data = GetSpanByName(
