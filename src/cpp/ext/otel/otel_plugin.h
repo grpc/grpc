@@ -84,6 +84,7 @@ class LabelsInjector {
   // corresponds to the CallAttemptTracer::OptionalLabelComponent enum. Returns
   // false when callback returns false.
   virtual bool AddOptionalLabels(
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span,
       opentelemetry::nostd::function_ref<
@@ -94,6 +95,7 @@ class LabelsInjector {
   // Gets the actual size of the optional labels that the Plugin is going to
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span) const = 0;
 };
@@ -204,7 +206,7 @@ class OpenTelemetryPluginBuilderImpl {
           generic_method_attribute_filter);
   OpenTelemetryPluginBuilderImpl& AddPluginOption(
       std::unique_ptr<InternalOpenTelemetryPluginOption> option);
-  void BuildAndRegisterGlobal();
+  absl::Status BuildAndRegisterGlobal();
 
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;

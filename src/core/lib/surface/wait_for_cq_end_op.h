@@ -41,7 +41,7 @@ class WaitForCqEndOp {
       } else {
         auto not_started = std::move(*n);
         auto& started =
-            state_.emplace<Started>(Activity::current()->MakeOwningWaker());
+            state_.emplace<Started>(GetContext<Activity>()->MakeOwningWaker());
         grpc_cq_end_op(
             not_started.cq, not_started.tag, std::move(not_started.error),
             [](void* p, grpc_cq_completion*) {

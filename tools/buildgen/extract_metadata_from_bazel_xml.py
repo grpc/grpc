@@ -85,7 +85,7 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/googleapis",
         proto_prefix="third_party/googleapis/",
     ),
-    "com_github_cncf_udpa": ExternalProtoLibrary(
+    "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
     "opencensus_proto": ExternalProtoLibrary(
@@ -574,7 +574,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
@@ -904,6 +904,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
 
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
+    tests = [test for test in tests if "_fuzzer_" not in test]
 
     return tests
 

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.61.0-dev'
+  version = '1.62.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -93,6 +93,14 @@ Pod::Spec.new do |s|
   s.default_subspecs = 'Interface', 'Implementation'
   s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
   s.libraries = 'c++'
+
+  # Exposes the privacy manifest. Depended on by any subspecs containing
+  # non-interface files.
+  s.subspec 'Privacy' do |ss|
+    ss.resource_bundles = {
+      s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+    }
+  end
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
@@ -185,9 +193,11 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency 'BoringSSL-GRPC', '0.0.31'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -392,6 +402,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/decode_huff.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.cc',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
+                      'src/core/ext/transport/chttp2/transport/frame.cc',
+                      'src/core/ext/transport/chttp2/transport/frame.h',
                       'src/core/ext/transport/chttp2/transport/frame_data.cc',
                       'src/core/ext/transport/chttp2/transport/frame_data.h',
                       'src/core/ext/transport/chttp2/transport/frame_goaway.cc',
@@ -530,6 +542,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c',
+                      'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c',
                       'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
@@ -993,6 +1008,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c',
+                      'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                       'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c',
@@ -1509,6 +1526,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/crash.h',
                       'src/core/lib/gprpp/debug_location.h',
                       'src/core/lib/gprpp/directory_reader.h',
+                      'src/core/lib/gprpp/down_cast.h',
                       'src/core/lib/gprpp/dual_ref_counted.h',
                       'src/core/lib/gprpp/env.h',
                       'src/core/lib/gprpp/examine_stack.cc',
@@ -1986,6 +2004,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_filters.cc',
+                      'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.cc',
                       'src/core/lib/transport/call_final_info.h',
                       'src/core/lib/transport/connectivity_state.cc',
@@ -2001,6 +2021,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/http2_errors.h',
                       'src/core/lib/transport/http_connect_handshaker.cc',
                       'src/core/lib/transport/http_connect_handshaker.h',
+                      'src/core/lib/transport/message.cc',
+                      'src/core/lib/transport/message.h',
+                      'src/core/lib/transport/metadata.cc',
+                      'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/metadata_compression_traits.h',
@@ -2382,6 +2406,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                               'src/core/ext/transport/chttp2/transport/decode_huff.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
+                              'src/core/ext/transport/chttp2/transport/frame.h',
                               'src/core/ext/transport/chttp2/transport/frame_data.h',
                               'src/core/ext/transport/chttp2/transport/frame_goaway.h',
                               'src/core/ext/transport/chttp2/transport/frame_ping.h',
@@ -2465,6 +2490,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h',
+                              'src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h',
                               'src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h',
@@ -2764,6 +2791,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.h',
                               'src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.h',
@@ -3024,6 +3052,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/crash.h',
                               'src/core/lib/gprpp/debug_location.h',
                               'src/core/lib/gprpp/directory_reader.h',
+                              'src/core/lib/gprpp/down_cast.h',
                               'src/core/lib/gprpp/dual_ref_counted.h',
                               'src/core/lib/gprpp/env.h',
                               'src/core/lib/gprpp/examine_stack.h',
@@ -3276,6 +3305,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',
@@ -3285,6 +3315,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/handshaker_registry.h',
                               'src/core/lib/transport/http2_errors.h',
                               'src/core/lib/transport/http_connect_handshaker.h',
+                              'src/core/lib/transport/message.h',
+                              'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/metadata_compression_traits.h',
                               'src/core/lib/transport/parsed_metadata.h',
@@ -3479,6 +3511,7 @@ Pod::Spec.new do |s|
 
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Cronet-Interface", version
 
     ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',

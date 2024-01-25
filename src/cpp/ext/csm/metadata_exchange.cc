@@ -89,8 +89,9 @@ constexpr absl::string_view kPeerCanonicalServiceAttribute =
     "csm.remote_workload_canonical_service";
 // Type values used by Google Cloud Resource Detector
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
+constexpr absl::string_view kGceType = "gcp_compute_engine";
 
-enum class GcpResourceType : std::uint8_t { kGke, kUnknown };
+enum class GcpResourceType : std::uint8_t { kGke, kGce, kUnknown };
 
 // A minimal class for helping with the information we need from the xDS
 // bootstrap file for GSM Observability reasons.
@@ -151,6 +152,8 @@ std::string GetXdsBootstrapContents() {
 GcpResourceType StringToGcpResourceType(absl::string_view type) {
   if (type == kGkeType) {
     return GcpResourceType::kGke;
+  } else if (type == kGceType) {
+    return GcpResourceType::kGce;
   }
   return GcpResourceType::kUnknown;
 }
@@ -219,39 +222,19 @@ class MeshLabelsIterable : public LabelsIterable {
     if (pos_ < local_labels_size) {
       return local_labels_[pos_++];
     }
-    if (++pos_ == local_labels_size + 1) {
-      return std::make_pair(kPeerTypeAttribute,
-                            GetStringValueFromUpbStruct(
-                                struct_pb.struct_pb, kMetadataExchangeTypeKey,
-                                struct_pb.arena.ptr()));
+    const size_t fixed_attribute_end =
+        local_labels_size + kFixedAttributes.size();
+    if (pos_ < fixed_attribute_end) {
+      return NextFromAttributeList(struct_pb, kFixedAttributes,
+                                   local_labels_size);
     }
-    // Only handle GKE type for now.
-    switch (remote_type_) {
-      case GcpResourceType::kGke:
-        if ((pos_ - 2 - local_labels_size) >= kGkeAttributeList.size()) {
-          return absl::nullopt;
-        }
-        return std::make_pair(
-            kGkeAttributeList[pos_ - 2 - local_labels_size].otel_attribute,
-            GetStringValueFromUpbStruct(
-                struct_pb.struct_pb,
-                kGkeAttributeList[pos_ - 2 - local_labels_size]
-                    .metadata_attribute,
-                struct_pb.arena.ptr()));
-      case GcpResourceType::kUnknown:
-        return absl::nullopt;
-    }
+    return NextFromAttributeList(struct_pb, GetAttributesForType(remote_type_),
+                                 fixed_attribute_end);
   }
 
   size_t Size() const override {
-    auto& struct_pb = GetDecodedMetadata();
-    if (struct_pb.struct_pb == nullptr) {
-      return local_labels_.size();
-    }
-    if (remote_type_ != GcpResourceType::kGke) {
-      return local_labels_.size() + 1;
-    }
-    return local_labels_.size() + kGkeAttributeList.size() + 1;
+    return local_labels_.size() + kFixedAttributes.size() +
+           GetAttributesForType(remote_type_).size();
   }
 
   void ResetIteratorPosition() override { pos_ = 0; }
@@ -263,7 +246,7 @@ class MeshLabelsIterable : public LabelsIterable {
   }
 
  private:
-  struct GkeAttribute {
+  struct RemoteAttribute {
     absl::string_view otel_attribute;
     absl::string_view metadata_attribute;
   };
@@ -273,17 +256,55 @@ class MeshLabelsIterable : public LabelsIterable {
     google_protobuf_Struct* struct_pb = nullptr;
   };
 
-  static constexpr std::array<GkeAttribute, 6> kGkeAttributeList = {
-      GkeAttribute{kPeerWorkloadNameAttribute,
-                   kMetadataExchangeWorkloadNameKey},
-      GkeAttribute{kPeerNamespaceNameAttribute,
-                   kMetadataExchangeNamespaceNameKey},
-      GkeAttribute{kPeerClusterNameAttribute, kMetadataExchangeClusterNameKey},
-      GkeAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
-      GkeAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
-      GkeAttribute{kPeerCanonicalServiceAttribute,
-                   kMetadataExchangeCanonicalServiceKey},
+  static constexpr std::array<RemoteAttribute, 2> kFixedAttributes = {
+      RemoteAttribute{kPeerTypeAttribute, kMetadataExchangeTypeKey},
+      RemoteAttribute{kPeerCanonicalServiceAttribute,
+                      kMetadataExchangeCanonicalServiceKey},
   };
+
+  static constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
+      RemoteAttribute{kPeerWorkloadNameAttribute,
+                      kMetadataExchangeWorkloadNameKey},
+      RemoteAttribute{kPeerNamespaceNameAttribute,
+                      kMetadataExchangeNamespaceNameKey},
+      RemoteAttribute{kPeerClusterNameAttribute,
+                      kMetadataExchangeClusterNameKey},
+      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+  };
+  static constexpr std::array<RemoteAttribute, 3> kGceAttributeList = {
+      RemoteAttribute{kPeerWorkloadNameAttribute,
+                      kMetadataExchangeWorkloadNameKey},
+      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+  };
+
+  static absl::Span<const RemoteAttribute> GetAttributesForType(
+      GcpResourceType remote_type) {
+    switch (remote_type) {
+      case GcpResourceType::kGke:
+        return kGkeAttributeList;
+      case GcpResourceType::kGce:
+        return kGceAttributeList;
+      default:
+        return {};
+    }
+  }
+
+  absl::optional<std::pair<absl::string_view, absl::string_view>>
+  NextFromAttributeList(const StructPb& struct_pb,
+                        absl::Span<const RemoteAttribute> attributes,
+                        size_t start_index) {
+    GPR_DEBUG_ASSERT(pos_ >= start_index);
+    const size_t index = pos_ - start_index;
+    if (index >= attributes.size()) return absl::nullopt;
+    ++pos_;
+    const auto& attribute = attributes[index];
+    return std::make_pair(attribute.otel_attribute,
+                          GetStringValueFromUpbStruct(
+                              struct_pb.struct_pb, attribute.metadata_attribute,
+                              struct_pb.arena.ptr()));
+  }
 
   StructPb& GetDecodedMetadata() const {
     auto* slice = absl::get_if<grpc_core::Slice>(&metadata_);
@@ -319,8 +340,12 @@ class MeshLabelsIterable : public LabelsIterable {
   uint32_t pos_ = 0;
 };
 
-constexpr std::array<MeshLabelsIterable::GkeAttribute, 6>
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 2>
+    MeshLabelsIterable::kFixedAttributes;
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5>
     MeshLabelsIterable::kGkeAttributeList;
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3>
+    MeshLabelsIterable::kGceAttributeList;
 
 }  // namespace
 
@@ -363,13 +388,13 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
       opentelemetry::sdk::resource::SemanticConventions::kK8sNamespaceName);
   absl::string_view cluster_name_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kK8sClusterName);
-  absl::string_view cluster_location_value = GetStringValueFromAttributeMap(
+  absl::string_view location_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::
-               kCloudRegion);  // if regional
-  if (cluster_location_value == "unknown") {
-    cluster_location_value = GetStringValueFromAttributeMap(
+               kCloudAvailabilityZone);  // if zonal
+  if (location_value == "unknown") {
+    location_value = GetStringValueFromAttributeMap(
         map, opentelemetry::sdk::resource::SemanticConventions::
-                 kCloudAvailabilityZone);  // if zonal
+                 kCloudRegion);  // if regional
   }
   absl::string_view project_id_value = GetStringValueFromAttributeMap(
       map, opentelemetry::sdk::resource::SemanticConventions::kCloudAccountId);
@@ -378,7 +403,8 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
   // Create metadata to be sent over wire.
   AddStringKeyValueToStructProto(metadata, kMetadataExchangeTypeKey, type_value,
                                  arena.ptr());
-  // Only handle GKE for now
+  AddStringKeyValueToStructProto(metadata, kMetadataExchangeCanonicalServiceKey,
+                                 canonical_service_value, arena.ptr());
   if (type_value == kGkeType) {
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeWorkloadNameKey,
                                    workload_name_value, arena.ptr());
@@ -387,12 +413,16 @@ ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeClusterNameKey,
                                    cluster_name_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
-                                   cluster_location_value, arena.ptr());
+                                   location_value, arena.ptr());
     AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
                                    project_id_value, arena.ptr());
-    AddStringKeyValueToStructProto(metadata,
-                                   kMetadataExchangeCanonicalServiceKey,
-                                   canonical_service_value, arena.ptr());
+  } else if (type_value == kGceType) {
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeWorkloadNameKey,
+                                   workload_name_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeLocationKey,
+                                   location_value, arena.ptr());
+    AddStringKeyValueToStructProto(metadata, kMetadataExchangeProjectIdKey,
+                                   project_id_value, arena.ptr());
   }
 
   size_t output_length;
@@ -432,12 +462,17 @@ void ServiceMeshLabelsInjector::AddLabels(
 }
 
 bool ServiceMeshLabelsInjector::AddOptionalLabels(
+    bool is_client,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
         optional_labels_span,
     opentelemetry::nostd::function_ref<
         bool(opentelemetry::nostd::string_view,
              opentelemetry::common::AttributeValue)>
         callback) const {
+  if (!is_client) {
+    // Currently the CSM optional labels are only set on client.
+    return true;
+  }
   // According to the CSM Observability Metric spec, if the control plane fails
   // to provide these labels, the client will set their values to "unknown".
   // These default values are set below.
@@ -463,9 +498,10 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
 }
 
 size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
+    bool is_client,
     absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
     const {
-  return 2;
+  return is_client ? 2 : 0;
 }
 
 }  // namespace internal

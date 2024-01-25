@@ -29,6 +29,11 @@
 
   third_party_proto_prefixes = {lib.proto_prefix for lib in external_proto_libraries}
 
+  gpr_libs = ['gpr']
+  grpc_libs = ['grpc', 'grpc_unsecure']
+  grpcxx_libs = ['grpc++', 'grpc++_unsecure']
+  protoc_libs = ['benchmark_helpers', 'grpc++_reflection', 'grpcpp_channelz']
+
   def third_party_proto_import_path(path):
     """Removes third_party prefix to match ProtoBuf's relative import path."""
     for prefix in third_party_proto_prefixes:
@@ -158,7 +163,7 @@
       return ' SHARED'
 
     # upb always compiles as a static library on Windows
-    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib']:
+    elif lib_name in ['upb','upb_collections_lib','upb_json_lib','upb_textformat_lib'] + protoc_libs:
       return ' ${_gRPC_STATIC_WIN32}'
 
     else:
@@ -191,6 +196,19 @@
       else:
         deps.append(d)
     return deps
+
+  def get_all_deps(target_dict, all_libs):
+    ret = set()
+    get_all_deps_recurse(target_dict, all_libs, ret)
+    return ret
+
+  def get_all_deps_recurse(target_dict, all_libs, all_deps):
+    for d in target_dict.get('deps', []):
+      if not d in all_deps:
+        all_deps.add(d)
+        for other_lib in all_libs:
+          if other_lib.name == d:
+            get_all_deps_recurse(other_lib, all_libs, all_deps)
 
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
@@ -250,12 +268,6 @@
       return '\n'.join(lines)
     return _func
 
-  def add_dll_annotation_macros(lib, prefix):
-    return """set_target_properties(%s PROPERTIES DEFINE_SYMBOL "%s_DLL_EXPORTS")
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(%s INTERFACE %s_DLL_IMPORTS)
-    endif()""" % (lib, prefix, lib, prefix)
-
   %>
   <%
   # These files are added to a set so that they are not duplicated if multiple
@@ -273,7 +285,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.8)
+  cmake_minimum_required(VERSION 3.13)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -286,6 +298,10 @@
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
 
+  if(BUILD_SHARED_LIBS AND MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  endif()
+
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
   set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
@@ -296,7 +312,7 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-  option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
+  option(gRPC_DOWNLOAD_ARCHIVES "Download archives for empty 3rd party directories" ON)
 
   set(gRPC_INSTALL_default ON)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -410,6 +426,8 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4503")
     # Tell MSVC to build grpc using utf-8
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
+    # Inconsistent object sizes can cause stack corruption and should be treated as an error
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /we4789")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -422,14 +440,6 @@
     add_definitions("-DGRPC_USE_PROTO_LITE")
   else()
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
-  endif()
-
-  if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
-    add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
-    if(_gRPC_PLATFORM_MAC)
-      # some C++11 constructs not supported before OS X 10.10
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
-    endif()
   endif()
 
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
@@ -496,7 +506,7 @@
   # Setup external proto library at ${external_proto_library.destination} if it doesn't exist
   % endif
   % for download_url in external_proto_library.urls:
-  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination})
+  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination} AND gRPC_DOWNLOAD_ARCHIVES)
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}
@@ -512,12 +522,12 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-
+    
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
   # are generated from protobuf definitions by upbc. This source code does not include
-  # annotations needed to export these functions from gprc.lib so we have to
+  # annotations needed to export these functions from grpc.lib so we have to
   # re-include a small subset of these.
   #
   # This is not an ideal situation because these functions will be unavailable
@@ -530,9 +540,18 @@
     src/core/ext/upb-gen/src/proto/grpc/health/v1/health.upb_minitable.c
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   )
+
   set(gRPC_ADDITIONAL_DLL_SRC
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
+    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+  )
+
+  set(gRPC_ADDITIONAL_DLL_CXX_SRC
+    src/cpp/common/tls_certificate_provider.cc
+    src/cpp/common/tls_certificate_verifier.cc
+    src/cpp/common/tls_credentials_options.cc
   )
 
   endif() # BUILD_SHARED_LIBS AND WIN32
@@ -792,10 +811,13 @@
   % endif
   % endfor
   % if lib.name in ['grpc++_alts', 'grpc++_unsecure', 'grpc++']:
-    ${'${gRPC_UPB_GEN_DUPL_SRC}'}
+    <%text>${gRPC_UPB_GEN_DUPL_SRC}</%text>
   % endif
   % if lib.name in ['grpc_unsecure']:
-    ${'${gRPC_ADDITIONAL_DLL_SRC}'}
+    <%text>${gRPC_ADDITIONAL_DLL_SRC}</%text>
+  % endif
+  % if lib.name in ['grpc++_unsecure']:
+    <%text>${gRPC_ADDITIONAL_DLL_CXX_SRC}</%text>
   % endif
   )
 
@@ -814,17 +836,30 @@
   if(WIN32 AND MSVC)
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
-    )
-    % if lib.name == 'gpr':
-    ${add_dll_annotation_macros(lib.name, 'GPR')}
-    % elif lib.name == 'grpc':
-    ${add_dll_annotation_macros(lib.name, 'GRPC')}
-    % elif lib.name == 'grpc_unsecure':
-    ${add_dll_annotation_macros(lib.name, 'GRPC')}
-    % elif lib.name == 'grpc++':
-    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
-    % elif lib.name == 'grpc++_unsecure':
-    ${add_dll_annotation_macros(lib.name, 'GRPCXX')}
+    )<%
+    dll_annotations = []
+    if lib.name in gpr_libs:
+      dll_annotations.append("GPR_DLL_EXPORTS")
+    if lib.name in grpc_libs:
+      dll_annotations.append("GRPC_DLL_EXPORTS")
+    if lib.name in grpcxx_libs:
+      dll_annotations.append("GRPCXX_DLL_EXPORTS")
+    if set(gpr_libs) & set(get_all_deps(lib, libs)):
+      dll_annotations.append("GPR_DLL_IMPORTS")
+    if set(grpc_libs) & set(get_all_deps(lib, libs)):
+      dll_annotations.append("GRPC_DLL_IMPORTS")
+    if set(grpcxx_libs) & set(get_all_deps(lib, libs)):
+      dll_annotations.append("GRPCXX_DLL_IMPORTS")
+    %>
+    % if dll_annotations:
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(${lib.name}
+      PRIVATE
+    % for definition in dll_annotations:
+        "${definition}"
+    % endfor
+      )
+    endif()
     % endif
     if(gRPC_INSTALL)
       install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${lib.name}.pdb
@@ -908,7 +943,27 @@
     ${proto_replace_ext(src, '.grpc.pb.h')}
   % endif
   % endfor
-  )
+  )<%
+  dll_annotations = []
+  if set(gpr_libs) & set(get_all_deps(tgt, libs)):
+    dll_annotations.append("GPR_DLL_IMPORTS")
+  if set(grpc_libs) & set(get_all_deps(tgt, libs)):
+    dll_annotations.append("GRPC_DLL_IMPORTS")
+  if set(grpcxx_libs) & set(get_all_deps(tgt, libs)):
+    dll_annotations.append("GRPCXX_DLL_IMPORTS")
+  %>
+  % if dll_annotations:
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(${tgt.name}
+      PRIVATE
+    % for definition in dll_annotations:
+        "${definition}"
+    % endfor
+      )
+    endif()
+  endif()
+  % endif
   target_compile_features(${tgt.name} PUBLIC cxx_std_14)
   target_include_directories(${tgt.name}
     PRIVATE

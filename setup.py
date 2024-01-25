@@ -194,12 +194,6 @@ USE_PREBUILT_GRPC_CORE = _env_bool_value(
     "GRPC_PYTHON_USE_PREBUILT_GRPC_CORE", "False"
 )
 
-# If this environmental variable is set, GRPC will not try to be compatible with
-# libc versions old than the one it was compiled against.
-DISABLE_LIBC_COMPATIBILITY = _env_bool_value(
-    "GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY", "False"
-)
-
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
 ENABLE_CYTHON_TRACING = _env_bool_value(
@@ -424,9 +418,6 @@ if asm_key:
     asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:
     DEFINE_MACROS += (("OPENSSL_NO_ASM", 1),)
-
-if not DISABLE_LIBC_COMPATIBILITY:
-    DEFINE_MACROS += (("GPR_BACKWARDS_COMPATIBILITY_MODE", 1),)
 
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the

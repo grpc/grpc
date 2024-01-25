@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "grand"  # @unused
+g_stands_for = "guardian"  # @unused
 
 core_version = "38.0.0"  # @unused
 
-version = "1.61.0-dev"  # @unused
+version = "1.62.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1530,6 +1530,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:call_filters",
         "//src/core:call_final_info",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
@@ -1570,6 +1571,8 @@ grpc_cc_library(
         "//src/core:loop",
         "//src/core:map",
         "//src/core:memory_quota",
+        "//src/core:message",
+        "//src/core:metadata",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:per_cpu",
@@ -1577,6 +1580,7 @@ grpc_cc_library(
         "//src/core:poll",
         "//src/core:pollset_set",
         "//src/core:posix_event_engine_base_hdrs",
+        "//src/core:prioritized_race",
         "//src/core:promise_status",
         "//src/core:race",
         "//src/core:random_early_detection",
@@ -4077,6 +4081,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:experiments",
+        "//src/core:gpr_manual_constructor",
         "//src/core:http2_errors",
         "//src/core:http2_settings",
         "//src/core:init_internally",
@@ -4365,22 +4370,22 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "xds_type_upb",
-    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
-    deps = ["@com_github_cncf_udpa//xds/type/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "xds_orca_upb",
-    deps = ["@com_github_cncf_udpa//xds/data/orca/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "xds_orca_service_upb",
-    deps = ["@com_github_cncf_udpa//xds/service/orca/v3:pkg"],
+    deps = ["@com_github_cncf_xds//xds/service/orca/v3:pkg"],
 )
 
 grpc_upb_proto_library(

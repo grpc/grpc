@@ -1,0 +1,16 @@
+network_input {
+  input_segments {
+    segments {
+      rst_stream {
+        error_code: 1694498816
+      }
+    }
+    segments {
+      rst_stream {
+        error_code: 1694498816
+      }
+    }
+  }
+}
+channel_args {
+}

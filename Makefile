@@ -411,7 +411,7 @@ Q = @
 endif
 
 CORE_VERSION = 38.0.0
-CPP_VERSION = 1.61.0-dev
+CPP_VERSION = 1.62.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1051,6 +1051,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
@@ -1106,6 +1107,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c \
@@ -1270,6 +1272,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
@@ -1705,12 +1708,15 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
     src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/message.cc \
+    src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -1956,6 +1962,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
@@ -2249,12 +2256,15 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
     src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/message.cc \
+    src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
@@ -3446,6 +3456,7 @@ src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c: $(OPENSSL_D
 src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c: $(OPENSSL_DEP)
+src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c: $(OPENSSL_DEP)
@@ -3591,6 +3602,7 @@ src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c: $(OPENSSL_DEP
 src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c: $(OPENSSL_DEP)

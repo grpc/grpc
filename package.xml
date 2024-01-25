@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.61.0dev</release>
-  <api>1.61.0dev</api>
+  <release>1.62.0dev</release>
+  <api>1.62.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.61.0 update
+- gRPC Core 1.62.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -277,6 +277,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_goaway.cc" role="src" />
@@ -415,6 +417,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h" role="src" />
@@ -878,6 +883,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c" role="src" />
@@ -1394,6 +1401,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/crash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/directory_reader.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/down_cast.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
@@ -1871,6 +1879,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
@@ -1886,6 +1896,10 @@
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/message.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/message.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_compression_traits.h" role="src" />

@@ -164,8 +164,8 @@ ServerMetadataHandle CheckPayload(const Message& msg,
   if (!max_length.has_value()) return nullptr;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
     gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
-            Activity::current()->DebugTag().c_str(), is_send ? "send" : "recv",
-            msg.payload()->Length(), *max_length);
+            GetContext<Activity>()->DebugTag().c_str(),
+            is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
   auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());

@@ -297,7 +297,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/unknown_field_set.cc',
     'third_party/protobuf/src/google/protobuf/wire_format.cc',
     'third_party/protobuf/src/google/protobuf/wire_format_lite.cc',
-    'third_party/utf8_range/utf8_validity.cc'
+    'third_party/protobuf/third_party/utf8_range/utf8_validity.cc'
 ]
 
 PROTO_FILES=[
@@ -316,7 +316,9 @@ PROTO_FILES=[
 ]
 
 CC_INCLUDES=[
- 'third_party/abseil-cpp', 'third_party/protobuf/src', 'third_party/utf8_range'
+    'third_party/abseil-cpp',
+    'third_party/protobuf/src',
+    'third_party/protobuf/third_party/utf8_range'
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 

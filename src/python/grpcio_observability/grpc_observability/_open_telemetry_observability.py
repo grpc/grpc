@@ -59,6 +59,8 @@ GRPC_STATUS_CODE_TO_STRING = {
 class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     """OpenTelemetry based plugin implementation.
 
+    This is class is part of an EXPERIMENTAL API.
+
     Args:
       exporter: Exporter used to export data.
       plugin: OpenTelemetryPlugin to enable.

@@ -525,7 +525,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
               "Too many pending requests for this server"));
         }
         auto w = std::make_shared<ActivityWaiter>(
-            Activity::current()->MakeOwningWaker());
+            GetContext<Activity>()->MakeOwningWaker());
         pending_.push(w);
         return OnCancel(
             [w]() -> Poll<absl::StatusOr<MatchResult>> {

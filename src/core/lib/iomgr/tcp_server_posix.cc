@@ -187,6 +187,8 @@ static grpc_error_handle CreateEventEngineListener(
   } else {
     EventEngine::Listener::AcceptCallback accept_cb =
         [s](std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
+          grpc_core::ApplicationCallbackExecCtx app_ctx;
+          grpc_core::ExecCtx exec_ctx;
           s->on_accept_cb(s->on_accept_cb_arg,
                           grpc_event_engine::experimental::
                               grpc_event_engine_endpoint_create(std::move(ep)),
@@ -420,8 +422,14 @@ static void on_read(void* arg, grpc_error_handle err) {
       addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                       &(addr.len)) < 0) {
-        gpr_log(GPR_ERROR, "Failed getpeername: %s",
-                grpc_core::StrError(errno).c_str());
+        auto listener_addr_uri = grpc_sockaddr_to_uri(&sp->addr);
+        gpr_log(
+            GPR_ERROR,
+            "Failed getpeername: %s. This is a critical failure, the "
+            "listener on %s:%d is shutting down.",
+            grpc_core::StrError(errno).c_str(),
+            listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
+            sp->port);
         close(fd);
         goto error;
       }
