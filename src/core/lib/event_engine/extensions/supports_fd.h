@@ -19,6 +19,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -28,7 +29,7 @@ namespace experimental {
 class EndpointSupportsFdExtension {
  public:
   virtual ~EndpointSupportsFdExtension() = default;
-  static std::string EndpointExtensionName() {
+  static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.endpoint_supports_fd";
   }
   /// Returns the file descriptor associated with the posix endpoint.
@@ -52,7 +53,7 @@ class EndpointSupportsFdExtension {
 class ListenerSupportsFdExtension {
  public:
   virtual ~ListenerSupportsFdExtension() = default;
-  static std::string EndpointExtensionName() {
+  static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.listener_supports_fd";
   }
   /// Called when a posix listener bind operation completes. A single bind
@@ -100,7 +101,7 @@ class ListenerSupportsFdExtension {
 class EventEngineSupportsFdExtension {
  public:
   virtual ~EventEngineSupportsFdExtension() = default;
-  static std::string EndpointExtensionName() {
+  static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.event_engine_supports_fd";
   }
   /// Creates a posix specific EventEngine::Endpoint from an fd which is already

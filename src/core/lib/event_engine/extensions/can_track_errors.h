@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string>
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -25,7 +25,7 @@ namespace experimental {
 class EndpointCanTrackErrorsExtension {
  public:
   virtual ~EndpointCanTrackErrorsExtension() = default;
-  static std::string EndpointExtensionName() {
+  static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.can_track_errors";
   }
 
