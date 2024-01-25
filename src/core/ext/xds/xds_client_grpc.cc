@@ -31,6 +31,7 @@
 #include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "upb/base/string_view.h"
+#include "xds_client_grpc.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -184,6 +185,30 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   return xds_client;
 }
 
+grpc_slice GrpcXdsClient::DumpAllClientConfigs()
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
+      grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
+  upb::Arena arena;
+  // Following two containers should survive till serialization
+  std::set<std::string> string_pool;
+  auto response = envoy_service_status_v3_ClientStatusResponse_new(arena.ptr());
+  // If we aren't using xDS, just return a response with empty config.
+  auto client_config = envoy_service_status_v3_ClientStatusResponse_add_config(
+      response, arena.ptr());
+  std::vector<std::unique_ptr<grpc_core::MutexLock>> client_locks;
+  if (xds_client.ok()) {
+    client_locks.emplace_back(
+        std::make_unique<grpc_core::MutexLock>((*xds_client)->mu()));
+    (*xds_client)->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+  }
+  // Serialize the upb message to bytes
+  size_t output_length;
+  char* output = envoy_service_status_v3_ClientStatusResponse_serialize(
+      response, arena.ptr(), &output_length);
+  return grpc_slice_from_cpp_string(std::string(output, output_length));
+}
+
 GrpcXdsClient::GrpcXdsClient(
     std::unique_ptr<GrpcXdsBootstrap> bootstrap, const ChannelArgs& args,
     OrphanablePtr<XdsTransportFactory> transport_factory)
@@ -236,28 +261,8 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 }  // namespace grpc_core
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
-grpc_slice grpc_dump_xds_configs(void) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+grpc_slice grpc_dump_xds_configs(void) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
-  upb::Arena arena;
-  // Following two containers should survive till serialization
-  std::vector<std::unique_ptr<std::string>> string_pool;
-  auto response = envoy_service_status_v3_ClientStatusResponse_new(arena.ptr());
-  // If we aren't using xDS, just return a response with empty config. This is
-  // consistent with older gRPC implementation
-  auto client_config = envoy_service_status_v3_ClientStatusResponse_add_config(
-      response, arena.ptr());
-  std::vector<std::unique_ptr<grpc_core::MutexLock>> client_locks;
-  if (xds_client.ok()) {
-    client_locks.emplace_back(
-        std::make_unique<grpc_core::MutexLock>((*xds_client)->mutex()));
-    (*xds_client)->DumpClientConfig(client_config, &string_pool, arena.ptr());
-  }
-  // Serialize the upb message to bytes
-  size_t output_length;
-  char* output = envoy_service_status_v3_ClientStatusResponse_serialize(
-      response, arena.ptr(), &output_length);
-  return grpc_slice_from_cpp_string(std::string(output, output_length));
+  return grpc_core::GrpcXdsClient::DumpAllClientConfigs();
 }

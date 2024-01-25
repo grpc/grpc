@@ -47,6 +47,26 @@
 
 namespace grpc_core {
 
+namespace testing {
+
+class XdsClientTestPeer {
+ public:
+  explicit XdsClientTestPeer(XdsClient* xds_client) : xds_client_(xds_client) {}
+
+  void TestDumpClientConfig() {
+    upb::Arena arena;
+    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+    std::set<std::string> string_pool;
+    MutexLock lock(xds_client_->mu());
+    xds_client_->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+  }
+
+ private:
+  XdsClient* xds_client_;
+};
+
+}  // namespace testing
+
 class Fuzzer {
  public:
   explicit Fuzzer(absl::string_view bootstrap_json) {
@@ -113,7 +133,7 @@ class Fuzzer {
         }
         break;
       case xds_client_fuzzer::Action::kDumpCsdsData:
-        DumpClientConfigBinary();
+        testing::XdsClientTestPeer(xds_client_.get()).TestDumpClientConfig();
         break;
       case xds_client_fuzzer::Action::kTriggerConnectionFailure:
         TriggerConnectionFailure(
@@ -223,14 +243,6 @@ class Fuzzer {
     if (authority_entry == nullptr) return nullptr;
     if (authority_entry->server() != nullptr) return authority_entry->server();
     return &bootstrap.server();
-  }
-
-  void DumpClientConfigBinary() {
-    upb::Arena arena;
-    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
-    std::vector<std::unique_ptr<std::string>> string_pool;
-    MutexLock lock(xds_client_->mutex());
-    xds_client_->DumpClientConfig(client_config, &string_pool, arena.ptr());
   }
 
   void TriggerConnectionFailure(const std::string& authority,
