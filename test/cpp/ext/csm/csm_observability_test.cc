@@ -64,9 +64,10 @@ TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
 }
 
 TEST(CsmPluginOptionTest, Basic) {
-  OpenTelemetryPluginBuilder()
-      .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
-      .BuildAndRegisterGlobal();
+  ASSERT_TRUE(OpenTelemetryPluginBuilder()
+                  .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
+                  .BuildAndRegisterGlobal()
+                  .ok());
 }
 
 }  // namespace

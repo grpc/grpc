@@ -137,7 +137,10 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
           google::cloud::otel::MakeResourceDetector()
               ->Detect()
               .GetAttributes()));
-  builder_->BuildAndRegisterGlobal();
+  auto status = builder_->BuildAndRegisterGlobal();
+  if (!status.ok()) {
+    return status;
+  }
   return CsmObservability();
 }
 
