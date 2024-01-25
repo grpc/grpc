@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
@@ -107,7 +108,7 @@ class OpenTelemetryPluginBuilder {
       std::unique_ptr<OpenTelemetryPluginOption> option);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
-  void BuildAndRegisterGlobal();
+  absl::Status BuildAndRegisterGlobal();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
