@@ -165,7 +165,6 @@ main() {
 
   activate_gke_cluster GKE_CLUSTER_PSM_CSM
 
-  set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
     kokoro_setup_test_driver "${GITHUB_REPOSITORY_NAME}"
   else
