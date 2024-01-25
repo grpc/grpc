@@ -40,6 +40,7 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/tls_utils.h"
 
@@ -103,18 +104,6 @@ class CrlProviderTest : public ::testing::Test {
   }
 
  protected:
-  X509* ReadPemCert(absl::string_view pem_cert) {
-    BIO* cert_bio =
-        BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
-    // Errors on BIO
-    if (cert_bio == nullptr) {
-      return nullptr;
-    }
-    X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
-    BIO_free(cert_bio);
-    return cert;
-  }
-
   std::string base_crl_issuer_;
   std::string intermediate_crl_issuer_;
 };

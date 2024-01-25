@@ -36,6 +36,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -445,37 +446,13 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
 
 #endif  // OPENSSL_IS_BORINGSSL
 
-X509_CRL* read_crl(absl::string_view crl_string) {
-  BIO* crl_bio =
-      BIO_new_mem_buf(crl_string.data(), static_cast<int>(crl_string.size()));
-  // Errors on BIO
-  if (crl_bio == nullptr) {
-    return nullptr;
-  }
-  X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
-  BIO_free(crl_bio);
-  return crl;
-}
-
-X509* read_cert(absl::string_view cert_string) {
-  BIO* cert_bio =
-      BIO_new_mem_buf(cert_string.data(), static_cast<int>(cert_string.size()));
-  // Errors on BIO
-  if (cert_bio == nullptr) {
-    return nullptr;
-  }
-  X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
-  BIO_free(cert_bio);
-  return cert;
-}
-
 TEST(CrlUtils, VerifySignatureValid) {
   absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), 1);
 }
 
@@ -484,8 +461,8 @@ TEST(CrlUtils, VerifySignatureIntermediateValid) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kIntermediateCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), 1);
 }
 
@@ -494,8 +471,8 @@ TEST(CrlUtils, VerifySignatureModifiedSignature) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), 0);
 }
 
@@ -504,7 +481,7 @@ TEST(CrlUtils, VerifySignatureModifiedContent) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
   EXPECT_EQ(crl, nullptr);
 }
 
@@ -513,8 +490,8 @@ TEST(CrlUtils, VerifySignatureWrongIssuer) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kIntermediateCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), 0);
 }
 
@@ -523,8 +500,8 @@ TEST(CrlUtils, VerifySignatureWrongIssuer2) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), 0);
 }
 
@@ -532,14 +509,14 @@ TEST(CrlUtils, VerifySignatureNullCrl) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
   X509_CRL* crl = nullptr;
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), -1);
 }
 
 TEST(CrlUtils, VerifySignatureNullCert) {
   absl::StatusOr<Slice> crl_slice = LoadFile(kIntermediateCrl, false);
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
   X509* issuer = nullptr;
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), -1);
 }
@@ -555,8 +532,8 @@ TEST(CrlUtils, VerifyIssuerNamesMatch) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_EQ(VerifyCrlCertIssuerNamesMatch(crl, issuer), 0);
 }
 
@@ -565,8 +542,8 @@ TEST(CrlUtils, VerifyIssuerNamesDontMatch) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kLeafCert, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_NE(VerifyCrlCertIssuerNamesMatch(crl, issuer), 0);
 }
 
@@ -575,8 +552,8 @@ TEST(CrlUtils, DuplicatedIssuerNamePassesButSignatureCheckFails) {
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
   absl::StatusOr<Slice> issuer_slice = LoadFile(kEvilCa, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   // The issuer names will match, but it should fail a signature check
   EXPECT_EQ(VerifyCrlCertIssuerNamesMatch(crl, issuer), 0);
   EXPECT_EQ(VerifyCrlSignature(crl, issuer), 0);
@@ -586,14 +563,14 @@ TEST(CrlUtils, VerifyIssuerNameNullCrl) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
   X509_CRL* crl = nullptr;
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_NE(VerifyCrlCertIssuerNamesMatch(crl, issuer), 0);
 }
 
 TEST(CrlUtils, VerifyIssuerNameNullCert) {
   absl::StatusOr<Slice> crl_slice = LoadFile(kIntermediateCrl, false);
   ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
-  X509_CRL* crl = read_crl(crl_slice->as_string_view());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
   X509* issuer = nullptr;
   EXPECT_NE(VerifyCrlCertIssuerNamesMatch(crl, issuer), 0);
 }
@@ -607,14 +584,14 @@ TEST(CrlUtils, VerifyIssuerNameNullCrlAndCert) {
 TEST(CrlUtils, VerifyCrlSignBitExists) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_TRUE(VerifyCrlSignBit(issuer));
 }
 
 TEST(CrlUtils, VerifyCrlSignBitMissing) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kLeafCert, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509* issuer = read_cert(issuer_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
   EXPECT_FALSE(VerifyCrlSignBit(issuer));
 }
 

@@ -583,6 +583,7 @@ grpc_cc_test(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/tsi:transport_security_test_lib",
         "//test/core/util:fuzz_config_vars_proto",
         "//test/core/util:grpc_test_util",
     ],
