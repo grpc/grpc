@@ -56,6 +56,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_extensions",
+    hdrs = [
+        "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/supports_fd.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "lib/event_engine/event_engine.cc",
@@ -1743,6 +1759,7 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
+        "event_engine_extensions",
         "event_engine_query_extensions",
         "//:event_engine_base_hdrs",
         "//:gpr",
@@ -2045,6 +2062,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_common",
+        "event_engine_extensions",
         "event_engine_tcp_socket_utils",
         "experiments",
         "iomgr_port",

@@ -25,7 +25,6 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/extensions/supports_fd.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -33,6 +32,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"

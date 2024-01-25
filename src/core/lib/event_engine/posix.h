@@ -18,11 +18,11 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/extensions/supports_fd.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 
 namespace grpc_event_engine {
