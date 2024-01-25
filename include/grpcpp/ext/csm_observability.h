@@ -90,8 +90,6 @@ class CsmObservabilityBuilder {
   std::unique_ptr<grpc::internal::OpenTelemetryPluginBuilderImpl> builder_;
 };
 
-}  // namespace experimental
-
 /// Creates an OpenTelemetryPluginOption that would add additional labels on
 /// gRPC metrics to enhance observability for CSM users.
 ///
@@ -102,6 +100,7 @@ class CsmObservabilityBuilder {
 ///     .BuildAndRegisterGlobal();
 std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption();
 
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_CSM_OBSERVABILITY_H
