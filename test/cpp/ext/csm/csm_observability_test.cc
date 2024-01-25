@@ -32,8 +32,8 @@ namespace testing {
 namespace {
 
 TEST(CsmObservabilityBuilderTest, Basic) {
-  EXPECT_TRUE(
-      experimental::CsmObservabilityBuilder().BuildAndRegister().status().ok());
+  EXPECT_EQ(experimental::CsmObservabilityBuilder().BuildAndRegister().status(),
+            absl::OkStatus());
 }
 
 TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
@@ -64,9 +64,11 @@ TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
 }
 
 TEST(CsmPluginOptionTest, Basic) {
-  OpenTelemetryPluginBuilder()
-      .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
-      .BuildAndRegisterGlobal();
+  EXPECT_EQ(
+      OpenTelemetryPluginBuilder()
+          .AddPluginOption(experimental::MakeCsmOpenTelemetryPluginOption())
+          .BuildAndRegisterGlobal(),
+      absl::OkStatus());
 }
 
 }  // namespace

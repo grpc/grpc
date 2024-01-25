@@ -206,7 +206,7 @@ class OpenTelemetryPluginBuilderImpl {
           generic_method_attribute_filter);
   OpenTelemetryPluginBuilderImpl& AddPluginOption(
       std::unique_ptr<InternalOpenTelemetryPluginOption> option);
-  void BuildAndRegisterGlobal();
+  absl::Status BuildAndRegisterGlobal();
 
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;

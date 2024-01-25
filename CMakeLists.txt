@@ -824,12 +824,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/testing/xds/v3/wrr_locality.proto src/proto/grpc/testing/xds/v3/wrr_locality.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  test/core/end2end/fuzzers/api_fuzzer.proto test/core/end2end/fuzzers/api_fuzzer.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  test/core/end2end/fuzzers/fuzzer_input.proto test/core/end2end/fuzzers/fuzzer_input.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -840,9 +834,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/util/fuzz_config_vars.proto test/core/util/fuzz_config_vars.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
-  test/core/util/fuzzing_channel_args.proto test/core/util/fuzzing_channel_args.proto
 )
 
 if(gRPC_BUILD_TESTS)
@@ -1344,12 +1335,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx server_context_test_spouse_test)
   add_dependencies(buildtests_cxx server_early_return_test)
   add_dependencies(buildtests_cxx server_finishes_request_test)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx server_fuzzer_chaotic_good)
-  endif()
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx server_fuzzer_chttp2)
-  endif()
   add_dependencies(buildtests_cxx server_interceptors_end2end_test)
   add_dependencies(buildtests_cxx server_registered_method_bad_client_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -26067,180 +26052,6 @@ target_link_libraries(server_finishes_request_test
 )
 
 
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(server_fuzzer_chaotic_good
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.grpc.pb.h
-    src/core/ext/transport/chaotic_good/frame.cc
-    src/core/ext/transport/chaotic_good/frame_header.cc
-    src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-    src/core/ext/transport/chaotic_good/settings_metadata.cc
-    src/core/lib/transport/promise_endpoint.cc
-    test/core/end2end/fuzzers/fuzzing_common.cc
-    test/core/end2end/fuzzers/network_input.cc
-    test/core/end2end/fuzzers/server_fuzzer.cc
-    test/core/end2end/fuzzers/server_fuzzer_chaotic_good.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/util/cmdline.cc
-    test/core/util/fuzz_config_vars.cc
-    test/core/util/fuzz_config_vars_helpers.cc
-    test/core/util/fuzzer_corpus_test.cc
-    test/core/util/fuzzer_util.cc
-    test/core/util/fuzzing_channel_args.cc
-    test/core/util/grpc_profiler.cc
-    test/core/util/histogram.cc
-    test/core/util/mock_endpoint.cc
-    test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
-    test/core/util/resolve_localhost_ip46.cc
-    test/core/util/slice_splitter.cc
-    test/core/util/tracer_util.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(server_fuzzer_chaotic_good
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(server_fuzzer_chaotic_good PUBLIC cxx_std_14)
-  target_include_directories(server_fuzzer_chaotic_good
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(server_fuzzer_chaotic_good
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-    grpc++_test_config
-  )
-
-
-endif()
-endif()
-if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-  add_executable(server_fuzzer_chttp2
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/api_fuzzer.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/end2end/fuzzers/fuzzer_input.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzz_config_vars.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/util/fuzzing_channel_args.grpc.pb.h
-    src/core/ext/transport/chaotic_good/frame_header.cc
-    test/core/end2end/fuzzers/fuzzing_common.cc
-    test/core/end2end/fuzzers/network_input.cc
-    test/core/end2end/fuzzers/server_fuzzer.cc
-    test/core/end2end/fuzzers/server_fuzzer_chttp2.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/util/cmdline.cc
-    test/core/util/fuzz_config_vars.cc
-    test/core/util/fuzz_config_vars_helpers.cc
-    test/core/util/fuzzer_corpus_test.cc
-    test/core/util/fuzzer_util.cc
-    test/core/util/fuzzing_channel_args.cc
-    test/core/util/grpc_profiler.cc
-    test/core/util/histogram.cc
-    test/core/util/mock_endpoint.cc
-    test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
-    test/core/util/resolve_localhost_ip46.cc
-    test/core/util/slice_splitter.cc
-    test/core/util/tracer_util.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(server_fuzzer_chttp2
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(server_fuzzer_chttp2 PUBLIC cxx_std_14)
-  target_include_directories(server_fuzzer_chttp2
-    PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(server_fuzzer_chttp2
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-    grpc++_test_config
-  )
-
-
-endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
