@@ -31,7 +31,6 @@
 #include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "upb/base/string_view.h"
-#include "xds_client_grpc.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -46,6 +45,7 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -187,8 +187,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
 
 grpc_slice GrpcXdsClient::DumpAllClientConfigs()
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
-  auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
+  auto xds_client =
+      GrpcXdsClient::GetOrCreate(ChannelArgs(), "grpc_dump_xds_configs()");
   upb::Arena arena;
   // Following two containers should survive till serialization
   std::set<std::string> string_pool;
@@ -196,10 +196,9 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
   // If we aren't using xDS, just return a response with empty config.
   auto client_config = envoy_service_status_v3_ClientStatusResponse_add_config(
       response, arena.ptr());
-  std::vector<std::unique_ptr<grpc_core::MutexLock>> client_locks;
+  std::vector<std::unique_ptr<MutexLock>> client_locks;
   if (xds_client.ok()) {
-    client_locks.emplace_back(
-        std::make_unique<grpc_core::MutexLock>((*xds_client)->mu()));
+    client_locks.emplace_back(std::make_unique<MutexLock>((*xds_client)->mu()));
     (*xds_client)->DumpClientConfig(&string_pool, arena.ptr(), client_config);
   }
   // Serialize the upb message to bytes
