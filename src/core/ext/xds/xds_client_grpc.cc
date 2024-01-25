@@ -32,7 +32,6 @@
 #include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "upb/base/string_view.h"
-#include "xds_client_grpc.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -47,6 +46,7 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
