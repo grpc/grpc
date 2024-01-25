@@ -157,10 +157,12 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
       connection_id_, std::make_shared<InterActivityLatch<PromiseEndpoint>>());
 }
 
-void ChaoticGoodServerListener::ActiveConnection::Fail(
-    absl::string_view error) {
-  gpr_log(GPR_ERROR, "ActiveConnection::Fail:%p %s", this,
-          std::string(error).c_str());
+void ChaoticGoodServerListener::ActiveConnection::Done(
+    absl::optional<absl::string_view> error) {
+  if (error.has_value()) {
+    gpr_log(GPR_ERROR, "ActiveConnection::Done:%p %s", this,
+            std::string(*error).c_str());
+  }
   // Can easily be holding various locks here: bounce through EE to ensure no
   // deadlocks.
   listener_->event_engine_->Run([self = Ref()]() {
@@ -353,12 +355,12 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   if (!error.ok()) {
-    self->connection_->Fail(
+    self->connection_->Done(
         absl::StrCat("Handshake failed: ", StatusToString(error)));
     return;
   }
   if (args->endpoint == nullptr) {
-    self->connection_->Fail("Server handshake done but has empty endpoint.");
+    self->connection_->Done("Server handshake done but has empty endpoint.");
     return;
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
@@ -384,9 +386,11 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           grpc_event_engine::experimental::GetDefaultEventEngine()),
       [self](absl::Status status) {
         if (!status.ok()) {
-          self->connection_->Fail(
+          self->connection_->Done(
               absl::StrCat("Server setting frame handling failed: ",
                            StatusToString(status)));
+        } else {
+          self->connection_->Done();
         }
       },
       self->connection_->arena_.get(),

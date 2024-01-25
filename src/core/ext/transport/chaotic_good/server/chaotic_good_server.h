@@ -142,7 +142,7 @@ class ChaoticGoodServerListener final
     };
 
    private:
-    void Fail(absl::string_view error);
+    void Done(absl::optional<absl::string_view> error = absl::nullopt);
     void NewConnectionID();
     const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
         memory_allocator_;
