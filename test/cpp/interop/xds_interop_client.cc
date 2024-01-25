@@ -403,10 +403,12 @@ void EnableCsmObservability() {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
-  grpc::OpenTelemetryPluginBuilder()
-      .AddPluginOption(grpc::experimental::MakeCsmOpenTelemetryPluginOption())
-      .SetMeterProvider(std::move(meter_provider))
-      .BuildAndRegisterGlobal();
+  assert(grpc::OpenTelemetryPluginBuilder()
+             .AddPluginOption(
+                 grpc::experimental::MakeCsmOpenTelemetryPluginOption())
+             .SetMeterProvider(std::move(meter_provider))
+             .BuildAndRegisterGlobal()
+             .ok());
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
