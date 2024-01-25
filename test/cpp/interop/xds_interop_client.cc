@@ -68,9 +68,11 @@ ABSL_FLAG(int32_t, stats_port, 50052,
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
 ABSL_FLAG(int32_t, request_payload_size, 0,
-          "Set the SimpleRequest.payload.body to a string of repeated 0 (zero) ASCII characters of the given size in bytes.");
+          "Set the SimpleRequest.payload.body to a string of repeated 0 (zero) "
+          "ASCII characters of the given size in bytes.");
 ABSL_FLAG(int32_t, response_payload_size, 0,
-          "Ask the server to respond with SimpleResponse.payload.body of the given length (may not be implemented on the server).");
+          "Ask the server to respond with SimpleResponse.payload.body of the "
+          "given length (may not be implemented on the server).");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
