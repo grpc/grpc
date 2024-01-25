@@ -68,7 +68,7 @@ ABSL_FLAG(int32_t, stats_port, 50052,
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
 ABSL_FLAG(int32_t, request_payload_size, 0,
-          "request payload size in bytes of zeros.");
+          "Set the SimpleRequest.payload.body to a string of repeated 0 (zero) ASCII characters of the given size in bytes.");
 ABSL_FLAG(int32_t, response_payload_size, 0,
           "response payload size in bytes of zeros.");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
