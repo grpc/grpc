@@ -53,6 +53,8 @@ namespace grpc_core {
 namespace experimental {
 
 namespace {
+// TODO(gtcooke94) Move ssl_transport_security_utils to it's own BUILD target
+// and add this to it.
 absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
     return "";
