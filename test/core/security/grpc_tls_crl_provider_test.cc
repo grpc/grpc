@@ -92,13 +92,13 @@ class CrlProviderTest : public ::testing::Test {
     std::string pem_cert = GetFileContents(kRootCert.data());
     X509* issuer = ReadPemCert(pem_cert);
     auto base_crl_issuer = IssuerFromCert(issuer);
-    ASSERT_TRUE(base_crl_issuer.ok());
+    ASSERT_EQ(base_crl_issuer.status(), absl::OkStatus());
     base_crl_issuer_ = *base_crl_issuer;
     std::string intermediate_string =
         GetFileContents(kCrlIntermediateIssuerPath.data());
     X509* intermediate_issuer = ReadPemCert(intermediate_string);
     auto intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
-    ASSERT_TRUE(intermediate_crl_issuer.ok());
+    ASSERT_EQ(intermediate_crl_issuer.status(), absl::OkStatus());
     intermediate_crl_issuer_ = *intermediate_crl_issuer;
   }
 
