@@ -3798,20 +3798,27 @@ class ServerCallSpine final : public CallSpineInterface,
 };
 
 ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
-    : BasicPromiseBasedCall(
-          arena, 1, [channel, server]() -> grpc_call_create_args {
-            grpc_call_create_args args;
-            args.channel = channel->Ref();
-            args.server = server;
-            args.parent = nullptr;
-            args.propagation_mask = 0;
-            args.cq = nullptr;
-            args.pollset_set_alternative = nullptr;
-            args.server_transport_data = &args;  // Arbitrary non-null pointer
-            args.send_deadline = Timestamp::InfFuture();
-            return args;
-          }()) {
+    : BasicPromiseBasedCall(arena, 1,
+                            [channel, server]() -> grpc_call_create_args {
+                              grpc_call_create_args args;
+                              args.channel = channel->Ref();
+                              args.server = server;
+                              args.parent = nullptr;
+                              args.propagation_mask = 0;
+                              args.cq = nullptr;
+                              args.pollset_set_alternative = nullptr;
+                              args.server_transport_data =
+                                  &args;  // Arbitrary non-null pointer
+                              args.send_deadline = Timestamp::InfFuture();
+                              return args;
+                            }()),
+      client_initial_metadata_(arena),
+      server_initial_metadata_(arena),
+      client_to_server_messages_(arena),
+      server_to_client_messages_(arena),
+      server_trailing_metadata_(arena) {
   global_stats().IncrementServerCallsCreated();
+  ScopedContext ctx(this);
   channel->channel_stack()->InitServerCallSpine(this);
 }
 

@@ -560,8 +560,9 @@ class ChaoticGoodFixture final : public CoreTestFixture {
 
   grpc_channel* MakeClient(const ChannelArgs& args,
                            grpc_completion_queue*) override {
-    auto* client =
-        grpc_chaotic_good_channel_create(localaddr_.c_str(), args.ToC().get());
+    auto* client = grpc_chaotic_good_channel_create(
+        localaddr_.c_str(),
+        args.Set(GRPC_ARG_ENABLE_RETRIES, false).ToC().get());
     return client;
   }
 
@@ -985,12 +986,15 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
 }
 
 std::vector<CoreTestConfiguration> ChaoticGoodFixtures() {
-  return std::vector<CoreTestConfiguration>{CoreTestConfiguration{
-      "ChaoticGoodFullStack", FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL, nullptr,
-      [](const ChannelArgs& /*client_args*/,
-         const ChannelArgs& /*server_args*/) {
-        return std::make_unique<ChaoticGoodFixture>();
-      }}};
+  return std::vector<CoreTestConfiguration>{
+      CoreTestConfiguration{"ChaoticGoodFullStack",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY,
+                            nullptr,
+                            [](const ChannelArgs& /*client_args*/,
+                               const ChannelArgs& /*server_args*/) {
+                              return std::make_unique<ChaoticGoodFixture>();
+                            }}};
 }
 
 std::vector<CoreTestConfiguration> AllConfigs() {
