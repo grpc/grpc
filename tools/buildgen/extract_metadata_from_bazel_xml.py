@@ -904,6 +904,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
 
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
+    tests = [test for test in tests if "_fuzzer_" not in test]
 
     return tests
 
