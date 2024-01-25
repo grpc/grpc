@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
-#define GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 
 #include <grpc/support/port_platform.h>
 
@@ -157,4 +157,4 @@ class EventEngineSupportsFdExtension {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
