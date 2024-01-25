@@ -65,7 +65,7 @@ TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
 
 TEST(CsmPluginOptionTest, Basic) {
   OpenTelemetryPluginBuilder()
-      .AddPluginOption(MakeCsmOpenTelemetryPluginOption())
+      .AddPluginOption(experimental::MakeCsmOpenTelemetryPluginOption())
       .BuildAndRegisterGlobal();
 }
 
