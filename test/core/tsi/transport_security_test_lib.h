@@ -244,6 +244,6 @@ std::string GenerateSelfSignedCertificate(
 X509* ReadPemCert(absl::string_view pem_cert);
 
 // Returns the OpenSSL representation of a CRL
-X509_CRL* ReadCrl(absl::string_view crl_string);
+X509_CRL* ReadCrl(absl::string_view crl_pem);
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H

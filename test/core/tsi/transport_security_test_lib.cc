@@ -775,9 +775,9 @@ X509* ReadPemCert(absl::string_view pem_cert) {
   return cert;
 }
 
-X509_CRL* ReadCrl(absl::string_view crl_string) {
+X509_CRL* ReadCrl(absl::string_view crl_pem) {
   BIO* crl_bio =
-      BIO_new_mem_buf(crl_string.data(), static_cast<int>(crl_string.size()));
+      BIO_new_mem_buf(crl_pem.data(), static_cast<int>(crl_pem.size()));
   // Errors on BIO
   if (crl_bio == nullptr) {
     return nullptr;
