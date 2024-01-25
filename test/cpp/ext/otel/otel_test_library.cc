@@ -115,7 +115,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   for (auto& option : config.plugin_options) {
     ot_builder.AddPluginOption(std::move(option));
   }
-  ASSERT_TRUE(ot_builder.BuildAndRegisterGlobal().ok());
+  ASSERT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = config.labels_to_inject;
