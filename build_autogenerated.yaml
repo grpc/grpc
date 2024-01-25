@@ -15433,7 +15433,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
   uses_polling: false
 - name: server_fuzzer_chttp2
   gtest: true
@@ -15499,7 +15498,6 @@ targets:
   platforms:
   - linux
   - posix
-  - mac
   uses_polling: false
 - name: server_interceptors_end2end_test
   gtest: true

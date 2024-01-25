@@ -9053,7 +9053,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -9065,7 +9064,6 @@
     "name": "server_fuzzer_chaotic_good",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": false
@@ -9080,7 +9078,6 @@
     "benchmark": false,
     "ci_platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -9092,7 +9089,6 @@
     "name": "server_fuzzer_chttp2",
     "platforms": [
       "linux",
-      "mac",
       "posix"
     ],
     "uses_polling": false
