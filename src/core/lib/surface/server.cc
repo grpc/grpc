@@ -1489,6 +1489,7 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           rc->Complete(std::move(std::get<0>(r)), *md);
           auto* call_context = GetContext<CallContext>();
           *rc->call = call_context->c_call();
+          grpc_call_ref(*rc->call);
           grpc_call_set_completion_queue(call_context->c_call(),
                                          rc->cq_bound_to_call);
           call_context->server_call_context()->PublishInitialMetadata(
