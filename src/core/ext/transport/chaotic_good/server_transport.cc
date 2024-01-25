@@ -447,6 +447,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
     Crash(absl::StrCat("unimplemented transport perform op: ",
                        grpc_transport_op_string(op)));
   }
+  ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
 
 }  // namespace chaotic_good

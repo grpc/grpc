@@ -2016,6 +2016,7 @@ class BasicPromiseBasedCall : public Call,
         context_[i].destroy(context_[i].value);
       }
     }
+    ResetDeadline();
   }
 
   // Implementation of EventEngine::Closure, called when deadline expires
@@ -4073,7 +4074,8 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
         ops, got_ops[GRPC_OP_RECV_CLOSE_ON_SERVER], [this](const grpc_op& op) {
           return [this, cancelled = op.data.recv_close_on_server.cancelled]() {
             return Map(server_trailing_metadata_.receiver.AwaitClosed(),
-                       [cancelled](bool result) -> Success {
+                       [cancelled, this](bool result) -> Success {
+                         ResetDeadline();
                          *cancelled = result ? 1 : 0;
                          return Success{};
                        });
