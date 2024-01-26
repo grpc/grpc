@@ -68,6 +68,7 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
 
 void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
                                             grpc_pollset_set* pss_dst) {
+  if (pollent == nullptr) return;
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     // CFStream does not use file destriptors. When CFStream is used, the fd
     // pollset is possible to be null.
@@ -87,6 +88,7 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
 
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst) {
+  if (pollent == nullptr) return;
   if (pollent->tag == GRPC_POLLS_POLLSET) {
 #ifdef GRPC_CFSTREAM
     if (pollent->pollent.pollset != nullptr) {

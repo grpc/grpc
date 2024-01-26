@@ -144,9 +144,12 @@ static grpc_error_handle CreateEventEngineListener(
             }
           }
           grpc_pollset* read_notifier_pollset =
-              (*(s->pollsets))[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                                   &s->next_pollset_to_assign, 1)) %
-                               s->pollsets->size()];
+              s->pollsets->empty()
+                  ? nullptr
+                  : (*(s->pollsets))[static_cast<size_t>(
+                                         gpr_atm_no_barrier_fetch_add(
+                                             &s->next_pollset_to_assign, 1)) %
+                                     s->pollsets->size()];
           acceptor->external_connection = is_external;
           acceptor->listener_fd = listener_fd;
           grpc_byte_buffer* buf = nullptr;
