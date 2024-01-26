@@ -163,13 +163,13 @@ OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
   return *this;
 }
 
-void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
+absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
   delete g_otel_plugin_state_;
   g_otel_plugin_state_ = new struct OpenTelemetryPluginState;
   if (meter_provider == nullptr) {
-    return;
+    return absl::OkStatus();
   }
   auto meter = meter_provider->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
   if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
@@ -269,6 +269,7 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                          args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
             });
       });
+  return absl::OkStatus();
 }
 
 }  // namespace internal
@@ -331,8 +332,8 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddPluginOption(
   return *this;
 }
 
-void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
-  impl_->BuildAndRegisterGlobal();
+absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
+  return impl_->BuildAndRegisterGlobal();
 }
 
 }  // namespace grpc
