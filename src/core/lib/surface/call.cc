@@ -2190,19 +2190,21 @@ void BasicPromiseBasedCall::UpdateDeadline(Timestamp deadline) {
 }
 
 void BasicPromiseBasedCall::ResetDeadline() {
-  MutexLock lock(&deadline_mu_);
-  if (deadline_ == Timestamp::InfFuture()) return;
-  auto* const event_engine = channel()->event_engine();
-  if (!event_engine->Cancel(deadline_task_)) return;
-  deadline_ = Timestamp::InfFuture();
-  InternalUnref("deadline");
+  {
+    MutexLock lock(&deadline_mu_);
+    if (deadline_ == Timestamp::InfFuture()) return;
+    auto* const event_engine = channel()->event_engine();
+    if (!event_engine->Cancel(deadline_task_)) return;
+    deadline_ = Timestamp::InfFuture();
+  }
+  InternalUnref("deadline[reset]");
 }
 
 void BasicPromiseBasedCall::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
   CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
-  InternalUnref("deadline");
+  InternalUnref("deadline[run]");
 }
 
 class PromiseBasedCall : public BasicPromiseBasedCall {
