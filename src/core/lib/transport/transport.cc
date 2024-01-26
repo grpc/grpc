@@ -89,6 +89,7 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
 namespace grpc_core {
 void Transport::SetPollingEntity(grpc_stream* stream,
                                  grpc_polling_entity* pollset_or_pollset_set) {
+  if (pollset_or_pollset_set == nullptr) return;
   if (auto* pollset = grpc_polling_entity_pollset(pollset_or_pollset_set)) {
     SetPollset(stream, pollset);
   } else if (auto* pollset_set =
