@@ -96,9 +96,8 @@ class MockEndpoint
 
 struct MockPromiseEndpoint {
   StrictMock<MockEndpoint>* endpoint = new StrictMock<MockEndpoint>();
-  std::unique_ptr<PromiseEndpoint> promise_endpoint =
-      std::make_unique<PromiseEndpoint>(
-          std::unique_ptr<StrictMock<MockEndpoint>>(endpoint), SliceBuffer());
+  PromiseEndpoint promise_endpoint{
+      std::unique_ptr<StrictMock<MockEndpoint>>(endpoint), SliceBuffer()};
 };
 
 // Send messages from client to server.
@@ -171,7 +170,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
   EXPECT_CALL(*control_endpoint.endpoint, Read).WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   auto call =
       MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
   transport->StartCall(std::move(call.handler));
@@ -216,7 +216,8 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
           }));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   auto call =
       MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
   transport->StartCall(std::move(call.handler));
@@ -269,7 +270,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
   EXPECT_CALL(*control_endpoint.endpoint, Read).WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   auto call1 =
       MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
   transport->StartCall(std::move(call1.handler));
@@ -340,7 +342,8 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
           }));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   auto call1 =
       MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
   transport->StartCall(std::move(call1.handler));

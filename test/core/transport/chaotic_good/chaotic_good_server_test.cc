@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -76,7 +77,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
     core_server_ = Server::FromC(server_);
     auto* listener =
         new ChaoticGoodServerListener(core_server_, channel_args());
-    auto port = listener->Bind(addr_.c_str());
+    auto port = listener->Bind(
+        *grpc_event_engine::experimental::URIToResolvedAddress(addr_));
     EXPECT_TRUE(port.ok());
     EXPECT_EQ(port.value(), port_);
     grpc_server_start(server_);
