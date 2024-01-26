@@ -301,6 +301,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
 
     # See work_stealing_thread_pool.cc for details.
     default_env = {"GRPC_THREAD_POOL_VERBOSE_FAILURES": "true"}
+    base_tags = tags
 
     if not uses_polling:
         tags = tags + ["no_uses_polling"]
@@ -427,35 +428,41 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
             for experiment in experiments[mode].keys():
-                for config in poller_config:
-                    config = dict(config)
-                    config["name"] = config["name"] + "@experiment=" + experiment
-                    env = dict(config["env"])
-                    env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
-                    env["GRPC_CI_EXPERIMENTS"] = "1"
-                    config["env"] = env
-                    tags = config["tags"] + ["experiment_variation"]
-                    for tag in must_have_tags + enabled_tags:
-                        if tag not in tags:
-                            tags = tags + [tag]
-                    config["tags"] = _update_experiments_platform_test_tags(tags, experiments[mode][experiment])
-                    config["flaky"] = True
-                    experiment_config.append(config)
+                env = default_env
+                env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
+                env["GRPC_CI_EXPERIMENTS"] = "1"
+                tags = base_tags
+                for tag in must_have_tags + enabled_tags:
+                    if tag not in tags:
+                        tags = tags + [tag]
+                config = {
+                    "name": name + "@experiment=" + experiment,
+                    "srcs": srcs,
+                    "deps": deps,
+                    "tags": _update_experiments_platform_test_tags(tags, experiments[mode][experiment]),
+                    "args": args,
+                    "flaky": True,
+                    "env": env,
+                }
+                experiment_config.append(config)
         if disabled_tags != None:
             for experiment in experiments[mode].keys():
-                for config in poller_config:
-                    config = dict(config)
-                    config["name"] = config["name"] + "@experiment=no_" + experiment
-                    env = dict(config["env"])
-                    env["GRPC_EXPERIMENTS"] = "-" + experiment
-                    env["GRPC_CI_EXPERIMENTS"] = "1"
-                    config["env"] = env
-                    tags = config["tags"] + ["experiment_variation"]
-                    for tag in must_have_tags + disabled_tags:
-                        if tag not in tags:
-                            tags = tags + [tag]
-                    config["tags"] = _update_experiments_platform_test_tags(tags, experiments[mode][experiment])
-                    experiment_config.append(config)
+                env = default_env
+                env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
+                env["GRPC_CI_EXPERIMENTS"] = "1"
+                tags = base_tags
+                for tag in must_have_tags + disabled_tags:
+                    if tag not in tags:
+                        tags = tags + [tag]
+                config = {
+                    "name": name + "@experiment=no_" + experiment,
+                    "srcs": srcs,
+                    "deps": deps,
+                    "tags": _update_experiments_platform_test_tags(tags, experiments[mode][experiment]),
+                    "args": args,
+                    "flaky": True,
+                    "env": env,
+                }
     return experiment_config
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
