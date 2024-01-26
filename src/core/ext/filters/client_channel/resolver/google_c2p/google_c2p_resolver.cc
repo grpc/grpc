@@ -258,6 +258,10 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
        Json::FromObject({
            {kC2PAuthority, Json::FromObject({
                                {"xds_servers", std::move(xds_server)},
+                               {"client_listener_resource_name_template",
+                                Json::FromString(absl::StrCat(
+                                    "xdstp://", kC2PAuthority,
+                                    "/envoy.config.listener.v3.Listener/%s"))},
                            })},
        })},
       {"node", Json::FromObject(std::move(node))},
