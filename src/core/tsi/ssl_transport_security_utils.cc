@@ -271,7 +271,7 @@ int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
   if (cert == nullptr || crl == nullptr) {
     return 1;
   }
-  X509_NAME* cert_name = X509_get_issuer_name(cert);
+  X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
   if (cert == nullptr) {
     return 1;
   }
@@ -279,7 +279,7 @@ int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
   if (crl_issuer_name == nullptr) {
     return 1;
   }
-  return X509_NAME_cmp(cert_name, crl_issuer_name);
+  return X509_NAME_cmp(cert_issuer_name, crl_issuer_name);
 }
 
 bool VerifyCrlSignBit(X509* issuer) {
@@ -294,8 +294,7 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
     return absl::InvalidArgumentError("cert cannot be null");
   }
   X509_NAME* issuer = X509_get_issuer_name(cert);
-  unsigned char* buf;
-  buf = nullptr;
+  unsigned char* buf = nullptr;
   int len = i2d_X509_NAME(issuer, &buf);
   if (len < 0 || buf == nullptr) return "";
   std::string ret(reinterpret_cast<char const*>(buf), len);
