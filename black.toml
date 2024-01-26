@@ -43,7 +43,7 @@ known_first_party = [
 ]
 known_third_party = ["grpc"]
 skip_glob = [
-    "third_party/*",
+    "*/third_party/*",
     "*/env/*",
     "*pb2*.py",
     "*pb2*.pyi",
