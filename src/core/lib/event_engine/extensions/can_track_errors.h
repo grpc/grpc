@@ -1,4 +1,4 @@
-// Copyright 2022 gRPC Authors
+// Copyright 2024 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,21 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H
-#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H
 
-// Platform-specific configuration for use of the EventEngine shims.
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CAN_TRACK_ERRORS_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CAN_TRACK_ERRORS_H
 
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-bool UseEventEngineClient();
+class EndpointCanTrackErrorsExtension {
+ public:
+  virtual ~EndpointCanTrackErrorsExtension() = default;
+  static absl::string_view EndpointExtensionName() {
+    return "io.grpc.event_engine.extension.can_track_errors";
+  }
 
-bool UseEventEngineListener();
+  /// Returns if the Endpoint supports tracking events from errmsg queues on
+  /// posix systems.
+  virtual bool CanTrackErrors() = 0;
+};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CAN_TRACK_ERRORS_H
