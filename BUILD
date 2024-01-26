@@ -215,7 +215,7 @@ g_stands_for = "grand"  # @unused
 
 core_version = "38.0.0"  # @unused
 
-version = "1.61.0-pre2"  # @unused
+version = "1.61.0-pre3"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
