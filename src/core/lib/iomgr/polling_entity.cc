@@ -38,12 +38,8 @@ grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
 grpc_polling_entity grpc_polling_entity_create_from_pollset(
     grpc_pollset* pollset) {
   grpc_polling_entity pollent;
-  if (pollset != nullptr) {
-    pollent.pollent.pollset = pollset;
-    pollent.tag = GRPC_POLLS_POLLSET;
-  } else {
-    pollent.tag = GRPC_POLLS_NONE;
-  }
+  pollent.pollent.pollset = pollset;
+  pollent.tag = GRPC_POLLS_POLLSET;
   return pollent;
 }
 
@@ -68,7 +64,6 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
 
 void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
                                             grpc_pollset_set* pss_dst) {
-  if (pollent == nullptr) return;
   if (pollent->tag == GRPC_POLLS_POLLSET) {
     // CFStream does not use file destriptors. When CFStream is used, the fd
     // pollset is possible to be null.
@@ -78,8 +73,6 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
-  } else if (pollent->tag == GRPC_POLLS_NONE) {
-    // Do nothing (empty polling entity)
   } else {
     grpc_core::Crash(
         absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
@@ -88,7 +81,6 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
 
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst) {
-  if (pollent == nullptr) return;
   if (pollent->tag == GRPC_POLLS_POLLSET) {
 #ifdef GRPC_CFSTREAM
     if (pollent->pollent.pollset != nullptr) {
@@ -101,8 +93,6 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);
-  } else if (pollent->tag == GRPC_POLLS_NONE) {
-    // Do nothing (empty polling entity)
   } else {
     grpc_core::Crash(
         absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
@@ -114,8 +104,6 @@ std::string grpc_polling_entity_string(grpc_polling_entity* pollent) {
     return absl::StrFormat("pollset:%p", pollent->pollent.pollset);
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     return absl::StrFormat("pollset_set:%p", pollent->pollent.pollset_set);
-  } else if (pollent->tag == GRPC_POLLS_NONE) {
-    return "empty";
   } else {
     return absl::StrFormat("invalid_tag:%d", pollent->tag);
   }
