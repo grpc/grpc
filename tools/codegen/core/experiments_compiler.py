@@ -192,6 +192,7 @@ class ExperimentDefinition(object):
             print("Failed to create experiment definition")
             return
         self._allow_in_fuzzing_config = True
+        self._uses_polling = False
         self._name = attributes["name"]
         self._description = attributes["description"]
         self._expiry = attributes["expiry"]
@@ -199,6 +200,9 @@ class ExperimentDefinition(object):
         self._additional_constraints = {}
         self._test_tags = []
         self._requires = set()
+
+        if "uses_polling" in attributes:
+            self._uses_polling = attributes["uses_polling"]
 
         if "allow_in_fuzzing_config" in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -682,6 +686,17 @@ class ExperimentsCompiler(object):
                     f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
                 )
             print("}", file=B)
+
+            # Generate a list of experiments that use polling.
+            print(file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENT_POLLERS = [", file=B)
+            else:
+                print("EXPERIMENT_POLLERS = [", file=B)
+            for name, exp in self._experiment_definitions.items():
+                if exp._uses_polling:
+                    print(f'    "{name}",', file=B)
+            print("]", file=B)
 
             print(file=B)
             if mode == "test":

@@ -58,6 +58,12 @@ EXPERIMENT_ENABLES = {
     "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
+EXPERIMENT_POLLERS = [
+    "event_engine_client",
+    "event_engine_dns",
+    "event_engine_listener",
+]
+
 EXPERIMENTS = {
     "windows": {
         "dbg": {
