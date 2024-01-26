@@ -77,7 +77,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     grpc_event_engine::experimental::g_event_engine_supports_fd = false;
     grpc_core::ForceEnableExperiment("event_engine_client", true);
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
-    grpc_core::ForceEnableExperiment("promise_based_client_call", true);
 
     std::vector<Test> tests;
     for (const auto& test : all_tests) {
