@@ -86,6 +86,9 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const uint8_t required_experiments_promise_based_client_call[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -226,7 +229,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
+     additional_constraints_promise_based_client_call,
+     required_experiments_promise_based_client_call, 2, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"chaotic_good", description_chaotic_good,
@@ -356,6 +360,9 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const uint8_t required_experiments_promise_based_client_call[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -496,7 +503,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
+     additional_constraints_promise_based_client_call,
+     required_experiments_promise_based_client_call, 2, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"chaotic_good", description_chaotic_good,
@@ -626,6 +634,9 @@ const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const uint8_t required_experiments_promise_based_client_call[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -766,7 +777,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
      additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
+     additional_constraints_promise_based_client_call,
+     required_experiments_promise_based_client_call, 2, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"chaotic_good", description_chaotic_good,

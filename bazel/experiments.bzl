@@ -33,7 +33,7 @@ EXPERIMENT_ENABLES = {
     "peer_state_based_framing": "peer_state_based_framing",
     "pending_queue_cap": "pending_queue_cap",
     "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
-    "promise_based_client_call": "promise_based_client_call",
+    "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
     "chaotic_good": "chaotic_good,promise_based_client_call,promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
@@ -72,6 +72,7 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "chaotic_good",
+                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -89,6 +90,9 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -148,6 +152,7 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "chaotic_good",
+                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -165,6 +170,9 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -222,6 +230,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good",
                 "event_engine_client",
+                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -242,6 +251,9 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lame_client_test": [
+                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
