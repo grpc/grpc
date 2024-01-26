@@ -251,35 +251,35 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   return result;
 }
 
-int VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
+bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (issuer == nullptr || crl == nullptr) {
-    return -1;
+    return false;
   }
   EVP_PKEY* ikey = X509_get_pubkey(issuer);
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
     EVP_PKEY_free(ikey);
-    return 1;
+    return false;
   }
   int ret = X509_CRL_verify(crl, ikey);
   EVP_PKEY_free(ikey);
   return ret;
 }
 
-int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
+bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
   if (cert == nullptr || crl == nullptr) {
-    return 1;
+    return false;
   }
   X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
   if (cert == nullptr) {
-    return 1;
+    return false;
   }
   X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
   if (crl_issuer_name == nullptr) {
-    return 1;
+    return false;
   }
-  return X509_NAME_cmp(cert_issuer_name, crl_issuer_name);
+  return X509_NAME_cmp(cert_issuer_name, crl_issuer_name) == 0;
 }
 
 bool VerifyCrlSignBit(X509* issuer) {
