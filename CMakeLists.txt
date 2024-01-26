@@ -107,6 +107,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base_internal
   absl_bind_front
   absl_bits
+  absl_charset
   absl_city
   absl_civil_time
   absl_cleanup
@@ -151,6 +152,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
+  absl_has_ostream_operator
   absl_hash
   absl_hash_function_defaults
   absl_hash_policy_traits
@@ -165,8 +167,10 @@ set(gRPC_ABSL_USED_TARGETS
   absl_low_level_hash
   absl_malloc_internal
   absl_memory
+  absl_no_destructor
   absl_non_temporal_arm_intrinsics
   absl_non_temporal_memcpy
+  absl_nullability
   absl_numeric_representation
   absl_optional
   absl_prefetch

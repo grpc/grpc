@@ -1684,6 +1684,8 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/time",
+        "absl/status",
+        "absl/strings:str_format",
     ],
     deps = [
         "time",
@@ -1707,14 +1709,17 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/time",
+        "absl/types:optional",
     ],
     deps = [
         "common_event_engine_closures",
+        "env",
         "event_engine_basic_work_queue",
         "event_engine_thread_count",
         "event_engine_thread_local",
         "event_engine_trace",
         "event_engine_work_queue",
+        "examine_stack",
         "forkable",
         "no_destruct",
         "notification",
@@ -1722,7 +1727,6 @@ grpc_cc_library(
         "//:backoff",
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//:grpc_trace",
     ],
 )
 
