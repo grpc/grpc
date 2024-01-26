@@ -26,6 +26,9 @@
 #              Defaults to the empty list.
 #              If any of the experiments in the required list is determined to
 #              be disabled at runtime, this experiment is disabled at runtime.
+# uses_polling: optional boolean (false if not specified) that indicates that
+#              this experiment should be tested with all different polling
+#              engines.
 #
 # Well known test tags:
 #   core_end2end_test:   all tests, fixtures in the core end2end suite
