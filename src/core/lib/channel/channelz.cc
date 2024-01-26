@@ -364,10 +364,6 @@ Json SocketNode::Security::Tls::RenderJson() {
   } else if (type == NameType::kOtherName) {
     data["other_name"] = Json::FromString(name);
   }
-  if (!local_certificate.empty()) {
-    data["local_certificate"] =
-        Json::FromString(absl::Base64Escape(local_certificate));
-  }
   if (!remote_certificate.empty()) {
     data["remote_certificate"] =
         Json::FromString(absl::Base64Escape(remote_certificate));
@@ -387,11 +383,6 @@ Json SocketNode::Security::RenderJson() {
     case ModelType::kTls:
       if (tls) {
         data["tls"] = tls->RenderJson();
-      }
-      break;
-    case ModelType::kOther:
-      if (other.has_value()) {
-        data["other"] = *other;
       }
       break;
   }
