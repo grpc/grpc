@@ -156,6 +156,10 @@ int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer);
 // return: true if cRLSign bit is present, 0 otherwise.
 bool VerifyCrlSignBit(X509* issuer);
 
+// Verifies the Authority Key Identifier of `crl` and `cert` match.
+// return: true if equal, false otherwise.
+bool VerifyAKIDMatch(X509_CRL* crl, X509* issuer);
+
 // Gets a stable representation of the issuer name from an X509 certificate.
 // return: a std::string of the DER encoding of the X509_NAME issuer name.
 absl::StatusOr<std::string> IssuerFromCert(X509* cert);

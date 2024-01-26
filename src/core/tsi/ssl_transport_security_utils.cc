@@ -289,6 +289,31 @@ bool VerifyCrlSignBit(X509* issuer) {
   return (X509_get_key_usage(issuer) & KU_CRL_SIGN) != 0;
 }
 
+bool VerifyAKIDMatch(X509_CRL* crl, X509* issuer) {
+  ASN1_OCTET_STRING* crl_akid = nullptr;
+  ASN1_OCTET_STRING* cert_akid = nullptr;
+  int i = X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (i >= 0) {
+    if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, i) != -1) {
+      return false;
+    }
+    crl_akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, i));
+  }
+  int j = X509_get_ext_by_NID(issuer, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_get_ext_by_NID(issuer, NID_authority_key_identifier, j) != -1) {
+      return false;
+    }
+    cert_akid = X509_EXTENSION_get_data(X509_get_ext(issuer, j));
+  }
+  if (crl_akid == nullptr || cert_akid == nullptr) {
+    return false;
+  }
+  return ASN1_OCTET_STRING_cmp(crl_akid, cert_akid) == 0;
+}
+
 absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   if (cert == nullptr) {
     return absl::InvalidArgumentError("cert cannot be null");

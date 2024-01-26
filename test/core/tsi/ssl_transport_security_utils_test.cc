@@ -600,6 +600,16 @@ TEST(CrlUtils, VerifyCrlSignBitNullCert) {
   EXPECT_FALSE(VerifyCrlSignBit(issuer));
 }
 
+TEST(CrlUtils, VerifyAKIDMatch) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
+  ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
+  absl::StatusOr<Slice> issuer_slice = LoadFile(kIntermediateCrlIssuer, false);
+  ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
+  EXPECT_TRUE(VerifyAKIDMatch(crl, issuer));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
