@@ -445,14 +445,28 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 tags.append("no_test_ios")
         return tags
 
-    experiment_config = expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky)
+    base_params = {
+        "name": name,
+        "srcs": srcs,
+        "deps": deps,
+        "tags": tags,
+        "args": args,
+        "exclude_pollers": exclude_pollers,
+        "uses_polling": uses_polling,
+        "uses_event_engine": uses_event_engine,
+        "flaky": flaky
+    }
+
+    experiment_config = expand_poller_config(**base_params)
     experiment_enables = {k: v for k, v in EXPERIMENT_ENABLES.items() + TEST_EXPERIMENT_ENABLES.items()}
     experiment_pollers = EXPERIMENT_POLLERS + TEST_EXPERIMENT_POLLERS
     for mode, config in mode_config.items():
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
             for experiment in experiments[mode].keys():
-                for config in expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, experiment in experiment_pollers, uses_event_engine, flaky):
+                experiment_params = dict(base_params)
+                experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
+                for config in expand_poller_config(**experiment_params):
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
@@ -468,7 +482,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     experiment_config.append(config)
         if disabled_tags != None:
             for experiment in experiments[mode].keys():
-                for config in expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, experiment in experiment_pollers, uses_event_engine, flaky):
+                experiment_params = dict(base_params)
+                experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
+                for config in expand_poller_config(**experiment_params):
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=no_" + experiment
                     env = dict(config["env"])
