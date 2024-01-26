@@ -76,6 +76,11 @@ then
   tools/distrib/python/make_grpcio_tools.py
 fi
 
+if [ "${SUBMODULE_NAME}" == "abseil-cpp" ]
+then
+  src/python/grpcio_observability/make_grpcio_observability.py
+fi
+
 # commit so that changes are passed to Docker
 git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule' --allow-empty
 
