@@ -280,6 +280,26 @@ def ios_cc_test(
         )
 
 def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+    """Common logic used to parameterize tests for every poller and EventEngine.
+
+    Used by expand_tests (repeatedly) to form base lists of pollers for each experiment.
+
+    Args:
+        name: base name of the test
+        srcs: source files
+        deps: base deps
+        tags: base tags
+        args: base args
+        flaky: base flaky
+        exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_polling: set to False if the test is not sensitive to polling methodology.
+        uses_event_engine: set to False if the test is not sensitive to
+            EventEngine implementation differences
+
+    Returns:
+        A list of dictionaries containing modified values of name, srcs, deps, tags, and args.
+    """
+
     poller_config = []
 
     # See work_stealing_thread_pool.cc for details.
