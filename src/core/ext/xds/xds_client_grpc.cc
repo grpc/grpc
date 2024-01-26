@@ -33,7 +33,6 @@
 #include "absl/types/optional.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "upb/base/string_view.h"
-#include "xds_client_grpc.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -48,6 +47,7 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
+#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -144,6 +144,21 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
       "not defined");
 }
 
+std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
+  MutexLock lock(g_mu);
+  std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
+  if (g_xds_client_map != nullptr) {
+    for (const auto& key_client : *g_xds_client_map) {
+      auto xds_client = key_client.second->RefIfNonZero(DEBUG_LOCATION,
+                                                        "DumpAllClientConfigs");
+      if (xds_client != nullptr) {
+        xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
+      }
+    }
+  }
+  return xds_clients;
+}
+
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
@@ -200,43 +215,27 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   return xds_client;
 }
 
-grpc_slice GrpcXdsClient::DumpAllClientConfigs() {
-  std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
-  {
-    MutexLock lock(g_mu);
-    if (g_xds_client_map != nullptr) {
-      for (const auto& key_xds_client: *g_xds_client_map) {
-        RefCountedPtr<GrpcXdsClient> xds_client =
-            key_xds_client.second->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs")
-                      .TakeAsSubclass<GrpcXdsClient>();
-        if (xds_client != nullptr) {
-          xds_clients.emplace_back(std::move(xds_client));
-        }
-      }
-    }
-  }
+grpc_slice GrpcXdsClient::DumpAllClientConfigs()
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  auto xds_clients = GetAllXdsClients();
   upb::Arena arena;
   // Following two containers should survive till serialization
   std::set<std::string> string_pool;
   auto response = envoy_service_status_v3_ClientStatusResponse_new(arena.ptr());
-  absl::c_for_each(
-      xds_clients, [&](const auto& xds_client) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-        auto client_config =
-            envoy_service_status_v3_ClientStatusResponse_add_config(
-                response, arena.ptr());
-        xds_client->mu()->Lock();
-        xds_client->DumpClientConfig(&string_pool, arena.ptr(), client_config);
-        envoy_service_status_v3_ClientConfig_set_client_scope(
-            client_config, StdStringToUpbString(xds_client->key()));
-      });
+  for (const auto& xds_client : xds_clients) {
+    auto client_config =
+        envoy_service_status_v3_ClientStatusResponse_add_config(response,
+                                                                arena.ptr());
+    xds_client->mu()->Lock();
+    xds_client->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+  }
   // Serialize the upb message to bytes
   size_t output_length;
   char* output = envoy_service_status_v3_ClientStatusResponse_serialize(
       response, arena.ptr(), &output_length);
-  absl::c_for_each(xds_clients,
-                   [](const auto& xds_client) ABSL_NO_THREAD_SAFETY_ANALYSIS {
-                     xds_client->mu()->Unlock();
-                   });
+  for (const auto& xds_client : xds_clients) {
+    xds_client->mu()->Unlock();
+  }
   return grpc_slice_from_cpp_string(std::string(output, output_length));
 }
 
