@@ -25,6 +25,7 @@
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -598,6 +599,62 @@ TEST(CrlUtils, VerifyCrlSignBitMissing) {
 TEST(CrlUtils, VerifyCrlSignBitNullCert) {
   X509* issuer = nullptr;
   EXPECT_FALSE(VerifyCrlSignBit(issuer));
+}
+
+TEST(CrlUtils, IssuerFromIntermediateCert) {
+  absl::StatusOr<Slice> cert_slice = LoadFile(kIntermediateCrlIssuer, false);
+  ASSERT_EQ(cert_slice.status(), absl::OkStatus());
+  X509* cert = ReadPemCert(cert_slice->as_string_view());
+  auto issuer = IssuerFromCert(cert);
+
+  // Build the known name for comparison
+  unsigned char* buf = nullptr;
+  X509_NAME* expected = X509_NAME_new();
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected, "C", MBSTRING_ASC, (const unsigned char*)"AU", -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(expected, "ST", MBSTRING_ASC,
+                                         (const unsigned char*)"Some-State", -1,
+                                         -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected, "O", MBSTRING_ASC,
+      (const unsigned char*)"Internet Widgits Pty Ltd", -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected, "CN", MBSTRING_ASC, (const unsigned char*)"testca", -1, -1, 0));
+  int len = i2d_X509_NAME(expected, &buf);
+  std::string expected_name(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  X509_NAME_free(expected);
+
+  ASSERT_EQ(issuer.status(), absl::OkStatus());
+  std::cout << *issuer << "xxx\n";
+  EXPECT_EQ(*issuer, expected_name);
+}
+
+TEST(CrlUtils, IssuerFromLeaf) {
+  absl::StatusOr<Slice> cert_slice = LoadFile(kLeafCert, false);
+  ASSERT_EQ(cert_slice.status(), absl::OkStatus());
+  X509* cert = ReadPemCert(cert_slice->as_string_view());
+  auto issuer = IssuerFromCert(cert);
+
+  // Build the known name for comparison
+  unsigned char* buf = nullptr;
+  X509_NAME* expected = X509_NAME_new();
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected, "CN", MBSTRING_ASC,
+      (const unsigned char*)"intermediatecert.example.com", -1, -1, 0));
+  int len = i2d_X509_NAME(expected, &buf);
+  std::string expected_name(reinterpret_cast<char const*>(buf), len);
+
+  OPENSSL_free(buf);
+  X509_NAME_free(expected);
+  ASSERT_EQ(issuer.status(), absl::OkStatus());
+  std::cout << *issuer << "xxx\n";
+  EXPECT_EQ(*issuer, expected_name);
+}
+
+TEST(CrlUtils, IssuerFromCertNull) {
+  auto issuer = IssuerFromCert(nullptr);
+  EXPECT_EQ(issuer.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
 }  // namespace testing
