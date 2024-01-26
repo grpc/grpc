@@ -6,7 +6,7 @@ This document describes the command line tool that comes with gRPC repository.
 It is desirable to have command line tools written in other languages roughly
 follow the same syntax and flags.
 
-> NOTE: At present, the tool needs to be built from source, and it should be
+> [!NOTE] At present, the tool needs to be built from source, and it should be
 > moved out to grpc-tools repository as a stand alone application once it is
 > mature enough. This tool in its current state though is not up to par in its
 > user-friendliness. Other tools in the ecosystem, for example,
