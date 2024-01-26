@@ -31,8 +31,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/config/cluster/v3/cluster.upb.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "upb/base/string_view.h"
+#include "upb_utils.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -228,6 +230,8 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
                                                                 arena.ptr());
     xds_client->mu()->Lock();
     xds_client->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+    envoy_service_status_v3_ClientConfig_set_client_scope(
+        client_config, StdStringToUpbString(xds_client->key()));
   }
   // Serialize the upb message to bytes
   size_t output_length;
