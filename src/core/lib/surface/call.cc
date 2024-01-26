@@ -2855,7 +2855,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
         SpawnInfallible("monitor_cancellation", [this]() {
           return Seq(cancel_error_.Wait(),
                      [this](ServerMetadataHandle trailing_metadata) {
-                       Crash("here");
                        return Map(server_trailing_metadata_.sender.Push(
                                       std::move(trailing_metadata)),
                                   [](bool) { return Empty{}; });
@@ -2863,7 +2862,14 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
         });
       }
 
-      ~WrappingCallSpine() override { call_->InternalUnref("call-spine"); }
+      ~WrappingCallSpine() override {
+        {
+          // Move these out and destroy before the internal unref.
+          auto client_initial_metadata = std::move(client_initial_metadata_);
+          auto server_trailing_metadata = std::move(server_trailing_metadata_);
+        }
+        call_->InternalUnref("call-spine");
+      }
 
       Pipe<ClientMetadataHandle>& client_initial_metadata() override {
         return client_initial_metadata_;

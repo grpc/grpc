@@ -134,14 +134,18 @@ auto ChaoticGoodClientTransport::TransportReadLoop() {
               LookupStream(frame_header.stream_id);
           ServerFragmentFrame frame;
           absl::Status deserialize_status;
+          const FrameLimits frame_limits{1024 * 1024 * 1024,
+                                         aligned_bytes_ - 1};
           if (call_handler.has_value()) {
             deserialize_status = transport_.DeserializeFrame(
                 frame_header, std::move(buffers), call_handler->arena(), frame,
-                FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
+                frame_limits);
           } else {
             // Stream not found, skip the frame.
-            transport_.SkipFrame(frame_header, std::move(buffers));
-            deserialize_status = absl::OkStatus();
+            auto arena = MakeScopedArena(1024, &allocator_);
+            deserialize_status =
+                transport_.DeserializeFrame(frame_header, std::move(buffers),
+                                            arena.get(), frame, frame_limits);
           }
           return If(
               deserialize_status.ok() && call_handler.has_value(),
@@ -171,9 +175,13 @@ auto ChaoticGoodClientTransport::OnTransportActivityDone() {
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
+    const ChannelArgs& args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     HPackParser hpack_parser, HPackCompressor hpack_encoder)
-    : outgoing_frames_(4),
+    : allocator_(args.GetObject<ResourceQuota>()
+                     ->memory_quota()
+                     ->CreateMemoryAllocator("chaotic-good")),
+      outgoing_frames_(4),
       transport_(std::move(control_endpoint), std::move(data_endpoint),
                  std::move(hpack_parser), std::move(hpack_encoder)),
       writer_{

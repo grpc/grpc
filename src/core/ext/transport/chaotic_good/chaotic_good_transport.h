@@ -119,9 +119,6 @@ class ChaoticGoodTransport {
                              std::move(buffers), limits);
   }
 
-  // Skip a frame, but correctly handle any hpack state updates.
-  void SkipFrame(FrameHeader, BufferPair) { Crash("not implemented"); }
-
  private:
   PromiseEndpoint control_endpoint_;
   PromiseEndpoint data_endpoint_;

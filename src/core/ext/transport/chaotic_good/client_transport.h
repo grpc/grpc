@@ -71,6 +71,7 @@ class ChaoticGoodClientTransport final : public Transport,
  public:
   ChaoticGoodClientTransport(
       PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
+      const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       HPackParser hpack_parser, HPackCompressor hpack_encoder);
@@ -104,6 +105,7 @@ class ChaoticGoodClientTransport final : public Transport,
   // Push one frame into a call
   auto PushFrameIntoCall(ServerFragmentFrame frame, CallHandler call_handler);
 
+  grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
   MpscReceiver<ClientFrame> outgoing_frames_;

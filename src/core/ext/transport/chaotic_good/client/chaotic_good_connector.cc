@@ -69,7 +69,6 @@ namespace {
 void MaybeNotify(const DebugLocation& location, grpc_closure*& notify,
                  grpc_error_handle error) {
   if (notify != nullptr) {
-    ExecCtx exec_ctx;
     ExecCtx::Run(location, std::exchange(notify, nullptr), error);
   }
 }
@@ -241,6 +240,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       [self = RefAsSubclass<ChaoticGoodConnector>()](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
               endpoint) mutable {
+        ExecCtx exec_ctx;
         if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
           auto endpoint_status = endpoint.status();
           auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
@@ -251,7 +251,6 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
           MaybeNotify(DEBUG_LOCATION, self->notify_, error);
           return;
         }
-        ExecCtx exec_ctx;
         auto* p = self.release();
         p->handshake_mgr_->DoHandshake(
             grpc_event_engine_endpoint_create(std::move(endpoint.value())),
@@ -312,8 +311,8 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
             MutexLock lock(&self->mu_);
             self->result_->transport = new ChaoticGoodClientTransport(
                 std::move(self->control_endpoint_),
-                std::move(self->data_endpoint_), self->event_engine_,
-                std::move(self->hpack_parser_),
+                std::move(self->data_endpoint_), self->args_.channel_args,
+                self->event_engine_, std::move(self->hpack_parser_),
                 std::move(self->hpack_compressor_));
             self->result_->channel_args = self->args_.channel_args;
           }
