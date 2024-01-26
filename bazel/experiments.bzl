@@ -58,6 +58,12 @@ EXPERIMENT_ENABLES = {
     "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
+EXPERIMENT_POLLERS = [
+    "event_engine_client",
+    "event_engine_dns",
+    "event_engine_listener",
+]
+
 EXPERIMENTS = {
     "windows": {
         "dbg": {
@@ -225,7 +231,6 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
-                "event_engine_client",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -237,9 +242,6 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -271,12 +273,16 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
+                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
