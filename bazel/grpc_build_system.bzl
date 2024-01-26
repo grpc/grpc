@@ -454,7 +454,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         "exclude_pollers": exclude_pollers,
         "uses_polling": uses_polling,
         "uses_event_engine": uses_event_engine,
-        "flaky": flaky
+        "flaky": flaky,
     }
 
     experiment_config = expand_poller_config(**base_params)
