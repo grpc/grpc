@@ -815,6 +815,7 @@ include/grpc/census.h \
 include/grpc/compression.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
+include/grpc/event_engine/extensible.h \
 include/grpc/event_engine/internal/memory_allocator_impl.h \
 include/grpc/event_engine/internal/slice_cast.h \
 include/grpc/event_engine/memory_allocator.h \
@@ -2057,6 +2058,8 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
+src/core/lib/event_engine/extensions/can_track_errors.h \
+src/core/lib/event_engine/extensions/supports_fd.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
 src/core/lib/event_engine/grpc_polled_fd.h \
@@ -2105,6 +2108,7 @@ src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc \
 src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h \
+src/core/lib/event_engine/query_extensions.h \
 src/core/lib/event_engine/ref_counted_dns_resolver_interface.h \
 src/core/lib/event_engine/resolved_address.cc \
 src/core/lib/event_engine/resolved_address_internal.h \
