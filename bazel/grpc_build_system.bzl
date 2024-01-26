@@ -431,7 +431,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 env = default_env
                 env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                 env["GRPC_CI_EXPERIMENTS"] = "1"
-                tags = base_tags
+                tags = list(base_tags)
                 for tag in must_have_tags + enabled_tags:
                     if tag not in tags:
                         tags = tags + [tag]
@@ -439,7 +439,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "name": name + "@experiment=" + experiment,
                     "srcs": srcs,
                     "deps": deps,
-                    "tags": _update_experiments_platform_test_tags(tags, experiments[mode][experiment]),
+                    "tags": _update_experiments_platform_test_tags(
+                        tags, experiments[mode][experiment]),
                     "args": args,
                     "flaky": True,
                     "env": env,
@@ -450,7 +451,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 env = default_env
                 env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                 env["GRPC_CI_EXPERIMENTS"] = "1"
-                tags = base_tags
+                tags = list(base_tags)
                 for tag in must_have_tags + disabled_tags:
                     if tag not in tags:
                         tags = tags + [tag]
@@ -458,7 +459,8 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "name": name + "@experiment=no_" + experiment,
                     "srcs": srcs,
                     "deps": deps,
-                    "tags": _update_experiments_platform_test_tags(tags, experiments[mode][experiment]),
+                    "tags": _update_experiments_platform_test_tags(
+                        tags, experiments[mode][experiment]),
                     "args": args,
                     "flaky": True,
                     "env": env,
