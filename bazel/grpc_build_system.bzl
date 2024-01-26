@@ -428,7 +428,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
             for experiment in experiments[mode].keys():
-                env = default_env
+                env = dict(default_env)
                 env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
                 env["GRPC_CI_EXPERIMENTS"] = "1"
                 tags = list(base_tags)
@@ -450,7 +450,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 experiment_config.append(config)
         if disabled_tags != None:
             for experiment in experiments[mode].keys():
-                env = default_env
+                env = dict(default_env)
                 env["GRPC_EXPERIMENTS"] = "-" + experiment
                 env["GRPC_CI_EXPERIMENTS"] = "1"
                 tags = list(base_tags)
@@ -466,9 +466,10 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                         experiments[mode][experiment],
                     ),
                     "args": args,
-                    "flaky": True,
+                    "flaky": flaky,
                     "env": env,
                 }
+                experiment_config.append(config)
     return experiment_config
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, copts = [], linkstatic = None, exclude_pollers = [], uses_event_engine = True):
