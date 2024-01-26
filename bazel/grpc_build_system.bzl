@@ -440,7 +440,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "srcs": srcs,
                     "deps": deps,
                     "tags": _update_experiments_platform_test_tags(
-                        tags, experiments[mode][experiment]),
+                        tags,
+                        experiments[mode][experiment],
+                    ),
                     "args": args,
                     "flaky": True,
                     "env": env,
@@ -460,7 +462,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "srcs": srcs,
                     "deps": deps,
                     "tags": _update_experiments_platform_test_tags(
-                        tags, experiments[mode][experiment]),
+                        tags,
+                        experiments[mode][experiment],
+                    ),
                     "args": args,
                     "flaky": True,
                     "env": env,
