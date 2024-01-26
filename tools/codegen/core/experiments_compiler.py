@@ -174,7 +174,9 @@ class ExperimentDefinition(object):
             print("ERROR: experiment with no name: %r" % attributes)
             self._error = True
         if "description" not in attributes:
-            print("ERROR: no description for experiment %s" % attributes["name"])
+            print(
+                "ERROR: no description for experiment %s" % attributes["name"]
+            )
             self._error = True
         if "owner" not in attributes:
             print("ERROR: no owner for experiment %s" % attributes["name"])
@@ -203,7 +205,9 @@ class ExperimentDefinition(object):
             self._uses_polling = attributes["uses_polling"]
 
         if "allow_in_fuzzing_config" in attributes:
-            self._allow_in_fuzzing_config = attributes["allow_in_fuzzing_config"]
+            self._allow_in_fuzzing_config = attributes[
+                "allow_in_fuzzing_config"
+            ]
 
         if "test_tags" in attributes:
             self._test_tags = attributes["test_tags"]
@@ -216,13 +220,19 @@ class ExperimentDefinition(object):
             return False
         if not check_expiry:
             return True
-        if self._name == "monitoring_experiment" and self._expiry == "never-ever":
+        if (
+            self._name == "monitoring_experiment"
+            and self._expiry == "never-ever"
+        ):
             return True
         today = datetime.date.today()
         two_quarters_from_now = today + datetime.timedelta(days=180)
         expiry = datetime.datetime.strptime(self._expiry, "%Y/%m/%d").date()
         if expiry < today:
-            print("WARNING: experiment %s expired on %s" % (self._name, self._expiry))
+            print(
+                "WARNING: experiment %s expired on %s"
+                % (self._name, self._expiry)
+            )
         if expiry > two_quarters_from_now:
             print(
                 "WARNING: experiment %s expires far in the future on %s"
@@ -245,7 +255,10 @@ class ExperimentDefinition(object):
         for requirement in rollout_attributes.get("requires", []):
             self._requires.add(requirement)
         if "default" not in rollout_attributes:
-            print("ERROR: no default for experiment %s" % rollout_attributes["name"])
+            print(
+                "ERROR: no default for experiment %s"
+                % rollout_attributes["name"]
+            )
             self._error = True
             return False
         is_dict = isinstance(rollout_attributes["default"], dict)
@@ -260,7 +273,8 @@ class ExperimentDefinition(object):
             elif value not in allowed_defaults:
                 print(
                     "ERROR: default for experiment %s on platform %s "
-                    "is of incorrect format" % (rollout_attributes["name"], platform)
+                    "is of incorrect format"
+                    % (rollout_attributes["name"], platform)
                 )
                 self._error = True
                 return False
@@ -316,7 +330,9 @@ class ExperimentsCompiler(object):
                 % experiment_definition.name
             )
             return False
-        self._experiment_definitions[experiment_definition.name] = experiment_definition
+        self._experiment_definitions[
+            experiment_definition.name
+        ] = experiment_definition
         return True
 
     def AddRolloutSpecification(self, rollout_attributes):
@@ -364,7 +380,8 @@ class ExperimentsCompiler(object):
             define_fmt = self._final_define[exp.default(platform)]
             if define_fmt:
                 print(
-                    define_fmt % ("GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper()),
+                    define_fmt
+                    % ("GRPC_EXPERIMENT_IS_INCLUDED_%s" % exp.name.upper()),
                     file=file_desc,
                 )
             print(
@@ -494,7 +511,9 @@ class ExperimentsCompiler(object):
         if "kDefaultForDebugOnly" in have_defaults:
             print("#ifdef NDEBUG", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
-                print("const bool kDefaultForDebugOnly = false;", file=file_desc)
+                print(
+                    "const bool kDefaultForDebugOnly = false;", file=file_desc
+                )
             print("#else", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
                 print("const bool kDefaultForDebugOnly = true;", file=file_desc)
@@ -518,7 +537,9 @@ class ExperimentsCompiler(object):
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
-                    f"required_experiments_{exp.name}" if exp._requires else "nullptr",
+                    f"required_experiments_{exp.name}"
+                    if exp._requires
+                    else "nullptr",
                     len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
@@ -550,7 +571,9 @@ class ExperimentsCompiler(object):
             if any_requires:
                 print("#include <stdint.h>", file=C)
                 print(file=C)
-            print(f'#include "{header_file_path.replace(".github", "")}"', file=C)
+            print(
+                f'#include "{header_file_path.replace(".github", "")}"', file=C
+            )
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
             idx = 0
@@ -618,7 +641,8 @@ class ExperimentsCompiler(object):
         )
 
         bzl_to_tags_to_experiments = dict(
-            (platform, deepcopy(defaults)) for platform in self._platforms_define.keys()
+            (platform, deepcopy(defaults))
+            for platform in self._platforms_define.keys()
         )
 
         for platform in self._platforms_define.keys():
@@ -630,7 +654,9 @@ class ExperimentsCompiler(object):
                     # experiment to the "on" mode.
                     if default == "debug":
                         default = True
-                    bzl_to_tags_to_experiments[platform][default][tag].append(exp.name)
+                    bzl_to_tags_to_experiments[platform][default][tag].append(
+                        exp.name
+                    )
 
         with open(output_file, "w") as B:
             PutCopyright(B, "#")
@@ -656,7 +682,9 @@ class ExperimentsCompiler(object):
             for name, exp in self._experiment_definitions.items():
                 enables = exp._requires.copy()
                 enables.add(name)
-                print(f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B)
+                print(
+                    f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
+                )
             print("}", file=B)
 
             # Generate a list of experiments that use polling.
