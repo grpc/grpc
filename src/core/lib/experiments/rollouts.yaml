@@ -92,8 +92,6 @@
   default: false
 - name: registered_method_lookup_in_transport
   default: true
-- name: registered_methods_map
-  default: false
 - name: rfc_max_concurrent_streams
   default: false
 - name: round_robin_delegate_to_pick_first
