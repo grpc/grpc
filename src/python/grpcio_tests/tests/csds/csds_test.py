@@ -83,7 +83,7 @@ class TestCsds(unittest.TestCase):
 
     def test_has_node(self):
         resp = self.get_xds_config_dump()
-        self.assertEqual(1, len(resp.config))
+        self.assertEqual(0, len(resp.config))
         self.assertEqual("python_test_csds", resp.config[0].node.id)
         self.assertEqual("test", resp.config[0].node.cluster)
 

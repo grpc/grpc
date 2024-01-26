@@ -158,8 +158,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
  protected:
   // Dumps the active xDS config to the provided
   // envoy.service.status.v3.ClientConfig message including the config status
-  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED). Individual xDS
-  // resource is encoded as envoy.admin.v3.*ConfigDump.
+  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
   void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
                         envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
