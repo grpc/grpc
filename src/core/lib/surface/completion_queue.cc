@@ -42,6 +42,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -519,6 +520,11 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
       "grpc_completion_queue_create_internal(completion_type=%d, "
       "polling_type=%d)",
       2, (completion_type, polling_type));
+
+  if (grpc_core::IsEventEngineClientEnabled() &&
+      grpc_core::IsEventEngineListenerEnabled()) {
+    polling_type = GRPC_CQ_NON_POLLING;
+  }
 
   switch (completion_type) {
     case GRPC_CQ_NEXT:

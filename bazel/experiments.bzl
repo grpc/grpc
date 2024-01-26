@@ -33,7 +33,7 @@ EXPERIMENT_ENABLES = {
     "peer_state_based_framing": "peer_state_based_framing",
     "pending_queue_cap": "pending_queue_cap",
     "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
-    "promise_based_client_call": "promise_based_client_call",
+    "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
     "promise_based_inproc_transport": "promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
