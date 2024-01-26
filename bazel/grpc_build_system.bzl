@@ -449,7 +449,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
         if disabled_tags != None:
             for experiment in experiments[mode].keys():
                 env = default_env
-                env["GRPC_EXPERIMENTS"] = experiment_enables[experiment]
+                env["GRPC_EXPERIMENTS"] = "-" + experiment
                 env["GRPC_CI_EXPERIMENTS"] = "1"
                 tags = list(base_tags)
                 for tag in must_have_tags + disabled_tags:
