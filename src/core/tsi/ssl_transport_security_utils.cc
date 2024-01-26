@@ -267,19 +267,19 @@ int VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   return ret;
 }
 
-int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer) {
-  if (issuer == nullptr || crl == nullptr) {
+int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
+  if (cert == nullptr || crl == nullptr) {
     return 1;
   }
-  X509_NAME* issuer_name = X509_get_issuer_name(issuer);
-  if (issuer == nullptr) {
+  X509_NAME* cert_name = X509_get_issuer_name(cert);
+  if (cert == nullptr) {
     return 1;
   }
   X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
   if (crl_issuer_name == nullptr) {
     return 1;
   }
-  return X509_NAME_cmp(issuer_name, crl_issuer_name);
+  return X509_NAME_cmp(cert_name, crl_issuer_name);
 }
 
 bool VerifyCrlSignBit(X509* issuer) {

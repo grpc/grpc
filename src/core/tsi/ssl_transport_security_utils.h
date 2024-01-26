@@ -150,7 +150,7 @@ int VerifyCrlSignature(X509_CRL* crl, X509* issuer);
 
 // Verifies the CRL issuer and certificate issuer name match.
 // return: 0 if equal, otherwise a value != 0 depending on the comparison.
-int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer);
+int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert);
 
 // Verifies the certificate in question has the cRLSign bit present.
 // return: true if cRLSign bit is present, 0 otherwise.
