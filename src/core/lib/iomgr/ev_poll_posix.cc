@@ -737,11 +737,7 @@ static bool pollset_in_pollset_sets(grpc_pollset* p) {
 }
 
 static bool pollset_has_observers(grpc_pollset* p) {
-  bool has_workers = pollset_has_workers(p);
-  bool in_pollset_sets = pollset_in_pollset_sets(p);
-  gpr_log(GPR_DEBUG, "HAS_WORKERS:%d HAS_POLLSET_SETS:%d", has_workers,
-          in_pollset_sets);
-  return has_workers || in_pollset_sets;
+  return pollset_has_workers(p) || pollset_in_pollset_sets(p);
 }
 
 static grpc_pollset_worker* pop_front_worker(grpc_pollset* p) {
