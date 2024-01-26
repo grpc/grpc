@@ -52,7 +52,7 @@
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
+    posix: true
     # TODO(hork): resolve when the client end2end test flake rate reduces to
     # a tolerable amount.
     windows: broken
@@ -87,7 +87,7 @@
 - name: pick_first_happy_eyeballs
   default: true
 - name: promise_based_client_call
-  default: false
+  default: broken
 - name: promise_based_server_call
   default: false
 - name: registered_method_lookup_in_transport
