@@ -1998,10 +1998,11 @@ class BasicPromiseBasedCall : public Call,
   using Call::arena;
 
   BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+                        uint32_t initial_internal_refs,
                         const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
              args.channel->Ref()),
-        Party(arena, initial_external_refs != 0 ? 1 : 0),
+        Party(arena, initial_internal_refs),
         external_refs_(initial_external_refs),
         cq_(args.cq) {
     if (args.cq != nullptr) {
@@ -2016,7 +2017,6 @@ class BasicPromiseBasedCall : public Call,
         context_[i].destroy(context_[i].value);
       }
     }
-    ResetDeadline();
   }
 
   // Implementation of EventEngine::Closure, called when deadline expires
@@ -2503,7 +2503,8 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
 
 PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
-    : BasicPromiseBasedCall(arena, initial_external_refs, args) {}
+    : BasicPromiseBasedCall(arena, initial_external_refs,
+                            initial_external_refs != 0 ? 1 : 0, args) {}
 
 static void CToMetadata(grpc_metadata* metadata, size_t count,
                         grpc_metadata_batch* b) {
@@ -3807,7 +3808,7 @@ class ServerCallSpine final : public CallSpineInterface,
 };
 
 ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
-    : BasicPromiseBasedCall(arena, 1,
+    : BasicPromiseBasedCall(arena, 0, 1,
                             [channel, server]() -> grpc_call_create_args {
                               grpc_call_create_args args;
                               args.channel = channel->Ref();
