@@ -57,8 +57,6 @@ class ChaoticGoodConnector : public SubchannelConnector {
   ~ChaoticGoodConnector() override;
   void Connect(const Args& args, Result* result, grpc_closure* notify) override;
   void Shutdown(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "SubchannelConnector::Shutdown: %s; mgr=%p",
-            error.ToString().c_str(), handshake_mgr_.get());
     ActivityPtr connect_activity;
     MutexLock lock(&mu_);
     if (is_shutdown_) return;

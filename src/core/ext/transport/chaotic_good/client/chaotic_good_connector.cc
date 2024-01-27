@@ -231,10 +231,6 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
-  gpr_log(
-      GPR_ERROR, "CONNECT TO: %s",
-      grpc_event_engine::experimental::ResolvedAddressToString(*resolved_addr_)
-          ->c_str());
   GPR_ASSERT(resolved_addr_.value().address() != nullptr);
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect =
       [self = RefAsSubclass<ChaoticGoodConnector>()](
@@ -245,9 +241,6 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
           auto endpoint_status = endpoint.status();
           auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
                                                      &endpoint_status, 1);
-          gpr_log(GPR_ERROR, "ChaoticGoodConnector::Connect:%p:%s",
-                  static_cast<SubchannelConnector*>(self.get()),
-                  error.ToString().c_str());
           MaybeNotify(DEBUG_LOCATION, self->notify_, error);
           return;
         }
@@ -270,8 +263,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   RefCountedPtr<ChaoticGoodConnector> self(
       static_cast<ChaoticGoodConnector*>(args->user_data));
-  gpr_log(GPR_ERROR, "SubchannelConnector::OnHandshakeDone:%p",
-          static_cast<SubchannelConnector*>(self.get()));
   grpc_slice_buffer_destroy(args->read_buffer);
   gpr_free(args->read_buffer);
   // Start receiving setting frames;

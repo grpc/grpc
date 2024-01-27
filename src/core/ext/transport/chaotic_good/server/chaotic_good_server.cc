@@ -133,15 +133,28 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : InternallyRefCounted("ActiveConnection"),
-      memory_allocator_(listener->memory_allocator_),
-      listener_(listener) {
+    : memory_allocator_(listener->memory_allocator_), listener_(listener) {
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
 
 ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
   if (receive_settings_activity_ != nullptr) receive_settings_activity_.reset();
+}
+
+void ChaoticGoodServerListener::ActiveConnection::Orphan() {
+  if (handshaking_state_ != nullptr) {
+    handshaking_state_->Shutdown();
+    handshaking_state_.reset();
+  }
+  ActivityPtr activity;
+  {
+    MutexLock lock(&mu_);
+    orphaned_ = true;
+    activity = std::move(receive_settings_activity_);
+  }
+  activity.reset();
+  Unref();
 }
 
 void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
@@ -418,7 +431,6 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   grpc_core::ExecCtx exec_ctx;
   auto* const core_server = grpc_core::Server::FromC(server);
   const std::string parsed_addr = grpc_core::URI::PercentDecode(addr);
-  gpr_log(GPR_INFO, "ADD_CHAOTIC_GOOD_PORT: %s", parsed_addr.c_str());
   const auto resolved_or = grpc_core::GetDNSResolver()->LookupHostnameBlocking(
       parsed_addr, absl::StrCat(0xd20));
   if (!resolved_or.ok()) {

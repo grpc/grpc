@@ -91,22 +91,7 @@ class ChaoticGoodServerListener final
     ~ActiveConnection() override;
     const ChannelArgs& args() const { return listener_->args(); }
 
-    void Orphan() override {
-      gpr_log(GPR_INFO, "ORPHAN ActiveConnection:%p", this);
-      if (handshaking_state_ != nullptr) {
-        handshaking_state_->Shutdown();
-        handshaking_state_.reset();
-      }
-      ActivityPtr activity;
-      {
-        MutexLock lock(&mu_);
-        orphaned_ = true;
-        activity = std::move(receive_settings_activity_);
-      }
-      activity.reset();
-      Unref();
-      gpr_log(GPR_INFO, "~ORPHAN ActiveConnection");
-    }
+    void Orphan() override;
 
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
@@ -117,7 +102,6 @@ class ChaoticGoodServerListener final
                      endpoint);
 
       void Shutdown() {
-        gpr_log(GPR_INFO, "Shutdown:%p", this);
         handshake_mgr_->Shutdown(absl::CancelledError("Shutdown"));
       }
 
