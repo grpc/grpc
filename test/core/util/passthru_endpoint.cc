@@ -149,10 +149,7 @@ class HalfEndpoint : public EventEngine::Endpoint {
 
   ~HalfEndpoint() override {
     shared_state_->shutdown = true;
-    {
-      grpc_core::MutexLock lock(&shared_state_->mu);
-      FlushPendingOpsLocked(absl::OkStatus());
-    }
+    FlushPendingOps(absl::OkStatus());
     if (on_read_) {
       shared_state_->event_engine->Run(
           [on_read = std::move(on_read_)]() mutable {
@@ -164,7 +161,7 @@ class HalfEndpoint : public EventEngine::Endpoint {
   }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args)
+            const ReadArgs* /* args */)
       ABSL_LOCKS_EXCLUDED(shared_state_->mu) override {
     grpc_core::MutexLock lock(&shared_state_->mu);
     if (shared_state_->shutdown) {
@@ -192,7 +189,7 @@ class HalfEndpoint : public EventEngine::Endpoint {
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override {
+             SliceBuffer* data, const WriteArgs* /* args */) override {
     grpc_core::MutexLock lock(&shared_state_->mu);
     gpr_atm_full_fetch_add(&shared_state_->stats->num_writes, (gpr_atm)1);
     if (shared_state_->shutdown) {
@@ -250,8 +247,9 @@ class HalfEndpoint : public EventEngine::Endpoint {
     return shared_state_->half_endpoint_client;
   }
 
-  void FlushPendingOpsLocked(absl::Status error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu) {
+  // TODO(b/7273178): ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu)
+  void FlushPendingOps(absl::Status error) {
+    grpc_core::MutexLock lock(&shared_state_->mu);
     if (pending_read_op_.is_armed) DoPendingReadOpLocked(error);
     if (pending_write_op_.is_armed) DoPendingWriteOpLocked(error);
   }
@@ -444,9 +442,9 @@ void SharedEndpointState::DoNextSchedChannelAction(absl::Status error) {
   channel_effects->allowed_read_bytes += curr_action.add_n_readable_bytes;
   channel_effects->allowed_write_bytes += curr_action.add_n_writable_bytes;
   static_cast<HalfEndpoint*>(grpc_get_wrapped_event_engine_endpoint(client))
-      ->FlushPendingOpsLocked(error);
+      ->FlushPendingOps(error);
   static_cast<HalfEndpoint*>(grpc_get_wrapped_event_engine_endpoint(server))
-      ->FlushPendingOpsLocked(error);
+      ->FlushPendingOps(error);
   SchedNextChannelActionLocked();
 }
 
