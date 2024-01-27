@@ -2868,6 +2868,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
       ~WrappingCallSpine() override {
         {
+          ScopedContext context(call_);
           // Move these out and destroy before the internal unref.
           auto client_initial_metadata = std::move(client_initial_metadata_);
           auto server_trailing_metadata = std::move(server_trailing_metadata_);
