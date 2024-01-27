@@ -2849,16 +2849,17 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                         ClientMetadataHandle metadata)
           : call_(call) {
         call_->InternalRef("call-spine");
-        SpawnInfallible("send_client_initial_metadata",
-                        [this, metadata = std::move(metadata)]() mutable {
-                          return Map(client_initial_metadata_.sender.Push(
-                                         std::move(metadata)),
-                                     [](bool) { return Empty{}; });
-                        });
-        SpawnInfallible("monitor_cancellation", [this]() {
-          return Seq(cancel_error_.Wait(),
-                     [this](ServerMetadataHandle trailing_metadata) {
-                       return Map(server_trailing_metadata_.sender.Push(
+        SpawnInfallible(
+            "send_client_initial_metadata",
+            [self = Ref(), metadata = std::move(metadata)]() mutable {
+              return Map(self->client_initial_metadata_.sender.Push(
+                             std::move(metadata)),
+                         [self](bool) { return Empty{}; });
+            });
+        SpawnInfallible("monitor_cancellation", [self = Ref()]() {
+          return Seq(self->cancel_error_.Wait(),
+                     [self](ServerMetadataHandle trailing_metadata) {
+                       return Map(self->server_trailing_metadata_.sender.Push(
                                       std::move(trailing_metadata)),
                                   [](bool) { return Empty{}; });
                      });
@@ -2904,6 +2905,10 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       void Unref() override {
         if (refs_.Unref()) delete this;
       }
+      RefCountedPtr<WrappingCallSpine> Ref() {
+        IncrementRefCount();
+        return RefCountedPtr<WrappingCallSpine>(this);
+      }
 
      private:
       RefCount refs_;
@@ -2919,6 +2924,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                &client_to_server_messages_.receiver);
     GPR_ASSERT(call_args.server_to_client_messages ==
                &server_to_client_messages_.sender);
+    call_args.client_initial_metadata_outstanding.Complete(true);
     return MakeRefCounted<WrappingCallSpine>(
         this, std::move(call_args.client_initial_metadata));
   }

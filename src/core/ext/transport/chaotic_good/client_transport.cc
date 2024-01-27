@@ -160,9 +160,12 @@ auto ChaoticGoodClientTransport::TransportReadLoop() {
                                  });
                     });
               },
-              [&deserialize_status]() -> absl::Status {
+              [&deserialize_status]() {
                 // Stream not found, nothing to do.
-                return std::move(deserialize_status);
+                return [deserialize_status =
+                            std::move(deserialize_status)]() mutable {
+                  return std::move(deserialize_status);
+                };
               });
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
