@@ -54,10 +54,10 @@
             "${file}",
             % endfor
           ],
-          publicHeadersPath: "spm-core-include",
           resources: [
             .copy("src/objective-c/PrivacyInfo.xcprivacy"),
           ],
+          publicHeadersPath: "spm-core-include",
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),
@@ -103,10 +103,10 @@
           sources: [
             "src/cpp/",
           ],
-          publicHeadersPath: "spm-cpp-include",
           resources: [
             .copy("src/objective-c/PrivacyInfo.xcprivacy"),
           ],
+          publicHeadersPath: "spm-cpp-include",
           cSettings: [
             .headerSearchPath("./"),
             .headerSearchPath("include/"),
