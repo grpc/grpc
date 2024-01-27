@@ -889,6 +889,7 @@ grpc_channel_filter MakeConnectedFilter() {
 
 ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
+  call_args.client_initial_metadata_outstanding.Complete(true);
   auto spine = GetContext<CallContext>()->MakeCallSpine(std::move(call_args));
   transport->client_transport()->StartCall(CallHandler{spine});
   return Map(spine->server_trailing_metadata().receiver.Next(),

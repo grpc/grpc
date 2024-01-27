@@ -115,8 +115,13 @@ class ChaoticGoodTransport {
   absl::Status DeserializeFrame(FrameHeader header, BufferPair buffers,
                                 Arena* arena, FrameInterface& frame,
                                 FrameLimits limits) {
-    return frame.Deserialize(&parser_, header, bitgen_, arena,
-                             std::move(buffers), limits);
+    auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
+                               std::move(buffers), limits);
+    if (grpc_chaotic_good_trace.enabled()) {
+      gpr_log(GPR_INFO, "CHAOTIC_GOOD: DeserializeFrame %s",
+              s.ok() ? frame.ToString().c_str() : s.ToString().c_str());
+    }
+    return s;
   }
 
  private:
