@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,15 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gpr/useful.h"
@@ -44,6 +38,11 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
+#include "absl/base/attributes.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/types/optional.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -483,7 +482,7 @@ DEFINE_PROTO_FUZZER(const flow_control_fuzzer::Msg& msg) {
   grpc_core::chttp2::FlowControlFuzzer fuzzer(msg.enable_bdp());
   for (const auto& action : msg.actions()) {
     if (!squelch) {
-      fprintf(stderr, "%s\n", action.DebugString().c_str());
+      fprintf(stderr, "%s\n", absl::StrCat(action).c_str());
     }
     fuzzer.Perform(action);
     fuzzer.AssertNoneStuck();
