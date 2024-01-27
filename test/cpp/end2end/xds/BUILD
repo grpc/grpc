@@ -490,21 +490,3 @@ grpc_cc_test(
         "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
-
-grpc_cc_test(
-    name = "xds_fallback_end2end_test",
-    srcs = ["xds_fallback_end2end_test.cc"],
-    external_deps = ["gtest"],
-    tags = [
-        "no_test_ios",
-        "xds_end2end_test",
-    ],
-    deps = [
-        ":xds_end2end_test_lib",
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
-    ],
-)
