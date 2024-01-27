@@ -156,6 +156,7 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+  requires: ["event_engine_listener", "event_engine_client"]
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.

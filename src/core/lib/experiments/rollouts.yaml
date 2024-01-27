@@ -87,7 +87,7 @@
 - name: pick_first_happy_eyeballs
   default: true
 - name: promise_based_client_call
-  default: broken
+  default: false
 - name: promise_based_server_call
   default: false
 - name: registered_method_lookup_in_transport
