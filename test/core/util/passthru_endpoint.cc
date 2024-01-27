@@ -148,8 +148,9 @@ class HalfEndpoint : public EventEngine::Endpoint {
       : endpoint_type_(endpoint_type), shared_state_(std::move(shared_state)) {}
 
   ~HalfEndpoint() override {
+    grpc_core::MutexLock lock(&shared_state_->mu);
     shared_state_->shutdown = true;
-    FlushPendingOps(absl::OkStatus());
+    FlushPendingOpsLocked(absl::OkStatus());
     if (on_read_) {
       shared_state_->event_engine->Run(
           [on_read = std::move(on_read_)]() mutable {
@@ -248,14 +249,13 @@ class HalfEndpoint : public EventEngine::Endpoint {
   }
 
   // TODO(b/7273178): ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu)
-  void FlushPendingOps(absl::Status error) {
-    grpc_core::MutexLock lock(&shared_state_->mu);
+  void FlushPendingOpsLocked(absl::Status error) {
     if (pending_read_op_.is_armed) DoPendingReadOpLocked(error);
     if (pending_write_op_.is_armed) DoPendingWriteOpLocked(error);
   }
 
-  void DoPendingReadOpLocked(absl::Status error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu) {
+  // TODO(b/7273178): ABSL_EXCLUSIVE_LOCKS_REQUIRED(shared_state_->mu)
+  void DoPendingReadOpLocked(absl::Status error) {
     GPR_ASSERT(pending_read_op_.is_armed);
     GPR_ASSERT(bytes_read_so_far_ <=
                shared_state_->channel_effects->allowed_read_bytes);
@@ -442,9 +442,9 @@ void SharedEndpointState::DoNextSchedChannelAction(absl::Status error) {
   channel_effects->allowed_read_bytes += curr_action.add_n_readable_bytes;
   channel_effects->allowed_write_bytes += curr_action.add_n_writable_bytes;
   static_cast<HalfEndpoint*>(grpc_get_wrapped_event_engine_endpoint(client))
-      ->FlushPendingOps(error);
+      ->FlushPendingOpsLocked(error);
   static_cast<HalfEndpoint*>(grpc_get_wrapped_event_engine_endpoint(server))
-      ->FlushPendingOps(error);
+      ->FlushPendingOpsLocked(error);
   SchedNextChannelActionLocked();
 }
 
