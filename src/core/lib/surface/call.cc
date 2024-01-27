@@ -3965,6 +3965,39 @@ auto MaybeOp(const grpc_op* ops, uint8_t idx, SetupFn setup) {
     return MaybeOpImpl<SetupFn>(setup(ops[idx]), ops[idx].op);
   }
 }
+
+template <typename F>
+class PollBatchLogger {
+ public:
+  PollBatchLogger(void* tag, F f) : tag_(tag), f_(std::move(f)) {}
+
+  auto operator()() {
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "Poll batch %p", tag_);
+    }
+    auto r = f_();
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO, "Poll batch %p --> %s", tag_, ResultString(r).c_str());
+    }
+    return r;
+  }
+
+ private:
+  template <typename T>
+  static std::string ResultString(Poll<T> r) {
+    if (r.pending()) return "PENDING";
+    return ResultString(r.value());
+  }
+  static std::string ResultString(Empty) { return "DONE"; }
+
+  void* tag_;
+  F f_;
+};
+
+template <typename F>
+PollBatchLogger<F> LogPollBatch(void* tag, F f) {
+  return PollBatchLogger<F>(tag, std::move(f));
+}
 }  // namespace
 
 StatusFlag ServerCallSpine::FinishRecvMessage(
@@ -4102,22 +4135,26 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
         [primary_ops = std::move(primary_ops),
          recv_trailing_metadata = std::move(recv_trailing_metadata),
          is_notify_tag_closure, notify_tag, this]() mutable {
-          return Seq(std::move(primary_ops), std::move(recv_trailing_metadata),
-                     [is_notify_tag_closure, notify_tag, this](StatusFlag) {
-                       return WaitForCqEndOp(is_notify_tag_closure, notify_tag,
-                                             absl::OkStatus(), cq());
-                     });
+          return LogPollBatch(
+              notify_tag,
+              Seq(std::move(primary_ops), std::move(recv_trailing_metadata),
+                  [is_notify_tag_closure, notify_tag, this](StatusFlag) {
+                    return WaitForCqEndOp(is_notify_tag_closure, notify_tag,
+                                          absl::OkStatus(), cq());
+                  }));
         });
   } else {
-    SpawnInfallible(
-        "batch", [primary_ops = std::move(primary_ops), is_notify_tag_closure,
-                  notify_tag, this]() mutable {
-          return Seq(std::move(primary_ops), [is_notify_tag_closure, notify_tag,
-                                              this](StatusFlag r) {
-            return WaitForCqEndOp(is_notify_tag_closure, notify_tag,
-                                  StatusCast<grpc_error_handle>(r), cq());
-          });
-        });
+    SpawnInfallible("batch", [primary_ops = std::move(primary_ops),
+                              is_notify_tag_closure, notify_tag,
+                              this]() mutable {
+      return LogPollBatch(
+          notify_tag,
+          Seq(std::move(primary_ops),
+              [is_notify_tag_closure, notify_tag, this](StatusFlag r) {
+                return WaitForCqEndOp(is_notify_tag_closure, notify_tag,
+                                      StatusCast<grpc_error_handle>(r), cq());
+              }));
+    });
   }
 }
 

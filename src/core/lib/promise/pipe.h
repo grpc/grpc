@@ -558,13 +558,25 @@ class PipeReceiver {
  public:
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
-  PipeReceiver(PipeReceiver&& other) noexcept = default;
-  PipeReceiver& operator=(PipeReceiver&& other) noexcept = default;
+  PipeReceiver(PipeReceiver&& other) noexcept
+      : center_(std::move(other.center_)) {
+    MoveMovedFrom(&other);
+  }
+  PipeReceiver& operator=(PipeReceiver&& other) noexcept {
+    center_ = std::move(other.center_);
+    MoveMovedFrom(&other);
+    return *this;
+  }
   ~PipeReceiver() {
     if (center_ != nullptr) center_->MarkCancelled();
   }
 
-  void Swap(PipeReceiver<T>* other) { std::swap(center_, other->center_); }
+  void Swap(PipeReceiver<T>* other) {
+    std::swap(center_, other->center_);
+#ifndef NDEBUG
+    std::swap(moved_from_, other->moved_from_);
+#endif
+  }
 
   // Receive a single message from the pipe.
   // Returns a promise that will resolve to an optional<T> - with a value if a
@@ -572,6 +584,7 @@ class PipeReceiver {
   // Blocks the promise until the receiver is either closed or a message is
   // available.
   auto Next() {
+    CheckNotMovedFrom();
     return Seq(pipe_detail::Next<T>(center_), [center = center_](
                                                   absl::optional<T> value) {
       bool open = value.has_value();
@@ -601,6 +614,7 @@ class PipeReceiver {
   // Checks closed from the receivers perspective: that is, if there is a value
   // in the pipe but the pipe is closed, reports open until that value is read.
   auto AwaitClosed() {
+    CheckNotMovedFrom();
     return [center = center_]() -> Poll<bool> {
       if (center == nullptr) return false;
       return center->PollClosedForReceiver();
@@ -608,10 +622,12 @@ class PipeReceiver {
   }
 
   auto AwaitEmpty() {
+    CheckNotMovedFrom();
     return [center = center_]() { return center->PollEmpty(); };
   }
 
   void CloseWithError() {
+    CheckNotMovedFrom();
     if (center_ != nullptr) {
       center_->MarkCancelled();
       center_.reset();
@@ -624,6 +640,7 @@ class PipeReceiver {
   // Interjects at the Next end of the pipe.
   template <typename Fn>
   void InterceptAndMap(Fn f, DebugLocation from = {}) {
+    CheckNotMovedFrom();
     center_->AppendMap(std::move(f), from);
   }
 
@@ -631,6 +648,7 @@ class PipeReceiver {
   template <typename Fn, typename OnHalfClose>
   void InterceptAndMapWithHalfClose(Fn f, OnHalfClose cleanup_fn,
                                     DebugLocation from = {}) {
+    CheckNotMovedFrom();
     center_->AppendMapWithCleanup(std::move(f), std::move(cleanup_fn), from);
   }
 
@@ -642,6 +660,19 @@ class PipeReceiver {
   // Make failure to destruct show up in ASAN builds.
 #ifndef NDEBUG
   std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
+  bool moved_from_ = false;
+  void SetMovedFrom() { moved_from_ = true; }
+  void ClearMovedFrom() { moved_from_ = false; }
+  void CheckNotMovedFrom() { GPR_ASSERT(!moved_from_); }
+  void MoveMovedFrom(PipeReceiver<T>* other) {
+    moved_from_ = other->moved_from_;
+    other->moved_from_ = true;
+  }
+#else
+  void SetMovedFrom() {}
+  void ClearMovedFrom() {}
+  void CheckNotMovedFrom() {}
+  void MoveMovedFrom(PipeReceiver<T>*) {}
 #endif
 };
 
