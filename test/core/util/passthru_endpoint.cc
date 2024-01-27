@@ -102,8 +102,8 @@ struct SharedEndpointState : std::enable_shared_from_this<SharedEndpointState> {
       channel_effects->allowed_read_bytes = UINT64_MAX;
       channel_effects->allowed_write_bytes = UINT64_MAX;
     }
-    client_addr_ = MakeHalfEndpointResolverAddress("client", this);
-    server_addr_ = MakeHalfEndpointResolverAddress("server", this);
+    client_addr = MakeHalfEndpointResolverAddress("client", this);
+    server_addr = MakeHalfEndpointResolverAddress("server", this);
   }
 
   ~SharedEndpointState() {
@@ -122,8 +122,8 @@ struct SharedEndpointState : std::enable_shared_from_this<SharedEndpointState> {
   };
 
   EventEngine::ResolvedAddress& GetEndpointResolvedAddress(EndpointType type) {
-    if (type == EndpointType::client) return client_addr_;
-    return server_addr_;
+    if (type == EndpointType::client) return client_addr;
+    return server_addr;
   }
 
   grpc_core::Mutex mu;
@@ -135,9 +135,9 @@ struct SharedEndpointState : std::enable_shared_from_this<SharedEndpointState> {
   grpc_endpoint* server;
   // Easy accessors. Pointers are owned by the grpc_endpoints above
   HalfEndpoint* half_endpoint_client;
-  EventEngine::ResolvedAddress client_addr_;
+  EventEngine::ResolvedAddress client_addr;
   HalfEndpoint* half_endpoint_server;
-  EventEngine::ResolvedAddress server_addr_;
+  EventEngine::ResolvedAddress server_addr;
   std::shared_ptr<EventEngine> event_engine;
 };
 
