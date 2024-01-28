@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/detail/status.h"
@@ -413,4 +415,4 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
