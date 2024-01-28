@@ -2856,14 +2856,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                              std::move(metadata)),
                          [self](bool) { return Empty{}; });
             });
-        SpawnInfallible("monitor_cancellation", [self = Ref()]() {
-          return Seq(self->cancel_error_.Wait(),
-                     [self](ServerMetadataHandle trailing_metadata) {
-                       return Map(self->server_trailing_metadata_.sender.Push(
-                                      std::move(trailing_metadata)),
-                                  [](bool) { return Empty{}; });
-                     });
-        });
       }
 
       ~WrappingCallSpine() override {
@@ -4021,6 +4013,7 @@ StatusFlag ServerCallSpine::FinishRecvMessage(
               DebugTag().c_str(),
               (*recv_message_)->data.raw.slice_buffer.length);
     }
+    recv_message_ = nullptr;
     return Success{};
   }
   if (result.cancelled()) {
@@ -4031,6 +4024,7 @@ StatusFlag ServerCallSpine::FinishRecvMessage(
               DebugTag().c_str());
     }
     *recv_message_ = nullptr;
+    recv_message_ = nullptr;
     return Failure{};
   }
   if (grpc_call_trace.enabled()) {
@@ -4040,6 +4034,7 @@ StatusFlag ServerCallSpine::FinishRecvMessage(
             DebugTag().c_str());
   }
   *recv_message_ = nullptr;
+  recv_message_ = nullptr;
   return Success{};
 }
 
