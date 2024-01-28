@@ -276,6 +276,9 @@ void Party::AddParticipants(Participant** participants, size_t count) {
   bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
+      gpr_log(GPR_DEBUG,
+              "Party %p                 AddParticipant: %s @ %" PRIdPTR, &sync_,
+              std::string(participants[i]->name()).c_str(), slots[i]);
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }
   });

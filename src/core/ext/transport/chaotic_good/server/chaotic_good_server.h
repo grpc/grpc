@@ -71,7 +71,6 @@ class ChaoticGoodServerListener final
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
   void Orphan() override {
-    gpr_log(GPR_INFO, "ORPHAN");
     {
       absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
       MutexLock lock(&mu_);
@@ -79,7 +78,6 @@ class ChaoticGoodServerListener final
     }
     ee_listener_.reset();
     Unref();
-    gpr_log(GPR_INFO, "~ORPHAN");
   };
 
   class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
