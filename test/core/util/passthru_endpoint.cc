@@ -243,8 +243,9 @@ class HalfEndpoint : public EventEngine::Endpoint {
   // Custom Methods
 
   HalfEndpoint* GetOther() const {
-    if (shared_state_->half_endpoint_client == this)
+    if (shared_state_->half_endpoint_client == this) {
       return shared_state_->half_endpoint_server;
+    }
     return shared_state_->half_endpoint_client;
   }
 
