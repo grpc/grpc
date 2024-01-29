@@ -6789,6 +6789,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_spine",
+    srcs = [
+        "lib/transport/call_spine.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_spine.h",
+    ],
+    deps = [
+        "1999",
+        "for_each",
+        "if",
+        "latch",
+        "message",
+        "metadata",
+        "pipe",
+        "prioritized_race",
+        "promise_status",
+        "status_flag",
+        "try_seq",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "metadata_batch",
     srcs = [
         "lib/transport/metadata_batch.cc",
