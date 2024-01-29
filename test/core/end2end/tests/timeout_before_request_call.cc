@@ -144,6 +144,7 @@ CORE_END2END_TEST(CoreDeadlineSingleHopTest,
   bool got_call = false;
   std::unique_ptr<IncomingCloseOnServer> client_close;
   Expect(2, MaybePerformAction{[this, &s, &got_call, &client_close](bool ok) {
+           gpr_log(GPR_INFO, "\n***\n*** got call: %d\n***", ok);
            got_call = true;
            if (ok) {
              // If we successfully get a call, then we should additionally get a

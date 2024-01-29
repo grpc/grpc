@@ -1904,6 +1904,8 @@ let package = Package(
         "src/core/lib/transport/call_filters.h",
         "src/core/lib/transport/call_final_info.cc",
         "src/core/lib/transport/call_final_info.h",
+        "src/core/lib/transport/call_spine.cc",
+        "src/core/lib/transport/call_spine.h",
         "src/core/lib/transport/connectivity_state.cc",
         "src/core/lib/transport/connectivity_state.h",
         "src/core/lib/transport/custom_metadata.h",
