@@ -109,7 +109,8 @@ inline bool IsV3CompressionFilterEnabled() { return false; }
 inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -171,7 +172,8 @@ inline bool IsV3CompressionFilterEnabled() { return false; }
 inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -234,7 +236,8 @@ inline bool IsV3CompressionFilterEnabled() { return false; }
 inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
+inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
