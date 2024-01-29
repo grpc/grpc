@@ -198,13 +198,17 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   return xds_client;
 }
 
+// ABSL_NO_THREAD_SAFETY_ANALYSIS because we have to manually manage locks for
+// individual XdsClients and compiler struggles with checking the validity
 grpc_slice GrpcXdsClient::DumpAllClientConfigs()
     ABSL_NO_THREAD_SAFETY_ANALYSIS {
   auto xds_clients = GetAllXdsClients();
   upb::Arena arena;
-  // Following two containers should survive till serialization
+  // Contains strings that should survive till serialization
   std::set<std::string> string_pool;
   auto response = envoy_service_status_v3_ClientStatusResponse_new(arena.ptr());
+  // We lock each XdsClient mutex till we are done with the serialization to
+  // ensure that all data referenced from the UPB proto message stays alive.
   for (const auto& xds_client : xds_clients) {
     auto client_config =
         envoy_service_status_v3_ClientStatusResponse_add_config(response,
