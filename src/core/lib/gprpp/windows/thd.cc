@@ -17,7 +17,6 @@
 //
 
 // Windows implementation for gpr threads.
-
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
@@ -145,6 +144,16 @@ class ThreadInternalsWindows
 }  // namespace
 
 namespace grpc_core {
+
+void Thread::Signal(gpr_thd_id /* tid */, int /* sig */) {
+  // TODO(hork): Implement
+  gpr_log(GPR_DEBUG, "Thread signals are not supported on Windows.");
+}
+
+void Thread::Kill(gpr_thd_id /* tid */) {
+  // TODO(hork): Implement
+  gpr_log(GPR_DEBUG, "Thread::Kill is not supported on Windows.");
+}
 
 Thread::Thread(const char* /* thd_name */, void (*thd_body)(void* arg),
                void* arg, bool* success, const Options& options)

@@ -513,6 +513,7 @@ Duration ScheduleConnection(
       [event_engine, channel_args,
        connect_timeout_ms = network_input.connect_timeout_ms(),
        schedule = std::move(schedule), port]() mutable {
+        ExecCtx exec_ctx;
         event_engine->Connect(
             [event_engine, schedule = std::move(schedule)](
                 absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>

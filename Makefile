@@ -1710,6 +1710,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -1764,6 +1765,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
@@ -2258,6 +2260,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -2299,6 +2302,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
@@ -3274,7 +3278,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/crc/internal/crc.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc \
-    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
@@ -3284,7 +3288,6 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
-    third_party/abseil-cpp/absl/flags/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc \
     third_party/abseil-cpp/absl/flags/internal/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc \
@@ -3308,6 +3311,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/random/internal/seed_material.cc \
     third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
     third_party/abseil-cpp/absl/random/seed_sequences.cc \
+    third_party/abseil-cpp/absl/status/internal/status_internal.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -3325,7 +3329,6 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
-    third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \

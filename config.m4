@@ -838,6 +838,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -913,7 +914,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/crc/internal/crc.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc \
-    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
@@ -923,7 +924,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
-    third_party/abseil-cpp/absl/flags/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc \
     third_party/abseil-cpp/absl/flags/internal/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc \
@@ -947,6 +947,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/random/internal/seed_material.cc \
     third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
     third_party/abseil-cpp/absl/random/seed_sequences.cc \
+    third_party/abseil-cpp/absl/status/internal/status_internal.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -964,7 +965,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
-    third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \
@@ -1598,6 +1598,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal/str_format)

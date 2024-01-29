@@ -107,6 +107,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base_internal
   absl_bind_front
   absl_bits
+  absl_charset
   absl_city
   absl_civil_time
   absl_cleanup
@@ -151,6 +152,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
+  absl_has_ostream_operator
   absl_hash
   absl_hash_function_defaults
   absl_hash_policy_traits
@@ -165,8 +167,10 @@ set(gRPC_ABSL_USED_TARGETS
   absl_low_level_hash
   absl_malloc_internal
   absl_memory
+  absl_no_destructor
   absl_non_temporal_arm_intrinsics
   absl_non_temporal_memcpy
+  absl_nullability
   absl_numeric_representation
   absl_optional
   absl_prefetch
@@ -2524,6 +2528,7 @@ add_library(grpc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -2647,6 +2652,7 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
@@ -3238,6 +3244,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -3347,6 +3354,7 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
@@ -5324,6 +5332,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
@@ -5421,6 +5430,7 @@ foreach(_hdr
   include/grpc/compression.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h

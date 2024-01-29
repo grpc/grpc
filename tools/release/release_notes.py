@@ -88,33 +88,32 @@ HTML_URL = "https://github.com/grpc/grpc/pull/"
 API_URL = "https://api.github.com/repos/grpc/grpc/pulls/"
 
 
-def print_commits_wo_pr(commits_wo_pr):
+def get_commit_detail(commit):
     """Print commit and CL info for the commits that are submitted with CL-first workflow and warn the release manager to check manually."""
-    print("***WARNING***")
-    print(
-        "The following commits are submitted with the CL-first workflow and does not have a PR number available in its commit info!"
+    glg_command = [
+        "git",
+        "log",
+        "-n 1",
+        "%s" % commit,
+    ]
+    output = subprocess.check_output(glg_command).decode("utf-8", "ignore")
+    matches = re.search("Author:.*<(.*@).*>", output)
+    author = matches.group(1)
+    detail = "- " + author + " "
+    title = output.splitlines()[4].strip()
+    detail += "- " + title
+    if not title.endswith("."):
+        detail += "."
+    matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
+    cl_num = matches.group(1)
+    detail += (
+        " ([commit](https://github.com/grpc/grpc/commit/"
+        + commit
+        + ")) ([CL](https://critique.corp.google.com/cl/"
+        + cl_num
+        + "))"
     )
-    print(
-        "Release manager needs to use the following info to go to the CL and gets the PR info from the Copybara:copybara_presubmit info on the CL and manually verify if the PR has the `release notes: yes` label!"
-    )
-    print("\n")
-
-    for commit in commits_wo_pr:
-        glg_command = [
-            "git",
-            "log",
-            "-n 1",
-            "%s" % commit,
-        ]
-        output = subprocess.check_output(glg_command).decode("utf-8", "ignore")
-        matches = re.search("PiperOrigin-RevId: ([0-9]+)$", output)
-        print("Commit: https://github.com/grpc/grpc/commit/%s" % commit)
-        print(
-            "CL:     https://critique.corp.google.com/cl/%s" % matches.group(1)
-        )
-        print("\n")
-
-    print("***WARNING***")
+    return detail
 
 
 def get_commit_log(prevRelLabel, relBranch):
@@ -231,18 +230,26 @@ def get_pr_titles(gitLogs):
             )
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
-
-    # Warn the release manager to manually check the commits that do not have PR
-    # info in its commit message.
     commits_wo_pr = all_commits_set - merge_commits_set - sq_commits_set
-    if commits_wo_pr:
-        print_commits_wo_pr(commits_wo_pr)
+    for commit in commits_wo_pr:
+        langs_pr["nopr"].append(get_commit_detail(commit))
 
     return langs_pr, error_count
 
 
 def write_draft(langs_pr, file, version, date):
     file.write(content_header.format(version=version, date=date))
+    file.write(
+        "Commits with missing PR number - please lookup the PR info in the corresponding CL and add to the additional notes if necessary.\n"
+    )
+    file.write("---\n")
+    file.write("\n")
+    if langs_pr["nopr"]:
+        file.write("\n".join(langs_pr["nopr"]))
+    else:
+        file.write("- None")
+    file.write("\n")
+    file.write("\n")
     file.write("PRs with missing release notes label - please fix in Github\n")
     file.write("---\n")
     file.write("\n")
