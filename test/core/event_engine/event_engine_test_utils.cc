@@ -85,7 +85,7 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
               "Timeout waiting for single owner; exiting to try and trigger "
               "leak detection.");
       // Exit and trigger ASAN leak check.
-      _exit(1);
+      exit(1);
     }
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());

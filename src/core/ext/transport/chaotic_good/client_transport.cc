@@ -199,9 +199,12 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       reader_{MakeActivity(
           // Continuously read next incoming frames from promise endpoints.
           TransportReadLoop(), EventEngineWakeupScheduler(event_engine),
-          OnTransportActivityDone())} {}
+          OnTransportActivityDone())} {
+  gpr_log(GPR_INFO, "ChaoticGoodClientTransport() %p", this);
+}
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
+  gpr_log(GPR_INFO, "~ChaoticGoodClientTransport() %p", this);
   if (writer_ != nullptr) {
     writer_.reset();
   }
@@ -211,6 +214,7 @@ ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
 }
 
 void ChaoticGoodClientTransport::AbortWithError() {
+  gpr_log(GPR_INFO, "ChaoticGoodClientTransport::AbortWithError() %p", this);
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   outgoing_frames_.MarkClosed();
