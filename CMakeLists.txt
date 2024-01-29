@@ -15543,6 +15543,7 @@ add_executable(grpc_tls_crl_provider_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/grpc_tls_crl_provider_test.cc
+  test/core/tsi/transport_security_test_lib.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16562,6 +16563,15 @@ if(gRPC_BUILD_TESTS)
 add_executable(http2_settings_test
   test/core/transport/chttp2/http2_settings_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_settings_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(http2_settings_test PUBLIC cxx_std_14)
 target_include_directories(http2_settings_test
   PRIVATE
@@ -26982,6 +26992,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_utils_test
     test/core/tsi/ssl_transport_security_utils_test.cc
+    test/core/tsi/transport_security_test_lib.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
