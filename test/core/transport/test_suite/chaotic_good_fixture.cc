@@ -104,7 +104,8 @@ TRANSPORT_FIXTURE(ChaoticGood) {
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
           std::move(control_endpoints.client), std::move(data_endpoints.client),
-          event_engine, HPackParser(), HPackCompressor());
+          ChannelArgs().SetObject(resource_quota), event_engine, HPackParser(),
+          HPackCompressor());
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
           channel_args, std::move(control_endpoints.server),

@@ -87,7 +87,7 @@ absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
 auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
                                                    CallHandler call_handler) {
   auto& headers = frame.headers;
-  return TrySeq(
+  auto push = TrySeq(
       If(
           headers != nullptr,
           [call_handler, &headers]() mutable {
@@ -111,6 +111,9 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
             },
             []() -> StatusFlag { return Success{}; });
       });
+  // Wrap the actual sequence with something that owns the call handler so that
+  // its lifetime extends until the push completes.
+  return [call_handler, push = std::move(push)]() mutable { return push(); };
 }
 
 auto ChaoticGoodClientTransport::TransportReadLoop() {
