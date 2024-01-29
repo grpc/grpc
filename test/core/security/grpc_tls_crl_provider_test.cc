@@ -101,7 +101,11 @@ class CrlProviderTest : public ::testing::Test {
     auto intermediate_crl_issuer = IssuerFromCert(intermediate_issuer);
     ASSERT_EQ(intermediate_crl_issuer.status(), absl::OkStatus());
     intermediate_crl_issuer_ = *intermediate_crl_issuer;
+    X509_free(issuer);
+    X509_free(intermediate_issuer);
   }
+
+  void TearDown() override {}
 
  protected:
   std::string base_crl_issuer_;
