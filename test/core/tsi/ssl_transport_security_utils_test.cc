@@ -582,23 +582,23 @@ TEST(CrlUtils, VerifyIssuerNameNullCrlAndCert) {
   EXPECT_FALSE(VerifyCrlCertIssuerNamesMatch(crl, cert));
 }
 
-TEST(CrlUtils, VerifyCrlSignBitExists) {
+TEST(CrlUtils, HasCrlSignBitExists) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kCrlIssuer, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
   X509* issuer = ReadPemCert(issuer_slice->as_string_view());
-  EXPECT_TRUE(VerifyCrlSignBit(issuer));
+  EXPECT_TRUE(HasCrlSignBit(issuer));
 }
 
-TEST(CrlUtils, VerifyCrlSignBitMissing) {
+TEST(CrlUtils, HasCrlSignBitMissing) {
   absl::StatusOr<Slice> issuer_slice = LoadFile(kLeafCert, false);
   ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
   X509* issuer = ReadPemCert(issuer_slice->as_string_view());
-  EXPECT_FALSE(VerifyCrlSignBit(issuer));
+  EXPECT_FALSE(HasCrlSignBit(issuer));
 }
 
-TEST(CrlUtils, VerifyCrlSignBitNullCert) {
+TEST(CrlUtils, HasCrlSignBitNullCert) {
   X509* issuer = nullptr;
-  EXPECT_FALSE(VerifyCrlSignBit(issuer));
+  EXPECT_FALSE(HasCrlSignBit(issuer));
 }
 
 TEST(CrlUtils, IssuerFromIntermediateCert) {
@@ -622,11 +622,11 @@ TEST(CrlUtils, IssuerFromIntermediateCert) {
       X509_NAME_add_entry_by_txt(expected_issuer_name, "CN", MBSTRING_ASC,
                                  (const unsigned char*)"testca", -1, -1, 0));
   int len = i2d_X509_NAME(expected_issuer_name, &buf);
-  std::string expected_name(reinterpret_cast<char const*>(buf), len);
+  std::string expected_issuer_name_der(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   X509_NAME_free(expected_issuer_name);
   ASSERT_EQ(issuer.status(), absl::OkStatus());
-  EXPECT_EQ(*issuer, expected_name);
+  EXPECT_EQ(*issuer, expected_issuer_name_der);
 }
 
 TEST(CrlUtils, IssuerFromLeaf) {
@@ -641,11 +641,11 @@ TEST(CrlUtils, IssuerFromLeaf) {
       expected_issuer_name, "CN", MBSTRING_ASC,
       (const unsigned char*)"intermediatecert.example.com", -1, -1, 0));
   int len = i2d_X509_NAME(expected_issuer_name, &buf);
-  std::string expected_name(reinterpret_cast<char const*>(buf), len);
+  std::string expected_issuer_name_der(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   X509_NAME_free(expected_issuer_name);
   ASSERT_EQ(issuer.status(), absl::OkStatus());
-  EXPECT_EQ(*issuer, expected_name);
+  EXPECT_EQ(*issuer, expected_issuer_name_der);
 }
 
 TEST(CrlUtils, IssuerFromCertNull) {

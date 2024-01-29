@@ -282,11 +282,11 @@ bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
   return X509_NAME_cmp(cert_issuer_name, crl_issuer_name) == 0;
 }
 
-bool VerifyCrlSignBit(X509* issuer) {
-  if (issuer == nullptr) {
+bool HasCrlSignBit(X509* cert) {
+  if (cert == nullptr) {
     return false;
   }
-  return (X509_get_key_usage(issuer) & KU_CRL_SIGN) != 0;
+  return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
 }
 
 absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
