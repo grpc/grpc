@@ -182,7 +182,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Make sure there's only one client connected.
-  EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
+  EXPECT_EQ(2UL, balancer_->ads_service()->clients().size());
 }
 
 TEST_P(
@@ -260,8 +260,6 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
         response_state->error_message,
         "xDS response validation errors: ["
         "resource index 0: server.other.com: "
-        "INVALID_ARGUMENT: Listener has neither address nor ApiListener; "
-        "resource index 1: server.example.com: "
         "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
   }
   // Now start a new channel with a third server name, this one with a

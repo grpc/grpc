@@ -344,7 +344,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   // Fetches the client config
   auto csds_response = FetchCsdsResponse();
   gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
-  EXPECT_EQ(1, csds_response.config_size());
+  ASSERT_EQ(1, csds_response.config_size());
   const auto& client_config = csds_response.config(0);
   // Validate the Node information
   EXPECT_THAT(client_config.node(),
@@ -352,6 +352,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
                      ::testing::HasSubstr(grpc_version_string()),
                      ::testing::ElementsAre(
                          "envoy.lb.does_not_support_overprovisioning")));
+  EXPECT_EQ(client_config.client_scope(), "server.example.com");
   // Listener matcher depends on whether RDS is enabled.
   ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
   if (GetParam().enable_rds_testing()) {
