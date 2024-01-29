@@ -262,7 +262,7 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
     EVP_PKEY_free(ikey);
     return false;
   }
-  int ret = X509_CRL_verify(crl, ikey);
+  bool ret = X509_CRL_verify(crl, ikey) == 1;
   EVP_PKEY_free(ikey);
   return ret;
 }

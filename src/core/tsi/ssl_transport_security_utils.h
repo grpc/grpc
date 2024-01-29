@@ -153,7 +153,7 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer);
 bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert);
 
 // Verifies the certificate in question has the cRLSign bit present.
-// return: true if cRLSign bit is present, 0 otherwise.
+// return: true if cRLSign bit is present, false otherwise.
 bool HasCrlSignBit(X509* cert);
 
 // Gets a stable representation of the issuer name from an X509 certificate.
