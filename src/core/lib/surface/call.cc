@@ -3746,7 +3746,7 @@ class ServerCallSpine final : public CallSpineInterface,
   void Unref() override { InternalUnref("CallSpine"); }
 
   // PromiseBasedCall
-  void OrphanCall() override {}
+  void OrphanCall() override { ResetDeadline(); }
   void CancelWithError(grpc_error_handle error) override {
     SpawnInfallible("CancelWithError", [this, error = std::move(error)] {
       std::ignore = Cancel(ServerMetadataFromStatus(error));
