@@ -62,7 +62,6 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   // correctly handles GOAWAY frames. Internal Reference b/135458602. If this
   // test remains flaky even after this, an alternative fix would be to send a
   // request when the server is in the shut down state.
-  //
   test.Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
