@@ -1533,6 +1533,7 @@ grpc_cc_library(
         "//src/core:bitset",
         "//src/core:call_filters",
         "//src/core:call_final_info",
+        "//src/core:call_size_estimator",
         "//src/core:call_spine",
         "//src/core:cancel_callback",
         "//src/core:channel_args",

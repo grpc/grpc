@@ -71,8 +71,8 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
     : is_client_(is_client),
       is_promising_(is_promising),
       compression_options_(compression_options),
-      call_size_estimate_(channel_stack->call_stack_size +
-                          grpc_call_get_initial_size_estimate()),
+      call_size_estimator_(channel_stack->call_stack_size +
+                           grpc_call_get_initial_size_estimate()),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       allocator_(channel_args.GetObject<ResourceQuota>()
                      ->memory_quota()
@@ -228,24 +228,6 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
     return nullptr;
   }
   return CreateWithBuilder(&builder);
-}
-
-void Channel::UpdateCallSizeEstimate(size_t size) {
-  size_t cur = call_size_estimate_.load(std::memory_order_relaxed);
-  if (cur < size) {
-    // size grew: update estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, size, std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  } else if (cur == size) {
-    // no change: holding pattern
-  } else if (cur > 0) {
-    // size shrank: decrease estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, std::min(cur - 1, (255 * cur + size) / 256),
-        std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  }
 }
 
 }  // namespace grpc_core
