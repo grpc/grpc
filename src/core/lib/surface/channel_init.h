@@ -84,7 +84,7 @@ class ChannelInit {
     absl::Status (*init)(void* data, const ChannelArgs& args);
     void (*destroy)(void* data);
     void (*add_to_stack_builder)(void* data,
-                                 CallFilters::StackBuilder* builder);
+                                 CallFilters::StackBuilder& builder);
   };
 
   class FilterRegistration {
@@ -223,12 +223,22 @@ class ChannelInit {
   GRPC_MUST_USE_RESULT
   bool CreateStack(ChannelStackBuilder* builder) const;
 
+  // Create a new style channel stack.
+  // Return value is a function that can be used to build the call.
+  // Channel data is held privately by that function.
+  // Terminators and post processors are not included in this construction:
+  // terminators are a legacy filter-stack concept, and post processors
+  // need to migrate to other mechanisms.
+  absl::StatusOr<absl::AnyInvocable<void(CallFilters::StackBuilder&)>>
+  CreateStack(grpc_channel_stack_type type, const ChannelArgs& args) const;
+
  private:
   struct Filter {
     Filter(const grpc_channel_filter* filter, const ChannelFilterVtable* vtable,
            std::vector<InclusionPredicate> predicates,
            SourceLocation registration_source)
         : filter(filter),
+          vtable(vtable),
           predicates(std::move(predicates)),
           registration_source(registration_source) {}
     const grpc_channel_filter* filter;
@@ -273,8 +283,8 @@ const ChannelInit::ChannelFilterVtable
           return absl::OkStatus();
         },
         [](void* data) { static_cast<T*>(data)->~T(); },
-        [](void* data, CallFilters::StackBuilder* builder) {
-          builder->Add(static_cast<T*>(data));
+        [](void* data, CallFilters::StackBuilder& builder) {
+          builder.Add(static_cast<T*>(data));
         }};
 
 }  // namespace grpc_core

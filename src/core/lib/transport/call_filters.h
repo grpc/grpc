@@ -770,6 +770,11 @@ struct AddOpImpl<
   }
 };
 
+struct ChannelDataDestructor {
+  void (*destroy)(void* channel_data);
+  void* channel_data;
+};
+
 // StackData contains the main datastructures built up by this module.
 // It's a complete representation of all the code that needs to be invoked
 // to execute a call for a given set of filters.
@@ -795,6 +800,9 @@ struct StackData {
   // We use a bespoke data structure here because finalizers can never be
   // asynchronous.
   std::vector<Finalizer> finalizers;
+  // A list of functions to call when this stack data is destroyed
+  // (to capture ownership of channel data)
+  std::vector<ChannelDataDestructor> channel_data_destructors;
 
   // Add one filter to the list of filters, and update alignment.
   // Returns the offset of the call data for this filter.
@@ -1143,6 +1151,9 @@ class CallFilters {
   // It contains pointers to the individual filters, yet it does not own those
   // pointers: it's expected that some other object will track that ownership.
   class Stack : public RefCounted<Stack> {
+   public:
+    ~Stack();
+
    private:
     friend class CallFilters;
     friend class StackBuilder;
@@ -1154,6 +1165,8 @@ class CallFilters {
   // the stack, then call Build() to generate a ref counted Stack object.
   class StackBuilder {
    public:
+    ~StackBuilder();
+
     template <typename FilterType>
     void Add(FilterType* filter) {
       const size_t call_offset = data_.AddFilter<FilterType>(filter);
@@ -1163,6 +1176,15 @@ class CallFilters {
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
+    }
+
+    void AddOwnedObject(void (*destroy)(void* p), void* p) {
+      data_.channel_data_destructors.push_back({destroy, p});
+    }
+
+    template <typename T>
+    void AddOwnedObject(RefCountedPtr<T> p) {
+      AddOwnedObject([](void* p) { static_cast<T*>(p)->Unref(); }, p.release());
     }
 
     RefCountedPtr<Stack> Build();
