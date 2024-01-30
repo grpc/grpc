@@ -57,7 +57,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
 
 typedef struct grpc_call_create_args {
-  grpc_core::RefCountedPtr<grpc_core::Channel> channel;
+  grpc_core::RefCountedPtr<grpc_core::GrpcChannel> channel;
   grpc_core::Server* server;
 
   grpc_call* parent;
@@ -160,7 +160,7 @@ template <>
 struct ContextType<CallContext> {};
 
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel,
+                                                 GrpcChannel* channel,
                                                  Arena* arena);
 
 }  // namespace grpc_core

@@ -103,15 +103,28 @@ struct CallRegistrationTable {
       ABSL_GUARDED_BY(mu);
 };
 
-class Channel : public RefCounted<Channel>,
-                public CppImplOf<Channel, grpc_channel> {
+class Channel : public RefCounted<Channel> {
  public:
-  static absl::StatusOr<RefCountedPtr<Channel>> Create(
+  Arena* CreateArena();
+  void DestroyArena(Arena* arena);
+
+ protected:
+  explicit Channel(const ChannelArgs& args);
+
+ private:
+  CallSizeEstimator call_size_estimator_;
+  MemoryAllocator allocator_;
+};
+
+class GrpcChannel : public Channel,
+                    public CppImplOf<GrpcChannel, grpc_channel> {
+ public:
+  static absl::StatusOr<RefCountedPtr<GrpcChannel>> Create(
       const char* target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type,
       Transport* optional_transport);
 
-  static absl::StatusOr<RefCountedPtr<Channel>> CreateWithBuilder(
+  static absl::StatusOr<RefCountedPtr<GrpcChannel>> CreateWithBuilder(
       ChannelStackBuilder* builder);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
@@ -121,9 +134,6 @@ class Channel : public RefCounted<Channel>,
   }
 
   channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
-
-  Arena* CreateArena();
-  void DestroyArena(Arena* arena);
 
   absl::string_view target() const { return target_; }
   bool is_client() const { return is_client_; }
@@ -140,18 +150,16 @@ class Channel : public RefCounted<Channel>,
   }
 
  private:
-  Channel(bool is_client, bool is_promising, std::string target,
-          const ChannelArgs& channel_args,
-          grpc_compression_options compression_options,
-          RefCountedPtr<grpc_channel_stack> channel_stack);
+  GrpcChannel(bool is_client, bool is_promising, std::string target,
+              const ChannelArgs& channel_args,
+              grpc_compression_options compression_options,
+              RefCountedPtr<grpc_channel_stack> channel_stack);
 
   const bool is_client_;
   const bool is_promising_;
   const grpc_compression_options compression_options_;
-  CallSizeEstimator call_size_estimator_;
   CallRegistrationTable registration_table_;
   RefCountedPtr<channelz::ChannelNode> channelz_node_;
-  MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
 };
@@ -160,26 +168,26 @@ class Channel : public RefCounted<Channel>,
 
 inline grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel) {
-  return grpc_core::Channel::FromC(channel)->compression_options();
+  return grpc_core::GrpcChannel::FromC(channel)->compression_options();
 }
 
 inline grpc_channel_stack* grpc_channel_get_channel_stack(
     grpc_channel* channel) {
-  return grpc_core::Channel::FromC(channel)->channel_stack();
+  return grpc_core::GrpcChannel::FromC(channel)->channel_stack();
 }
 
 inline grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel) {
-  return grpc_core::Channel::FromC(channel)->channelz_node();
+  return grpc_core::GrpcChannel::FromC(channel)->channelz_node();
 }
 
 inline void grpc_channel_internal_ref(grpc_channel* channel,
                                       const char* reason) {
-  grpc_core::Channel::FromC(channel)->Ref(DEBUG_LOCATION, reason).release();
+  grpc_core::GrpcChannel::FromC(channel)->Ref(DEBUG_LOCATION, reason).release();
 }
 inline void grpc_channel_internal_unref(grpc_channel* channel,
                                         const char* reason) {
-  grpc_core::Channel::FromC(channel)->Unref(DEBUG_LOCATION, reason);
+  grpc_core::GrpcChannel::FromC(channel)->Unref(DEBUG_LOCATION, reason);
 }
 
 // Return the channel's compression options.
