@@ -94,8 +94,8 @@ namespace {
 Mutex* g_mu = new Mutex;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 // Key bytes live in clients so they outlive the entries in this map
-std::map<absl::string_view, WeakRefCountedPtr<GrpcXdsClient>, std::less<>>*
-    g_xds_client_map ABSL_GUARDED_BY(*g_mu) = nullptr;
+NoDestruct<std::map<absl::string_view, GrpcXdsClient*, std::less<>>>
+    g_xds_client_map ABSL_GUARDED_BY(*g_mu);
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
@@ -146,13 +146,11 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
 std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
   MutexLock lock(g_mu);
   std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
-  if (g_xds_client_map != nullptr) {
-    for (const auto& key_client : *g_xds_client_map) {
-      auto xds_client = key_client.second->RefIfNonZero(DEBUG_LOCATION,
-                                                        "DumpAllClientConfigs");
-      if (xds_client != nullptr) {
-        xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
-      }
+  for (const auto& key_client : *g_xds_client_map) {
+    auto xds_client =
+        key_client.second->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
+    if (xds_client != nullptr) {
+      xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
     }
   }
   return xds_clients;
@@ -178,11 +176,6 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   }
   // Otherwise, use the global instance.
   MutexLock lock(g_mu);
-  if (g_xds_client_map == nullptr) {
-    g_xds_client_map =
-        new std::map<absl::string_view, WeakRefCountedPtr<GrpcXdsClient>,
-                     std::less<>>;
-  }
   auto it = g_xds_client_map->find(key);
   if (it != g_xds_client_map->end()) {
     auto xds_client = it->second->RefIfNonZero(DEBUG_LOCATION, reason);
@@ -205,8 +198,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
       std::string(key), std::move(*bootstrap), channel_args,
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
-  g_xds_client_map->emplace(xds_client->key(),
-                            xds_client->WeakRefAsSubclass<GrpcXdsClient>());
+  g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "xDS client for key: %s was created",
             std::string(key).c_str());
@@ -245,7 +237,7 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
 }
 
 GrpcXdsClient::GrpcXdsClient(
-    const std::string& key, std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+    absl::string_view key, std::unique_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
     OrphanablePtr<XdsTransportFactory> transport_factory)
     : XdsClient(
@@ -267,11 +259,9 @@ GrpcXdsClient::GrpcXdsClient(
 
 void GrpcXdsClient::Orphan() {
   MutexLock lock(g_mu);
-  if (g_xds_client_map != nullptr && g_xds_client_map->size() > 1) {
+  auto it = g_xds_client_map->find(key_);
+  if (it != g_xds_client_map->end() && it->second == this) {
     g_xds_client_map->erase(g_xds_client_map->find(key_));
-  } else {
-    delete g_xds_client_map;
-    g_xds_client_map = nullptr;
   }
 }
 
@@ -288,9 +278,7 @@ void SetXdsChannelArgsForTest(grpc_channel_args* args) {
 }
 
 void UnsetGlobalXdsClientsForTest() {
-  MutexLock lock(g_mu);
-  delete g_xds_client_map;
-  g_xds_client_map = nullptr;
+  // TODO(eostroukhov): Remove before submit
 }
 
 void SetXdsFallbackBootstrapConfig(const char* config) {

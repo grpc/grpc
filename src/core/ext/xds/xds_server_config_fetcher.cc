@@ -94,7 +94,7 @@ namespace {
 
 using ReadDelayHandle = XdsClient::ReadDelayHandle;
 
-constexpr absl::string_view kServerXdsClientKey = "server";
+constexpr absl::string_view kServerXdsClientKey = "#server";
 
 TraceFlag grpc_xds_server_config_fetcher_trace(false,
                                                "xds_server_config_fetcher");

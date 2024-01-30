@@ -881,7 +881,7 @@ void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
 
 void XdsResolver::StartLocked() {
   auto xds_client =
-      GrpcXdsClient::GetOrCreate(data_plane_authority_, args_, "xds resolver");
+      GrpcXdsClient::GetOrCreate(uri_.ToString(), args_, "xds resolver");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "

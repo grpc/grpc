@@ -352,7 +352,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
                      ::testing::HasSubstr(grpc_version_string()),
                      ::testing::ElementsAre(
                          "envoy.lb.does_not_support_overprovisioning")));
-  EXPECT_EQ(client_config.client_scope(), "server.example.com");
+  EXPECT_EQ(client_config.client_scope(), "xds:/server.example.com");
   // Listener matcher depends on whether RDS is enabled.
   ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
   if (GetParam().enable_rds_testing()) {
