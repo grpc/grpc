@@ -32,13 +32,13 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
@@ -106,7 +106,12 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           if (is_last) {
             *parser->target_settings = *parser->incoming_settings;
             t->num_pending_induced_frames++;
-            grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
+            if (grpc_core::IsChttp2NewWritesEnabled()) {
+              t->qframes.emplace_back(grpc_core::Http2SettingsFrame{true, {}});
+            } else {
+              grpc_slice_buffer_add(t->qbuf.c_slice_buffer(),
+                                    grpc_chttp2_settings_ack_create());
+            }
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
             if (t->notify_on_receive_settings != nullptr) {
@@ -177,9 +182,16 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         auto error =
             parser->incoming_settings->Apply(parser->id, parser->value);
         if (error != GRPC_HTTP2_NO_ERROR) {
-          grpc_chttp2_goaway_append(
-              t->last_new_stream_id, error,
-              grpc_slice_from_static_string("HTTP2 settings error"), &t->qbuf);
+          if (grpc_core::IsChttp2NewWritesEnabled()) {
+            t->qframes.emplace_back(grpc_core::Http2GoawayFrame{
+                t->last_new_stream_id, static_cast<uint32_t>(error),
+                grpc_core::Slice::FromStaticString("HTTP2 settings error")});
+          } else {
+            grpc_chttp2_goaway_append(
+                t->last_new_stream_id, error,
+                grpc_slice_from_static_string("HTTP2 settings error"),
+                t->qbuf.c_slice_buffer());
+          }
           return GRPC_ERROR_CREATE(absl::StrFormat(
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));

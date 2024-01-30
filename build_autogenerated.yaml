@@ -9317,6 +9317,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/http2_errors.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/message/accessors.h
@@ -9370,6 +9371,7 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_final_info.cc
   - test/core/transport/chttp2/flow_control_test.cc
   - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -9621,6 +9623,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/http2_errors.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -9629,6 +9632,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/transport/call_final_info.cc
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest

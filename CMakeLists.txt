@@ -14011,6 +14011,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_final_info.cc
   test/core/transport/chttp2/flow_control_test.cc
   third_party/upb/upb/message/accessors.c
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -14349,6 +14350,7 @@ add_executable(frame_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/transport/call_final_info.cc
   test/core/transport/chttp2/frame_test.cc
 )
 if(WIN32 AND MSVC)

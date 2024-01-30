@@ -91,6 +91,23 @@ TYPED_TEST(BitSetTest, Count) {
   }
 }
 
+TYPED_TEST(BitSetTest, ClearAll) {
+  // Create a bitset, set some random bit
+  constexpr size_t kBits = TypeParam::kBits;
+  BitSet<kBits> b;
+  std::set<size_t> bits_set;
+  std::random_device rd;
+  std::uniform_int_distribution<size_t> dist(0, kBits - 1);
+  size_t bit = dist(rd);
+  b.set(bit);
+  // Assert some bits are set
+  EXPECT_FALSE(b.none());
+  // Clear all bits
+  b.ClearAll();
+  // Assert no bits are set
+  EXPECT_TRUE(b.none());
+}
+
 TEST(ToIntTest, ToInt) {
   auto make_bitset = [](bool b0, bool b1, bool b2) {
     BitSet<3> b;

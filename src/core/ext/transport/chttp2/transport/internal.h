@@ -43,6 +43,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
@@ -337,7 +338,8 @@ struct grpc_chttp2_transport final
   grpc_core::HPackCompressor hpack_compressor;
 
   /// data to write next write
-  grpc_slice_buffer qbuf;
+  grpc_core::SliceBuffer qbuf;
+  std::vector<grpc_core::Http2Frame> qframes;
 
   size_t max_requests_per_read;
 

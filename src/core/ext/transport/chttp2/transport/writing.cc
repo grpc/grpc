@@ -39,6 +39,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
@@ -112,80 +113,6 @@ static grpc_core::Duration NextAllowedPingInterval(grpc_chttp2_transport* t) {
   return grpc_core::Duration::Zero();
 }
 
-static void maybe_initiate_ping(grpc_chttp2_transport* t) {
-  if (!t->ping_callbacks.ping_requested()) {
-    // no ping needed: wait
-    return;
-  }
-  // InvalidateNow to avoid getting stuck re-initializing the ping timer
-  // in a loop while draining the currently-held combiner. Also see
-  // https://github.com/grpc/grpc/issues/26079.
-  grpc_core::ExecCtx::Get()->InvalidateNow();
-  Match(
-      t->ping_rate_policy.RequestSendPing(NextAllowedPingInterval(t),
-                                          t->ping_callbacks.pings_inflight()),
-      [t](grpc_core::Chttp2PingRatePolicy::SendGranted) {
-        t->ping_rate_policy.SentPing();
-        const uint64_t id = t->ping_callbacks.StartPing(t->bitgen);
-        grpc_slice_buffer_add(t->outbuf.c_slice_buffer(),
-                              grpc_chttp2_ping_create(false, id));
-        t->keepalive_incoming_data_wanted = true;
-        if (t->channelz_socket != nullptr) {
-          t->channelz_socket->RecordKeepaliveSent();
-        }
-        grpc_core::global_stats().IncrementHttp2PingsSent();
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-          gpr_log(GPR_INFO, "%s[%p]: Ping %" PRIx64 " sent [%s]: %s",
-                  t->is_client ? "CLIENT" : "SERVER", t, id,
-                  std::string(t->peer_string.as_string_view()).c_str(),
-                  t->ping_rate_policy.GetDebugString().c_str());
-        }
-      },
-      [t](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
-        // need to receive something of substance before sending a ping again
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-          gpr_log(GPR_INFO,
-                  "%s[%p]: Ping delayed [%s]: too many recent pings: %s",
-                  t->is_client ? "CLIENT" : "SERVER", t,
-                  std::string(t->peer_string.as_string_view()).c_str(),
-                  t->ping_rate_policy.GetDebugString().c_str());
-        }
-      },
-      [t](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) {
-        // not enough elapsed time between successive pings
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-          gpr_log(
-              GPR_INFO,
-              "%s[%p]: Ping delayed [%s]: not enough time elapsed since last "
-              "ping. Last ping:%s, minimum wait:%s need to wait:%s",
-              t->is_client ? "CLIENT" : "SERVER", t,
-              std::string(t->peer_string.as_string_view()).c_str(),
-              too_soon.last_ping.ToString().c_str(),
-              too_soon.next_allowed_ping_interval.ToString().c_str(),
-              too_soon.wait.ToString().c_str());
-        }
-        if (t->delayed_ping_timer_handle ==
-            grpc_event_engine::experimental::EventEngine::TaskHandle::
-                kInvalid) {
-          t->delayed_ping_timer_handle = t->event_engine->RunAfter(
-              too_soon.wait, [t = t->Ref()]() mutable {
-                grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-                grpc_core::ExecCtx exec_ctx;
-                grpc_chttp2_retry_initiate_ping(std::move(t));
-              });
-        }
-      });
-}
-
 static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                         int64_t send_bytes, grpc_chttp2_write_cb** list,
                         int64_t* ctr, grpc_error_handle error) {
@@ -228,13 +155,14 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   }
 }
 
+namespace grpc_core {
 namespace {
 
 class CountDefaultMetadataEncoder {
  public:
   size_t count() const { return count_; }
 
-  void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
+  void Encode(const Slice&, const Slice&) {}
 
   template <typename Which>
   void Encode(Which, const typename Which::ValueType&) {
@@ -245,21 +173,17 @@ class CountDefaultMetadataEncoder {
   size_t count_ = 0;
 };
 
-}  // namespace
-
 // Returns true if initial_metadata contains only default headers.
-static bool is_default_initial_metadata(grpc_metadata_batch* initial_metadata) {
+bool IsDefaultInitialMetadata(grpc_metadata_batch* initial_metadata) {
   CountDefaultMetadataEncoder enc;
   initial_metadata->Encode(&enc);
   return enc.count() == initial_metadata->count();
 }
 
-namespace {
-
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    grpc_core::global_stats().IncrementHttp2WritesBegun();
+    global_stats().IncrementHttp2WritesBegun();
   }
 
   void FlushSettings() {
@@ -267,9 +191,13 @@ class WriteContext {
         t_->max_concurrent_streams_policy.AdvertiseValue());
     auto update = t_->settings.MaybeSendUpdate();
     if (update.has_value()) {
-      grpc_core::Http2Frame frame(std::move(*update));
-      Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
-      if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
+      if (IsChttp2NewWritesEnabled()) {
+        AddFrame(std::move(*update));
+      } else {
+        Http2Frame frame(std::move(*update));
+        Serialize(absl::Span<Http2Frame>(&frame, 1), t_->outbuf);
+      }
+      if (t_->keepalive_timeout != Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
@@ -277,32 +205,47 @@ class WriteContext {
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
             t_->settings_timeout, [t = t_->Ref()]() mutable {
-              grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-              grpc_core::ExecCtx exec_ctx;
+              ApplicationCallbackExecCtx callback_exec_ctx;
+              ExecCtx exec_ctx;
               grpc_chttp2_settings_timeout(std::move(t));
             });
       }
       t_->flow_control.FlushedSettings();
       t_->max_concurrent_streams_policy.FlushedSettings();
-      grpc_core::global_stats().IncrementHttp2SettingsWrites();
+      global_stats().IncrementHttp2SettingsWrites();
     }
   }
 
   void FlushQueuedBuffers() {
     // simple writes are queued to qbuf, and flushed here
-    grpc_slice_buffer_move_into(&t_->qbuf, t_->outbuf.c_slice_buffer());
+    if (IsChttp2NewWritesEnabled()) {
+      GPR_ASSERT(t_->qbuf.Count() == 0);
+      frames_.reserve(frames_.size() + t_->qframes.size());
+      for (auto& frame : t_->qframes) {
+        frames_.emplace_back(std::move(frame));
+      }
+      t_->qframes.clear();
+    } else {
+      GPR_ASSERT(t_->qframes.empty());
+      grpc_slice_buffer_move_into(t_->qbuf.c_slice_buffer(),
+                                  t_->outbuf.c_slice_buffer());
+      GPR_ASSERT(t_->qbuf.Count() == 0);
+    }
     t_->num_pending_induced_frames = 0;
-    GPR_ASSERT(t_->qbuf.count == 0);
   }
 
   void FlushWindowUpdates() {
     uint32_t transport_announce = t_->flow_control.MaybeSendUpdate(
-        t_->outbuf.c_slice_buffer()->count > 0);
+        t_->outbuf.c_slice_buffer()->count > 0 || !frames_.empty());
     if (transport_announce) {
       grpc_transport_one_way_stats throwaway_stats;
-      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
-                            grpc_chttp2_window_update_create(
-                                0, transport_announce, &throwaway_stats));
+      if (IsChttp2NewWritesEnabled()) {
+        AddFrame(Http2WindowUpdateFrame{0, transport_announce});
+      } else {
+        grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
+                              grpc_chttp2_window_update_create(
+                                  0, transport_announce, &throwaway_stats));
+      }
       grpc_chttp2_reset_ping_clock(t_);
     }
   }
@@ -312,11 +255,96 @@ class WriteContext {
     // Limit the size of writes if we include ping acks - to avoid the ack being
     // delayed by crypto operations.
     target_write_size_ = 0;
-    for (size_t i = 0; i < t_->ping_ack_count; i++) {
-      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
-                            grpc_chttp2_ping_create(true, t_->ping_acks[i]));
+    if (IsChttp2NewWritesEnabled()) {
+      frames_.reserve(frames_.size() + t_->ping_ack_count);
+      for (size_t i = 0; i < t_->ping_ack_count; i++) {
+        AddFrame(Http2PingFrame{true, t_->ping_acks[i]});
+      }
+    } else {
+      for (size_t i = 0; i < t_->ping_ack_count; i++) {
+        grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
+                              grpc_chttp2_ping_create(true, t_->ping_acks[i]));
+      }
     }
     t_->ping_ack_count = 0;
+  }
+
+  void MaybeInitiatePing() {
+    if (!t_->ping_callbacks.ping_requested()) {
+      // no ping needed: wait
+      return;
+    }
+    // InvalidateNow to avoid getting stuck re-initializing the ping timer
+    // in a loop while draining the currently-held combiner. Also see
+    // https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
+    Match(
+        t_->ping_rate_policy.RequestSendPing(
+            NextAllowedPingInterval(t_), t_->ping_callbacks.pings_inflight()),
+        [this](Chttp2PingRatePolicy::SendGranted) {
+          t_->ping_rate_policy.SentPing();
+          const uint64_t id = t_->ping_callbacks.StartPing(t_->bitgen);
+          if (IsChttp2NewWritesEnabled()) {
+            AddFrame(Http2PingFrame{false, id});
+          } else {
+            grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
+                                  grpc_chttp2_ping_create(false, id));
+          }
+          t_->keepalive_incoming_data_wanted = true;
+          if (t_->channelz_socket != nullptr) {
+            t_->channelz_socket->RecordKeepaliveSent();
+          }
+          global_stats().IncrementHttp2PingsSent();
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+            gpr_log(GPR_INFO, "%s[%p]: Ping %" PRIx64 " sent [%s]: %s",
+                    t_->is_client ? "CLIENT" : "SERVER", t_, id,
+                    std::string(t_->peer_string.as_string_view()).c_str(),
+                    t_->ping_rate_policy.GetDebugString().c_str());
+          }
+        },
+        [this](Chttp2PingRatePolicy::TooManyRecentPings) {
+          // need to receive something of substance before sending a ping again
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+            gpr_log(GPR_INFO,
+                    "%s[%p]: Ping delayed [%s]: too many recent pings: %s",
+                    t_->is_client ? "CLIENT" : "SERVER", t_,
+                    std::string(t_->peer_string.as_string_view()).c_str(),
+                    t_->ping_rate_policy.GetDebugString().c_str());
+          }
+        },
+        [this](Chttp2PingRatePolicy::TooSoon too_soon) {
+          // not enough elapsed time between successive pings
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace) ||
+              GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
+            gpr_log(
+                GPR_INFO,
+                "%s[%p]: Ping delayed [%s]: not enough time elapsed since last "
+                "ping. Last ping:%s, minimum wait:%s need to wait:%s",
+                t_->is_client ? "CLIENT" : "SERVER", t_,
+                std::string(t_->peer_string.as_string_view()).c_str(),
+                too_soon.last_ping.ToString().c_str(),
+                too_soon.next_allowed_ping_interval.ToString().c_str(),
+                too_soon.wait.ToString().c_str());
+          }
+          if (t_->delayed_ping_timer_handle ==
+              grpc_event_engine::experimental::EventEngine::TaskHandle::
+                  kInvalid) {
+            t_->delayed_ping_timer_handle = t_->event_engine->RunAfter(
+                too_soon.wait, [t = t_->Ref()]() mutable {
+                  ApplicationCallbackExecCtx callback_exec_ctx;
+                  ExecCtx exec_ctx;
+                  grpc_chttp2_retry_initiate_ping(std::move(t));
+                });
+          }
+        });
   }
 
   void EnactHpackSettings() {
@@ -337,9 +365,16 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
-      result_.partial = true;
-      return nullptr;
+    if (IsChttp2NewWritesEnabled()) {
+      if (data_write_bytes_ >= target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
+    } else {
+      if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
     }
 
     grpc_chttp2_stream* s;
@@ -360,15 +395,27 @@ class WriteContext {
   grpc_chttp2_transport* transport() const { return t_; }
 
   grpc_chttp2_begin_write_result Result() {
+    if (IsChttp2NewWritesEnabled()) {
+      Serialize(absl::Span<Http2Frame>(frames_), t_->outbuf);
+    } else {
+      GPR_ASSERT(frames_.empty());
+    }
     result_.writing = t_->outbuf.c_slice_buffer()->count > 0;
     return result_;
   }
 
   size_t target_write_size() const { return target_write_size_; }
 
+  void AddFrame(Http2Frame&& frame) {
+    GPR_ASSERT(IsChttp2NewWritesEnabled());
+    frames_.emplace_back(std::move(frame));
+  }
+
+  std::vector<Http2Frame>& mutable_frames() { return frames_; }
+
  private:
   grpc_chttp2_transport* const t_;
-  size_t target_write_size_ = grpc_core::IsWriteSizePolicyEnabled()
+  size_t target_write_size_ = IsWriteSizePolicyEnabled()
                                   ? t_->write_size_policy.WriteTargetSize()
                                   : 1024 * 1024;
 
@@ -378,7 +425,9 @@ class WriteContext {
   int initial_metadata_writes_ = 0;
   int trailing_metadata_writes_ = 0;
   int message_writes_ = 0;
+  size_t data_write_bytes_ = 0;
   grpc_chttp2_begin_write_result result_ = {false, false, false};
+  std::vector<Http2Frame> frames_;
 };
 
 class DataSendContext {
@@ -398,11 +447,11 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    return grpc_core::Clamp<uint32_t>(
+    return Clamp<uint32_t>(
         std::min<int64_t>(
             {t_->settings.peer().max_frame_size(), stream_remote_window(),
              t_->flow_control.remote_window(),
-             grpc_core::IsWriteSizeCapEnabled()
+             IsWriteSizeCapEnabled()
                  ? static_cast<int64_t>(write_context_->target_write_size())
                  : std::numeric_limits<uint32_t>::max()}),
         0, std::numeric_limits<uint32_t>::max());
@@ -414,12 +463,22 @@ class DataSendContext {
     uint32_t send_bytes =
         static_cast<uint32_t>(std::min(static_cast<size_t>(max_outgoing()),
                                        s_->flow_controlled_buffer.length));
+    GPR_ASSERT(!is_last_frame_);
     is_last_frame_ = send_bytes == s_->flow_controlled_buffer.length &&
                      s_->send_trailing_metadata != nullptr &&
                      s_->send_trailing_metadata->empty();
-    grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
-                            is_last_frame_, &s_->stats.outgoing,
-                            t_->outbuf.c_slice_buffer());
+    if (IsChttp2NewWritesEnabled()) {
+      Http2DataFrame frame{s_->id, is_last_frame_, SliceBuffer{}};
+      grpc_slice_buffer_move_first_no_ref(&s_->flow_controlled_buffer,
+                                          send_bytes,
+                                          frame.payload.c_slice_buffer());
+      write_context_->AddFrame(std::move(frame));
+      s_->stats.outgoing.framing_bytes += 9;
+    } else {
+      grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, send_bytes,
+                              is_last_frame_, &s_->stats.outgoing,
+                              t_->outbuf.c_slice_buffer());
+    }
     sfc_upd_.SentData(send_bytes);
     s_->sending_bytes += send_bytes;
   }
@@ -440,8 +499,7 @@ class DataSendContext {
   WriteContext* write_context_;
   grpc_chttp2_transport* t_;
   grpc_chttp2_stream* s_;
-  grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{
-      &s_->flow_control};
+  chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd_{&s_->flow_control};
   const size_t sending_bytes_before_;
   bool is_last_frame_ = false;
 };
@@ -449,7 +507,10 @@ class DataSendContext {
 class StreamWriteContext {
  public:
   StreamWriteContext(WriteContext* write_context, grpc_chttp2_stream* s)
-      : write_context_(write_context), t_(write_context->transport()), s_(s) {
+      : write_context_(write_context),
+        t_(write_context->transport()),
+        s_(s),
+        output_frames_before_(write_context->mutable_frames().size()) {
     GRPC_CHTTP2_IF_TRACING(
         gpr_log(GPR_INFO, "W:%p %s[%d] im-(sent,send)=(%d,%d)", t_,
                 t_->is_client ? "CLIENT" : "SERVER", s->id,
@@ -468,19 +529,26 @@ class StreamWriteContext {
     // https://github.com/grpc/proposal/blob/master/A6-client-retries.md#when-retries-are-valid
     if (!t_->is_client && s_->flow_controlled_buffer.length == 0 &&
         s_->send_trailing_metadata != nullptr &&
-        is_default_initial_metadata(s_->send_initial_metadata)) {
+        IsDefaultInitialMetadata(s_->send_initial_metadata)) {
       ConvertInitialMetadataToTrailingMetadata();
     } else {
-      t_->hpack_compressor.EncodeHeaders(
-          grpc_core::HPackCompressor::EncodeHeaderOptions{
-              s_->id,  // stream_id
-              false,   // is_eof
-              t_->settings.peer()
-                  .allow_true_binary_metadata(),     // use_true_binary_metadata
-              t_->settings.peer().max_frame_size(),  // max_frame_size
-              &s_->stats.outgoing                    // stats
-          },
-          *s_->send_initial_metadata, t_->outbuf.c_slice_buffer());
+      HPackCompressor::EncodeHeaderOptions encode_options{
+          s_->id,  // stream_id
+          false,   // is_eof
+          t_->settings.peer()
+              .allow_true_binary_metadata(),     // use_true_binary_metadata
+          t_->settings.peer().max_frame_size(),  // max_frame_size
+          &s_->stats.outgoing                    // stats
+      };
+      if (IsChttp2NewWritesEnabled()) {
+        t_->hpack_compressor.EncodeHeaders(encode_options,
+                                           *s_->send_initial_metadata,
+                                           write_context_->mutable_frames());
+      } else {
+        t_->hpack_compressor.EncodeHeaders(encode_options,
+                                           *s_->send_initial_metadata,
+                                           t_->outbuf.c_slice_buffer());
+      }
       grpc_chttp2_reset_ping_clock(t_);
       write_context_->IncInitialMetadataWrites();
     }
@@ -492,23 +560,25 @@ class StreamWriteContext {
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kHeadWritten,
-          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
-          s_->flow_control.stats()));
+      s_->call_tracer->RecordAnnotation(HttpAnnotation(
+          HttpAnnotation::Type::kHeadWritten, gpr_now(GPR_CLOCK_REALTIME),
+          s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
 
   void FlushWindowUpdates() {
     if (s_->read_closed) return;
-
     // send any window updates
     const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
     if (stream_announce == 0) return;
-
-    grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
-                          grpc_chttp2_window_update_create(
-                              s_->id, stream_announce, &s_->stats.outgoing));
+    if (IsChttp2NewWritesEnabled()) {
+      write_context_->AddFrame(Http2WindowUpdateFrame{s_->id, stream_announce});
+      s_->stats.outgoing.framing_bytes += 13;
+    } else {
+      grpc_slice_buffer_add(t_->outbuf.c_slice_buffer(),
+                            grpc_chttp2_window_update_create(
+                                s_->id, stream_announce, &s_->stats.outgoing));
+    }
     grpc_chttp2_reset_ping_clock(t_);
     write_context_->IncWindowUpdateWrites();
   }
@@ -524,11 +594,11 @@ class StreamWriteContext {
 
     if (!data_send_context.AnyOutgoing()) {
       if (t_->flow_control.remote_window() <= 0) {
-        grpc_core::global_stats().IncrementHttp2TransportStalls();
+        global_stats().IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
-        grpc_core::global_stats().IncrementHttp2StreamStalls();
+        global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       }
@@ -560,22 +630,34 @@ class StreamWriteContext {
 
     GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "sending trailing_metadata"));
     if (s_->send_trailing_metadata->empty()) {
-      grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
-                              &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
+      if (IsChttp2NewWritesEnabled()) {
+        write_context_->AddFrame(Http2DataFrame{s_->id, true, SliceBuffer{}});
+        s_->stats.outgoing.framing_bytes += 9;
+      } else {
+        grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
+                                &s_->stats.outgoing,
+                                t_->outbuf.c_slice_buffer());
+      }
     } else {
       if (send_status_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
-                                        *send_status_);
+        s_->send_trailing_metadata->Set(HttpStatusMetadata(), *send_status_);
       }
       if (send_content_type_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::ContentTypeMetadata(),
+        s_->send_trailing_metadata->Set(ContentTypeMetadata(),
                                         *send_content_type_);
       }
-      t_->hpack_compressor.EncodeHeaders(
-          grpc_core::HPackCompressor::EncodeHeaderOptions{
-              s_->id, true, t_->settings.peer().allow_true_binary_metadata(),
-              t_->settings.peer().max_frame_size(), &s_->stats.outgoing},
-          *s_->send_trailing_metadata, t_->outbuf.c_slice_buffer());
+      HPackCompressor::EncodeHeaderOptions encode_options{
+          s_->id, true, t_->settings.peer().allow_true_binary_metadata(),
+          t_->settings.peer().max_frame_size(), &s_->stats.outgoing};
+      if (IsChttp2NewWritesEnabled()) {
+        t_->hpack_compressor.EncodeHeaders(encode_options,
+                                           *s_->send_trailing_metadata,
+                                           write_context_->mutable_frames());
+      } else {
+        t_->hpack_compressor.EncodeHeaders(encode_options,
+                                           *s_->send_trailing_metadata,
+                                           t_->outbuf.c_slice_buffer());
+      }
     }
     write_context_->IncTrailingMetadataWrites();
     grpc_chttp2_reset_ping_clock(t_);
@@ -595,10 +677,8 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move the :status and
     // content-type headers to the trailers.
-    send_status_ =
-        s_->send_initial_metadata->get(grpc_core::HttpStatusMetadata());
-    send_content_type_ =
-        s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
+    send_status_ = s_->send_initial_metadata->get(HttpStatusMetadata());
+    send_content_type_ = s_->send_initial_metadata->get(ContentTypeMetadata());
   }
 
   void SentLastFrame() {
@@ -611,16 +691,22 @@ class StreamWriteContext {
     s_->eos_sent = true;
 
     if (!t_->is_client && !s_->read_closed) {
-      grpc_slice_buffer_add(
-          t_->outbuf.c_slice_buffer(),
-          grpc_chttp2_rst_stream_create(s_->id, GRPC_HTTP2_NO_ERROR,
-                                        &s_->stats.outgoing));
+      if (IsChttp2NewWritesEnabled()) {
+        write_context_->AddFrame(
+            Http2RstStreamFrame{s_->id, GRPC_HTTP2_NO_ERROR});
+        s_->stats.outgoing.framing_bytes += 13;
+      } else {
+        grpc_slice_buffer_add(
+            t_->outbuf.c_slice_buffer(),
+            grpc_chttp2_rst_stream_create(s_->id, GRPC_HTTP2_NO_ERROR,
+                                          &s_->stats.outgoing));
+      }
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
+      s_->call_tracer->RecordAnnotation(HttpAnnotation(
+          HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }
@@ -630,15 +716,16 @@ class StreamWriteContext {
   grpc_chttp2_stream* const s_;
   bool stream_became_writable_ = false;
   absl::optional<uint32_t> send_status_;
-  absl::optional<grpc_core::ContentTypeMetadata::ValueType> send_content_type_ =
-      {};
+  absl::optional<ContentTypeMetadata::ValueType> send_content_type_ = {};
+  const size_t output_frames_before_;
 };
 }  // namespace
+}  // namespace grpc_core
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
   int64_t outbuf_relative_start_pos = 0;
-  WriteContext ctx(t);
+  grpc_core::WriteContext ctx(t);
   ctx.FlushSettings();
   ctx.FlushPingAcks();
   ctx.FlushQueuedBuffers();
@@ -651,7 +738,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   // for each grpc_chttp2_stream that's become writable, frame it's data
   // (according to available window sizes) and add to the output buffer
   while (grpc_chttp2_stream* s = ctx.NextStream()) {
-    StreamWriteContext stream_ctx(&ctx, s);
+    grpc_core::StreamWriteContext stream_ctx(&ctx, s);
     size_t orig_len = t->outbuf.c_slice_buffer()->length;
     int64_t num_stream_bytes = 0;
     stream_ctx.FlushInitialMetadata();
@@ -687,9 +774,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   }
 
   ctx.FlushWindowUpdates();
-
-  maybe_initiate_ping(t);
-
+  ctx.MaybeInitiatePing();
   return ctx.Result();
 }
 

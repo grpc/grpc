@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
@@ -106,6 +107,47 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;
     flags = 0;
+  }
+}
+
+void HPackCompressor::Frame(const EncodeHeaderOptions& options,
+                            SliceBuffer& raw, std::vector<Http2Frame>& output) {
+  Http2HeaderFrame first;
+  first.stream_id = options.stream_id;
+  options.stats->header_bytes += raw.Length();
+  options.stats->framing_bytes += 9;
+  // per the HTTP/2 spec:
+  //   A HEADERS frame carries the END_STREAM flag that signals the end of a
+  //   stream. However, a HEADERS frame with the END_STREAM flag set can be
+  //   followed by CONTINUATION frames on the same stream. Logically, the
+  //   CONTINUATION frames are part of the HEADERS frame.
+  // Thus, we add the END_STREAM flag to the HEADER frame (the first frame).
+  first.end_stream = options.is_end_of_stream;
+  if (raw.Length() <= options.max_frame_size) {
+    first.end_headers = true;
+    first.payload = std::move(raw);
+    output.emplace_back(std::move(first));
+    return;
+  }
+  raw.MoveFirstNBytesIntoSliceBuffer(options.max_frame_size, first.payload);
+  output.emplace_back(std::move(first));
+  while (true) {
+    Http2ContinuationFrame continuation;
+    continuation.stream_id = options.stream_id;
+    options.stats->framing_bytes += 9;
+    // per the HTTP/2 spec:
+    //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
+    //   a CONTINUATION frame for the same stream.
+    // Thus, we add the END_HEADER flag to the last frame.
+    if (raw.Length() < options.max_frame_size) {
+      continuation.end_headers = true;
+      continuation.payload = std::move(raw);
+      output.emplace_back(std::move(continuation));
+      return;
+    }
+    raw.MoveFirstNBytesIntoSliceBuffer(options.max_frame_size,
+                                       continuation.payload);
+    output.emplace_back(std::move(continuation));
   }
 }
 
@@ -240,6 +282,18 @@ class StringKey {
   VarintWriter<1> len_key_;
 };
 }  // namespace
+
+void EncodeUncompressedHeaders(absl::Span<std::pair<Slice, Slice>> key_values,
+                               SliceBuffer& out) {
+  for (auto& kv : key_values) {
+    StringKey key(std::move(kv.first));
+    key.WritePrefix(0x00, out.AddTiny(key.prefix_length()));
+    out.Append(key.key());
+    NonBinaryStringValue emit(std::move(kv.second));
+    emit.WritePrefix(out.AddTiny(emit.prefix_length()));
+    out.Append(emit.data());
+  }
+}
 
 namespace hpack_encoder_detail {
 void Encoder::EmitIndexed(uint32_t elem_index) {

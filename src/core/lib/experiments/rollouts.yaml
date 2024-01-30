@@ -44,6 +44,8 @@
   default: debug
 - name: canary_client_privacy
   default: false
+- name: chttp2_new_writes
+  default: true
 - name: client_idleness
   default: true
 - name: client_privacy

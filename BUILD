@@ -3807,6 +3807,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:call_final_info",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -3939,6 +3940,7 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "chttp2_bin_encoder",
+        "chttp2_frame",
         "chttp2_legacy_frame",
         "chttp2_varint",
         "gpr",
@@ -4057,6 +4059,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "chttp2_context_list_entry",
+        "chttp2_frame",
         "chttp2_legacy_frame",
         "chttp2_varint",
         "debug_location",

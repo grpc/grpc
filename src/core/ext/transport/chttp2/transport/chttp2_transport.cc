@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <new>
@@ -58,6 +59,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
@@ -393,8 +395,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_endpoint_destroy(ep);
 
-  grpc_slice_buffer_destroy(&qbuf);
-
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
@@ -666,7 +666,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
         outbuf.c_slice_buffer(),
         grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING));
   }
-  grpc_slice_buffer_init(&qbuf);
   grpc_chttp2_goaway_parser_init(&goaway_parser);
 
   // configure http2 the way we like it
@@ -1854,7 +1853,13 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
 
   explicit GracefulGoaway(grpc_chttp2_transport* t) : t_(t->Ref()) {
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
-    grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(), &t->qbuf);
+    if (grpc_core::IsChttp2NewWritesEnabled()) {
+      t_->qframes.emplace_back(grpc_core::Http2GoawayFrame{
+          (1u << 31) - 1, GRPC_HTTP2_NO_ERROR, grpc_core::Slice{}});
+    } else {
+      grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(),
+                                t->qbuf.c_slice_buffer());
+    }
     t->keepalive_timeout =
         std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
     t->ping_timeout =
@@ -1887,8 +1892,13 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
                 std::string(t_->peer_string.as_string_view()).c_str(),
                 t_->last_new_stream_id));
     t_->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
-    grpc_chttp2_goaway_append(t_->last_new_stream_id, 0, grpc_empty_slice(),
-                              &t_->qbuf);
+    if (grpc_core::IsChttp2NewWritesEnabled()) {
+      t_->qframes.emplace_back(grpc_core::Http2GoawayFrame{
+          t_->last_new_stream_id, GRPC_HTTP2_NO_ERROR, grpc_core::Slice{}});
+    } else {
+      grpc_chttp2_goaway_append(t_->last_new_stream_id, 0, grpc_empty_slice(),
+                                t_->qbuf.c_slice_buffer());
+    }
     grpc_chttp2_initiate_write(t_.get(),
                                GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   }
@@ -1934,9 +1944,16 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
             t->is_client ? "CLIENT" : "SERVER", t->last_new_stream_id,
             grpc_core::StatusToString(error).c_str());
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
-    grpc_chttp2_goaway_append(
-        t->last_new_stream_id, static_cast<uint32_t>(http_error),
-        grpc_slice_from_cpp_string(std::move(message)), &t->qbuf);
+    if (grpc_core::IsChttp2NewWritesEnabled()) {
+      t->qframes.emplace_back(grpc_core::Http2GoawayFrame{
+          t->last_new_stream_id, static_cast<uint32_t>(http_error),
+          grpc_core::Slice::FromCopiedString(message)});
+    } else {
+      grpc_chttp2_goaway_append(t->last_new_stream_id,
+                                static_cast<uint32_t>(http_error),
+                                grpc_slice_from_cpp_string(std::move(message)),
+                                t->qbuf.c_slice_buffer());
+    }
   } else {
     // Final GOAWAY has already been sent.
   }
@@ -2243,8 +2260,14 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
           [id = s->id, http_error,
            remove_stream_handle = grpc_chttp2_mark_stream_closed(
                t, s, 1, 1, due_to_error)](grpc_chttp2_transport* t) {
-            grpc_chttp2_add_rst_stream_to_next_write(
-                t, id, static_cast<uint32_t>(http_error), nullptr);
+            if (grpc_core::IsChttp2NewWritesEnabled()) {
+              t->qframes.emplace_back(grpc_core::Http2RstStreamFrame{
+                  id, static_cast<uint32_t>(http_error)});
+              t->num_pending_induced_frames++;
+            } else {
+              grpc_chttp2_add_rst_stream_to_next_write(
+                  t, id, static_cast<uint32_t>(http_error), nullptr);
+            }
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
           });
@@ -2424,14 +2447,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
        grpc_status, message = std::move(message),
        remove_stream_handle =
            std::move(remove_stream_handle)](grpc_chttp2_transport* t) mutable {
-        grpc_slice hdr;
-        grpc_slice status_hdr;
-        grpc_slice http_status_hdr;
-        grpc_slice content_type_hdr;
-        grpc_slice message_pfx;
-        uint8_t* p;
-        uint32_t len = 0;
-
+        std::vector<std::pair<grpc_core::Slice, grpc_core::Slice>> headers;
         // Hand roll a header block.
         //   This is unnecessarily ugly - at some point we should find a more
         //   elegant solution.
@@ -2440,139 +2456,55 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         //   HPACK compression and just write the uncompressed bytes onto the
         //   wire.
         if (!sent_initial_metadata) {
-          http_status_hdr = GRPC_SLICE_MALLOC(13);
-          p = GRPC_SLICE_START_PTR(http_status_hdr);
-          *p++ = 0x00;
-          *p++ = 7;
-          *p++ = ':';
-          *p++ = 's';
-          *p++ = 't';
-          *p++ = 'a';
-          *p++ = 't';
-          *p++ = 'u';
-          *p++ = 's';
-          *p++ = 3;
-          *p++ = '2';
-          *p++ = '0';
-          *p++ = '0';
-          GPR_ASSERT(p == GRPC_SLICE_END_PTR(http_status_hdr));
-          len += static_cast<uint32_t> GRPC_SLICE_LENGTH(http_status_hdr);
-
-          content_type_hdr = GRPC_SLICE_MALLOC(31);
-          p = GRPC_SLICE_START_PTR(content_type_hdr);
-          *p++ = 0x00;
-          *p++ = 12;
-          *p++ = 'c';
-          *p++ = 'o';
-          *p++ = 'n';
-          *p++ = 't';
-          *p++ = 'e';
-          *p++ = 'n';
-          *p++ = 't';
-          *p++ = '-';
-          *p++ = 't';
-          *p++ = 'y';
-          *p++ = 'p';
-          *p++ = 'e';
-          *p++ = 16;
-          *p++ = 'a';
-          *p++ = 'p';
-          *p++ = 'p';
-          *p++ = 'l';
-          *p++ = 'i';
-          *p++ = 'c';
-          *p++ = 'a';
-          *p++ = 't';
-          *p++ = 'i';
-          *p++ = 'o';
-          *p++ = 'n';
-          *p++ = '/';
-          *p++ = 'g';
-          *p++ = 'r';
-          *p++ = 'p';
-          *p++ = 'c';
-          GPR_ASSERT(p == GRPC_SLICE_END_PTR(content_type_hdr));
-          len += static_cast<uint32_t> GRPC_SLICE_LENGTH(content_type_hdr);
+          headers.emplace_back(grpc_core::Slice::FromStaticString(":status"),
+                               grpc_core::Slice::FromStaticString("200"));
+          headers.emplace_back(
+              grpc_core::Slice::FromStaticString("content-type"),
+              grpc_core::Slice::FromStaticString("application/grpc"));
         }
-
-        status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
-        p = GRPC_SLICE_START_PTR(status_hdr);
-        *p++ = 0x00;  // literal header, not indexed
-        *p++ = 11;    // len(grpc-status)
-        *p++ = 'g';
-        *p++ = 'r';
-        *p++ = 'p';
-        *p++ = 'c';
-        *p++ = '-';
-        *p++ = 's';
-        *p++ = 't';
-        *p++ = 'a';
-        *p++ = 't';
-        *p++ = 'u';
-        *p++ = 's';
-        if (grpc_status < 10) {
-          *p++ = 1;
-          *p++ = static_cast<uint8_t>('0' + grpc_status);
+        headers.emplace_back(
+            grpc_core::Slice::FromStaticString("grpc-status"),
+            grpc_core::Slice::FromCopiedString(absl::StrCat(grpc_status)));
+        headers.emplace_back(grpc_core::Slice::FromStaticString("grpc-message"),
+                             grpc_core::Slice::FromCopiedString(message));
+        if (grpc_core::IsChttp2NewWritesEnabled()) {
+          grpc_core::Http2HeaderFrame frame;
+          frame.stream_id = id;
+          frame.end_headers = true;
+          frame.end_stream = true;
+          grpc_core::EncodeUncompressedHeaders(
+              absl::Span<std::pair<grpc_core::Slice, grpc_core::Slice>>(
+                  headers),
+              frame.payload);
+          t->qframes.emplace_back(std::move(frame));
+          t->qframes.emplace_back(
+              grpc_core::Http2RstStreamFrame{id, GRPC_HTTP2_NO_ERROR});
+          t->num_pending_induced_frames++;
         } else {
-          *p++ = 2;
-          *p++ = static_cast<uint8_t>('0' + (grpc_status / 10));
-          *p++ = static_cast<uint8_t>('0' + (grpc_status % 10));
+          size_t idx = grpc_slice_buffer_add_indexed(t->qbuf.c_slice_buffer(),
+                                                     GRPC_SLICE_MALLOC(9));
+          const size_t len_before = t->qbuf.Length();
+          grpc_core::EncodeUncompressedHeaders(
+              absl::Span<std::pair<grpc_core::Slice, grpc_core::Slice>>(
+                  headers),
+              t->qbuf);
+          uint8_t* p =
+              GRPC_SLICE_START_PTR(t->qbuf.c_slice_buffer()->slices[idx]);
+          size_t len = t->qbuf.Length() - len_before;
+          *p++ = static_cast<uint8_t>(len >> 16);
+          *p++ = static_cast<uint8_t>(len >> 8);
+          *p++ = static_cast<uint8_t>(len);
+          *p++ = GRPC_CHTTP2_FRAME_HEADER;
+          *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM |
+                 GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
+          *p++ = static_cast<uint8_t>(id >> 24);
+          *p++ = static_cast<uint8_t>(id >> 16);
+          *p++ = static_cast<uint8_t>(id >> 8);
+          *p++ = static_cast<uint8_t>(id);
+          grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_NO_ERROR,
+                                                   nullptr);
         }
-        GPR_ASSERT(p == GRPC_SLICE_END_PTR(status_hdr));
-        len += static_cast<uint32_t> GRPC_SLICE_LENGTH(status_hdr);
-
-        size_t msg_len = message.length();
-        GPR_ASSERT(msg_len <= UINT32_MAX);
-        grpc_core::VarintWriter<1> msg_len_writer(
-            static_cast<uint32_t>(msg_len));
-        message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_writer.length());
-        p = GRPC_SLICE_START_PTR(message_pfx);
-        *p++ = 0x00;  // literal header, not indexed
-        *p++ = 12;    // len(grpc-message)
-        *p++ = 'g';
-        *p++ = 'r';
-        *p++ = 'p';
-        *p++ = 'c';
-        *p++ = '-';
-        *p++ = 'm';
-        *p++ = 'e';
-        *p++ = 's';
-        *p++ = 's';
-        *p++ = 'a';
-        *p++ = 'g';
-        *p++ = 'e';
-        msg_len_writer.Write(0, p);
-        p += msg_len_writer.length();
-        GPR_ASSERT(p == GRPC_SLICE_END_PTR(message_pfx));
-        len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
-        len += static_cast<uint32_t>(msg_len);
-
-        hdr = GRPC_SLICE_MALLOC(9);
-        p = GRPC_SLICE_START_PTR(hdr);
-        *p++ = static_cast<uint8_t>(len >> 16);
-        *p++ = static_cast<uint8_t>(len >> 8);
-        *p++ = static_cast<uint8_t>(len);
-        *p++ = GRPC_CHTTP2_FRAME_HEADER;
-        *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM |
-               GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
-        *p++ = static_cast<uint8_t>(id >> 24);
-        *p++ = static_cast<uint8_t>(id >> 16);
-        *p++ = static_cast<uint8_t>(id >> 8);
-        *p++ = static_cast<uint8_t>(id);
-        GPR_ASSERT(p == GRPC_SLICE_END_PTR(hdr));
-
-        grpc_slice_buffer_add(&t->qbuf, hdr);
-        if (!sent_initial_metadata) {
-          grpc_slice_buffer_add(&t->qbuf, http_status_hdr);
-          grpc_slice_buffer_add(&t->qbuf, content_type_hdr);
-        }
-        grpc_slice_buffer_add(&t->qbuf, status_hdr);
-        grpc_slice_buffer_add(&t->qbuf, message_pfx);
-        grpc_slice_buffer_add(&t->qbuf,
-                              grpc_slice_from_cpp_string(std::move(message)));
         grpc_chttp2_reset_ping_clock(t);
-        grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_NO_ERROR,
-                                                 nullptr);
 
         grpc_chttp2_initiate_write(t,
                                    GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
