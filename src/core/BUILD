@@ -6735,6 +6735,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel",
+    srcs = [
+        "lib/transport/channel.cc",
+    ],
+    hdrs = [
+        "lib/transport/channel.h",
+    ],
+    deps = [
+        "arena",
+        "call_size_estimator",
+        "channel_args",
+        "ref_counted",
+        "resource_quota",
+        "//:stats",
+    ],
+)
+
+grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
         "lib/transport/parsed_metadata.cc",

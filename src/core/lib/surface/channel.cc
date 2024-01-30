@@ -64,23 +64,6 @@
 
 namespace grpc_core {
 
-Channel::Channel(const ChannelArgs& args)
-    : call_size_estimator_(grpc_call_get_initial_size_estimate()),
-      allocator_(args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryOwner()) {}
-
-Arena* Channel::CreateArena() {
-  const size_t initial_size = call_size_estimator_.CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  return Arena::Create(initial_size, &allocator_);
-}
-
-void Channel::DestroyArena(Arena* arena) {
-  call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-  arena->Destroy();
-}
-
 GrpcChannel::GrpcChannel(bool is_client, bool is_promising, std::string target,
                          const ChannelArgs& channel_args,
                          grpc_compression_options compression_options,

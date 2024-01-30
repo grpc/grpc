@@ -52,10 +52,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_size_estimator.h"
+#include "src/core/lib/transport/channel.h"
 #include "src/core/lib/transport/transport.h"
 
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
@@ -101,19 +100,6 @@ struct CallRegistrationTable {
   // C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall> map
       ABSL_GUARDED_BY(mu);
-};
-
-class Channel : public RefCounted<Channel> {
- public:
-  Arena* CreateArena();
-  void DestroyArena(Arena* arena);
-
- protected:
-  explicit Channel(const ChannelArgs& args);
-
- private:
-  CallSizeEstimator call_size_estimator_;
-  MemoryAllocator allocator_;
 };
 
 class GrpcChannel : public Channel,
