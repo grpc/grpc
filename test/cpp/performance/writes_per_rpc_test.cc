@@ -135,7 +135,8 @@ class InProcessCHTTP2 {
               .PreconditionChannelArgs(nullptr)
               .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
       args = args.Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
-                 .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+                 .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX)
+                 .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
           args, grpc_event_engine_endpoint_create(std::move(client_endpoint)),
           /*is_client=*/true);
