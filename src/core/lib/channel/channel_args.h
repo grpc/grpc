@@ -324,6 +324,16 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
+  template <typename T>
+  static Pointer UnownedPointer(T* p) {
+    static const grpc_arg_pointer_vtable vtable = {
+        [](void* p) -> void* { return p; },
+        [](void* p) {},
+        [](void* p, void* q) { return QsortCompare(p, q); },
+    };
+    return Pointer(p, &vtable);
+  }
+
   class Value {
    public:
     explicit Value(int n)

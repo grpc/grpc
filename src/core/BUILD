@@ -2855,6 +2855,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "call_filters",
         "channel_args",
         "channel_fwd",
         "channel_stack_trace",
@@ -6748,6 +6749,7 @@ grpc_cc_library(
         "channel_args",
         "ref_counted",
         "resource_quota",
+        "//:gpr_platform",
         "//:stats",
     ],
 )
