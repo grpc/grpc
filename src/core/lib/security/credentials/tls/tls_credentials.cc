@@ -62,14 +62,6 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     grpc_tls_credentials_options_destroy(options);
     return false;
   }
-  if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
-    gpr_log(GPR_ERROR,
-            "Setting crl_directory and crl_provider not supported. Using the "
-            "crl_provider.");
-    // TODO(gtcooke94) - Maybe return false here. Right now object lifetime of
-    // this options struct is leaky if false is returned and represents a more
-    // complex fix to handle in another PR.
-  }
   // In the following conditions, there won't be any issues, but it might
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=

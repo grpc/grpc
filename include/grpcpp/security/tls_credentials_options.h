@@ -104,8 +104,6 @@ class TlsCredentialsOptions {
   // version > 1.1.
   void set_crl_directory(const std::string& path);
 
-  void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
-
   // Sets the minimum TLS version that will be negotiated during the TLS
   // handshake. If not set, the underlying SSL library will use TLS v1.2.
   // @param tls_version: The minimum TLS version.
