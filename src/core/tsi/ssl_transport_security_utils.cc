@@ -291,7 +291,7 @@ bool HasCrlSignBit(X509* cert) {
     return false;
   }
   return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
-#endif  // OPENSSL_VERSION_NUMBEr < 0x10100000
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000
 }
 
 absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
@@ -301,7 +301,9 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   X509_NAME* issuer = X509_get_issuer_name(cert);
   unsigned char* buf = nullptr;
   int len = i2d_X509_NAME(issuer, &buf);
-  if (len < 0 || buf == nullptr) return "";
+  if (len < 0 || buf == nullptr) {
+    return absl::InvalidArgumentError("could not read issuer name from cert");
+  }
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
