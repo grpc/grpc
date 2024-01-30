@@ -6869,6 +6869,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_size_estimator",
+    srcs = [
+        "lib/transport/call_size_estimator.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_size_estimator.h",
+    ],
+)
+
+grpc_cc_library(
     name = "compression_internal",
     srcs = [
         "lib/compression/compression_internal.cc",
