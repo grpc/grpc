@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CHANNEL_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CHANNEL_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -37,4 +39,4 @@ class Channel : public RefCounted<Channel> {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CHANNEL_H
