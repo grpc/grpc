@@ -41,12 +41,19 @@ def main(command_arguments):
     return _protoc_compiler.run_main(command_arguments)
 
 
-def _get_resource_file_name(package_or_requirement: str, resource_name: str) -> str:
-  """Obtain the filename for a resource on the file system."""
-  if sys.version_info >= (3, 9, 0):
-    return (resources.files(package_or_requirement) / resource_name).resolve()
-  else:
-    return pkg_resources.resource_filename(package_or_requirement, resource_name)
+def _get_resource_file_name(
+    package_or_requirement: str, resource_name: str
+) -> str:
+    """Obtain the filename for a resource on the file system."""
+    if sys.version_info >= (3, 9, 0):
+        return (
+            resources.files(package_or_requirement) / resource_name
+        ).resolve()
+    else:
+        return pkg_resources.resource_filename(
+            package_or_requirement, resource_name
+        )
+
 
 # NOTE(rbellevi): importlib.abc is not supported on 3.4.
 if sys.version_info >= (3, 5, 0):
