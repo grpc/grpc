@@ -23,6 +23,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -68,6 +69,8 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick until idle, or a set duration has passed, whichever comes first.
+  void TickUntilIdleOrDuration(Duration d) ABSL_LOCKS_EXCLUDED(mu_);
   // Tick until some time
   void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
   // Tick for some duration
@@ -300,6 +303,33 @@ class FuzzingEventEngine : public EventEngine {
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_
       ABSL_GUARDED_BY(run_after_duration_callback_mu_);
+};
+
+class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
+ public:
+  ThreadedFuzzingEventEngine()
+      : ThreadedFuzzingEventEngine(std::chrono::milliseconds(600)) {}
+
+  explicit ThreadedFuzzingEventEngine(Duration max_time)
+      : FuzzingEventEngine(FuzzingEventEngine::Options(),
+                           fuzzing_event_engine::Actions()),
+        main_([this, max_time]() {
+          while (!done_.load()) {
+            // absl::SleepFor(absl::Milliseconds(10));
+            // TickUntilIdleOrDuration(max_time);
+            absl::SleepFor(absl::Milliseconds(1));
+            TickUntilIdle();
+          }
+        }) {}
+
+  ~ThreadedFuzzingEventEngine() override {
+    done_.store(true);
+    main_.join();
+  }
+
+ private:
+  std::atomic<bool> done_{false};
+  std::thread main_;
 };
 
 }  // namespace experimental

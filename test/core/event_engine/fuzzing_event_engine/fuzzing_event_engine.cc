@@ -20,8 +20,6 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
-#include <ratio>
-#include <type_traits>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -31,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
@@ -197,6 +196,19 @@ void FuzzingEventEngine::TickUntilIdle() {
   }
 }
 
+void FuzzingEventEngine::TickUntilIdleOrDuration(Duration d) {
+  auto t = Now() + d;
+  while (true) {
+    {
+      grpc_core::MutexLock lock(&*mu_);
+      if (tasks_by_id_.empty()) return;
+    }
+    auto now = Now();
+    if (now >= t) return;
+    Tick(d);
+  }
+}
+
 void FuzzingEventEngine::TickUntil(Time t) {
   while (true) {
     auto now = Now();
@@ -343,6 +355,7 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
 bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs*) {
+  grpc_core::global_stats().IncrementSyscallWrite();
   grpc_core::MutexLock lock(&*mu_);
   GPR_ASSERT(!middle_->closed[my_index()]);
   GPR_ASSERT(!middle_->writing[my_index()]);
