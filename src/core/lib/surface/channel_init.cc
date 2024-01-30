@@ -104,9 +104,9 @@ ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, const grpc_channel_filter* filter,
-    SourceLocation registration_source) {
-  filters_[type].emplace_back(
-      std::make_unique<FilterRegistration>(filter, registration_source));
+    const ChannelFilterVtable* vtable, SourceLocation registration_source) {
+  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
+      filter, vtable, registration_source));
   return *filters_[type].back();
 }
 
@@ -141,7 +141,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       GPR_ASSERT(registration->after_.empty());
       GPR_ASSERT(registration->before_.empty());
       GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(registration->filter_,
+      terminal_filters.emplace_back(registration->filter_, nullptr,
                                     std::move(registration->predicates_),
                                     registration->registration_source_);
     } else {
@@ -222,9 +222,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> filters;
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
-    filters.emplace_back(filter,
-                         std::move(filter_to_registration[filter]->predicates_),
-                         filter_to_registration[filter]->registration_source_);
+    auto* registration = filter_to_registration[filter];
+    filters.emplace_back(filter, registration->vtable_,
+                         std::move(registration->predicates_),
+                         registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
