@@ -39,9 +39,9 @@ int main(int argc, char** argv) {
     // set max # of file descriptors to a low value, and
     // verify we can create and destroy many more than this number
     // of descriptors
-    rlim.rlim_cur = rlim.rlim_max = 10;
+    rlim.rlim_cur = rlim.rlim_max = 1000;
     GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
-    for (i = 0; i < 100; i++) {
+    for (i = 0; i < 10000; i++) {
       p = grpc_iomgr_create_endpoint_pair("test", nullptr);
       grpc_endpoint_destroy(p.client);
       grpc_endpoint_destroy(p.server);
