@@ -112,9 +112,7 @@ void ResolverChannel::UpdateResolverResultLocked(Resolver::Result result) {
   auto resolved_stack =
       CreateResolvedStackFromResolverResult(std::move(result));
   resolved_stack_.Set(resolved_stack.value_or(nullptr));
-  if (resolver_callback != nullptr) {
-    resolver_callback(resolved_stack.status());
-  }
+  if (resolver_callback != nullptr) resolver_callback(resolved_stack.status());
 }
 
 absl::StatusOr<RefCountedPtr<ResolverChannel::ResolvedStack>>
