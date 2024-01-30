@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_RESOLVER_RESOLVER_CHANNEL_H
-#define GRPC_SRC_CORE_LIB_RESOLVER_RESOLVER_CHANNEL_H
+#ifndef GRPC_SRC_CORE_LIB_CLIENT_CHANNEL_RESOLVER_CHANNEL_H
+#define GRPC_SRC_CORE_LIB_CLIENT_CHANNEL_RESOLVER_CHANNEL_H
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -56,4 +58,4 @@ class ResolverChannel final : public Channel {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_CLIENT_CHANNEL_RESOLVER_CHANNEL_H
