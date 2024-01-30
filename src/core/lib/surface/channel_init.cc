@@ -449,7 +449,7 @@ ChannelInit::CreateStack(grpc_channel_stack_type type,
    public:
     explicit Control(std::vector<ChannelFilter> filters, uint8_t* p)
         : filters_(std::move(filters)), p_(p) {}
-    ~Control() {
+    ~Control() override {
       for (const auto& filter : filters_) {
         filter.vtable->destroy(p_ + filter.offset);
       }
