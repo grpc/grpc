@@ -57,6 +57,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -117,25 +118,28 @@ class ChaoticGoodServerTransport final : public Transport,
                            MpscSender<ServerFrame> outgoing_frames);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
-  auto TransportReadLoop();
-  auto TransportWriteLoop();
+  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto ReadOneFrame(ChaoticGoodTransport& transport);
+  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
   auto DeserializeAndPushFragmentToNewCall(FrameHeader frame_header,
-                                           BufferPair buffers);
-  auto DeserializeAndPushFragmentToExistingCall(FrameHeader frame_header,
-                                                BufferPair buffers);
+                                           BufferPair buffers,
+                                           ChaoticGoodTransport& transport);
+  auto DeserializeAndPushFragmentToExistingCall(
+      FrameHeader frame_header, BufferPair buffers,
+      ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
                                  absl::Status error, ClientFragmentFrame frame);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
                             ClientFragmentFrame frame);
 
   Acceptor* acceptor_ = nullptr;
+  InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
-  ChaoticGoodTransport transport_;
   // Assigned aligned bytes from setting frame.
   size_t aligned_bytes_ = 64;
   Mutex mu_;

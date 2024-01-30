@@ -56,14 +56,15 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-auto ChaoticGoodClientTransport::TransportWriteLoop() {
-  return Loop([this] {
+auto ChaoticGoodClientTransport::TransportWriteLoop(
+    RefCountedPtr<ChaoticGoodTransport> transport) {
+  return Loop([this, transport = std::move(transport)] {
     return TrySeq(
         // Get next outgoing frame.
         outgoing_frames_.Next(),
         // Serialize and write it out.
-        [this](ClientFrame client_frame) {
-          return transport_.WriteFrame(GetFrameInterface(client_frame));
+        [transport = transport.get()](ClientFrame client_frame) {
+          return transport->WriteFrame(GetFrameInterface(client_frame));
         },
         []() -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit loop.
@@ -116,10 +117,11 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
   return [call_handler, push = std::move(push)]() mutable { return push(); };
 }
 
-auto ChaoticGoodClientTransport::TransportReadLoop() {
-  return Loop([this] {
+auto ChaoticGoodClientTransport::TransportReadLoop(
+    RefCountedPtr<ChaoticGoodTransport> transport) {
+  return Loop([this, transport = std::move(transport)] {
     return TrySeq(
-        transport_.ReadFrameBytes(),
+        transport->ReadFrameBytes(),
         [](std::tuple<FrameHeader, BufferPair> frame_bytes)
             -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
           const auto& frame_header = std::get<0>(frame_bytes);
@@ -130,7 +132,8 @@ auto ChaoticGoodClientTransport::TransportReadLoop() {
           }
           return frame_bytes;
         },
-        [this](std::tuple<FrameHeader, BufferPair> frame_bytes) {
+        [this, transport = transport.get()](
+            std::tuple<FrameHeader, BufferPair> frame_bytes) {
           const auto& frame_header = std::get<0>(frame_bytes);
           auto& buffers = std::get<1>(frame_bytes);
           absl::optional<CallHandler> call_handler =
@@ -140,14 +143,14 @@ auto ChaoticGoodClientTransport::TransportReadLoop() {
           const FrameLimits frame_limits{1024 * 1024 * 1024,
                                          aligned_bytes_ - 1};
           if (call_handler.has_value()) {
-            deserialize_status = transport_.DeserializeFrame(
+            deserialize_status = transport->DeserializeFrame(
                 frame_header, std::move(buffers), call_handler->arena(), frame,
                 frame_limits);
           } else {
             // Stream not found, skip the frame.
             auto arena = MakeScopedArena(1024, &allocator_);
             deserialize_status =
-                transport_.DeserializeFrame(frame_header, std::move(buffers),
+                transport->DeserializeFrame(frame_header, std::move(buffers),
                                             arena.get(), frame, frame_limits);
           }
           return If(
@@ -187,19 +190,18 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     : allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
-      outgoing_frames_(4),
-      transport_(std::move(control_endpoint), std::move(data_endpoint),
-                 std::move(hpack_parser), std::move(hpack_encoder)),
-      writer_{
-          MakeActivity(
-              // Continuously write next outgoing frames to promise endpoints.
-              TransportWriteLoop(), EventEngineWakeupScheduler(event_engine),
-              OnTransportActivityDone()),
-      },
-      reader_{MakeActivity(
-          // Continuously read next incoming frames from promise endpoints.
-          TransportReadLoop(), EventEngineWakeupScheduler(event_engine),
-          OnTransportActivityDone())} {
+      outgoing_frames_(4) {
+  auto transport = MakeRefCounted<ChaoticGoodTransport>(
+      std::move(control_endpoint), std::move(data_endpoint),
+      std::move(hpack_parser), std::move(hpack_encoder));
+  writer_ = MakeActivity(
+      // Continuously write next outgoing frames to promise endpoints.
+      TransportWriteLoop(transport), EventEngineWakeupScheduler(event_engine),
+      OnTransportActivityDone());
+  reader_ = MakeActivity(
+      // Continuously read next incoming frames from promise endpoints.
+      TransportReadLoop(std::move(transport)),
+      EventEngineWakeupScheduler(event_engine), OnTransportActivityDone());
   gpr_log(GPR_INFO, "ChaoticGoodClientTransport() %p", this);
 }
 

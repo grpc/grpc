@@ -35,7 +35,7 @@ extern grpc_core::TraceFlag grpc_chaotic_good_trace;
 namespace grpc_core {
 namespace chaotic_good {
 
-class ChaoticGoodTransport {
+class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  public:
   ChaoticGoodTransport(PromiseEndpoint control_endpoint,
                        PromiseEndpoint data_endpoint, HPackParser hpack_parser,
