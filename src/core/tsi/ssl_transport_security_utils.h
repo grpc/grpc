@@ -145,16 +145,17 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
                                  size_t* unprotected_bytes_size);
 
 // Verifies that `crl` was signed by `issuer.
-// return: 1 if valid, 0 if invalid, and -1 is there was a problem.
-int VerifyCrlSignature(X509_CRL* crl, X509* issuer);
+// return: true if valid, false otherwise.
+bool VerifyCrlSignature(X509_CRL* crl, X509* issuer);
 
 // Verifies the CRL issuer and certificate issuer name match.
-// return: 0 if equal, otherwise a value != 0 depending on the comparison.
-int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer);
+// return: true if equal, false if not.
+bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert);
 
 // Verifies the certificate in question has the cRLSign bit present.
-// return: true if cRLSign bit is present, 0 otherwise.
-bool VerifyCrlSignBit(X509* issuer);
+// OpenSSL >= 1.1.1 return: true if cRLSign bit is present, false otherwise.
+// OpenSSL == 1.0.2 return: true always
+bool HasCrlSignBit(X509* cert);
 
 // Verifies the Authority Key Identifier of `crl` and `cert` match.
 // return: true if equal, false otherwise.

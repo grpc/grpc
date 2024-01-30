@@ -251,42 +251,47 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   return result;
 }
 
-int VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
+bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (issuer == nullptr || crl == nullptr) {
-    return -1;
+    return false;
   }
   EVP_PKEY* ikey = X509_get_pubkey(issuer);
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
     EVP_PKEY_free(ikey);
-    return 1;
+    return false;
   }
-  int ret = X509_CRL_verify(crl, ikey);
+  bool ret = X509_CRL_verify(crl, ikey) == 1;
   EVP_PKEY_free(ikey);
   return ret;
 }
 
-int VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* issuer) {
-  if (issuer == nullptr || crl == nullptr) {
-    return 1;
+bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
+  if (cert == nullptr || crl == nullptr) {
+    return false;
   }
-  X509_NAME* issuer_name = X509_get_issuer_name(issuer);
-  if (issuer == nullptr) {
-    return 1;
+  X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
+  if (cert == nullptr) {
+    return false;
   }
   X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
   if (crl_issuer_name == nullptr) {
-    return 1;
-  }
-  return X509_NAME_cmp(issuer_name, crl_issuer_name);
-}
-
-bool VerifyCrlSignBit(X509* issuer) {
-  if (issuer == nullptr) {
     return false;
   }
-  return (X509_get_key_usage(issuer) & KU_CRL_SIGN) != 0;
+  return X509_NAME_cmp(cert_issuer_name, crl_issuer_name) == 0;
+}
+
+bool HasCrlSignBit(X509* cert) {
+// X509_get_key_usage is not in 1.0.2. Just make this return true.
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+  return true;
+#else
+  if (cert == nullptr) {
+    return false;
+  }
+  return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
+#endif  // OPENSSL_VERSION_NUMBEr < 0x10100000
 }
 
 bool VerifyAKIDMatch(X509_CRL* crl, X509* issuer) {
@@ -319,8 +324,7 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
     return absl::InvalidArgumentError("cert cannot be null");
   }
   X509_NAME* issuer = X509_get_issuer_name(cert);
-  unsigned char* buf;
-  buf = nullptr;
+  unsigned char* buf = nullptr;
   int len = i2d_X509_NAME(issuer, &buf);
   if (len < 0 || buf == nullptr) return "";
   std::string ret(reinterpret_cast<char const*>(buf), len);

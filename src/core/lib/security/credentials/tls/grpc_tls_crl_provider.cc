@@ -63,8 +63,7 @@ absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (issuer == nullptr) {
     return absl::InvalidArgumentError("crl cannot have null issuer");
   }
-  unsigned char* buf;
-  buf = nullptr;
+  unsigned char* buf = nullptr;
   int len = i2d_X509_NAME(issuer, &buf);
   if (len < 0 || buf == nullptr) {
     return absl::InvalidArgumentError("crl cannot have null issuer");
