@@ -1152,7 +1152,7 @@ class CallFilters {
   // pointers: it's expected that some other object will track that ownership.
   class Stack : public RefCounted<Stack> {
    public:
-    ~Stack();
+    ~Stack() override;
 
    private:
     friend class CallFilters;
