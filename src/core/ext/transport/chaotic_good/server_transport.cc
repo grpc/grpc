@@ -345,8 +345,7 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     : outgoing_frames_(4),
       allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
-                     ->CreateMemoryAllocator("chaotic-good")),
-      event_engine_(event_engine) {
+                     ->CreateMemoryAllocator("chaotic-good")) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));
@@ -354,7 +353,7 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
                          EventEngineWakeupScheduler(event_engine),
                          OnTransportActivityDone("writer"));
   reader_ = MakeActivity(TransportReadLoop(std::move(transport)),
-                         EventEngineWakeupScheduler(event_engine_),
+                         EventEngineWakeupScheduler(event_engine),
                          OnTransportActivityDone("reader"));
 }
 

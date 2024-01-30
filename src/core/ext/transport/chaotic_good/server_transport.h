@@ -147,7 +147,6 @@ class ChaoticGoodServerTransport final : public Transport,
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   uint32_t last_seen_new_stream_id_ = 0;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   ActivityPtr writer_ ABSL_GUARDED_BY(mu_);
   ActivityPtr reader_ ABSL_GUARDED_BY(mu_);
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
