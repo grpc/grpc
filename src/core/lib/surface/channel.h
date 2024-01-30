@@ -52,9 +52,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/channel.h"
 #include "src/core/lib/transport/transport.h"
 
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
@@ -80,9 +80,6 @@ grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
 grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel);
 
-size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
-void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
-
 namespace grpc_core {
 
 struct RegisteredCall {
@@ -105,15 +102,15 @@ struct CallRegistrationTable {
       ABSL_GUARDED_BY(mu);
 };
 
-class Channel : public RefCounted<Channel>,
-                public CppImplOf<Channel, grpc_channel> {
+class GrpcChannel : public Channel,
+                    public CppImplOf<GrpcChannel, grpc_channel> {
  public:
-  static absl::StatusOr<RefCountedPtr<Channel>> Create(
+  static absl::StatusOr<RefCountedPtr<GrpcChannel>> Create(
       const char* target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type,
       Transport* optional_transport);
 
-  static absl::StatusOr<RefCountedPtr<Channel>> CreateWithBuilder(
+  static absl::StatusOr<RefCountedPtr<GrpcChannel>> CreateWithBuilder(
       ChannelStackBuilder* builder);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
@@ -124,22 +121,7 @@ class Channel : public RefCounted<Channel>,
 
   channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
 
-  size_t CallSizeEstimate() {
-    // We round up our current estimate to the NEXT value of kRoundUpSize.
-    // This ensures:
-    //  1. a consistent size allocation when our estimate is drifting slowly
-    //     (which is common) - which tends to help most allocators reuse memory
-    //  2. a small amount of allowed growth over the estimate without hitting
-    //     the arena size doubling case, reducing overall memory usage
-    static constexpr size_t kRoundUpSize = 256;
-    return (call_size_estimate_.load(std::memory_order_relaxed) +
-            2 * kRoundUpSize) &
-           ~(kRoundUpSize - 1);
-  }
-
-  void UpdateCallSizeEstimate(size_t size);
   absl::string_view target() const { return target_; }
-  MemoryAllocator* allocator() { return &allocator_; }
   bool is_client() const { return is_client_; }
   bool is_promising() const { return is_promising_; }
   RegisteredCall* RegisterCall(const char* method, const char* host);
@@ -154,18 +136,16 @@ class Channel : public RefCounted<Channel>,
   }
 
  private:
-  Channel(bool is_client, bool is_promising, std::string target,
-          const ChannelArgs& channel_args,
-          grpc_compression_options compression_options,
-          RefCountedPtr<grpc_channel_stack> channel_stack);
+  GrpcChannel(bool is_client, bool is_promising, std::string target,
+              const ChannelArgs& channel_args,
+              grpc_compression_options compression_options,
+              RefCountedPtr<grpc_channel_stack> channel_stack);
 
   const bool is_client_;
   const bool is_promising_;
   const grpc_compression_options compression_options_;
-  std::atomic<size_t> call_size_estimate_;
   CallRegistrationTable registration_table_;
   RefCountedPtr<channelz::ChannelNode> channelz_node_;
-  MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
 };
@@ -174,26 +154,26 @@ class Channel : public RefCounted<Channel>,
 
 inline grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel) {
-  return grpc_core::Channel::FromC(channel)->compression_options();
+  return grpc_core::GrpcChannel::FromC(channel)->compression_options();
 }
 
 inline grpc_channel_stack* grpc_channel_get_channel_stack(
     grpc_channel* channel) {
-  return grpc_core::Channel::FromC(channel)->channel_stack();
+  return grpc_core::GrpcChannel::FromC(channel)->channel_stack();
 }
 
 inline grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel) {
-  return grpc_core::Channel::FromC(channel)->channelz_node();
+  return grpc_core::GrpcChannel::FromC(channel)->channelz_node();
 }
 
 inline void grpc_channel_internal_ref(grpc_channel* channel,
                                       const char* reason) {
-  grpc_core::Channel::FromC(channel)->Ref(DEBUG_LOCATION, reason).release();
+  grpc_core::GrpcChannel::FromC(channel)->Ref(DEBUG_LOCATION, reason).release();
 }
 inline void grpc_channel_internal_unref(grpc_channel* channel,
                                         const char* reason) {
-  grpc_core::Channel::FromC(channel)->Unref(DEBUG_LOCATION, reason);
+  grpc_core::GrpcChannel::FromC(channel)->Unref(DEBUG_LOCATION, reason);
 }
 
 // Return the channel's compression options.

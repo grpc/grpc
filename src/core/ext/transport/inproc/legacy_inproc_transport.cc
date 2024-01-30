@@ -1264,7 +1264,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
-    auto new_channel = grpc_core::Channel::Create(
+    auto new_channel = grpc_core::GrpcChannel::Create(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
       GPR_ASSERT(!channel);

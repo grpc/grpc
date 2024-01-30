@@ -222,7 +222,22 @@ void CallFilters::CancelDueToFailedPipeOperation() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// CallFilters::Stack
+
+CallFilters::Stack::~Stack() {
+  for (auto& destructor : data_.channel_data_destructors) {
+    destructor.destroy(destructor.channel_data);
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // CallFilters::StackBuilder
+
+CallFilters::StackBuilder::~StackBuilder() {
+  for (auto& destructor : data_.channel_data_destructors) {
+    destructor.destroy(destructor.channel_data);
+  }
+}
 
 RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
   if (data_.call_data_size % data_.call_data_alignment != 0) {

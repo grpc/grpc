@@ -64,19 +64,15 @@
 
 namespace grpc_core {
 
-Channel::Channel(bool is_client, bool is_promising, std::string target,
-                 const ChannelArgs& channel_args,
-                 grpc_compression_options compression_options,
-                 RefCountedPtr<grpc_channel_stack> channel_stack)
-    : is_client_(is_client),
+GrpcChannel::GrpcChannel(bool is_client, bool is_promising, std::string target,
+                         const ChannelArgs& channel_args,
+                         grpc_compression_options compression_options,
+                         RefCountedPtr<grpc_channel_stack> channel_stack)
+    : Channel(channel_args),
+      is_client_(is_client),
       is_promising_(is_promising),
       compression_options_(compression_options),
-      call_size_estimate_(channel_stack->call_stack_size +
-                          grpc_call_get_initial_size_estimate()),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      allocator_(channel_args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryOwner()),
       target_(std::move(target)),
       channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
@@ -107,7 +103,7 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
   };
 }
 
-absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
+absl::StatusOr<RefCountedPtr<GrpcChannel>> GrpcChannel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
   auto channel_args = builder->channel_args();
   if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
@@ -151,7 +147,7 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
         *enabled_algorithms_bitset | 1 /* always support no compression */;
   }
 
-  return RefCountedPtr<Channel>(new Channel(
+  return RefCountedPtr<GrpcChannel>(new GrpcChannel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
       builder->IsPromising(), std::string(builder->target()), channel_args,
       compression_options, std::move(*r)));
@@ -173,7 +169,7 @@ const grpc_arg_pointer_vtable channelz_node_arg_vtable = {
     channelz_node_copy, channelz_node_destroy, channelz_node_cmp};
 }  // namespace
 
-absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
+absl::StatusOr<RefCountedPtr<GrpcChannel>> GrpcChannel::Create(
     const char* target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport) {
   if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
@@ -230,29 +226,11 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
   return CreateWithBuilder(&builder);
 }
 
-void Channel::UpdateCallSizeEstimate(size_t size) {
-  size_t cur = call_size_estimate_.load(std::memory_order_relaxed);
-  if (cur < size) {
-    // size grew: update estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, size, std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  } else if (cur == size) {
-    // no change: holding pattern
-  } else if (cur > 0) {
-    // size shrank: decrease estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, std::min(cur - 1, (255 * cur + size) / 256),
-        std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  }
-}
-
 }  // namespace grpc_core
 
 char* grpc_channel_get_target(grpc_channel* channel) {
   GRPC_API_TRACE("grpc_channel_get_target(channel=%p)", 1, (channel));
-  auto target = grpc_core::Channel::FromC(channel)->target();
+  auto target = grpc_core::GrpcChannel::FromC(channel)->target();
   char* buffer = static_cast<char*>(gpr_zalloc(target.size() + 1));
   memcpy(buffer, target.data(), target.size());
   return buffer;
@@ -263,7 +241,7 @@ void grpc_channel_get_info(grpc_channel* channel,
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_element* elem = grpc_channel_stack_element(
-      grpc_core::Channel::FromC(channel)->channel_stack(), 0);
+      grpc_core::GrpcChannel::FromC(channel)->channel_stack(), 0);
   elem->filter->get_channel_info(elem, channel_info);
 }
 
@@ -275,7 +253,7 @@ void grpc_channel_reset_connect_backoff(grpc_channel* channel) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->reset_connect_backoff = true;
   grpc_channel_element* elem = grpc_channel_stack_element(
-      grpc_core::Channel::FromC(channel)->channel_stack(), 0);
+      grpc_core::GrpcChannel::FromC(channel)->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 }
 
@@ -284,7 +262,8 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
     grpc_core::Timestamp deadline, bool registered_method) {
-  auto channel = grpc_core::Channel::FromC(c_channel)->Ref();
+  auto channel = grpc_core::GrpcChannel::FromC(c_channel)
+                     ->RefAsSubclass<grpc_core::GrpcChannel>();
   GPR_ASSERT(channel->is_client());
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
 
@@ -369,12 +348,13 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GPR_ASSERT(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  return grpc_core::Channel::FromC(channel)->RegisterCall(method, host);
+  return grpc_core::GrpcChannel::FromC(channel)->RegisterCall(method, host);
 }
 
 namespace grpc_core {
 
-RegisteredCall* Channel::RegisterCall(const char* method, const char* host) {
+RegisteredCall* GrpcChannel::RegisterCall(const char* method,
+                                          const char* host) {
   MutexLock lock(&registration_table_.mu);
   auto key = std::make_pair(std::string(host != nullptr ? host : ""),
                             std::string(method != nullptr ? method : ""));
@@ -422,8 +402,8 @@ grpc_call* grpc_channel_create_registered_call(
 }
 
 void grpc_channel_destroy_internal(grpc_channel* c_channel) {
-  grpc_core::RefCountedPtr<grpc_core::Channel> channel(
-      grpc_core::Channel::FromC(c_channel));
+  grpc_core::RefCountedPtr<grpc_core::GrpcChannel> channel(
+      grpc_core::GrpcChannel::FromC(c_channel));
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   grpc_channel_element* elem;
   GRPC_API_TRACE("grpc_channel_destroy(channel=%p)", 1, (c_channel));

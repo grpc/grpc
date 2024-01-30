@@ -2855,6 +2855,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "call_filters",
         "channel_args",
         "channel_fwd",
         "channel_stack_trace",
@@ -6735,6 +6736,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel",
+    srcs = [
+        "lib/transport/channel.cc",
+    ],
+    hdrs = [
+        "lib/transport/channel.h",
+    ],
+    deps = [
+        "arena",
+        "call_size_estimator",
+        "channel_args",
+        "ref_counted",
+        "resource_quota",
+        "//:gpr_platform",
+        "//:stats",
+    ],
+)
+
+grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
         "lib/transport/parsed_metadata.cc",
@@ -6866,6 +6886,17 @@ grpc_cc_library(
         "time",
         "//:gpr",
     ],
+)
+
+grpc_cc_library(
+    name = "call_size_estimator",
+    srcs = [
+        "lib/transport/call_size_estimator.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_size_estimator.h",
+    ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
