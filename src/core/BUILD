@@ -6876,6 +6876,7 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_size_estimator.h",
     ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
