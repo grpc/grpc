@@ -283,10 +283,15 @@ bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
 }
 
 bool HasCrlSignBit(X509* cert) {
+// X509_get_key_usage is not in 1.0.2. Just make this return true.
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+  return true;
+#else
   if (cert == nullptr) {
     return false;
   }
   return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
+#endif  // OPENSSL_VERSION_NUMBEr < 0x10100000
 }
 
 absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
