@@ -1298,11 +1298,7 @@ Server::ChannelData::~ChannelData() {
   }
 }
 
-Arena* Server::ChannelData::CreateArena() {
-  const auto initial_size = channel_->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  return Arena::Create(initial_size, channel_->allocator());
-}
+Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
 
 absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
     ClientMetadata& client_initial_metadata, Arena* arena) {

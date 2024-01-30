@@ -122,13 +122,10 @@ class Channel : public RefCounted<Channel>,
 
   channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
 
-  size_t CallSizeEstimate() { return call_size_estimator_.CallSizeEstimate(); }
-  void UpdateCallSizeEstimate(size_t size) {
-    call_size_estimator_.UpdateCallSizeEstimate(size);
-  }
+  Arena* CreateArena();
+  void DestroyArena(Arena* arena);
 
   absl::string_view target() const { return target_; }
-  MemoryAllocator* allocator() { return &allocator_; }
   bool is_client() const { return is_client_; }
   bool is_promising() const { return is_promising_; }
   RegisteredCall* RegisterCall(const char* method, const char* host);
