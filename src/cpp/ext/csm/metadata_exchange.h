@@ -123,7 +123,7 @@ class MeshLabelsIterable : public LabelsIterable {
 
   const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
   StructPb metadata_;
-  mutable GcpResourceType remote_type_ = GcpResourceType::kUnknown;
+  GcpResourceType remote_type_ = GcpResourceType::kUnknown;
   uint32_t pos_ = 0;
 };
 

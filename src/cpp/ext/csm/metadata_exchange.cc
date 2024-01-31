@@ -251,6 +251,10 @@ absl::Span<const MeshLabelsIterable::RemoteAttribute> GetAttributesForType(
 
 }  // namespace
 
+//
+// MeshLabelsIterable
+//
+
 MeshLabelsIterable::MeshLabelsIterable(
     const std::vector<std::pair<absl::string_view, std::string>>& local_labels,
     grpc_core::Slice remote_metadata)
@@ -337,6 +341,10 @@ std::string GetMeshId() {
   }
   return std::string(mesh_id);
 }
+
+//
+// ServiceMeshLabelsInjector
+//
 
 ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
     const opentelemetry::sdk::common::AttributeMap& map) {
