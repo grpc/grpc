@@ -43,7 +43,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/subprocess.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
@@ -148,7 +147,6 @@ struct RequestState {
   bool done = false;
   grpc_http_response response = {};
   grpc_pollset_set* pollset_set_to_destroy_eagerly = nullptr;
-  grpc_core::Notification callback_finished;
 };
 
 void OnFinish(void* arg, grpc_error_handle error) {
@@ -187,12 +185,6 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   GPR_ASSERT(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
-}
-
-void OnFinishExpectFailureWithNotification(void* arg, grpc_error_handle error) {
-  RequestState* request_state = static_cast<RequestState*>(arg);
-  OnFinishExpectFailure(arg, error);
-  request_state->callback_finished.Notify();
 }
 
 TEST_F(HttpRequestTest, Get) {
@@ -474,8 +466,8 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */,
           &wrapped_pollset_set_to_destroy_eagerly, &req, NSecondsTime(15),
-          GRPC_CLOSURE_CREATE(OnFinishExpectFailureWithNotification,
-                              &request_state, grpc_schedule_on_exec_ctx),
+          GRPC_CLOSURE_CREATE(OnFinishExpectFailure, &request_state,
+                              grpc_schedule_on_exec_ctx),
           &request_state.response,
           grpc_core::RefCountedPtr<grpc_channel_credentials>(
               grpc_insecure_credentials_create()));
@@ -483,20 +475,13 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   http_request->Start();
   exec_ctx.Flush();
   http_request.reset();  // cancel the request
-  if (!grpc_core::IsEventEngineClientEnabled()) {
-    // Since the request was cancelled, the on_done callback should be flushed
-    // out on the ExecCtx flush below. When the on_done callback is ran, it will
-    // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. Thus, we
-    // can't poll on that pollset here.
-    exec_ctx.Flush();
-  } else {
-    // EventEngine threads will execute the `OnFinishExpectFailure` callback
-    // asynchronously. Since the pollset will be destroyed in another thread,
-    // this test can't poll on it here, so this uses a Notification to signal
-    // that the callback has been run to completion.
-    exec_ctx.Flush();
-    request_state.callback_finished.WaitForNotification();
-  }
+  // Since the request was cancelled, the on_done callback should be flushed
+  // out on the ExecCtx flush below. When the on_done callback is ran, it will
+  // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. Thus, we
+  // can't poll on that pollset here.
+  exec_ctx.Flush();
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
 }
 
 void CancelRequest(grpc_core::HttpRequest* req) {
