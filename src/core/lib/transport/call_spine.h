@@ -42,12 +42,7 @@ namespace grpc_core {
 // legacy promise calls anymore
 class CallSpineInterface {
  public:
-  CallSpineInterface() {
-    gpr_log(GPR_DEBUG, "CallSpineInterface ctor %p", this);
-  }
-  virtual ~CallSpineInterface() {
-    gpr_log(GPR_DEBUG, "CallSpineInterface dtor %p", this);
-  }
+  virtual ~CallSpineInterface() = default;
   virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
   virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
   virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
