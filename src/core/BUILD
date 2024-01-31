@@ -6725,6 +6725,8 @@ grpc_cc_library(
     ],
     deps = [
         "call_final_info",
+        "latch",
+        "map",
         "message",
         "metadata",
         "ref_counted",

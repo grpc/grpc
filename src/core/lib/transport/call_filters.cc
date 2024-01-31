@@ -221,6 +221,17 @@ void CallFilters::CancelDueToFailedPipeOperation() {
   server_trailing_metadata_waiter_.Wake();
 }
 
+void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
+  GPR_ASSERT(md != nullptr);
+  if (server_trailing_metadata_ != nullptr) return;
+  server_trailing_metadata_ = std::move(md);
+  client_initial_metadata_state_.CloseWithError();
+  server_initial_metadata_state_.CloseWithError();
+  client_to_server_message_state_.CloseWithError();
+  server_to_client_message_state_.CloseWithError();
+  server_trailing_metadata_waiter_.Wake();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters::Stack
 
@@ -259,6 +270,48 @@ void filters_detail::PipeState::Start() {
   GPR_DEBUG_ASSERT(!started_);
   started_ = true;
   wait_recv_.Wake();
+}
+
+void filters_detail::PipeState::CloseWithError() {
+  if (state_ == ValueState::kClosed) return;
+  state_ = ValueState::kError;
+  wait_recv_.Wake();
+  wait_send_.Wake();
+}
+
+Poll<bool> filters_detail::PipeState::PollClosed() {
+  switch (state_) {
+    case ValueState::kIdle:
+    case ValueState::kWaiting:
+    case ValueState::kQueued:
+    case ValueState::kReady:
+    case ValueState::kProcessing:
+      return wait_recv_.pending();
+    case ValueState::kClosed:
+      return false;
+    case ValueState::kError:
+      return true;
+  }
+}
+
+void filters_detail::PipeState::CloseSending() {
+  switch (state_) {
+    case ValueState::kIdle:
+      state_ = ValueState::kClosed;
+      break;
+    case ValueState::kWaiting:
+      state_ = ValueState::kClosed;
+      wait_recv_.Wake();
+      break;
+    case ValueState::kClosed:
+    case ValueState::kError:
+      break;
+    case ValueState::kQueued:
+    case ValueState::kReady:
+    case ValueState::kProcessing:
+      Crash("Only one push allowed to be outstanding");
+      break;
+  }
 }
 
 void filters_detail::PipeState::BeginPush() {
@@ -330,7 +383,7 @@ Poll<StatusFlag> filters_detail::PipeState::PollPush() {
   GPR_UNREACHABLE_CODE(return Pending{});
 }
 
-Poll<StatusFlag> filters_detail::PipeState::PollPull() {
+Poll<ValueOrFailure<bool>> filters_detail::PipeState::PollPull() {
   switch (state_) {
     case ValueState::kWaiting:
       return wait_recv_.pending();
@@ -341,10 +394,11 @@ Poll<StatusFlag> filters_detail::PipeState::PollPull() {
     case ValueState::kQueued:
       if (!started_) return wait_recv_.pending();
       state_ = ValueState::kProcessing;
-      return Success{};
+      return true;
     case ValueState::kProcessing:
       Crash("Only one pull allowed to be outstanding");
     case ValueState::kClosed:
+      return false;
     case ValueState::kError:
       return Failure{};
   }

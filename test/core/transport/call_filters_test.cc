@@ -1224,7 +1224,7 @@ TEST(PipeStateTest, OnePull) {
   ps.BeginPush();
   Mock::VerifyAndClearExpectations(&activity);
   // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   // push should be pending though!
   EXPECT_THAT(ps.PollPush(), IsPending());
   // ack the pull, should see a wakeup
@@ -1232,7 +1232,7 @@ TEST(PipeStateTest, OnePull) {
   ps.AckPull();
   Mock::VerifyAndClearExpectations(&activity);
   // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
   ps.DropPush();
   ps.DropPull();
   EXPECT_FALSE(ps.holds_error());
@@ -1251,7 +1251,7 @@ TEST(PipeStateTest, StartThenPull) {
   ps.BeginPush();
   Mock::VerifyAndClearExpectations(&activity);
   // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   // push should be pending though!
   EXPECT_THAT(ps.PollPush(), IsPending());
   // ack the pull, should see a wakeup
@@ -1259,7 +1259,7 @@ TEST(PipeStateTest, StartThenPull) {
   ps.AckPull();
   Mock::VerifyAndClearExpectations(&activity);
   // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
   ps.DropPush();
   ps.DropPull();
   EXPECT_FALSE(ps.holds_error());
@@ -1275,7 +1275,7 @@ TEST(PipeStateTest, PushFirst) {
   // push should be pending
   EXPECT_THAT(ps.PollPush(), IsPending());
   // pull should immediately see a value
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   // push should still be pending though!
   EXPECT_THAT(ps.PollPush(), IsPending());
   // ack the pull, should see a wakeup
@@ -1283,7 +1283,7 @@ TEST(PipeStateTest, PushFirst) {
   ps.AckPull();
   Mock::VerifyAndClearExpectations(&activity);
   // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
   ps.DropPush();
   ps.DropPull();
   EXPECT_FALSE(ps.holds_error());
@@ -1320,7 +1320,7 @@ TEST(PipeStateTest, DropProcessing) {
   activity.Activate();
   ps.Start();
   ps.BeginPush();
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   ps.DropPull();
   EXPECT_TRUE(ps.holds_error());
   EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
