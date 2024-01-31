@@ -107,6 +107,17 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
   };
 }
 
+Arena* Channel::CreateArena() {
+  const size_t initial_size = call_size_estimator_.CallSizeEstimate();
+  global_stats().IncrementCallInitialSize(initial_size);
+  return Arena::Create(initial_size, &allocator_);
+}
+
+void Channel::DestroyArena(Arena* arena) {
+  call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  arena->Destroy();
+}
+
 absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     ChannelStackBuilder* builder) {
   auto channel_args = builder->channel_args();
