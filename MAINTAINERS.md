@@ -44,6 +44,7 @@ for general contribution guidelines.
 <!-- go/keep-sorted end -->
 
 ## Emeritus Maintainers (in alphabetical order)
+<!-- go/keep-sorted start case=no -->
 - [adelez](https://github.com/adelez), Google LLC
 - [AspirinSJL](https://github.com/AspirinSJL), Google LLC
 - [billfeng327](https://github.com/billfeng327), Google LLC
@@ -90,3 +91,4 @@ for general contribution guidelines.
 - [yihuazhang](https://github.com/yihuazhang), Google LLC
 - [zpencer](https://github.com/zpencer), Google LLC
 - [ZhenLian](https://github.com/ZhenLian), Google LLC
+<!-- go/keep-sorted end -->
