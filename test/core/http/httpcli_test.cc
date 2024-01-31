@@ -475,10 +475,16 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   http_request->Start();
   exec_ctx.Flush();
   http_request.reset();  // cancel the request
+  // With iomgr polling:
   // Since the request was cancelled, the on_done callback should be flushed
   // out on the ExecCtx flush below. When the on_done callback is ran, it will
-  // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. Thus, we
-  // can't poll on that pollset here.
+  // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. PollUntil's
+  // predicate should return true immediately.
+  //
+  // With EventEngine polling:
+  // Since the callback will be run asynchronously in another thread, with an
+  // independent ExecCtx, PollUntil is used here to ensure this test does not
+  // finish before the callback is run.
   exec_ctx.Flush();
   PollUntil([&request_state]() { return request_state.done; },
             AbslDeadlineSeconds(60));
