@@ -1906,6 +1906,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/call_filters.h )
   s.files += %w( src/core/lib/transport/call_final_info.cc )
   s.files += %w( src/core/lib/transport/call_final_info.h )
+  s.files += %w( src/core/lib/transport/call_size_estimator.cc )
+  s.files += %w( src/core/lib/transport/call_size_estimator.h )
   s.files += %w( src/core/lib/transport/call_spine.cc )
   s.files += %w( src/core/lib/transport/call_spine.h )
   s.files += %w( src/core/lib/transport/connectivity_state.cc )
