@@ -34,10 +34,8 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
 
 #include <grpc/slice.h>
 
@@ -90,8 +88,6 @@ constexpr absl::string_view kPeerCanonicalServiceAttribute =
 // Type values used by Google Cloud Resource Detector
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
 constexpr absl::string_view kGceType = "gcp_compute_engine";
-
-enum class GcpResourceType : std::uint8_t { kGke, kGce, kUnknown };
 
 // A minimal class for helping with the information we need from the xDS
 // bootstrap file for GSM Observability reasons.
@@ -149,13 +145,14 @@ std::string GetXdsBootstrapContents() {
   return "";
 }
 
-GcpResourceType StringToGcpResourceType(absl::string_view type) {
+MeshLabelsIterable::GcpResourceType StringToGcpResourceType(
+    absl::string_view type) {
   if (type == kGkeType) {
-    return GcpResourceType::kGke;
+    return MeshLabelsIterable::GcpResourceType::kGke;
   } else if (type == kGceType) {
-    return GcpResourceType::kGce;
+    return MeshLabelsIterable::GcpResourceType::kGce;
   }
-  return GcpResourceType::kUnknown;
+  return MeshLabelsIterable::GcpResourceType::kUnknown;
 }
 
 upb_StringView AbslStrToUpbStr(absl::string_view str) {
@@ -207,147 +204,114 @@ absl::string_view GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
   return "unknown";
 }
 
-class MeshLabelsIterable : public LabelsIterable {
- public:
-  explicit MeshLabelsIterable(
-      const std::vector<std::pair<absl::string_view, std::string>>&
-          local_labels,
-      grpc_core::Slice remote_metadata)
-      : local_labels_(local_labels), metadata_(std::move(remote_metadata)) {}
-
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
-      override {
-    auto& struct_pb = GetDecodedMetadata();
-    size_t local_labels_size = local_labels_.size();
-    if (pos_ < local_labels_size) {
-      return local_labels_[pos_++];
-    }
-    const size_t fixed_attribute_end =
-        local_labels_size + kFixedAttributes.size();
-    if (pos_ < fixed_attribute_end) {
-      return NextFromAttributeList(struct_pb, kFixedAttributes,
-                                   local_labels_size);
-    }
-    return NextFromAttributeList(struct_pb, GetAttributesForType(remote_type_),
-                                 fixed_attribute_end);
-  }
-
-  size_t Size() const override {
-    return local_labels_.size() + kFixedAttributes.size() +
-           GetAttributesForType(remote_type_).size();
-  }
-
-  void ResetIteratorPosition() override { pos_ = 0; }
-
-  // Returns true if the peer sent a non-empty base64 encoded
-  // "x-envoy-peer-metadata" metadata.
-  bool GotRemoteLabels() const {
-    return GetDecodedMetadata().struct_pb != nullptr;
-  }
-
- private:
-  struct RemoteAttribute {
-    absl::string_view otel_attribute;
-    absl::string_view metadata_attribute;
-  };
-
-  struct StructPb {
-    upb::Arena arena;
-    google_protobuf_Struct* struct_pb = nullptr;
-  };
-
-  static constexpr std::array<RemoteAttribute, 2> kFixedAttributes = {
-      RemoteAttribute{kPeerTypeAttribute, kMetadataExchangeTypeKey},
-      RemoteAttribute{kPeerCanonicalServiceAttribute,
-                      kMetadataExchangeCanonicalServiceKey},
-  };
-
-  static constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
-      RemoteAttribute{kPeerWorkloadNameAttribute,
-                      kMetadataExchangeWorkloadNameKey},
-      RemoteAttribute{kPeerNamespaceNameAttribute,
-                      kMetadataExchangeNamespaceNameKey},
-      RemoteAttribute{kPeerClusterNameAttribute,
-                      kMetadataExchangeClusterNameKey},
-      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
-      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
-  };
-  static constexpr std::array<RemoteAttribute, 3> kGceAttributeList = {
-      RemoteAttribute{kPeerWorkloadNameAttribute,
-                      kMetadataExchangeWorkloadNameKey},
-      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
-      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
-  };
-
-  static absl::Span<const RemoteAttribute> GetAttributesForType(
-      GcpResourceType remote_type) {
-    switch (remote_type) {
-      case GcpResourceType::kGke:
-        return kGkeAttributeList;
-      case GcpResourceType::kGce:
-        return kGceAttributeList;
-      default:
-        return {};
-    }
-  }
-
-  absl::optional<std::pair<absl::string_view, absl::string_view>>
-  NextFromAttributeList(const StructPb& struct_pb,
-                        absl::Span<const RemoteAttribute> attributes,
-                        size_t start_index) {
-    GPR_DEBUG_ASSERT(pos_ >= start_index);
-    const size_t index = pos_ - start_index;
-    if (index >= attributes.size()) return absl::nullopt;
-    ++pos_;
-    const auto& attribute = attributes[index];
-    return std::make_pair(attribute.otel_attribute,
-                          GetStringValueFromUpbStruct(
-                              struct_pb.struct_pb, attribute.metadata_attribute,
-                              struct_pb.arena.ptr()));
-  }
-
-  StructPb& GetDecodedMetadata() const {
-    auto* slice = absl::get_if<grpc_core::Slice>(&metadata_);
-    if (slice == nullptr) {
-      return absl::get<StructPb>(metadata_);
-    }
-    // Treat an empty slice as an invalid metadata value.
-    if (slice->empty()) {
-      metadata_ = StructPb{};
-      auto& struct_pb = absl::get<StructPb>(metadata_);
-      return struct_pb;
-    }
-    std::string decoded_metadata;
-    bool metadata_decoded =
-        absl::Base64Unescape(slice->as_string_view(), &decoded_metadata);
-    metadata_ = StructPb{};
-    auto& struct_pb = absl::get<StructPb>(metadata_);
-    if (metadata_decoded) {
-      struct_pb.struct_pb = google_protobuf_Struct_parse(
-          decoded_metadata.c_str(), decoded_metadata.size(),
-          struct_pb.arena.ptr());
-      remote_type_ = StringToGcpResourceType(GetStringValueFromUpbStruct(
-          struct_pb.struct_pb, kMetadataExchangeTypeKey,
-          struct_pb.arena.ptr()));
-    }
-    return struct_pb;
-  }
-
-  const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
-  // Holds either the metadata slice or the decoded proto struct.
-  mutable absl::variant<grpc_core::Slice, StructPb> metadata_;
-  mutable GcpResourceType remote_type_ = GcpResourceType::kUnknown;
-  uint32_t pos_ = 0;
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 2> kFixedAttributes =
+    {
+        MeshLabelsIterable::RemoteAttribute{kPeerTypeAttribute,
+                                            kMetadataExchangeTypeKey},
+        MeshLabelsIterable::RemoteAttribute{
+            kPeerCanonicalServiceAttribute,
+            kMetadataExchangeCanonicalServiceKey},
 };
 
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 2>
-    MeshLabelsIterable::kFixedAttributes;
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5>
-    MeshLabelsIterable::kGkeAttributeList;
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3>
-    MeshLabelsIterable::kGceAttributeList;
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5> kGkeAttributeList =
+    {
+        MeshLabelsIterable::RemoteAttribute{kPeerWorkloadNameAttribute,
+                                            kMetadataExchangeWorkloadNameKey},
+        MeshLabelsIterable::RemoteAttribute{kPeerNamespaceNameAttribute,
+                                            kMetadataExchangeNamespaceNameKey},
+        MeshLabelsIterable::RemoteAttribute{kPeerClusterNameAttribute,
+                                            kMetadataExchangeClusterNameKey},
+        MeshLabelsIterable::RemoteAttribute{kPeerLocationAttribute,
+                                            kMetadataExchangeLocationKey},
+        MeshLabelsIterable::RemoteAttribute{kPeerProjectIdAttribute,
+                                            kMetadataExchangeProjectIdKey},
+};
+
+constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3> kGceAttributeList =
+    {
+        MeshLabelsIterable::RemoteAttribute{kPeerWorkloadNameAttribute,
+                                            kMetadataExchangeWorkloadNameKey},
+        MeshLabelsIterable::RemoteAttribute{kPeerLocationAttribute,
+                                            kMetadataExchangeLocationKey},
+        MeshLabelsIterable::RemoteAttribute{kPeerProjectIdAttribute,
+                                            kMetadataExchangeProjectIdKey},
+};
+
+absl::Span<const MeshLabelsIterable::RemoteAttribute> GetAttributesForType(
+    MeshLabelsIterable::GcpResourceType remote_type) {
+  switch (remote_type) {
+    case MeshLabelsIterable::GcpResourceType::kGke:
+      return kGkeAttributeList;
+    case MeshLabelsIterable::GcpResourceType::kGce:
+      return kGceAttributeList;
+    default:
+      return {};
+  }
+}
 
 }  // namespace
+
+MeshLabelsIterable::MeshLabelsIterable(
+    const std::vector<std::pair<absl::string_view, std::string>>& local_labels,
+    grpc_core::Slice remote_metadata)
+    : local_labels_(local_labels),
+      metadata_(DecodeMetadata(std::move(remote_metadata))),
+      remote_type_(StringToGcpResourceType(GetStringValueFromUpbStruct(
+          metadata_.struct_pb, kMetadataExchangeTypeKey,
+          metadata_.arena.ptr()))) {}
+
+absl::optional<std::pair<absl::string_view, absl::string_view>>
+MeshLabelsIterable::Next() {
+  size_t local_labels_size = local_labels_.size();
+  if (pos_ < local_labels_size) {
+    return local_labels_[pos_++];
+  }
+  const size_t fixed_attribute_end =
+      local_labels_size + kFixedAttributes.size();
+  if (pos_ < fixed_attribute_end) {
+    return NextFromAttributeList(kFixedAttributes, local_labels_size);
+  }
+  return NextFromAttributeList(GetAttributesForType(remote_type_),
+                               fixed_attribute_end);
+}
+
+size_t MeshLabelsIterable::Size() const {
+  return local_labels_.size() + kFixedAttributes.size() +
+         GetAttributesForType(remote_type_).size();
+}
+
+absl::optional<std::pair<absl::string_view, absl::string_view>>
+MeshLabelsIterable::NextFromAttributeList(
+    absl::Span<const RemoteAttribute> attributes, size_t start_index) {
+  GPR_DEBUG_ASSERT(pos_ >= start_index);
+  const size_t index = pos_ - start_index;
+  if (index >= attributes.size()) return absl::nullopt;
+  ++pos_;
+  const auto& attribute = attributes[index];
+  return std::make_pair(attribute.otel_attribute,
+                        GetStringValueFromUpbStruct(
+                            metadata_.struct_pb, attribute.metadata_attribute,
+                            metadata_.arena.ptr()));
+}
+
+MeshLabelsIterable::StructPb MeshLabelsIterable::DecodeMetadata(
+    grpc_core::Slice slice) {
+  StructPb struct_pb;
+  // Treat an empty slice as an invalid metadata value.
+  if (slice.empty()) {
+    return struct_pb;
+  }
+  // Decode the slice.
+  std::string decoded_metadata;
+  bool metadata_decoded =
+      absl::Base64Unescape(slice.as_string_view(), &decoded_metadata);
+  if (metadata_decoded) {
+    struct_pb.struct_pb = google_protobuf_Struct_parse(decoded_metadata.c_str(),
+                                                       decoded_metadata.size(),
+                                                       struct_pb.arena.ptr());
+  }
+  return struct_pb;
+}
 
 // Returns the mesh ID by reading and parsing the bootstrap file. Returns
 // "unknown" if for some reason, mesh ID could not be figured out.

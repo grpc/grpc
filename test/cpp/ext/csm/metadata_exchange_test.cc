@@ -243,6 +243,18 @@ class MetadataExchangeTest
     EXPECT_EQ(attributes.find("csm.remote_workload_type"), attributes.end());
   }
 
+  size_t ExpectedAttributesSize(bool is_client) {
+    grpc::internal::ServiceMeshLabelsInjector labels_injector(
+        GetParam().GetTestResource().GetAttributes());
+    grpc::internal::MeshLabelsIterable labels_iterable(
+        labels_injector.TestOnlyLocalLabels(),
+        labels_injector.TestOnlySerializedLabels().Ref());
+    return is_client
+               ? labels_iterable.Size() + /*CSM service name and namespace*/ 2 +
+                     /*Base gRPC metric labels*/ 3
+               : labels_iterable.Size() + /*Base gRPC metric labels*/ 2;
+  }
+
  private:
   char* bootstrap_file_name_ = nullptr;
 };
@@ -289,6 +301,7 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), ExpectedAttributesSize(/*is_client*/ true));
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
@@ -336,6 +349,7 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), ExpectedAttributesSize(/*is_client*/ false));
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
   VerifyServiceMeshAttributes(attributes, /*is_client=*/false);
