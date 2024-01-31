@@ -243,7 +243,14 @@ class MetadataExchangeTest
     EXPECT_EQ(attributes.find("csm.remote_workload_type"), attributes.end());
   }
 
+  // Returns the expected size of attributes on client/server metrics (other
+  // than `grpc.client.attempt.started` and `grpc.server.call.started`). Use of
+  // this method additionally tests `Size()` method on `MeshLabelsIterable`
+  // which is unused by the OTel C++ library at present, but might be used in
+  // the future.
   size_t ExpectedAttributesSize(bool is_client) {
+    // Create a temporary ServiceMeshLabelsInjector and MeshLabelsIterable to
+    // get the expected size of the labels.
     grpc::internal::ServiceMeshLabelsInjector labels_injector(
         GetParam().GetTestResource().GetAttributes());
     grpc::internal::MeshLabelsIterable labels_iterable(
