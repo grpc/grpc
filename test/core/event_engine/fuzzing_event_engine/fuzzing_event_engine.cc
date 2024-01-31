@@ -196,19 +196,6 @@ void FuzzingEventEngine::TickUntilIdle() {
   }
 }
 
-void FuzzingEventEngine::TickUntilIdleOrDuration(Duration d) {
-  auto t = Now() + d;
-  while (true) {
-    {
-      grpc_core::MutexLock lock(&*mu_);
-      if (tasks_by_id_.empty()) return;
-    }
-    auto now = Now();
-    if (now >= t) return;
-    Tick(d);
-  }
-}
-
 void FuzzingEventEngine::TickUntil(Time t) {
   while (true) {
     auto now = Now();

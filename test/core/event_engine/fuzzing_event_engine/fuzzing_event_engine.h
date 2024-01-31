@@ -39,6 +39,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -308,17 +309,16 @@ class FuzzingEventEngine : public EventEngine {
 class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
  public:
   ThreadedFuzzingEventEngine()
-      : ThreadedFuzzingEventEngine(std::chrono::milliseconds(600)) {}
+      : ThreadedFuzzingEventEngine(std::chrono::milliseconds(10)) {}
 
   explicit ThreadedFuzzingEventEngine(Duration max_time)
       : FuzzingEventEngine(FuzzingEventEngine::Options(),
                            fuzzing_event_engine::Actions()),
         main_([this, max_time]() {
           while (!done_.load()) {
-            // absl::SleepFor(absl::Milliseconds(10));
-            // TickUntilIdleOrDuration(max_time);
-            absl::SleepFor(absl::Milliseconds(1));
-            TickUntilIdle();
+            absl::SleepFor(absl::Milliseconds(
+                grpc_event_engine::experimental::Milliseconds(max_time)));
+            Tick();
           }
         }) {}
 

@@ -16,6 +16,8 @@
 //
 //
 
+#include <chrono>
+
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
@@ -56,7 +58,7 @@ using grpc_event_engine::experimental::URIToResolvedAddress;
 
 void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-constexpr int kIterations = 5000;
+constexpr int kIterations = 10000;
 constexpr int kSnapshotEvery = kIterations / 10;
 }  // namespace
 
@@ -270,11 +272,11 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
   auto fuzzing_engine = std::dynamic_pointer_cast<
       grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
       grpc_event_engine::experimental::GetDefaultEventEngine());
-  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 0), 2.3);
-  // EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 1, 0), 2.3);
-  // EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 1), 2.3);
-  // EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 4096, 0), 2.5);
-  // EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 4096), 2.5);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 0), 2.2);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 1, 0), 2.2);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 1), 2.2);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 4096, 0), 2.5);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 4096), 2.5);
 }
 
 }  // namespace testing
@@ -286,7 +288,7 @@ int main(int argc, char** argv) {
       []() -> std::unique_ptr<grpc_event_engine::experimental::EventEngine> {
         return std::make_unique<
             grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
-            std::chrono::milliseconds(500));
+            std::chrono::milliseconds(1));
       });
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
