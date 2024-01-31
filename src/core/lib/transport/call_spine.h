@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "call_filters.h"
-
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/detail/status.h"
@@ -30,6 +28,7 @@
 #include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -50,7 +49,7 @@ class CallSpine final : public Party {
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
@@ -138,33 +137,33 @@ class CallInitiator {
       : spine_(std::move(spine)) {}
 
   auto PushClientInitialMetadata(ClientMetadataHandle md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PushClientInitialMetadata(std::move(md));
   }
 
   auto PullServerInitialMetadata() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullServerInitialMetadata();
   }
 
   auto PullServerTrailingMetadata() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullServerTrailingMetadata();
   }
 
   auto PullMessage() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullServerToClientMessage();
   }
 
   auto PushMessage(MessageHandle message) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     GPR_DEBUG_ASSERT(message != nullptr);
     return spine_->call_filters().PushClientToServerMessage(std::move(message));
   }
 
   void FinishSends() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     spine_->call_filters().FinishClientToServerSends();
   }
 
@@ -174,7 +173,7 @@ class CallInitiator {
   }
 
   void Cancel() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     spine_->call_filters().PushServerTrailingMetadata(
         ServerMetadataFromStatus(absl::CancelledError()));
   }
@@ -206,12 +205,12 @@ class CallHandler {
       : spine_(std::move(spine)) {}
 
   auto PullClientInitialMetadata() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullClientInitialMetadata();
   }
 
   auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return If(
         md.has_value(),
         [&md, this]() {
@@ -220,29 +219,29 @@ class CallHandler {
         },
         [this]() {
           spine_->call_filters().NoServerInitialMetadata();
-          return Success{};
+          return []() -> StatusFlag { return Success{}; };
         });
   }
 
   auto PushServerTrailingMetadata(ServerMetadataHandle md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     spine_->call_filters().PushServerTrailingMetadata(std::move(md));
     return Map(spine_->call_filters().WasCancelled(),
                [](bool was_cancelled) { return StatusFlag(!was_cancelled); });
   }
 
   auto PullMessage() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullClientToServerMessage();
   }
 
   auto PushMessage(MessageHandle message) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PushServerToClientMessage(std::move(message));
   }
 
   void Cancel(ServerMetadataHandle status) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     spine_->call_filters().PushServerTrailingMetadata(std::move(status));
   }
 
