@@ -40,6 +40,8 @@
 
 #if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
+#else
+#include "src/core/lib/gprpp/crash.h"
 #endif
 // IWYU pragma: no_include <sys/socket.h>
 
