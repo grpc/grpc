@@ -480,6 +480,8 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. Thus, we
   // can't poll on that pollset here.
   exec_ctx.Flush();
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
 }
 
 void CancelRequest(grpc_core::HttpRequest* req) {
