@@ -122,6 +122,11 @@ Pod::Spec.new do |s|
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = 'src'
+
+    ss.resource_bundles = {
+      s.module_name => 'src/PrivacyInfo.xcprivacy'
+    }
+
     ss.source_files = 'src/ssl/*.{h,c,cc}',
                       'src/ssl/**/*.{h,c,cc}',
                       'src/crypto/*.{h,c,cc}',
@@ -684,6 +689,16 @@ Pod::Spec.new do |s|
       Wakc8+BjAUEM+xrF8G7bU4XRfSnBNUFNazq8w9xJ6nPNKHVW53WH3E4DXUQc74M63K56B6GuNOLa24gZ
       Jq0aVQND6Yw85rfNdhzPO5g1Sys4QKiPIuizghfbI6QRd9+2Lyrf1y9VXjbKHgOIJwh//9v/AXNDsFL5
       zwQA
+    EOF
+
+    # PrivacyInfo.xcprivacy is not part of BoringSSL repo, inject it during pod installation
+    base64 --decode $opts <<EOF | gunzip > src/PrivacyInfo.xcprivacy
+      H4sICAAAAAAC/1ByaXZhY3lJbmZvLnhjcHJpdmFjeQC1kl9PwjAUxZ/Hp6h9Z1di/JsxAhskJAQXGQ8+
+      Nt0VG7a1aRuw395OHUhE8UHflrNzzj2/pNHgpSrJBrURsu7TXnhOCdZcFqJe9ekyn3Rv6CDuRGfpfZI/
+      ZmOiSmEsyZaj2TQhtAswVKpEgDRPSTabLnLiOwDGc0ros7XqDmC73YascYVcVo3RQKalQm3dzJd1fSAs
+      bEH9mff2gzleLQS3cSeI1uji+SLTYsO4yzXja78ygkb2f59YaRC++BJZlsgtFimzLHcKzS7BtGYOvm1O
+      ZcVEfdI+5ByNwWKYTY/U+4+gBQh+TrZBbzNW+wFHnQmzuJLaTUSJuajQWFapCD4SJ488IDNyDxV8mrm/
+      m1z1rsPeYSnscaDl+RewhTMWq5GUtsH7Y7KLy8ntL8h2WqtE8PY0484rAb5xoDEDAAA=
     EOF
 
     # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists

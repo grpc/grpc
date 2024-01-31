@@ -80,6 +80,14 @@ Pod::Spec.new do |s|
 
   s.header_mappings_dir = 'include/grpcpp'
 
+  # Exposes the privacy manifest. Depended on by any subspecs containing
+  # non-interface files.
+  s.subspec 'Privacy' do |ss|
+    ss.resource_bundles = {
+      s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+    }
+  end
+
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/grpcpp'
 
@@ -214,6 +222,7 @@ Pod::Spec.new do |s|
 
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
+    ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20230802.0'
@@ -2729,6 +2738,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Cronet-Interface", version
     ss.dependency "#{s.name}/Implementation", version
+    ss.dependency "#{s.name}/Privacy", version
 
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
 
