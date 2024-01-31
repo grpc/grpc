@@ -45,6 +45,9 @@ class GrpcXdsClient : public XdsClient {
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
       const ChannelArgs& args, const char* reason);
 
+  // Builds ClientStatusResponse containing all resources from all XdsClients
+  static grpc_slice DumpAllClientConfigs();
+
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support
   // tests that want to use a fake transport factory with code that
