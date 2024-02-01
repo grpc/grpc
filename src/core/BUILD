@@ -6757,6 +6757,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_destination",
+    hdrs = [
+        "lib/transport/call_destination.h",
+    ],
+    deps = [
+        "call_spine",
+        "//:gpr_platform",
+        "//:orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
         "lib/transport/parsed_metadata.cc",
