@@ -247,14 +247,14 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
   auto init = b.Build();
   int p = 0;
-  auto stack_mutator = init.CreateStack(
+  auto segment = init.CreateStackSegment(
       GRPC_CLIENT_CHANNEL,
       ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p)));
-  ASSERT_TRUE(stack_mutator.ok()) << stack_mutator.status();
+  ASSERT_TRUE(segment.ok()) << segment.status();
   CallFilters::StackBuilder stack_builder;
-  (*stack_mutator)(stack_builder);
+  segment->AddToCallFilterStack(stack_builder);
+  segment = absl::CancelledError();  // force the segment to be destroyed
   auto stack = stack_builder.Build();
-  stack_mutator = nullptr;
   { CallFilters call_filters(stack); }
   EXPECT_EQ(p, 1);
 }

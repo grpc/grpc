@@ -223,14 +223,54 @@ class ChannelInit {
   GRPC_MUST_USE_RESULT
   bool CreateStack(ChannelStackBuilder* builder) const;
 
+  // A set of channel filters that can be added to a call stack.
+  // TODO(ctiller): move this out so it can be used independently of
+  // the global registration mechanisms.
+  class StackSegment final {
+   public:
+    // Registration of one channel filter in the stack.
+    struct ChannelFilter {
+      size_t offset;
+      const ChannelFilterVtable* vtable;
+    };
+
+    StackSegment() = default;
+    explicit StackSegment(std::vector<ChannelFilter> filters,
+                          uint8_t* channel_data);
+    StackSegment(const StackSegment& other) = delete;
+    StackSegment& operator=(const StackSegment& other) = delete;
+    StackSegment(StackSegment&& other) noexcept = default;
+    StackSegment& operator=(StackSegment&& other) = default;
+
+    // Add this segment to a call filter stack builder
+    void AddToCallFilterStack(CallFilters::StackBuilder& builder);
+
+   private:
+    // Combined channel data for the stack
+    class ChannelData : public RefCounted<ChannelData> {
+     public:
+      explicit ChannelData(std::vector<ChannelFilter> filters,
+                           uint8_t* channel_data);
+      ~ChannelData() override;
+
+      void AddToCallFilterStack(CallFilters::StackBuilder& builder);
+
+     private:
+      std::vector<ChannelFilter> filters_;
+      uint8_t* channel_data_;
+    };
+
+    RefCountedPtr<ChannelData> data_;
+  };
+
   // Create a new style channel stack.
   // Return value is a function that can be used to build the call.
   // Channel data is held privately by that function.
   // Terminators and post processors are not included in this construction:
   // terminators are a legacy filter-stack concept, and post processors
   // need to migrate to other mechanisms.
-  absl::StatusOr<absl::AnyInvocable<void(CallFilters::StackBuilder&)>>
-  CreateStack(grpc_channel_stack_type type, const ChannelArgs& args) const;
+  absl::StatusOr<StackSegment> CreateStackSegment(
+      grpc_channel_stack_type type, const ChannelArgs& args) const;
 
  private:
   struct Filter {
