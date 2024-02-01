@@ -29,6 +29,8 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -191,6 +193,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -293,6 +297,8 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -455,6 +461,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -557,6 +565,8 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -719,6 +729,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
