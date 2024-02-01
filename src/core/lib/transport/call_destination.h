@@ -27,7 +27,8 @@ namespace grpc_core {
 // instance).
 class CallDestination : public Orphanable {
  public:
-  virtual void StartCall(CallHandler call_handler) = 0;
+  virtual void StartCall(ClientMetadataHandle metadata,
+                         CallHandler call_handler) = 0;
 };
 
 }  // namespace grpc_core

@@ -408,10 +408,8 @@ auto OutgoingMessages(CallHalf h) {
   return Wrapper{std::move(h)};
 }
 
-// Forward a call from `call_handler` to `call_initiator` (with initial metadata
-// `client_initial_metadata`)
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata);
+// Forwards a call from `call_handler` to `call_initiator`.
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator);
 
 }  // namespace grpc_core
 

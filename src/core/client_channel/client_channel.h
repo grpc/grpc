@@ -1,5 +1,5 @@
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/call_filters.h"
 
@@ -53,7 +58,7 @@ class ClientChannel : public CallFactory {
   // becomes different from *state, sets *state to the new state and
   // schedules on_complete.  The watcher_timer_init callback is invoked as
   // soon as the watch is actually started (i.e., after hopping into the
-  // client channel combiner).  I/O will be serviced via pollent.
+  // client channel WorkSerializer).  I/O will be serviced via pollent.
   //
   // This is intended to be used when starting a watch from outside of C-core
   // via grpc_channel_watch_connectivity_state().  It should not be used
@@ -93,6 +98,98 @@ class ClientChannel : public CallFactory {
 #endif
 
  private:
+  class ResolverResultHandler;
+  class SubchannelWrapper;
+  class ClientChannelControlHelper;
+  class ConnectivityWatcherAdder;
+  class ConnectivityWatcherRemover;
+
+#if 0
+  // Represents a pending connectivity callback from an external caller
+  // via grpc_client_channel_watch_connectivity_state().
+  class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
+   public:
+    ExternalConnectivityWatcher(ClientChannelFilter* chand,
+                                grpc_polling_entity pollent,
+                                grpc_connectivity_state* state,
+                                grpc_closure* on_complete,
+                                grpc_closure* watcher_timer_init);
+
+    ~ExternalConnectivityWatcher() override;
+
+    // Removes the watcher from the external_watchers_ map.
+    static void RemoveWatcherFromExternalWatchersMap(ClientChannelFilter* chand,
+                                                     grpc_closure* on_complete,
+                                                     bool cancel);
+
+    void Notify(grpc_connectivity_state state,
+                const absl::Status& /* status */) override;
+
+    void Cancel();
+
+   private:
+    // Adds the watcher to state_tracker_. Consumes the ref that is passed to it
+    // from Start().
+    void AddWatcherLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_);
+    void RemoveWatcherLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_);
+
+    ClientChannelFilter* chand_;
+    grpc_polling_entity pollent_;
+    grpc_connectivity_state initial_state_;
+    grpc_connectivity_state* state_;
+    grpc_closure* on_complete_;
+    grpc_closure* watcher_timer_init_;
+    std::atomic<bool> done_{false};
+  };
+#endif
+
+  void OnResolverResultChangedLocked(Resolver::Result result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+  void OnResolverErrorLocked(absl::Status status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  absl::Status CreateOrUpdateLbPolicyLocked(
+      RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
+      const absl::optional<std::string>& health_check_service_name,
+      Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+  OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
+      const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void UpdateStateLocked(grpc_connectivity_state state,
+                         const absl::Status& status, const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void UpdateStateAndPickerLocked(
+      grpc_connectivity_state state, const absl::Status& status,
+      const char* reason,
+      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void UpdateServiceConfigInControlPlaneLocked(
+      RefCountedPtr<ServiceConfig> service_config,
+      RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void UpdateServiceConfigInDataPlaneLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+  void DestroyResolverAndLbPolicyLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+  void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+
+#if 0
+  void StartTransportOpLocked(grpc_transport_op* op)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+  grpc_error_handle DoPingLocked(grpc_transport_op* op)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
+  static void GetChannelInfo(grpc_channel_element* elem,
+                             const grpc_channel_info* info);
+#endif
+
   //
   // Fields set at construction and never modified.
   //
@@ -103,6 +200,7 @@ class ClientChannel : public CallFactory {
   std::string uri_to_resolve_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
+  OrphanablePtr<CallDestination> call_destination_;
 
   //
   // Fields related to name resolution.
@@ -111,7 +209,7 @@ class ClientChannel : public CallFactory {
     RefCountedPtr<ConfigSelector> config_selector;
     RefCountedPtr<CallFilters::Stack> filter_stack;
   };
-  Observable<StatusOr<ResolverDataForCalls>> resolver_data_for_calls_;
+  Observable<absl::StatusOr<ResolverDataForCalls>> resolver_data_for_calls_;
 
   //
   // Fields related to LB picks.
