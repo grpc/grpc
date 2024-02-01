@@ -75,15 +75,15 @@ You will see a series of screens:
 
 1.  Select *Authorize LF-Engineering:
 
-    ![Screenshot of EasyCLA Step 1](doc/images/img/grpc-easycla-authorize.png)
+![Screenshot of EasyCLA Step 1](doc/images/img/grpc-easycla-authorize.png)
 
 1.  Select your contributor type:
 
-    ![Screenshot of EasyCLA Step 2](doc/images/img/grpc-contributor-type.png)
+![Screenshot of EasyCLA Step 2](doc/images/img/grpc-contributor-type.png)
 
 1.  Select *SIGN CLA*:
 
-    ![Screenshot of EasyCLA Step 3](doc/images/img/grpc-sign-cla.png)
+![Screenshot of EasyCLA Step 3](doc/images/img/grpc-sign-cla.png)
 
 Some time after you've digitally signed the document, the EasyCLA will appear as
 *Covered*.
@@ -117,13 +117,13 @@ You can read more about the process and requirements
 After you fix the code review, you will finally get an approval. After getting
 approval, you can submit the pull request.
 
-    ![Pull request approved and labelled ](doc/images/img/grpc-review-complete.png)
+![Pull request approved and labelled](doc/images/img/grpc-review-complete.png)
 
 ### Submission
 
 You **cannot** do submission or merge of a pull request through Github.
 
-    ![Pull request approved and labelled ](doc/images/img/grpc-wait-for-merge.png)
+![Pull request approved and labelled](doc/images/img/grpc-wait-for-merge.png)
 
 After you have approval from a reviewer, a Google employee will trigger
 the submission process. When the submission happens:
