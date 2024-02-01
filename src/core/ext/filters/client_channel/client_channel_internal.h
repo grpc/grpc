@@ -35,7 +35,7 @@
 //
 // This file contains internal interfaces used to allow various plugins
 // (filters, LB policies, etc) to access internal data provided by the
-// ClientChannel that is not normally accessible via external APIs.
+// ClientChannelFilter that is not normally accessible via external APIs.
 //
 
 // Channel arg key for health check service name.

@@ -310,8 +310,9 @@ namespace {
 void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call = static_cast<ClientChannel::FilterBasedLoadBalancedCall*>(
-      batch->handler_private.extra_arg);
+  auto* lb_call =
+      static_cast<ClientChannelFilter::FilterBasedLoadBalancedCall*>(
+          batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
 }
@@ -1710,7 +1711,7 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
+OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
