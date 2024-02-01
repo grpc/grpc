@@ -374,8 +374,6 @@ def targets():
                        presubmit=True),
         CppDistribTest('linux',
                        'x64',
-        CppDistribTest('linux',
-                       'x64',
                        'debian10',
                        'cmake_pkgconfig',
                        presubmit=True),
