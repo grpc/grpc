@@ -184,7 +184,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   };
 
   Call(Arena* arena, bool is_client, Timestamp send_deadline,
-       RefCountedPtr<GrpcChannel> channel)
+       RefCountedPtr<Channel> channel)
       : channel_(std::move(channel)),
         arena_(arena),
         send_deadline_(send_deadline),
@@ -198,7 +198,7 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
-  GrpcChannel* channel() const {
+  Channel* channel() const {
     GPR_DEBUG_ASSERT(channel_ != nullptr);
     return channel_.get();
   }
@@ -248,7 +248,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   gpr_cycle_counter start_time() const { return start_time_; }
 
  private:
-  RefCountedPtr<GrpcChannel> channel_;
+  RefCountedPtr<Channel> channel_;
   Arena* const arena_;
   std::atomic<ParentCall*> parent_call_{nullptr};
   ChildCall* child_ = nullptr;
@@ -689,7 +689,7 @@ class FilterStackCall final : public Call {
 
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->RefAsSubclass<GrpcChannel>()),
+             args.channel->RefAsSubclass<Channel>()),
         cq_(args.cq),
         stream_op_payload_(context_) {}
 
@@ -802,7 +802,7 @@ class FilterStackCall final : public Call {
 
 grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
-  GrpcChannel* channel = args->channel.get();
+  Channel* channel = args->channel.get();
 
   auto add_init_error = [](grpc_error_handle* composite,
                            grpc_error_handle new_err) {
@@ -1994,7 +1994,7 @@ class BasicPromiseBasedCall : public Call,
   BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                         const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->RefAsSubclass<GrpcChannel>()),
+             args.channel->RefAsSubclass<Channel>()),
         Party(arena, initial_external_refs != 0 ? 1 : 0),
         external_refs_(initial_external_refs),
         cq_(args.cq) {
@@ -3704,7 +3704,7 @@ class ServerCallSpine final : public CallSpineInterface,
                               public ServerCallContext,
                               public BasicPromiseBasedCall {
  public:
-  ServerCallSpine(Server* server, GrpcChannel* channel, Arena* arena);
+  ServerCallSpine(Server* server, Channel* channel, Arena* arena);
 
   // CallSpineInterface
   Pipe<ClientMetadataHandle>& client_initial_metadata() override {
@@ -3788,12 +3788,11 @@ class ServerCallSpine final : public CallSpineInterface,
   ClientMetadataHandle client_initial_metadata_stored_;
 };
 
-ServerCallSpine::ServerCallSpine(Server* server, GrpcChannel* channel,
-                                 Arena* arena)
+ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
     : BasicPromiseBasedCall(
           arena, 1, [channel, server]() -> grpc_call_create_args {
             grpc_call_create_args args;
-            args.channel = channel->RefAsSubclass<GrpcChannel>();
+            args.channel = channel->RefAsSubclass<Channel>();
             args.server = server;
             args.parent = nullptr;
             args.propagation_mask = 0;
@@ -4055,7 +4054,7 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
 }
 
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 GrpcChannel* channel,
+                                                 Channel* channel,
                                                  Arena* arena) {
   return RefCountedPtr<ServerCallSpine>(
       arena->New<ServerCallSpine>(server, channel, arena));

@@ -117,7 +117,7 @@ class ClientChannel {
 
   // Returns the ClientChannel object from channel, or null if channel
   // is not a client channel.
-  static ClientChannel* GetFromChannel(GrpcChannel* channel);
+  static ClientChannel* GetFromChannel(Channel* channel);
 
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,

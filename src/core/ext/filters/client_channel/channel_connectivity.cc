@@ -49,7 +49,7 @@
 namespace grpc_core {
 namespace {
 
-bool IsLameChannel(GrpcChannel* channel) {
+bool IsLameChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
   return elem->filter == &LameClientFilter::kFilter;
@@ -65,7 +65,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   GRPC_API_TRACE(
       "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
       (c_channel, try_to_connect));
-  grpc_core::GrpcChannel* channel = grpc_core::GrpcChannel::FromC(c_channel);
+  grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
   // Forward through to the underlying client channel.
   grpc_core::ClientChannel* client_channel =
       grpc_core::ClientChannel::GetFromChannel(channel);
@@ -82,7 +82,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
 }
 
 int grpc_channel_num_external_connectivity_watchers(grpc_channel* c_channel) {
-  grpc_core::GrpcChannel* channel = grpc_core::GrpcChannel::FromC(c_channel);
+  grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
   grpc_core::ClientChannel* client_channel =
       grpc_core::ClientChannel::GetFromChannel(channel);
   if (client_channel == nullptr) {
@@ -98,7 +98,7 @@ int grpc_channel_num_external_connectivity_watchers(grpc_channel* c_channel) {
 
 int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
   return grpc_core::ClientChannel::GetFromChannel(
-             grpc_core::GrpcChannel::FromC(channel)) != nullptr;
+             grpc_core::Channel::FromC(channel)) != nullptr;
 }
 
 namespace grpc_core {
@@ -109,7 +109,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   StateWatcher(grpc_channel* c_channel, grpc_completion_queue* cq, void* tag,
                grpc_connectivity_state last_observed_state,
                gpr_timespec deadline)
-      : channel_(GrpcChannel::FromC(c_channel)->RefAsSubclass<GrpcChannel>()),
+      : channel_(Channel::FromC(c_channel)->RefAsSubclass<Channel>()),
         cq_(cq),
         tag_(tag),
         state_(last_observed_state) {
@@ -225,7 +225,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
     self->WeakUnref();
   }
 
-  RefCountedPtr<GrpcChannel> channel_;
+  RefCountedPtr<Channel> channel_;
   grpc_completion_queue* cq_;
   void* tag_;
 

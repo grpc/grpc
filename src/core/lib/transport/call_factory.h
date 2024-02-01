@@ -21,16 +21,18 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_size_estimator.h"
+#include "src/core/lib/transport/call_spine.h"
 
 namespace grpc_core {
 
-class Channel : public RefCounted<Channel> {
+class CallFactory : public RefCounted<CallFactory> {
  public:
+  explicit CallFactory(const ChannelArgs& args);
+
   Arena* CreateArena();
   void DestroyArena(Arena* arena);
 
- protected:
-  explicit Channel(const ChannelArgs& args);
+  virtual CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena) = 0;
 
  private:
   CallSizeEstimator call_size_estimator_;
