@@ -70,7 +70,7 @@ namespace {
 class NotReallyACallFactory final : public CallFactory {
  public:
   using CallFactory::CallFactory;
-  CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena) {
+  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
     Crash("NotReallyACallFactory::CreateCall should never be called");
   }
 };
