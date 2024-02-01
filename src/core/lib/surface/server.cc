@@ -790,9 +790,6 @@ class ChannelBroadcaster {
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
     Server::ChannelData::MakeCallPromise,
-    [](grpc_channel_element*, CallSpineInterface*) {
-      // TODO(ctiller): remove the server filter when call-v3 is finalized
-    },
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -1297,8 +1294,6 @@ Server::ChannelData::~ChannelData() {
     }
   }
 }
-
-Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
 
 absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
     ClientMetadata& client_initial_metadata, Arena* arena) {

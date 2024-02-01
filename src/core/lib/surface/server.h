@@ -218,7 +218,7 @@ class Server : public InternallyRefCounted<Server>,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ChannelData final : public ServerTransport::Acceptor {
+  class ChannelData final {
    public:
     ChannelData() = default;
     ~ChannelData();
@@ -239,11 +239,6 @@ class Server : public InternallyRefCounted<Server>,
     static void DestroyChannelElement(grpc_channel_element* elem);
     static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
         grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
-    void InitCall(RefCountedPtr<CallSpine> call);
-
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;

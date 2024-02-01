@@ -58,6 +58,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/call_spine.h"
+#include "src/core/lib/transport/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -550,24 +551,8 @@ class ClientTransport {
 
 class ServerTransport {
  public:
-  // Acceptor helps transports create calls.
-  class Acceptor {
-   public:
-    // Returns an arena that can be used to allocate memory for initial metadata
-    // parsing, and later passed to CreateCall() as the underlying arena for
-    // that call.
-    virtual Arena* CreateArena() = 0;
-    // Create a call at the server (or fail)
-    // arena must have been previously allocated by CreateArena()
-    virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
-
-   protected:
-    ~Acceptor() = default;
-  };
-
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetAcceptor(Acceptor* acceptor) = 0;
+  virtual void SetChannel(Channel* channel) = 0;
 
  protected:
   ~ServerTransport() = default;

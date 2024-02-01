@@ -407,7 +407,6 @@ class ClientChannel::PromiseBasedCallData : public ClientChannel::CallData {
 const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     ClientChannel::MakeCallPromise,
-    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -424,7 +423,6 @@ const grpc_channel_filter ClientChannel::kFilterVtableWithPromises = {
 const grpc_channel_filter ClientChannel::kFilterVtableWithoutPromises = {
     ClientChannel::FilterBasedCallData::StartTransportStreamOpBatch,
     nullptr,
-    /* init_call: */ nullptr,
     ClientChannel::StartTransportOp,
     sizeof(ClientChannel::FilterBasedCallData),
     ClientChannel::FilterBasedCallData::Init,
@@ -572,7 +570,6 @@ class DynamicTerminationFilter::CallData {
 const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::StartTransportStreamOpBatch,
     DynamicTerminationFilter::MakeCallPromise,
-    /* init_call: */ nullptr,
     DynamicTerminationFilter::StartTransportOp,
     sizeof(DynamicTerminationFilter::CallData),
     DynamicTerminationFilter::CallData::Init,

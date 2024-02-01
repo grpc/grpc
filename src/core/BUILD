@@ -6750,7 +6750,9 @@ grpc_cc_library(
     deps = [
         "arena",
         "call_size_estimator",
+        "call_spine",
         "channel_args",
+        "metadata",
         "ref_counted",
         "resource_quota",
         "//:gpr_platform",

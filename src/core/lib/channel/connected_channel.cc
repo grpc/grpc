@@ -860,7 +860,6 @@ grpc_channel_filter MakeConnectedFilter() {
   return {
       connected_channel_start_transport_stream_op_batch,
       make_call_promise != nullptr ? make_call_wrapper : nullptr,
-      /* init_call: */ nullptr,
       connected_channel_start_transport_op,
       sizeof(call_data),
       connected_channel_init_call_elem,
@@ -889,21 +888,7 @@ grpc_channel_filter MakeConnectedFilter() {
 
 ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  auto spine = GetContext<CallContext>()->MakeCallSpine(std::move(call_args));
-  transport->client_transport()->StartCall(CallHandler{spine});
-  return Map(spine->server_trailing_metadata().receiver.Next(),
-             [](NextResult<ServerMetadataHandle> r) {
-               if (r.has_value()) {
-                 auto md = std::move(r.value());
-                 md->Set(GrpcStatusFromWire(), true);
-                 return md;
-               }
-               auto m = GetContext<Arena>()->MakePooled<ServerMetadata>(
-                   GetContext<Arena>());
-               m->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-               m->Set(GrpcCallWasCancelled(), true);
-               return m;
-             });
+  Crash("not implemented");
 }
 
 const grpc_channel_filter kClientPromiseBasedTransportFilter =
@@ -932,7 +917,6 @@ const grpc_channel_filter kServerPromiseBasedTransportFilter = {
     nullptr,
     [](grpc_channel_element*, CallArgs, NextPromiseFactory)
         -> ArenaPromise<ServerMetadataHandle> { Crash("not implemented"); },
-    /* init_call: */ [](grpc_channel_element*, CallSpineInterface*) {},
     connected_channel_start_transport_op,
     0,
     nullptr,

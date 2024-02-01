@@ -21,6 +21,8 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_size_estimator.h"
+#include "src/core/lib/transport/call_spine.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -28,6 +30,8 @@ class Channel : public RefCounted<Channel> {
  public:
   Arena* CreateArena();
   void DestroyArena(Arena* arena);
+
+  CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena);
 
  protected:
   explicit Channel(const ChannelArgs& args);

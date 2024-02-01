@@ -2089,10 +2089,6 @@ class BasicPromiseBasedCall : public Call,
   // for that functionality be invented)
   grpc_call_stack* call_stack() final { return nullptr; }
 
-  virtual RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs) {
-    Crash("Not implemented");
-  }
-
  protected:
   class ScopedContext
       : public ScopedActivity,
@@ -2702,11 +2698,6 @@ ServerCallContext* CallContext::server_call_context() {
   return call_->server_call_context();
 }
 
-RefCountedPtr<CallSpineInterface> CallContext::MakeCallSpine(
-    CallArgs call_args) {
-  return call_->MakeCallSpine(std::move(call_args));
-}
-
 grpc_call* CallContext::c_call() { return call_->c_ptr(); }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2827,81 +2818,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
   std::string DebugTag() const override {
     return absl::StrFormat("CLIENT_CALL[%p]: ", this);
-  }
-
-  RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs call_args) final {
-    class WrappingCallSpine final : public CallSpineInterface {
-     public:
-      WrappingCallSpine(ClientPromiseBasedCall* call,
-                        ClientMetadataHandle metadata)
-          : call_(call) {
-        call_->InternalRef("call-spine");
-        SpawnInfallible("send_client_initial_metadata",
-                        [this, metadata = std::move(metadata)]() mutable {
-                          return Map(client_initial_metadata_.sender.Push(
-                                         std::move(metadata)),
-                                     [](bool) { return Empty{}; });
-                        });
-        SpawnInfallible("monitor_cancellation", [this]() {
-          return Seq(cancel_error_.Wait(),
-                     [this](ServerMetadataHandle trailing_metadata) {
-                       Crash("here");
-                       return Map(server_trailing_metadata_.sender.Push(
-                                      std::move(trailing_metadata)),
-                                  [](bool) { return Empty{}; });
-                     });
-        });
-      }
-
-      ~WrappingCallSpine() override { call_->InternalUnref("call-spine"); }
-
-      Pipe<ClientMetadataHandle>& client_initial_metadata() override {
-        return client_initial_metadata_;
-      }
-
-      Pipe<MessageHandle>& client_to_server_messages() override {
-        return call_->client_to_server_messages_;
-      }
-
-      Pipe<ServerMetadataHandle>& server_initial_metadata() override {
-        return call_->server_initial_metadata_;
-      }
-
-      Pipe<MessageHandle>& server_to_client_messages() override {
-        return call_->server_to_client_messages_;
-      }
-
-      Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
-        return server_trailing_metadata_;
-      }
-
-      Latch<ServerMetadataHandle>& cancel_latch() override {
-        return cancel_error_;
-      }
-
-      Party& party() override { return *call_; }
-
-      void IncrementRefCount() override { refs_.Ref(); }
-      void Unref() override {
-        if (refs_.Unref()) delete this;
-      }
-
-     private:
-      RefCount refs_;
-      ClientPromiseBasedCall* const call_;
-      std::atomic<bool> sent_trailing_metadata_{false};
-      Pipe<ClientMetadataHandle> client_initial_metadata_{call_->arena()};
-      Pipe<ServerMetadataHandle> server_trailing_metadata_{call_->arena()};
-      Latch<ServerMetadataHandle> cancel_error_;
-    };
-    GPR_ASSERT(call_args.server_initial_metadata ==
-               &server_initial_metadata_.sender);
-    GPR_ASSERT(call_args.client_to_server_messages ==
-               &client_to_server_messages_.receiver);
-    GPR_ASSERT(call_args.server_to_client_messages ==
-               &server_to_client_messages_.sender);
-    return MakeRefCounted<WrappingCallSpine>(
-        this, std::move(call_args.client_initial_metadata));
   }
 
  private:
@@ -3700,40 +3616,19 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Server Call
 
-class ServerCallSpine final : public CallSpineInterface,
-                              public ServerCallContext,
-                              public BasicPromiseBasedCall {
+class ServerCall final : public ServerCallContext,
+                         public BasicPromiseBasedCall {
  public:
-  ServerCallSpine(Server* server, GrpcChannel* channel, Arena* arena);
-
-  // CallSpineInterface
-  Pipe<ClientMetadataHandle>& client_initial_metadata() override {
-    return client_initial_metadata_;
-  }
-  Pipe<ServerMetadataHandle>& server_initial_metadata() override {
-    return server_initial_metadata_;
-  }
-  Pipe<MessageHandle>& client_to_server_messages() override {
-    return client_to_server_messages_;
-  }
-  Pipe<MessageHandle>& server_to_client_messages() override {
-    return server_to_client_messages_;
-  }
-  Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
-    return server_trailing_metadata_;
-  }
-  Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
-  Party& party() override { return *this; }
-  void IncrementRefCount() override { InternalRef("CallSpine"); }
-  void Unref() override { InternalUnref("CallSpine"); }
+  ServerCall(Server* server, GrpcChannel* channel, Arena* arena);
 
   // PromiseBasedCall
   void OrphanCall() override {}
   void CancelWithError(grpc_error_handle error) override {
-    SpawnInfallible("CancelWithError", [this, error = std::move(error)] {
-      std::ignore = Cancel(ServerMetadataFromStatus(error));
-      return Empty{};
-    });
+    call_handler_.SpawnInfallible(
+        "CancelWithError", [this, error = std::move(error)] {
+          call_handler_.Cancel(ServerMetadataFromStatus(error));
+          return Empty{};
+        });
   }
   bool is_trailers_only() const override {
     Crash("is_trailers_only not implemented for server calls");
@@ -3772,20 +3667,9 @@ class ServerCallSpine final : public CallSpineInterface,
     return absl::StrFormat("SERVER_CALL_SPINE[%p]: ", this);
   }
 
-  // Initial metadata from client to server
-  Pipe<ClientMetadataHandle> client_initial_metadata_;
-  // Initial metadata from server to client
-  Pipe<ServerMetadataHandle> server_initial_metadata_;
-  // Messages travelling from the application to the transport.
-  Pipe<MessageHandle> client_to_server_messages_;
-  // Messages travelling from the transport to the application.
-  Pipe<MessageHandle> server_to_client_messages_;
-  // Trailing metadata from server to client
-  Pipe<ServerMetadataHandle> server_trailing_metadata_;
-  // Latch that can be set to terminate the call
-  Latch<ServerMetadataHandle> cancel_latch_;
   grpc_byte_buffer** recv_message_ = nullptr;
   ClientMetadataHandle client_initial_metadata_stored_;
+  CallHandler call_handler_;
 };
 
 ServerCallSpine::ServerCallSpine(Server* server, GrpcChannel* channel,
