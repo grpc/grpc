@@ -2526,6 +2526,7 @@ add_library(grpc
   src/core/lib/surface/version.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_size_estimator.cc
@@ -3243,6 +3244,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/version.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_size_estimator.cc
@@ -5332,6 +5334,7 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/transport/batch_builder.cc
+  src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_size_estimator.cc
