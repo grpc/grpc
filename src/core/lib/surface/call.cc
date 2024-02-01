@@ -689,7 +689,7 @@ class FilterStackCall final : public Call {
 
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->RefAsSubclass<Channel>()),
+             args.channel->Ref()),
         cq_(args.cq),
         stream_op_payload_(context_) {}
 
@@ -1994,7 +1994,7 @@ class BasicPromiseBasedCall : public Call,
   BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                         const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->RefAsSubclass<Channel>()),
+             args.channel->Ref()),
         Party(arena, initial_external_refs != 0 ? 1 : 0),
         external_refs_(initial_external_refs),
         cq_(args.cq) {
@@ -3792,7 +3792,7 @@ ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
     : BasicPromiseBasedCall(
           arena, 1, [channel, server]() -> grpc_call_create_args {
             grpc_call_create_args args;
-            args.channel = channel->RefAsSubclass<Channel>();
+            args.channel = channel->Ref();
             args.server = server;
             args.parent = nullptr;
             args.propagation_mask = 0;

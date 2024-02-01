@@ -109,7 +109,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   StateWatcher(grpc_channel* c_channel, grpc_completion_queue* cq, void* tag,
                grpc_connectivity_state last_observed_state,
                gpr_timespec deadline)
-      : channel_(Channel::FromC(c_channel)->RefAsSubclass<Channel>()),
+      : channel_(Channel::FromC(c_channel)->Ref()),
         cq_(cq),
         tag_(tag),
         state_(last_observed_state) {

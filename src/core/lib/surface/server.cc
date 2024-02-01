@@ -1057,7 +1057,7 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
   std::vector<RefCountedPtr<Channel>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel()->RefAsSubclass<Channel>());
+    channels.push_back(chand->channel()->Ref());
   }
   return channels;
 }
