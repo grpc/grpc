@@ -88,11 +88,11 @@ You will see a series of screens:
 Some time after you've digitally signed the document, the EasyCLA will appear as
 *Covered*.
 
-    ![Screenshot of EasyCLA Step 5](doc/images/img/grpc-easycla-covered.png)
+![Screenshot of EasyCLA Step 5](doc/images/img/grpc-easycla-covered.png)
 
     After a few hours, you will notice a new "assignee" assigned to the pull request. 
 
-    ![Screenshot after an assignee is added](doc/images/img/grpc-assignee.png)
+![Screenshot after an assignee is added](doc/images/img/grpc-assignee.png)
 
 After a reviewer is assigned to you, they will help with the next
 steps, which are as follows:
