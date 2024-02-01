@@ -56,8 +56,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -97,8 +95,6 @@ namespace grpc_core {
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::PosixSocketWrapper;
-using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
@@ -1080,25 +1076,12 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
   grpc_core::ChannelArgs server_args = core_server->channel_args();
   std::string name = absl::StrCat("fd:", fd);
-  // The fd is going to be registered with the gRPC poller to be asynchronously
-  // notified for read/write/error events. It must be marked as NonBlocking
-  // to ensure that the poller/gRPC executor threads do not get blocked on
-  // the socket when attempting to read/write from it.
-  grpc_core::PosixSocketWrapper sock(fd);
-  (void)sock.SetSocketNonBlocking(true);
-  (void)sock.SetSocketCloexec(true);
-  (void)sock.SetSocketNoSigpipeIfPossible();
-  auto peer_address = sock.PeerAddress();
-  std::string addr_str = name;
-  if (peer_address.ok()) {
-    addr_str = *grpc_core::ResolvedAddressToURI(peer_address.value());
-  }
   auto memory_quota =
       server_args.GetObject<grpc_core::ResourceQuota>()->memory_quota();
   grpc_endpoint* server_endpoint = grpc_tcp_create_from_fd(
       grpc_fd_create(fd, name.c_str(), true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
-      addr_str);
+      name);
   grpc_core::Transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false  // is_client
   );
