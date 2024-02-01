@@ -182,8 +182,8 @@ py_library(
 py_grpc_library(
     name = "helloworld_py_pb2_grpc_library_changed",
     srcs = [":helloworld_proto"],
-    deps = [":helloworld_py_pb2"],
     grpc_library = ":grpc_library_replacement",
+    deps = [":helloworld_py_pb2"],
 )
 
 py_test(
