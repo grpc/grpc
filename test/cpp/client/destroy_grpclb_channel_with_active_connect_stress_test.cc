@@ -37,7 +37,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
