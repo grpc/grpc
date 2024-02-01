@@ -67,6 +67,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -128,6 +129,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -190,6 +192,7 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
+inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -246,6 +249,7 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #else
 enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
+  kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
@@ -289,6 +293,10 @@ enum ExperimentIds {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_V3
+inline bool IsCallV3Enabled() {
+  return IsExperimentEnabled(kExperimentIdCallV3);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {

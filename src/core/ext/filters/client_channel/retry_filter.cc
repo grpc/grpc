@@ -98,7 +98,7 @@ namespace grpc_core {
 //
 
 RetryFilter::RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
-    : client_channel_(args.GetObject<ClientChannel>()),
+    : client_channel_(args.GetObject<ClientChannelFilter>()),
       event_engine_(args.GetObject<EventEngine>()),
       per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
       service_config_parser_index_(

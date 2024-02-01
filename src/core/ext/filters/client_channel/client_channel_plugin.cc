@@ -42,12 +42,12 @@ void BuildClientChannelConfiguration(CoreConfiguration::Builder* builder) {
   internal::RetryServiceConfigParser::Register(builder);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_CHANNEL,
-                       &ClientChannel::kFilterVtableWithPromises)
+                       &ClientChannelFilter::kFilterVtableWithPromises)
       .If(IsEverythingBelowClientChannelPromiseSafe)
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_CHANNEL,
-                       &ClientChannel::kFilterVtableWithoutPromises)
+                       &ClientChannelFilter::kFilterVtableWithoutPromises)
       .IfNot(IsEverythingBelowClientChannelPromiseSafe)
       .Terminal();
 }

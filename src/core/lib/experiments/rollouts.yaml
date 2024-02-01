@@ -42,6 +42,8 @@
 
 - name: call_status_override_on_cancellation
   default: debug
+- name: call_v3
+  default: false
 - name: canary_client_privacy
   default: false
 - name: client_idleness
