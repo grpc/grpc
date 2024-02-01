@@ -275,8 +275,7 @@ static grpc_call* grpc_channel_create_call_internal(
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
     grpc_core::Timestamp deadline, bool registered_method) {
-  auto channel =
-      grpc_core::Channel::FromC(c_channel)->RefAsSubclass<grpc_core::Channel>();
+  auto channel = grpc_core::Channel::FromC(c_channel)->Ref();
   GPR_ASSERT(channel->is_client());
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
 
