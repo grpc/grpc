@@ -2020,8 +2020,10 @@ void RetryFilter::LegacyCallData::OnRetryTimer() {
 void RetryFilter::LegacyCallData::OnRetryTimerLocked(
     void* arg, grpc_error_handle /*error*/) {
   auto* calld = static_cast<RetryFilter::LegacyCallData*>(arg);
-  calld->retry_timer_handle_.reset();
-  calld->CreateCallAttempt(/*is_transparent_retry=*/false);
+  if (calld->retry_timer_handle_.has_value()) {
+    calld->retry_timer_handle_.reset();
+    calld->CreateCallAttempt(/*is_transparent_retry=*/false);
+  }
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }
 
