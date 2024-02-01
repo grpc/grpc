@@ -221,6 +221,7 @@ CallInitiator ClientChannel::CreateCall(ClientMetadataHandle metadata,
                      absl::Status status = ApplyServiceConfigToCall(
                          self.get(), *resolver_data.config_selector, metadata);
                      if (!status.ok()) return status;
+// FIXME: need to call call_initiator.PushClientInitialMetadata() here
                      // Finish constructing the call with the right filter
                      // stack and destination.
                      handler.SetStack(std::move(resolver_data.filter_stack));

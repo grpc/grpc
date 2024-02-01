@@ -39,11 +39,6 @@ class Observable {
   // Returns a promise that resolves to a T when the value becomes != current.
   auto Next(T current) { return Observer(state_, std::move(current)); }
 
-  T current() const {
-    MutexLock lock(state_->mu());
-    return state_->current();
-  }
-
  private:
   // Forward declaration so we can form pointers to Observer in State.
   class Observer;
