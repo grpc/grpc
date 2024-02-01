@@ -51,6 +51,10 @@
 
 namespace grpc_core {
 
+namespace testing {
+class XdsClientTestPeer;
+}
+
 extern TraceFlag grpc_xds_client_trace;
 extern TraceFlag grpc_xds_client_refcount_trace;
 
@@ -147,20 +151,23 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
-  // Dumps the active xDS config in JSON format.
-  // Individual xDS resource is encoded as envoy.admin.v3.*ConfigDump. Returns
-  // envoy.service.status.v3.ClientConfig which also includes the config
-  // status (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
-  //
-  // Expected to be invoked by wrapper languages in their CSDS service
-  // implementation.
-  std::string DumpClientConfigBinary();
-
   grpc_event_engine::experimental::EventEngine* engine() {
     return engine_.get();
   }
 
+ protected:
+  // Dumps the active xDS config to the provided
+  // envoy.service.status.v3.ClientConfig message including the config status
+  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
+                        envoy_service_status_v3_ClientConfig* client_config)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+  Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
+
  private:
+  friend testing::XdsClientTestPeer;
+
   struct XdsResourceKey {
     std::string id;
     std::vector<URI::QueryParam> query_params;

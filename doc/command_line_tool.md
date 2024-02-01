@@ -2,37 +2,44 @@
 
 ## Overview
 
-This document describes the command line tool that comes with gRPC repository. It is desirable to have command line
-tools written in other languages roughly follow the same syntax and flags.
+This document describes the command line tool that comes with gRPC repository.
+It is desirable to have command line tools written in other languages roughly
+follow the same syntax and flags.
 
-At this point, the tool needs to be built from source, and it should be moved out to grpc-tools repository as a stand
-alone application once it is mature enough.
+> [!NOTE]
+> At present, the tool needs to be built from source, and it should be moved out
+> to grpc-tools repository as a stand alone application once it is mature
+> enough. This tool in its current state though is not up to par in its
+> user-friendliness. Other tools in the ecosystem, for example,
+> [grpcurl](https://github.com/fullstorydev/grpcurl) are better maintained.
 
 ## Core functionality
 
 The command line tool can do the following things:
 
-- Send unary rpc.
-- Attach metadata and display received metadata.
-- Handle common authentication to server.
-- Infer request/response types from server reflection result.
-- Find the request/response types from a given proto file.
-- Read proto request in text form.
-- Read request in wire form (for protobuf messages, this means serialized binary form).
-- Display proto response in text form.
-- Write response in wire form to a file.
+-   Send unary rpc.
+-   Attach metadata and display received metadata.
+-   Handle common authentication to server.
+-   Infer request/response types from server reflection result.
+-   Find the request/response types from a given proto file.
+-   Read proto request in text form.
+-   Read request in wire form (for protobuf messages, this means serialized
+    binary form).
+-   Display proto response in text form.
+-   Write response in wire form to a file.
 
 The command line tool should support the following things:
 
-- List server services and methods through server reflection.
-- Fine-grained auth control (such as, use this oauth token to talk to the server).
-- Send streaming rpc.
+-   List server services and methods through server reflection.
+-   Fine-grained auth control (such as, use this oauth token to talk to the
+    server).
+-   Send streaming rpc.
 
 ## Code location
 
 To use the tool, you need to get the grpc repository and make sure your system
-has the prerequisites for building grpc from source, given in the [installation
-instructions](../BUILDING.md).
+has the prerequisites for building grpc from source, given in the
+[installation instructions](../BUILDING.md).
 
 In order to build the grpc command line tool from a fresh clone of the grpc
 repository, you need to run the following command to update submodules:
@@ -58,10 +65,13 @@ https://github.com/grpc/grpc/blob/master/test/cpp/util/grpc_cli.cc
 Most `grpc_cli` commands need the server to support server reflection. See
 guides for
 [Java](https://github.com/grpc/grpc-java/blob/master/documentation/server-reflection-tutorial.md#enable-server-reflection)
-, [C++](https://github.com/grpc/grpc/blob/master/doc/server_reflection_tutorial.md)
-and [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md)
+,
+[C++](https://github.com/grpc/grpc/blob/master/doc/server_reflection_tutorial.md)
+and
+[Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md)
 
-Local proto files can be used as an alternative. See instructions [below](#Call-a-remote-method).
+Local proto files can be used as an alternative. See instructions
+[below](#Call-a-remote-method).
 
 ## Usage
 
@@ -176,8 +186,8 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
     ```
 
     If the proto file is not under the current directory, you can use
-    `--proto_path` to specify new search roots
-    (separated by colon on Mac/Linux/Cygwin or semicolon on Windows).
+    `--proto_path` to specify new search roots (separated by colon on
+    Mac/Linux/Cygwin or semicolon on Windows).
 
     Note that the tool will always attempt to use the reflection service first,
     falling back to local proto files if the service is not found. Use

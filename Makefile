@@ -1708,8 +1708,11 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_size_estimator.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -1764,6 +1767,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
@@ -2256,8 +2260,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_size_estimator.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -2299,6 +2306,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
@@ -2979,7 +2987,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -3016,6 +3024,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
     third_party/boringssl-with-bazel/src/crypto/thread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
@@ -3039,6 +3054,29 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
@@ -3063,9 +3101,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
@@ -3073,29 +3109,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -3274,7 +3287,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/crc/internal/crc.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc \
-    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
@@ -3284,7 +3297,6 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
-    third_party/abseil-cpp/absl/flags/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc \
     third_party/abseil-cpp/absl/flags/internal/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc \
@@ -3308,6 +3320,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/random/internal/seed_material.cc \
     third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
     third_party/abseil-cpp/absl/random/seed_sequences.cc \
+    third_party/abseil-cpp/absl/status/internal/status_internal.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -3325,7 +3338,6 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
-    third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \

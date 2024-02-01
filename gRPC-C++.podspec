@@ -225,7 +225,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20230802.0'
+    abseil_version = '1.20240116.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -958,6 +958,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/common_closures.h',
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
+                      'src/core/lib/event_engine/extensions/can_track_errors.h',
+                      'src/core/lib/event_engine/extensions/supports_fd.h',
                       'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/grpc_polled_fd.h',
                       'src/core/lib/event_engine/handle_containers.h',
@@ -987,6 +989,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
+                      'src/core/lib/event_engine/query_extensions.h',
                       'src/core/lib/event_engine/ref_counted_dns_resolver_interface.h',
                       'src/core/lib/event_engine/resolved_address_internal.h',
                       'src/core/lib/event_engine/shim.h',
@@ -1278,8 +1281,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_factory.h',
                       'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.h',
+                      'src/core/lib/transport/call_size_estimator.h',
+                      'src/core/lib/transport/call_spine.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/custom_metadata.h',
                       'src/core/lib/transport/error_utils.h',
@@ -2209,6 +2215,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
+                              'src/core/lib/event_engine/extensions/can_track_errors.h',
+                              'src/core/lib/event_engine/extensions/supports_fd.h',
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/grpc_polled_fd.h',
                               'src/core/lib/event_engine/handle_containers.h',
@@ -2238,6 +2246,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
+                              'src/core/lib/event_engine/query_extensions.h',
                               'src/core/lib/event_engine/ref_counted_dns_resolver_interface.h',
                               'src/core/lib/event_engine/resolved_address_internal.h',
                               'src/core/lib/event_engine/shim.h',
@@ -2529,8 +2538,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_factory.h',
                               'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
+                              'src/core/lib/transport/call_size_estimator.h',
+                              'src/core/lib/transport/call_spine.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',
                               'src/core/lib/transport/error_utils.h',

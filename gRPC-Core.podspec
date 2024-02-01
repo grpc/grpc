@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20230802.0'
+  abseil_version = '1.20240116.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
                       'include/grpc/compression.h',
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
+                      'include/grpc/event_engine/extensible.h',
                       'include/grpc/event_engine/internal/memory_allocator_impl.h',
                       'include/grpc/event_engine/internal/slice_cast.h',
                       'include/grpc/event_engine/memory_allocator.h',
@@ -194,7 +195,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.31'
+    ss.dependency 'BoringSSL-GRPC', '0.0.32'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -1389,6 +1390,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine.cc',
+                      'src/core/lib/event_engine/extensions/can_track_errors.h',
+                      'src/core/lib/event_engine/extensions/supports_fd.h',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/grpc_polled_fd.h',
@@ -1437,6 +1440,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc',
                       'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
+                      'src/core/lib/event_engine/query_extensions.h',
                       'src/core/lib/event_engine/ref_counted_dns_resolver_interface.h',
                       'src/core/lib/event_engine/resolved_address.cc',
                       'src/core/lib/event_engine/resolved_address_internal.h',
@@ -2004,10 +2008,16 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_factory.cc',
+                      'src/core/lib/transport/call_factory.h',
                       'src/core/lib/transport/call_filters.cc',
                       'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.cc',
                       'src/core/lib/transport/call_final_info.h',
+                      'src/core/lib/transport/call_size_estimator.cc',
+                      'src/core/lib/transport/call_size_estimator.h',
+                      'src/core/lib/transport/call_spine.cc',
+                      'src/core/lib/transport/call_spine.h',
                       'src/core/lib/transport/connectivity_state.cc',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/custom_metadata.h',
@@ -2985,6 +2995,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
+                              'src/core/lib/event_engine/extensions/can_track_errors.h',
+                              'src/core/lib/event_engine/extensions/supports_fd.h',
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/grpc_polled_fd.h',
                               'src/core/lib/event_engine/handle_containers.h',
@@ -3014,6 +3026,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h',
                               'src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h',
+                              'src/core/lib/event_engine/query_extensions.h',
                               'src/core/lib/event_engine/ref_counted_dns_resolver_interface.h',
                               'src/core/lib/event_engine/resolved_address_internal.h',
                               'src/core/lib/event_engine/shim.h',
@@ -3305,8 +3318,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_factory.h',
                               'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
+                              'src/core/lib/transport/call_size_estimator.h',
+                              'src/core/lib/transport/call_spine.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',
                               'src/core/lib/transport/error_utils.h',

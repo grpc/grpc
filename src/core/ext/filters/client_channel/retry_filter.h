@@ -72,7 +72,7 @@ class RetryFilter {
     return retry_throttle_data_;
   }
 
-  ClientChannel* client_channel() const { return client_channel_; }
+  ClientChannelFilter* client_channel() const { return client_channel_; }
 
   size_t per_rpc_retry_buffer_size() const {
     return per_rpc_retry_buffer_size_;
@@ -110,7 +110,7 @@ class RetryFilter {
   static void GetChannelInfo(grpc_channel_element* /*elem*/,
                              const grpc_channel_info* /*info*/) {}
 
-  ClientChannel* client_channel_;
+  ClientChannelFilter* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;
   size_t per_rpc_retry_buffer_size_;
   RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;

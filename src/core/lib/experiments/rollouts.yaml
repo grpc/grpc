@@ -42,6 +42,8 @@
 
 - name: call_status_override_on_cancellation
   default: debug
+- name: call_v3
+  default: false
 - name: canary_client_privacy
   default: false
 - name: client_idleness
@@ -52,7 +54,7 @@
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
+    posix: true
     # TODO(hork): resolve when the client end2end test flake rate reduces to
     # a tolerable amount.
     windows: broken

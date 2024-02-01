@@ -56,6 +56,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_extensions",
+    hdrs = [
+        "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/supports_fd.h",
+    ],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_common",
     srcs = [
         "lib/event_engine/event_engine.cc",
@@ -64,6 +81,7 @@ grpc_cc_library(
         "lib/event_engine/slice_buffer.cc",
     ],
     hdrs = [
+        "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/handle_containers.h",
         "lib/event_engine/resolved_address_internal.h",
         "//:include/grpc/event_engine/slice.h",
@@ -1742,6 +1760,8 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "//:event_engine_base_hdrs",
         "//:gpr",
     ],
@@ -2043,6 +2063,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_common",
+        "event_engine_extensions",
         "event_engine_tcp_socket_utils",
         "experiments",
         "iomgr_port",
@@ -6714,6 +6735,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_factory",
+    srcs = [
+        "lib/transport/call_factory.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_factory.h",
+    ],
+    deps = [
+        "arena",
+        "call_size_estimator",
+        "call_spine",
+        "channel_args",
+        "ref_counted",
+        "resource_quota",
+        "//:gpr_platform",
+        "//:stats",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_destination",
+    hdrs = [
+        "lib/transport/call_destination.h",
+    ],
+    deps = [
+        "call_spine",
+        "//:gpr_platform",
+        "//:orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
         "lib/transport/parsed_metadata.cc",
@@ -6764,6 +6817,30 @@ grpc_cc_library(
         "slice_buffer",
         "//:gpr_platform",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_spine",
+    srcs = [
+        "lib/transport/call_spine.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_spine.h",
+    ],
+    deps = [
+        "1999",
+        "for_each",
+        "if",
+        "latch",
+        "message",
+        "metadata",
+        "pipe",
+        "prioritized_race",
+        "promise_status",
+        "status_flag",
+        "try_seq",
+        "//:gpr",
     ],
 )
 
@@ -6821,6 +6898,17 @@ grpc_cc_library(
         "time",
         "//:gpr",
     ],
+)
+
+grpc_cc_library(
+    name = "call_size_estimator",
+    srcs = [
+        "lib/transport/call_size_estimator.cc",
+    ],
+    hdrs = [
+        "lib/transport/call_size_estimator.h",
+    ],
+    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
