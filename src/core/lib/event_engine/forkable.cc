@@ -43,13 +43,15 @@ bool IsForkEnabled() {
 void ObjectGroupForkHandler::RegisterForkable(
     std::shared_ptr<Forkable> forkable, GRPC_UNUSED void (*prepare)(void),
     GRPC_UNUSED void (*parent)(void), GRPC_UNUSED void (*child)(void)) {
-  GPR_ASSERT(!is_forking_);
-  forkables_.emplace_back(forkable);
+  if (IsForkEnabled()) {
+    GPR_ASSERT(!is_forking_);
+    forkables_.emplace_back(forkable);
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-  if (!std::exchange(registered_, true)) {
-    pthread_atfork(prepare, parent, child);
-  }
+    if (!std::exchange(registered_, true)) {
+      pthread_atfork(prepare, parent, child);
+    }
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  }
 }
 
 void ObjectGroupForkHandler::Prefork() {
