@@ -25,13 +25,25 @@
 
 namespace grpc_core {
 
+// CallFactory creates calls.
 class CallFactory : public RefCounted<CallFactory> {
  public:
   explicit CallFactory(const ChannelArgs& args);
 
+  // Create an arena for a call.
+  // We do this as a separate step so that servers can create arenas without
+  // creating the call into it - in the case that we have a HTTP/2 rapid reset
+  // like attack this saves a lot of cpu time.
   Arena* CreateArena();
+  // Destroy an arena created by CreateArena.
+  // Updates the call size estimator so that we always create arenas of about
+  // the right size.
   void DestroyArena(Arena* arena);
 
+  // Create a call. The call will be created in the given arena.
+  // It is the CallFactory's responsibility to ensure that the CallHandler
+  // associated with the call is eventually handled by something (typically a
+  // CallDestination, but this is not strictly required).
   virtual CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena) = 0;
 
  private:

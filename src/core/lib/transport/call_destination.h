@@ -22,6 +22,9 @@
 
 namespace grpc_core {
 
+// CallDestination is responsible for the processing of a CallHandler.
+// It might be a transport, the server API, or a subchannel on the client (for
+// instance).
 class CallDestination : public Orphanable {
  public:
   virtual void StartCall(CallHandler call_handler) = 0;
