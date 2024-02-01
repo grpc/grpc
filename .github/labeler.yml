@@ -51,6 +51,7 @@ lang/python:
       - all-globs-to-any-file:
           - src/python/**
           - '!src/python/grpcio/grpc_core_dependencies.py'
+          - '!src/python/grpcio_observability/observability_lib_deps.py'
 lang/ruby:
   - changed-files:
       - any-glob-to-any-file:
