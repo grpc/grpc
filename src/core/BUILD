@@ -3326,9 +3326,9 @@ grpc_cc_library(
         "lib/security/security_connector/fake/fake_security_connector.cc",
     ],
     hdrs = [
-        "load_balancing/grpclb/grpclb.h",
         "lib/security/credentials/fake/fake_credentials.h",
         "lib/security/security_connector/fake/fake_security_connector.h",
+        "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
         "absl/status",
@@ -3506,8 +3506,8 @@ grpc_cc_library(
         "lib/security/credentials/google_default/google_default_credentials.cc",
     ],
     hdrs = [
-        "load_balancing/grpclb/grpclb.h",
         "lib/security/credentials/google_default/google_default_credentials.h",
+        "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
         "absl/status:statusor",
