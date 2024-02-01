@@ -218,11 +218,6 @@ class ChannelInit {
                                   [static_cast<int>(PostProcessorSlot::kCount)];
   };
 
-  /// Construct a channel stack of some sort: see channel_stack.h for details
-  /// \a builder is the channel stack builder to build into.
-  GRPC_MUST_USE_RESULT
-  bool CreateStack(ChannelStackBuilder* builder) const;
-
   // A set of channel filters that can be added to a call stack.
   // TODO(ctiller): move this out so it can be used independently of
   // the global registration mechanisms.
@@ -263,12 +258,16 @@ class ChannelInit {
     RefCountedPtr<ChannelData> data_;
   };
 
-  // Create a new style channel stack.
-  // Return value is a function that can be used to build the call.
-  // Channel data is held privately by that function.
+  /// Construct a channel stack of some sort: see channel_stack.h for details
+  /// \a builder is the channel stack builder to build into.
+  GRPC_MUST_USE_RESULT
+  bool CreateStack(ChannelStackBuilder* builder) const;
+
+  // Create a segment of a channel stack.
   // Terminators and post processors are not included in this construction:
   // terminators are a legacy filter-stack concept, and post processors
   // need to migrate to other mechanisms.
+  // TODO(ctiller): figure out other mechanisms.
   absl::StatusOr<StackSegment> CreateStackSegment(
       grpc_channel_stack_type type, const ChannelArgs& args) const;
 
