@@ -1708,11 +1708,11 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
     src/core/lib/transport/call_spine.cc \
-    src/core/lib/transport/channel.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
@@ -2260,11 +2260,11 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
     src/core/lib/transport/call_spine.cc \
-    src/core/lib/transport/channel.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \

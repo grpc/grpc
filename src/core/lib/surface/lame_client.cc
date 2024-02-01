@@ -157,8 +157,8 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
                    new absl::Status(static_cast<absl::StatusCode>(error_code),
                                     error_message),
                    &grpc_core::kLameFilterErrorArgVtable));
-  auto channel = grpc_core::GrpcChannel::Create(
-      target, std::move(args), GRPC_CLIENT_LAME_CHANNEL, nullptr);
+  auto channel = grpc_core::Channel::Create(target, std::move(args),
+                                            GRPC_CLIENT_LAME_CHANNEL, nullptr);
   GPR_ASSERT(channel.ok());
   return channel->release()->c_ptr();
 }

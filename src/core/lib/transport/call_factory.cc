@@ -14,26 +14,26 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/channel.h"
+#include "src/core/lib/transport/call_factory.h"
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
 
-Channel::Channel(const ChannelArgs& args)
+CallFactory::CallFactory(const ChannelArgs& args)
     : call_size_estimator_(1024),
       allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryOwner()) {}
 
-Arena* Channel::CreateArena() {
+Arena* CallFactory::CreateArena() {
   const size_t initial_size = call_size_estimator_.CallSizeEstimate();
   global_stats().IncrementCallInitialSize(initial_size);
   return Arena::Create(initial_size, &allocator_);
 }
 
-void Channel::DestroyArena(Arena* arena) {
+void CallFactory::DestroyArena(Arena* arena) {
   call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
   arena->Destroy();
 }

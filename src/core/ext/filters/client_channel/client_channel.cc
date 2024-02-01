@@ -1182,7 +1182,7 @@ class ClientChannel::ClientChannelControlHelper
 // ClientChannel implementation
 //
 
-ClientChannel* ClientChannel::GetFromChannel(GrpcChannel* channel) {
+ClientChannel* ClientChannel::GetFromChannel(Channel* channel) {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel->channel_stack());
   if (elem->filter != &kFilterVtableWithPromises &&

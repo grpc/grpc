@@ -229,7 +229,7 @@ class Server : public InternallyRefCounted<Server>,
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
-                       RefCountedPtr<GrpcChannel> channel, size_t cq_idx,
+                       RefCountedPtr<Channel> channel, size_t cq_idx,
                        Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
@@ -257,7 +257,7 @@ class Server : public InternallyRefCounted<Server>,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    RefCountedPtr<GrpcChannel> channel_;
+    RefCountedPtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
@@ -406,7 +406,7 @@ class Server : public InternallyRefCounted<Server>,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<GrpcChannel>> GetChannelsLocked() const;
+  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.

@@ -734,14 +734,14 @@ class ChannelBroadcaster {
   // when the actual setup and shutdown broadcast take place.
 
   // Copies over the channels from the locked server.
-  void FillChannelsLocked(std::vector<RefCountedPtr<GrpcChannel>> channels) {
+  void FillChannelsLocked(std::vector<RefCountedPtr<Channel>> channels) {
     GPR_DEBUG_ASSERT(channels_.empty());
     channels_ = std::move(channels);
   }
 
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
-    for (const RefCountedPtr<GrpcChannel>& channel : channels_) {
+    for (const RefCountedPtr<Channel>& channel : channels_) {
       SendShutdown(channel->c_ptr(), send_goaway, force_disconnect);
     }
     channels_.clear();  // just for safety against double broadcast
@@ -778,7 +778,7 @@ class ChannelBroadcaster {
     elem->filter->start_transport_op(elem, op);
   }
 
-  std::vector<RefCountedPtr<GrpcChannel>> channels_;
+  std::vector<RefCountedPtr<Channel>> channels_;
 };
 
 }  // namespace
@@ -908,8 +908,8 @@ grpc_error_handle Server::SetupTransport(
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
-  absl::StatusOr<RefCountedPtr<GrpcChannel>> channel =
-      GrpcChannel::Create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
+  absl::StatusOr<RefCountedPtr<Channel>> channel =
+      Channel::Create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
   if (!channel.ok()) {
     return absl_status_to_grpc_error(channel.status());
   }
@@ -1050,11 +1050,11 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   }
 }
 
-std::vector<RefCountedPtr<GrpcChannel>> Server::GetChannelsLocked() const {
-  std::vector<RefCountedPtr<GrpcChannel>> channels;
+std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
+  std::vector<RefCountedPtr<Channel>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel()->RefAsSubclass<GrpcChannel>());
+    channels.push_back(chand->channel()->Ref());
   }
   return channels;
 }
@@ -1304,7 +1304,7 @@ absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        RefCountedPtr<GrpcChannel> channel,
+                                        RefCountedPtr<Channel> channel,
                                         size_t cq_idx, Transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);

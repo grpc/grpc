@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CHANNEL_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_CHANNEL_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_DESTINATION_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_DESTINATION_H
 
 #include <grpc/support/port_platform.h>
 
@@ -26,7 +26,10 @@
 
 namespace grpc_core {
 
-class Channel : public RefCounted<Channel> {
+// CallDestination is responsible for the processing of a CallHandler.
+// It might be a transport, the server API, or a subchannel on the client (for
+// instance).
+class CallDestination : public Orphanable {
  public:
   Arena* CreateArena();
   void DestroyArena(Arena* arena);
@@ -43,4 +46,4 @@ class Channel : public RefCounted<Channel> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CHANNEL_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_DESTINATION_H
