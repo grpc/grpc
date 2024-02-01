@@ -31,7 +31,7 @@ class Channel : public RefCounted<Channel> {
   Arena* CreateArena();
   void DestroyArena(Arena* arena);
 
-  CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena);
+  virtual CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena) = 0;
 
  protected:
   explicit Channel(const ChannelArgs& args);
