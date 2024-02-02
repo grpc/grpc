@@ -146,16 +146,6 @@ class ClientChannel : public CallFactory {
   };
 #endif
 
-  // The result of the load balancing promise.
-  struct PickSubchannelResult {
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-    std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
-        call_tracker;
-  };
-  LoopCtl<absl::StatusOr<PickSubchannelResult>> PickSubchannel(
-      LoadBalancingPolicy::SubchannelPicker& picker,
-      ClientMetadataHandle& client_initial_metadata);
-
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void OnResolverErrorLocked(absl::Status status)
@@ -200,6 +190,18 @@ class ClientChannel : public CallFactory {
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info);
 #endif
+
+  // Does an LB pick for a call.  Returns one of the following things:
+  // - Continue{}, meaning to queue the pick
+  // - a non-OK status, meaning to fail the call
+  // - a connected subchannel, meaning that the pick is complete
+  // When the pick is complete, pushes client_initial_metadata onto
+  // call_initiator.  Also adds the subchannel call tracker (if any) to
+  // context.
+  LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>> PickSubchannel(
+      LoadBalancingPolicy::SubchannelPicker& picker,
+      ClientMetadataHandle& client_initial_metadata,
+      CallInitiator& call_initiator);
 
   //
   // Fields set at construction and never modified.
