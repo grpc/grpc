@@ -403,7 +403,6 @@ TEST(CredentialsTest, TlsChannelCredentialsWithGoodMinAndMaxTlsVersions) {
   options.set_max_tls_version(grpc_tls_version::TLS1_3);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   EXPECT_NE(channel_credentials, nullptr);
-  delete options.c_credentials_options();
 }
 
 TEST(CredentialsTest, TlsChannelCredentialsWithBadMinAndMaxTlsVersions) {

@@ -183,7 +183,6 @@ TEST(CredentialsTest, TlsServerCredentialsWithGoodMinMaxTlsVersions) {
   options.set_max_tls_version(grpc_tls_version::TLS1_3);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   EXPECT_NE(server_credentials, nullptr);
-  delete options.c_credentials_options();
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithBadMinMaxTlsVersions) {
