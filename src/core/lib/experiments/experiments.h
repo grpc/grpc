@@ -60,14 +60,13 @@ namespace grpc_core {
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
+inline bool IsCallStatusOverrideOnCancellationEnabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
-inline bool IsCallV3Enabled() { return false; }
+ }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -111,6 +110,7 @@ inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -122,14 +122,13 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
+inline bool IsCallStatusOverrideOnCancellationEnabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
-inline bool IsCallV3Enabled() { return false; }
+ }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -174,6 +173,7 @@ inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -185,14 +185,13 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
+inline bool IsCallStatusOverrideOnCancellationEnabled() { 
 #ifdef NDEBUG
-  return false;
+return false;
 #else
-  return true;
+return true;
 #endif
-}
-inline bool IsCallV3Enabled() { return false; }
+ }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -238,6 +237,7 @@ inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -249,7 +249,6 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #else
 enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
-  kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
@@ -285,171 +284,92 @@ enum ExperimentIds {
   kExperimentIdV3ServerAuthFilter,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
+  kExperimentIdCallV3,
   kExperimentIdWriteSizePolicy,
   kExperimentIdWriteSizeCap,
   kExperimentIdWrrDelegateToPickFirst,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-  return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_V3
-inline bool IsCallV3Enabled() {
-  return IsExperimentEnabled(kExperimentIdCallV3);
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
-inline bool IsCanaryClientPrivacyEnabled() {
-  return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
-}
+inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() {
-  return IsExperimentEnabled(kExperimentIdClientIdleness);
-}
+inline bool IsClientIdlenessEnabled() { return IsExperimentEnabled(kExperimentIdClientIdleness); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
-inline bool IsClientPrivacyEnabled() {
-  return IsExperimentEnabled(kExperimentIdClientPrivacy);
-}
+inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(kExperimentIdClientPrivacy); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
-inline bool IsEventEngineClientEnabled() {
-  return IsExperimentEnabled(kExperimentIdEventEngineClient);
-}
+inline bool IsEventEngineClientEnabled() { return IsExperimentEnabled(kExperimentIdEventEngineClient); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
-inline bool IsEventEngineDnsEnabled() {
-  return IsExperimentEnabled(kExperimentIdEventEngineDns);
-}
+inline bool IsEventEngineDnsEnabled() { return IsExperimentEnabled(kExperimentIdEventEngineDns); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
-inline bool IsEventEngineListenerEnabled() {
-  return IsExperimentEnabled(kExperimentIdEventEngineListener);
-}
+inline bool IsEventEngineListenerEnabled() { return IsExperimentEnabled(kExperimentIdEventEngineListener); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
-inline bool IsFreeLargeAllocatorEnabled() {
-  return IsExperimentEnabled(kExperimentIdFreeLargeAllocator);
-}
+inline bool IsFreeLargeAllocatorEnabled() { return IsExperimentEnabled(kExperimentIdFreeLargeAllocator); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
-inline bool IsHttp2StatsFixEnabled() {
-  return IsExperimentEnabled(kExperimentIdHttp2StatsFix);
-}
+inline bool IsHttp2StatsFixEnabled() { return IsExperimentEnabled(kExperimentIdHttp2StatsFix); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
-inline bool IsKeepaliveFixEnabled() {
-  return IsExperimentEnabled(kExperimentIdKeepaliveFix);
-}
+inline bool IsKeepaliveFixEnabled() { return IsExperimentEnabled(kExperimentIdKeepaliveFix); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
-inline bool IsKeepaliveServerFixEnabled() {
-  return IsExperimentEnabled(kExperimentIdKeepaliveServerFix);
-}
+inline bool IsKeepaliveServerFixEnabled() { return IsExperimentEnabled(kExperimentIdKeepaliveServerFix); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
-inline bool IsMonitoringExperimentEnabled() {
-  return IsExperimentEnabled(kExperimentIdMonitoringExperiment);
-}
+inline bool IsMonitoringExperimentEnabled() { return IsExperimentEnabled(kExperimentIdMonitoringExperiment); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
-inline bool IsMultipingEnabled() {
-  return IsExperimentEnabled(kExperimentIdMultiping);
-}
+inline bool IsMultipingEnabled() { return IsExperimentEnabled(kExperimentIdMultiping); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
-inline bool IsPeerStateBasedFramingEnabled() {
-  return IsExperimentEnabled(kExperimentIdPeerStateBasedFraming);
-}
+inline bool IsPeerStateBasedFramingEnabled() { return IsExperimentEnabled(kExperimentIdPeerStateBasedFraming); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() {
-  return IsExperimentEnabled(kExperimentIdPendingQueueCap);
-}
+inline bool IsPendingQueueCapEnabled() { return IsExperimentEnabled(kExperimentIdPendingQueueCap); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() {
-  return IsExperimentEnabled(kExperimentIdPickFirstHappyEyeballs);
-}
+inline bool IsPickFirstHappyEyeballsEnabled() { return IsExperimentEnabled(kExperimentIdPickFirstHappyEyeballs); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
-inline bool IsPromiseBasedClientCallEnabled() {
-  return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall);
-}
+inline bool IsPromiseBasedClientCallEnabled() { return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() {
-  return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall);
-}
+inline bool IsPromiseBasedServerCallEnabled() { return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() {
-  return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
-}
+inline bool IsRegisteredMethodLookupInTransportEnabled() { return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
-inline bool IsPromiseBasedInprocTransportEnabled() {
-  return IsExperimentEnabled(kExperimentIdPromiseBasedInprocTransport);
-}
+inline bool IsPromiseBasedInprocTransportEnabled() { return IsExperimentEnabled(kExperimentIdPromiseBasedInprocTransport); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHODS_MAP
-inline bool IsRegisteredMethodsMapEnabled() {
-  return IsExperimentEnabled(kExperimentIdRegisteredMethodsMap);
-}
+inline bool IsRegisteredMethodsMapEnabled() { return IsExperimentEnabled(kExperimentIdRegisteredMethodsMap); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RFC_MAX_CONCURRENT_STREAMS
-inline bool IsRfcMaxConcurrentStreamsEnabled() {
-  return IsExperimentEnabled(kExperimentIdRfcMaxConcurrentStreams);
-}
+inline bool IsRfcMaxConcurrentStreamsEnabled() { return IsExperimentEnabled(kExperimentIdRfcMaxConcurrentStreams); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ROUND_ROBIN_DELEGATE_TO_PICK_FIRST
-inline bool IsRoundRobinDelegateToPickFirstEnabled() {
-  return IsExperimentEnabled(kExperimentIdRoundRobinDelegateToPickFirst);
-}
+inline bool IsRoundRobinDelegateToPickFirstEnabled() { return IsExperimentEnabled(kExperimentIdRoundRobinDelegateToPickFirst); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RSTPIT
-inline bool IsRstpitEnabled() {
-  return IsExperimentEnabled(kExperimentIdRstpit);
-}
+inline bool IsRstpitEnabled() { return IsExperimentEnabled(kExperimentIdRstpit); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
-inline bool IsScheduleCancellationOverWriteEnabled() {
-  return IsExperimentEnabled(kExperimentIdScheduleCancellationOverWrite);
-}
+inline bool IsScheduleCancellationOverWriteEnabled() { return IsExperimentEnabled(kExperimentIdScheduleCancellationOverWrite); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_PRIVACY
-inline bool IsServerPrivacyEnabled() {
-  return IsExperimentEnabled(kExperimentIdServerPrivacy);
-}
+inline bool IsServerPrivacyEnabled() { return IsExperimentEnabled(kExperimentIdServerPrivacy); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
-inline bool IsTcpFrameSizeTuningEnabled() {
-  return IsExperimentEnabled(kExperimentIdTcpFrameSizeTuning);
-}
+inline bool IsTcpFrameSizeTuningEnabled() { return IsExperimentEnabled(kExperimentIdTcpFrameSizeTuning); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_RCV_LOWAT
-inline bool IsTcpRcvLowatEnabled() {
-  return IsExperimentEnabled(kExperimentIdTcpRcvLowat);
-}
+inline bool IsTcpRcvLowatEnabled() { return IsExperimentEnabled(kExperimentIdTcpRcvLowat); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
-inline bool IsTraceRecordCallopsEnabled() {
-  return IsExperimentEnabled(kExperimentIdTraceRecordCallops);
-}
+inline bool IsTraceRecordCallopsEnabled() { return IsExperimentEnabled(kExperimentIdTraceRecordCallops); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
-inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
-  return IsExperimentEnabled(kExperimentIdUnconstrainedMaxQuotaBufferSize);
-}
+inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return IsExperimentEnabled(kExperimentIdUnconstrainedMaxQuotaBufferSize); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_BACKEND_METRIC_FILTER
-inline bool IsV3BackendMetricFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3BackendMetricFilter);
-}
+inline bool IsV3BackendMetricFilterEnabled() { return IsExperimentEnabled(kExperimentIdV3BackendMetricFilter); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_CHANNEL_IDLE_FILTERS
-inline bool IsV3ChannelIdleFiltersEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3ChannelIdleFilters);
-}
+inline bool IsV3ChannelIdleFiltersEnabled() { return IsExperimentEnabled(kExperimentIdV3ChannelIdleFilters); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_COMPRESSION_FILTER
-inline bool IsV3CompressionFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3CompressionFilter);
-}
+inline bool IsV3CompressionFilterEnabled() { return IsExperimentEnabled(kExperimentIdV3CompressionFilter); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_SERVER_AUTH_FILTER
-inline bool IsV3ServerAuthFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3ServerAuthFilter);
-}
+inline bool IsV3ServerAuthFilterEnabled() { return IsExperimentEnabled(kExperimentIdV3ServerAuthFilter); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() {
-  return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
-}
+inline bool IsWorkSerializerClearsTimeCacheEnabled() { return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
-inline bool IsWorkSerializerDispatchEnabled() {
-  return IsExperimentEnabled(kExperimentIdWorkSerializerDispatch);
-}
+inline bool IsWorkSerializerDispatchEnabled() { return IsExperimentEnabled(kExperimentIdWorkSerializerDispatch); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_V3
+inline bool IsCallV3Enabled() { return IsExperimentEnabled(kExperimentIdCallV3); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
-inline bool IsWriteSizePolicyEnabled() {
-  return IsExperimentEnabled(kExperimentIdWriteSizePolicy);
-}
+inline bool IsWriteSizePolicyEnabled() { return IsExperimentEnabled(kExperimentIdWriteSizePolicy); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
-inline bool IsWriteSizeCapEnabled() {
-  return IsExperimentEnabled(kExperimentIdWriteSizeCap);
-}
+inline bool IsWriteSizeCapEnabled() { return IsExperimentEnabled(kExperimentIdWriteSizeCap); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
-inline bool IsWrrDelegateToPickFirstEnabled() {
-  return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst);
-}
+inline bool IsWrrDelegateToPickFirstEnabled() { return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst); }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
