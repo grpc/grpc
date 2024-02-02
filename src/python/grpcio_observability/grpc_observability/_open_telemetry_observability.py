@@ -72,7 +72,6 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self,
         *,
         plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
-        exporter: "grpc_observability.Exporter" = None,
     ):
         _plugins = []
         if plugins:
