@@ -129,11 +129,11 @@ TEST(ObservableTest, ChangeValueWakesUp) {
   EXPECT_THAT(next(), IsReady(2));
 }
 
-TEST(ObservableTest, IsAcceptable) {
+TEST(ObservableTest, NextWhen) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   Observable<int> observable(1);
-  auto next = observable.Next(0, [](int i) { return i == 3; });
+  auto next = observable.NextWhen([](int i) { return i == 3; });
   EXPECT_THAT(next(), IsPending());
   EXPECT_CALL(activity, WakeupRequested());
   observable.Set(2);
