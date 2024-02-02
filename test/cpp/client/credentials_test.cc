@@ -30,6 +30,7 @@
 
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 

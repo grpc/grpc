@@ -24,6 +24,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
