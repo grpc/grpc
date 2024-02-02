@@ -1403,10 +1403,14 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # to generate it automatically.
 all_extra_metadata = {}
 # TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
-if '@com_google_protobuf//third_party/utf8_range:utf8_range' not in bazel_rules:
-    md = _BUILD_EXTRA_METADATA['@com_google_protobuf//third_party/utf8_range:utf8_range']
-    del _BUILD_EXTRA_METADATA['@com_google_protobuf//third_party/utf8_range:utf8_range']
-    _BUILD_EXTRA_METADATA['@utf8_range//:utf8_range'] = md
+if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
+    md = _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    del _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
