@@ -203,6 +203,16 @@ CallInitiator ClientChannel::CreateCall(ClientMetadataHandle metadata,
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/handler pair.
   auto call = MakeCall(event_engine(), arena);
+  // Construct a promise to wait for the resolver result.
+  const bool wait_for_ready =
+      metadata->GetOrCreatePointer(WaitForReady())->value;
+  auto wait_for_resolver_result = resolver_data_for_calls_.Next(
+      {nullptr, nullptr},
+      [wait_for_ready](const absl::StatusOr<ResolverDataForCalls> result) {
+        // If the resolver reports an error but the call is wait_for_ready,
+        // keep waiting for the next result instead of failing the call.
+        return result.ok() || !wait_for_ready;
+      });
   // Spawn a promise to wait for the resolver result.
   // This will eventually start using the handler, which will allow the
   // initiator to make progress.
@@ -211,8 +221,7 @@ CallInitiator ClientChannel::CreateCall(ClientMetadataHandle metadata,
       [self = RefAsSubclass<ClientChannel>(),
        metadata = std::move(metadata),
        handler = std::move(call.handler)]() mutable {
-        return Map(self->resolver_data_for_calls_.Next({}),
-// FIXME: if call is wait_for_ready and result is not OK, stay pending
+        return Map(std::move(wait_for_resolver_result),
                    // Handle resolver result.
                    [self, metadata = std::move(metadata),
                     handler = std::move(handler)](
