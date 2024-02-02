@@ -123,7 +123,7 @@ class OpenTelemetryPlugin:
         self, target: str  # pylint: disable=unused-argument
     ) -> bool:
         """
-        If set, this will be called per channel to decide whether to record the
+        Once overridden, this will be called per channel to decide whether to record the
         target attribute on client or to replace it with "other".
         This helps reduce the cardinality on metrics in cases where many channels
         are created with different targets in the same binary (which might happen
@@ -142,7 +142,7 @@ class OpenTelemetryPlugin:
         self, method: str  # pylint: disable=unused-argument
     ) -> bool:
         """
-        If set, this will be called with a generic method type to decide whether to
+        Once overridden, this will be called with a generic method type to decide whether to
         record the method name or to replace it with "other".
 
         Note that pre-registered methods will always be recorded no matter what this
