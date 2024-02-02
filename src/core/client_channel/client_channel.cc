@@ -133,13 +133,14 @@ class NoRetryCallDestination : public CallDestination {
       RefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
-  void StartCall(ClientMetadataHandle metadata,
-                 CallHandler call_handler) override {
-    CallInitiator call_initiator = client_channel_->CreateLoadBalancedCall(
-        std::move(metadata),
+  void StartCall(CallHandler call_handler) override {
+    client_channel_->CreateLoadBalancedCall(
+        std::move(call_handler),
         /*on_commit=*/[]() {},  // FIXME
         /*is_transparent_retry=*/false);
-    ForwardCall(std::move(call_handler), std::move(call_initiator));
+// FIXME: I think CreateLoadBalancedCall() will return void and will
+// invoke ForwardCall() internally, rather than us doing it here
+//    ForwardCall(std::move(call_handler), std::move(call_initiator));
   }
 
   void Orphan() override { delete this; }
@@ -218,19 +219,27 @@ CallInitiator ClientChannel::CreateCall(ClientMetadataHandle metadata,
   // initiator to make progress.
   call.initiator.SpawnGuarded(
       "wait-for-name-resolution",
-      [self = RefAsSubclass<ClientChannel>(),
-       metadata = std::move(metadata),
+      [self = RefAsSubclass<ClientChannel>(), metadata = std::move(metadata),
+       initiator = call.initiator,
        handler = std::move(call.handler)]() mutable {
         return Map(std::move(wait_for_resolver_result),
                    // Handle resolver result.
                    [self, metadata = std::move(metadata),
+                    initiator = std::move(initiator),
                     handler = std::move(handler)](
                        ResolverDataForCalls resolver_data) mutable {
                      // Apply service config to call.
                      absl::Status status = ApplyServiceConfigToCall(
                          self.get(), *resolver_data.config_selector, metadata);
                      if (!status.ok()) return status;
-// FIXME: need to call call_initiator.PushClientInitialMetadata() here
+                     // Now inject initial metadata into the call.
+                     initiator.SpawnGuarded(
+                         "send_initial_metadata",
+                         [initiator, client_initial_metadata =
+                              std::move(client_initial_metadata)]() mutable {
+                           return initiator.PushClientInitialMetadata(
+                               std::move(client_initial_metadata));
+                         });
                      // Finish constructing the call with the right filter
                      // stack and destination.
                      handler.SetStack(std::move(resolver_data.filter_stack));

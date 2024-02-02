@@ -46,7 +46,7 @@ class ClientChannel : public CallFactory {
 
   // Creates a load balanced call on the channel.
   CallInitiator CreateLoadBalancedCall(
-      ClientMetadataHandle md, absl::AnyInvocable<void()> on_commit,
+      CallHandler call_handler, absl::AnyInvocable<void()> on_commit,
       bool is_transparent_retry);
 
   // Returns the current connectivity state.  If try_to_connect is true,
