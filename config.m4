@@ -837,6 +837,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
@@ -1133,7 +1134,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -1170,6 +1171,13 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
     third_party/boringssl-with-bazel/src/crypto/thread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
@@ -1193,6 +1201,29 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
@@ -1217,9 +1248,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
@@ -1227,29 +1256,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -1636,6 +1642,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/fipsmodule)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hpke)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/hrss)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/keccak)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/kyber)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/lhash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/obj)
@@ -1648,10 +1655,10 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rc4)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/rsa_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/siphash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/spx)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/stack)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/trust_token)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)

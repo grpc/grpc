@@ -310,8 +310,9 @@ namespace {
 void StartBatchInCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call = static_cast<ClientChannel::FilterBasedLoadBalancedCall*>(
-      batch->handler_private.extra_arg);
+  auto* lb_call =
+      static_cast<ClientChannelFilter::FilterBasedLoadBalancedCall*>(
+          batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
 }
@@ -1710,7 +1711,7 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
   call_attempt_->StartRetriableBatches();
 }
 
-OrphanablePtr<ClientChannel::FilterBasedLoadBalancedCall>
+OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
@@ -2020,8 +2021,10 @@ void RetryFilter::LegacyCallData::OnRetryTimer() {
 void RetryFilter::LegacyCallData::OnRetryTimerLocked(
     void* arg, grpc_error_handle /*error*/) {
   auto* calld = static_cast<RetryFilter::LegacyCallData*>(arg);
-  calld->retry_timer_handle_.reset();
-  calld->CreateCallAttempt(/*is_transparent_retry=*/false);
+  if (calld->retry_timer_handle_.has_value()) {
+    calld->retry_timer_handle_.reset();
+    calld->CreateCallAttempt(/*is_transparent_retry=*/false);
+  }
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }
 

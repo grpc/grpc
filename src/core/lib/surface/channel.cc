@@ -58,11 +58,24 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
+
+namespace {
+
+class NotReallyACallFactory final : public CallFactory {
+ public:
+  using CallFactory::CallFactory;
+  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
+    Crash("NotReallyACallFactory::CreateCall should never be called");
+  }
+};
+
+}  // namespace
 
 Channel::Channel(bool is_client, bool is_promising, std::string target,
                  const ChannelArgs& channel_args,
@@ -71,14 +84,10 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
     : is_client_(is_client),
       is_promising_(is_promising),
       compression_options_(compression_options),
-      call_size_estimator_(channel_stack->call_stack_size +
-                           grpc_call_get_initial_size_estimate()),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      allocator_(channel_args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryOwner()),
       target_(std::move(target)),
-      channel_stack_(std::move(channel_stack)) {
+      channel_stack_(std::move(channel_stack)),
+      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -105,17 +114,6 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
     }
     ShutdownInternally();
   };
-}
-
-Arena* Channel::CreateArena() {
-  const size_t initial_size = call_size_estimator_.CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  return Arena::Create(initial_size, &allocator_);
-}
-
-void Channel::DestroyArena(Arena* arena) {
-  call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-  arena->Destroy();
 }
 
 absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(

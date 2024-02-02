@@ -195,7 +195,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.31'
+    ss.dependency 'BoringSSL-GRPC', '0.0.32'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -2009,6 +2009,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_factory.cc',
+                      'src/core/lib/transport/call_factory.h',
                       'src/core/lib/transport/call_filters.cc',
                       'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.cc',
@@ -3317,6 +3319,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_factory.h',
                               'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/call_size_estimator.h',

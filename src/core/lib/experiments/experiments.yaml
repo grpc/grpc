@@ -47,6 +47,11 @@
   expiry: 2024/04/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: call_v3
+  description: Promise-based call version 3.
+  expiry: 2024/06/01
+  owner: ctiller@google.com
+  test_tags: []
 - name: canary_client_privacy
   description:
     If set, canary client privacy
@@ -185,12 +190,6 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
-- name: registered_methods_map
-  description:
-    Use absl::flat_hash_map for registered methods.
-  expiry: 2024/01/31
-  owner: alishananda@google.com
-  test_tags: []
 - name: rfc_max_concurrent_streams
   description:
     If set, enable rfc-compliant behavior (cancellation) in the advent that

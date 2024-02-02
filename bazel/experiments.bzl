@@ -18,6 +18,7 @@
 
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
+    "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
     "client_idleness": "client_idleness",
     "client_privacy": "client_privacy",
@@ -38,7 +39,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
     "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
-    "registered_methods_map": "registered_methods_map",
     "rfc_max_concurrent_streams": "rfc_max_concurrent_streams",
     "round_robin_delegate_to_pick_first": "round_robin_delegate_to_pick_first",
     "rstpit": "rstpit",
