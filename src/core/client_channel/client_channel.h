@@ -189,6 +189,12 @@ class ClientChannel : public CallFactory {
                              const grpc_channel_info* info);
 #endif
 
+  // Applies service config settings from config_selector to the call.
+  // May modify call context and client_initial_metadata.
+  absl::Status ApplyServiceConfigToCall(
+      ConfigSelector& config_selector,
+      ClientMetadataHandle& client_initial_metadata) const;
+
   // Does an LB pick for a call.  Returns one of the following things:
   // - Continue{}, meaning to queue the pick
   // - a non-OK status, meaning to fail the call

@@ -1461,12 +1461,14 @@ class NoRetryCallDestination : public CallDestination {
   RefCountedPtr<ClientChannel> client_channel_;
 };
 
-absl::Status ApplyServiceConfigToCall(
+}  // namespace
+
+absl::Status ClientChannel::ApplyServiceConfigToCall(
     ConfigSelector& config_selector,
-    ClientMetadataHandle& client_initial_metadata) {
+    ClientMetadataHandle& client_initial_metadata) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-    gpr_log(GPR_INFO, "client_channel=%p calld=%p: applying service config to call",
-            client_channel(), this);
+    gpr_log(GPR_INFO, "client_channel=%p: applying service config to call",
+            this);
   }
   // Create a ClientChannelServiceConfigCallData for the call.  This stores
   // a ref to the ServiceConfig and caches the right set of parsed configs
@@ -1474,31 +1476,33 @@ absl::Status ApplyServiceConfigToCall(
   // itself in the call context, so that it can be accessed by filters
   // below us in the stack, and it will be cleaned up when the call ends.
   auto* service_config_call_data =
-      arena()->New<ClientChannelServiceConfigCallData>(arena(), call_context());
+      GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
+          GetContext<Arena>(), GetContext<grpc_call_context_element>());
   // Use the ConfigSelector to determine the config for the call.
-  absl::Status call_config_status =
-      (*config_selector)
-          ->GetCallConfig(
-              {send_initial_metadata(), arena(), service_config_call_data});
+  absl::Status call_config_status = config_selector.GetCallConfig(
+      {client_initial_metadata.get(), GetContext<Arena>(),
+       service_config_call_data});
   if (!call_config_status.ok()) {
-    return absl_status_to_grpc_error(
-        MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector"));
+    return MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector");
   }
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
-          client_channel()->service_config_parser_index_));
+          service_config_parser_index_));
   if (method_params != nullptr) {
-    // If the deadline from the service config is shorter than the one
-    // from the client API, reset the deadline timer.
-    if (client_channel()->deadline_checking_enabled_ &&
-        method_params->timeout() != Duration::Zero()) {
-      ResetDeadline(method_params->timeout());
+    // If the service config specifies a deadline, update the call's
+    // deadline timer.
+    if (method_params->timeout() != Duration::Zero()) {
+      CallContext* call_context = GetContext<CallContext>();
+      const Timestamp per_method_deadline =
+          Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
+          method_params->timeout();
+      call_context->UpdateDeadline(per_method_deadline);
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
     auto* wait_for_ready =
-        send_initial_metadata()->GetOrCreatePointer(WaitForReady());
+        client_initial_metadata->GetOrCreatePointer(WaitForReady());
     if (method_params->wait_for_ready().has_value() &&
         !wait_for_ready->explicitly_set) {
       wait_for_ready->value = method_params->wait_for_ready().value();
@@ -1506,8 +1510,6 @@ absl::Status ApplyServiceConfigToCall(
   }
   return absl::OkStatus();
 }
-
-}  // namespace
 
 CallInitiator ClientChannel::CreateCall(
     ClientMetadataHandle client_initial_metadata, Arena* arena) {
@@ -1550,8 +1552,7 @@ CallInitiator ClientChannel::CreateCall(
                     ResolverDataForCalls resolver_data) mutable {
                   // Apply service config to call.
                   absl::Status status = ApplyServiceConfigToCall(
-                      self.get(), *resolver_data.config_selector,
-                      client_initial_metadata);
+                      *resolver_data.config_selector, client_initial_metadata);
                   if (!status.ok()) return status;
                   // If the call was queued, add trace annotation.
                   if (was_queued) {
