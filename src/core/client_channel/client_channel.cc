@@ -134,13 +134,26 @@ class NoRetryCallDestination : public CallDestination {
       : client_channel_(std::move(client_channel)) {}
 
   void StartCall(CallHandler call_handler) override {
-    client_channel_->CreateLoadBalancedCall(
-        std::move(call_handler),
-        /*on_commit=*/[]() {},  // FIXME
-        /*is_transparent_retry=*/false);
-// FIXME: I think CreateLoadBalancedCall() will return void and will
-// invoke ForwardCall() internally, rather than us doing it here
-//    ForwardCall(std::move(call_handler), std::move(call_initiator));
+    call_handler.SpawnGuarded(
+        "drain_send_initial_metadata",
+        [call_handler = std::move(call_handler)]() {
+          // Wait to get client initial metadata from the call handler.
+          return Map(
+              call_handler.PullClientInitialMetadata(),
+              [call_handler](
+                  ClientMetadataHandle client_initial_metadata) mutable {
+                // Create the LoadBalancedCall.
+                CallInitiator call_initiator =
+                    client_channel_->CreateLoadBalancedCall(
+                        std::move(client_initial_metadata),
+                        /*on_commit=*/[]() {},  // FIXME
+                        /*is_transparent_retry=*/false);
+                // Propagate operations from the parent call's handler to
+                // the LoadBalancedCall's initiator.
+                ForwardCall(std::move(call_handler),
+                            std::move(call_initiator));
+              });
+        });
   }
 
   void Orphan() override { delete this; }
@@ -156,7 +169,6 @@ absl::Status ApplyServiceConfigToCall(
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand(), this);
   }
-  if (!config_selector.ok()) return config_selector.status();
   // Create a ClientChannelServiceConfigCallData for the call.  This stores
   // a ref to the ServiceConfig and caches the right set of parsed configs
   // to use for the call.  The ClientChannelServiceConfigCallData will store
@@ -198,55 +210,61 @@ absl::Status ApplyServiceConfigToCall(
 
 }  // namespace
 
-CallInitiator ClientChannel::CreateCall(ClientMetadataHandle metadata,
-                                        Arena* arena) {
+CallInitiator ClientChannel::CreateCall(
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/handler pair.
-  auto call = MakeCall(event_engine(), arena);
-  // Construct a promise to wait for the resolver result.
-  const bool wait_for_ready =
-      metadata->GetOrCreatePointer(WaitForReady())->value;
-  auto wait_for_resolver_result = resolver_data_for_calls_.Next(
-      {nullptr, nullptr},
-      [wait_for_ready](const absl::StatusOr<ResolverDataForCalls> result) {
-        // If the resolver reports an error but the call is wait_for_ready,
-        // keep waiting for the next result instead of failing the call.
-        return result.ok() || !wait_for_ready;
-      });
+  auto call = MakeCall(channel_args_.GetObject<EventEngine>(), arena);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start using the handler, which will allow the
   // initiator to make progress.
   call.initiator.SpawnGuarded(
       "wait-for-name-resolution",
-      [self = RefAsSubclass<ClientChannel>(), metadata = std::move(metadata),
+      [self = RefAsSubclass<ClientChannel>(),
+       client_initial_metadata = std::move(client_initial_metadata),
        initiator = call.initiator,
        handler = std::move(call.handler)]() mutable {
-        return Map(std::move(wait_for_resolver_result),
-                   // Handle resolver result.
-                   [self, metadata = std::move(metadata),
-                    initiator = std::move(initiator),
-                    handler = std::move(handler)](
-                       ResolverDataForCalls resolver_data) mutable {
-                     // Apply service config to call.
-                     absl::Status status = ApplyServiceConfigToCall(
-                         self.get(), *resolver_data.config_selector, metadata);
-                     if (!status.ok()) return status;
-                     // Now inject initial metadata into the call.
-                     initiator.SpawnGuarded(
-                         "send_initial_metadata",
-                         [initiator, client_initial_metadata =
-                              std::move(client_initial_metadata)]() mutable {
-                           return initiator.PushClientInitialMetadata(
-                               std::move(client_initial_metadata));
-                         });
-                     // Finish constructing the call with the right filter
-                     // stack and destination.
-                     handler.SetStack(std::move(resolver_data.filter_stack));
-                     self->call_destination_->StartCall(std::move(metadata),
-                                                        std::move(handler));
-                     return absl::OkStatus();
-                   });
+        const bool wait_for_ready =
+            client_initial_metadata->GetOrCreatePointer(WaitForReady())->value;
+        return Map(
+            // Wait for the resolver result.
+            resolver_data_for_calls_.NextWhen(
+                [wait_for_ready](
+                    const absl::StatusOr<ResolverDataForCalls> result) {
+                  // If the resolver reports an error but the call is
+                  // wait_for_ready, keep waiting for the next result
+                  // instead of failing the call.
+                  if (!result.ok()) return !wait_for_ready;
+                  // Not an error.  Make sure we actually have a result.
+                  return *result != nullptr;
+                }),
+                // Handle resolver result.
+                [self, initiator = std::move(initiator),
+                 handler = std::move(handler),
+                 client_initial_metadata = std::move(client_initial_metadata)](
+                    ResolverDataForCalls resolver_data) mutable {
+                  // Apply service config to call.
+                  absl::Status status = ApplyServiceConfigToCall(
+                      self.get(), *resolver_data.config_selector,
+                      client_initial_metadata);
+                  if (!status.ok()) return status;
+                  // Now inject initial metadata into the call.
+// FIXME: how do I chain this such that it doesn't need another call to
+// SpawnGuarded()?
+                  initiator.SpawnGuarded(
+                      "send_initial_metadata",
+                      [initiator, client_initial_metadata =
+                           std::move(client_initial_metadata)]() mutable {
+                        return initiator.PushClientInitialMetadata(
+                            std::move(client_initial_metadata));
+                      });
+                  // Finish constructing the call with the right filter
+                  // stack and destination.
+                  handler.SetStack(std::move(resolver_data.filter_stack));
+                  self->call_destination_->StartCall(std::move(handler));
+                  return absl::OkStatus();
+                });
       });
   // Return the initiator.
   return call.initiator;

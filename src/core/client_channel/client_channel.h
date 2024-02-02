@@ -42,12 +42,13 @@ class ClientChannel : public CallFactory {
   static ClientChannel* GetFromChannel(Channel* channel);
 
   // Creates a call on the channel.
-  CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena) override;
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
+                           Arena* arena) override;
 
   // Creates a load balanced call on the channel.
   CallInitiator CreateLoadBalancedCall(
-      CallHandler call_handler, absl::AnyInvocable<void()> on_commit,
-      bool is_transparent_retry);
+      ClientInitialMetadata client_initial_metadata,
+      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
   // Returns the current connectivity state.  If try_to_connect is true,
   // triggers a connection attempt if not already connected.
