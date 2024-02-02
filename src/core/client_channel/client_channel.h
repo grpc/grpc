@@ -41,15 +41,6 @@ class ClientChannel : public CallFactory {
   // is not a client channel.
   static ClientChannel* GetFromChannel(Channel* channel);
 
-  // Creates a call on the channel.
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
-                           Arena* arena) override;
-
-  // Creates a load balanced call on the channel.
-  CallInitiator CreateLoadBalancedCall(
-      ClientInitialMetadata client_initial_metadata,
-      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
-
   // Returns the current connectivity state.  If try_to_connect is true,
   // triggers a connection attempt if not already connected.
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
@@ -83,6 +74,7 @@ class ClientChannel : public CallFactory {
     MutexLock lock(&external_watchers_mu_);
     return static_cast<int>(external_watchers_.size());
   }
+#endif
 
   // Starts and stops a connectivity watch.  The watcher will be initially
   // notified as soon as the state changes from initial_state and then on
@@ -96,14 +88,22 @@ class ClientChannel : public CallFactory {
       OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher);
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
-#endif
+
+  // Creates a call on the channel.
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
+                           Arena* arena) override;
+
+  // Creates a load balanced call on the channel.
+  CallInitiator CreateLoadBalancedCall(
+      ClientInitialMetadata client_initial_metadata,
+      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
  private:
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
-  class ConnectivityWatcherAdder;
-  class ConnectivityWatcherRemover;
+  class LbCallState;
+  class LbMetadata;
 
 #if 0
   // Represents a pending connectivity callback from an external caller
@@ -145,6 +145,16 @@ class ClientChannel : public CallFactory {
     std::atomic<bool> done_{false};
   };
 #endif
+
+  // The result of the load balancing promise.
+  struct PickSubchannelResult {
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+    std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+        call_tracker;
+  };
+  LoopCtl<absl::StatusOr<PickSubchannelResult>> PickSubchannel(
+      LoadBalancingPolicy::SubchannelPicker& picker,
+      ClientMetadataHandle& client_initial_metadata);
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -202,6 +212,9 @@ class ClientChannel : public CallFactory {
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   OrphanablePtr<CallDestination> call_destination_;
+
+  CallSizeEstimator lb_call_size_estimator_;
+  MemoryAllocator lb_call_allocator_;
 
   //
   // Fields related to name resolution.
