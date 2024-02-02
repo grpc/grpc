@@ -1295,10 +1295,13 @@ Server::ChannelData::~ChannelData() {
   }
 }
 
-absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
-    ClientMetadata& client_initial_metadata, Arena* arena) {
-  SetRegisteredMethodOnMetadata(client_initial_metadata);
-  auto call = MakeServerCall(server_.get(), channel_.get(), arena);
+CallInitiator Server::ServerChannel::CreateCall(
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  server_->SetRegisteredMethodOnMetadata(*client_initial_metadata);
+  auto call = MakeCall(server_->event_engine_.get(), arena);
+  return std::move(call.initiator);
+
+  auto call = MakeServerCall(RefAsSubclass<ServerChannel>(), arena);
   InitCall(call);
   return CallInitiator(std::move(call));
 }

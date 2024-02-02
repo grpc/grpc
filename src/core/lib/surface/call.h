@@ -153,8 +153,7 @@ class CallContext {
 template <>
 struct ContextType<CallContext> {};
 
-RefCountedPtr<CallSpine> MakeServerCall(Server* server, Channel* channel,
-                                        Arena* arena);
+grpc_call* MakeServerCall(CallHandler handler);
 
 }  // namespace grpc_core
 

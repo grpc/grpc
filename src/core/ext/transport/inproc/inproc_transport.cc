@@ -36,8 +36,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                                     public Transport,
                                     public ServerTransport {
  public:
-  void SetChannel(Channel* channel) {
-    channel_ = channel;
+  void SetCallFactory(CallFactory* call_factory) override {
+    call_factory_ = call_factory;
     ConnectionState expect = ConnectionState::kInitial;
     state_.compare_exchange_strong(expect, ConnectionState::kReady,
                                    std::memory_order_acq_rel,
@@ -93,7 +93,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return channel_->CreateCall(std::move(md), channel_->CreateArena());
+    return call_factory_->CreateCall(std::move(md),
+                                     call_factory_->CreateArena());
   }
 
  private:
@@ -101,7 +102,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
   std::atomic<bool> disconnecting_{false};
-  Channel* channel_;
+  CallFactory* call_factory_;
   absl::Status disconnect_error_;
   Mutex state_tracker_mu_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
