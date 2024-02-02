@@ -56,9 +56,9 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/call_spine.h"
-#include "src/core/lib/transport/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -552,7 +552,7 @@ class ClientTransport {
 class ServerTransport {
  public:
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetChannel(Channel* channel) = 0;
+  virtual void SetCallFactory(CallFactory* channel) = 0;
 
  protected:
   ~ServerTransport() = default;

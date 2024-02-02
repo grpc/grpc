@@ -36,7 +36,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                                     public Transport,
                                     public ServerTransport {
  public:
-  void SetChannel(Channel* channel) override {
+  void SetChannel(Channel* channel) {
     channel_ = channel;
     ConnectionState expect = ConnectionState::kInitial;
     state_.compare_exchange_strong(expect, ConnectionState::kReady,

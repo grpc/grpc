@@ -218,7 +218,7 @@ class Server : public InternallyRefCounted<Server>,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ServerChannel final : public Channel {
+  class ServerChannel final : public CallFactory {
    public:
     CallInitiator CreateCall(ClientMetadataHandle md, Arena* arena) override;
   };
@@ -233,7 +233,7 @@ class Server : public InternallyRefCounted<Server>,
                        Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
-    GrpcChannel* channel() const { return channel_.get(); }
+    Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
     RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
