@@ -10,8 +10,8 @@
  * decode.c and decode_fast.c.
  */
 
-#ifndef UPB_WIRE_INTERNAL_DECODE_H_
-#define UPB_WIRE_INTERNAL_DECODE_H_
+#ifndef UPB_WIRE_INTERNAL_DECODER_H_
+#define UPB_WIRE_INTERNAL_DECODER_H_
 
 #include "upb/mem/internal/arena.h"
 #include "upb/message/internal/message.h"
@@ -33,7 +33,10 @@ typedef struct upb_Decoder {
   uint32_t end_group;  // field number of END_GROUP tag, else DECODE_NOGROUP.
   uint16_t options;
   bool missing_required;
-  upb_Arena arena;
+  union {
+    upb_Arena arena;
+    void* foo[UPB_ARENA_SIZE_HACK];
+  };
   upb_DecodeStatus status;
   jmp_buf err;
 
@@ -56,36 +59,17 @@ extern const uint8_t upb_utf8_offsets[];
 
 UPB_INLINE
 bool _upb_Decoder_VerifyUtf8Inline(const char* ptr, int len) {
-  const char* end = ptr + len;
-
-  // Check 8 bytes at a time for any non-ASCII char.
-  while (end - ptr >= 8) {
-    uint64_t data;
-    memcpy(&data, ptr, 8);
-    if (data & 0x8080808080808080) goto non_ascii;
-    ptr += 8;
-  }
-
-  // Check one byte at a time for non-ASCII.
-  while (ptr < end) {
-    if (*ptr & 0x80) goto non_ascii;
-    ptr++;
-  }
-
-  return true;
-
-non_ascii:
-  return utf8_range2((const unsigned char*)ptr, end - ptr) == 0;
+  return utf8_range_IsValid(ptr, len);
 }
 
 const char* _upb_Decoder_CheckRequired(upb_Decoder* d, const char* ptr,
                                        const upb_Message* msg,
-                                       const upb_MiniTable* l);
+                                       const upb_MiniTable* m);
 
 /* x86-64 pointers always have the high 16 bits matching. So we can shift
  * left 8 and right 8 without loss of information. */
 UPB_INLINE intptr_t decode_totable(const upb_MiniTable* tablep) {
-  return ((intptr_t)tablep << 8) | tablep->table_mask;
+  return ((intptr_t)tablep << 8) | tablep->UPB_PRIVATE(table_mask);
 }
 
 UPB_INLINE const upb_MiniTable* decode_totablep(intptr_t table) {
@@ -106,8 +90,8 @@ UPB_INLINE const char* _upb_Decoder_BufferFlipCallback(
   if (!old_end) _upb_FastDecoder_ErrorJmp(d, kUpb_DecodeStatus_Malformed);
 
   if (d->unknown) {
-    if (!_upb_Message_AddUnknown(d->unknown_msg, d->unknown,
-                                 old_end - d->unknown, &d->arena)) {
+    if (!UPB_PRIVATE(_upb_Message_AddUnknown)(
+            d->unknown_msg, d->unknown, old_end - d->unknown, &d->arena)) {
       _upb_FastDecoder_ErrorJmp(d, kUpb_DecodeStatus_OutOfMemory);
     }
     d->unknown = new_start;
@@ -126,9 +110,9 @@ const char* _upb_FastDecoder_TagDispatch(upb_Decoder* d, const char* ptr,
   size_t idx = tag & mask;
   UPB_ASSUME((idx & 7) == 0);
   idx >>= 3;
-  data = table_p->fasttable[idx].field_data ^ tag;
-  UPB_MUSTTAIL return table_p->fasttable[idx].field_parser(d, ptr, msg, table,
-                                                           hasbits, data);
+  data = table_p->UPB_PRIVATE(fasttable)[idx].field_data ^ tag;
+  UPB_MUSTTAIL return table_p->UPB_PRIVATE(fasttable)[idx].field_parser(
+      d, ptr, msg, table, hasbits, data);
 }
 #endif
 
@@ -140,4 +124,4 @@ UPB_INLINE uint32_t _upb_FastDecoder_LoadTag(const char* ptr) {
 
 #include "upb/port/undef.inc"
 
-#endif /* UPB_WIRE_INTERNAL_DECODE_H_ */
+#endif /* UPB_WIRE_INTERNAL_DECODER_H_ */
