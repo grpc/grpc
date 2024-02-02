@@ -102,8 +102,6 @@ class ClientChannel : public CallFactory {
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
-  class LbCallState;
-  class LbMetadata;
 
 #if 0
   // Represents a pending connectivity callback from an external caller
