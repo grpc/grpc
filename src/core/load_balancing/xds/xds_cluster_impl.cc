@@ -41,7 +41,7 @@
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -67,7 +67,7 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 

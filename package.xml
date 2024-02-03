@@ -139,36 +139,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/http_proxy_mapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/local_subchannel_pool.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/polling_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/polling_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc" role="src" />
@@ -1625,14 +1595,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/endpoint_addresses.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/endpoint_addresses.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/resolver_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/resolver_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/resolver_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resolver/server_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
@@ -1928,6 +1890,44 @@
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_wrr_locality.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry_extra.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/binder/binder_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver_plugin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/dns_resolver_plugin.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/service_config_helper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/event_engine/service_config_helper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/native/dns_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/dns/native/dns_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/endpoint_addresses.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/endpoint_addresses.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/fake/fake_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/fake/fake_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/google_c2p/google_c2p_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/polling_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/polling_resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/resolver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/resolver_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/resolver_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/resolver_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/server_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_attributes.h" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />
