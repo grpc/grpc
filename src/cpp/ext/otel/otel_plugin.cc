@@ -117,13 +117,6 @@ OpenTelemetryPluginBuilderImpl::DisableAllMetrics() {
 }
 
 OpenTelemetryPluginBuilderImpl&
-OpenTelemetryPluginBuilderImpl::SetLabelsInjector(
-    std::unique_ptr<LabelsInjector> labels_injector) {
-  labels_injector_ = std::move(labels_injector);
-  return *this;
-}
-
-OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::SetTargetSelector(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_selector) {
@@ -243,7 +236,6 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                     kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per server call", "By");
   }
-  g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
   g_otel_plugin_state_->server_selector = std::move(server_selector_);
