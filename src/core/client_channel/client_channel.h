@@ -218,7 +218,7 @@ class ClientChannel : public CallFactory {
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   OrphanablePtr<CallDestination> call_destination_;
-
+  // State for LB calls.
   CallSizeEstimator lb_call_size_estimator_;
   MemoryAllocator lb_call_allocator_;
 
