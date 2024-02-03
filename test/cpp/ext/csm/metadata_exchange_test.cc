@@ -127,7 +127,8 @@ class TestScenario {
 class MeshLabelsPluginOption
     : public grpc::internal::InternalOpenTelemetryPluginOption {
  public:
-  MeshLabelsPluginOption(const opentelemetry::sdk::common::AttributeMap& map)
+  explicit MeshLabelsPluginOption(
+      const opentelemetry::sdk::common::AttributeMap& map)
       : labels_injector_(
             std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(map)) {}
 
