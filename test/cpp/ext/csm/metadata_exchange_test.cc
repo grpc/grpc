@@ -132,11 +132,11 @@ class MeshLabelsPluginOption
       : labels_injector_(
             std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(map)) {}
 
-  bool IsActiveOnClientChannel(absl::string_view target) const override {
+  bool IsActiveOnClientChannel(absl::string_view /*target*/) const override {
     return true;
   }
 
-  bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const override {
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& /*args*/) const override {
     return true;
   }
 
