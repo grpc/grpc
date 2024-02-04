@@ -85,16 +85,22 @@ class Server : public InternallyRefCounted<Server>,
 
   class ServerChannel final : public CallFactory {
    public:
-    ServerChannel(Server* server, OrphanablePtr<Transport> transport)
-        : CallFactory(server->channel_args_),
-          transport_(std::move(transport)),
-          server_(server) {}
+    ServerChannel(Server* server,
+                  RefCountedPtr<CallFilters::Stack> filter_stack,
+                  OrphanablePtr<Transport> transport, size_t cq_idx);
+    ~ServerChannel() override;
     CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
                              Arena* arena) override;
+    void Orphan() override;
+    Transport& transport() { return *transport_; }
 
    private:
-    const OrphanablePtr<Transport> transport_;
-    Server* const server_;
+    class ConnectivityWatcher;
+
+    OrphanablePtr<Transport> transport_;
+    const RefCountedPtr<CallFilters::Stack> filter_stack_;
+    RefCountedPtr<Server> const server_;
+    const size_t cq_idx_;
   };
 
   // Opaque type used for registered methods.
@@ -387,6 +393,13 @@ class Server : public InternallyRefCounted<Server>,
     using is_transparent = void;
   };
 
+  struct ChannelSet {
+    std::vector<RefCountedPtr<Channel>> ye_olde_channels;
+    std::vector<RefCountedPtr<ServerChannel>> channels;
+  };
+
+  class ChannelBroadcaster;
+
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
@@ -412,7 +425,8 @@ class Server : public InternallyRefCounted<Server>,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
+  ChannelSet GetChannelsLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.
@@ -449,8 +463,9 @@ class Server : public InternallyRefCounted<Server>,
   }
 
   void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
-  RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
-                                        const absl::string_view& path);
+  RegisteredMethod* GetRegisteredMethod(absl::string_view host,
+                                        absl::string_view path);
+  void MatchThenPublish(CallHandler handler, size_t cq_idx);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
@@ -506,7 +521,12 @@ class Server : public InternallyRefCounted<Server>,
   const Duration max_time_in_pending_queue_;
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
-  std::list<ChannelData*> channels_;
+  std::list<ChannelData*> ye_olde_channels_ ABSL_GUARDED_BY(mu_global_);
+  using ServerChannelSet = absl::flat_hash_set<RefCountedPtr<ServerChannel>,
+                                               RefCountedPtrHash<ServerChannel>,
+                                               RefCountedPtrEq<ServerChannel>>;
+  ServerChannelSet channels_ ABSL_GUARDED_BY(mu_global_);
+  std::atomic<size_t> num_channels_{0};
 
   std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;

@@ -6750,8 +6750,7 @@ grpc_cc_library(
         "call_size_estimator",
         "call_spine",
         "channel_args",
-        "metadata",
-        "ref_counted",
+        "dual_ref_counted",
         "resource_quota",
         "//:gpr_platform",
         "//:stats",
@@ -6764,9 +6763,13 @@ grpc_cc_library(
         "lib/transport/call_destination.h",
     ],
     deps = [
+        "arena",
+        "call_size_estimator",
         "call_spine",
+        "channel_args",
+        "metadata",
+        "ref_counted",
         "//:gpr_platform",
-        "//:orphanable",
     ],
 )
 

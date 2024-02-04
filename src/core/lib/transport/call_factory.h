@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_size_estimator.h"
 #include "src/core/lib/transport/call_spine.h"
@@ -26,7 +26,7 @@
 namespace grpc_core {
 
 // CallFactory creates calls.
-class CallFactory : public RefCounted<CallFactory> {
+class CallFactory : public DualRefCounted<CallFactory> {
  public:
   explicit CallFactory(const ChannelArgs& args);
 

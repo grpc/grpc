@@ -73,6 +73,7 @@ class NotReallyACallFactory final : public CallFactory {
   CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
     Crash("NotReallyACallFactory::CreateCall should never be called");
   }
+  void Orphan() override {}
 };
 
 }  // namespace

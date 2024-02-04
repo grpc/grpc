@@ -28,6 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "connectivity_state.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -215,3 +216,22 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
   op->op.on_complete = &op->outer_on_complete;
   return &op->op;
 }
+
+namespace grpc_core {
+
+void Transport::SendGoaway(absl::string_view message) {
+  auto* op = grpc_make_transport_op(nullptr);
+  op->goaway_error =
+      grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
+                         StatusIntProperty::kRpcStatus, GRPC_STATUS_OK);
+  PerformOp(op);
+}
+
+void Transport::StartConnectivityWatch(
+    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+  auto* op = grpc_make_transport_op(nullptr);
+  op->start_connectivity_watch = std::move(watcher);
+  PerformOp(op);
+}
+
+}  // namespace grpc_core

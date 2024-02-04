@@ -552,7 +552,7 @@ class ClientTransport {
 class ServerTransport {
  public:
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetCallFactory(CallFactory* channel) = 0;
+  virtual void SetCallFactory(WeakRefCountedPtr<CallFactory> channel) = 0;
 
  protected:
   ~ServerTransport() = default;
@@ -582,6 +582,12 @@ class Transport : public Orphanable {
 
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  // Wrappers around PerformOp (we'll make these first class virtuals at some
+  // point)
+  void SendGoaway(absl::string_view message);
+  void StartConnectivityWatch(
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // implementation of grpc_transport_get_endpoint
   virtual grpc_endpoint* GetEndpoint() = 0;
