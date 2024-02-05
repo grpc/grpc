@@ -14,5 +14,5 @@
 
 # GRPC contains the General RPC module.
 module GRPC
-  VERSION = '1.59.3'
+  VERSION = '1.59.4'
 end

@@ -215,7 +215,7 @@ g_stands_for = "generative"  # @unused
 
 core_version = "36.0.0"  # @unused
 
-version = "1.59.3"  # @unused
+version = "1.59.4"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",

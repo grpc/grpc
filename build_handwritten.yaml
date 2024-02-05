@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: generative
   protobuf_version: 3.24.3
-  version: 1.59.3
+  version: 1.59.4
 configs:
   asan:
     CC: clang
