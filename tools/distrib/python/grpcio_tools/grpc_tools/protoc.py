@@ -47,7 +47,7 @@ def _get_resource_file_name(
     """Obtain the filename for a resource on the file system."""
     file_name = None
     if sys.version_info >= (3, 9, 0):
-         file_name = (
+        file_name = (
             resources.files(package_or_requirement) / resource_name
         ).resolve()
     else:
