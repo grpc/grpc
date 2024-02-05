@@ -38,7 +38,7 @@ class Observable {
   void Set(T value) { state_->Set(std::move(value)); }
 
   // Returns a promise that resolves to a T when the value becomes != current.
-  auto Next(T current) { return Observer(state_, std::move(current)); }
+  auto Next(T current) { return ObserverIfChanged(state_, std::move(current)); }
 
   // Same as Next(), except it resolves only once is_acceptable returns
   // true for the new value.
@@ -47,9 +47,8 @@ class Observable {
   }
 
  private:
-  // Forward declaration so we can form pointers to observer types in State.
+  // Forward declaration so we can form pointers to Observer in State.
   class Observer;
-  class ObserverWhen;
 
   // State keeps track of all observable state.
   // It's a refcounted object so that promises reading the state are not tied
@@ -77,19 +76,11 @@ class Observable {
     void Remove(Observer* observer) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.erase(observer);
     }
-    void Remove(ObserverWhen* observer) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-      observer_whens_.erase(observer);
-    }
 
     // Add an observer to the set (it needs updates).
     GRPC_MUST_USE_RESULT Waker Add(Observer* observer)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.insert(observer);
-      return GetContext<Activity>()->MakeNonOwningWaker();
-    }
-    GRPC_MUST_USE_RESULT Waker Add(ObserverWhen* observer)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-      observer_whens_.insert(observer);
       return GetContext<Activity>()->MakeNonOwningWaker();
     }
 
@@ -99,27 +90,22 @@ class Observable {
       for (auto* observer : observers_) {
         observer->Wakeup();
       }
-      for (auto* observer : observer_whens_) {
-        observer->Wakeup();
-      }
     }
 
     Mutex mu_;
     // All observers that may need an update.
     absl::flat_hash_set<Observer*> observers_ ABSL_GUARDED_BY(mu_);
-    absl::flat_hash_set<ObserverWhen*> observer_whens_ ABSL_GUARDED_BY(mu_);
     // The current value.
     T value_ ABSL_GUARDED_BY(mu_);
   };
 
-  // Observer is a promise that resolves to a T when the value becomes !=
-  // current.
+  // A promise that resolves to a T when ShouldReturn() returns true.
+  // Subclasses must implement ShouldReturn().
   class Observer {
    public:
-    Observer(RefCountedPtr<State> state, T current)
-        : state_(std::move(state)), current_(std::move(current)) {}
+    explicit Observer(RefCountedPtr<State> state) : state_(std::move(state)) {}
 
-    ~Observer() {
+    virtual ~Observer() {
       // If we saw a pending at all then we *may* be in the set of observers.
       // If not we're definitely not and we can avoid taking the lock at all.
       if (!saw_pending_) return;
@@ -130,8 +116,7 @@ class Observable {
 
     Observer(const Observer&) = delete;
     Observer& operator=(const Observer&) = delete;
-    Observer(Observer&& other) noexcept
-        : state_(std::move(other.state_)), current_(std::move(other.current_)) {
+    Observer(Observer&& other) noexcept : state_(std::move(other.state_)) {
       GPR_ASSERT(other.waker_.is_unwakeable());
       GPR_ASSERT(!other.saw_pending_);
     }
@@ -139,10 +124,12 @@ class Observable {
 
     void Wakeup() { waker_.WakeupAsync(); }
 
+    virtual bool ShouldReturn(const T& current) = 0;
+
     Poll<T> operator()() {
       MutexLock lock(state_->mu());
       // Check if the value has changed yet.
-      if (current_ != state_->current()) {
+      if (ShouldReturn(state_->current())) {
         if (saw_pending_ && !waker_.is_unwakeable()) state_->Remove(this);
         return state_->current();
       }
@@ -154,58 +141,44 @@ class Observable {
 
    private:
     RefCountedPtr<State> state_;
-    T current_;
     Waker waker_;
     bool saw_pending_ = false;
   };
 
-  // ObserverWhen is a promise that resolves to a T when the value becomes
-  // acceptable.
-  class ObserverWhen {
+  // An observer that resolves to a T when the value becomes != current.
+  class ObserverIfChanged : public Observer {
+   public:
+    ObserverIfChanged(RefCountedPtr<State> state, T current)
+        : Observer(std::move(state)), current_(std::move(current)) {}
+
+    ObserverIfChanged(ObserverIfChanged&& other) noexcept
+        : Observer(std::move(other)), current_(std::move(other.current_)) {}
+
+    bool ShouldReturn(const T& current) override { return current_ != current; }
+
+   private:
+    T current_;
+  };
+
+  // A promise that resolves to a T when is_acceptable returns true for
+  // the current value.
+  class ObserverWhen : public Observer {
    public:
     ObserverWhen(RefCountedPtr<State> state,
                  absl::AnyInvocable<bool(const T&)> is_acceptable)
-        : state_(std::move(state)), is_acceptable_(std::move(is_acceptable)) {}
+        : Observer(std::move(state)),
+          is_acceptable_(std::move(is_acceptable)) {}
 
-    ~ObserverWhen() {
-      // If we saw a pending at all then we *may* be in the set of observers.
-      // If not we're definitely not and we can avoid taking the lock at all.
-      if (!saw_pending_) return;
-      MutexLock lock(state_->mu());
-      auto w = std::move(waker_);
-      state_->Remove(this);
-    }
-
-    ObserverWhen(const ObserverWhen&) = delete;
-    ObserverWhen& operator=(const ObserverWhen&) = delete;
     ObserverWhen(ObserverWhen&& other) noexcept
-        : state_(std::move(other.state_)),
-          is_acceptable_(std::move(other.is_acceptable_)) {
-      GPR_ASSERT(other.waker_.is_unwakeable());
-      GPR_ASSERT(!other.saw_pending_);
-    }
-    ObserverWhen& operator=(ObserverWhen&& other) noexcept = delete;
+        : Observer(std::move(other)),
+          is_acceptable_(std::move(other.is_acceptable_)) {}
 
-    void Wakeup() { waker_.WakeupAsync(); }
-
-    Poll<T> operator()() {
-      MutexLock lock(state_->mu());
-      // Check if the value is acceptable.
-      if (is_acceptable_(state_->current())) {
-        if (saw_pending_ && !waker_.is_unwakeable()) state_->Remove(this);
-        return state_->current();
-      }
-      // Record that we saw at least one pending and then register for wakeup.
-      saw_pending_ = true;
-      if (waker_.is_unwakeable()) waker_ = state_->Add(this);
-      return Pending{};
+    bool ShouldReturn(const T& current) override {
+      return is_acceptable_(current);
     }
 
    private:
-    RefCountedPtr<State> state_;
     absl::AnyInvocable<bool(const T&)> is_acceptable_;
-    Waker waker_;
-    bool saw_pending_ = false;
   };
 
   RefCountedPtr<State> state_;
