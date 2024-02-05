@@ -25,6 +25,7 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
 
@@ -202,6 +203,25 @@ TEST(CredentialsTest, TlsServerCredentialsWithCrlProviderAndDirectory) {
 
 // TODO(gtcooke94) - Add test to make sure Tls*CredentialsOptions does not leak
 // when not moved into TlsCredentials
+
+TEST(CredentialsTest, TlsServerCredentialsWithGoodMinMaxTlsVersions) {
+  grpc::experimental::TlsServerCredentialsOptions options(
+      /*certificate_provider=*/nullptr);
+  options.set_min_tls_version(grpc_tls_version::TLS1_2);
+  options.set_max_tls_version(grpc_tls_version::TLS1_3);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  EXPECT_NE(server_credentials, nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithBadMinMaxTlsVersions) {
+  grpc::experimental::TlsServerCredentialsOptions options(
+      /*certificate_provider=*/nullptr);
+  options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  options.set_max_tls_version(grpc_tls_version::TLS1_2);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  EXPECT_EQ(server_credentials, nullptr);
+  delete options.c_credentials_options();
+}
 
 }  // namespace
 }  // namespace testing
