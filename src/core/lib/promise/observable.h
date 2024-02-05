@@ -154,9 +154,7 @@ class Observable {
     ObserverIfChanged(ObserverIfChanged&& other) noexcept
         : Observer(std::move(other)), current_(std::move(other.current_)) {}
 
-    bool ShouldReturn(const T& current) override {
-      return current_ != current;
-    }
+    bool ShouldReturn(const T& current) override { return current_ != current; }
 
    private:
     T current_;
