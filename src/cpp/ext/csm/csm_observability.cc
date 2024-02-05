@@ -139,9 +139,5 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   return CsmObservability();
 }
 
-std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption() {
-  return std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>();
-}
-
 }  // namespace experimental
 }  // namespace grpc
