@@ -30,6 +30,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 
@@ -410,6 +411,7 @@ TEST(CredentialsTest, TlsChannelCredentialsWithBadMinAndMaxTlsVersions) {
   options.set_max_tls_version(grpc_tls_version::TLS1_2);
   auto channel_credentials = grpc::experimental::TlsCredentials(options);
   EXPECT_EQ(channel_credentials, nullptr);
+  delete options.c_credentials_options();
 }
 
 }  // namespace

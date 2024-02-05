@@ -24,6 +24,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -192,6 +193,7 @@ TEST(CredentialsTest, TlsServerCredentialsWithBadMinMaxTlsVersions) {
   options.set_max_tls_version(grpc_tls_version::TLS1_2);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   EXPECT_EQ(server_credentials, nullptr);
+  delete options.c_credentials_options();
 }
 
 }  // namespace
