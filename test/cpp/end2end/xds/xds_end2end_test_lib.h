@@ -29,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "google/protobuf/message.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -162,6 +163,10 @@ class XdsTestType {
   // For use as the final parameter in INSTANTIATE_TEST_SUITE_P().
   static std::string Name(const ::testing::TestParamInfo<XdsTestType>& info) {
     return info.param.AsString();
+  }
+
+  friend void PrintTo(const XdsTestType& test_type, std::ostream* os) {
+    *os << test_type.AsString();
   }
 
  private:
