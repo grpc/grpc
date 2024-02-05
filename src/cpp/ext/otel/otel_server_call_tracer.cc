@@ -82,10 +82,6 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // arguments.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
-    if (OpenTelemetryPluginState().labels_injector != nullptr) {
-      OpenTelemetryPluginState().labels_injector->AddLabels(
-          send_initial_metadata, injected_labels_.get());
-    }
     active_plugin_options_view_.ForEach(
         [&](const InternalOpenTelemetryPluginOption& plugin_option,
             size_t index) {
@@ -162,7 +158,6 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Time start_time_;
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
-  std::unique_ptr<LabelsIterable> injected_labels_;
   bool registered_method_;
   ActivePluginOptionsView active_plugin_options_view_;
   // TODO(yashykt): It's wasteful to do this per call. When we re-haul the stats
@@ -175,10 +170,6 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
-  if (OpenTelemetryPluginState().labels_injector != nullptr) {
-    injected_labels_ = OpenTelemetryPluginState().labels_injector->GetLabels(
-        recv_initial_metadata);
-  }
   active_plugin_options_view_.ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t index) {
@@ -198,7 +189,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     OpenTelemetryPluginState().server.call.started->Add(
-        1, KeyValueIterable(/*injected_labels_iterable=*/nullptr, {},
+        1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr, {},
                             /*is_client=*/false));
@@ -221,8 +212,7 @@ void OpenTelemetryServerCallTracer::RecordEnd(
             grpc_status_code_to_string(final_info->final_status)}}};
   // Currently we do not have any optional labels on the server side.
   KeyValueIterable labels(
-      injected_labels_.get(), injected_labels_from_plugin_options_,
-      additional_labels,
+      injected_labels_from_plugin_options_, additional_labels,
       /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
       /*is_client=*/false);
   if (OpenTelemetryPluginState().server.call.duration != nullptr) {

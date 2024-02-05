@@ -105,7 +105,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
     meter_provider->AddMetricReader(reader_);
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
-  ot_builder.SetLabelsInjector(std::move(config.labels_injector));
   ot_builder.SetTargetSelector(std::move(config.target_selector));
   ot_builder.SetServerSelector(std::move(config.server_selector));
   ot_builder.SetTargetAttributeFilter(

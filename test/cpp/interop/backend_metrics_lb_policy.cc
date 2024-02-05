@@ -22,9 +22,9 @@
 
 #include "absl/strings/str_format.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
 
 namespace grpc {
 namespace testing {

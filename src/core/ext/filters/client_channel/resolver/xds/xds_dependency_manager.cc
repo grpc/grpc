@@ -20,12 +20,12 @@
 
 #include "absl/strings/str_join.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/match.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
 
 namespace grpc_core {
 

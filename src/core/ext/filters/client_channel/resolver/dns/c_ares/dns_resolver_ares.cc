@@ -62,7 +62,6 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -72,6 +71,7 @@
 #include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
