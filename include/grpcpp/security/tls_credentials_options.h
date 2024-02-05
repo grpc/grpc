@@ -104,6 +104,15 @@ class TlsCredentialsOptions {
   // version > 1.1.
   void set_crl_directory(const std::string& path);
 
+  // Sets the minimum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.2.
+  // @param tls_version: The minimum TLS version.
+  void set_min_tls_version(grpc_tls_version tls_version);
+  // Sets the maximum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.3.
+  // @param tls_version: The maximum TLS version.
+  void set_max_tls_version(grpc_tls_version tls_version);
+
   // ----- Getters for member fields ----
   // Get the internal c options. This function shall be used only internally.
   grpc_tls_credentials_options* c_credentials_options() const {

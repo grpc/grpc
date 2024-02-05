@@ -24,6 +24,7 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -174,6 +175,25 @@ TEST(CredentialsTest, TlsServerCredentialsWithAsyncExternalVerifier) {
   options.set_certificate_verifier(verifier);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   GPR_ASSERT(server_credentials.get() != nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithGoodMinMaxTlsVersions) {
+  grpc::experimental::TlsServerCredentialsOptions options(
+      /*certificate_provider=*/nullptr);
+  options.set_min_tls_version(grpc_tls_version::TLS1_2);
+  options.set_max_tls_version(grpc_tls_version::TLS1_3);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  EXPECT_NE(server_credentials, nullptr);
+}
+
+TEST(CredentialsTest, TlsServerCredentialsWithBadMinMaxTlsVersions) {
+  grpc::experimental::TlsServerCredentialsOptions options(
+      /*certificate_provider=*/nullptr);
+  options.set_min_tls_version(grpc_tls_version::TLS1_3);
+  options.set_max_tls_version(grpc_tls_version::TLS1_2);
+  auto server_credentials = grpc::experimental::TlsServerCredentials(options);
+  EXPECT_EQ(server_credentials, nullptr);
+  delete options.c_credentials_options();
 }
 
 }  // namespace

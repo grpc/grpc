@@ -147,6 +147,8 @@ EXPORTS
     grpc_tls_certificate_provider_file_watcher_create
     grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
+    grpc_tls_credentials_options_set_min_tls_version
+    grpc_tls_credentials_options_set_max_tls_version
     grpc_tls_credentials_options_set_certificate_provider
     grpc_tls_credentials_options_watch_root_certs
     grpc_tls_credentials_options_set_root_cert_name
