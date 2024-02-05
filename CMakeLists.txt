@@ -1794,30 +1794,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/http_proxy_mapper.cc
-  src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
-  src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
-  src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  src/core/ext/filters/client_channel/lb_policy/health_check_client.cc
-  src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
-  src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
-  src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
-  src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
-  src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
-  src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
-  src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
-  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
-  src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2412,8 +2388,6 @@ add_library(grpc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/load_balancing/lb_policy.cc
-  src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
@@ -2547,6 +2521,32 @@ add_library(grpc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
+  src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/child_policy_handler.cc
+  src/core/load_balancing/endpoint_list.cc
+  src/core/load_balancing/grpclb/client_load_reporting_filter.cc
+  src/core/load_balancing/grpclb/grpclb.cc
+  src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc
+  src/core/load_balancing/grpclb/grpclb_client_stats.cc
+  src/core/load_balancing/grpclb/load_balancer_api.cc
+  src/core/load_balancing/health_check_client.cc
+  src/core/load_balancing/lb_policy.cc
+  src/core/load_balancing/lb_policy_registry.cc
+  src/core/load_balancing/oob_backend_metric.cc
+  src/core/load_balancing/outlier_detection/outlier_detection.cc
+  src/core/load_balancing/pick_first/pick_first.cc
+  src/core/load_balancing/priority/priority.cc
+  src/core/load_balancing/ring_hash/ring_hash.cc
+  src/core/load_balancing/rls/rls.cc
+  src/core/load_balancing/round_robin/round_robin.cc
+  src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
+  src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc
+  src/core/load_balancing/weighted_target/weighted_target.cc
+  src/core/load_balancing/xds/cds.cc
+  src/core/load_balancing/xds/xds_cluster_impl.cc
+  src/core/load_balancing/xds/xds_cluster_manager.cc
+  src/core/load_balancing/xds/xds_override_host.cc
+  src/core/load_balancing/xds/xds_wrr_locality.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_extra.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
@@ -2893,24 +2893,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/dynamic_filters.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/http_proxy_mapper.cc
-  src/core/ext/filters/client_channel/lb_policy/address_filtering.cc
-  src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc
-  src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  src/core/ext/filters/client_channel/lb_policy/health_check_client.cc
-  src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc
-  src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc
-  src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
-  src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
-  src/core/ext/filters/client_channel/lb_policy/rls/rls.cc
-  src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
-  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc
-  src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/local_subchannel_pool.cc
   src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -3166,8 +3148,6 @@ add_library(grpc_unsecure
   src/core/lib/json/json_object_loader.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/load_balancing/lb_policy.cc
-  src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
@@ -3266,6 +3246,26 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
+  src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/child_policy_handler.cc
+  src/core/load_balancing/endpoint_list.cc
+  src/core/load_balancing/grpclb/client_load_reporting_filter.cc
+  src/core/load_balancing/grpclb/grpclb.cc
+  src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc
+  src/core/load_balancing/grpclb/grpclb_client_stats.cc
+  src/core/load_balancing/grpclb/load_balancer_api.cc
+  src/core/load_balancing/health_check_client.cc
+  src/core/load_balancing/lb_policy.cc
+  src/core/load_balancing/lb_policy_registry.cc
+  src/core/load_balancing/oob_backend_metric.cc
+  src/core/load_balancing/outlier_detection/outlier_detection.cc
+  src/core/load_balancing/pick_first/pick_first.cc
+  src/core/load_balancing/priority/priority.cc
+  src/core/load_balancing/rls/rls.cc
+  src/core/load_balancing/round_robin/round_robin.cc
+  src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
+  src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc
+  src/core/load_balancing/weighted_target/weighted_target.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
@@ -5257,8 +5257,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/load_balancing/lb_policy.cc
-  src/core/lib/load_balancing/lb_policy_registry.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
@@ -5355,6 +5353,8 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
+  src/core/load_balancing/lb_policy.cc
+  src/core/load_balancing/lb_policy_registry.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
@@ -5807,7 +5807,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(static_stride_scheduler_benchmark
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+    src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
     test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
   )
   if(WIN32 AND MSVC)
@@ -28240,7 +28240,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(static_stride_scheduler_test
-  src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc
+  src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
   test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
 )
 if(WIN32 AND MSVC)

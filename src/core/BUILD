@@ -2971,8 +2971,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "lb_policy",
-    srcs = ["lib/load_balancing/lb_policy.cc"],
-    hdrs = ["lib/load_balancing/lb_policy.h"],
+    srcs = ["load_balancing/lb_policy.cc"],
+    hdrs = ["load_balancing/lb_policy.h"],
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
@@ -3007,7 +3007,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "lb_policy_factory",
-    hdrs = ["lib/load_balancing/lb_policy_factory.h"],
+    hdrs = ["load_balancing/lb_policy_factory.h"],
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
@@ -3023,8 +3023,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "lb_policy_registry",
-    srcs = ["lib/load_balancing/lb_policy_registry.cc"],
-    hdrs = ["lib/load_balancing/lb_policy_registry.h"],
+    srcs = ["load_balancing/lb_policy_registry.cc"],
+    hdrs = ["load_balancing/lb_policy_registry.h"],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -3043,7 +3043,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "subchannel_interface",
-    hdrs = ["lib/load_balancing/subchannel_interface.h"],
+    hdrs = ["load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
         "dual_ref_counted",
@@ -3056,7 +3056,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "delegating_helper",
-    hdrs = ["lib/load_balancing/delegating_helper.h"],
+    hdrs = ["load_balancing/delegating_helper.h"],
     external_deps = [
         "absl/status",
         "absl/strings",
@@ -3326,9 +3326,9 @@ grpc_cc_library(
         "lib/security/security_connector/fake/fake_security_connector.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "lib/security/credentials/fake/fake_credentials.h",
         "lib/security/security_connector/fake/fake_security_connector.h",
+        "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
         "absl/status",
@@ -3506,8 +3506,8 @@ grpc_cc_library(
         "lib/security/credentials/google_default/google_default_credentials.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "lib/security/credentials/google_default/google_default_credentials.h",
+        "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -4272,16 +4272,16 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_grpclb",
     srcs = [
-        "ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc",
-        "ext/filters/client_channel/lb_policy/grpclb/grpclb.cc",
-        "ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
-        "ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
+        "load_balancing/grpclb/client_load_reporting_filter.cc",
+        "load_balancing/grpclb/grpclb.cc",
+        "load_balancing/grpclb/grpclb_client_stats.cc",
+        "load_balancing/grpclb/load_balancer_api.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
-        "ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
-        "ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
+        "load_balancing/grpclb/client_load_reporting_filter.h",
+        "load_balancing/grpclb/grpclb.h",
+        "load_balancing/grpclb/grpclb_client_stats.h",
+        "load_balancing/grpclb/load_balancer_api.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4373,7 +4373,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_backend_metric_data",
     hdrs = [
-        "ext/filters/client_channel/lb_policy/backend_metric_data.h",
+        "load_balancing/backend_metric_data.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -4391,7 +4391,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_rls",
     srcs = [
-        "ext/filters/client_channel/lb_policy/rls/rls.cc",
+        "load_balancing/rls/rls.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4767,7 +4767,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_cds",
     srcs = [
-        "ext/filters/client_channel/lb_policy/xds/cds.cc",
+        "load_balancing/xds/cds.cc",
     ],
     external_deps = [
         "absl/status",
@@ -4813,7 +4813,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_xds_channel_args",
     hdrs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_channel_args.h",
+        "load_balancing/xds/xds_channel_args.h",
     ],
     language = "c++",
     deps = [
@@ -4825,7 +4825,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_impl",
     srcs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc",
+        "load_balancing/xds/xds_cluster_impl.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4871,7 +4871,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds_cluster_manager",
     srcs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc",
+        "load_balancing/xds/xds_cluster_manager.cc",
     ],
     external_deps = [
         "absl/status",
@@ -4912,7 +4912,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds_wrr_locality",
     srcs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc",
+        "load_balancing/xds/xds_wrr_locality.cc",
     ],
     external_deps = [
         "absl/status",
@@ -4949,10 +4949,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_address_filtering",
     srcs = [
-        "ext/filters/client_channel/lb_policy/address_filtering.cc",
+        "load_balancing/address_filtering.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/address_filtering.h",
+        "load_balancing/address_filtering.h",
     ],
     external_deps = [
         "absl/functional:function_ref",
@@ -4974,11 +4974,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "health_check_client",
     srcs = [
-        "ext/filters/client_channel/lb_policy/health_check_client.cc",
+        "load_balancing/health_check_client.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/health_check_client.h",
-        "ext/filters/client_channel/lb_policy/health_check_client_internal.h",
+        "load_balancing/health_check_client.h",
+        "load_balancing/health_check_client_internal.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5019,7 +5019,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_subchannel_list",
     hdrs = [
-        "ext/filters/client_channel/lb_policy/subchannel_list.h",
+        "load_balancing/subchannel_list.h",
     ],
     external_deps = [
         "absl/status",
@@ -5048,10 +5048,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "lb_endpoint_list",
     srcs = [
-        "ext/filters/client_channel/lb_policy/endpoint_list.cc",
+        "load_balancing/endpoint_list.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/endpoint_list.h",
+        "load_balancing/endpoint_list.h",
     ],
     external_deps = [
         "absl/functional:function_ref",
@@ -5084,10 +5084,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_pick_first",
     srcs = [
-        "ext/filters/client_channel/lb_policy/pick_first/pick_first.cc",
+        "load_balancing/pick_first/pick_first.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/pick_first/pick_first.h",
+        "load_balancing/pick_first/pick_first.h",
     ],
     external_deps = [
         "absl/algorithm:container",
@@ -5199,10 +5199,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_ring_hash",
     srcs = [
-        "ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
+        "load_balancing/ring_hash/ring_hash.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+        "load_balancing/ring_hash/ring_hash.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5252,7 +5252,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_round_robin",
     srcs = [
-        "ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
+        "load_balancing/round_robin/round_robin.cc",
     ],
     external_deps = [
         "absl/meta:type_traits",
@@ -5289,10 +5289,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "static_stride_scheduler",
     srcs = [
-        "ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc",
+        "load_balancing/weighted_round_robin/static_stride_scheduler.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h",
+        "load_balancing/weighted_round_robin/static_stride_scheduler.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -5306,7 +5306,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_weighted_round_robin",
     srcs = [
-        "ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc",
+        "load_balancing/weighted_round_robin/weighted_round_robin.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5358,7 +5358,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_outlier_detection_header",
     hdrs = [
-        "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h",
+        "load_balancing/outlier_detection/outlier_detection.h",
     ],
     external_deps = ["absl/types:optional"],
     language = "c++",
@@ -5375,7 +5375,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_outlier_detection",
     srcs = [
-        "ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc",
+        "load_balancing/outlier_detection/outlier_detection.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5423,7 +5423,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_priority",
     srcs = [
-        "ext/filters/client_channel/lb_policy/priority/priority.cc",
+        "load_balancing/priority/priority.cc",
     ],
     external_deps = [
         "absl/status",
@@ -5465,7 +5465,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_weighted_target",
     srcs = [
-        "ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc",
+        "load_balancing/weighted_target/weighted_target.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5508,10 +5508,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds_override_host",
     srcs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_override_host.cc",
+        "load_balancing/xds/xds_override_host.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/lb_policy/xds/xds_override_host.h",
+        "load_balancing/xds/xds_override_host.h",
     ],
     external_deps = [
         "absl/base:core_headers",

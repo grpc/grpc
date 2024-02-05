@@ -27,7 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5
