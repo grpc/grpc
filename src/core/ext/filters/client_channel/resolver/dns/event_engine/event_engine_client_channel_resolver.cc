@@ -38,7 +38,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/ext/filters/client_channel/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -57,6 +56,7 @@
 #include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/service_config/service_config.h"
 #include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 
 // IWYU pragma: no_include <ratio>
 

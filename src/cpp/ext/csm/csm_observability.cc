@@ -130,13 +130,8 @@ CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
 }
 
 absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
-  builder_->SetServerSelector(internal::CsmServerSelector);
-  builder_->SetTargetSelector(internal::CsmChannelTargetSelector);
-  builder_->SetLabelsInjector(
-      std::make_unique<internal::ServiceMeshLabelsInjector>(
-          google::cloud::otel::MakeResourceDetector()
-              ->Detect()
-              .GetAttributes()));
+  builder_->AddPluginOption(
+      std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>());
   auto status = builder_->BuildAndRegisterGlobal();
   if (!status.ok()) {
     return status;
