@@ -253,6 +253,9 @@ class CallInitiator {
             [spine = spine_](NextResult<ServerMetadataHandle> md) mutable {
               return [md = std::move(md),
                       spine]() mutable -> Poll<ServerMetadataHandle> {
+                // If the pipe was closed at cancellation time, we'll see no
+                // value here. Return pending and allow the cancellation to win
+                // the race.
                 if (!md.has_value()) return Pending{};
                 spine->server_trailing_metadata().sender.Close();
                 return std::move(*md);

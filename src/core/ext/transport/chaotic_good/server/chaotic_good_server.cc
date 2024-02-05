@@ -281,7 +281,6 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             return latch->Wait();
           },
           [self](PromiseEndpoint ret) -> absl::Status {
-            // TODO(ladynana): initialize server transport.
             return self->connection_->listener_->server_->SetupTransport(
                 new ChaoticGoodServerTransport(
                     self->connection_->args(),
