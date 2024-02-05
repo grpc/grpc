@@ -99,11 +99,13 @@ EXTERNAL_PROTO_LIBRARIES = {
 # For that we need mapping from external repo name to a corresponding
 # path to a git submodule.
 EXTERNAL_SOURCE_PREFIXES = {
-    "@utf8_range": "third_party/utf8_range",
-    "@com_googlesource_code_re2": "third_party/re2",
-    "@com_google_googletest": "third_party/googletest",
-    "@com_google_protobuf": "third_party/upb",
-    "@zlib": "third_party/zlib",
+    # TODO(veblush): Remove @utf8_range// item once protobuf is upgraded to 26.x
+    "@utf8_range//": "third_party/utf8_range",
+    "@com_googlesource_code_re2//": "third_party/re2",
+    "@com_google_googletest//": "third_party/googletest",
+    "@com_google_protobuf//upb": "third_party/upb/upb",
+    "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
+    "@zlib//": "third_party/zlib",
 }
 
 
@@ -209,9 +211,9 @@ def _try_extract_source_file_path(label: str) -> str:
         # This is an external source file. We are only interested in sources
         # for some of the external libraries.
         for lib_name, prefix in EXTERNAL_SOURCE_PREFIXES.items():
-            if label.startswith(lib_name + "//"):
+            if label.startswith(lib_name):
                 return (
-                    label.replace("%s//" % lib_name, prefix + "/")
+                    label.replace("%s" % lib_name, prefix)
                     .replace(":", "/")
                     .replace("//", "/")
                 )
@@ -1100,7 +1102,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
-    "@utf8_range//:utf8_range": {
+    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
         "build": "all",
         # rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
@@ -1400,6 +1402,15 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
+# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
+if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
+    md = _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    del _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)

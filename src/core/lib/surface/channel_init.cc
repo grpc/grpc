@@ -440,6 +440,7 @@ absl::StatusOr<ChannelInit::StackSegment> ChannelInit::CreateStackSegment(
       for (size_t j = 0; j < i; j++) {
         filters[j].vtable->destroy(p + filters[j].offset);
       }
+      gpr_free_aligned(p);
       return r;
     }
   }

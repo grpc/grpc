@@ -36,7 +36,6 @@
 
 #include <grpc/support/json.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -45,6 +44,7 @@
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 
 namespace grpc_core {
 

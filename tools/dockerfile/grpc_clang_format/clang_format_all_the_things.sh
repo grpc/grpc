@@ -52,6 +52,7 @@ do
     -and -not -name grpc_tls_credentials_options_comparator_test.cc \
     -and -not -path '*/cmake/build/*' \
     -and -not -path '*/third_party/*' \
+    -and -not -path '*/src/python/grpcio_observability/grpc_root/*' \
     `"
   done
 done

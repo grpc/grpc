@@ -40,7 +40,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -61,7 +60,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -72,6 +70,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/lb_policy.h"
 
 //
 // Client channel filter

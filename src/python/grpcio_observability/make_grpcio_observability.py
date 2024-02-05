@@ -68,8 +68,8 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("src/core/lib", "grpc_root/src/core/lib"),
     (
-        "src/core/ext/filters/client_channel/lb_policy",
-        "grpc_root/src/core/ext/filters/client_channel/lb_policy",
+        "src/core/load_balancing",
+        "grpc_root/src/core/load_balancing",
     ),
 ]
 
