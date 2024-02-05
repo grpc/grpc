@@ -50,9 +50,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
-#include "src/core/resolver/xds/xds_resolver_attributes.h"
-#include "src/core/resolver/xds/xds_resolver_trace.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
@@ -93,6 +90,9 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
+#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/resolver/xds/xds_resolver_trace.h"
 
 namespace grpc_core {
 

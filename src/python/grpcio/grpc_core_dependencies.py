@@ -763,6 +763,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/surface/version.cc',
     'src/core/lib/transport/batch_builder.cc',
     'src/core/lib/transport/bdp_estimator.cc',
+    'src/core/lib/transport/call_factory.cc',
     'src/core/lib/transport/call_filters.cc',
     'src/core/lib/transport/call_final_info.cc',
     'src/core/lib/transport/call_size_estimator.cc',

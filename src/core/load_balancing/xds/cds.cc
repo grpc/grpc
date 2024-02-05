@@ -40,7 +40,6 @@
 #include "src/core/load_balancing/address_filtering.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -64,6 +63,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/resolver/xds/xds_dependency_manager.h"
 
 namespace grpc_core {
 

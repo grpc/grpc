@@ -29,6 +29,8 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -105,9 +107,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
     "max concurrent streams are exceeded in chttp2. See "
@@ -191,6 +190,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -234,8 +235,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
@@ -293,6 +292,8 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -369,9 +370,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
     "max concurrent streams are exceeded in chttp2. See "
@@ -455,6 +453,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -498,8 +498,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
@@ -557,6 +555,8 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -633,9 +633,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
     "max concurrent streams are exceeded in chttp2. See "
@@ -719,6 +716,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -762,8 +761,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},

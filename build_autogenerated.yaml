@@ -1135,6 +1135,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -1935,6 +1936,7 @@ libs:
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
@@ -2594,6 +2596,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -3014,6 +3017,7 @@ libs:
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
+  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
@@ -4665,6 +4669,7 @@ libs:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
+  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -4968,6 +4973,7 @@ libs:
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/transport/batch_builder.cc
+  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc

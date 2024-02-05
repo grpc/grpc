@@ -52,10 +52,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_size_estimator.h"
+#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
@@ -122,8 +121,8 @@ class Channel : public RefCounted<Channel>,
 
   channelz::ChannelNode* channelz_node() const { return channelz_node_.get(); }
 
-  Arena* CreateArena();
-  void DestroyArena(Arena* arena);
+  Arena* CreateArena() { return call_factory_->CreateArena(); }
+  void DestroyArena(Arena* arena) { return call_factory_->DestroyArena(arena); }
 
   absl::string_view target() const { return target_; }
   bool is_client() const { return is_client_; }
@@ -148,12 +147,11 @@ class Channel : public RefCounted<Channel>,
   const bool is_client_;
   const bool is_promising_;
   const grpc_compression_options compression_options_;
-  CallSizeEstimator call_size_estimator_;
   CallRegistrationTable registration_table_;
   RefCountedPtr<channelz::ChannelNode> channelz_node_;
-  MemoryAllocator allocator_;
   std::string target_;
   const RefCountedPtr<grpc_channel_stack> channel_stack_;
+  const RefCountedPtr<CallFactory> call_factory_;
 };
 
 }  // namespace grpc_core
