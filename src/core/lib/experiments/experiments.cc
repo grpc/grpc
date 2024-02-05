@@ -105,9 +105,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
     "max concurrent streams are exceeded in chttp2. See "
@@ -240,8 +237,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
@@ -377,9 +372,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
     "max concurrent streams are exceeded in chttp2. See "
@@ -512,8 +504,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},
@@ -649,9 +639,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
 const char* const description_rfc_max_concurrent_streams =
     "If set, enable rfc-compliant behavior (cancellation) in the advent that "
     "max concurrent streams are exceeded in chttp2. See "
@@ -784,8 +771,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
     {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
      additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
      true},

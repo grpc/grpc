@@ -40,7 +40,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 
