@@ -121,6 +121,33 @@ class TestScenario {
   XdsBootstrapSource bootstrap_source_;
 };
 
+// A PluginOption that injects `ServiceMeshLabelsInjector`. (This is different
+// from CsmOpenTelemetryPluginOption since it does not restrict itself to just
+// CSM channels and servers.)
+class MeshLabelsPluginOption
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
+ public:
+  explicit MeshLabelsPluginOption(
+      const opentelemetry::sdk::common::AttributeMap& map)
+      : labels_injector_(
+            std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(map)) {}
+
+  bool IsActiveOnClientChannel(absl::string_view /*target*/) const override {
+    return true;
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& /*args*/) const override {
+    return true;
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return labels_injector_.get();
+  }
+
+ private:
+  std::unique_ptr<grpc::internal::ServiceMeshLabelsInjector> labels_injector_;
+};
+
 class MetadataExchangeTest
     : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
@@ -149,9 +176,8 @@ class MetadataExchangeTest
     OpenTelemetryPluginEnd2EndTest::Init(std::move(
         Options()
             .set_metric_names(std::move(metric_names))
-            .set_labels_injector(
-                std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
-                    GetParam().GetTestResource().GetAttributes()))
+            .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
+                GetParam().GetTestResource().GetAttributes()))
             .set_labels_to_inject(std::move(labels_to_inject))
             .set_target_selector(
                 [enable_client_side_injector](absl::string_view /*target*/) {
