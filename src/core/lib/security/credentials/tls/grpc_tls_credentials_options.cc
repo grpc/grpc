@@ -128,3 +128,15 @@ void grpc_tls_credentials_options_set_send_client_ca_list(
   }
   options->set_send_client_ca_list(send_client_ca_list);
 }
+
+void grpc_tls_credentials_options_set_min_tls_version(
+    grpc_tls_credentials_options* options, grpc_tls_version min_tls_version) {
+  GPR_ASSERT(options != nullptr);
+  options->set_min_tls_version(min_tls_version);
+}
+
+void grpc_tls_credentials_options_set_max_tls_version(
+    grpc_tls_credentials_options* options, grpc_tls_version max_tls_version) {
+  GPR_ASSERT(options != nullptr);
+  options->set_max_tls_version(max_tls_version);
+}
