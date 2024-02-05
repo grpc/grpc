@@ -1068,7 +1068,10 @@ grpc_cc_library(
     hdrs = [
         "lib/promise/observable.h",
     ],
-    external_deps = ["absl/container:flat_hash_set"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/functional:any_invocable",
+    ],
     language = "c++",
     deps = [
         "activity",
