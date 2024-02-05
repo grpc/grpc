@@ -107,8 +107,7 @@ CsmObservabilityBuilder::CsmObservabilityBuilder()
 CsmObservabilityBuilder::~CsmObservabilityBuilder() = default;
 
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
-    std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-        meter_provider) {
+    std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
   builder_->SetMeterProvider(meter_provider);
   return *this;
 }

@@ -58,7 +58,7 @@ grpc::experimental::CsmObservability EnableCsmObservability() {
                            .SetMeterProvider(std::move(meter_provider))
                            .BuildAndRegister();
   assert(observability.ok());
-  return *observability;
+  return *std::move(observability);
 }
 
 int main(int argc, char** argv) {

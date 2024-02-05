@@ -442,7 +442,7 @@ grpc::experimental::CsmObservability EnableCsmObservability() {
                            .SetMeterProvider(std::move(meter_provider))
                            .BuildAndRegister();
   assert(observability.ok());
-  return *observability;
+  return *std::move(observability);
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
