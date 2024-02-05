@@ -86,11 +86,6 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
 // TESTING PURPOSES ONLY.
 class MeshLabelsIterable : public LabelsIterable {
  public:
-  struct RemoteAttribute {
-    absl::string_view otel_attribute;
-    absl::string_view metadata_attribute;
-  };
-
   enum class GcpResourceType : std::uint8_t { kGke, kGce, kUnknown };
 
   MeshLabelsIterable(
@@ -114,10 +109,6 @@ class MeshLabelsIterable : public LabelsIterable {
     upb::Arena arena;
     google_protobuf_Struct* struct_pb = nullptr;
   };
-
-  absl::optional<std::pair<absl::string_view, absl::string_view>>
-  NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
-                        size_t start_index);
 
   static StructPb DecodeMetadata(grpc_core::Slice slice);
 

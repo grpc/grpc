@@ -269,25 +269,6 @@ class MetadataExchangeTest
     EXPECT_EQ(attributes.find("csm.remote_workload_type"), attributes.end());
   }
 
-  // Returns the expected size of attributes on client/server metrics (other
-  // than `grpc.client.attempt.started` and `grpc.server.call.started`). Use of
-  // this method additionally tests `Size()` method on `MeshLabelsIterable`
-  // which is unused by the OTel C++ library at present, but might be used in
-  // the future.
-  size_t ExpectedAttributesSize(bool is_client) {
-    // Create a temporary ServiceMeshLabelsInjector and MeshLabelsIterable to
-    // get the expected size of the labels.
-    grpc::internal::ServiceMeshLabelsInjector labels_injector(
-        GetParam().GetTestResource().GetAttributes());
-    grpc::internal::MeshLabelsIterable labels_iterable(
-        labels_injector.TestOnlyLocalLabels(),
-        labels_injector.TestOnlySerializedLabels().Ref());
-    return is_client
-               ? labels_iterable.Size() + /*CSM service name and namespace*/ 2 +
-                     /*Base gRPC metric labels*/ 3
-               : labels_iterable.Size() + /*Base gRPC metric labels*/ 2;
-  }
-
  private:
   char* bootstrap_file_name_ = nullptr;
 };
@@ -334,7 +315,6 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), ExpectedAttributesSize(/*is_client*/ true));
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
@@ -382,7 +362,6 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
   ASSERT_NE(point_data, nullptr);
   ASSERT_EQ(point_data->count_, 1);
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), ExpectedAttributesSize(/*is_client*/ false));
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
   VerifyServiceMeshAttributes(attributes, /*is_client=*/false);
@@ -439,6 +418,69 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
             "mynamespace");
 }
 
+class MeshLabelsIterableTest : public MetadataExchangeTest {
+ protected:
+  // Returns the expected size of attributes on client/server metrics (other
+  // than `grpc.client.attempt.started` and `grpc.server.call.started`). Use of
+  // this method additionally tests `Size()` method on `MeshLabelsIterable`
+  // which is unused by the OTel C++ library at present, but might be used in
+  // the future.
+  size_t ExpectedAttributesSize(bool is_client) {
+    // Create a temporary ServiceMeshLabelsInjector and MeshLabelsIterable to
+    // get the expected size of the labels.
+    grpc::internal::ServiceMeshLabelsInjector labels_injector(
+        GetParam().GetTestResource().GetAttributes());
+    grpc::internal::MeshLabelsIterable labels_iterable(
+        labels_injector.TestOnlyLocalLabels(),
+        labels_injector.TestOnlySerializedLabels().Ref());
+    return is_client
+               ? labels_iterable.Size() + /*CSM service name and namespace*/ 2 +
+                     /*Base gRPC metric labels*/ 3
+               : labels_iterable.Size() + /*Base gRPC metric labels*/ 2;
+  }
+};
+
+TEST_P(MeshLabelsIterableTest, ClientMetricsAttributesSize) {
+  Init(/*metric_names=*/{
+      grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), ExpectedAttributesSize(/*is_client*/ true));
+}
+
+TEST_P(MeshLabelsIterableTest, ServerMetricsAttributesSize) {
+  Init(
+      /*metric_names=*/{
+          grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName});
+  SendRPC();
+  const char* kMetricName = "grpc.server.call.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  auto point_data =
+      absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+          &data[kMetricName][0].point_data);
+  ASSERT_NE(point_data, nullptr);
+  ASSERT_EQ(point_data->count_, 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), ExpectedAttributesSize(/*is_client*/ false));
+}
+
 INSTANTIATE_TEST_SUITE_P(
     MetadataExchange, MetadataExchangeTest,
     ::testing::Values(
@@ -454,6 +496,17 @@ INSTANTIATE_TEST_SUITE_P(
                      TestScenario::XdsBootstrapSource::kFromConfig),
         TestScenario(TestScenario::ResourceType::kUnknown,
                      TestScenario::XdsBootstrapSource::kFromFile)),
+    &TestScenario::Name);
+
+INSTANTIATE_TEST_SUITE_P(
+    MeshLabelsIterable, MeshLabelsIterableTest,
+    ::testing::Values(
+        TestScenario(TestScenario::ResourceType::kGke,
+                     TestScenario::XdsBootstrapSource::kFromConfig),
+        TestScenario(TestScenario::ResourceType::kGce,
+                     TestScenario::XdsBootstrapSource::kFromConfig),
+        TestScenario(TestScenario::ResourceType::kUnknown,
+                     TestScenario::XdsBootstrapSource::kFromConfig)),
     &TestScenario::Name);
 
 }  // namespace

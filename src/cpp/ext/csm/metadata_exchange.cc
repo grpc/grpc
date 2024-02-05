@@ -204,40 +204,35 @@ absl::string_view GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
   return "unknown";
 }
 
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 2> kFixedAttributes =
-    {
-        MeshLabelsIterable::RemoteAttribute{kPeerTypeAttribute,
-                                            kMetadataExchangeTypeKey},
-        MeshLabelsIterable::RemoteAttribute{
-            kPeerCanonicalServiceAttribute,
-            kMetadataExchangeCanonicalServiceKey},
+struct RemoteAttribute {
+  absl::string_view otel_attribute;
+  absl::string_view metadata_attribute;
 };
 
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5> kGkeAttributeList =
-    {
-        MeshLabelsIterable::RemoteAttribute{kPeerWorkloadNameAttribute,
-                                            kMetadataExchangeWorkloadNameKey},
-        MeshLabelsIterable::RemoteAttribute{kPeerNamespaceNameAttribute,
-                                            kMetadataExchangeNamespaceNameKey},
-        MeshLabelsIterable::RemoteAttribute{kPeerClusterNameAttribute,
-                                            kMetadataExchangeClusterNameKey},
-        MeshLabelsIterable::RemoteAttribute{kPeerLocationAttribute,
-                                            kMetadataExchangeLocationKey},
-        MeshLabelsIterable::RemoteAttribute{kPeerProjectIdAttribute,
-                                            kMetadataExchangeProjectIdKey},
+constexpr std::array<RemoteAttribute, 2> kFixedAttributes = {
+    RemoteAttribute{kPeerTypeAttribute, kMetadataExchangeTypeKey},
+    RemoteAttribute{kPeerCanonicalServiceAttribute,
+                    kMetadataExchangeCanonicalServiceKey},
 };
 
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3> kGceAttributeList =
-    {
-        MeshLabelsIterable::RemoteAttribute{kPeerWorkloadNameAttribute,
-                                            kMetadataExchangeWorkloadNameKey},
-        MeshLabelsIterable::RemoteAttribute{kPeerLocationAttribute,
-                                            kMetadataExchangeLocationKey},
-        MeshLabelsIterable::RemoteAttribute{kPeerProjectIdAttribute,
-                                            kMetadataExchangeProjectIdKey},
+constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
+    RemoteAttribute{kPeerWorkloadNameAttribute,
+                    kMetadataExchangeWorkloadNameKey},
+    RemoteAttribute{kPeerNamespaceNameAttribute,
+                    kMetadataExchangeNamespaceNameKey},
+    RemoteAttribute{kPeerClusterNameAttribute, kMetadataExchangeClusterNameKey},
+    RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+    RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
 };
 
-absl::Span<const MeshLabelsIterable::RemoteAttribute> GetAttributesForType(
+constexpr std::array<RemoteAttribute, 3> kGceAttributeList = {
+    RemoteAttribute{kPeerWorkloadNameAttribute,
+                    kMetadataExchangeWorkloadNameKey},
+    RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+    RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+};
+
+absl::Span<const RemoteAttribute> GetAttributesForType(
     MeshLabelsIterable::GcpResourceType remote_type) {
   switch (remote_type) {
     case MeshLabelsIterable::GcpResourceType::kGke:
@@ -247,6 +242,22 @@ absl::Span<const MeshLabelsIterable::RemoteAttribute> GetAttributesForType(
     default:
       return {};
   }
+}
+
+absl::optional<std::pair<absl::string_view, absl::string_view>>
+NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
+                      size_t start_index, size_t curr,
+                      google_protobuf_Struct* decoded_metadata,
+                      upb_Arena* arena) {
+  GPR_DEBUG_ASSERT(curr >= start_index);
+  const size_t index = curr - start_index;
+  if (index >= attributes.size()) return absl::nullopt;
+  ++curr;
+  const auto& attribute = attributes[index];
+  return std::make_pair(
+      attribute.otel_attribute,
+      GetStringValueFromUpbStruct(decoded_metadata,
+                                  attribute.metadata_attribute, arena));
 }
 
 }  // namespace
@@ -273,29 +284,17 @@ MeshLabelsIterable::Next() {
   const size_t fixed_attribute_end =
       local_labels_size + kFixedAttributes.size();
   if (pos_ < fixed_attribute_end) {
-    return NextFromAttributeList(kFixedAttributes, local_labels_size);
+    return NextFromAttributeList(kFixedAttributes, local_labels_size, pos_++,
+                                 metadata_.struct_pb, metadata_.arena.ptr());
   }
   return NextFromAttributeList(GetAttributesForType(remote_type_),
-                               fixed_attribute_end);
+                               fixed_attribute_end, pos_++, metadata_.struct_pb,
+                               metadata_.arena.ptr());
 }
 
 size_t MeshLabelsIterable::Size() const {
   return local_labels_.size() + kFixedAttributes.size() +
          GetAttributesForType(remote_type_).size();
-}
-
-absl::optional<std::pair<absl::string_view, absl::string_view>>
-MeshLabelsIterable::NextFromAttributeList(
-    absl::Span<const RemoteAttribute> attributes, size_t start_index) {
-  GPR_DEBUG_ASSERT(pos_ >= start_index);
-  const size_t index = pos_ - start_index;
-  if (index >= attributes.size()) return absl::nullopt;
-  ++pos_;
-  const auto& attribute = attributes[index];
-  return std::make_pair(attribute.otel_attribute,
-                        GetStringValueFromUpbStruct(
-                            metadata_.struct_pb, attribute.metadata_attribute,
-                            metadata_.arena.ptr()));
 }
 
 MeshLabelsIterable::StructPb MeshLabelsIterable::DecodeMetadata(
