@@ -23,7 +23,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-#include "gmock/gmock.h"
 
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
