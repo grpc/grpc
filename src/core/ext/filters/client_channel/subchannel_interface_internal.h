@@ -21,7 +21,7 @@
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
+#include "src/core/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
 
