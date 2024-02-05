@@ -3014,8 +3014,6 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/dynamic_filters.cc",
         "//src/core:ext/filters/client_channel/global_subchannel_pool.cc",
         "//src/core:ext/filters/client_channel/http_proxy_mapper.cc",
-        "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.cc",
-        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.cc",
         "//src/core:ext/filters/client_channel/retry_filter.cc",
         "//src/core:ext/filters/client_channel/retry_filter_legacy_call_data.cc",
@@ -3025,6 +3023,8 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/subchannel.cc",
         "//src/core:ext/filters/client_channel/subchannel_pool_interface.cc",
         "//src/core:ext/filters/client_channel/subchannel_stream_client.cc",
+        "//src/core:load_balancing/child_policy_handler.cc",
+        "//src/core:load_balancing/oob_backend_metric.cc",
     ],
     hdrs = [
         "//src/core:ext/filters/client_channel/backend_metric.h",
@@ -3039,9 +3039,6 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/dynamic_filters.h",
         "//src/core:ext/filters/client_channel/global_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/http_proxy_mapper.h",
-        "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
-        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
-        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
         "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
         "//src/core:ext/filters/client_channel/retry_filter.h",
         "//src/core:ext/filters/client_channel/retry_filter_legacy_call_data.h",
@@ -3051,6 +3048,9 @@ grpc_cc_library(
         "//src/core:ext/filters/client_channel/subchannel_interface_internal.h",
         "//src/core:ext/filters/client_channel/subchannel_pool_interface.h",
         "//src/core:ext/filters/client_channel/subchannel_stream_client.h",
+        "//src/core:load_balancing/child_policy_handler.h",
+        "//src/core:load_balancing/oob_backend_metric.h",
+        "//src/core:load_balancing/oob_backend_metric_internal.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3646,10 +3646,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_grpclb_balancer_addresses",
     srcs = [
-        "//src/core:ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
+        "//src/core:load_balancing/grpclb/grpclb_balancer_addresses.cc",
     ],
     hdrs = [
-        "//src/core:ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
+        "//src/core:load_balancing/grpclb/grpclb_balancer_addresses.h",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
