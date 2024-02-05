@@ -28,14 +28,14 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/load_balancing/lb_policy.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
 // (filters, LB policies, etc) to access internal data provided by the
-// ClientChannel that is not normally accessible via external APIs.
+// ClientChannelFilter that is not normally accessible via external APIs.
 //
 
 // Channel arg key for health check service name.

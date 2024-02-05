@@ -976,30 +976,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/http_proxy_mapper.cc \
-    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
-    src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/health_check_client.cc \
-    src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
-    src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
-    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
-    src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
-    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -1594,8 +1570,6 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/load_balancing/lb_policy.cc \
-    src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
@@ -1708,6 +1682,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
@@ -1727,6 +1702,32 @@ LIBGRPC_SRC = \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
+    src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/child_policy_handler.cc \
+    src/core/load_balancing/endpoint_list.cc \
+    src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
+    src/core/load_balancing/grpclb/grpclb.cc \
+    src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc \
+    src/core/load_balancing/grpclb/grpclb_client_stats.cc \
+    src/core/load_balancing/grpclb/load_balancer_api.cc \
+    src/core/load_balancing/health_check_client.cc \
+    src/core/load_balancing/lb_policy.cc \
+    src/core/load_balancing/lb_policy_registry.cc \
+    src/core/load_balancing/oob_backend_metric.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/pick_first/pick_first.cc \
+    src/core/load_balancing/priority/priority.cc \
+    src/core/load_balancing/ring_hash/ring_hash.cc \
+    src/core/load_balancing/rls/rls.cc \
+    src/core/load_balancing/round_robin/round_robin.cc \
+    src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
+    src/core/load_balancing/weighted_target/weighted_target.cc \
+    src/core/load_balancing/xds/cds.cc \
+    src/core/load_balancing/xds/xds_cluster_impl.cc \
+    src/core/load_balancing/xds/xds_cluster_manager.cc \
+    src/core/load_balancing/xds/xds_override_host.cc \
+    src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
@@ -1907,24 +1908,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/http_proxy_mapper.cc \
-    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
-    src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/health_check_client.cc \
-    src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
-    src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
-    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
-    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
     src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -2180,8 +2163,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_object_loader.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/load_balancing/lb_policy.cc \
-    src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
@@ -2259,6 +2240,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
@@ -2278,6 +2260,26 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
+    src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/child_policy_handler.cc \
+    src/core/load_balancing/endpoint_list.cc \
+    src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
+    src/core/load_balancing/grpclb/grpclb.cc \
+    src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc \
+    src/core/load_balancing/grpclb/grpclb_client_stats.cc \
+    src/core/load_balancing/grpclb/load_balancer_api.cc \
+    src/core/load_balancing/health_check_client.cc \
+    src/core/load_balancing/lb_policy.cc \
+    src/core/load_balancing/lb_policy_registry.cc \
+    src/core/load_balancing/oob_backend_metric.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/pick_first/pick_first.cc \
+    src/core/load_balancing/priority/priority.cc \
+    src/core/load_balancing/rls/rls.cc \
+    src/core/load_balancing/round_robin/round_robin.cc \
+    src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
+    src/core/load_balancing/weighted_target/weighted_target.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_noextra.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
@@ -2985,7 +2987,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -3022,6 +3024,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
     third_party/boringssl-with-bazel/src/crypto/thread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
@@ -3045,6 +3054,29 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
@@ -3069,9 +3101,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
@@ -3079,29 +3109,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -3415,12 +3422,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc: $(OPENSSL_DEP)
 src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
@@ -3795,6 +3796,12 @@ src/core/lib/security/security_connector/local/local_security_connector.cc: $(OP
 src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/tls/tls_security_connector.cc: $(OPENSSL_DEP)
+src/core/load_balancing/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/cds.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_override_host.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry_extra.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/crypt/aes_gcm.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/crypt/gsec.cc: $(OPENSSL_DEP)

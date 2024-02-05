@@ -40,7 +40,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -61,7 +60,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resolver/resolver.h"
@@ -72,6 +70,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/lb_policy.h"
 
 //
 // Client channel filter
@@ -87,8 +87,8 @@
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
-// Channel arg containing a pointer to the ClientChannel object.
-#define GRPC_ARG_CLIENT_CHANNEL "grpc.internal.client_channel"
+// Channel arg containing a pointer to the ClientChannelFilter object.
+#define GRPC_ARG_CLIENT_CHANNEL "grpc.internal.client_channel_filter"
 
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
@@ -102,7 +102,7 @@
 
 namespace grpc_core {
 
-class ClientChannel {
+class ClientChannelFilter {
  public:
   static const grpc_channel_filter kFilterVtableWithPromises;
   static const grpc_channel_filter kFilterVtableWithoutPromises;
@@ -115,9 +115,9 @@ class ClientChannel {
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_CLIENT_CHANNEL; }
 
-  // Returns the ClientChannel object from channel, or null if channel
+  // Returns the ClientChannelFilter object from channel, or null if channel
   // is not a client channel.
-  static ClientChannel* GetFromChannel(Channel* channel);
+  static ClientChannelFilter* GetFromChannel(Channel* channel);
 
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,
@@ -196,7 +196,7 @@ class ClientChannel {
   // via grpc_client_channel_watch_connectivity_state().
   class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
    public:
-    ExternalConnectivityWatcher(ClientChannel* chand,
+    ExternalConnectivityWatcher(ClientChannelFilter* chand,
                                 grpc_polling_entity pollent,
                                 grpc_connectivity_state* state,
                                 grpc_closure* on_complete,
@@ -205,7 +205,7 @@ class ClientChannel {
     ~ExternalConnectivityWatcher() override;
 
     // Removes the watcher from the external_watchers_ map.
-    static void RemoveWatcherFromExternalWatchersMap(ClientChannel* chand,
+    static void RemoveWatcherFromExternalWatchersMap(ClientChannelFilter* chand,
                                                      grpc_closure* on_complete,
                                                      bool cancel);
 
@@ -222,7 +222,7 @@ class ClientChannel {
     void RemoveWatcherLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_);
 
-    ClientChannel* chand_;
+    ClientChannelFilter* chand_;
     grpc_polling_entity pollent_;
     grpc_connectivity_state initial_state_;
     grpc_connectivity_state* state_;
@@ -231,8 +231,9 @@ class ClientChannel {
     std::atomic<bool> done_{false};
   };
 
-  ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
-  ~ClientChannel();
+  ClientChannelFilter(grpc_channel_element_args* args,
+                      grpc_error_handle* error);
+  ~ClientChannelFilter();
 
   // Filter vtable functions.
   static grpc_error_handle Init(grpc_channel_element* elem,
@@ -378,15 +379,15 @@ class ClientChannel {
 };
 
 //
-// ClientChannel::LoadBalancedCall
+// ClientChannelFilter::LoadBalancedCall
 //
 
 // TODO(roth): As part of simplifying cancellation in the filter stack,
 // this should no longer need to be ref-counted.
-class ClientChannel::LoadBalancedCall
+class ClientChannelFilter::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
-  LoadBalancedCall(ClientChannel* chand,
+  LoadBalancedCall(ClientChannelFilter* chand,
                    grpc_call_context_element* call_context,
                    absl::AnyInvocable<void()> on_commit,
                    bool is_transparent_retry);
@@ -396,15 +397,15 @@ class ClientChannel::LoadBalancedCall
 
   // Called by channel when removing a call from the list of queued calls.
   void RemoveCallFromLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
   // Called by the channel for each queued call when a new picker
   // becomes available.
   virtual void RetryPickLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) = 0;
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_) = 0;
 
  protected:
-  ClientChannel* chand() const { return chand_; }
+  ClientChannelFilter* chand() const { return chand_; }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
     return static_cast<ClientCallTracer::CallAttemptTracer*>(
         call_context_[GRPC_CONTEXT_CALL_TRACER].value);
@@ -458,13 +459,13 @@ class ClientChannel::LoadBalancedCall
                           grpc_error_handle* error);
   // Adds the call to the channel's list of queued picks if not already present.
   void AddCallToLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
   // Called when adding the call to the LB queue.
   virtual void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_) = 0;
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_) = 0;
 
-  ClientChannel* chand_;
+  ClientChannelFilter* chand_;
 
   absl::AnyInvocable<void()> on_commit_;
 
@@ -477,8 +478,8 @@ class ClientChannel::LoadBalancedCall
   grpc_call_context_element* const call_context_;
 };
 
-class ClientChannel::FilterBasedLoadBalancedCall
-    : public ClientChannel::LoadBalancedCall {
+class ClientChannelFilter::FilterBasedLoadBalancedCall
+    : public ClientChannelFilter::LoadBalancedCall {
  public:
   // If on_call_destruction_complete is non-null, then it will be
   // invoked once the LoadBalancedCall is completely destroyed.
@@ -486,7 +487,7 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // the LB call has a subchannel call and ensuring that the
   // on_call_destruction_complete closure passed down from the surface
   // is not invoked until after the subchannel call stack is destroyed.
-  FilterBasedLoadBalancedCall(ClientChannel* chand,
+  FilterBasedLoadBalancedCall(ClientChannelFilter* chand,
                               const grpc_call_element_args& args,
                               grpc_polling_entity* pollent,
                               grpc_closure* on_call_destruction_complete,
@@ -555,10 +556,10 @@ class ClientChannel::FilterBasedLoadBalancedCall
   void TryPick(bool was_queued);
 
   void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
   void RetryPickLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
   void CreateSubchannelCall();
 
@@ -579,9 +580,8 @@ class ClientChannel::FilterBasedLoadBalancedCall
   // Set when we fail inside the LB call.
   grpc_error_handle failure_error_;
 
-  // Accessed while holding ClientChannel::lb_mu_.
   LbQueuedCallCanceller* lb_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::lb_mu_) = nullptr;
+      ABSL_GUARDED_BY(&ClientChannelFilter::lb_mu_) = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 
@@ -604,10 +604,10 @@ class ClientChannel::FilterBasedLoadBalancedCall
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
 };
 
-class ClientChannel::PromiseBasedLoadBalancedCall
-    : public ClientChannel::LoadBalancedCall {
+class ClientChannelFilter::PromiseBasedLoadBalancedCall
+    : public ClientChannelFilter::LoadBalancedCall {
  public:
-  PromiseBasedLoadBalancedCall(ClientChannel* chand,
+  PromiseBasedLoadBalancedCall(ClientChannelFilter* chand,
                                absl::AnyInvocable<void()> on_commit,
                                bool is_transparent_retry);
 
@@ -622,7 +622,7 @@ class ClientChannel::PromiseBasedLoadBalancedCall
   void RetryPickLocked() override;
 
   void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::lb_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
   grpc_polling_entity pollent_;
   ClientMetadataHandle client_initial_metadata_;

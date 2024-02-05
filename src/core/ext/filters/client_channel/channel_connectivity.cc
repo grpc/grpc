@@ -67,8 +67,8 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
       (c_channel, try_to_connect));
   grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
   // Forward through to the underlying client channel.
-  grpc_core::ClientChannel* client_channel =
-      grpc_core::ClientChannel::GetFromChannel(channel);
+  grpc_core::ClientChannelFilter* client_channel =
+      grpc_core::ClientChannelFilter::GetFromChannel(channel);
   if (GPR_UNLIKELY(client_channel == nullptr)) {
     if (grpc_core::IsLameChannel(channel)) {
       return GRPC_CHANNEL_TRANSIENT_FAILURE;
@@ -83,8 +83,8 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
 
 int grpc_channel_num_external_connectivity_watchers(grpc_channel* c_channel) {
   grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
-  grpc_core::ClientChannel* client_channel =
-      grpc_core::ClientChannel::GetFromChannel(channel);
+  grpc_core::ClientChannelFilter* client_channel =
+      grpc_core::ClientChannelFilter::GetFromChannel(channel);
   if (client_channel == nullptr) {
     if (!grpc_core::IsLameChannel(channel)) {
       gpr_log(GPR_ERROR,
@@ -97,7 +97,7 @@ int grpc_channel_num_external_connectivity_watchers(grpc_channel* c_channel) {
 }
 
 int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
-  return grpc_core::ClientChannel::GetFromChannel(
+  return grpc_core::ClientChannelFilter::GetFromChannel(
              grpc_core::Channel::FromC(channel)) != nullptr;
 }
 
@@ -115,8 +115,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
         state_(last_observed_state) {
     GPR_ASSERT(grpc_cq_begin_op(cq, tag));
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
-    ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(channel_.get());
+    ClientChannelFilter* client_channel =
+        ClientChannelFilter::GetFromChannel(channel_.get());
     if (client_channel == nullptr) {
       // If the target URI used to create the channel was invalid, channel
       // stack initialization failed, and that caused us to create a lame
@@ -145,7 +145,7 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
 
  private:
   // A fire-and-forget object used to delay starting the timer until the
-  // ClientChannel actually starts the watch.
+  // ClientChannelFilter actually starts the watch.
   class WatcherTimerInitState {
    public:
     WatcherTimerInitState(StateWatcher* state_watcher, Timestamp deadline)
@@ -201,8 +201,8 @@ class StateWatcher : public DualRefCounted<StateWatcher> {
   void TimeoutComplete() {
     timer_fired_ = true;
     // If this is a client channel (not a lame channel), cancel the watch.
-    ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(channel_.get());
+    ClientChannelFilter* client_channel =
+        ClientChannelFilter::GetFromChannel(channel_.get());
     if (client_channel != nullptr) {
       client_channel->CancelExternalConnectivityWatcher(&on_complete_);
     }
