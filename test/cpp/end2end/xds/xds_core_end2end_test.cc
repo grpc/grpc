@@ -24,6 +24,7 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -230,6 +231,38 @@ TEST_P(
       {"locality0", CreateEndpointsForBackends(1, 2)},
   })));
   WaitForBackend(DEBUG_LOCATION, 1);
+}
+
+// Tests that the NACK for multiple bad LDS resources includes both errors.
+// This needs to use xDS server as this is the only scenario when XdsClient
+// is shared.
+TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
+  CreateBackends(2, true);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  auto listener = default_server_listener_;
+  listener.clear_address();
+  listener.set_name(GetServerListenerName(backends_[0]->port()));
+  balancer_->ads_service()->SetLdsResource(listener);
+  backends_[0]->Start();
+  listener = default_server_listener_;
+  listener.clear_address();
+  listener.set_name(GetServerListenerName(backends_[1]->port()));
+  balancer_->ads_service()->SetLdsResource(listener);
+  backends_[1]->Start();
+  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  EXPECT_EQ(
+      response_state->error_message,
+      absl::StrFormat(
+          "xDS response validation errors: ["
+          "resource index 0: "
+          "grpc/server?xds.resource.listening_address=127.0.0.1:%lu: "
+          "INVALID_ARGUMENT: Listener has neither address nor ApiListener; "
+          "resource index 1: "
+          "grpc/server?xds.resource.listening_address=127.0.0.1:%lu: "
+          "INVALID_ARGUMENT: Listener has neither address nor ApiListener]",
+          backends_[0]->port(), backends_[1]->port()));
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource

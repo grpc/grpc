@@ -94,8 +94,8 @@ namespace {
 Mutex* g_mu = new Mutex;
 const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 // Key bytes live in clients so they outlive the entries in this map
-NoDestruct<std::map<absl::string_view, GrpcXdsClient*, std::less<>>>
-    g_xds_client_map ABSL_GUARDED_BY(*g_mu);
+NoDestruct<std::map<absl::string_view, GrpcXdsClient*>> g_xds_client_map
+    ABSL_GUARDED_BY(*g_mu);
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
 
 }  // namespace
@@ -261,7 +261,7 @@ void GrpcXdsClient::Orphan() {
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
-    g_xds_client_map->erase(g_xds_client_map->find(key_));
+    g_xds_client_map->erase(it);
   }
 }
 
@@ -278,7 +278,8 @@ void SetXdsChannelArgsForTest(grpc_channel_args* args) {
 }
 
 void UnsetGlobalXdsClientsForTest() {
-  // TODO(eostroukhov): Remove before submit
+  MutexLock lock(g_mu);
+  g_xds_client_map->clear();
 }
 
 void SetXdsFallbackBootstrapConfig(const char* config) {
