@@ -722,7 +722,8 @@ template <typename FilterType, typename T, typename R,
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
-    absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
+    absl::enable_if_t<!std::is_same<R, absl::Status>::value &&
+                      std::is_same<absl::Status, PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
     class Promise {
