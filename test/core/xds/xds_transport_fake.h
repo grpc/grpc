@@ -88,7 +88,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool Orphaned();
 
-    bool WaitForReadsStarted(int expected, absl::Duration timeout) {
+    bool WaitForReadsStarted(size_t expected, absl::Duration timeout) {
       MutexLock lock(&mu_);
       auto cond = [this, expected]() {
         mu_.AssertReaderHeld();
