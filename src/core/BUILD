@@ -2858,7 +2858,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "call_filters",
         "channel_args",
         "channel_fwd",
         "channel_stack_trace",

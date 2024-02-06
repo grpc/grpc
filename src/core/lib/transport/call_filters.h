@@ -344,100 +344,12 @@ struct AddOpImpl<
   }
 };
 
-// $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
-template <typename FilterType, typename T,
-          T (FilterType::Call::*impl)(T, FilterType*)>
-struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        FallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data,
-               T value) -> Poll<ResultOr<T>> {
-              return ResultOr<T>{
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      std::move(value), static_cast<FilterType*>(channel_data)),
-                  nullptr};
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data, T value) -> Poll<T> {
-              (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  *value, static_cast<FilterType*>(channel_data));
-              return (
-                  static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  std::move(value), static_cast<FilterType*>(channel_data));
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-};
-
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
           absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        FallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value);
-              if (r.ok()) return ResultOr<T>{std::move(value), nullptr};
-              return ResultOr<T>{
-                  nullptr, StatusCast<ServerMetadataHandle>(std::move(r))};
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void*, T value) -> Poll<T> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value);
-              if (r.ok()) return std::move(value);
-              return StatusCast<ServerMetadataHandle>(std::move(r));
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-};
-
-// absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
-template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
-              const typename T::element_type&)>
-struct AddOpImpl<
-    FilterType, T,
-    absl::Status (FilterType::Call::*)(const typename T::element_type&), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
     to.Add(
@@ -489,64 +401,6 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
-// absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
-template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
-struct AddOpImpl<FilterType, T,
-                 absl::Status (FilterType::Call::*)(
-                     const typename T::element_type&, FilterType*),
-                 impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        FallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data,
-               T value) -> Poll<ResultOr<T>> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value, static_cast<FilterType*>(channel_data));
-              if (IsStatusOk(r)) return ResultOr<T>{std::move(value), nullptr};
-              return ResultOr<T>{
-                  nullptr, StatusCast<ServerMetadataHandle>(std::move(r))};
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-};
-
-// absl::StatusOr<$VALUE_HANDLE> $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
-template <typename FilterType, typename T,
-          absl::StatusOr<T> (FilterType::Call::*impl)(T, FilterType*)>
-struct AddOpImpl<FilterType, T,
-                 absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
-                 impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        FallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data,
-               T value) -> Poll<ResultOr<T>> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      std::move(value), static_cast<FilterType*>(channel_data));
-              if (IsStatusOk(r)) return ResultOr<T>{std::move(*r), nullptr};
-              return ResultOr<T>{
-                  nullptr, StatusCast<ServerMetadataHandle>(std::move(r))};
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-};
-
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
           ServerMetadataHandle (FilterType::Call::*impl)(
@@ -576,35 +430,6 @@ struct AddOpImpl<FilterType, T,
   }
 };
 
-// ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&)
-template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
-              const typename T::element_type&)>
-struct AddOpImpl<FilterType, T,
-                 ServerMetadataHandle (FilterType::Call::*)(
-                     const typename T::element_type&),
-                 impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        FallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value);
-              if (r == nullptr) return ResultOr<T>{std::move(value), nullptr};
-              return ResultOr<T>{
-                  nullptr, StatusCast<ServerMetadataHandle>(std::move(r))};
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-};
-
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
           ServerMetadataHandle (FilterType::Call::*impl)(
@@ -612,36 +437,6 @@ template <typename FilterType, typename T,
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      typename T::element_type&, FilterType*),
-                 impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        FallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data,
-               T value) -> Poll<ResultOr<T>> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value, static_cast<FilterType*>(channel_data));
-              if (r == nullptr) return ResultOr<T>{std::move(value), nullptr};
-              return ResultOr<T>{
-                  nullptr, StatusCast<ServerMetadataHandle>(std::move(r))};
-            },
-            nullptr,
-            nullptr,
-        });
-  }
-};
-
-// ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
-template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
-              const typename T::element_type&, FilterType*)>
-struct AddOpImpl<FilterType, T,
-                 ServerMetadataHandle (FilterType::Call::*)(
-                     const typename T::element_type&, FilterType*),
                  impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
@@ -770,11 +565,6 @@ struct AddOpImpl<
   }
 };
 
-struct ChannelDataDestructor {
-  void (*destroy)(void* channel_data);
-  void* channel_data;
-};
-
 // StackData contains the main datastructures built up by this module.
 // It's a complete representation of all the code that needs to be invoked
 // to execute a call for a given set of filters.
@@ -800,9 +590,6 @@ struct StackData {
   // We use a bespoke data structure here because finalizers can never be
   // asynchronous.
   std::vector<Finalizer> finalizers;
-  // A list of functions to call when this stack data is destroyed
-  // (to capture ownership of channel data)
-  std::vector<ChannelDataDestructor> channel_data_destructors;
 
   // Add one filter to the list of filters, and update alignment.
   // Returns the offset of the call data for this filter.
@@ -934,7 +721,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
   }
 
   template <typename FilterType>
@@ -1151,9 +938,6 @@ class CallFilters {
   // It contains pointers to the individual filters, yet it does not own those
   // pointers: it's expected that some other object will track that ownership.
   class Stack : public RefCounted<Stack> {
-   public:
-    ~Stack() override;
-
    private:
     friend class CallFilters;
     friend class StackBuilder;
@@ -1165,8 +949,6 @@ class CallFilters {
   // the stack, then call Build() to generate a ref counted Stack object.
   class StackBuilder {
    public:
-    ~StackBuilder();
-
     template <typename FilterType>
     void Add(FilterType* filter) {
       const size_t call_offset = data_.AddFilter<FilterType>(filter);
@@ -1176,15 +958,6 @@ class CallFilters {
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
-    }
-
-    void AddOwnedObject(void (*destroy)(void* p), void* p) {
-      data_.channel_data_destructors.push_back({destroy, p});
-    }
-
-    template <typename T>
-    void AddOwnedObject(RefCountedPtr<T> p) {
-      AddOwnedObject([](void* p) { static_cast<T*>(p)->Unref(); }, p.release());
     }
 
     RefCountedPtr<Stack> Build();
