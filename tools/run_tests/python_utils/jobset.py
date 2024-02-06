@@ -321,7 +321,7 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(
             args=cmdline,
-            stderr=subprocess.STDOUT,
+            stderr=self._logfile,
             stdout=self._logfile,
             cwd=self._spec.cwd,
             shell=self._spec.shell,
