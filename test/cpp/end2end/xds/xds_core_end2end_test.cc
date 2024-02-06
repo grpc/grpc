@@ -167,7 +167,21 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, GlobalXdsClientTest,
                              XdsTestType::kBootstrapFromEnvVar)),
                          &XdsTestType::Name);
 
-TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
+TEST_P(GlobalXdsClientTest, MultipleChannelsSameTargetShareXdsClient) {
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Create second channel and tell it to connect to the same server.
+  auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kServerName);
+  channel2->GetState(/*try_to_connect=*/true);
+  ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
+  // Make sure there's only one client connected.
+  EXPECT_EQ(1UL, balancer_->ads_service()->clients().size());
+}
+
+TEST_P(GlobalXdsClientTest,
+       MultipleChannelsDifferentTargetDoNotShareXdsClient) {
   CreateAndStartBackends(1);
   const char* kNewServerName = "new-server.example.com";
   Listener listener = default_listener_;
@@ -181,7 +195,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   auto channel2 = CreateChannel(/*failover_timeout_ms=*/0, kNewServerName);
   channel2->GetState(/*try_to_connect=*/true);
   ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
-  // Make sure there's only one client connected.
+  // Make sure there are two clients connected.
   EXPECT_EQ(2UL, balancer_->ads_service()->clients().size());
 }
 
@@ -216,65 +230,6 @@ TEST_P(
       {"locality0", CreateEndpointsForBackends(1, 2)},
   })));
   WaitForBackend(DEBUG_LOCATION, 1);
-}
-
-// Tests that the NACK for multiple bad LDS resources includes both errors.
-// This needs to be in GlobalXdsClientTest because the only way to request
-// two LDS resources in the same XdsClient is for two channels to share
-// the same XdsClient.
-TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
-  CreateAndStartBackends(1);
-  constexpr char kServerName2[] = "server.other.com";
-  constexpr char kServerName3[] = "server.another.com";
-  auto listener = default_listener_;
-  listener.clear_api_listener();
-  balancer_->ads_service()->SetLdsResource(listener);
-  listener.set_name(kServerName2);
-  balancer_->ads_service()->SetLdsResource(listener);
-  listener = default_listener_;
-  listener.set_name(kServerName3);
-  SetListenerAndRouteConfiguration(balancer_.get(), listener,
-                                   default_route_config_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  EXPECT_EQ(response_state->error_message,
-            "xDS response validation errors: ["
-            "resource index 0: server.example.com: "
-            "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
-  // Need to create a second channel to subscribe to a second LDS resource.
-  auto channel2 = CreateChannel(0, kServerName2);
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  {
-    ClientContext context;
-    EchoRequest request;
-    request.set_message(kRequestMessage);
-    EchoResponse response;
-    grpc::Status status = stub2->Echo(&context, request, &response);
-    EXPECT_FALSE(status.ok());
-    // Wait for second NACK to be reported to xDS server.
-    const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
-    ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-    EXPECT_EQ(
-        response_state->error_message,
-        "xDS response validation errors: ["
-        "resource index 0: server.other.com: "
-        "INVALID_ARGUMENT: Listener has neither address nor ApiListener]");
-  }
-  // Now start a new channel with a third server name, this one with a
-  // valid resource.
-  auto channel3 = CreateChannel(0, kServerName3);
-  auto stub3 = grpc::testing::EchoTestService::NewStub(channel3);
-  {
-    ClientContext context;
-    EchoRequest request;
-    request.set_message(kRequestMessage);
-    EchoResponse response;
-    grpc::Status status = stub3->Echo(&context, request, &response);
-    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                             << " message=" << status.error_message();
-  }
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource

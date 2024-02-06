@@ -638,7 +638,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpMultiClient) {
   const size_t kNumRpcs = 5;
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-
   // Send several RPCs to ensure the xDS setup works
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // Connect to a second server
@@ -647,7 +646,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpMultiClient) {
   ASSERT_TRUE(channel2->WaitForConnected(grpc_timeout_seconds_to_deadline(1)));
   // Fetches the client config
   auto csds_response = FetchCsdsResponse();
-  gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
   ASSERT_EQ(2, csds_response.config_size());
   std::vector<std::string> scopes;
   for (const auto& client_config : csds_response.config()) {
