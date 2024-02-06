@@ -33,7 +33,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -50,8 +49,9 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_registry.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
@@ -460,7 +460,7 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 
 // This test is meant to repro a bug noticed in internal issue b/297538255.
 // The general issue is the loop in
-// https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc#L371.
+// https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc#L371.
 // The problem with that loop is that c-ares *can* in certain situations stop
 // caring about the fd being processed without reading all of the data out of
 // the read buffer. In that case, we keep looping because
@@ -486,10 +486,10 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
 //   6) Because we overwrite the socket "close" method, c-ares attempt to close
 //      the socket in handle_error does nothing except for removing the socket
 //      from ARES_GETSOCK_READABLE:
-//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L156.
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L156.
 //   7) Because there is still one byte left in the TCP read buffer,
 //      IsFdStillReadableLocked will keep returning true:
-//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L82.
+//      https://github.com/grpc/grpc/blob/f6a994229e72bc771963706de7a0cd8aa9150bb6/src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc#L82.
 //      But c-ares will never try to read from that socket again, so we have an
 //      infinite busy loop.
 TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
