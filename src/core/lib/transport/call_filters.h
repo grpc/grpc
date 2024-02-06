@@ -729,7 +729,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
-    GPR_DEBUG_ASSERT(p == &FilterType::OnFinalize);
+    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
