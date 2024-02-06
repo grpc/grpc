@@ -29,8 +29,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -164,6 +162,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
+const uint8_t required_experiments_call_v3[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -190,8 +194,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -274,6 +276,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3,
+     required_experiments_call_v3, 3, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,
@@ -292,8 +296,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -427,6 +429,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
+const uint8_t required_experiments_call_v3[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -453,8 +461,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -537,6 +543,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3,
+     required_experiments_call_v3, 3, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,
@@ -555,8 +563,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -690,6 +696,12 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
+const uint8_t required_experiments_call_v3[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -716,8 +728,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_idleness", description_client_idleness,
@@ -800,6 +810,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3,
+     required_experiments_call_v3, 3, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,

@@ -20,10 +20,10 @@ import grpc
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._cyobservability import MetricsName
 from grpc_observability._observability import StatsData
-from opentelemetry.sdk.metrics import Counter
-from opentelemetry.sdk.metrics import Histogram
-from opentelemetry.sdk.metrics import Meter
-from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.metrics import Counter
+from opentelemetry.metrics import Histogram
+from opentelemetry.metrics import Meter
+from opentelemetry.metrics import MeterProvider
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
@@ -123,7 +123,7 @@ class OpenTelemetryPlugin:
         self, target: str  # pylint: disable=unused-argument
     ) -> bool:
         """
-        If set, this will be called per channel to decide whether to record the
+        Once overridden, this will be called per channel to decide whether to record the
         target attribute on client or to replace it with "other".
         This helps reduce the cardinality on metrics in cases where many channels
         are created with different targets in the same binary (which might happen
@@ -142,7 +142,7 @@ class OpenTelemetryPlugin:
         self, method: str  # pylint: disable=unused-argument
     ) -> bool:
         """
-        If set, this will be called with a generic method type to decide whether to
+        Once overridden, this will be called with a generic method type to decide whether to
         record the method name or to replace it with "other".
 
         Note that pre-registered methods will always be recorded no matter what this

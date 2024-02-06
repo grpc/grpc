@@ -18,16 +18,7 @@
 
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata) {
-  // Send initial metadata.
-  call_initiator.SpawnGuarded(
-      "send_initial_metadata",
-      [client_initial_metadata = std::move(client_initial_metadata),
-       call_initiator]() mutable {
-        return call_initiator.PushClientInitialMetadata(
-            std::move(client_initial_metadata));
-      });
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   // Read messages from handler into initiator.
   call_handler.SpawnGuarded("read_messages", [call_handler,
                                               call_initiator]() mutable {

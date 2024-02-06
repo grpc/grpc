@@ -67,7 +67,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -110,6 +109,7 @@ inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -128,7 +128,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -172,6 +171,7 @@ inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -190,7 +190,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return true;
 #endif
 }
-inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
@@ -234,6 +233,7 @@ inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
+inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_CAP
@@ -245,7 +245,6 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 #else
 enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
-  kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
@@ -280,6 +279,7 @@ enum ExperimentIds {
   kExperimentIdV3ServerAuthFilter,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
+  kExperimentIdCallV3,
   kExperimentIdWriteSizePolicy,
   kExperimentIdWriteSizeCap,
   kExperimentIdWrrDelegateToPickFirst,
@@ -288,10 +288,6 @@ enum ExperimentIds {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_V3
-inline bool IsCallV3Enabled() {
-  return IsExperimentEnabled(kExperimentIdCallV3);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
@@ -428,6 +424,10 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
 inline bool IsWorkSerializerDispatchEnabled() {
   return IsExperimentEnabled(kExperimentIdWorkSerializerDispatch);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_V3
+inline bool IsCallV3Enabled() {
+  return IsExperimentEnabled(kExperimentIdCallV3);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRITE_SIZE_POLICY
 inline bool IsWriteSizePolicyEnabled() {
