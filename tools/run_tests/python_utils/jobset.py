@@ -192,7 +192,7 @@ class JobSpec(object):
         timeout_retries=0,
         kill_handler=None,
         cpu_cost=1.0,
-        verbose_success=False,
+        verbose_success=True,
         logfilename=None,
     ):
         """
@@ -321,7 +321,7 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(
             args=cmdline,
-            stderr=subprocess.STDOUT,
+            stderr=sys.stdout,
             stdout=sys.stdout,
             cwd=self._spec.cwd,
             shell=self._spec.shell,
