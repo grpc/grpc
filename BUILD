@@ -3029,9 +3029,9 @@ grpc_cc_library(
     hdrs = [
         "//src/core:client_channel/backend_metric.h",
         "//src/core:client_channel/backup_poller.h",
-        "//src/core:client_channel/client_channel_filter.h",
         "//src/core:client_channel/client_channel_channelz.h",
         "//src/core:client_channel/client_channel_factory.h",
+        "//src/core:client_channel/client_channel_filter.h",
         "//src/core:client_channel/client_channel_internal.h",
         "//src/core:client_channel/client_channel_service_config.h",
         "//src/core:client_channel/config_selector.h",
