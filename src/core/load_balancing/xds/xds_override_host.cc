@@ -49,7 +49,6 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_internal.h"
 #include "src/core/load_balancing/child_policy_handler.h"
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -75,13 +74,14 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/xds/xds_dependency_manager.h"
 
 namespace grpc_core {
 

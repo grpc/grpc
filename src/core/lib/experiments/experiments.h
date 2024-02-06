@@ -195,8 +195,7 @@ inline bool IsCanaryClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
 inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
-inline bool IsEventEngineClientEnabled() { return true; }
+inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }

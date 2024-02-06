@@ -107,8 +107,7 @@ CsmObservabilityBuilder::CsmObservabilityBuilder()
 CsmObservabilityBuilder::~CsmObservabilityBuilder() = default;
 
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
-    std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-        meter_provider) {
+    std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
   builder_->SetMeterProvider(meter_provider);
   return *this;
 }
@@ -137,10 +136,6 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
     return status;
   }
   return CsmObservability();
-}
-
-std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption() {
-  return std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>();
 }
 
 }  // namespace experimental

@@ -79,7 +79,7 @@ BANNED_EXCEPT = {
     # TODO(roth): Fix these callers to use the absl random library instead.
     "std::random_device": [
         "src/core/load_balancing/rls/rls.cc",
-        "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
+        "src/core/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     # use 'grpc_core::Crash' instead
     "GPR_ASSERT(false": [],
