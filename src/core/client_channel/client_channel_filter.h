@@ -176,12 +176,6 @@ class ClientChannelFilter {
       CallArgs call_args, absl::AnyInvocable<void()> on_commit,
       bool is_transparent_retry);
 
-  // Exposed for testing only.
-  static ChannelArgs MakeSubchannelArgs(
-      const ChannelArgs& channel_args, const ChannelArgs& address_args,
-      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
-      const std::string& channel_default_authority);
-
  private:
   class CallData;
   class FilterBasedCallData;

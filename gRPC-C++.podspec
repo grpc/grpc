@@ -259,6 +259,7 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/client_channel/backend_metric.h',
                       'src/core/client_channel/backup_poller.h',
+                      'src/core/client_channel/client_channel.h',
                       'src/core/client_channel/client_channel_channelz.h',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.h',
@@ -1227,6 +1228,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.h',
                       'src/core/lib/surface/channel_init.h',
+                      'src/core/lib/surface/channel_interface.h',
                       'src/core/lib/surface/channel_stack_type.h',
                       'src/core/lib/surface/completion_queue.h',
                       'src/core/lib/surface/completion_queue_factory.h',
@@ -1534,6 +1536,7 @@ Pod::Spec.new do |s|
 
     ss.private_header_files = 'src/core/client_channel/backend_metric.h',
                               'src/core/client_channel/backup_poller.h',
+                              'src/core/client_channel/client_channel.h',
                               'src/core/client_channel/client_channel_channelz.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
@@ -2484,6 +2487,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
                               'src/core/lib/surface/channel_init.h',
+                              'src/core/lib/surface/channel_interface.h',
                               'src/core/lib/surface/channel_stack_type.h',
                               'src/core/lib/surface/completion_queue.h',
                               'src/core/lib/surface/completion_queue_factory.h',

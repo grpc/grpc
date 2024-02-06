@@ -276,6 +276,12 @@ class Subchannel : public DualRefCounted<Subchannel> {
     return event_engine_;
   }
 
+  // Exposed for testing purposes only.
+  static ChannelArgs MakeSubchannelArgs(
+      const ChannelArgs& channel_args, const ChannelArgs& address_args,
+      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
+      const std::string& channel_default_authority);
+
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.

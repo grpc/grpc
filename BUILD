@@ -3005,6 +3005,7 @@ grpc_cc_library(
         "//src/core:client_channel/backend_metric.cc",
         "//src/core:client_channel/backup_poller.cc",
         "//src/core:client_channel/channel_connectivity.cc",
+        "//src/core:client_channel/client_channel.cc",
         "//src/core:client_channel/client_channel_channelz.cc",
         "//src/core:client_channel/client_channel_factory.cc",
         "//src/core:client_channel/client_channel_filter.cc",
@@ -3029,6 +3030,7 @@ grpc_cc_library(
     hdrs = [
         "//src/core:client_channel/backend_metric.h",
         "//src/core:client_channel/backup_poller.h",
+        "//src/core:client_channel/client_channel.h",
         "//src/core:client_channel/client_channel_channelz.h",
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
@@ -3106,6 +3108,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
+        "//src/core:channel_interface",
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:connectivity_state",

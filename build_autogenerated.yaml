@@ -219,6 +219,7 @@ libs:
   headers:
   - src/core/client_channel/backend_metric.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_channelz.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
@@ -1123,6 +1124,7 @@ libs:
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_interface.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
@@ -1237,6 +1239,7 @@ libs:
   - src/core/client_channel/backend_metric.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/channel_connectivity.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -2198,6 +2201,7 @@ libs:
   headers:
   - src/core/client_channel/backend_metric.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_channelz.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
@@ -2584,6 +2588,7 @@ libs:
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_interface.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
@@ -2688,6 +2693,7 @@ libs:
   - src/core/client_channel/backend_metric.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/channel_connectivity.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc

@@ -108,6 +108,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/channel_connectivity.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_channelz.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.cc" role="src" />
@@ -1768,6 +1770,7 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />

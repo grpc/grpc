@@ -49,6 +49,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channel_interface",
+    hdrs = [
+        "lib/surface/channel_interface.h"
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+    ],
+    language = "c++",
+)
+
+grpc_cc_library(
     name = "slice_cast",
     hdrs = [
         "//:include/grpc/event_engine/internal/slice_cast.h",

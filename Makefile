@@ -962,6 +962,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/backend_metric.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/channel_connectivity.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -1894,6 +1895,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_channel/backend_metric.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/channel_connectivity.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
