@@ -1000,7 +1000,7 @@ std::vector<CoreTestConfiguration> ChaoticGoodFixtures() {
 
 std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs;
-  if (IsChaoticGoodEnabled()) {
+  if (IsExperimentEnabledInConfiguration(kExperimentIdChaoticGood)) {
     configs = ChaoticGoodFixtures();
   } else {
     configs = DefaultConfigs();
