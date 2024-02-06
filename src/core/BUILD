@@ -5655,10 +5655,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "polling_resolver",
     srcs = [
-        "ext/filters/client_channel/resolver/polling_resolver.cc",
+        "resolver/polling_resolver.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/polling_resolver.h",
+        "resolver/polling_resolver.h",
     ],
     external_deps = [
         "absl/status",
@@ -5690,10 +5690,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "service_config_helper",
     srcs = [
-        "ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc",
+        "resolver/dns/event_engine/service_config_helper.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.h",
+        "resolver/dns/event_engine/service_config_helper.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -5715,10 +5715,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_dns_event_engine",
     srcs = [
-        "ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc",
+        "resolver/dns/event_engine/event_engine_client_channel_resolver.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h",
+        "resolver/dns/event_engine/event_engine_client_channel_resolver.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5758,10 +5758,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_dns_plugin",
     srcs = [
-        "ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc",
+        "resolver/dns/dns_resolver_plugin.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/dns/dns_resolver_plugin.h",
+        "resolver/dns/dns_resolver_plugin.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -5780,10 +5780,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
-        "ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
+        "resolver/dns/native/dns_resolver.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/dns/native/dns_resolver.h",
+        "resolver/dns/native/dns_resolver.h",
     ],
     external_deps = [
         "absl/functional:bind_front",
@@ -5816,7 +5816,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_sockaddr",
     srcs = [
-        "ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
+        "resolver/sockaddr/sockaddr_resolver.cc",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -5840,7 +5840,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_binder",
     srcs = [
-        "ext/filters/client_channel/resolver/binder/binder_resolver.cc",
+        "resolver/binder/binder_resolver.cc",
     ],
     external_deps = [
         "absl/status",
@@ -5866,7 +5866,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_xds_attributes",
     hdrs = [
-        "ext/filters/client_channel/resolver/xds/xds_resolver_attributes.h",
+        "resolver/xds/xds_resolver_attributes.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -5880,10 +5880,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_xds_trace",
     srcs = [
-        "ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc",
+        "resolver/xds/xds_resolver_trace.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/xds/xds_resolver_trace.h",
+        "resolver/xds/xds_resolver_trace.h",
     ],
     language = "c++",
     deps = [
@@ -5895,10 +5895,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_dependency_manager",
     srcs = [
-        "ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc",
+        "resolver/xds/xds_dependency_manager.cc",
     ],
     hdrs = [
-        "ext/filters/client_channel/resolver/xds/xds_dependency_manager.h",
+        "resolver/xds/xds_dependency_manager.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",
@@ -5922,7 +5922,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_xds",
     srcs = [
-        "ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+        "resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
         "absl/meta:type_traits",
@@ -5981,7 +5981,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_c2p",
     srcs = [
-        "ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
+        "resolver/google_c2p/google_c2p_resolver.cc",
     ],
     external_deps = [
         "absl/status:statusor",

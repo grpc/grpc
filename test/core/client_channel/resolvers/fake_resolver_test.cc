@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 
 #include <inttypes.h>
 #include <string.h>
@@ -47,10 +47,10 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
