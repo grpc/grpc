@@ -122,11 +122,7 @@ def eintr_be_gone(fn):
 
 
 def message(tag, msg, explanatory_text=None, do_newline=False):
-    if (
-        message.old_tag == tag
-        and message.old_msg == msg
-        and not explanatory_text
-    ):
+    if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
         return
     message.old_tag = tag
     message.old_msg = msg
@@ -145,16 +141,16 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                     % (
                         _BEGINNING_OF_LINE,
                         _CLEAR_LINE,
-                        "\n%s" % explanatory_text
-                        if explanatory_text is not None
-                        else "",
+                        (
+                            "\n%s" % explanatory_text
+                            if explanatory_text is not None
+                            else ""
+                        ),
                         _COLORS[_TAG_COLOR[tag]][1],
                         _COLORS[_TAG_COLOR[tag]][0],
                         tag,
                         msg,
-                        "\n"
-                        if do_newline or explanatory_text is not None
-                        else "",
+                        "\n" if do_newline or explanatory_text is not None else "",
                     )
                 )
             sys.stdout.flush()
@@ -207,6 +203,7 @@ class JobSpec(object):
             environ = {}
         self.cmdline = cmdline
         self.environ = environ
+        self.environ["GRPC_VERBOSITY"] = "true"
         self.shortname = cmdline[0] if shortname is None else shortname
         self.cwd = cwd
         self.shell = shell
@@ -216,16 +213,10 @@ class JobSpec(object):
         self.kill_handler = kill_handler
         self.cpu_cost = cpu_cost
         self.verbose_success = verbose_success
-        self.logfilename = logfilename
-        if (
-            self.logfilename
-            and self.flake_retries != 0
-            and self.timeout_retries != 0
-        ):
+        self.logfilename = None
+        if self.logfilename and self.flake_retries != 0 and self.timeout_retries != 0:
             # Forbidden to avoid overwriting the test log when retrying.
-            raise Exception(
-                "Cannot use custom logfile when retries are enabled"
-            )
+            raise Exception("Cannot use custom logfile when retries are enabled")
 
     def identity(self):
         return "%r %r" % (self.cmdline, self.environ)
@@ -273,9 +264,7 @@ def read_from_start(f):
 class Job(object):
     """Manages one job."""
 
-    def __init__(
-        self, spec, newline_on_success, travis, add_env, quiet_success=False
-    ):
+    def __init__(self, spec, newline_on_success, travis, add_env, quiet_success=False):
         self._spec = spec
         self._newline_on_success = newline_on_success
         self._travis = travis
@@ -295,9 +284,7 @@ class Job(object):
     def start(self):
         if self._spec.logfilename:
             # make sure the log directory exists
-            logfile_dir = os.path.dirname(
-                os.path.abspath(self._spec.logfilename)
-            )
+            logfile_dir = os.path.dirname(os.path.abspath(self._spec.logfilename))
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, "w+")
@@ -405,9 +392,7 @@ class Job(object):
                     if real > 0.5:
                         cores = (user + sys) / real
                         self.result.cpu_measured = float("%.01f" % cores)
-                        self.result.cpu_estimated = float(
-                            "%.01f" % self._spec.cpu_cost
-                        )
+                        self.result.cpu_estimated = float("%.01f" % self._spec.cpu_cost)
                         measurement = "; cpu_cost=%.01f; estimated=%.01f" % (
                             self.result.cpu_measured,
                             self.result.cpu_estimated,
@@ -520,10 +505,7 @@ class Jobset(object):
     def start(self, spec):
         """Start a job. Return True on success, False on failure."""
         while True:
-            if (
-                self._max_time > 0
-                and time.time() - self._start_time > self._max_time
-            ):
+            if self._max_time > 0 and time.time() - self._start_time > self._max_time:
                 skipped_job_result = JobResult()
                 skipped_job_result.state = "SKIPPED"
                 message("SKIPPED", spec.shortname, do_newline=True)
@@ -577,17 +559,13 @@ class Jobset(object):
                 return
             if not self._travis and platform_string() != "windows":
                 rstr = (
-                    ""
-                    if self._remaining is None
-                    else "%d queued, " % self._remaining
+                    "" if self._remaining is None else "%d queued, " % self._remaining
                 )
                 if self._remaining is not None and self._completed > 0:
                     now = time.time()
                     sofar = now - self._start_time
                     remaining = (
-                        sofar
-                        / self._completed
-                        * (self._remaining + len(self._running))
+                        sofar / self._completed * (self._remaining + len(self._running))
                     )
                     rstr = "ETA %.1f sec; %s" % (remaining, rstr)
                 if waiting_for is not None:
@@ -676,9 +654,7 @@ def run(
     js = Jobset(
         check_cancelled,
         maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-        maxjobs_cpu_agnostic
-        if maxjobs_cpu_agnostic is not None
-        else _DEFAULT_MAX_JOBS,
+        maxjobs_cpu_agnostic if maxjobs_cpu_agnostic is not None else _DEFAULT_MAX_JOBS,
         newline_on_success,
         travis,
         stop_on_failure,
