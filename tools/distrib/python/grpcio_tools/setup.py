@@ -24,7 +24,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import pkg_resources
 import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
@@ -214,22 +213,6 @@ if "win32" in sys.platform:
 elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
-# By default, Python3 setuptools(distutils) enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target and (
-        pkg_resources.parse_version(mac_target)
-        < pkg_resources.parse_version("10.10.0")
-    ):
-        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-        os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-            r"macosx-[0-9]+\.[0-9]+-(.+)",
-            r"macosx-10.10-\1",
-            sysconfig.get_platform(),
-        )
-
 
 def package_data():
     tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace(".", os.path.sep)
@@ -313,6 +296,7 @@ setuptools.setup(
         "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
     ],
+    setup_requires=["packaging>=23.2"],
     package_data=package_data(),
     cmdclass={
         "build_ext": BuildExt,
