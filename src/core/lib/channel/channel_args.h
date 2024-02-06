@@ -324,6 +324,18 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
+  // Helper to create a `Pointer` object to an object that is not owned by the
+  // `ChannelArgs` object. Useful for tests, a code smell for production code.
+  template <typename T>
+  static Pointer UnownedPointer(T* p) {
+    static const grpc_arg_pointer_vtable vtable = {
+        [](void* p) -> void* { return p; },
+        [](void*) {},
+        [](void* p, void* q) { return QsortCompare(p, q); },
+    };
+    return Pointer(p, &vtable);
+  }
+
   class Value {
    public:
     explicit Value(int n)

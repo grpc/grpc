@@ -29,8 +29,8 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
