@@ -90,7 +90,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool WaitForReadsStarted(int expected, absl::Duration timeout) {
       MutexLock lock(&mu_);
-      auto cond = [this, expected] () {
+      auto cond = [this, expected]() {
         mu_.AssertReaderHeld();
         return reads_started_ == expected;
       };
