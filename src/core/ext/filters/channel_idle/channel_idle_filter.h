@@ -40,6 +40,8 @@
 
 namespace grpc_core {
 
+Duration GetClientIdleTimeout(const ChannelArgs& args);
+
 class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
  public:
   ~ChannelIdleFilter() override = default;

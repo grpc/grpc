@@ -23,6 +23,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/filters/channel_idle/idle_filter_state.h"
+#include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel_interface.h"
 #include "src/core/lib/transport/call_destination.h"
@@ -69,10 +71,16 @@ class ClientChannel : public ChannelInterface {
       ClientInitialMetadata client_initial_metadata,
       absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
+  // Flag that this object gets stored in channel args as a raw pointer.
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.client_channel";
+  }
+
  private:
   class ResolverResultHandler;
-  class SubchannelWrapper;
   class ClientChannelControlHelper;
+  class SubchannelWrapper;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
@@ -110,6 +118,8 @@ class ClientChannel : public ChannelInterface {
       RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
+  void StartIdleTimer();
+
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
   absl::Status ApplyServiceConfigToCall(
@@ -139,9 +149,19 @@ class ClientChannel : public ChannelInterface {
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
   OrphanablePtr<CallDestination> call_destination_;
+
+  //
   // State for LB calls.
+  //
   CallSizeEstimator lb_call_size_estimator_;
   MemoryAllocator lb_call_allocator_;
+
+  //
+  // Idleness state.
+  //
+  const Duration idle_timeout_;
+  IdleFilterState idle_state_(false);
+  SingleSetPtr<Activity, typename ActivityPtr::deleter_type> idle_activity_;
 
   //
   // Fields related to name resolution.

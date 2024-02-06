@@ -87,9 +87,6 @@
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
-// Channel arg containing a pointer to the ClientChannelFilter object.
-#define GRPC_ARG_CLIENT_CHANNEL "grpc.internal.client_channel_filter"
-
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
 //   recv_initial_metadata
@@ -113,7 +110,9 @@ class ClientChannelFilter {
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
-  static absl::string_view ChannelArgName() { return GRPC_ARG_CLIENT_CHANNEL; }
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.client_channel_filter";
+  }
 
   // Returns the ClientChannelFilter object from channel, or null if channel
   // is not a client channel.
