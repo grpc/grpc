@@ -46,6 +46,7 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:variant",
         "google_cloud_cpp:opentelemetry",
+        "otel/api",
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
         "upb_base_lib",
