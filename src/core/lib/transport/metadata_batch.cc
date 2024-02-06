@@ -64,7 +64,7 @@ absl::optional<absl::string_view> UnknownMap::GetStringValue(
 }  // namespace metadata_detail
 
 ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
-    Slice value, bool, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn /*on_error*/) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "application/grpc") {
@@ -76,7 +76,9 @@ ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
   } else if (value_string.empty()) {
     out = kEmpty;
   } else {
-    on_error("invalid value", value);
+    // We are intentionally not invoking on_error here since the spec is not
+    // clear on what the behavior should be here, so to avoid breaking anyone,
+    // we should continue to accept this.
   }
   return out;
 }
