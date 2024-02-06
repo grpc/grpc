@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg indicating the xDS cluster name.
 // Set by xds_cluster_impl LB policy and used by GoogleDefaultCredentials.

@@ -37,7 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
