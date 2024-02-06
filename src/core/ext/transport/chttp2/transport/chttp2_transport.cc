@@ -3256,7 +3256,6 @@ void grpc_chttp2_transport_start_reading(
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
-    gpr_free(read_buffer);
   }
   auto* tp = t.get();
   tp->combiner->Run(

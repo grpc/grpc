@@ -221,7 +221,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
 
   void DoHandshake(const grpc_resolved_address* addr)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);

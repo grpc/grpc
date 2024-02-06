@@ -186,8 +186,10 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::Start(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
   handshake_mgr_->DoHandshake(
       grpc_event_engine_endpoint_create(std::move(endpoint)),
-      connection_->args(), GetConnectionDeadline(), nullptr, OnHandshakeDone,
-      Ref().release());
+      connection_->args(), GetConnectionDeadline(), nullptr,
+      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) {
+        self->OnHandshakeDone(std::move(result));
+      });
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
@@ -344,30 +346,24 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
-    OnHandshakeDone(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  GPR_ASSERT(args != nullptr);
-  RefCountedPtr<HandshakingState> self(
-      static_cast<HandshakingState*>(args->user_data));
-  grpc_slice_buffer_destroy(args->read_buffer);
-  gpr_free(args->read_buffer);
-  if (!error.ok()) {
-    self->connection_->Fail(
-        absl::StrCat("Handshake failed: ", StatusToString(error)));
+    OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
+  if (!result.ok()) {
+    connection_->Fail(
+        absl::StrCat("Handshake failed: ", result.status().ToString()));
     return;
   }
-  if (args->endpoint == nullptr) {
-    self->connection_->Fail("Server handshake done but has empty endpoint.");
+  if ((*result)->endpoint == nullptr) {
+    connection_->Fail("Server handshake done but has empty endpoint.");
     return;
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
-      args->endpoint));
-  self->connection_->endpoint_ = std::make_shared<PromiseEndpoint>(
+      (*result)->endpoint));
+  connection_->endpoint_ = std::make_shared<PromiseEndpoint>(
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
-          args->endpoint),
+          (*result)->endpoint),
       SliceBuffer());
   auto activity = MakeActivity(
-      [self]() {
+      [self = Ref()]() {
         return TrySeq(Race(EndpointReadSettingsFrame(self),
                            TrySeq(Sleep(Timestamp::Now() + kConnectionDeadline),
                                   []() -> absl::StatusOr<bool> {
@@ -381,18 +377,18 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       },
       EventEngineWakeupScheduler(
           grpc_event_engine::experimental::GetDefaultEventEngine()),
-      [self](absl::Status status) {
+      [self = Ref()](absl::Status status) {
         if (!status.ok()) {
           self->connection_->Fail(
               absl::StrCat("Server setting frame handling failed: ",
                            StatusToString(status)));
         }
       },
-      self->connection_->arena_.get(),
+      connection_->arena_.get(),
       grpc_event_engine::experimental::GetDefaultEventEngine().get());
-  MutexLock lock(&self->connection_->mu_);
-  if (self->connection_->orphaned_) return;
-  self->connection_->receive_settings_activity_ = std::move(activity);
+  MutexLock lock(&connection_->mu_);
+  if (connection_->orphaned_) return;
+  connection_->receive_settings_activity_ = std::move(activity);
 }
 
 Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::

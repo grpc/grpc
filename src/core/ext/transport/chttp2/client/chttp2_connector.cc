@@ -125,10 +125,12 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
-  Ref().release();  // Ref held by OnHandshakeDone().
-  handshake_mgr_->DoHandshake(nullptr /* endpoint */, channel_args,
-                              args.deadline, nullptr /* acceptor */,
-                              OnHandshakeDone, this);
+  handshake_mgr_->DoHandshake(
+      /*endpoint=*/nullptr, channel_args, args.deadline, /*acceptor=*/nullptr,
+      [self = RefAsSubclass<Chttp2Connector>()](
+          absl::StatusOr<HandshakerArgs*> result) {
+        self->OnHandshakeDone(std::move(result));
+      });
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -140,60 +142,54 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
   }
 }
 
-void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
-  {
-    MutexLock lock(&self->mu_);
-    if (!error.ok() || self->shutdown_) {
-      if (error.ok()) {
-        error = GRPC_ERROR_CREATE("connector shutdown");
-        // We were shut down after handshaking completed successfully, so
-        // destroy the endpoint here.
-        if (args->endpoint != nullptr) {
-          // TODO(ctiller): It is currently necessary to shutdown endpoints
-          // before destroying them, even if we know that there are no
-          // pending read/write callbacks.  This should be fixed, at which
-          // point this can be removed.
-          grpc_endpoint_shutdown(args->endpoint, error);
-          grpc_endpoint_destroy(args->endpoint);
-          grpc_slice_buffer_destroy(args->read_buffer);
-          gpr_free(args->read_buffer);
-        }
+void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
+  MutexLock lock(&mu_);
+  if (!result.ok() || shutdown_) {
+    if (result.ok()) {
+      absl::Status status = absl::CancelledError("connector shutdown");
+      // We were shut down after handshaking completed successfully, so
+      // destroy the endpoint here.
+      if ((*result)->endpoint != nullptr) {
+        // TODO(ctiller): It is currently necessary to shutdown endpoints
+        // before destroying them, even if we know that there are no
+        // pending read/write callbacks.  This should be fixed, at which
+        // point this can be removed.
+        grpc_endpoint_shutdown((*result)->endpoint, status);
+        grpc_endpoint_destroy((*result)->endpoint);
       }
-      self->result_->Reset();
-      NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
-    } else if (args->endpoint != nullptr) {
-      self->result_->transport =
-          grpc_create_chttp2_transport(args->args, args->endpoint, true);
-      GPR_ASSERT(self->result_->transport != nullptr);
-      self->result_->socket_node =
-          grpc_chttp2_transport_get_socket_node(self->result_->transport);
-      self->result_->channel_args = args->args;
-      self->endpoint_ = args->endpoint;
-      self->Ref().release();  // Ref held by OnReceiveSettings()
-      GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
-                        grpc_schedule_on_exec_ctx);
-      grpc_chttp2_transport_start_reading(self->result_->transport,
-                                          args->read_buffer,
-                                          &self->on_receive_settings_, nullptr);
-      self->timer_handle_ = self->event_engine_->RunAfter(
-          self->args_.deadline - Timestamp::Now(),
-          [self = self->RefAsSubclass<Chttp2Connector>()] {
-            ApplicationCallbackExecCtx callback_exec_ctx;
-            ExecCtx exec_ctx;
-            self->OnTimeout();
-          });
-    } else {
-      // If the handshaking succeeded but there is no endpoint, then the
-      // handshaker may have handed off the connection to some external
-      // code. Just verify that exit_early flag is set.
-      GPR_DEBUG_ASSERT(args->exit_early);
-      NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
+      result = std::move(status);
     }
-    self->handshake_mgr_.reset();
+    result_->Reset();
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
+  } else if ((*result)->endpoint != nullptr) {
+    result_->transport = grpc_create_chttp2_transport(
+        (*result)->args, (*result)->endpoint, true);
+    GPR_ASSERT(result_->transport != nullptr);
+    result_->socket_node =
+        grpc_chttp2_transport_get_socket_node(result_->transport);
+    result_->channel_args = (*result)->args;
+    endpoint_ = (*result)->endpoint;
+    Ref().release();  // Ref held by OnReceiveSettings()
+    GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                      grpc_schedule_on_exec_ctx);
+    grpc_chttp2_transport_start_reading(result_->transport,
+                                        (*result)->read_buffer.c_slice_buffer(),
+                                        &on_receive_settings_, nullptr);
+    timer_handle_ =
+        event_engine_->RunAfter(args_.deadline - Timestamp::Now(),
+                                [self = RefAsSubclass<Chttp2Connector>()] {
+                                  ApplicationCallbackExecCtx callback_exec_ctx;
+                                  ExecCtx exec_ctx;
+                                  self->OnTimeout();
+                                });
+  } else {
+    // If the handshaking succeeded but there is no endpoint, then the
+    // handshaker may have handed off the connection to some external
+    // code. Just verify that exit_early flag is set.
+    GPR_DEBUG_ASSERT((*result)->exit_early);
+    NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   }
-  self->Unref();
+  handshake_mgr_.reset();
 }
 
 void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {

@@ -132,8 +132,9 @@ class ChaoticGoodServerListener final
       static auto DataEndpointWriteSettingsFrame(
           RefCountedPtr<HandshakingState> self);
 
-      static void OnHandshakeDone(void* arg, grpc_error_handle error);
+      void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
       Timestamp GetConnectionDeadline();
+
       const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
           memory_allocator_;
       const RefCountedPtr<ActiveConnection> connection_;

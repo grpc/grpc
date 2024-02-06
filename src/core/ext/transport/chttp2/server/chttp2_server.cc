@@ -166,7 +166,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
      private:
       void OnTimeout() ABSL_LOCKS_EXCLUDED(&connection_->mu_);
       static void OnReceiveSettings(void* arg, grpc_error_handle /* error */);
-      static void OnHandshakeDone(void* arg, grpc_error_handle error);
+      void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
       RefCountedPtr<ActiveConnection> const connection_;
       grpc_pollset* const accepting_pollset_;
       grpc_tcp_server_acceptor* acceptor_;
@@ -402,15 +402,17 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
     grpc_endpoint* endpoint, const ChannelArgs& channel_args) {
-  Ref().release();  // Held by OnHandshakeDone
   RefCountedPtr<HandshakeManager> handshake_mgr;
   {
     MutexLock lock(&connection_->mu_);
     if (handshake_mgr_ == nullptr) return;
     handshake_mgr = handshake_mgr_;
   }
-  handshake_mgr->DoHandshake(endpoint, channel_args, deadline_, acceptor_,
-                             OnHandshakeDone, this);
+  handshake_mgr->DoHandshake(
+      endpoint, channel_args, deadline_, acceptor_,
+      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) {
+        self->OnHandshakeDone(std::move(result));
+      });
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout() {
@@ -444,39 +446,35 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
-    void* arg, grpc_error_handle error) {
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  HandshakingState* self = static_cast<HandshakingState*>(args->user_data);
+    absl::StatusOr<HandshakerArgs*> result) {
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
   bool cleanup_connection = false;
   {
-    MutexLock connection_lock(&self->connection_->mu_);
-    if (!error.ok() || self->connection_->shutdown_) {
-      std::string error_str = StatusToString(error);
+    MutexLock connection_lock(&connection_->mu_);
+    if (!result.ok() || connection_->shutdown_) {
       cleanup_connection = true;
-      if (error.ok() && args->endpoint != nullptr) {
+      if (result.ok() && (*result)->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
         // TODO(ctiller): It is currently necessary to shutdown endpoints
         // before destroying them, even if we know that there are no
         // pending read/write callbacks.  This should be fixed, at which
         // point this can be removed.
-        grpc_endpoint_shutdown(args->endpoint, absl::OkStatus());
-        grpc_endpoint_destroy(args->endpoint);
-        grpc_slice_buffer_destroy(args->read_buffer);
-        gpr_free(args->read_buffer);
+        grpc_endpoint_shutdown((*result)->endpoint,
+                               absl::CancelledError("handshake shutdown"));
+        grpc_endpoint_destroy((*result)->endpoint);
       }
     } else {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
       // code, so we can just clean up here without creating a transport.
-      if (args->endpoint != nullptr) {
-        Transport* transport =
-            grpc_create_chttp2_transport(args->args, args->endpoint, false);
+      if ((*result)->endpoint != nullptr) {
+        Transport* transport = grpc_create_chttp2_transport(
+            (*result)->args, (*result)->endpoint, false);
         grpc_error_handle channel_init_err =
-            self->connection_->listener_->server_->SetupTransport(
-                transport, self->accepting_pollset_, args->args,
+            connection_->listener_->server_->SetupTransport(
+                transport, accepting_pollset_, (*result)->args,
                 grpc_chttp2_transport_get_socket_node(transport));
         if (channel_init_err.ok()) {
           // Use notify_on_receive_settings callback to enforce the
@@ -487,31 +485,29 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // static_cast<> to a derived class.
           // TODO(roth): Change to static_cast<> when we C++-ify the
           // transport API.
-          self->connection_->transport_ =
+          connection_->transport_ =
               reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
-          self->Ref().release();  // Held by OnReceiveSettings().
-          GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
-                            self, grpc_schedule_on_exec_ctx);
+          Ref().release();  // Held by OnReceiveSettings().
+          GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                            grpc_schedule_on_exec_ctx);
           // If the listener has been configured with a config fetcher, we
           // need to watch on the transport being closed so that we can an
           // updated list of active connections.
           grpc_closure* on_close = nullptr;
-          if (self->connection_->listener_->config_fetcher_watcher_ !=
-              nullptr) {
+          if (connection_->listener_->config_fetcher_watcher_ != nullptr) {
             // Refs helds by OnClose()
-            self->connection_->Ref().release();
-            on_close = &self->connection_->on_close_;
+            connection_->Ref().release();
+            on_close = &connection_->on_close_;
           } else {
             // Remove the connection from the connections_ map since OnClose()
             // will not be invoked when a config fetcher is set.
             cleanup_connection = true;
           }
-          grpc_chttp2_transport_start_reading(transport, args->read_buffer,
-                                              &self->on_receive_settings_,
-                                              on_close);
-          self->timer_handle_ = self->connection_->event_engine_->RunAfter(
-              self->deadline_ - Timestamp::Now(),
-              [self = self->Ref()]() mutable {
+          grpc_chttp2_transport_start_reading(
+              transport, (*result)->read_buffer.c_slice_buffer(),
+              &on_receive_settings_, on_close);
+          timer_handle_ = connection_->event_engine_->RunAfter(
+              deadline_ - Timestamp::Now(), [self = Ref()]() mutable {
                 ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 self->OnTimeout();
@@ -523,8 +519,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           gpr_log(GPR_ERROR, "Failed to create channel: %s",
                   StatusToString(channel_init_err).c_str());
           transport->Orphan();
-          grpc_slice_buffer_destroy(args->read_buffer);
-          gpr_free(args->read_buffer);
           cleanup_connection = true;
         }
       } else {
@@ -535,22 +529,20 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     // shutdown the handshake when the listener needs to stop serving.
     // Avoid calling the destructor of HandshakeManager and HandshakingState
     // from within the critical region.
-    handshake_mgr = std::move(self->handshake_mgr_);
-    handshaking_state_ref = std::move(self->connection_->handshaking_state_);
+    handshake_mgr = std::move(handshake_mgr_);
+    handshaking_state_ref = std::move(connection_->handshaking_state_);
   }
-  gpr_free(self->acceptor_);
-  self->acceptor_ = nullptr;
+  gpr_free(acceptor_);
+  acceptor_ = nullptr;
   OrphanablePtr<ActiveConnection> connection;
   if (cleanup_connection) {
-    MutexLock listener_lock(&self->connection_->listener_->mu_);
-    auto it = self->connection_->listener_->connections_.find(
-        self->connection_.get());
-    if (it != self->connection_->listener_->connections_.end()) {
+    MutexLock listener_lock(&connection_->listener_->mu_);
+    auto it = connection_->listener_->connections_.find(connection_.get());
+    if (it != connection_->listener_->connections_.end()) {
       connection = std::move(it->second);
-      self->connection_->listener_->connections_.erase(it);
+      connection_->listener_->connections_.erase(it);
     }
   }
-  self->Unref();
 }
 
 //

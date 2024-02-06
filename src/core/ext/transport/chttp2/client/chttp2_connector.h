@@ -44,7 +44,7 @@ class Chttp2Connector : public SubchannelConnector {
   void Shutdown(grpc_error_handle error) override;
 
  private:
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
   static void OnReceiveSettings(void* arg, grpc_error_handle error);
   void OnTimeout() ABSL_LOCKS_EXCLUDED(mu_);
 

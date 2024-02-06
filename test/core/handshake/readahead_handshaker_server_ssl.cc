@@ -50,14 +50,26 @@ namespace grpc_core {
 class ReadAheadHandshaker : public Handshaker {
  public:
   ~ReadAheadHandshaker() override {}
-  const char* name() const override { return "read_ahead"; }
-  void Shutdown(grpc_error_handle /*why*/) override {}
-  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
-                   grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override {
-    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
-                       /*urgent=*/false, /*min_progress_size=*/1);
+  absl::string_view name() const override { return "read_ahead"; }
+  void DoHandshake(
+      HandshakerArgs* args,
+      absl::AnyInvocable<void(absl::Status)> on_handshake_done) override {
+    on_handshake_done_ = std::move(on_handshake_done);
+    GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
+    grpc_endpoint_read(args->endpoint, args->read_buffer.c_slice_buffer(),
+                       &on_read_done_, /*urgent=*/false,
+                       /*min_progress_size=*/1);
   }
+  void Shutdown(absl::Status /*error*/) override {}
+
+ private:
+  static void OnReadDone(void* arg, grpc_error_handle error) {
+    auto* self = static_cast<ReadAheadHandshaker*>(arg);
+    self->on_handshake_done_(std::move(error));
+  }
+
+  grpc_closure on_read_done_;
+  absl::AnyInvocable<void(absl::Status)> on_handshake_done_;
 };
 
 class ReadAheadHandshakerFactory : public HandshakerFactory {

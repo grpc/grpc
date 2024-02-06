@@ -254,11 +254,13 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
           return;
         }
         ExecCtx exec_ctx;
-        auto* p = self.release();
+        auto* p = self.get();
         p->handshake_mgr_->DoHandshake(
             grpc_event_engine_endpoint_create(std::move(endpoint.value())),
             p->channel_args_, p->args_.deadline, nullptr /* acceptor */,
-            OnHandshakeDone, p);
+            [self = std::move(self)](absl::StatusOr<HandshakerArgs*> result) {
+              self->OnHandshakeDone(std::move(result));
+            });
       };
   event_engine_->Connect(
       std::move(on_connect), *resolved_addr_,
@@ -268,61 +270,59 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
       EventEngine::Duration(kTimeoutSecs));
 }
 
-void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  RefCountedPtr<ChaoticGoodConnector> self(
-      static_cast<ChaoticGoodConnector*>(args->user_data));
+void ChaoticGoodConnector::OnHandshakeDone(
+    absl::StatusOr<HandshakerArgs*> result) {
   gpr_log(GPR_ERROR, "SubchannelConnector::OnHandshakeDone:%p",
-          static_cast<SubchannelConnector*>(self.get()));
-  grpc_slice_buffer_destroy(args->read_buffer);
-  gpr_free(args->read_buffer);
+          static_cast<SubchannelConnector*>(this));
   // Start receiving setting frames;
   {
-    MutexLock lock(&self->mu_);
-    if (!error.ok() || self->is_shutdown_) {
-      if (error.ok()) {
-        error = GRPC_ERROR_CREATE("connector shutdown");
+    MutexLock lock(&mu_);
+    if (!result.ok() || is_shutdown_) {
+      absl::Status error = result.status();
+      if (result.ok()) {
+        error = absl::CancelledError("connector shutdown");
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
-        if (args->endpoint != nullptr) {
-          grpc_endpoint_shutdown(args->endpoint, error);
-          grpc_endpoint_destroy(args->endpoint);
+        if ((*result)->endpoint != nullptr) {
+          grpc_endpoint_shutdown((*result)->endpoint, error);
+          grpc_endpoint_destroy((*result)->endpoint);
         }
       }
-      self->result_->Reset();
-      MaybeNotify(DEBUG_LOCATION, self->notify_, error);
+      result_->Reset();
+      MaybeNotify(DEBUG_LOCATION, notify_, std::move(error));
       return;
     }
   }
-  if (args->endpoint != nullptr) {
+  if ((*result)->endpoint != nullptr) {
     GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
-        args->endpoint));
-    self->control_endpoint_ = std::make_shared<PromiseEndpoint>(
+        (*result)->endpoint));
+    control_endpoint_ = std::make_shared<PromiseEndpoint>(
         grpc_event_engine::experimental::
-            grpc_take_wrapped_event_engine_endpoint(args->endpoint),
+            grpc_take_wrapped_event_engine_endpoint((*result)->endpoint),
         SliceBuffer());
     auto activity = MakeActivity(
-        [self] {
+        [self = RefAsSubclass<ChaoticGoodConnector>()] {
           return TrySeq(ControlEndpointWriteSettingsFrame(self),
                         ControlEndpointReadSettingsFrame(self),
                         []() { return absl::OkStatus(); });
         },
-        EventEngineWakeupScheduler(self->event_engine_),
-        [self](absl::Status status) {
-          MaybeNotify(DEBUG_LOCATION, self->notify_, status);
+        EventEngineWakeupScheduler(event_engine_),
+        [self = RefAsSubclass<ChaoticGoodConnector>()](absl::Status status) {
+          MaybeNotify(DEBUG_LOCATION, self->notify_, std::move(status));
         },
-        self->arena_.get(), self->event_engine_.get());
-    MutexLock lock(&self->mu_);
-    if (!self->is_shutdown_) {
-      self->connect_activity_ = std::move(activity);
+        arena_.get(), event_engine_.get());
+    MutexLock lock(&mu_);
+    if (!is_shutdown_) {
+      connect_activity_ = std::move(activity);
     }
   } else {
     // Handshaking succeeded but there is no endpoint.
-    MutexLock lock(&self->mu_);
-    self->result_->Reset();
-    auto error = GRPC_ERROR_CREATE("handshake complete with empty endpoint.");
-    MaybeNotify(DEBUG_LOCATION, self->notify_, error);
+    MutexLock lock(&mu_);
+    result_->Reset();
+    MaybeNotify(DEBUG_LOCATION, notify_,
+                absl::InternalError("handshake complete with empty endpoint."));
   }
 }
+
 }  // namespace chaotic_good
 }  // namespace grpc_core

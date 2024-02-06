@@ -80,7 +80,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
       RefCountedPtr<ChaoticGoodConnector> self);
   static auto WaitForDataEndpointSetup(
       RefCountedPtr<ChaoticGoodConnector> self);
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
 
   grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
