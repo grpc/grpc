@@ -10,7 +10,6 @@
   "tests.interop._insecure_intraop_test.InsecureIntraopTest",
   "tests.interop._secure_intraop_test.SecureIntraopTest",
   "tests.observability._observability_api_test.AllTest",
-  "tests.observability._observability_test.ObservabilityTest",
   "tests.observability._open_telemetry_observability_test.OpenTelemetryObservabilityTest",
   "tests.protoc_plugin._python_plugin_test.ModuleMainTest",
   "tests.protoc_plugin._python_plugin_test.PythonPluginTest",
