@@ -85,7 +85,7 @@ _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS = [
     _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
 ]
 
-_TEST_TIMEOUT = 3 * 60
+_TEST_TIMEOUT = 30
 
 # disable this test on core-based languages,
 # see https://github.com/grpc/grpc/issues/9779
