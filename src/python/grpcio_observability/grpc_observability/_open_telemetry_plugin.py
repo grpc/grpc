@@ -20,10 +20,10 @@ import grpc
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._cyobservability import MetricsName
 from grpc_observability._observability import StatsData
-from opentelemetry.sdk.metrics import Counter
-from opentelemetry.sdk.metrics import Histogram
-from opentelemetry.sdk.metrics import Meter
-from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.metrics import Counter
+from opentelemetry.metrics import Histogram
+from opentelemetry.metrics import Meter
+from opentelemetry.metrics import MeterProvider
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
