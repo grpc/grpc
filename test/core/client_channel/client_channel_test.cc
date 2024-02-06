@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 
 #include <memory>
 
@@ -25,7 +25,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/util/test_config.h"
