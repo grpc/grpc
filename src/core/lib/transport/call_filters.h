@@ -1137,6 +1137,42 @@ class PipeState {
   bool started_ = false;
 };
 
+template <typename Fn>
+class ServerTrailingMetadataInterceptor {
+ public:
+  class Call {
+   public:
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+    void OnServerTrailingMetadata(ServerMetadata& md,
+                                  ServerTrailingMetadataInterceptor* filter) {
+      filter->fn_(md);
+    }
+  };
+
+  explicit ServerTrailingMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn fn_;
+};
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientInitialMetadata;
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
+template <typename Fn>
+const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
+
 }  // namespace filters_detail
 
 // Execution environment for a stack of filters.
@@ -1144,6 +1180,7 @@ class PipeState {
 class CallFilters {
  public:
   class StackBuilder;
+  class StackTestSpouse;
 
   // A stack is an opaque, immutable type that contains the data necessary to
   // execute a call through a given set of filters.
@@ -1157,6 +1194,7 @@ class CallFilters {
    private:
     friend class CallFilters;
     friend class StackBuilder;
+    friend class StackTestSpouse;
     explicit Stack(filters_detail::StackData data) : data_(std::move(data)) {}
     const filters_detail::StackData data_;
   };
@@ -1185,6 +1223,19 @@ class CallFilters {
     template <typename T>
     void AddOwnedObject(RefCountedPtr<T> p) {
       AddOwnedObject([](void* p) { static_cast<T*>(p)->Unref(); }, p.release());
+    }
+
+    template <typename T>
+    void AddOwnedObject(std::unique_ptr<T> p) {
+      AddOwnedObject([](void* p) { delete static_cast<T*>(p); }, p.release());
+    }
+
+    template <typename Fn>
+    void AddOnServerTrailingMetadata(Fn fn) {
+      auto filter = std::make_unique<
+          filters_detail::ServerTrailingMetadataInterceptor<Fn>>(std::move(fn));
+      Add(filter.get());
+      AddOwnedObject(std::move(filter));
     }
 
     RefCountedPtr<Stack> Build();
