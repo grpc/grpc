@@ -129,6 +129,21 @@ TEST(ObservableTest, ChangeValueWakesUp) {
   EXPECT_THAT(next(), IsReady(2));
 }
 
+TEST(ObservableTest, NextWhen) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  Observable<int> observable(1);
+  auto next = observable.NextWhen([](int i) { return i == 3; });
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  observable.Set(2);
+  EXPECT_THAT(next(), IsPending());
+  EXPECT_CALL(activity, WakeupRequested());
+  observable.Set(3);
+  Mock::VerifyAndClearExpectations(&activity);
+  EXPECT_THAT(next(), IsReady(3));
+}
+
 TEST(ObservableTest, MultipleActivitiesWakeUp) {
   StrictMock<MockActivity> activity1;
   StrictMock<MockActivity> activity2;

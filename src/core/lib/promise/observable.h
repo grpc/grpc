@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
@@ -36,8 +37,20 @@ class Observable {
   // Update the value to something new. Awakes any waiters.
   void Set(T value) { state_->Set(std::move(value)); }
 
+  // Returns a promise that resolves to a T when is_acceptable returns true for
+  // that value.
+  // is_acceptable is any invocable that takes a `const T&` and returns a bool.
+  template <typename F>
+  auto NextWhen(F is_acceptable) {
+    return ObserverWhen<F>(state_, std::move(is_acceptable));
+  }
+
   // Returns a promise that resolves to a T when the value becomes != current.
-  auto Next(T current) { return Observer(state_, std::move(current)); }
+  auto Next(T current) {
+    return NextWhen([current = std::move(current)](const T& value) {
+      return value != current;
+    });
+  }
 
  private:
   // Forward declaration so we can form pointers to Observer in State.
@@ -92,13 +105,13 @@ class Observable {
     T value_ ABSL_GUARDED_BY(mu_);
   };
 
-  // Observer is a promise that resolves to a T when the value becomes !=
-  // current.
+  // A promise that resolves to a T when ShouldReturn() returns true.
+  // Subclasses must implement ShouldReturn().
   class Observer {
    public:
-    Observer(RefCountedPtr<State> state, T current)
-        : state_(std::move(state)), current_(std::move(current)) {}
-    ~Observer() {
+    explicit Observer(RefCountedPtr<State> state) : state_(std::move(state)) {}
+
+    virtual ~Observer() {
       // If we saw a pending at all then we *may* be in the set of observers.
       // If not we're definitely not and we can avoid taking the lock at all.
       if (!saw_pending_) return;
@@ -109,8 +122,7 @@ class Observable {
 
     Observer(const Observer&) = delete;
     Observer& operator=(const Observer&) = delete;
-    Observer(Observer&& other) noexcept
-        : state_(std::move(other.state_)), current_(std::move(other.current_)) {
+    Observer(Observer&& other) noexcept : state_(std::move(other.state_)) {
       GPR_ASSERT(other.waker_.is_unwakeable());
       GPR_ASSERT(!other.saw_pending_);
     }
@@ -118,10 +130,12 @@ class Observable {
 
     void Wakeup() { waker_.WakeupAsync(); }
 
+    virtual bool ShouldReturn(const T& current) = 0;
+
     Poll<T> operator()() {
       MutexLock lock(state_->mu());
       // Check if the value has changed yet.
-      if (current_ != state_->current()) {
+      if (ShouldReturn(state_->current())) {
         if (saw_pending_ && !waker_.is_unwakeable()) state_->Remove(this);
         return state_->current();
       }
@@ -133,9 +147,29 @@ class Observable {
 
    private:
     RefCountedPtr<State> state_;
-    T current_;
     Waker waker_;
     bool saw_pending_ = false;
+  };
+
+  // A promise that resolves to a T when is_acceptable returns true for
+  // the current value.
+  template <typename F>
+  class ObserverWhen : public Observer {
+   public:
+    ObserverWhen(RefCountedPtr<State> state, F is_acceptable)
+        : Observer(std::move(state)),
+          is_acceptable_(std::move(is_acceptable)) {}
+
+    ObserverWhen(ObserverWhen&& other) noexcept
+        : Observer(std::move(other)),
+          is_acceptable_(std::move(other.is_acceptable_)) {}
+
+    bool ShouldReturn(const T& current) override {
+      return is_acceptable_(current);
+    }
+
+   private:
+    F is_acceptable_;
   };
 
   RefCountedPtr<State> state_;

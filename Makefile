@@ -977,24 +977,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/http_proxy_mapper.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
     src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -1575,9 +1557,6 @@ LIBGRPC_SRC = \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
-    src/core/lib/resolver/endpoint_addresses.cc \
-    src/core/lib/resolver/resolver.cc \
-    src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
@@ -1731,6 +1710,27 @@ LIBGRPC_SRC = \
     src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
+    src/core/resolver/binder/binder_resolver.cc \
+    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/resolver/dns/dns_resolver_plugin.cc \
+    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
+    src/core/resolver/dns/event_engine/service_config_helper.cc \
+    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/endpoint_addresses.cc \
+    src/core/resolver/fake/fake_resolver.cc \
+    src/core/resolver/google_c2p/google_c2p_resolver.cc \
+    src/core/resolver/polling_resolver.cc \
+    src/core/resolver/resolver.cc \
+    src/core/resolver/resolver_registry.cc \
+    src/core/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/resolver/xds/xds_dependency_manager.cc \
+    src/core/resolver/xds/xds_resolver.cc \
+    src/core/resolver/xds/xds_resolver_trace.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1910,20 +1910,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/http_proxy_mapper.cc \
     src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/retry_filter.cc \
     src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
     src/core/ext/filters/client_channel/retry_service_config.cc \
@@ -2168,9 +2154,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
-    src/core/lib/resolver/endpoint_addresses.cc \
-    src/core/lib/resolver/resolver.cc \
-    src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
@@ -2284,6 +2267,23 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/load_balancing/weighted_target/weighted_target.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_noextra.cc \
+    src/core/resolver/binder/binder_resolver.cc \
+    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/resolver/dns/dns_resolver_plugin.cc \
+    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
+    src/core/resolver/dns/event_engine/service_config_helper.cc \
+    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/endpoint_addresses.cc \
+    src/core/resolver/fake/fake_resolver.cc \
+    src/core/resolver/polling_resolver.cc \
+    src/core/resolver/resolver.cc \
+    src/core/resolver/resolver_registry.cc \
+    src/core/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
@@ -3424,10 +3424,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
@@ -3805,6 +3801,10 @@ src/core/load_balancing/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
 src/core/load_balancing/xds/xds_override_host.cc: $(OPENSSL_DEP)
 src/core/load_balancing/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry_extra.cc: $(OPENSSL_DEP)
+src/core/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
+src/core/resolver/xds/xds_dependency_manager.cc: $(OPENSSL_DEP)
+src/core/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
+src/core/resolver/xds/xds_resolver_trace.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/crypt/aes_gcm.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/crypt/gsec.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/frame_protector/alts_counter.cc: $(OPENSSL_DEP)

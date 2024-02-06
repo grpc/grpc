@@ -62,7 +62,6 @@ gRPC Python Observability Depends on the following packages:
 ::
 
   grpcio
-  opentelemetry-sdk==1.21.0
   opentelemetry-api==1.21.0
 
 

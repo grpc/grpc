@@ -2933,10 +2933,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "endpoint_addresses",
     srcs = [
-        "//src/core:lib/resolver/endpoint_addresses.cc",
+        "//src/core:resolver/endpoint_addresses.cc",
     ],
     hdrs = [
-        "//src/core:lib/resolver/endpoint_addresses.h",
+        "//src/core:resolver/endpoint_addresses.h",
     ],
     external_deps = [
         "absl/functional:function_ref",
@@ -2959,7 +2959,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "server_address",
     hdrs = [
-        "//src/core:lib/resolver/server_address.h",
+        "//src/core:resolver/server_address.h",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -2972,13 +2972,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver",
     srcs = [
-        "//src/core:lib/resolver/resolver.cc",
-        "//src/core:lib/resolver/resolver_registry.cc",
+        "//src/core:resolver/resolver.cc",
+        "//src/core:resolver/resolver_registry.cc",
     ],
     hdrs = [
-        "//src/core:lib/resolver/resolver.h",
-        "//src/core:lib/resolver/resolver_factory.h",
-        "//src/core:lib/resolver/resolver_registry.h",
+        "//src/core:resolver/resolver.h",
+        "//src/core:resolver/resolver_factory.h",
+        "//src/core:resolver/resolver_registry.h",
     ],
     external_deps = [
         "absl/status",
@@ -3165,17 +3165,17 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
+        "//src/core:resolver/dns/c_ares/dns_resolver_ares.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
+        "//src/core:resolver/dns/c_ares/dns_resolver_ares.h",
+        "//src/core:resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3764,8 +3764,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_resolver_fake",
-    srcs = ["//src/core:ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
-    hdrs = ["//src/core:ext/filters/client_channel/resolver/fake/fake_resolver.h"],
+    srcs = ["//src/core:resolver/fake/fake_resolver.cc"],
+    hdrs = ["//src/core:resolver/fake/fake_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
         "absl/strings",
