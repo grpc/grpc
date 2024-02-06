@@ -565,6 +565,11 @@ struct AddOpImpl<
   }
 };
 
+struct ChannelDataDestructor {
+  void (*destroy)(void* channel_data);
+  void* channel_data;
+};
+
 // StackData contains the main datastructures built up by this module.
 // It's a complete representation of all the code that needs to be invoked
 // to execute a call for a given set of filters.
@@ -590,6 +595,9 @@ struct StackData {
   // We use a bespoke data structure here because finalizers can never be
   // asynchronous.
   std::vector<Finalizer> finalizers;
+  // A list of functions to call when this stack data is destroyed
+  // (to capture ownership of channel data)
+  std::vector<ChannelDataDestructor> channel_data_destructors;
 
   // Add one filter to the list of filters, and update alignment.
   // Returns the offset of the call data for this filter.
@@ -924,6 +932,42 @@ class PipeState {
   bool started_ = false;
 };
 
+template <typename Fn>
+class ServerTrailingMetadataInterceptor {
+ public:
+  class Call {
+   public:
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+    void OnServerTrailingMetadata(ServerMetadata& md,
+                                  ServerTrailingMetadataInterceptor* filter) {
+      filter->fn_(md);
+    }
+  };
+
+  explicit ServerTrailingMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn fn_;
+};
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientInitialMetadata;
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
+template <typename Fn>
+const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
+template <typename Fn>
+const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
+
 }  // namespace filters_detail
 
 // Execution environment for a stack of filters.
@@ -931,6 +975,7 @@ class PipeState {
 class CallFilters {
  public:
   class StackBuilder;
+  class StackTestSpouse;
 
   // A stack is an opaque, immutable type that contains the data necessary to
   // execute a call through a given set of filters.
@@ -938,9 +983,13 @@ class CallFilters {
   // It contains pointers to the individual filters, yet it does not own those
   // pointers: it's expected that some other object will track that ownership.
   class Stack : public RefCounted<Stack> {
+   public:
+    ~Stack() override;
+
    private:
     friend class CallFilters;
     friend class StackBuilder;
+    friend class StackTestSpouse;
     explicit Stack(filters_detail::StackData data) : data_(std::move(data)) {}
     const filters_detail::StackData data_;
   };
@@ -949,6 +998,8 @@ class CallFilters {
   // the stack, then call Build() to generate a ref counted Stack object.
   class StackBuilder {
    public:
+    ~StackBuilder();
+
     template <typename FilterType>
     void Add(FilterType* filter) {
       const size_t call_offset = data_.AddFilter<FilterType>(filter);
@@ -958,6 +1009,28 @@ class CallFilters {
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
+    }
+
+    void AddOwnedObject(void (*destroy)(void* p), void* p) {
+      data_.channel_data_destructors.push_back({destroy, p});
+    }
+
+    template <typename T>
+    void AddOwnedObject(RefCountedPtr<T> p) {
+      AddOwnedObject([](void* p) { static_cast<T*>(p)->Unref(); }, p.release());
+    }
+
+    template <typename T>
+    void AddOwnedObject(std::unique_ptr<T> p) {
+      AddOwnedObject([](void* p) { delete static_cast<T*>(p); }, p.release());
+    }
+
+    template <typename Fn>
+    void AddOnServerTrailingMetadata(Fn fn) {
+      auto filter = std::make_unique<
+          filters_detail::ServerTrailingMetadataInterceptor<Fn>>(std::move(fn));
+      Add(filter.get());
+      AddOwnedObject(std::move(filter));
     }
 
     RefCountedPtr<Stack> Build();
