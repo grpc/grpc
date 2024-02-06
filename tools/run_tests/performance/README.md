@@ -412,7 +412,7 @@ $ tools/run_tests/performance/build_performance.sh
 Example running and profiling of go benchmark server:
 
 ```
-$ export QPS_WORKERS=<host1>:<10000>,<host2>,10000,<host3>:10000
+$ export QPS_WORKERS=<host1>:<10000>,<host2>:10000,<host3>:10000
 $ bins/opt/qps_json_driver --scenario_json='<scenario_json_scenario_config_string>'
 ```
 
@@ -458,7 +458,16 @@ $ go tool pprof --text --alloc_space http://localhost:<pprof_port>/debug/heap
   Type: comma separated list of host:port
 
   Set this to a comma separated list of QPS worker processes/machines. Each
-  scenario in a scenario config has specifies a certain number of servers,
+  scenario in a scenario config specifies a certain number of servers,
   `num_servers`, and the driver will start "benchmark servers"'s on the first
   `num_server` `host:port` pairs in the comma separated list. The rest will be
   told to run as clients against the benchmark server.
+  - The driver has an optional `--qps_server_target_override` command argument which overrides the server target that the client QPS workers send requests to. This can be used to create benchmarking scenarios targeting a backend with a single hostname that balances among multiple servers.
+
+    > Example: we have a backend reachable at `example-hostname` that balances between two servers at addresses `1.1.1.1` and `2.2.2.2`. To set up a benchmark targeting this backend:
+    > * In the scenario json config, set `num_servers` to 2.
+    > * Set `QPS_WORKERS` to `1.1.1.1:<port>,2.2.2.2<port>,<client1>:<port>,<client2>:<port>...`
+    > * Run the driver with command argument `--qps_server_target_override=example-hostname`.
+    >
+    > If there are multiple servers (`num_servers > 1`) and the `--qps_server_target_override` command argument is set, then the overriding target must balance among all `num_servers` servers. If there is a server not balanced by the target, then the reported server metrics and benchmark results will be incorrect.
+  

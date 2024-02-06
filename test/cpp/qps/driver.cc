@@ -470,6 +470,11 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
   if (qps_server_target_override.length() > 0) {
+    // If there are multiple servers (num_servers > 1), then qps_server_target_override
+    // must balance among all `num_servers` servers. Otherwise, the reported server
+    // metrics and benchmark results will be incorrect. Please see
+    // https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
+    // for more details.
     client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }
