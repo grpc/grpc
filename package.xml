@@ -1321,7 +1321,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/windows/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/windows/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/windows/tmpfile.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
