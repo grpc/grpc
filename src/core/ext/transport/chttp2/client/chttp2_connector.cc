@@ -39,8 +39,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/client_channel_factory.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
