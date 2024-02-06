@@ -429,13 +429,13 @@ static void on_read(void* arg, grpc_error_handle err) {
         auto listener_addr_uri = grpc_sockaddr_to_uri(&sp->addr);
         gpr_log(
             GPR_ERROR,
-            "Failed getpeername: %s. This is a critical failure, the "
-            "listener on %s:%d is shutting down.",
+            "Failed getpeername: %s. Dropping the connection, and continuing "
+            "to listen on %s:%d.",
             grpc_core::StrError(errno).c_str(),
             listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
             sp->port);
         close(fd);
-        goto error;
+        continue;
       }
     }
 

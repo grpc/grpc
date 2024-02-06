@@ -25,10 +25,10 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
 #include "test/core/util/test_config.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resolver/resolver_registry.h"
+#include "src/core/resolver/resolver_registry.h"
 
 // Registers the factory with `grpc_core::ResolverRegistry`. Defined in
 // binder_resolver.cc

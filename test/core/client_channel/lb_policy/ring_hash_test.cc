@@ -37,8 +37,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 

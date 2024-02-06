@@ -37,13 +37,19 @@ class Observable {
   // Update the value to something new. Awakes any waiters.
   void Set(T value) { state_->Set(std::move(value)); }
 
-  // Returns a promise that resolves to a T when the value becomes != current.
-  auto Next(T current) { return ObserverIfChanged(state_, std::move(current)); }
+  // Returns a promise that resolves to a T when is_acceptable returns true for
+  // that value.
+  // is_acceptable is any invocable that takes a `const T&` and returns a bool.
+  template <typename F>
+  auto NextWhen(F is_acceptable) {
+    return ObserverWhen<F>(state_, std::move(is_acceptable));
+  }
 
-  // Same as Next(), except it resolves only once is_acceptable returns
-  // true for the new value.
-  auto NextWhen(absl::AnyInvocable<bool(const T&)> is_acceptable) {
-    return ObserverWhen(state_, std::move(is_acceptable));
+  // Returns a promise that resolves to a T when the value becomes != current.
+  auto Next(T current) {
+    return NextWhen([current = std::move(current)](const T& value) {
+      return value != current;
+    });
   }
 
  private:
@@ -145,27 +151,12 @@ class Observable {
     bool saw_pending_ = false;
   };
 
-  // An observer that resolves to a T when the value becomes != current.
-  class ObserverIfChanged : public Observer {
-   public:
-    ObserverIfChanged(RefCountedPtr<State> state, T current)
-        : Observer(std::move(state)), current_(std::move(current)) {}
-
-    ObserverIfChanged(ObserverIfChanged&& other) noexcept
-        : Observer(std::move(other)), current_(std::move(other.current_)) {}
-
-    bool ShouldReturn(const T& current) override { return current_ != current; }
-
-   private:
-    T current_;
-  };
-
   // A promise that resolves to a T when is_acceptable returns true for
   // the current value.
+  template <typename F>
   class ObserverWhen : public Observer {
    public:
-    ObserverWhen(RefCountedPtr<State> state,
-                 absl::AnyInvocable<bool(const T&)> is_acceptable)
+    ObserverWhen(RefCountedPtr<State> state, F is_acceptable)
         : Observer(std::move(state)),
           is_acceptable_(std::move(is_acceptable)) {}
 
@@ -178,7 +169,7 @@ class Observable {
     }
 
    private:
-    absl::AnyInvocable<bool(const T&)> is_acceptable_;
+    F is_acceptable_;
   };
 
   RefCountedPtr<State> state_;

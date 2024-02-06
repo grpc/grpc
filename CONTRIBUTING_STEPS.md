@@ -130,5 +130,8 @@ the submission process. When the submission happens:
 
 1.  A commit with your changes, along with a few additional formatting changes, will
     be committed to the `grpc/master` branch.
+![Copybara commit](doc/images/img/grpc-copybara-commit.png)
+
 1.  The pull request you originally created will be closed.
+![Pull request closed by copybara](doc/images/img/grpc-pr-closed-by-copybara.png)
 

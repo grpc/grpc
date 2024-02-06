@@ -57,12 +57,12 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 // IWYU pragma: no_include <type_traits>
 

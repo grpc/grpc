@@ -998,6 +998,31 @@ TEST(StackDataTest,
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
+// StackBuilder
+
+class CallFilters::StackTestSpouse {
+ public:
+  static const filters_detail::StackData& StackDataFrom(const Stack& stack) {
+    return stack.data_;
+  }
+};
+
+TEST(StackBuilderTest, AddOnServerTrailingMetadata) {
+  CallFilters::StackBuilder b;
+  b.AddOnServerTrailingMetadata(
+      [x = std::make_unique<int>(42)](ServerMetadata&) { EXPECT_EQ(*x, 42); });
+  auto stack = b.Build();
+  const auto& data = CallFilters::StackTestSpouse().StackDataFrom(*stack);
+  ASSERT_EQ(data.server_trailing_metadata.ops.size(), 1u);
+  ASSERT_EQ(data.client_initial_metadata.ops.size(), 0u);
+  ASSERT_EQ(data.client_to_server_messages.ops.size(), 0u);
+  ASSERT_EQ(data.server_to_client_messages.ops.size(), 0u);
+  ASSERT_EQ(data.server_initial_metadata.ops.size(), 0u);
+  EXPECT_EQ(data.server_trailing_metadata.ops[0].call_offset, 0);
+  EXPECT_NE(data.server_trailing_metadata.ops[0].channel_data, nullptr);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // OperationExecutor
 
 namespace filters_detail {
