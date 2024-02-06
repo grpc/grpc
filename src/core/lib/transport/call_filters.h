@@ -933,13 +933,14 @@ struct StackData {
   // Finalizer interception adders
 
   template <typename FilterType>
-  void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
+  void AddFinalizer(FilterType*, size_t, GRPC_UNUSED const NoInterceptor* p) {
     GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
-  void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+  void AddFinalizer(
+      FilterType* channel_data, size_t call_offset,
+      void (GRPC_UNUSED FilterType::Call::*p)(const grpc_call_final_info*)) {
     GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -953,8 +954,8 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+                    void (GRPC_UNUSED FilterType::Call::*p)(
+                        const grpc_call_final_info*, FilterType*)) {
     GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
