@@ -149,11 +149,6 @@ class ClientChannelFilter {
         this, on_complete, /*cancel=*/true);
   }
 
-  int NumExternalConnectivityWatchers() const {
-    MutexLock lock(&external_watchers_mu_);
-    return static_cast<int>(external_watchers_.size());
-  }
-
   // Starts and stops a connectivity watch.  The watcher will be initially
   // notified as soon as the state changes from initial_state and then on
   // every subsequent state change until either the watch is stopped or

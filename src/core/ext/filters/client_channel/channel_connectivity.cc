@@ -81,21 +81,6 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   return client_channel->CheckConnectivityState(try_to_connect);
 }
 
-int grpc_channel_num_external_connectivity_watchers(grpc_channel* c_channel) {
-  grpc_core::Channel* channel = grpc_core::Channel::FromC(c_channel);
-  grpc_core::ClientChannelFilter* client_channel =
-      grpc_core::ClientChannelFilter::GetFromChannel(channel);
-  if (client_channel == nullptr) {
-    if (!grpc_core::IsLameChannel(channel)) {
-      gpr_log(GPR_ERROR,
-              "grpc_channel_num_external_connectivity_watchers called on "
-              "something that is not a client channel");
-    }
-    return 0;
-  }
-  return client_channel->NumExternalConnectivityWatchers();
-}
-
 int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
   return grpc_core::ClientChannelFilter::GetFromChannel(
              grpc_core::Channel::FromC(channel)) != nullptr;
