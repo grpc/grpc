@@ -40,11 +40,11 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/client_channel_channelz.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/load_balancing/health_check_client_internal.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/client_channel/subchannel.h"
+#include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"

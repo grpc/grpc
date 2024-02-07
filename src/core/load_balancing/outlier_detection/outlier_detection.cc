@@ -46,7 +46,7 @@
 
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/health_check_client_internal.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
+#include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

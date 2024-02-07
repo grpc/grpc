@@ -43,7 +43,7 @@
 
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/client/connection_id_generator.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"

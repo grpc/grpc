@@ -26,7 +26,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/client_channel/connector.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/channel/channel_args.h"

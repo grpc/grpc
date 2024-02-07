@@ -37,7 +37,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
