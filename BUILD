@@ -1284,14 +1284,51 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channelz",
+    srcs = [
+        "//src/core:lib/channel/channel_trace.cc",
+        "//src/core:lib/channel/channelz.cc",
+        "//src/core:lib/channel/channelz_registry.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/channel/channel_trace.h",
+        "//src/core:lib/channel/channelz.h",
+        "//src/core:lib/channel/channelz_registry.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "exec_ctx",
+        "gpr",
+        "grpc_public_hdrs",
+        "parse_address",
+        "ref_counted_ptr",
+        "sockaddr_utils",
+        "uri_parser",
+        "//src/core:channel_args",
+        "//src/core:connectivity_state",
+        "//src/core:json",
+        "//src/core:json_writer",
+        "//src/core:per_cpu",
+        "//src/core:ref_counted",
+        "//src/core:resolved_address",
+        "//src/core:slice",
+        "//src/core:time",
+        "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_base",
     srcs = [
         "//src/core:lib/channel/call_tracer.cc",
         "//src/core:lib/channel/channel_stack.cc",
         "//src/core:lib/channel/channel_stack_builder_impl.cc",
-        "//src/core:lib/channel/channel_trace.cc",
-        "//src/core:lib/channel/channelz.cc",
-        "//src/core:lib/channel/channelz_registry.cc",
         "//src/core:lib/channel/connected_channel.cc",
         "//src/core:lib/channel/promise_based_filter.cc",
         "//src/core:lib/channel/server_call_tracer_filter.cc",
@@ -1392,9 +1429,6 @@ grpc_cc_library(
         "//src/core:lib/channel/call_tracer.h",
         "//src/core:lib/channel/channel_stack.h",
         "//src/core:lib/channel/channel_stack_builder_impl.h",
-        "//src/core:lib/channel/channel_trace.h",
-        "//src/core:lib/channel/channelz.h",
-        "//src/core:lib/channel/channelz_registry.h",
         "//src/core:lib/channel/connected_channel.h",
         "//src/core:lib/channel/promise_based_filter.h",
         "//src/core:lib/channel/status_util.h",
@@ -1504,6 +1538,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "channel_stack_builder",
+        "channelz",
         "config",
         "config_vars",
         "cpp_impl_of",
@@ -1790,6 +1825,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "channel_arg_names",
+        "channelz",
         "config",
         "debug_location",
         "exec_ctx",
@@ -3073,6 +3109,7 @@ grpc_cc_library(
     deps = [
         "backoff",
         "channel_arg_names",
+        "channelz",
         "config",
         "config_vars",
         "debug_location",
@@ -4057,6 +4094,7 @@ grpc_cc_library(
     visibility = ["@grpc:grpclb"],
     deps = [
         "channel_arg_names",
+        "channelz",
         "chttp2_context_list_entry",
         "chttp2_legacy_frame",
         "chttp2_varint",
