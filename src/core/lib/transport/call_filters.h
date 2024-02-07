@@ -491,8 +491,8 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
+          absl::Status (FilterType::Call::*impl)(
+              const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
                      const typename T::element_type&, FilterType*),
@@ -722,7 +722,8 @@ template <typename FilterType, typename T, typename R,
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
-    absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
+    absl::enable_if_t<!std::is_same<R, absl::Status>::value &&
+                      std::is_same<absl::Status, PromiseResult<R>>::value>> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
     class Promise {
