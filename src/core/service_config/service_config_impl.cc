@@ -36,9 +36,9 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/service_config/service_config_parser.h"
 
 namespace grpc_core {
 
