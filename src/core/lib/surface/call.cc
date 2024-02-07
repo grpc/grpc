@@ -118,9 +118,6 @@ namespace grpc_core {
 
 class Call : public CppImplOf<Call, grpc_call> {
  public:
-  Arena* arena() { return arena_; }
-  bool is_client() const { return is_client_; }
-
   virtual void ContextSet(grpc_context_index elem, void* value,
                           void (*destroy)(void* value)) = 0;
   virtual void* ContextGet(grpc_context_index elem) const = 0;
@@ -128,7 +125,6 @@ class Call : public CppImplOf<Call, grpc_call> {
   void CancelWithStatus(grpc_status_code status, const char* description);
   virtual void CancelWithError(grpc_error_handle error) = 0;
   virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
-  char* GetPeer();
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
                                      void* notify_tag,
                                      bool is_notify_tag_closure) = 0;
@@ -140,6 +136,18 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
+  // Return the EventEngine used for this call's async execution.
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
+
+ protected:
+};
+
+class ChannelBasedCall : public Call {
+ public:
+  Arena* arena() { return arena_; }
+  bool is_client() const { return is_client_; }
+
   grpc_compression_algorithm test_only_compression_algorithm() {
     return incoming_compression_algorithm_;
   }
@@ -148,13 +156,11 @@ class Call : public CppImplOf<Call, grpc_call> {
     return encodings_accepted_by_peer_;
   }
 
+  char* GetPeer();
+
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
-
-  // Return the EventEngine used for this call's async execution.
-  virtual grpc_event_engine::experimental::EventEngine* event_engine()
-      const = 0;
 
  protected:
   // The maximum number of concurrent batches possible.
@@ -170,21 +176,24 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   struct ParentCall {
     Mutex child_list_mu;
-    Call* first_child ABSL_GUARDED_BY(child_list_mu) = nullptr;
+    ChannelBasedCall* first_child ABSL_GUARDED_BY(child_list_mu) = nullptr;
   };
 
   struct ChildCall {
-    explicit ChildCall(Call* parent) : parent(parent) {}
-    Call* parent;
+    explicit ChildCall(ChannelBasedCall* parent) : parent(parent) {}
+    ChannelBasedCall* parent;
     /// siblings: children of the same parent form a list, and this list is
     /// protected under
     /// parent->mu
-    Call* sibling_next = nullptr;
-    Call* sibling_prev = nullptr;
+    ChannelBasedCall* sibling_next = nullptr;
+    ChannelBasedCall* sibling_prev = nullptr;
   };
 
-  Call(Arena* arena, bool is_client, Timestamp send_deadline,
-       RefCountedPtr<Channel> channel)
+  ParentCall* GetOrCreateParentCall();
+  ParentCall* parent_call();
+
+  ChannelBasedCall(Arena* arena, bool is_client, Timestamp send_deadline,
+                   RefCountedPtr<Channel> channel)
       : channel_(std::move(channel)),
         arena_(arena),
         send_deadline_(send_deadline),
@@ -192,19 +201,17 @@ class Call : public CppImplOf<Call, grpc_call> {
     GPR_DEBUG_ASSERT(arena_ != nullptr);
     GPR_DEBUG_ASSERT(channel_ != nullptr);
   }
-  virtual ~Call() = default;
+  virtual ~ChannelBasedCall() = default;
 
   void DeleteThis();
 
-  ParentCall* GetOrCreateParentCall();
-  ParentCall* parent_call();
   Channel* channel() const {
     GPR_DEBUG_ASSERT(channel_ != nullptr);
     return channel_.get();
   }
 
-  absl::Status InitParent(Call* parent, uint32_t propagation_mask);
-  void PublishToParent(Call* parent);
+  absl::Status InitParent(ChannelBasedCall* parent, uint32_t propagation_mask);
+  void PublishToParent(ChannelBasedCall* parent);
   void MaybeUnpublishFromParent();
   void PropagateCancellationToChildren();
 
@@ -271,7 +278,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
-Call::ParentCall* Call::GetOrCreateParentCall() {
+ChannelBasedCall::ParentCall* ChannelBasedCall::GetOrCreateParentCall() {
   ParentCall* p = parent_call_.load(std::memory_order_acquire);
   if (p == nullptr) {
     p = arena_->New<ParentCall>();
@@ -286,11 +293,12 @@ Call::ParentCall* Call::GetOrCreateParentCall() {
   return p;
 }
 
-Call::ParentCall* Call::parent_call() {
+ChannelBasedCall::ParentCall* ChannelBasedCall::parent_call() {
   return parent_call_.load(std::memory_order_acquire);
 }
 
-absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
+absl::Status ChannelBasedCall::InitParent(ChannelBasedCall* parent,
+                                          uint32_t propagation_mask) {
   child_ = arena()->New<ChildCall>(parent);
 
   parent->InternalRef("child");
@@ -323,7 +331,7 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
   return absl::OkStatus();
 }
 
-void Call::PublishToParent(Call* parent) {
+void ChannelBasedCall::PublishToParent(ChannelBasedCall* parent) {
   ChildCall* cc = child_;
   ParentCall* pc = parent->GetOrCreateParentCall();
   MutexLock lock(&pc->child_list_mu);
@@ -341,7 +349,7 @@ void Call::PublishToParent(Call* parent) {
   }
 }
 
-void Call::MaybeUnpublishFromParent() {
+void ChannelBasedCall::MaybeUnpublishFromParent() {
   ChildCall* cc = child_;
   if (cc == nullptr) return;
 
@@ -373,15 +381,15 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
       StatusIntProperty::kRpcStatus, status));
 }
 
-void Call::PropagateCancellationToChildren() {
+void ChannelBasedCall::PropagateCancellationToChildren() {
   ParentCall* pc = parent_call();
   if (pc != nullptr) {
-    Call* child;
+    ChannelBasedCall* child;
     MutexLock lock(&pc->child_list_mu);
     child = pc->first_child;
     if (child != nullptr) {
       do {
-        Call* next_child_call = child->child_->sibling_next;
+        ChannelBasedCall* next_child_call = child->child_->sibling_next;
         if (child->cancellation_is_inherited_) {
           child->InternalRef("propagate_cancel");
           child->CancelWithError(absl::CancelledError());
@@ -393,7 +401,7 @@ void Call::PropagateCancellationToChildren() {
   }
 }
 
-char* Call::GetPeer() {
+char* ChannelBasedCall::GetPeer() {
   Slice peer_slice = GetPeerString();
   if (!peer_slice.empty()) {
     absl::string_view peer_string_view = peer_slice.as_string_view();
@@ -408,15 +416,15 @@ char* Call::GetPeer() {
   return gpr_strdup("unknown");
 }
 
-void Call::DeleteThis() {
+void ChannelBasedCall::DeleteThis() {
   RefCountedPtr<Channel> channel = std::move(channel_);
   Arena* arena = arena_;
-  this->~Call();
+  this->~ChannelBasedCall();
   channel->DestroyArena(arena);
 }
 
-void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
-                                          grpc_metadata_batch& md) {
+void ChannelBasedCall::PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                                      grpc_metadata_batch& md) {
   // TODO(juanlishen): If the user has already specified a compression
   // algorithm by setting the initial metadata with key of
   // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
@@ -451,7 +459,7 @@ void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
   md.Remove(GrpcLbClientStatsMetadata());
 }
 
-void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
+void ChannelBasedCall::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   Slice* peer_string = md.get_pointer(PeerString());
   if (peer_string != nullptr) SetPeerString(peer_string->Ref());
 
@@ -480,7 +488,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   }
 }
 
-void Call::HandleCompressionAlgorithmNotAccepted(
+void ChannelBasedCall::HandleCompressionAlgorithmNotAccepted(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
@@ -491,7 +499,7 @@ void Call::HandleCompressionAlgorithmNotAccepted(
           std::string(encodings_accepted_by_peer_.ToString()).c_str());
 }
 
-void Call::HandleCompressionAlgorithmDisabled(
+void ChannelBasedCall::HandleCompressionAlgorithmDisabled(
     grpc_compression_algorithm compression_algorithm) {
   const char* algo_name = nullptr;
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
@@ -507,7 +515,7 @@ void Call::HandleCompressionAlgorithmDisabled(
 // FilterStackCall
 // To be removed once promise conversion is complete
 
-class FilterStackCall final : public Call {
+class FilterStackCall final : public ChannelBasedCall {
  public:
   ~FilterStackCall() override {
     for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
@@ -688,8 +696,8 @@ class FilterStackCall final : public Call {
   };
 
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
-      : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->Ref()),
+      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+                         args.send_deadline, args.channel->Ref()),
         cq_(args.cq),
         stream_op_payload_(context_) {}
 
@@ -870,7 +878,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   Call* parent = Call::FromC(args->parent);
   if (parent != nullptr) {
     add_init_error(&error, absl_status_to_grpc_error(call->InitParent(
-                               parent, args->propagation_mask)));
+                               down_cast<ChannelBasedCall*>(parent),
+                               args->propagation_mask)));
   }
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
@@ -882,7 +891,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
   if (parent != nullptr) {
-    call->PublishToParent(parent);
+    call->PublishToParent(down_cast<ChannelBasedCall*>(parent));
   }
 
   if (!error.ok()) {
@@ -1984,17 +1993,17 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class BasicPromiseBasedCall : public Call,
+class BasicPromiseBasedCall : public ChannelBasedCall,
                               public Party,
                               public grpc_event_engine::experimental::
                                   EventEngine::Closure /* for deadlines */ {
  public:
-  using Call::arena;
+  using ChannelBasedCall::arena;
 
   BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                         const grpc_call_create_args& args)
-      : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->Ref()),
+      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+                         args.send_deadline, args.channel->Ref()),
         Party(arena, initial_external_refs != 0 ? 1 : 0),
         external_refs_(initial_external_refs),
         cq_(args.cq) {
@@ -2205,7 +2214,7 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
     return failed_before_recv_message_.load(std::memory_order_relaxed);
   }
 
-  using Call::arena;
+  using ChannelBasedCall::arena;
 
  protected:
   class ScopedContext : public BasicPromiseBasedCall::ScopedContext,
@@ -2759,11 +2768,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     Call* parent = Call::FromC(args->parent);
     if (parent != nullptr) {
-      auto parent_status = InitParent(parent, args->propagation_mask);
+      auto parent_status = InitParent(down_cast<ChannelBasedCall*>(parent),
+                                      args->propagation_mask);
       if (!parent_status.ok()) {
         CancelWithError(std::move(parent_status));
       }
-      PublishToParent(parent);
+      PublishToParent(down_cast<ChannelBasedCall*>(parent));
     }
   }
 
@@ -3616,81 +3626,26 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Server Call
 
-class ServerCall final : public ServerCallContext,
-                         public BasicPromiseBasedCall {
+class ServerCall final : public ServerCallContext, public Call {
  public:
-  ServerCall(Server* server, Channel* channel, Arena* arena);
-
-  // PromiseBasedCall
-  void OrphanCall() override {}
-  void CancelWithError(grpc_error_handle error) override {
-    call_handler_.SpawnInfallible(
-        "CancelWithError", [this, error = std::move(error)] {
-          call_handler_.Cancel(ServerMetadataFromStatus(error));
-          return Empty{};
-        });
-  }
-  bool is_trailers_only() const override {
-    Crash("is_trailers_only not implemented for server calls");
-  }
-  absl::string_view GetServerAuthority() const override {
-    Crash("unimplemented");
-  }
-  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
-                             bool is_notify_tag_closure) override;
-
-  bool Completed() final { Crash("unimplemented"); }
-  bool failed_before_recv_message() const final { Crash("unimplemented"); }
-
-  ServerCallContext* server_call_context() override { return this; }
-  const void* server_stream_data() override { Crash("unimplemented"); }
-  void PublishInitialMetadata(
-      ClientMetadataHandle metadata,
-      grpc_metadata_array* publish_initial_metadata) override;
-  ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
-      CallArgs, grpc_completion_queue*,
-      absl::FunctionRef<void(grpc_call* call)>) override {
-    Crash("unimplemented");
-  }
-
-  bool RunParty() override {
-    ScopedContext ctx(this);
-    return Party::RunParty();
-  }
+  explicit ServerCall(CallHandler call_handler);
 
  private:
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                    bool is_notify_tag_closure);
   StatusFlag FinishRecvMessage(NextResult<MessageHandle> result);
 
-  std::string DebugTag() const override {
-    return absl::StrFormat("SERVER_CALL_SPINE[%p]: ", this);
-  }
-
   grpc_byte_buffer** recv_message_ = nullptr;
   ClientMetadataHandle client_initial_metadata_stored_;
   CallHandler call_handler_;
 };
 
-ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
-    : BasicPromiseBasedCall(
-          arena, 1, [channel, server]() -> grpc_call_create_args {
-            grpc_call_create_args args;
-            args.channel = channel->Ref();
-            args.server = server;
-            args.parent = nullptr;
-            args.propagation_mask = 0;
-            args.cq = nullptr;
-            args.pollset_set_alternative = nullptr;
-            args.server_transport_data = &args;  // Arbitrary non-null pointer
-            args.send_deadline = Timestamp::InfFuture();
-            return args;
-          }()) {
+ServerCall::ServerCall(CallHandler call_handler)
+    : call_handler_(std::move(call_handler)) {
   global_stats().IncrementServerCallsCreated();
-  channel->channel_stack()->InitServerCallSpine(this);
 }
 
-void ServerCallSpine::PublishInitialMetadata(
+void ServerCall::PublishInitialMetadata(
     ClientMetadataHandle metadata,
     grpc_metadata_array* publish_initial_metadata) {
   if (grpc_call_trace.enabled()) {
@@ -3701,9 +3656,9 @@ void ServerCallSpine::PublishInitialMetadata(
   client_initial_metadata_stored_ = std::move(metadata);
 }
 
-grpc_call_error ServerCallSpine::StartBatch(const grpc_op* ops, size_t nops,
-                                            void* notify_tag,
-                                            bool is_notify_tag_closure) {
+grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
+                                       void* notify_tag,
+                                       bool is_notify_tag_closure) {
   if (nops == 0) {
     EndOpImmediately(cq(), notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
