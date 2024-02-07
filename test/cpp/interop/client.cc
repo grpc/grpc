@@ -363,3 +363,19 @@ int main(int argc, char** argv) {
 
   return ret;
 }
+
+// stubby call blade:kokoro-api KokoroApi.Build 'full_job_name:
+// "grpc/core/master/linux/grpc_interop_toprod.cfg“ scm_revision: {  
+// github_scm_revision {     commit_sha: "tmptmp"     owner: "drfloob"     name:
+// "grpc”     repository: "grpc"   }
+// }'
+
+// stubby call blade:kokoro-api KokoroApi.Build 'full_job_name:
+// "grpc/core/master/linux/grpc_interop_toprod.cfg" scm_revision: {
+//   github_scm_revision {
+//     commit_sha: "tmptmp"
+//     owner: "drfloob"
+//     name: "grpc"
+//     repository: "grpc"
+//   }
+// }'

@@ -308,10 +308,13 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(
             args=cmdline,
-            capture_output=True,
             cwd=self._spec.cwd,
             shell=self._spec.shell,
+            stderr=subprocess.STDOUT,
+            stdout=subprocess.PIPE,
+            capture_output=True,
             env=env,
+            text=True,
         )
         delay = 0.3
         for i in range(0, 4):
@@ -339,6 +342,7 @@ class Job(object):
             return stdout
 
         if self._state == _RUNNING and self._process.poll() is not None:
+            message("DO NOT SUBMIT", self._process.stdout, stdout(), do_newline=True)
             elapsed = time.time() - self._start
             self.result.elapsed_time = elapsed
             if self._process.returncode != 0:
