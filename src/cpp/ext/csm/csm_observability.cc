@@ -94,8 +94,6 @@ class CsmOpenTelemetryPluginOption
 
 }  // namespace internal
 
-namespace experimental {
-
 //
 // CsmObservabilityBuilder
 //
@@ -138,5 +136,4 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   return CsmObservability();
 }
 
-}  // namespace experimental
 }  // namespace grpc

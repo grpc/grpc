@@ -32,7 +32,7 @@ namespace testing {
 namespace {
 
 TEST(CsmObservabilityBuilderTest, Basic) {
-  EXPECT_EQ(experimental::CsmObservabilityBuilder().BuildAndRegister().status(),
+  EXPECT_EQ(CsmObservabilityBuilder().BuildAndRegister().status(),
             absl::OkStatus());
 }
 

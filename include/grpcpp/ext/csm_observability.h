@@ -36,8 +36,6 @@ namespace internal {
 class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
 
-namespace experimental {
-
 // This is a no-op at present, but in the future, this object would be useful
 // for performing cleanup.
 class CsmObservability {
@@ -97,7 +95,14 @@ class CsmObservabilityBuilder {
   std::unique_ptr<grpc::internal::OpenTelemetryPluginBuilderImpl> builder_;
 };
 
+namespace experimental {
+using CsmObservability GRPC_DEPRECATED("Use grpc::CsmObservability instead.") =
+    grpc::CsmObservability;
+using CsmObservabilityBuilder GRPC_DEPRECATED(
+    "Use grpc::CsmObservabilityBuilder instead.") =
+    grpc::CsmObservabilityBuilder;
 }  // namespace experimental
+
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_CSM_OBSERVABILITY_H
