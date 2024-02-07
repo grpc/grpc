@@ -31,29 +31,34 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
   // Read messages from handler into initiator.
   call_handler.SpawnGuarded("read_messages", [call_handler,
                                               call_initiator]() mutable {
-    return Seq(ForEach(OutgoingMessages(call_handler),
-                       [call_initiator](MessageHandle msg) mutable {
-                         // Need to spawn a job into the initiator's activity to
-                         // push the message in.
-                         return call_initiator.SpawnWaitable(
-                             "send_message",
-                             [msg = std::move(msg), call_initiator]() mutable {
-                               return call_initiator.CancelIfFails(
-                                   call_initiator.PushMessage(std::move(msg)));
-                             });
-                       }),
-               [call_initiator](StatusFlag result) mutable {
-                 call_initiator.SpawnInfallible(
-                     "finish-downstream", [call_initiator, result]() mutable {
-                       if (result.ok()) {
-                         call_initiator.FinishSends();
-                       } else {
-                         call_initiator.Cancel();
-                       }
-                       return Empty{};
-                     });
-                 return result;
-               });
+    return Seq(
+        ForEach(OutgoingMessages(call_handler),
+                [call_initiator](MessageHandle msg) mutable {
+                  // Need to spawn a job into the initiator's activity to
+                  // push the message in.
+                  return call_initiator.SpawnWaitable(
+                      "send_message",
+                      [msg = std::move(msg), call_initiator]() mutable {
+                        return call_initiator.CancelIfFails(
+                            call_initiator.PushMessage(std::move(msg)));
+                      });
+                }),
+        [call_initiator](StatusFlag result) mutable {
+          if (result.ok()) {
+            call_initiator.SpawnInfallible("finish-downstream-ok",
+                                           [call_initiator, result]() mutable {
+                                             call_initiator.FinishSends();
+                                             return Empty{};
+                                           });
+          } else {
+            call_initiator.SpawnInfallible("finish-downstream-fail",
+                                           [call_initiator, result]() mutable {
+                                             call_initiator.Cancel();
+                                             return Empty{};
+                                           });
+          }
+          return result;
+        });
   });
   call_initiator.SpawnInfallible("read_the_things", [call_initiator,
                                                      call_handler]() mutable {
