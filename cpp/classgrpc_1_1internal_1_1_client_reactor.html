@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.60.0</span>
+   &#160;<span id="projectnumber">1.61.0</span>
    </div>
   </td>
  </tr>
@@ -82,9 +82,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a6f2d01b96c82c2c9138bc686b20e8ec0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html#a6f2d01b96c82c2c9138bc686b20e8ec0">OnDone</a> (const <a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;)=0</td></tr>
 <tr class="memdesc:a6f2d01b96c82c2c9138bc686b20e8ec0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by the library when all operations associated with this RPC have completed and all Holds have been removed.  <a href="classgrpc_1_1internal_1_1_client_reactor.html#a6f2d01b96c82c2c9138bc686b20e8ec0">More...</a><br /></td></tr>
 <tr class="separator:a6f2d01b96c82c2c9138bc686b20e8ec0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af43424681aa098ea98add31c15b17e31"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html#af43424681aa098ea98add31c15b17e31">InternalScheduleOnDone</a> (<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
-<tr class="memdesc:af43424681aa098ea98add31c15b17e31"><td class="mdescLeft">&#160;</td><td class="mdescRight">InternalScheduleOnDone is not part of the API and is not meant to be overridden.  <a href="classgrpc_1_1internal_1_1_client_reactor.html#af43424681aa098ea98add31c15b17e31">More...</a><br /></td></tr>
-<tr class="separator:af43424681aa098ea98add31c15b17e31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a83de106b1f266d569104c08d155b977a"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html#a83de106b1f266d569104c08d155b977a">InternalTrailersOnly</a> (const <a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call) const</td></tr>
 <tr class="memdesc:a83de106b1f266d569104c08d155b977a"><td class="mdescLeft">&#160;</td><td class="mdescRight">InternalTrailersOnly is not part of the API and is not meant to be overridden.  <a href="classgrpc_1_1internal_1_1_client_reactor.html#a83de106b1f266d569104c08d155b977a">More...</a><br /></td></tr>
 <tr class="separator:a83de106b1f266d569104c08d155b977a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -116,35 +113,6 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="af43424681aa098ea98add31c15b17e31"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af43424681aa098ea98add31c15b17e31">&#9670;&nbsp;</a></span>InternalScheduleOnDone()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual void grpc::internal::ClientReactor::InternalScheduleOnDone </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td>
-          <td class="paramname"><em>s</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>InternalScheduleOnDone is not part of the API and is not meant to be overridden. </p>
-<p>It is virtual to allow successful builds for certain bazel build users that only want to depend on gRPC codegen headers and not the full library (although this is not a generally-supported option). Although the virtual call is slower than a direct call, this function is heavyweight and the cost of the virtual call is not much in comparison. This function may be removed or devirtualized in the future. </p>
-
-</div>
-</div>
 <a id="a83de106b1f266d569104c08d155b977a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a83de106b1f266d569104c08d155b977a">&#9670;&nbsp;</a></span>InternalTrailersOnly()</h2>
 
@@ -217,7 +185,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:03:05 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

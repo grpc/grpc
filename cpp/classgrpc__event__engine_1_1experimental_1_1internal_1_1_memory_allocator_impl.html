@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.60.0</span>
+   &#160;<span id="projectnumber">1.61.0</span>
    </div>
   </td>
  </tr>
@@ -91,6 +91,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a668908d336cf3c21ad6f7dfe7f06739a"><td class="memItemLeft" align="right" valign="top">virtual size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a668908d336cf3c21ad6f7dfe7f06739a">Reserve</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> request)=0</td></tr>
 <tr class="memdesc:a668908d336cf3c21ad6f7dfe7f06739a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reserve bytes from the quota.  <a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a668908d336cf3c21ad6f7dfe7f06739a">More...</a><br /></td></tr>
 <tr class="separator:a668908d336cf3c21ad6f7dfe7f06739a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba1813501d54cb8140c8c50024e8bb91"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#aba1813501d54cb8140c8c50024e8bb91">MakeSlice</a> (<a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a> request)=0</td></tr>
+<tr class="memdesc:aba1813501d54cb8140c8c50024e8bb91"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allocate a slice, using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html" title="Reservation request - how much memory do we want to allocate?">MemoryRequest</a> to size the number of returned bytes.  <a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#aba1813501d54cb8140c8c50024e8bb91">More...</a><br /></td></tr>
+<tr class="separator:aba1813501d54cb8140c8c50024e8bb91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7174ccff32e753e55b68e609b82f8617"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a7174ccff32e753e55b68e609b82f8617">Release</a> (size_t n)=0</td></tr>
 <tr class="memdesc:a7174ccff32e753e55b68e609b82f8617"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release some bytes that were previously reserved.  <a href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a7174ccff32e753e55b68e609b82f8617">More...</a><br /></td></tr>
 <tr class="separator:a7174ccff32e753e55b68e609b82f8617"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -179,6 +182,35 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="aba1813501d54cb8140c8c50024e8bb91"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba1813501d54cb8140c8c50024e8bb91">&#9670;&nbsp;</a></span>MakeSlice()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual <a class="el" href="structgrpc__slice.html">grpc_slice</a> grpc_event_engine::experimental::internal::MemoryAllocatorImpl::MakeSlice </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html">MemoryRequest</a>&#160;</td>
+          <td class="paramname"><em>request</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Allocate a slice, using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_request.html" title="Reservation request - how much memory do we want to allocate?">MemoryRequest</a> to size the number of returned bytes. </p>
+<p>For a variable length request, check the returned slice length to verify how much memory was allocated. Takes care of reserving memory for any relevant control structures also. </p>
+
+</div>
+</div>
 <a id="a89a118fa4c2c8863f7339841a3d5bbf1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a89a118fa4c2c8863f7339841a3d5bbf1">&#9670;&nbsp;</a></span>operator=()</h2>
 
@@ -297,7 +329,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:03:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">37.0.0</span>
+   &#160;<span id="projectnumber">38.0.0</span>
    </div>
   </td>
  </tr>
@@ -104,6 +104,9 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cda2ef24a6abbc49df1806599c6c930"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a4cda2ef24a6abbc49df1806599c6c930">GetLocalAddress</a> () const =0</td></tr>
 <tr class="separator:a4cda2ef24a6abbc49df1806599c6c930"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afab4c0bbead3173305575c996c32c784"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#afab4c0bbead3173305575c996c32c784">QueryExtension</a> (absl::string_view)</td></tr>
+<tr class="memdesc:afab4c0bbead3173305575c996c32c784"><td class="mdescLeft">&#160;</td><td class="mdescRight">A method which allows users to query whether an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> implementation supports a specified extension.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#afab4c0bbead3173305575c996c32c784">More...</a><br /></td></tr>
+<tr class="separator:afab4c0bbead3173305575c996c32c784"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>One end of a connection between a gRPC client and server. </p>
@@ -188,6 +191,40 @@ Public Member Functions</h2></td></tr>
 
 <p>Returns an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>. </p>
 <p>The returned values are expected to remain valid for the life of the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>. </p>
+
+</div>
+</div>
+<a id="afab4c0bbead3173305575c996c32c784"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afab4c0bbead3173305575c996c32c784">&#9670;&nbsp;</a></span>QueryExtension()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void* grpc_event_engine::experimental::EventEngine::Endpoint::QueryExtension </td>
+          <td>(</td>
+          <td class="paramtype">absl::string_view&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>A method which allows users to query whether an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> implementation supports a specified extension. </p>
+<p>The name of the extension is provided as an input.</p>
+<p>An extension could be any type with a unique string id. Each extension may support additional capabilities and if the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> implementation supports the queried extension, it should return a valid pointer to the extension type.</p>
+<p>E.g., use case of an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">EventEngine::Endpoint</a> supporting a custom extension.</p>
+<p>class CustomEndpointExtension { public: static constexpr std::string name = "my.namespace.extension_name"; void Process() { ... } }</p>
+<p>class CustomEndpoint : public <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">EventEngine::Endpoint</a>, CustomEndpointExtension { public: void* <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#afab4c0bbead3173305575c996c32c784" title="A method which allows users to query whether an Endpoint implementation supports a specified extensio...">QueryExtension(absl::string_view id)</a> override { if (id == CustomEndpointExtension::name) { return static_cast&lt;CustomEndpointExtension*&gt;(this); } return nullptr; } ... }</p>
+<p>auto ext_ = static_cast&lt;CustomEndpointExtension*&gt;( endpoint-&gt;QueryExtension(CustomrEndpointExtension::name)); if (ext_ != nullptr) { ext_-&gt;Process(); } </p>
 
 </div>
 </div>
@@ -291,7 +328,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:02:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
