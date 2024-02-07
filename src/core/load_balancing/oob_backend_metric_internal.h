@@ -30,9 +30,9 @@
 
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/oob_backend_metric.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_interface_internal.h"
-#include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/client_channel/subchannel.h"
+#include "src/core/client_channel/subchannel_interface_internal.h"
+#include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
