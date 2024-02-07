@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -46,6 +47,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -58,24 +60,11 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
-
-namespace {
-
-class NotReallyACallFactory final : public CallFactory {
- public:
-  using CallFactory::CallFactory;
-  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
-    Crash("NotReallyACallFactory::CreateCall should never be called");
-  }
-};
-
-}  // namespace
 
 Channel::Channel(bool is_client, bool is_promising, std::string target,
                  const ChannelArgs& channel_args,
@@ -87,7 +76,9 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       target_(std::move(target)),
       channel_stack_(std::move(channel_stack)),
-      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
+      v3_channel_(IsCallV3Enabled()
+                      ? MakeRefCounted<ClientChannel>(channel_args)
+                      : nullptr) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
