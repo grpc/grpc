@@ -96,6 +96,7 @@ class CsmObservabilityBuilder {
 };
 
 namespace experimental {
+// TODO(yashykt): Remove this once no longer needed.
 using CsmObservability GRPC_DEPRECATED("Use grpc::CsmObservability instead.") =
     grpc::CsmObservability;
 using CsmObservabilityBuilder GRPC_DEPRECATED(
