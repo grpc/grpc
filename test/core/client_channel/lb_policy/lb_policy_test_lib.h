@@ -74,7 +74,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/backend_metric_data.h"

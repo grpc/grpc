@@ -33,7 +33,7 @@
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {

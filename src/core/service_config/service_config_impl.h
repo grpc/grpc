@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
-#define GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
+#ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
+#define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,8 +36,8 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 // The main purpose of the code here is to parse the service config in
@@ -122,4 +122,4 @@ class ServiceConfigImpl final : public ServiceConfig {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
+#endif  // GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H

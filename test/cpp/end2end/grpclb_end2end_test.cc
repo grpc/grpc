@@ -53,7 +53,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/endpoint_addresses.h"

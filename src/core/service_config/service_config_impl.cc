@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/service_config/service_config_impl.h"
 
 #include <string.h>
 
@@ -36,7 +36,7 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/service_config/service_config_parser.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 

@@ -40,7 +40,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_trace.h"
