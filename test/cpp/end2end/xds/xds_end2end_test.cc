@@ -55,7 +55,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_channel_args.h"
