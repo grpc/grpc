@@ -7624,6 +7624,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -11538,6 +11539,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: insecure_security_connector_test
   gtest: true
   build: test
