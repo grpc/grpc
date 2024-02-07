@@ -60,6 +60,7 @@ class OpenTelemetryClientFilter : public grpc_core::ChannelFilter {
 
   std::string filtered_target_;
   ActivePluginOptionsView active_plugin_options_view_;
+  bool plugin_enabled_;
 };
 
 }  // namespace internal

@@ -680,6 +680,23 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   EXPECT_EQ(*status_value, "UNIMPLEMENTED");
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, DisableOTelPluginTest) {
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
+       grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
+  grpc::internal::DisableOpenTelemetryPlugin();
+  // Re-create server and channel after disabling the plugin.
+  ResetServerAndStub();
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+          /*data*/) { return false; });
+  // Since we've disabled the plugin, no metrics should be recorded.
+  ASSERT_TRUE(data.empty());
+}
+
 using OpenTelemetryPluginOptionEnd2EndTest = OpenTelemetryPluginEnd2EndTest;
 
 class SimpleLabelIterable : public grpc::internal::LabelsIterable {

@@ -252,8 +252,9 @@ bool OpenTelemetryServerCallTracerFactory::IsServerTraced(
     const grpc_core::ChannelArgs& args) {
   // Return true only if there is no server selector registered or if the server
   // selector returns true.
-  return OpenTelemetryPluginState().server_selector == nullptr ||
-         OpenTelemetryPluginState().server_selector(args);
+  return OpenTelemetryPluginEnabled() &&
+         (OpenTelemetryPluginState().server_selector == nullptr ||
+          OpenTelemetryPluginState().server_selector(args));
 }
 
 }  // namespace internal

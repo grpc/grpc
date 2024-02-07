@@ -97,6 +97,14 @@ class CsmOpenTelemetryPluginOption
 namespace experimental {
 
 //
+// CsmObservability
+//
+
+CsmObservability::~CsmObservability() {
+  grpc::internal::DisableOpenTelemetryPlugin();
+}
+
+//
 // CsmObservabilityBuilder
 //
 

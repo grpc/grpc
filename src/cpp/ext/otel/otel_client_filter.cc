@@ -81,28 +81,33 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 OpenTelemetryClientFilter::MakeCallPromise(
     grpc_core::CallArgs call_args,
     grpc_core::NextPromiseFactory next_promise_factory) {
-  auto* path = call_args.client_initial_metadata->get_pointer(
-      grpc_core::HttpPathMetadata());
-  bool registered_method = reinterpret_cast<uintptr_t>(
-      call_args.client_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
-          .value_or(nullptr));
-  auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-  auto* tracer =
-      grpc_core::GetContext<grpc_core::Arena>()
-          ->ManagedNew<OpenTelemetryCallTracer>(
-              this, path != nullptr ? path->Ref() : grpc_core::Slice(),
-              grpc_core::GetContext<grpc_core::Arena>(), registered_method);
-  GPR_DEBUG_ASSERT(
-      call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-      nullptr);
-  call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
-  call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy = nullptr;
+  if (plugin_enabled_) {
+    auto* path = call_args.client_initial_metadata->get_pointer(
+        grpc_core::HttpPathMetadata());
+    bool registered_method =
+        reinterpret_cast<uintptr_t>(call_args.client_initial_metadata
+                                        ->get(grpc_core::GrpcRegisteredMethod())
+                                        .value_or(nullptr));
+    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
+    auto* tracer =
+        grpc_core::GetContext<grpc_core::Arena>()
+            ->ManagedNew<OpenTelemetryCallTracer>(
+                this, path != nullptr ? path->Ref() : grpc_core::Slice(),
+                grpc_core::GetContext<grpc_core::Arena>(), registered_method);
+    GPR_DEBUG_ASSERT(
+        call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
+        nullptr);
+    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
+    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
+        nullptr;
+  }
   return next_promise_factory(std::move(call_args));
 }
 
 OpenTelemetryClientFilter::OpenTelemetryClientFilter(std::string target)
     : active_plugin_options_view_(
-          ActivePluginOptionsView::MakeForClient(target)) {
+          ActivePluginOptionsView::MakeForClient(target)),
+      plugin_enabled_(OpenTelemetryPluginEnabled()) {
   // Use the original target string only if a filter on the attribute is not
   // registered or if the filter returns true, otherwise use "other".
   if (OpenTelemetryPluginState().target_attribute_filter == nullptr ||

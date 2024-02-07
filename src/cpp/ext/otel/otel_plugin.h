@@ -147,6 +147,11 @@ struct OpenTelemetryPluginState {
 
 const struct OpenTelemetryPluginState& OpenTelemetryPluginState();
 
+// Returns whether the OpenTelemetry plugin is enabled.
+bool OpenTelemetryPluginEnabled();
+// Disables the OpenTelemetry plugin.
+void DisableOpenTelemetryPlugin();
+
 // Tags
 absl::string_view OpenTelemetryMethodKey();
 absl::string_view OpenTelemetryStatusKey();

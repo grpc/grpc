@@ -140,6 +140,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   void TearDown() override;
 
+  void ResetServerAndStub();
   void ResetStub(std::shared_ptr<Channel> channel);
 
   void SendRPC();
