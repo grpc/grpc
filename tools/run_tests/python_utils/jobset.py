@@ -108,7 +108,7 @@ _TAG_COLOR = {
 }
 
 _FORMAT = "%(asctime)-15s %(message)s"
-logging.basicConfig(level=logging.INFO, format=_FORMAT)
+logging.basicConfig(level=logging.DEBUG, format=_FORMAT)
 
 
 def eintr_be_gone(fn):
@@ -308,8 +308,7 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(
             args=cmdline,
-            stderr=self._logfile,
-            stdout=self._logfile,
+            capture_output=True,
             cwd=self._spec.cwd,
             shell=self._spec.shell,
             env=env,
