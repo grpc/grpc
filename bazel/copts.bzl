@@ -55,6 +55,12 @@ GRPC_LLVM_WARNING_FLAGS = [
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",
+    # alignment issues
+    "-Walign-mismatch",
+    # TODO(hork): file bug with upb to fix -Wcast-align
+    # "-Wcast-align",
+    "-Wover-aligned",
+    "-Wunaligned-access",
 ]
 
 GRPC_DEFAULT_COPTS = select({
