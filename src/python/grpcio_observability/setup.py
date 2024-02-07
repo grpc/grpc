@@ -275,7 +275,6 @@ setuptools.setup(
         "setuptools>=59.6.0",
         "opentelemetry-api==1.21.0",
     ],
-    setup_requires=["packaging>=23.2"],
     cmdclass={
         "build_ext": BuildExt,
     },

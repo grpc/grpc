@@ -84,8 +84,7 @@ BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
 def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (
-        b"#include <atomic>\n"
-        + b"int main() { return std::atomic<int64_t>{}; }"
+        b"#include <atomic>\n" + b"int main() { return std::atomic<int64_t>{}; }"
     )
     cxx = os.environ.get("CXX", "c++")
     cpp_test = subprocess.Popen(
@@ -170,9 +169,7 @@ if EXTRA_ENV_LINK_ARGS is None:
     # more modern ABIs (ELF et al.), Mach-O prepends an underscore to the names
     # of C functions.
     if "darwin" in sys.platform:
-        EXTRA_ENV_LINK_ARGS += " -Wl,-exported_symbol,_{}".format(
-            _EXT_INIT_SYMBOL
-        )
+        EXTRA_ENV_LINK_ARGS += " -Wl,-exported_symbol,_{}".format(_EXT_INIT_SYMBOL)
     if "linux" in sys.platform or "darwin" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
@@ -216,16 +213,12 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
 
 def package_data():
     tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace(".", os.path.sep)
-    proto_resources_path = os.path.join(
-        tools_path, GRPC_PYTHON_PROTO_RESOURCES_NAME
-    )
+    proto_resources_path = os.path.join(tools_path, GRPC_PYTHON_PROTO_RESOURCES_NAME)
     proto_files = []
     for proto_file in PROTO_FILES:
         source = os.path.join(PROTO_INCLUDE, proto_file)
         target = os.path.join(proto_resources_path, proto_file)
-        relative_target = os.path.join(
-            GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file
-        )
+        relative_target = os.path.join(GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file)
         try:
             os.makedirs(os.path.dirname(target))
         except OSError as error:
@@ -296,7 +289,6 @@ setuptools.setup(
         "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
     ],
-    setup_requires=["packaging>=23.2"],
     package_data=package_data(),
     cmdclass={
         "build_ext": BuildExt,

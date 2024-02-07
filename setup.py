@@ -523,7 +523,7 @@ EXTRAS_REQUIRES = {
 }
 
 SETUP_REQUIRES = (
-    INSTALL_REQUIRES + ("packaging>=23.2",) + ("Sphinx~=1.8.1",)
+    INSTALL_REQUIRES + ("Sphinx~=1.8.1",)
     if ENABLE_DOCUMENTATION_BUILD
     else ()
 )
