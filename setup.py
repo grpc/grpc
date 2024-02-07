@@ -372,7 +372,8 @@ if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ("re2",)
 if BUILD_WITH_SYSTEM_ABSL:
     EXTENSION_LIBRARIES += tuple(
-        lib.stem[3:] for lib in sorted(pathlib.Path("/usr").glob("lib*/libabsl_*.so"))
+        lib.stem[3:]
+        for lib in sorted(pathlib.Path("/usr").glob("lib*/libabsl_*.so"))
     )
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
