@@ -96,10 +96,8 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
   }
 
   auto te = md.Take(TeMetadata());
-  if (te == TeMetadata::kTrailers) {
+  if (te == TeMetadata::kTrailers || !te.has_value()) {
     // Do nothing, ok.
-  } else if (!te.has_value()) {
-    return MalformedRequest("Missing :te header");
   } else {
     return MalformedRequest("Bad :te header");
   }
