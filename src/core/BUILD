@@ -2188,6 +2188,7 @@ grpc_cc_library(
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
+        "strerror",
         "time",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
