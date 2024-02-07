@@ -391,9 +391,9 @@ class Job(object):
                     )
                     real = float(m.group(1))
                     user = float(m.group(2))
-                    sys = float(m.group(3))
+                    tsys = float(m.group(3))
                     if real > 0.5:
-                        cores = (user + sys) / real
+                        cores = (user + tsys) / real
                         self.result.cpu_measured = float("%.01f" % cores)
                         self.result.cpu_estimated = float("%.01f" % self._spec.cpu_cost)
                         measurement = "; cpu_cost=%.01f; estimated=%.01f" % (
@@ -420,6 +420,9 @@ class Job(object):
             and self._spec.timeout_seconds is not None
             and time.time() - self._start > self._spec.timeout_seconds
         ):
+            outs, errs = self._process.communicate()
+            sys.stdout.write("DO NOT SUBMIT %s" % outs)
+            sys.stdout.flush()
             elapsed = time.time() - self._start
             self.result.elapsed_time = elapsed
             if self._timeout_retries < self._spec.timeout_retries:
