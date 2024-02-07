@@ -1738,8 +1738,6 @@
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/b64.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice.cc" role="src" />

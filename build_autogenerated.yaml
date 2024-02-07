@@ -1109,7 +1109,6 @@ libs:
   - src/core/lib/service_config/service_config_call_data.h
   - src/core/lib/service_config/service_config_impl.h
   - src/core/lib/service_config/service_config_parser.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -1906,7 +1905,6 @@ libs:
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/service_config/service_config_impl.cc
   - src/core/lib/service_config/service_config_parser.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -2570,7 +2568,6 @@ libs:
   - src/core/lib/service_config/service_config_call_data.h
   - src/core/lib/service_config/service_config_impl.h
   - src/core/lib/service_config/service_config_parser.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -2987,7 +2984,6 @@ libs:
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/service_config/service_config_impl.cc
   - src/core/lib/service_config/service_config_parser.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -4644,7 +4640,6 @@ libs:
   - src/core/lib/service_config/service_config.h
   - src/core/lib/service_config/service_config_call_data.h
   - src/core/lib/service_config/service_config_parser.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -4945,7 +4940,6 @@ libs:
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/service_config/service_config_parser.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -5763,17 +5757,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: b64_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/slice/b64_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
 - name: backend_metrics_lb_policy_test
   gtest: true
   build: test

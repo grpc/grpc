@@ -1631,7 +1631,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/util/json_util.cc \
     src/core/lib/service_config/service_config_impl.cc \
     src/core/lib/service_config/service_config_parser.cc \
-    src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
@@ -2193,7 +2192,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/util/json_util.cc \
     src/core/lib/service_config/service_config_impl.cc \
     src/core/lib/service_config/service_config_parser.cc \
-    src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
