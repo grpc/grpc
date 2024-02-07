@@ -48,9 +48,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/config_selector.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/client_channel/backup_poller.h"
+#include "src/core/client_channel/config_selector.h"
+#include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
