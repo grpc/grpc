@@ -36,6 +36,10 @@ class ClientChannel : public ChannelInterface {
  public:
   ClientChannel(absl::string_view target_uri, ChannelArgs args);
 
+  ~ClientChannel() override;
+
+  void Orphan() override;
+
   absl::string_view target() const override;
 
   void GetChannelInfo(const grpc_channel_info* channel_info) override;

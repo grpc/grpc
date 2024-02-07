@@ -111,12 +111,11 @@ namespace grpc_core {
 
 using internal::ClientChannelMethodParsedConfig;
 
-// FIXME: share with legacy client channel impl
-// (and rethink if this is still the right division of tracers -- may
-// need to add more logging)
-TraceFlag grpc_client_channel_trace(false, "client_channel");
-TraceFlag grpc_client_channel_call_trace(false, "client_channel_call");
-TraceFlag grpc_client_channel_lb_call_trace(false, "client_channel_lb_call");
+// Defined in legacy client channel filter.
+// TODO(roth): Move these here when we remove the legacy filter.
+extern TraceFlag grpc_client_channel_trace;
+extern TraceFlag grpc_client_channel_call_trace;
+extern TraceFlag grpc_client_channel_lb_call_trace;
 
 //
 // ClientChannel::ResolverResultHandler
@@ -124,7 +123,8 @@ TraceFlag grpc_client_channel_lb_call_trace(false, "client_channel_lb_call");
 
 class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
  public:
-  explicit ResolverResultHandler(RefCountedPtr<ClientChannel> client_channel)
+  explicit ResolverResultHandler(
+      WeakRefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ResolverResultHandler() override {
@@ -140,7 +140,7 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
   }
 
  private:
-  RefCountedPtr<ClientChannel> client_channel_;
+  WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
@@ -151,7 +151,7 @@ class ClientChannel::ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   explicit ClientChannelControlHelper(
-      RefCountedPtr<ClientChannel> client_channel)
+      WeakRefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ClientChannelControlHelper() override {
@@ -247,7 +247,7 @@ class ClientChannel::ClientChannelControlHelper
     return channelz::ChannelTrace::Error;
   }
 
-  RefCountedPtr<ClientChannel> client_channel_;
+  WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
@@ -264,7 +264,7 @@ class ClientChannel::ClientChannelControlHelper
 // control plane work_serializer.
 class ClientChannel::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
+  SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
                     RefCountedPtr<Subchannel> subchannel)
       : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
                                 ? "SubchannelWrapper"
@@ -507,7 +507,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
   };
 
-  RefCountedPtr<ClientChannel> client_channel_;
+  WeakRefCountedPtr<ClientChannel> client_channel_;
   RefCountedPtr<Subchannel> subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
@@ -682,9 +682,19 @@ ClientChannel::ClientChannel(absl::string_view target_uri,
 
 ClientChannel::~ClientChannel() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-    gpr_log(GPR_INFO, "client_channel=%p: destroying channel", this);
+    gpr_log(GPR_INFO, "client_channel=%p: destroying", this);
+  }
+}
+
+void ClientChannel::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
+    gpr_log(GPR_INFO, "client_channel=%p: shutting down", this);
   }
   DestroyResolverAndLbPolicyLocked();
+  // IncreaseCallCount() introduces a phony call and prevents the idle
+  // timer from being reset by other threads.
+  idle_state_.IncreaseCallCount();
+  idle_activity_.Reset();
 }
 
 void ClientChannel::GetChannelInfo(const grpc_channel_info* info) {
@@ -707,7 +717,7 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
       ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (state == GRPC_CHANNEL_IDLE && try_to_connect) {
     work_serializer_->Run(
-        [self = RefAsSubclass<ClientChannel>()]()
+        [self = WeakRefAsSubclass<ClientChannel>()]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
           self->TryToConnectLocked();
         },
@@ -720,7 +730,7 @@ void ClientChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
   work_serializer_->Run(
-      [self = RefAsSubclass<ClientChannel>(), initial_state,
+      [self = WeakRefAsSubclass<ClientChannel>(), initial_state,
        watcher = std::move(watcher)]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
         self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
@@ -731,7 +741,7 @@ void ClientChannel::AddConnectivityWatcher(
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
   work_serializer_->Run(
-      [self = RefAsSubclass<ClientChannel>(), watcher]()
+      [self = WeakRefAsSubclass<ClientChannel>(), watcher]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
         self->state_tracker_.RemoveWatcher(watcher);
       },
@@ -1202,7 +1212,8 @@ void ClientChannel::CreateResolverLocked() {
       uri_to_resolve_, channel_args_,
       interested_parties_, // FIXME: remove somehow
       work_serializer_,
-      std::make_unique<ResolverResultHandler>(this));
+      std::make_unique<ResolverResultHandler>(
+          WeakRefAsSubclass<ClientChannel>()));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
@@ -1513,7 +1524,8 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =
-      std::make_unique<ClientChannelControlHelper>(this);
+      std::make_unique<ClientChannelControlHelper>(
+          WeakRefAsSubclass<ClientChannel>());
   lb_policy_args.args = args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
@@ -1616,7 +1628,7 @@ void ClientChannel::StartIdleTimer() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: idle timer started", this);
   }
-  auto self = RefAsSubclass<ClientChannel>();
+  auto self = WeakRefAsSubclass<ClientChannel>();
   auto promise = Loop([self]() {
     return TrySeq(Sleep(Timestamp::Now() + self->idle_timeout_),
                   [&self]() -> Poll<LoopCtl<absl::Status>> {

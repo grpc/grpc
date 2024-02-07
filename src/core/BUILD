@@ -6765,7 +6765,7 @@ grpc_cc_library(
         "call_size_estimator",
         "call_spine",
         "channel_args",
-        "ref_counted",
+        "dual_ref_counted",
         "resource_quota",
         "//:gpr_platform",
         "//:stats",
