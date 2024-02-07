@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.60.0</span>
+   &#160;<span id="projectnumber">1.61.0</span>
    </div>
   </td>
  </tr>
@@ -149,7 +149,7 @@ $(function() {
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#a38801b73ee9078cac37ee2346d052a7d">kGRPCHeadersKey</a>;</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#abefaebd61dda59469f7f54757f2d1395">kGRPCTrailersKey</a>;</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160; </div>
-<div class="line"><a name="l00174"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#a1cf875c3f6d8737657907e38b468d05f">  174</a></span>&#160;<span class="keyword">typedef</span> <span class="keywordtype">char</span>* _Nonnull <a class="code" href="_g_r_p_c_types_8h.html#a1cf875c3f6d8737657907e38b468d05f">GRPCTransportID</a>;</div>
+<div class="line"><a name="l00174"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">  174</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">const</span> <span class="keywordtype">char</span>* _Nonnull <a class="code" href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">GRPCTransportID</a>;</div>
 <div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
 <div class="line"><a name="l00179"></a><span class="lineno"><a class="line" href="protocol_g_r_p_c_authorization_protocol-p.html">  179</a></span>&#160;<span class="keyword">@protocol </span><a class="code" href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol</a></div>
 <div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; </div>
@@ -159,17 +159,17 @@ $(function() {
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
 <div class="line"><a name="l00190"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">  190</a></span>&#160;<span class="keyword">typedef</span> NSDictionary&lt;NSString*, id&gt; <a class="code" href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">GRPCMetadataDictionary</a>;</div>
 </div><!-- fragment --></div><!-- contents -->
-<div class="ttc" id="a_g_r_p_c_types_8h_html_a1cf875c3f6d8737657907e38b468d05f"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a1cf875c3f6d8737657907e38b468d05f">GRPCTransportID</a></div><div class="ttdeci">char *_Nonnull GRPCTransportID</div><div class="ttdoc">The id of a transport implementation.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:174</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a0b771408f3bdd5e106736dee2bf99503"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a0b771408f3bdd5e106736dee2bf99503">NS_ENUM</a></div><div class="ttdeci">typedef NS_ENUM(NSUInteger, GRPCErrorCode)</div><div class="ttdoc">gRPC error codes.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:26</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a34464a42046cbec45f941d1fd08ef60a"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">GRPCMetadataDictionary</a></div><div class="ttdeci">NSDictionary&lt; NSString *, id &gt; GRPCMetadataDictionary</div><div class="ttdoc">gRPC metadata dictionary typedef</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:190</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_ac31a1bcb28b15f798596ed3349e9bfb8"><div class="ttname"><a href="_g_r_p_c_types_8h.html#ac31a1bcb28b15f798596ed3349e9bfb8">kGRPCErrorDomain</a></div><div class="ttdeci">NSString *const _Nonnull kGRPCErrorDomain</div><div class="ttdoc">Domain of NSError objects produced by gRPC.</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_abefaebd61dda59469f7f54757f2d1395"><div class="ttname"><a href="_g_r_p_c_types_8h.html#abefaebd61dda59469f7f54757f2d1395">kGRPCTrailersKey</a></div><div class="ttdeci">NSString *const _Nonnull kGRPCTrailersKey</div></div>
 <div class="ttc" id="aprotocol_g_r_p_c_authorization_protocol-p_html"><div class="ttname"><a href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol-p</a></div><div class="ttdoc">Implement this protocol to provide a token to gRPC when a call is initiated.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:179</div></div>
+<div class="ttc" id="a_g_r_p_c_types_8h_html_af3bbf543fba8f9c001d26153c96f83e6"><div class="ttname"><a href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">GRPCTransportID</a></div><div class="ttdeci">const typedef char *_Nonnull GRPCTransportID</div><div class="ttdoc">The id of a transport implementation.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:174</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a38801b73ee9078cac37ee2346d052a7d"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a38801b73ee9078cac37ee2346d052a7d">kGRPCHeadersKey</a></div><div class="ttdeci">NSString *const _Nonnull kGRPCHeadersKey</div><div class="ttdoc">Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by the...</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a6d1c0685676b450f85433dc8b8920153"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a6d1c0685676b450f85433dc8b8920153">GRPCCompressAlgorithm</a></div><div class="ttdeci">GRPCCompressionAlgorithm GRPCCompressAlgorithm</div><div class="ttdoc">GRPCCompressAlgorithm is deprecated.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:147</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:04:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:50:37 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

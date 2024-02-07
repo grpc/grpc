@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">37.0.0</span>
+   &#160;<span id="projectnumber">38.0.0</span>
    </div>
   </td>
  </tr>
@@ -132,18 +132,30 @@ $(function() {
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keywordflow">return</span> <span class="keyword">reinterpret_cast&lt;</span>Result&amp;<span class="keyword">&gt;</span>(value);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;}</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;}  <span class="comment">// namespace internal</span></div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_INTERNAL_SLICE_CAST_H</span></div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="comment">// Cast to `Result&amp;&amp;` from `T&amp;&amp;` without any runtime checks.</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="comment">// This is only valid if `sizeof(Result) == sizeof(T)`, and if `Result`, `T` are</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="comment">// opted in as compatible via `SliceCastable`.</span></div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> Result, <span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a name="l00067"></a><span class="lineno"><a class="line" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#a16c9a6e8e1da13006f55358273c41f0c">   67</a></span>&#160;Result&amp;&amp; <a class="code" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ae60e17e7c4e497b7bc207fc0928fbba4">SliceCast</a>(T&amp;&amp; value, <a class="code" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable&lt;Result, T&gt;</a> = {}) {</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <span class="comment">// Insist upon sizes being equal to catch mismatches.</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="comment">// We assume if sizes are opted in and sizes are equal then yes, these two</span></div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="comment">// types are expected to be layout compatible and actually appear to be.</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  static_assert(<span class="keyword">sizeof</span>(Result) == <span class="keyword">sizeof</span>(T), <span class="stringliteral">&quot;size mismatch&quot;</span>);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordflow">return</span> <span class="keyword">reinterpret_cast&lt;</span>Result&amp;&amp;<span class="keyword">&gt;</span>(value);</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;}  <span class="comment">// namespace internal</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;}  <span class="comment">// namespace grpc_event_engine</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160; </div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor">#endif  // GRPC_EVENT_ENGINE_INTERNAL_SLICE_CAST_H</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="astructgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_html"><div class="ttname"><a href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">grpc_event_engine::experimental::internal::SliceCastable</a></div><div class="ttdef"><b>Definition:</b> slice_cast.h:30</div></div>
 <div class="ttc" id="anamespacegrpc__event__engine_html"><div class="ttname"><a href="namespacegrpc__event__engine.html">grpc_event_engine</a></div><div class="ttdef"><b>Definition:</b> endpoint_config.h:24</div></div>
 <div class="ttc" id="anamespacegrpc__event__engine_1_1experimental_1_1internal_html_ae60e17e7c4e497b7bc207fc0928fbba4"><div class="ttname"><a href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ae60e17e7c4e497b7bc207fc0928fbba4">grpc_event_engine::experimental::internal::SliceCast</a></div><div class="ttdeci">const Result &amp; SliceCast(const T &amp;value, SliceCastable&lt; Result, T &gt;={})</div><div class="ttdef"><b>Definition:</b> slice_cast.h:43</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:02:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.60.0</span>
+   &#160;<span id="projectnumber">1.61.0</span>
    </div>
   </td>
  </tr>
@@ -166,7 +166,10 @@ Lifespan and Ownership</h2>
 <h2><a class="anchor" id="autotoc_md268"></a>
 Blocking EventEngine Callbacks</h2>
 <p>Doing blocking work in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> callbacks is generally not advisable. While gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> implementations have some capacity to scale their thread pools to avoid starvation, this is not an instantaneous process. Further, user-provided EventEngines may not be optimized to handle excessive blocking work at all.</p>
-<p><em>Best Practice</em> : Occasional blocking work may be fine, but we do not recommend running a mostly blocking workload in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> threads. </p>
+<p><em>Best Practice</em> : Occasional blocking work may be fine, but we do not recommend running a mostly blocking workload in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> threads.</p>
+<h2><a class="anchor" id="autotoc_md269"></a>
+Thread-safety guarantees</h2>
+<p>All <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> methods are guaranteed to be thread-safe, no external synchronization is required to call any <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> method. Please note that this does not apply to application callbacks, which may be run concurrently; application state synchronization must be managed by the application. </p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="a3380997754430d27e6b9832174184327"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3380997754430d27e6b9832174184327">&#9670;&nbsp;</a></span>Duration</h2>
@@ -257,8 +260,8 @@ Blocking EventEngine Callbacks</h2>
 </div><div class="memdoc">
 
 <p>Request cancellation of a task. </p>
-<p>If the associated closure has already been scheduled to run, it will not be cancelled, and this function will return false.</p>
-<p>If the associated closure has not been scheduled to run, it will be cancelled, and this method will return true. The associated absl::AnyInvocable or <em>Closure*</em> will not be called. If the closure type was an absl::AnyInvocable, it will be destroyed before the method returns. </p>
+<p>If the associated closure cannot be cancelled for any reason, this function will return false.</p>
+<p>If the associated closure can be cancelled, the associated callback will never be run, and this method will return true. If the callback type was an absl::AnyInvocable, it will be destroyed before the method returns. </p>
 
 </div>
 </div>
@@ -482,7 +485,7 @@ Blocking EventEngine Callbacks</h2>
 </div><div class="memdoc">
 
 <p>Asynchronously executes a task as soon as possible. </p>
-<p><em>Closures</em> scheduled with <em>Run</em> cannot be cancelled. Unlike the overloaded <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> alternative, the absl::AnyInvocable version's <em>closure</em> will be deleted by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> after the closure has been run.</p>
+<p><em>Closures</em> passed to <em>Run</em> cannot be cancelled. Unlike the overloaded <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> alternative, the absl::AnyInvocable version's <em>closure</em> will be deleted by the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> after the closure has been run.</p>
 <p>This version of <em>Run</em> may be less performant than the <em><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_closure.html" title="A custom closure type for EventEngine task execution.">Closure</a></em> version in some scenarios. This overload is useful in situations where performance is not a critical concern.</p>
 <p>Implementations must not execute the closure in the calling thread before <em>Run</em> returns. </p>
 
@@ -513,7 +516,7 @@ Blocking EventEngine Callbacks</h2>
 </div><div class="memdoc">
 
 <p>Asynchronously executes a task as soon as possible. </p>
-<p><em>Closures</em> scheduled with <em>Run</em> cannot be cancelled. The <em>closure</em> will not be deleted after it has been run, ownership remains with the caller.</p>
+<p><em>Closures</em> passed to <em>Run</em> cannot be cancelled. The <em>closure</em> will not be deleted after it has been run, ownership remains with the caller.</p>
 <p>Implementations must not execute the closure in the calling thread before <em>Run</em> returns. For example, if the caller must release a lock before the closure can proceed, running the closure immediately would cause a deadlock. </p>
 
 </div>
@@ -605,7 +608,7 @@ Blocking EventEngine Callbacks</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:03:05 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.60.0</span>
+   &#160;<span id="projectnumber">1.61.0</span>
    </div>
   </td>
  </tr>
@@ -124,7 +124,7 @@ Requests</h2>
 <p><b>Custom-Metadata</b> is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as <b>Custom-Metadata</b>.</p>
 <p>Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per <a href="https://tools.ietf.org/html/rfc4648#section-4">https://tools.ietf.org/html/rfc4648#section-4</a>. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding &amp; decoding as headers are sent and received.</p>
 <p><b>Custom-Metadata</b> header order is not guaranteed to be preserved except for values with duplicate header names. Duplicate header names may have their values joined with "," as the delimiter and be considered semantically equivalent. Implementations must split **Binary-Header**s on "," before decoding the Base64-encoded values.</p>
-<p><b>ASCII-Value</b> should not have leading or trailing whitespace. If it contains leading or trailing whitespace, it may be stripped. The <b>ASCII-Value</b> character range defined is more strict than HTTP. Implementations must not error due to receiving an invalid <b>ASCII-Value</b> that's a valid <b>field-value</b> in HTTP, but the precise behavior is not strictly defined: they may throw the value away or accept the value. If accepted, care must be taken to make sure that the application is permitted to echo the value back as metadata. For example, if the metadata is provided to the application as a list in a request, the application should not trigger an error by providing that same list as the metadata in the response.</p>
+<p><b>ASCII-Value</b> should not have leading or trailing whitespace. If it contains leading or trailing whitespace, it may be stripped. The <b>ASCII-Value</b> character range defined is stricter than HTTP. Implementations must not error due to receiving an invalid <b>ASCII-Value</b> that's a valid <b>field-value</b> in HTTP, but the precise behavior is not strictly defined: they may throw the value away or accept the value. If accepted, care must be taken to make sure that the application is permitted to echo the value back as metadata. For example, if the metadata is provided to the application as a list in a request, the application should not trigger an error by providing that same list as the metadata in the response.</p>
 <p>Servers may limit the size of <b>Request-Headers</b>, with a default of 8 KiB suggested. Implementations are encouraged to compute total header size like HTTP/2's <code>SETTINGS_MAX_HEADER_LIST_SIZE</code>: the sum of all header fields, for each field the sum of the uncompressed field name and value lengths plus 32, with binary values' lengths being post-Base64.</p>
 <p>The repeated sequence of <b>Length-Prefixed-Message</b> items is delivered in DATA frames</p>
 <ul>
@@ -265,7 +265,7 @@ Appendix A - GRPC for Protobuf</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:03:04 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

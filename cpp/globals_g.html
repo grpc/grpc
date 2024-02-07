@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.60.0</span>
+   &#160;<span id="projectnumber">1.61.0</span>
    </div>
   </td>
  </tr>
@@ -575,6 +575,9 @@ $(function() {
 <li>GRPC_ARG_ENABLE_RETRIES
 : <a class="el" href="group__grpc__arg__keys.html#ga212f667ecbcee3b100898ba7e88454df">channel_arg_names.h</a>
 </li>
+<li>GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY
+: <a class="el" href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">channel_arg_names.h</a>
+</li>
 <li>GRPC_ARG_EXPAND_WILDCARD_ADDRS
 : <a class="el" href="group__grpc__arg__keys.html#gab11602475264d01e0ea50f0ce376cdcd">channel_arg_names.h</a>
 </li>
@@ -733,6 +736,9 @@ $(function() {
 </li>
 <li>GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS
 : <a class="el" href="group__grpc__arg__keys.html#gabd95d2a6b1cd3b3ca8a1c9fb7eb4cdf1">channel_arg_names.h</a>
+</li>
+<li>GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS
+: <a class="el" href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">channel_arg_names.h</a>
 </li>
 <li>GRPC_ARG_SERVICE_CONFIG
 : <a class="el" href="group__grpc__arg__keys.html#gad60df744eb84ef55a371de9b8bd2373d">channel_arg_names.h</a>
@@ -976,6 +982,9 @@ $(function() {
 </li>
 <li>grpc_call_ref()
 : <a class="el" href="grpc_8h.html#a37a3bcb24b22addd01a9d0881c5a438c">grpc.h</a>
+</li>
+<li>grpc_call_run_in_event_engine()
+: <a class="el" href="grpc_2impl_2call_8h.html#a6df2684a045833af0d9a19d55f883095">call.h</a>
 </li>
 <li>grpc_call_set_credentials()
 : <a class="el" href="grpc__security_8h.html#ab065a653f78111065e91a579fd2ce2d2">grpc_security.h</a>
@@ -1757,11 +1766,11 @@ $(function() {
 <li>GRPC_SLICE_LENGTH
 : <a class="el" href="slice__type_8h.html#ae965fb2ee1a646253cdbd49d82b0b6c5">slice_type.h</a>
 </li>
-<li>GRPC_SLICE_MALLOC
-: <a class="el" href="grpc_2slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">slice.h</a>
-</li>
 <li>grpc_slice_malloc()
 : <a class="el" href="grpc_2slice_8h.html#a0b714cdd6fa993b1d47eb08f2d5f8fc1">slice.h</a>
+</li>
+<li>GRPC_SLICE_MALLOC
+: <a class="el" href="grpc_2slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52">slice.h</a>
 </li>
 <li>grpc_slice_malloc_large()
 : <a class="el" href="grpc_2slice_8h.html#ab286ea0212352a75cfaf34c32eccff17">slice.h</a>
@@ -2022,8 +2031,8 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#af2bc85e32b46689f20d6b8fe78954146">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier
-: <a class="el" href="tls__certificate__verifier_8h.html#afc10060e41d23b0e31f5c5a312d49138">tls_certificate_verifier.h</a>
-, <a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#afc10060e41d23b0e31f5c5a312d49138">grpc_security.h</a>
+, <a class="el" href="tls__certificate__verifier_8h.html#afc10060e41d23b0e31f5c5a312d49138">tls_certificate_verifier.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_cancel()
 : <a class="el" href="grpc__security_8h.html#a8650518e6108ff6ed8624e0c00f8a55c">grpc_security.h</a>
@@ -2033,8 +2042,8 @@ $(function() {
 , <a class="el" href="grpc__security_8h.html#a02ce84a849538d46352f38553d1df8f1">grpc_security.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_external_create()
-: <a class="el" href="tls__certificate__verifier_8h.html#a129d8fd8e77cde679368f6ae03f990d4">tls_certificate_verifier.h</a>
-, <a class="el" href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">grpc_security.h</a>
+: <a class="el" href="grpc__security_8h.html#a129d8fd8e77cde679368f6ae03f990d4">grpc_security.h</a>
+, <a class="el" href="tls__certificate__verifier_8h.html#a129d8fd8e77cde679368f6ae03f990d4">tls_certificate_verifier.h</a>
 </li>
 <li>grpc_tls_certificate_verifier_host_name_create()
 : <a class="el" href="grpc__security_8h.html#a576605b5b21536662c29d135ee19e07b">grpc_security.h</a>
@@ -2084,6 +2093,12 @@ $(function() {
 <li>grpc_tls_credentials_options_set_identity_cert_name()
 : <a class="el" href="grpc__security_8h.html#a740c02c53ed078ad1ceb499124c79342">grpc_security.h</a>
 </li>
+<li>grpc_tls_credentials_options_set_max_tls_version()
+: <a class="el" href="grpc__security_8h.html#aed7591f18880292f53ac0c4ac8b50cba">grpc_security.h</a>
+</li>
+<li>grpc_tls_credentials_options_set_min_tls_version()
+: <a class="el" href="grpc__security_8h.html#a92cef9c02025e01df918b0dec9938256">grpc_security.h</a>
+</li>
 <li>grpc_tls_credentials_options_set_root_cert_name()
 : <a class="el" href="grpc__security_8h.html#a1e5ce0bf79a2a373b68a8d1d7e80dae2">grpc_security.h</a>
 </li>
@@ -2119,8 +2134,8 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#ac0ad89ed7803b8b71ee7f0b8d7b86a51">grpc_security.h</a>
 </li>
 <li>grpc_tls_on_custom_verification_check_done_cb
-: <a class="el" href="grpc__security_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_security.h</a>
-, <a class="el" href="tls__certificate__verifier_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">tls_certificate_verifier.h</a>
+: <a class="el" href="tls__certificate__verifier_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">tls_certificate_verifier.h</a>
+, <a class="el" href="grpc__security_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_security.h</a>
 </li>
 <li>grpc_tls_server_credentials_create()
 : <a class="el" href="grpc__security_8h.html#a1ef8332e1edf68afd4cf5a8dda804de7">grpc_security.h</a>
@@ -2195,7 +2210,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:03:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

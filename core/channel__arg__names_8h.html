@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">37.0.0</span>
+   &#160;<span id="projectnumber">38.0.0</span>
    </div>
   </td>
  </tr>
@@ -145,6 +145,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga4494709dc5c7c899af4ed67ec7728549"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</a>&#160;&#160;&#160;&quot;grpc.http2.min_ping_interval_without_data_ms&quot;</td></tr>
 <tr class="memdesc:ga4494709dc5c7c899af4ed67ec7728549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Minimum allowed time between a server receiving successive ping frames without sending any data/header frame.  <a href="group__grpc__arg__keys.html#ga4494709dc5c7c899af4ed67ec7728549">More...</a><br /></td></tr>
 <tr class="separator:ga4494709dc5c7c899af4ed67ec7728549"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS</a>&#160;&#160;&#160;&quot;grpc.server_max_unrequested_time_in_server&quot;</td></tr>
+<tr class="memdesc:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum time to allow a request to be: (1) received by the server, but (2) not requested by a RequestCall (in the completion queue based API) before the request is cancelled.  <a href="group__grpc__arg__keys.html#ga3f8b16398c4051ebf86fb7fcf26e02b3">More...</a><br /></td></tr>
+<tr class="separator:ga3f8b16398c4051ebf86fb7fcf26e02b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">GRPC_ARG_HTTP2_SCHEME</a>&#160;&#160;&#160;&quot;grpc.http2_scheme&quot;</td></tr>
 <tr class="memdesc:ga7797da9f3f5a1381484b2cabca1920fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg to override the http2 :scheme header.  <a href="group__grpc__arg__keys.html#ga7797da9f3f5a1381484b2cabca1920fc">More...</a><br /></td></tr>
 <tr class="separator:ga7797da9f3f5a1381484b2cabca1920fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -341,11 +344,14 @@ Macros</h2></td></tr>
 <tr class="memitem:ga7a2a214214ad1af38b0f67429838b215"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7a2a214214ad1af38b0f67429838b215">GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS</a>&#160;&#160;&#160;&quot;grpc.happy_eyeballs_connection_attempt_delay_ms&quot;</td></tr>
 <tr class="memdesc:ga7a2a214214ad1af38b0f67429838b215"><td class="mdescLeft">&#160;</td><td class="mdescRight">Connection Attempt Delay for use in Happy Eyeballs, in milliseconds.  <a href="group__grpc__arg__keys.html#ga7a2a214214ad1af38b0f67429838b215">More...</a><br /></td></tr>
 <tr class="separator:ga7a2a214214ad1af38b0f67429838b215"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY</a>&#160;&#160;&#160;&quot;grpc.event_engine_use_memory_allocator_factory&quot;</td></tr>
+<tr class="memdesc:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="mdescLeft">&#160;</td><td class="mdescRight">It accepts a MemoryAllocatorFactory as input and If specified, it forces the default event engine to use memory allocators created using the provided factory.  <a href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">More...</a><br /></td></tr>
+<tr class="separator:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Dec 9 2023 01:02:56 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Feb 7 2024 18:49:47 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
