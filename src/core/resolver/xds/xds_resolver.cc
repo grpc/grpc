@@ -48,8 +48,8 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_internal.h"
-#include "src/core/ext/filters/client_channel/config_selector.h"
+#include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/config_selector.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
