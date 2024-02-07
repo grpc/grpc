@@ -31,7 +31,7 @@ measure_cpu_costs = False
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 # Maximum number of bytes of job's stdout that will be stored in the result.
 # Only last N bytes of stdout will be kept if the actual output longer.
-_MAX_RESULT_SIZE = 64 * 1024
+_MAX_RESULT_SIZE = 64 * 1024 * 1024
 
 
 # NOTE: If you change this, please make sure to test reviewing the
@@ -312,7 +312,6 @@ class Job(object):
             shell=self._spec.shell,
             stderr=subprocess.STDOUT,
             stdout=subprocess.PIPE,
-            capture_output=True,
             env=env,
             text=True,
         )
@@ -342,7 +341,8 @@ class Job(object):
             return stdout
 
         if self._state == _RUNNING and self._process.poll() is not None:
-            message("DO NOT SUBMIT", self._process.stdout, stdout(), do_newline=True)
+            outs, errs = self._process.communicate()
+            message("DO NOT SUBMIT", outs, stdout(), do_newline=True)
             elapsed = time.time() - self._start
             self.result.elapsed_time = elapsed
             if self._process.returncode != 0:
