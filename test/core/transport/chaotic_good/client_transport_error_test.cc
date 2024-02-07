@@ -133,7 +133,11 @@ class ClientTransportTest : public ::testing::Test {
   }
   MemoryAllocator* memory_allocator() { return &allocator_; }
 
-  ChannelArgs MakeChannelArgs() { return ChannelArgs(); }
+  ChannelArgs MakeChannelArgs() {
+    return CoreConfiguration::Get()
+        .channel_args_preconditioning()
+        .PreconditionChannelArgs(nullptr);
+  }
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>

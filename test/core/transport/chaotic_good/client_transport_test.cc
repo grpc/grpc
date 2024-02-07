@@ -91,7 +91,11 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   });
 }
 
-ChannelArgs MakeChannelArgs() { return ChannelArgs(); }
+ChannelArgs MakeChannelArgs() {
+  return CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(nullptr);
+}
 
 TEST_F(TransportTest, AddOneStream) {
   MockPromiseEndpoint control_endpoint;
