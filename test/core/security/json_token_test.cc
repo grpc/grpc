@@ -322,7 +322,10 @@ static void check_jwt_signature(const char* b64_signature, EVP_PKEY* key,
   ASSERT_EQ(EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key),
             1);
   ASSERT_EQ(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size), 1);
-  ASSERT_EQ(EVP_DigestVerifyFinal(md_ctx, decoded.data(), decoded.size()), 1);
+  ASSERT_EQ(EVP_DigestVerifyFinal(
+                md_ctx, reinterpret_cast<const unsigned char*>(decoded.data()),
+                decoded.size()),
+            1);
 
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
 }

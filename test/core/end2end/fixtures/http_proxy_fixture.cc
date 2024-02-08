@@ -498,7 +498,7 @@ static bool proxy_auth_header_matches(absl::string_view proxy_auth_header_val,
   }
   std::string decoded;
   absl::Base64Unescape(proxy_auth_header_val, &decoded);
-  return proxy_auth_header_val == decoded;
+  return expected_cred == decoded;
 }
 
 // Callback to read the HTTP CONNECT request.
