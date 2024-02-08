@@ -14,12 +14,10 @@
 # limitations under the License.
 #
 # Builds C++ interop server and client in a base image.
-set -ex
+set -e
 
 mkdir -p /var/local/git
-echo "DO NOT SUBMIT cloning: $(date)"
 git clone /var/local/jenkins/grpc /var/local/git/grpc
-echo "DO NOT SUBMIT updating submodules: $(date)"
 # clone gRPC submodules, use data from locally cloned submodules where possible
 (cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
 && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
@@ -30,8 +28,6 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-grep -R 'DO NOT SUBMIT'
-
 # Install the roots.pem
 mkdir -p /usr/local/share/grpc
 cp etc/roots.pem /usr/local/share/grpc/roots.pem
@@ -39,9 +35,6 @@ cp etc/roots.pem /usr/local/share/grpc/roots.pem
 # build C++ interop client, interop server and http2 interop client
 mkdir -p cmake/build
 cd cmake/build
-echo "DO NOT SUBMIT make: $(date)"
-N_JOBS=$(nproc --all)
 cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release ../..
-make interop_client interop_server -j${N_JOBS}
-make http2_client -j${N_JOBS}
-echo "DO NOT SUBMIT build_interop.sh done: $(date)"
+make interop_client interop_server -j4
+make http2_client -j4

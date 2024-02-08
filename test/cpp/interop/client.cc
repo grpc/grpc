@@ -219,7 +219,6 @@ int main(int argc, char** argv) {
   }
   grpc::testing::ChannelCreationFunc channel_creation_func =
       [test_case, &additional_metadata](grpc::ChannelArguments arguments) {
-        gpr_log(GPR_ERROR, "DO NOT SUBMIT: in channel_creation func");
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
             factories;
@@ -246,59 +245,58 @@ int main(int argc, char** argv) {
       absl::GetFlag(FLAGS_do_not_abort_on_transient_failures));
 
   std::unordered_map<std::string, std::function<bool()>> actions;
-  // actions["empty_unary"] =
-  //     std::bind(&grpc::testing::InteropClient::DoEmpty, &client);
-  // actions["large_unary"] =
-  //     std::bind(&grpc::testing::InteropClient::DoLargeUnary, &client);
-  // actions["server_compressed_unary"] = std::bind(
-  //     &grpc::testing::InteropClient::DoServerCompressedUnary, &client);
-  // actions["client_compressed_unary"] = std::bind(
-  //     &grpc::testing::InteropClient::DoClientCompressedUnary, &client);
-  // actions["client_streaming"] =
-  //     std::bind(&grpc::testing::InteropClient::DoRequestStreaming, &client);
-  // actions["server_streaming"] =
-  //     std::bind(&grpc::testing::InteropClient::DoResponseStreaming, &client);
-  // actions["server_compressed_streaming"] = std::bind(
-  //     &grpc::testing::InteropClient::DoServerCompressedStreaming, &client);
-  // actions["client_compressed_streaming"] = std::bind(
-  //     &grpc::testing::InteropClient::DoClientCompressedStreaming, &client);
-  // actions["slow_consumer"] = std::bind(
-  //     &grpc::testing::InteropClient::DoResponseStreamingWithSlowConsumer,
-  //     &client);
-  // actions["half_duplex"] =
-  //     std::bind(&grpc::testing::InteropClient::DoHalfDuplex, &client);
-  // actions["ping_pong"] =
-  //     std::bind(&grpc::testing::InteropClient::DoPingPong, &client);
-  // actions["cancel_after_begin"] =
-  //     std::bind(&grpc::testing::InteropClient::DoCancelAfterBegin, &client);
-  // actions["cancel_after_first_response"] = std::bind(
-  //     &grpc::testing::InteropClient::DoCancelAfterFirstResponse, &client);
-  // actions["timeout_on_sleeping_server"] = std::bind(
-  //     &grpc::testing::InteropClient::DoTimeoutOnSleepingServer, &client);
-  // actions["empty_stream"] =
-  //     std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
-  // actions["pick_first_unary"] =
-  //     std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
-  // actions["orca_per_rpc"] =
-  //     std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
-  // actions["orca_oob"] =
-  //     std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
+  actions["empty_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoEmpty, &client);
+  actions["large_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoLargeUnary, &client);
+  actions["server_compressed_unary"] = std::bind(
+      &grpc::testing::InteropClient::DoServerCompressedUnary, &client);
+  actions["client_compressed_unary"] = std::bind(
+      &grpc::testing::InteropClient::DoClientCompressedUnary, &client);
+  actions["client_streaming"] =
+      std::bind(&grpc::testing::InteropClient::DoRequestStreaming, &client);
+  actions["server_streaming"] =
+      std::bind(&grpc::testing::InteropClient::DoResponseStreaming, &client);
+  actions["server_compressed_streaming"] = std::bind(
+      &grpc::testing::InteropClient::DoServerCompressedStreaming, &client);
+  actions["client_compressed_streaming"] = std::bind(
+      &grpc::testing::InteropClient::DoClientCompressedStreaming, &client);
+  actions["slow_consumer"] = std::bind(
+      &grpc::testing::InteropClient::DoResponseStreamingWithSlowConsumer,
+      &client);
+  actions["half_duplex"] =
+      std::bind(&grpc::testing::InteropClient::DoHalfDuplex, &client);
+  actions["ping_pong"] =
+      std::bind(&grpc::testing::InteropClient::DoPingPong, &client);
+  actions["cancel_after_begin"] =
+      std::bind(&grpc::testing::InteropClient::DoCancelAfterBegin, &client);
+  actions["cancel_after_first_response"] = std::bind(
+      &grpc::testing::InteropClient::DoCancelAfterFirstResponse, &client);
+  actions["timeout_on_sleeping_server"] = std::bind(
+      &grpc::testing::InteropClient::DoTimeoutOnSleepingServer, &client);
+  actions["empty_stream"] =
+      std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
+  actions["pick_first_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
+  actions["orca_per_rpc"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaPerRpc, &client);
+  actions["orca_oob"] =
+      std::bind(&grpc::testing::InteropClient::DoOrcaOob, &client);
   if (absl::GetFlag(FLAGS_use_tls)) {
-    // actions["compute_engine_creds"] =
-    //     std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds,
-    //     &client,
-    //               absl::GetFlag(FLAGS_default_service_account),
-    //               absl::GetFlag(FLAGS_oauth_scope));
-    // actions["jwt_token_creds"] =
-    //     std::bind(&grpc::testing::InteropClient::DoJwtTokenCreds, &client,
-    //               GetServiceAccountJsonKey());
+    actions["compute_engine_creds"] =
+        std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
+                  absl::GetFlag(FLAGS_default_service_account),
+                  absl::GetFlag(FLAGS_oauth_scope));
+    actions["jwt_token_creds"] =
+        std::bind(&grpc::testing::InteropClient::DoJwtTokenCreds, &client,
+                  GetServiceAccountJsonKey());
     actions["oauth2_auth_token"] =
         std::bind(&grpc::testing::InteropClient::DoOauth2AuthToken, &client,
                   absl::GetFlag(FLAGS_default_service_account),
                   absl::GetFlag(FLAGS_oauth_scope));
-    // actions["per_rpc_creds"] =
-    //     std::bind(&grpc::testing::InteropClient::DoPerRpcCreds, &client,
-    //               GetServiceAccountJsonKey());
+    actions["per_rpc_creds"] =
+        std::bind(&grpc::testing::InteropClient::DoPerRpcCreds, &client,
+                  GetServiceAccountJsonKey());
   }
   if (absl::GetFlag(FLAGS_custom_credentials_type) ==
       "google_default_credentials") {
@@ -306,42 +304,38 @@ int main(int argc, char** argv) {
         std::bind(&grpc::testing::InteropClient::DoGoogleDefaultCredentials,
                   &client, absl::GetFlag(FLAGS_default_service_account));
   }
-  // actions["status_code_and_message"] =
-  //     std::bind(&grpc::testing::InteropClient::DoStatusWithMessage, &client);
-  // actions["special_status_message"] =
-  //     std::bind(&grpc::testing::InteropClient::DoSpecialStatusMessage,
-  //     &client);
-  // actions["custom_metadata"] =
-  //     std::bind(&grpc::testing::InteropClient::DoCustomMetadata, &client);
-  // actions["unimplemented_method"] =
-  //     std::bind(&grpc::testing::InteropClient::DoUnimplementedMethod,
-  //     &client);
-  // actions["unimplemented_service"] =
-  //     std::bind(&grpc::testing::InteropClient::DoUnimplementedService,
-  //     &client);
-  // actions["channel_soak"] = std::bind(
-  //     &grpc::testing::InteropClient::DoChannelSoakTest, &client,
-  //     absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
-  //     absl::GetFlag(FLAGS_soak_max_failures),
-  //     absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
-  //     absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
-  //     absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
-  //     absl::GetFlag(FLAGS_soak_request_size),
-  //     absl::GetFlag(FLAGS_soak_response_size));
-  // actions["rpc_soak"] = std::bind(
-  //     &grpc::testing::InteropClient::DoRpcSoakTest, &client,
-  //     absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
-  //     absl::GetFlag(FLAGS_soak_max_failures),
-  //     absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
-  //     absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
-  //     absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
-  //     absl::GetFlag(FLAGS_soak_request_size),
-  //     absl::GetFlag(FLAGS_soak_response_size));
-  // actions["long_lived_channel"] =
-  //     std::bind(&grpc::testing::InteropClient::DoLongLivedChannelTest,
-  //     &client,
-  //               absl::GetFlag(FLAGS_soak_iterations),
-  //               absl::GetFlag(FLAGS_iteration_interval));
+  actions["status_code_and_message"] =
+      std::bind(&grpc::testing::InteropClient::DoStatusWithMessage, &client);
+  actions["special_status_message"] =
+      std::bind(&grpc::testing::InteropClient::DoSpecialStatusMessage, &client);
+  actions["custom_metadata"] =
+      std::bind(&grpc::testing::InteropClient::DoCustomMetadata, &client);
+  actions["unimplemented_method"] =
+      std::bind(&grpc::testing::InteropClient::DoUnimplementedMethod, &client);
+  actions["unimplemented_service"] =
+      std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
+  actions["channel_soak"] = std::bind(
+      &grpc::testing::InteropClient::DoChannelSoakTest, &client,
+      absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
+      absl::GetFlag(FLAGS_soak_max_failures),
+      absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
+      absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
+      absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
+      absl::GetFlag(FLAGS_soak_request_size),
+      absl::GetFlag(FLAGS_soak_response_size));
+  actions["rpc_soak"] = std::bind(
+      &grpc::testing::InteropClient::DoRpcSoakTest, &client,
+      absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
+      absl::GetFlag(FLAGS_soak_max_failures),
+      absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
+      absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
+      absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
+      absl::GetFlag(FLAGS_soak_request_size),
+      absl::GetFlag(FLAGS_soak_response_size));
+  actions["long_lived_channel"] =
+      std::bind(&grpc::testing::InteropClient::DoLongLivedChannelTest, &client,
+                absl::GetFlag(FLAGS_soak_iterations),
+                absl::GetFlag(FLAGS_iteration_interval));
 
   UpdateActions(&actions);
 
@@ -364,19 +358,3 @@ int main(int argc, char** argv) {
 
   return ret;
 }
-
-// stubby call blade:kokoro-api KokoroApi.Build 'full_job_name:
-// "grpc/core/master/linux/grpc_interop_toprod.cfg“ scm_revision: {  
-// github_scm_revision {     commit_sha: "tmptmp"     owner: "drfloob"     name:
-// "grpc”     repository: "grpc"   }
-// }'
-
-// stubby call blade:kokoro-api KokoroApi.Build 'full_job_name:
-// "grpc/core/master/linux/grpc_interop_toprod.cfg" scm_revision: {
-//   github_scm_revision {
-//     commit_sha: "tmptmp"
-//     owner: "drfloob"
-//     name: "grpc"
-//     repository: "grpc"
-//   }
-// }'
