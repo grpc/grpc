@@ -99,6 +99,7 @@ _TAG_COLOR = {
     "TIMEOUT_FLAKE": "purple",
     "WARNING": "yellow",
     "TIMEOUT": "red",
+    "DO NOT SUBMIT": "red",
     "PASSED": "green",
     "START": "gray",
     "WAITING": "yellow",
