@@ -38,9 +38,9 @@ class OpenTelemetryPluginBuilderImpl;
 
 namespace experimental {
 
-// When this object goes out of scope, CsmObservability will stop recording
-// metrics for new channels and servers. Existing channels and servers may
-// continue exporting metrics (implementation-dependent).
+// This object maintains state around the registered CsmObservability plugin.
+// The application is responsible for retaining this object until it has closed
+// all channels and servers that are recording metrics.
 class CsmObservability {
  public:
   CsmObservability() = default;
