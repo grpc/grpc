@@ -20,9 +20,12 @@
 
 #include <stdio.h>
 
-#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || defined(GPR_WINDOWS)
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
+    defined(GPR_WINDOWS)
 #include <string.h>
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 #include <sys/param.h>
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
 
 #include "gtest/gtest.h"
 
