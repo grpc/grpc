@@ -50,6 +50,7 @@
 namespace grpc {
 namespace {
 
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
@@ -86,6 +87,13 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   gpr_free(bundle_str);
   grpc_slice_unref(roots_bundle);
   grpc_slice_unref(result_slice);
+}
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+
+TEST(LoadSystemRootCertsTest, Success) {
+  grpc_slice roots_slice = grpc_core::LoadSystemRootCerts();
+  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(roots_slice));
+  grpc_slice_unref(roots_slice);
 }
 
 }  // namespace
