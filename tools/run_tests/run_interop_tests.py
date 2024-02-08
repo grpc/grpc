@@ -105,9 +105,8 @@ class CXXLanguage:
 
     def client_cmd(self, args):
         install_gdb = ["apt", "install", "-y", "gdb", ";"]
-        return (
-            install_gdb
-            + [
+        run_gdb_client = (
+            [
                 "GRPC_VERBOSITY=debug",
                 "gdb",
                 "-ex",
@@ -116,6 +115,14 @@ class CXXLanguage:
                 "cmake/build/interop_client",
             ]
             + args
+            + [";"]
+        )
+        return (
+            install_gdb
+            + ["GRPC_EXPERIMENTS=event_engine_client"]
+            + run_gdb_client
+            + ["GRPC_EXPERIMENTS=-event_engine_client"]
+            + run_gdb_client
         )
 
     def client_cmd_http2interop(self, args):
