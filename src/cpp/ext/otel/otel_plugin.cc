@@ -68,7 +68,6 @@ absl::flat_hash_set<std::string> BaseMetrics() {
 
 // TODO(yashykt): This should go away when we move to the
 // GlobalStatsPluginRegistry.
-std::atomic<bool> g_otel_plugin_enabled(false);
 
 }  // namespace
 
@@ -80,10 +79,6 @@ const struct OpenTelemetryPluginState& OpenTelemetryPluginState() {
   GPR_DEBUG_ASSERT(g_otel_plugin_state_ != nullptr);
   return *g_otel_plugin_state_;
 }
-
-bool OpenTelemetryPluginEnabled() { return g_otel_plugin_enabled; }
-
-void DisableOpenTelemetryPlugin() { g_otel_plugin_enabled = false; }
 
 absl::string_view OpenTelemetryMethodKey() { return "grpc.method"; }
 
@@ -270,7 +265,6 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                          args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
             });
       });
-  g_otel_plugin_enabled = true;
   return absl::OkStatus();
 }
 

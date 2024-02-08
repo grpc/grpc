@@ -48,8 +48,11 @@ class CsmObservability {
   // Disable copy constructor and copy-assignment operator.
   CsmObservability(const CsmObservability&) = delete;
   CsmObservability& operator=(const CsmObservability&) = delete;
-  CsmObservability(CsmObservability&&) = default;
-  CsmObservability& operator=(CsmObservability&&) = default;
+  CsmObservability(CsmObservability&&) noexcept;
+  CsmObservability& operator=(CsmObservability&&) noexcept;
+
+ private:
+  bool valid_ = true;
 };
 
 // CsmObservabilityBuilder configures observability for all service mesh traffic
