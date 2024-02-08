@@ -143,17 +143,16 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
-      if (!is_immediately_resolved_ &&
-          *async_resolution_.first_factory == nullptr) {
-        // Cancelled whilst polling
-        return absl::nullopt;
-      }
       if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: %s", this,
                 DebugString().c_str());
       }
       if (is_immediately_resolved_) return std::move(result_);
       while (true) {
+        if (*async_resolution_.first_factory == nullptr) {
+          // Cancelled whilst polling
+          return absl::nullopt;
+        }
         auto r = async_resolution_.current_factory->PollOnce(
             async_resolution_.space.get());
         if (auto* p = r.value_if_ready()) {
