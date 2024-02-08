@@ -104,7 +104,14 @@ class CXXLanguage:
         self.safename = "cxx"
 
     def client_cmd(self, args):
-        return ["cmake/build/interop_client"] + args
+        return [
+            "GRPC_VERBOSITY=debug",
+            "gdb",
+            "-ex",
+            "run",
+            "-args",
+            "cmake/build/interop_client",
+        ] + args
 
     def client_cmd_http2interop(self, args):
         return ["cmake/build/http2_client"] + args
@@ -998,8 +1005,9 @@ def cloud_to_prod_jobspec(
         )
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
+                manual_cmd_log.append('docker_image=%s"' % docker_image)
                 manual_cmd_log.append(
-                    'echo "Testing ${docker_image:=%s}"' % docker_image
+                    'echo "Testing ${docker_image=%s}"' % docker_image
                 )
             manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
         cwd = None

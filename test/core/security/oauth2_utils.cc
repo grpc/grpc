@@ -49,6 +49,12 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch initial_metadata{arena.get()};
   char* token = nullptr;
+  // TODO(hork): rm once GetRequestMetadata does not depend on pollsets.
+  grpc_pollset* pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  gpr_mu* mu = nullptr;
+  grpc_pollset_init(pollset, &mu);
+  auto pops = grpc_polling_entity_create_from_pollset(pollset);
   auto activity = grpc_core::MakeActivity(
       [creds, &initial_metadata, &get_request_metadata_args]() {
         return grpc_core::Map(
@@ -77,7 +83,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
         }
         done.Notify();
       },
-      arena.get());
+      arena.get(), &pops);
   grpc_core::ExecCtx::Get()->Flush();
   done.WaitForNotification();
   grpc_core::ExecCtx::Get()->Flush();
