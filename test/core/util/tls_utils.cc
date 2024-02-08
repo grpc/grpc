@@ -78,7 +78,7 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
   return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
 }
 
-std::string GetFileContents(const char* path) {
+std::string GetFileContents(const std::string& path) {
   auto slice = LoadFile(path, /*add_null_terminator=*/false);
   if (!slice.ok()) {
     Crash(absl::StrCat("error loading file ", path, ": ",
