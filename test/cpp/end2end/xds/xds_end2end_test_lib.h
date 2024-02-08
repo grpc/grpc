@@ -259,6 +259,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       allow_put_requests_ = allow_put_requests;
     }
 
+    void StopListening();
+
     void StopListeningAndSendGoaways();
 
    private:
@@ -331,6 +333,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       Status Echo2(ServerContext* context, const EchoRequest* request,
                    EchoResponse* response) override {
         return Echo(context, request, response);
+      }
+
+      Status BidiStream(
+          ServerContext* context,
+          ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
+        {
+          grpc_core::MutexLock lock(&mu_);
+          clients_.insert(context->peer());
+        }
+        return TestMultipleServiceImpl<RpcService>::BidiStream(context, stream);
       }
 
       void Start() {}

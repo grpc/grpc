@@ -171,6 +171,16 @@ void XdsEnd2endTest::ServerThread::StopListeningAndSendGoaways() {
   gpr_log(GPR_INFO, "%s done sending GOAWAYs", Type());
 }
 
+void XdsEnd2endTest::ServerThread::StopListening() {
+  gpr_log(GPR_INFO, "%s about to stop listening", Type());
+  {
+    grpc_core::ExecCtx exec_ctx;
+    auto* server = grpc_core::Server::FromC(server_->c_server());
+    server->StopListening();
+  }
+  gpr_log(GPR_INFO, "%s stopped listening", Type());
+}
+
 void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
                                          grpc_core::CondVar* cond) {
   // We need to acquire the lock here in order to prevent the notify_one
