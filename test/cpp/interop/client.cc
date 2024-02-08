@@ -219,6 +219,7 @@ int main(int argc, char** argv) {
   }
   grpc::testing::ChannelCreationFunc channel_creation_func =
       [test_case, &additional_metadata](grpc::ChannelArguments arguments) {
+        gpr_log(GPR_ERROR, "DO NOT SUBMIT: in channel_creation func");
         std::vector<std::unique_ptr<
             grpc::experimental::ClientInterceptorFactoryInterface>>
             factories;

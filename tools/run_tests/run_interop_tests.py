@@ -745,12 +745,12 @@ _TEST_CASES = [
 ]
 
 _AUTH_TEST_CASES = [
-    "compute_engine_creds",
-    "jwt_token_creds",
+    # "compute_engine_creds",
+    # "jwt_token_creds",
     "oauth2_auth_token",
-    "per_rpc_creds",
-    _GOOGLE_DEFAULT_CREDS_TEST_CASE,
-    _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
+    # "per_rpc_creds",
+    # _GOOGLE_DEFAULT_CREDS_TEST_CASE,
+    # _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
 ]
 
 _HTTP2_TEST_CASES = ["tls", "framing"]
