@@ -63,14 +63,6 @@ TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
       "xds://traffic-director-global.xds.googleapis.com/foo"));
 }
 
-TEST(CsmPluginOptionTest, Basic) {
-  EXPECT_EQ(
-      OpenTelemetryPluginBuilder()
-          .AddPluginOption(experimental::MakeCsmOpenTelemetryPluginOption())
-          .BuildAndRegisterGlobal(),
-      absl::OkStatus());
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

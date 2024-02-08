@@ -959,32 +959,32 @@ endif
 # deps: ['upb_json_lib', 'upb_textformat_lib', 're2', 'z', 'grpc_abseil', 'cares', 'gpr', 'libssl', 'address_sorting']
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib', 'libssl']
 LIBGRPC_SRC = \
+    src/core/client_channel/backend_metric.cc \
+    src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/channel_connectivity.cc \
+    src/core/client_channel/client_channel_channelz.cc \
+    src/core/client_channel/client_channel_factory.cc \
+    src/core/client_channel/client_channel_filter.cc \
+    src/core/client_channel/client_channel_plugin.cc \
+    src/core/client_channel/client_channel_service_config.cc \
+    src/core/client_channel/config_selector.cc \
+    src/core/client_channel/dynamic_filters.cc \
+    src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/http_proxy_mapper.cc \
+    src/core/client_channel/local_subchannel_pool.cc \
+    src/core/client_channel/retry_filter.cc \
+    src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_service_config.cc \
+    src/core/client_channel/retry_throttle.cc \
+    src/core/client_channel/service_config_channel_arg_filter.cc \
+    src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_pool_interface.cc \
+    src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/client_channel_service_config.cc \
-    src/core/ext/filters/client_channel/config_selector.cc \
-    src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/http_proxy_mapper.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/retry_filter.cc \
-    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
-    src/core/ext/filters/client_channel/retry_service_config.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
@@ -1891,32 +1891,32 @@ endif
 # deps: ['upb_message_lib', 'utf8_range_lib', 'z', 'grpc_abseil', 'cares', 'gpr', 'address_sorting']
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBGRPC_UNSECURE_SRC = \
+    src/core/client_channel/backend_metric.cc \
+    src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/channel_connectivity.cc \
+    src/core/client_channel/client_channel_channelz.cc \
+    src/core/client_channel/client_channel_factory.cc \
+    src/core/client_channel/client_channel_filter.cc \
+    src/core/client_channel/client_channel_plugin.cc \
+    src/core/client_channel/client_channel_service_config.cc \
+    src/core/client_channel/config_selector.cc \
+    src/core/client_channel/dynamic_filters.cc \
+    src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/http_proxy_mapper.cc \
+    src/core/client_channel/local_subchannel_pool.cc \
+    src/core/client_channel/retry_filter.cc \
+    src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_service_config.cc \
+    src/core/client_channel/retry_throttle.cc \
+    src/core/client_channel/service_config_channel_arg_filter.cc \
+    src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_pool_interface.cc \
+    src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/client_channel_service_config.cc \
-    src/core/ext/filters/client_channel/config_selector.cc \
-    src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/http_proxy_mapper.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/retry_filter.cc \
-    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
-    src/core/ext/filters/client_channel/retry_service_config.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \

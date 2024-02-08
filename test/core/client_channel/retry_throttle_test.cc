@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/filters/client_channel/retry_throttle.h"
+#include "src/core/client_channel/retry_throttle.h"
 
 #include "gtest/gtest.h"
 
