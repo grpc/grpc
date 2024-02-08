@@ -101,12 +101,14 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
                                 grpc_core::Timestamp::InfFuture()))) {
         is_done = true;
       }
-      gpr_mu_unlock(mu);
     }
+    gpr_mu_unlock(mu);
   }
   grpc_pollset_shutdown(
       grpc_polling_entity_pollset(&pops),
       GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr, nullptr));
   grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_destroy(grpc_polling_entity_pollset(&pops));
+  gpr_free(pollset);
   return token;
 }
