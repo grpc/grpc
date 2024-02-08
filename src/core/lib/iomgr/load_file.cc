@@ -56,7 +56,6 @@ grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
   if (bytes_read < contents_size) {
     gpr_free(contents);
     error = GRPC_OS_ERROR(errno, "fread");
-    GPR_ASSERT(ferror(file));
     goto end;
   }
   if (add_null_terminator) {
