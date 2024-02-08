@@ -393,11 +393,11 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         else sysconfig.get_platform()
     )
-    if "x86" in boringssl_asm_platform:
-        print("Enabling SSL2 on %s platform" % boringssl_asm_platform)
+    if "i686" in boringssl_asm_platform:
+        print("Enabling SSE2 on %s platform" % boringssl_asm_platform)
         EXTRA_COMPILE_ARGS.append("-msse2")
     else:
-        print("SSL2 not enabled on %s platform" % boringssl_asm_platform)
+        print("SSE2 not enabled on %s platform" % boringssl_asm_platform)
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
     # (i.e. not Windows), we can include the assembly files and let BoringSSL
