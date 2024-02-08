@@ -47,9 +47,9 @@
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
-#include "test/cpp/util/tls_utils.h"
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
@@ -66,6 +66,7 @@ using grpc::channelz::v1::GetSubchannelRequest;
 using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
+using grpc_core::testing::GetFileContents;
 
 namespace grpc {
 namespace testing {
@@ -141,7 +142,7 @@ std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
   }
   args->SetSslTargetNameOverride("foo.test.google.fr");
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      GetFileContents(kClientKeyPath), GetFileContents(kClientCertPath)};
+      {GetFileContents(kClientKeyPath), GetFileContents(kClientCertPath)}};
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(
       std::make_shared<grpc::experimental::StaticDataCertificateProvider>(

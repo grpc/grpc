@@ -23,7 +23,7 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/cpp/util/tls_utils.h"
+#include "test/core/util/tls_utils.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 
