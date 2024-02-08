@@ -18,6 +18,7 @@ grpc_fuzz_test(
     name = "union_with_test",
     srcs = ["union_with_test.cc"],
     external_deps = [
+        "absl/types:variant",
         "fuzztest",
         "fuzztest_main",
         "gtest",

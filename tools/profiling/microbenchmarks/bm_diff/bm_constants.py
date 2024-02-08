@@ -21,7 +21,6 @@ _AVAILABLE_BENCHMARK_TESTS = [
     "bm_fullstack_streaming_pump",
     "bm_closure",
     "bm_cq",
-    "bm_call_create",
     "bm_chttp2_hpack",
     "bm_chttp2_transport",
     "bm_pollset",

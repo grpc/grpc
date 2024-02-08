@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-class ChannelIdleFilter : public ChannelFilter {
+class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
  public:
   ~ChannelIdleFilter() override = default;
 
@@ -49,9 +49,23 @@ class ChannelIdleFilter : public ChannelFilter {
   ChannelIdleFilter(ChannelIdleFilter&&) = default;
   ChannelIdleFilter& operator=(ChannelIdleFilter&&) = default;
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    explicit Call(ChannelIdleFilter* filter) : filter_(filter) {
+      filter_->IncreaseCallCount();
+    }
+    ~Call() { filter_->DecreaseCallCount(); }
+
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+
+   private:
+    ChannelIdleFilter* filter_;
+  };
 
   bool StartTransportOp(grpc_transport_op* op) override;
 
@@ -74,12 +88,6 @@ class ChannelIdleFilter : public ChannelFilter {
 
  private:
   void StartIdleTimer();
-
-  struct CallCountDecreaser {
-    void operator()(ChannelIdleFilter* filter) const {
-      filter->DecreaseCallCount();
-    }
-  };
 
   // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;

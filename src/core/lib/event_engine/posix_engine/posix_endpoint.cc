@@ -1246,8 +1246,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   GPR_ASSERT(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
   mem_quota_ = options.resource_quota->memory_quota();
-  memory_owner_ = mem_quota_->CreateMemoryOwner(
-      peer_addr_string.ok() ? *peer_addr_string : "");
+  memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
   auto local_address = sock.LocalAddress();
   if (local_address.ok()) {

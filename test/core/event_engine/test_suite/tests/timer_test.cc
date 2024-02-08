@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <memory>
 #include <random>
-#include <ratio>
 #include <thread>
 #include <utility>
 #include <vector>

@@ -83,8 +83,11 @@ union {
 % endif
   enum class State : uint8_t { ${",".join(f"kState{i}" for i in range(0,n))} };
   GPR_NO_UNIQUE_ADDRESS State state = State::kState0;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence;
 
-  SeqState(P&& p, ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))}) noexcept {
+  SeqState(P&& p,
+           ${",".join(f"F{i}&& f{i}" for i in range(0,n-1))},
+           DebugLocation whence) noexcept: whence(whence)  {
     Construct(&${"prior."*(n-1)}current_promise, std::forward<P>(p));
 % for i in range(0,n-1):
     Construct(&${"prior."*(n-1-i)}next_factory, std::forward<F${i}>(f${i}));
@@ -106,7 +109,7 @@ tail${i}:
     Destruct(&${"prior."*(n-1-i)}next_factory);
 % endfor
   }
-  SeqState(const SeqState& other) noexcept : state(other.state) {
+  SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
     GPR_ASSERT(state == State::kState0);
     Construct(&${"prior."*(n-1-i)}current_promise,
             other.${"prior."*(n-1-i)}current_promise);
@@ -116,7 +119,7 @@ tail${i}:
 % endfor
   }
   SeqState& operator=(const SeqState& other) = delete;
-  SeqState(SeqState&& other) noexcept : state(other.state) {
+  SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
     switch (state) {
 % for i in range(0,n-1):
      case State::kState${i}:
@@ -139,11 +142,22 @@ tail${i}:
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: begin poll step ${i+1}/${n}", this);
+        }
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: poll step ${i+1}/${n} gets %s", this, 
+                  p != nullptr
+                    ? (PromiseResultTraits${i}::IsOk(*p)
+                      ? "ready" 
+                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str()) 
+                    : "pending");
+        }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits${i}::IsOk(*p)) {
-            return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(*p));
+          return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(*p));
         }
         Destruct(&${"prior."*(n-1-i)}current_promise);
         auto next_promise = PromiseResultTraits${i}::CallFactory(&${"prior."*(n-1-i)}next_factory, std::move(*p));
@@ -155,7 +169,13 @@ tail${i}:
 % endfor
       default:
       case State::kState${n-1}: {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: begin poll step ${n}/${n}", this);
+        }
         auto result = current_promise();
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: poll step ${n}/${n} gets %s", this, result.ready()? "ready" : "pending");
+        }
         auto* p = result.value_if_ready();
         if (p == nullptr) return Pending{};
         return Result(std::move(*p));
@@ -178,13 +198,16 @@ front_matter = """
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/trace.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -266,6 +289,6 @@ copyright = [line[2:].rstrip() for line in copyright]
 with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
-    for n in range(2, 10):
+    for n in range(2, 14):
         print(seq_state.render(n=n), file=f)
     print(end_matter, file=f)

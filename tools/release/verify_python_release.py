@@ -44,6 +44,7 @@ _DEFAULT_PACKAGES = [
     "grpcio-testing",
     "grpcio-admin",
     "grpcio-csds",
+    "xds-protos",
 ]
 
 Artifact = collections.namedtuple("Artifact", ("filename", "checksum"))

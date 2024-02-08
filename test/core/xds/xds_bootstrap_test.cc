@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -665,10 +664,9 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginParsingSuccess) {
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
   ASSERT_EQ(fake_plugin.config->name(), "fake");
-  ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
-                fake_plugin.config)
-                ->value(),
-            10);
+  auto* config = static_cast<FakeCertificateProviderFactory::Config*>(
+      fake_plugin.config.get());
+  ASSERT_EQ(config->value(), 10);
 }
 
 TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
@@ -693,10 +691,9 @@ TEST(XdsBootstrapTest, CertificateProvidersFakePluginEmptyConfig) {
       bootstrap->certificate_providers().at("fake_plugin");
   ASSERT_EQ(fake_plugin.plugin_name, "fake");
   ASSERT_EQ(fake_plugin.config->name(), "fake");
-  ASSERT_EQ(static_cast<RefCountedPtr<FakeCertificateProviderFactory::Config>>(
-                fake_plugin.config)
-                ->value(),
-            0);
+  auto* config = static_cast<FakeCertificateProviderFactory::Config*>(
+      fake_plugin.config.get());
+  ASSERT_EQ(config->value(), 0);
 }
 
 TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {

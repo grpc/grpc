@@ -54,6 +54,10 @@ class WorkQueue {
   virtual void Add(EventEngine::Closure* closure) = 0;
   // Wraps an AnyInvocable and adds it to the the queue.
   virtual void Add(absl::AnyInvocable<void()> invocable) = 0;
+  // Returns an optional owner id for queue identification.
+  // TODO(hork): revisit if this can be moved to the thread pool implementation
+  // if dynamic queue type experiments are warranted.
+  virtual const void* owner() = 0;
 };
 
 }  // namespace experimental

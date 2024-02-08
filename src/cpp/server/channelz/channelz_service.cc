@@ -20,6 +20,8 @@
 
 #include "src/cpp/server/channelz/channelz_service.h"
 
+#include <memory>
+
 #include <grpc/support/alloc.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 

@@ -98,8 +98,5 @@ def generate_resolver_component_tests():
                 "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
                 "--running_under_bazel=true",
             ],
-            # The test is highly flaky on AWS workers that we use for running ARM64 tests.
-            # The "no_arm64" tag can be used to skip it.
-            # (see https://github.com/grpc/grpc/issues/25289).
-            tags = ["no_mac", "no_arm64", "resolver_component_tests_runner_invoker"],
+            tags = ["no_mac", "resolver_component_tests_runner_invoker"],
         )

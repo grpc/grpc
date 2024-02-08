@@ -23,7 +23,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <limits>
 #include <string>
 #include <utility>

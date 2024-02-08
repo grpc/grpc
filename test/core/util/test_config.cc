@@ -21,9 +21,6 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <initializer_list>
-#include <string>
-
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"

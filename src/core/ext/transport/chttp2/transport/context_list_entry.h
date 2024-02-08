@@ -24,7 +24,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <memory>
+#include <utility>
 #include <vector>
+
+#include "src/core/lib/channel/tcp_tracer.h"
 
 namespace grpc_core {
 
@@ -43,11 +47,13 @@ namespace grpc_core {
 class ContextListEntry {
  public:
   ContextListEntry(void* context, int64_t relative_start_pos,
-                   int64_t num_traced_bytes, size_t byte_offset)
+                   int64_t num_traced_bytes, size_t byte_offset,
+                   std::shared_ptr<TcpTracerInterface> tcp_tracer)
       : trace_context_(context),
         relative_start_pos_in_chunk_(relative_start_pos),
         num_traced_bytes_in_chunk_(num_traced_bytes),
-        byte_offset_in_stream_(byte_offset) {}
+        byte_offset_in_stream_(byte_offset),
+        tcp_tracer_(std::move(tcp_tracer)) {}
 
   ContextListEntry() = delete;
 
@@ -55,12 +61,16 @@ class ContextListEntry {
   int64_t RelativeStartPosInChunk() { return relative_start_pos_in_chunk_; }
   int64_t NumTracedBytesInChunk() { return num_traced_bytes_in_chunk_; }
   size_t ByteOffsetInStream() { return byte_offset_in_stream_; }
+  std::shared_ptr<TcpTracerInterface> ReleaseTcpTracer() {
+    return std::move(tcp_tracer_);
+  }
 
  private:
   void* trace_context_;
   int64_t relative_start_pos_in_chunk_;
   int64_t num_traced_bytes_in_chunk_;
   size_t byte_offset_in_stream_;
+  std::shared_ptr<TcpTracerInterface> tcp_tracer_;
 };
 
 /// A list of RPC Contexts

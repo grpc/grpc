@@ -21,14 +21,45 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <thread>
-
 #include <grpcpp/server.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/sync.h"
+#include "src/proto/grpc/testing/messages.pb.h"
+#include "src/proto/grpc/testing/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
+
+class HookServiceImpl final : public HookService::CallbackService {
+ public:
+  ServerUnaryReactor* Hook(CallbackServerContext* context,
+                           const Empty* /* request */,
+                           Empty* /* reply */) override;
+
+  ServerUnaryReactor* SetReturnStatus(CallbackServerContext* context,
+                                      const SetReturnStatusRequest* request,
+                                      Empty* /* reply */) override;
+
+  ServerUnaryReactor* ClearReturnStatus(CallbackServerContext* context,
+                                        const Empty* request,
+                                        Empty* /* reply */) override;
+
+  void AddReturnStatus(const Status& status);
+
+  bool TestOnlyExpectRequests(size_t expected_requests_count,
+                              const absl::Duration& timeout);
+
+  void Stop();
+
+ private:
+  void MatchRequestsAndStatuses() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar request_var_ ABSL_GUARDED_BY(&mu_);
+  std::vector<ServerUnaryReactor*> pending_requests_ ABSL_GUARDED_BY(&mu_);
+  std::vector<Status> pending_statuses_ ABSL_GUARDED_BY(&mu_);
+  absl::optional<Status> respond_all_status_ ABSL_GUARDED_BY(&mu_);
+};
 
 // Implementation of the pre-stop hook server. An instance is created to start
 // a server and destroyed to stop one.

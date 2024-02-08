@@ -29,12 +29,12 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
 #include "test/core/util/test_config.h"

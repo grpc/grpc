@@ -8,6 +8,7 @@ See [CONTRIBUTING.md](https://github.com/grpc/grpc-community/blob/master/CONTRIB
 for general contribution guidelines.
 
 ## Maintainers (in alphabetical order)
+<!-- go/keep-sorted start case=no -->
 - [a11r](https://github.com/a11r), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
@@ -21,6 +22,7 @@ for general contribution guidelines.
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
 - [jtattermusch](https://github.com/jtattermusch), Google LLC
+- [kevinnilson](https://github.com/kevinnilson), Google LLC
 - [LittleCVR](https://github.com/littlecvr), Google LLC
 - [markdroth](https://github.com/markdroth), Google LLC
 - [matthewstevenson88](https://github.com/matthewstevenson88), Google LLC
@@ -33,13 +35,16 @@ for general contribution guidelines.
 - [soheilhy](https://github.com/soheilhy), Google LLC
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC
+- [tjagtap](https://github.com/tjagtap), Google LLC
 - [veblush](https://github.com/veblush), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC
 - [ZhouyihaiDing](https://github.com/ZhouyihaiDing), Google LLC
+<!-- go/keep-sorted end -->
 
 ## Emeritus Maintainers (in alphabetical order)
+<!-- go/keep-sorted start case=no -->
 - [adelez](https://github.com/adelez), Google LLC
 - [AspirinSJL](https://github.com/AspirinSJL), Google LLC
 - [billfeng327](https://github.com/billfeng327), Google LLC
@@ -86,3 +91,4 @@ for general contribution guidelines.
 - [yihuazhang](https://github.com/yihuazhang), Google LLC
 - [zpencer](https://github.com/zpencer), Google LLC
 - [ZhenLian](https://github.com/ZhenLian), Google LLC
+<!-- go/keep-sorted end -->

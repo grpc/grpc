@@ -18,7 +18,6 @@
 
 #include <stdint.h>
 
-#include <algorithm>
 #include <memory>
 #include <string>
 
@@ -30,7 +29,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -43,12 +41,13 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/load_balancing/delegating_helper.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
+#include "src/core/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
 
@@ -340,9 +339,10 @@ class AddressTestLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
           cb_(std::move(cb)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override {
-      cb_(address);
-      return parent_helper()->CreateSubchannel(std::move(address), args);
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+      cb_(EndpointAddresses(address, per_address_args));
+      return parent_helper()->CreateSubchannel(address, per_address_args, args);
     }
 
    private:
@@ -414,17 +414,19 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
             config->address().c_str());
     auto uri = URI::Parse(config->address());
     args.config.reset();
-    args.addresses = ServerAddressList();
+    EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(*uri, &address));
-      args.addresses->emplace_back(address, ChannelArgs());
+      addresses.emplace_back(address, ChannelArgs());
     } else {
       gpr_log(GPR_ERROR,
               "%s: could not parse URI (%s), using empty address list",
               kFixedAddressLbPolicyName, uri.status().ToString().c_str());
       args.resolution_note = "no address in fixed_address_lb policy";
     }
+    args.addresses =
+        std::make_shared<EndpointAddressesListIterator>(std::move(addresses));
     return ForwardingLoadBalancingPolicy::UpdateLocked(std::move(args));
   }
 
@@ -496,7 +498,7 @@ class OobBackendMetricTestLoadBalancingPolicy
   class BackendMetricWatcher : public OobBackendMetricWatcher {
    public:
     BackendMetricWatcher(
-        ServerAddress address,
+        EndpointAddresses address,
         RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent)
         : address_(std::move(address)), parent_(std::move(parent)) {}
 
@@ -506,7 +508,7 @@ class OobBackendMetricTestLoadBalancingPolicy
     }
 
    private:
-    ServerAddress address_;
+    EndpointAddresses address_;
     RefCountedPtr<OobBackendMetricTestLoadBalancingPolicy> parent_;
   };
 
@@ -518,11 +520,16 @@ class OobBackendMetricTestLoadBalancingPolicy
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        ServerAddress address, const ChannelArgs& args) override {
-      auto subchannel = parent_helper()->CreateSubchannel(address, args);
+        const grpc_resolved_address& address,
+        const ChannelArgs& per_address_args, const ChannelArgs& args) override {
+      auto subchannel =
+          parent_helper()->CreateSubchannel(address, per_address_args, args);
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
-          Duration::Seconds(1), std::make_unique<BackendMetricWatcher>(
-                                    std::move(address), parent()->Ref())));
+          Duration::Seconds(1),
+          std::make_unique<BackendMetricWatcher>(
+              EndpointAddresses(address, per_address_args),
+              parent()
+                  ->RefAsSubclass<OobBackendMetricTestLoadBalancingPolicy>())));
       return subchannel;
     }
   };

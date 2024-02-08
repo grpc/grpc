@@ -19,7 +19,6 @@
 
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
@@ -34,7 +33,7 @@ struct SimpleSliceBasedMetadata {
   static MementoType ParseMemento(Slice value,
                                   bool will_keep_past_request_lifetime,
                                   MetadataParseErrorFn) {
-    if (will_keep_past_request_lifetime && IsUniqueMetadataStringsEnabled()) {
+    if (will_keep_past_request_lifetime) {
       return value.TakeUniquelyOwned();
     } else {
       return value.TakeOwned();

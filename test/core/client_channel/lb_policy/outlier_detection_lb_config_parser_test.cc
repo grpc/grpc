@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gmock/gmock.h"

@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <initializer_list>
 #include <memory>
 
 #include "absl/strings/str_format.h"

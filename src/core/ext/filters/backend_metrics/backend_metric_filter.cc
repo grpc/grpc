@@ -17,7 +17,6 @@
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
 #include <inttypes.h>
-#include <limits.h>
 #include <stddef.h>
 
 #include <functional>
@@ -27,30 +26,37 @@
 
 #include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 
 namespace grpc_core {
 
 TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 
-absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
-    BackendMetricProvider* provider) const {
+const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
+const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
+const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
+const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
+const NoInterceptor BackendMetricFilter::Call::OnFinalize;
+
+namespace {
+absl::optional<std::string> MaybeSerializeBackendMetrics(
+    BackendMetricProvider* provider) {
   if (provider == nullptr) return absl::nullopt;
   BackendMetricData data = provider->GetBackendMetricData();
   upb::Arena arena;
@@ -109,17 +115,27 @@ absl::optional<std::string> BackendMetricFilter::MaybeSerializeBackendMetrics(
       xds_data_orca_v3_OrcaLoadReport_serialize(response, arena.ptr(), &len);
   return std::string(buf, len);
 }
+}  // namespace
+
+const grpc_channel_filter LegacyBackendMetricFilter::kFilter =
+    MakePromiseBasedFilter<LegacyBackendMetricFilter, FilterEndpoint::kServer>(
+        "backend_metric");
 
 const grpc_channel_filter BackendMetricFilter::kFilter =
     MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
         "backend_metric");
+
+absl::StatusOr<LegacyBackendMetricFilter> LegacyBackendMetricFilter::Create(
+    const ChannelArgs&, ChannelFilter::Args) {
+  return LegacyBackendMetricFilter();
+}
 
 absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
     const ChannelArgs&, ChannelFilter::Args) {
   return BackendMetricFilter();
 }
 
-ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
+ArenaPromise<ServerMetadataHandle> LegacyBackendMetricFilter::MakeCallPromise(
     CallArgs call_args, NextPromiseFactory next_promise_factory) {
   return ArenaPromise<ServerMetadataHandle>(Map(
       next_promise_factory(std::move(call_args)),
@@ -150,15 +166,39 @@ ArenaPromise<ServerMetadataHandle> BackendMetricFilter::MakeCallPromise(
       }));
 }
 
+void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  auto* ctx = &GetContext<
+      grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
+  if (ctx == nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+      gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
+    }
+    return;
+  }
+  absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(
+      reinterpret_cast<BackendMetricProvider*>(ctx->value));
+  if (serialized.has_value() && !serialized->empty()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+      gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %" PRIuPTR,
+              this, serialized->size());
+    }
+    md.Set(EndpointLoadMetricsBinMetadata(),
+           Slice::FromCopiedString(std::move(*serialized)));
+  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+    gpr_log(GPR_INFO, "[%p] No backend metrics.", this);
+  }
+}
+
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-        if (builder->channel_args().Contains(
-                GRPC_ARG_SERVER_CALL_METRIC_RECORDING)) {
-          builder->PrependFilter(&BackendMetricFilter::kFilter);
-        }
-        return true;
-      });
+  if (IsV3BackendMetricFilterEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter<BackendMetricFilter>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
+  } else {
+    builder->channel_init()
+        ->RegisterFilter<LegacyBackendMetricFilter>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
+  }
 }
 
 }  // namespace grpc_core

@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include <grpc/support/log.h>
+
 static LibraryInitializer* g_libraryInitializer;
 
 LibraryInitializer::LibraryInitializer() {

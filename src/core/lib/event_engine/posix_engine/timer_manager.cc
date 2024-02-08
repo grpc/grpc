@@ -30,7 +30,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/thd.h"
 
 static thread_local bool g_timer_thread;
 
@@ -67,41 +66,32 @@ bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
 }
 
 void TimerManager::MainLoop() {
-  for (;;) {
-    grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
-    absl::optional<std::vector<experimental::EventEngine::Closure*>>
-        check_result = timer_list_->TimerCheck(&next);
-    GPR_ASSERT(check_result.has_value() &&
-               "ERROR: More than one MainLoop is running.");
-    if (!check_result->empty()) {
-      RunSomeTimers(std::move(*check_result));
-      continue;
-    }
-    if (!WaitUntil(next)) break;
+  grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
+  absl::optional<std::vector<experimental::EventEngine::Closure*>>
+      check_result = timer_list_->TimerCheck(&next);
+  GPR_ASSERT(check_result.has_value() &&
+             "ERROR: More than one MainLoop is running.");
+  bool timers_found = !check_result->empty();
+  if (timers_found) {
+    RunSomeTimers(std::move(*check_result));
   }
-  main_loop_exit_signal_->Notify();
+  thread_pool_->Run([this, next, timers_found]() {
+    if (!timers_found && !WaitUntil(next)) {
+      main_loop_exit_signal_->Notify();
+      return;
+    }
+    MainLoop();
+  });
 }
 
 bool TimerManager::IsTimerManagerThread() { return g_timer_thread; }
-
-void TimerManager::StartMainLoopThread() {
-  main_thread_ = grpc_core::Thread(
-      "timer_manager",
-      [](void* arg) {
-        auto self = static_cast<TimerManager*>(arg);
-        self->MainLoop();
-      },
-      this, nullptr,
-      grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
-  main_thread_.Start();
-}
 
 TimerManager::TimerManager(
     std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool)
     : host_(this), thread_pool_(std::move(thread_pool)) {
   timer_list_ = std::make_unique<TimerList>(&host_);
   main_loop_exit_signal_.emplace();
-  StartMainLoopThread();
+  thread_pool_->Run([this]() { MainLoop(); });
 }
 
 grpc_core::Timestamp TimerManager::Host::Now() {
@@ -162,7 +152,7 @@ void TimerManager::RestartPostFork() {
   }
   shutdown_ = false;
   main_loop_exit_signal_.emplace();
-  StartMainLoopThread();
+  thread_pool_->Run([this]() { MainLoop(); });
 }
 
 void TimerManager::PrepareFork() { Shutdown(); }

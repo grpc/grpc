@@ -125,6 +125,8 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data:valid.pem",
         "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
         "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
         "//test/core/tsi/test_creds/crl_data/crls_missing_intermediate:ab06acdd.r0",
         "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],

@@ -15,7 +15,7 @@
 #ifndef GRPC_IMPL_CHANNEL_ARG_NAMES_H
 #define GRPC_IMPL_CHANNEL_ARG_NAMES_H
 
-// IWYU pragma: private, include "third_party/grpc/include/grpc/grpc.h"
+// IWYU pragma: private, include <grpc/grpc.h>
 // IWYU pragma: friend "src/.*"
 // IWYU pragma: friend "test/.*"
 
@@ -106,6 +106,12 @@
  */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
+/** Maximum time to allow a request to be:
+    (1) received by the server, but
+    (2) not requested by a RequestCall (in the completion queue based API)
+    before the request is cancelled */
+#define GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS \
+  "grpc.server_max_unrequested_time_in_server"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a
@@ -328,6 +334,16 @@
 /** Channel arg to set http proxy per channel. If set, the channel arg
  *  value will be preferred over the environment variable settings. */
 #define GRPC_ARG_HTTP_PROXY "grpc.http_proxy"
+/** Specifies an HTTP proxy to use for individual addresses.
+ *  The proxy must be specified as an IP address, not a DNS name.
+ *  If set, the channel arg value will be preferred over the environment
+ *  variable settings. */
+#define GRPC_ARG_ADDRESS_HTTP_PROXY "grpc.address_http_proxy"
+/** Comma separated list of addresses or address ranges that are behind the
+ *  address HTTP proxy.
+ */
+#define GRPC_ARG_ADDRESS_HTTP_PROXY_ENABLED_ADDRESSES \
+  "grpc.address_http_proxy_enabled_addresses"
 /** If set to non zero, surfaces the user agent string to the server. User
     agent is surfaced by default. */
 #define GRPC_ARG_SURFACE_USER_AGENT "grpc.surface_user_agent"
@@ -370,6 +386,15 @@
 /** Configure the Differentiated Services Code Point used on outgoing packets.
  *  Integer value ranging from 0 to 63. */
 #define GRPC_ARG_DSCP "grpc.dscp"
+/** Connection Attempt Delay for use in Happy Eyeballs, in milliseconds.
+ *  Defaults to 250ms. */
+#define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
+  "grpc.happy_eyeballs_connection_attempt_delay_ms"
+/** It accepts a MemoryAllocatorFactory as input and If specified, it forces
+ * the default event engine to use memory allocators created using the provided
+ * factory. */
+#define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \
+  "grpc.event_engine_use_memory_allocator_factory"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

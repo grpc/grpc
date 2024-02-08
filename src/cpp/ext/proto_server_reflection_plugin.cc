@@ -16,6 +16,9 @@
 //
 //
 
+#include <memory>
+#include <string>
+
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/server_initializer.h>
@@ -27,35 +30,40 @@ namespace grpc {
 namespace reflection {
 
 ProtoServerReflectionPlugin::ProtoServerReflectionPlugin()
-    : reflection_service_(new grpc::ProtoServerReflection()) {}
+    : backend_(std::make_shared<ProtoServerReflectionBackend>()),
+      reflection_service_v1alpha_(
+          std::make_shared<ProtoServerReflection>(backend_)),
+      reflection_service_v1_(
+          std::make_shared<ProtoServerReflectionV1>(backend_)) {}
 
 std::string ProtoServerReflectionPlugin::name() {
   return "proto_server_reflection";
 }
 
 void ProtoServerReflectionPlugin::InitServer(grpc::ServerInitializer* si) {
-  si->RegisterService(reflection_service_);
+  si->RegisterService(reflection_service_v1_);
+  si->RegisterService(reflection_service_v1alpha_);
 }
 
 void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
-  reflection_service_->SetServiceList(si->GetServiceList());
+  backend_->SetServiceList(si->GetServiceList());
 }
 
 void ProtoServerReflectionPlugin::ChangeArguments(const std::string& /*name*/,
                                                   void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
-  if (reflection_service_) {
-    return reflection_service_->has_synchronous_methods();
-  }
-  return false;
+  return (reflection_service_v1_ &&
+          reflection_service_v1_->has_synchronous_methods()) ||
+         (reflection_service_v1alpha_ &&
+          reflection_service_v1alpha_->has_synchronous_methods());
 }
 
 bool ProtoServerReflectionPlugin::has_async_methods() const {
-  if (reflection_service_) {
-    return reflection_service_->has_async_methods();
-  }
-  return false;
+  return (reflection_service_v1_ &&
+          reflection_service_v1_->has_async_methods()) ||
+         (reflection_service_v1alpha_ &&
+          reflection_service_v1alpha_->has_async_methods());
 }
 
 static std::unique_ptr<grpc::ServerBuilderPlugin> CreateProtoReflection() {

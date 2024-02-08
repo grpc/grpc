@@ -18,8 +18,6 @@
 
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <string>
 
@@ -31,11 +29,12 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
+#include "src/core/lib/transport/transport.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -74,30 +73,43 @@ TEST(XdsChannelStackModifierTest, ChannelArgsCompare) {
 constexpr char kTestFilter1[] = "test_filter_1";
 constexpr char kTestFilter2[] = "test_filter_2";
 
+namespace {
+class FakeTransport final : public Transport {
+ public:
+  FilterStackTransport* filter_stack_transport() override { return nullptr; }
+  ClientTransport* client_transport() override { return nullptr; }
+  ServerTransport* server_transport() override { return nullptr; }
+
+  absl::string_view GetTransportName() const override { return "fake"; }
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+  void PerformOp(grpc_transport_op*) override {}
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
+  void Orphan() override {}
+};
+}  // namespace
+
 // Test filters insertion
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   CoreConfiguration::Reset();
   grpc_init();
   // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {
-      nullptr, nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
-      0,       nullptr, nullptr, nullptr, nullptr, kTestFilter1};
+      nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+      nullptr, 0,       nullptr, nullptr, nullptr, nullptr, kTestFilter1};
   const grpc_channel_filter test_filter_2 = {
-      nullptr, nullptr, nullptr, 0,       nullptr, nullptr,     nullptr,
-      0,       nullptr, nullptr, nullptr, nullptr, kTestFilter2};
+      nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+      nullptr, 0,       nullptr, nullptr, nullptr, nullptr, kTestFilter2};
   auto channel_stack_modifier = MakeRefCounted<XdsChannelStackModifier>(
       std::vector<const grpc_channel_filter*>{&test_filter_1, &test_filter_2});
   grpc_arg arg = channel_stack_modifier->MakeChannelArg();
+  FakeTransport fake_transport;
   // Create a phony ChannelStackBuilder object
   grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
-  ChannelStackBuilderImpl builder("test", GRPC_SERVER_CHANNEL,
-                                  ChannelArgs::FromC(args));
+  ChannelStackBuilderImpl builder(
+      "test", GRPC_SERVER_CHANNEL,
+      ChannelArgs::FromC(args).SetObject<Transport>(&fake_transport));
   grpc_channel_args_destroy(args);
-  grpc_transport_vtable fake_transport_vtable;
-  memset(&fake_transport_vtable, 0, sizeof(grpc_transport_vtable));
-  fake_transport_vtable.name = "fake";
-  grpc_transport fake_transport = {&fake_transport_vtable};
-  builder.SetTransport(&fake_transport);
   // Construct channel stack and verify that the test filters were successfully
   // added
   {

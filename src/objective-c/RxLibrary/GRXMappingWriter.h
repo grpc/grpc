@@ -16,7 +16,7 @@
  *
  */
 
-#import "RxLibrary/GRXForwardingWriter.h"
+#import "GRXForwardingWriter.h"
 
 /** A "proxy" writer that transforms all the values of its input writer by using a mapping function.
  */

@@ -23,7 +23,6 @@
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 namespace grpc_core {
 
@@ -56,8 +55,7 @@ BatchBuilder::PendingCompletion::PendingCompletion(RefCountedPtr<Batch> batch)
 
 BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
                            grpc_stream_refcount* stream_refcount)
-    : party(static_cast<Party*>(Activity::current())->Ref()),
-      stream_refcount(stream_refcount) {
+    : party(GetContext<Party>()->Ref()), stream_refcount(stream_refcount) {
   batch.payload = payload;
   batch.is_traced = GetContext<CallContext>()->traced();
 #ifndef NDEBUG
@@ -71,7 +69,7 @@ BatchBuilder::Batch::~Batch() {
   auto* arena = party->arena();
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
-            Activity::current()->DebugTag().c_str(), this);
+            GetContext<Activity>()->DebugTag().c_str(), this);
   }
   if (pending_receive_message != nullptr) {
     arena->DeletePooled(pending_receive_message);
@@ -98,8 +96,8 @@ BatchBuilder::Batch::~Batch() {
 BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
   if (target_.has_value() &&
       (target_->stream != target.stream ||
-       target.transport->vtable
-           ->hacky_disable_stream_op_batch_coalescing_in_connected_channel)) {
+       target.transport->filter_stack_transport()
+           ->HackyDisableStreamOpBatchCoalescingInConnectedChannel())) {
     FlushBatch();
   }
   if (!target_.has_value()) {
@@ -125,7 +123,8 @@ void BatchBuilder::FlushBatch() {
 }
 
 void BatchBuilder::Batch::PerformWith(Target target) {
-  grpc_transport_perform_stream_op(target.transport, target.stream, &batch);
+  target.transport->filter_stack_transport()->PerformStreamOp(target.stream,
+                                                              &batch);
 }
 
 ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(

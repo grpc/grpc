@@ -18,6 +18,7 @@
 
 #include <algorithm>
 
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -59,6 +60,15 @@ bool Chttp2PingAbusePolicy::ReceivedOnePing(bool transport_idle) {
   // Received ping too soon: increment strike count.
   ++ping_strikes_;
   return ping_strikes_ > max_ping_strikes_ && max_ping_strikes_ != 0;
+}
+
+std::string Chttp2PingAbusePolicy::GetDebugString(bool transport_idle) const {
+  return absl::StrCat(
+      "now=", Timestamp::Now().ToString(), " transport_idle=", transport_idle,
+      " next_allowed_ping=",
+      (last_ping_recv_time_ + RecvPingIntervalWithoutData(transport_idle))
+          .ToString(),
+      " ping_strikes=", ping_strikes_);
 }
 
 Duration Chttp2PingAbusePolicy::RecvPingIntervalWithoutData(

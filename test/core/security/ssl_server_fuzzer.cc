@@ -69,6 +69,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     grpc_mock_endpoint_put_read(
         mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
+    grpc_mock_endpoint_finish_put_reads(mock_endpoint);
 
     // Load key pair and establish server SSL credentials.
     grpc_slice ca_slice, cert_slice, key_slice;

@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
 #include "test/core/util/tls_utils.h"
 
 #include <stdio.h>
@@ -138,8 +137,8 @@ void DestroyExternalVerifier(void* arg) {
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
-  // Spawn a detached thread to destroy the verifier, to make sure that we don't
-  // try to join the worker thread from within the worker thread.
+  // Spawn a detached thread to destroy the verifier, to make sure that we
+  // don't try to join the worker thread from within the worker thread.
   Thread destroy_thread("DestroyExternalVerifier", DestroyExternalVerifier,
                         self, nullptr, Thread::Options().set_joinable(false));
   destroy_thread.Start();

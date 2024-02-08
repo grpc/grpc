@@ -18,7 +18,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/status/statusor.h"
@@ -193,6 +192,10 @@ class If<bool, T, F> {
 // If it returns failure, returns failure for the entire combinator.
 // If it returns true, evaluates the second promise.
 // If it returns false, evaluates the third promise.
+// If C is a constant, it's guaranteed that one of the promise factories
+// if_true or if_false will be evaluated before returning from this function.
+// This makes it safe to capture lambda arguments in the promise factory by
+// reference.
 template <typename C, typename T, typename F>
 promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
   return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),

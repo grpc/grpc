@@ -44,11 +44,12 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_core::Executor::SetThreadingAll(false);
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_transport* client_transport = grpc_create_binder_transport_client(
-        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
-            input.incoming_parcels()),
-        std::make_shared<
-            grpc::experimental::binder::UntrustedSecurityPolicy>());
+    grpc_core::Transport* client_transport =
+        grpc_create_binder_transport_client(
+            std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+                input.incoming_parcels()),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>());
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));

@@ -16,6 +16,8 @@
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -70,8 +72,7 @@ int64_t event_engine_tcp_client_connect(
       },
       CreateResolvedAddress(*addr), config,
       resource_quota != nullptr
-          ? resource_quota->memory_quota()->CreateMemoryOwner(
-                absl::StrCat("tcp-client:", addr_uri.value()))
+          ? resource_quota->memory_quota()->CreateMemoryOwner()
           : grpc_event_engine::experimental::MemoryAllocator(),
       std::max(grpc_core::Duration::Milliseconds(1),
                deadline - grpc_core::Timestamp::Now()));

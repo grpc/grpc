@@ -16,6 +16,8 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 
+#include <memory>
+
 #include "absl/functional/any_invocable.h"
 #include "gtest/gtest.h"
 

@@ -76,9 +76,10 @@ BANNED_EXCEPT = {
     "grpc_slice_unref(": ["src/core/lib/slice/slice.cc"],
     # std::random_device needs /dev/random which is not available on all linuxes that we support.
     # Any usage must be optional and opt-in, so that those platforms can use gRPC without problem.
+    # TODO(roth): Fix these callers to use the absl random library instead.
     "std::random_device": [
-        "src/core/ext/filters/client_channel/lb_policy/rls/rls.cc",
-        "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
+        "src/core/load_balancing/rls/rls.cc",
+        "src/core/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     # use 'grpc_core::Crash' instead
     "GPR_ASSERT(false": [],

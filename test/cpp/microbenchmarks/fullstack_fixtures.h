@@ -235,8 +235,8 @@ class EndpointPairFixture : public BaseFixture {
 
  protected:
   grpc_endpoint_pair endpoint_pair_;
-  grpc_transport* client_transport_;
-  grpc_transport* server_transport_;
+  grpc_core::Transport* client_transport_;
+  grpc_core::Transport* server_transport_;
 
  private:
   std::unique_ptr<Server> server_;

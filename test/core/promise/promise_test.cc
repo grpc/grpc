@@ -14,6 +14,9 @@
 
 #include "src/core/lib/promise/promise.h"
 
+#include <memory>
+#include <utility>
+
 #include "gtest/gtest.h"
 
 namespace grpc_core {

@@ -23,6 +23,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 #include "src/core/lib/transport/timeout_encoding.h"
 
@@ -63,7 +64,7 @@ absl::optional<absl::string_view> UnknownMap::GetStringValue(
 }  // namespace metadata_detail
 
 ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
-    Slice value, bool, MetadataParseErrorFn on_error) {
+    Slice value, bool, MetadataParseErrorFn /*on_error*/) {
   auto out = kInvalid;
   auto value_string = value.as_string_view();
   if (value_string == "application/grpc") {
@@ -75,7 +76,9 @@ ContentTypeMetadata::MementoType ContentTypeMetadata::ParseMemento(
   } else if (value_string.empty()) {
     out = kEmpty;
   } else {
-    on_error("invalid value", value);
+    // We are intentionally not invoking on_error here since the spec is not
+    // clear on what the behavior should be here, so to avoid breaking anyone,
+    // we should continue to accept this.
   }
   return out;
 }
@@ -290,6 +293,10 @@ std::string GrpcStreamNetworkState::DisplayValue(ValueType x) {
       return "not seen by server";
   }
   GPR_UNREACHABLE_CODE(return "unknown value");
+}
+
+std::string GrpcRegisteredMethod::DisplayValue(void* x) {
+  return absl::StrFormat("%p", x);
 }
 
 std::string PeerString::DisplayValue(const ValueType& x) {

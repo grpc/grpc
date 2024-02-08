@@ -48,6 +48,13 @@ TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
 ]
 
 grpc_cc_library(
+    name = "proto_bit_gen",
+    language = "c++",
+    public_hdrs = ["proto_bit_gen.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
@@ -299,13 +306,13 @@ grpc_cc_library(
     ],
     deps = [
         "//:config",
+        "//:endpoint_addresses",
         "//:gpr",
         "//:grpc",
         "//:grpc_client_channel",
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
-        "//:server_address",
         "//:uri_parser",
         "//src/core:channel_args",
         "//src/core:delegating_helper",
@@ -482,5 +489,15 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_stats_plugin",
+    srcs = ["fake_stats_plugin.cc"],
+    hdrs = ["fake_stats_plugin.h"],
+    deps = [
+        "//:grpc",
+        "//src/core:examine_stack",
     ],
 )

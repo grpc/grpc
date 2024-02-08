@@ -17,27 +17,48 @@
 
 #include <inttypes.h>
 
+#include <cstddef>
+
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 // -------- LivingThreadCount --------
 
-void LivingThreadCount::BlockUntilThreadCount(size_t desired_threads,
-                                              const char* why) {
-  constexpr grpc_core::Duration log_rate = grpc_core::Duration::Seconds(3);
+absl::Status LivingThreadCount::BlockUntilThreadCount(
+    size_t desired_threads, const char* why,
+    grpc_core::Duration stuck_timeout) {
+  grpc_core::Timestamp timeout_baseline = grpc_core::Timestamp::Now();
+  constexpr grpc_core::Duration log_rate = grpc_core::Duration::Seconds(5);
+  size_t prev_thread_count = 0;
   while (true) {
-    auto curr_threads = WaitForCountChange(desired_threads, log_rate);
-    if (curr_threads == desired_threads) break;
+    auto curr_threads = WaitForCountChange(desired_threads, log_rate / 2);
+    if (curr_threads == desired_threads) return absl::OkStatus();
+    auto elapsed = grpc_core::Timestamp::Now() - timeout_baseline;
+    if (curr_threads == prev_thread_count) {
+      if (elapsed > stuck_timeout) {
+        return absl::DeadlineExceededError(absl::StrFormat(
+            "Timed out after %f seconds", stuck_timeout.seconds()));
+      }
+    } else {
+      // the thread count has changed. Reset the timeout clock
+      prev_thread_count = curr_threads;
+      timeout_baseline = grpc_core::Timestamp::Now();
+    }
     GRPC_LOG_EVERY_N_SEC_DELAYED(
         log_rate.seconds(), GPR_DEBUG,
         "Waiting for thread pool to idle before %s. (%" PRIdPTR " to %" PRIdPTR
-        ")",
-        why, curr_threads, desired_threads);
+        "). Timing out in %0.f seconds.",
+        why, curr_threads, desired_threads,
+        (stuck_timeout - elapsed).seconds());
   }
 }
 

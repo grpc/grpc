@@ -72,11 +72,9 @@ SSL_INCLUDE = (
     os.path.join("third_party", "boringssl-with-bazel", "src", "include"),
 )
 UPB_INCLUDE = (os.path.join("third_party", "upb"),)
-UPB_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upb-generated"),
-)
+UPB_GRPC_GENERATED_INCLUDE = (os.path.join("src", "core", "ext", "upb-gen"),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (
-    os.path.join("src", "core", "ext", "upbdefs-generated"),
+    os.path.join("src", "core", "ext", "upbdefs-gen"),
 )
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
@@ -109,6 +107,7 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: Apache Software License",
 ]
 
@@ -195,12 +194,6 @@ USE_PREBUILT_GRPC_CORE = _env_bool_value(
     "GRPC_PYTHON_USE_PREBUILT_GRPC_CORE", "False"
 )
 
-# If this environmental variable is set, GRPC will not try to be compatible with
-# libc versions old than the one it was compiled against.
-DISABLE_LIBC_COMPATIBILITY = _env_bool_value(
-    "GRPC_PYTHON_DISABLE_LIBC_COMPATIBILITY", "False"
-)
-
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
 ENABLE_CYTHON_TRACING = _env_bool_value(
@@ -252,32 +245,22 @@ def check_linker_need_libatomic():
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = " -std=c++14"
+    EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        if sys.version_info < (3, 5):
-            EXTRA_ENV_COMPILE_ARGS += " -D_hypot=hypot"
-            # We use define flags here and don't directly add to DEFINE_MACROS below to
-            # ensure that the expert user/builder has a way of turning it off (via the
-            # envvars) without adding yet more GRPC-specific envvars.
-            # See https://sourceforge.net/p/mingw-w64/bugs/363/
-            if "32" in platform.architecture()[0]:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime32 -D_timeb=__timeb32"
-                    " -D_ftime_s=_ftime32_s"
-                )
-            else:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime64 -D_timeb=__timeb64"
-                )
-        else:
-            # We need to statically link the C++ Runtime, only the C runtime is
-            # available dynamically
-            EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c11"
+        # We need to statically link the C++ Runtime, only the C runtime is
+        # available dynamically
+        EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform:
+        # GCC by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
         EXTRA_ENV_COMPILE_ARGS += (
             " -fvisibility=hidden -fno-wrapv -fno-exceptions"
         )
     elif "darwin" in sys.platform:
+        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
         EXTRA_ENV_COMPILE_ARGS += (
             " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
             " -DHAVE_UNISTD_H"
@@ -291,6 +274,11 @@ if EXTRA_ENV_LINK_ARGS is None:
             EXTRA_ENV_LINK_ARGS += " -latomic"
     if "linux" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " -static-libgcc"
+
+# Explicitly link Core Foundation framework for MacOS to ensure no symbol is
+# missing when compiled using package managers like Conda.
+if "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -420,9 +408,6 @@ if asm_key:
     asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:
     DEFINE_MACROS += (("OPENSSL_NO_ASM", 1),)
-
-if not DISABLE_LIBC_COMPATIBILITY:
-    DEFINE_MACROS += (("GPR_BACKWARDS_COMPATIBILITY_MODE", 1),)
 
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the

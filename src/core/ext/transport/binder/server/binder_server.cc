@@ -210,7 +210,7 @@ class BinderServerListener : public Server::ListenerInterface {
     client_binder->Initialize();
     // Finish the second half of SETUP_TRANSPORT in
     // grpc_create_binder_transport_server().
-    grpc_transport* server_transport = grpc_create_binder_transport_server(
+    Transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
     GPR_ASSERT(server_transport);
     grpc_error_handle error = server_->SetupTransport(

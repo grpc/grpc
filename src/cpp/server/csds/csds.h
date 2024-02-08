@@ -26,7 +26,6 @@
 #include <grpcpp/support/sync_stream.h>
 
 #include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/csds.pb.h"
 
 namespace grpc {
 namespace xds {

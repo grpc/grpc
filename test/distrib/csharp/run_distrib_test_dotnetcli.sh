@@ -25,7 +25,7 @@ cd DistribTest
 
 # TODO(jtattermusch): make sure we don't pollute the global nuget cache with
 # the nugets being tested.
-dotnet restore DistribTestDotNet.csproj
+CLR_OPENSSL_VERSION_OVERRIDE=1.1 dotnet restore DistribTestDotNet.csproj
 
 dotnet build DistribTestDotNet.csproj
 

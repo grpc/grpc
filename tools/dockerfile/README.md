@@ -46,6 +46,12 @@ Rebuild the docker images that have been modified locally and upload the docker 
 artifact registry (note that this won't overwrite the "old" versions of the docker image
 that are already in artifact registry)
 ```
+# Install qemu, binformat, and configure binfmt interpreters
+sudo apt-get install binfmt-support qemu-user-static
+
+# Enable different multi-architecture containers by QEMU with Docker
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
 tools/dockerfile/push_testing_images.sh
 ```
 

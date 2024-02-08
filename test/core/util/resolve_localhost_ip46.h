@@ -19,10 +19,30 @@
 #ifndef GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H
 #define GRPC_TEST_CORE_UTIL_RESOLVE_LOCALHOST_IP46_H
 
+#include <string>
+
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 // Test whether localhost resolves to ipv4 and/or ipv6
 void LocalhostResolves(bool* ipv4, bool* ipv6);
+
+// Returns true if running with IPv6 only, false otherwise.
+bool RunningWithIPv6Only();
+
+// Returns the IP address of localhost.
+// If RunningWithIPv6Only() is true, returns the IPv6 address;
+// otherwise, returns the IPv4 address.
+absl::string_view LocalIp();
+
+// Returns LocalIp() with a port.
+std::string LocalIpAndPort(int port);
+
+// Returns the URI of the IP address of localhost with the given port.
+// If RunningWithIPv6Only() is true, returns the IPv6 address;
+// otherwise, returns the IPv4 address.
+std::string LocalIpUri(int port);
 
 }  // namespace grpc_core
 

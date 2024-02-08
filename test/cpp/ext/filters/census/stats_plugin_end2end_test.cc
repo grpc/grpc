@@ -716,7 +716,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
   // Check presence of message size annotations in server span
   auto server_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
-  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  ASSERT_NE(server_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(server_span_data, "Send message: 5 bytes"));
   EXPECT_FALSE(IsAnnotationPresent(attempt_span_data,
                                    "Send compressed message: 5 bytes"));
@@ -780,7 +780,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
   // Check presence of message size annotations in server span
   auto server_span_data =
       GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
-  ASSERT_NE(attempt_span_data, recorded_spans.end());
+  ASSERT_NE(server_span_data, recorded_spans.end());
   EXPECT_TRUE(
       IsAnnotationPresent(server_span_data, "Send message: 1026 bytes"));
   // We don't know what the exact compressed message size would be
@@ -833,6 +833,60 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
       "gRPC metadata "
       "soft_limit:[0-9]{4,5},hard_limit:[0-9]{5},grpc-status:[0-9]{1,2},grpc-"
       "server-stats-bin:[0-9]{1,2},"));
+}
+
+// Tests that HTTP annotations are present.
+TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
+  {
+    // Client spans are ended when the ClientContext's destructor is invoked.
+    EchoRequest request;
+    EchoResponse response;
+
+    grpc::ClientContext context;
+    ::opencensus::trace::AlwaysSampler always_sampler;
+    ::opencensus::trace::StartSpanOptions options;
+    options.sampler = &always_sampler;
+    auto sampling_span =
+        ::opencensus::trace::Span::StartSpan("sampling", nullptr, options);
+    grpc::CensusContext app_census_context("root", &sampling_span,
+                                           ::opencensus::tags::TagMap{});
+    context.set_census_context(
+        reinterpret_cast<census_context*>(&app_census_context));
+    context.AddMetadata(kExpectedTraceIdKey,
+                        app_census_context.Span().context().trace_id().ToHex());
+    traces_recorder_->StartRecording();
+    grpc::Status status = stub_->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok());
+  }
+  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
+  TestUtils::Flush();
+  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  traces_recorder_->StopRecording();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans();
+  auto client_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Sent.", client_method_name_));
+  ASSERT_NE(client_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(client_span_data,
+                                  "HttpAnnotation type: Start time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(client_span_data,
+                                  "HttpAnnotation type: HeadWritten time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(client_span_data,
+                                  "HttpAnnotation type: End time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  auto server_span_data =
+      GetSpanByName(recorded_spans, absl::StrCat("Recv.", client_method_name_));
+  ASSERT_NE(server_span_data, recorded_spans.end());
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "HttpAnnotation type: Start time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "HttpAnnotation type: HeadWritten time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
+  EXPECT_TRUE(IsAnnotationPresent(server_span_data,
+                                  "HttpAnnotation type: End time: .* "
+                                  "transport:\\[.*\\] stream:\\[.*\\]"));
 }
 
 // Test the working of GRPC_ARG_DISABLE_OBSERVABILITY.
@@ -1044,6 +1098,7 @@ TEST(StatsPluginDeclarationTest, Declarations) {
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_core::ForceEnableExperiment("trace_record_callops", true);
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

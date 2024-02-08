@@ -1000,7 +1000,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1019,7 +1022,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1038,7 +1044,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1057,7 +1066,10 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
     ):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
@@ -1389,6 +1401,13 @@ class ServerInterceptor(abc.ABC):
     @abc.abstractmethod
     def intercept_service(self, continuation, handler_call_details):
         """Intercepts incoming RPCs before handing them over to a handler.
+
+        State can be passed from an interceptor to downstream interceptors
+        via contextvars. The first interceptor is called from an empty
+        contextvars.Context, and the same Context is used for downstream
+        interceptors and for the final handler call. Note that there are no
+        guarantees that interceptors and handlers will be called from the
+        same thread.
 
         Args:
           continuation: A function that takes a HandlerCallDetails and

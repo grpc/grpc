@@ -16,8 +16,6 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
     /**
      * metadata values for each rpc for the keys specified in
      * LoadBalancerStatsRequest.metadata_keys.
-     * metadata keys and values are returned exactly as was recieved
-     * from the server.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.MetadataEntry metadata = 1;</code>
      */
@@ -32,8 +30,6 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
      *     @type array<\Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry>|\Google\Protobuf\Internal\RepeatedField $metadata
      *           metadata values for each rpc for the keys specified in
      *           LoadBalancerStatsRequest.metadata_keys.
-     *           metadata keys and values are returned exactly as was recieved
-     *           from the server.
      * }
      */
     public function __construct($data = NULL) {
@@ -44,8 +40,6 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
     /**
      * metadata values for each rpc for the keys specified in
      * LoadBalancerStatsRequest.metadata_keys.
-     * metadata keys and values are returned exactly as was recieved
-     * from the server.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.MetadataEntry metadata = 1;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
@@ -58,8 +52,6 @@ class RpcMetadata extends \Google\Protobuf\Internal\Message
     /**
      * metadata values for each rpc for the keys specified in
      * LoadBalancerStatsRequest.metadata_keys.
-     * metadata keys and values are returned exactly as was recieved
-     * from the server.
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.MetadataEntry metadata = 1;</code>
      * @param array<\Grpc\Testing\LoadBalancerStatsResponse\MetadataEntry>|\Google\Protobuf\Internal\RepeatedField $var

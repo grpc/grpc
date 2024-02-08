@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -34,8 +33,8 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 

@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import asyncio
+from contextvars import ContextVar
 import datetime
+from typing import Optional
 
 import grpc
 from grpc.experimental import aio
@@ -26,6 +28,8 @@ from tests_aio.unit import _constants
 
 _INITIAL_METADATA_KEY = "x-grpc-test-echo-initial"
 _TRAILING_METADATA_KEY = "x-grpc-test-echo-trailing-bin"
+
+TEST_CONTEXT_VAR: ContextVar[str] = ContextVar("")
 
 
 async def _maybe_echo_metadata(servicer_context):
@@ -56,7 +60,14 @@ async def _maybe_echo_status(
 
 
 class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
+    def __init__(self, record: Optional[list] = None):
+        self.record = record if record is not None else []
+
+    def _append_to_log(self):
+        self.record.append("servicer:" + TEST_CONTEXT_VAR.get("service"))
+
     async def UnaryCall(self, request, context):
+        self._append_to_log()
         await _maybe_echo_metadata(context)
         await _maybe_echo_status(request, context)
         return messages_pb2.SimpleResponse(
@@ -67,11 +78,13 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
         )
 
     async def EmptyCall(self, request, context):
+        self._append_to_log()
         return empty_pb2.Empty()
 
     async def StreamingOutputCall(
         self, request: messages_pb2.StreamingOutputCallRequest, unused_context
     ):
+        self._append_to_log()
         for response_parameters in request.response_parameters:
             if response_parameters.interval_us != 0:
                 await asyncio.sleep(
@@ -93,10 +106,12 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
     # when the sever is instantiated. They are not being provided by
     # the proto file.
     async def UnaryCallWithSleep(self, unused_request, unused_context):
+        self._append_to_log()
         await asyncio.sleep(_constants.UNARY_CALL_WITH_SLEEP_VALUE)
         return messages_pb2.SimpleResponse()
 
     async def StreamingInputCall(self, request_async_iterator, unused_context):
+        self._append_to_log()
         aggregate_size = 0
         async for request in request_async_iterator:
             if request.payload is not None and request.payload.body:
@@ -106,6 +121,7 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
         )
 
     async def FullDuplexCall(self, request_async_iterator, context):
+        self._append_to_log()
         await _maybe_echo_metadata(context)
         async for request in request_async_iterator:
             await _maybe_echo_status(request, context)
@@ -143,12 +159,16 @@ def _create_extra_generic_handler(servicer: TestServiceServicer):
 
 
 async def start_test_server(
-    port=0, secure=False, server_credentials=None, interceptors=None
+    port=0,
+    secure=False,
+    server_credentials=None,
+    interceptors=None,
+    record: Optional[list] = None,
 ):
     server = aio.server(
         options=(("grpc.so_reuseport", 0),), interceptors=interceptors
     )
-    servicer = TestServiceServicer()
+    servicer = TestServiceServicer(record)
     test_pb2_grpc.add_TestServiceServicer_to_server(servicer, server)
 
     server.add_generic_rpc_handlers((_create_extra_generic_handler(servicer),))

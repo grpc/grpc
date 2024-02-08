@@ -25,14 +25,16 @@
 #     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 #   )
 #
-# this will generate these upb source files at src/core/ext/upb-generated.
+# this will generate these upb source files at src/core/ext/upb-gen.
 #
-#   src/proto/grpc/health/v1/health.upb.c
 #   src/proto/grpc/health/v1/health.upb.h
+#   src/proto/grpc/health/v1/health.upb_minitable.h
+#   src/proto/grpc/health/v1/health.upb_minitable.c
 
 import argparse
 import collections
 import os
+import re
 import shutil
 import subprocess
 import xml.etree.ElementTree
@@ -103,7 +105,7 @@ def read_upb_bazel_rules():
         if elem.tag == "rule"
         and elem.attrib["class"]
         in [
-            "upb_proto_library",
+            "upb_c_proto_library",
             "upb_proto_reflection_library",
         ]
     ]
@@ -127,7 +129,7 @@ def read_upb_bazel_rules():
         dep_rules[dep_rule.name] = dep_rule
     # add proto files to upb rules transitively
     for rule in rules:
-        if not rule.type.startswith("upb_proto_"):
+        if not rule.type.startswith("upb_"):
             continue
         if len(rule.deps) == 1:
             rule.proto_files.extend(
@@ -146,8 +148,21 @@ def get_upb_path(proto_path, ext):
     return proto_path.replace(":", "/").replace(".proto", ext)
 
 
-def get_bazel_bin_root_path(elink):
+def get_bazel_bin_root_path(elink, file):
     BAZEL_BIN_ROOT = "bazel-bin/"
+    if elink[0] == "@com_google_protobuf//":
+        name = re.search("google/protobuf/([a-z_]*)\.", file).group(1)
+        result = os.path.join(
+            BAZEL_BIN_ROOT,
+            "external",
+            elink[0].replace("@", "").replace("//", ""),
+            "src",
+            "google",
+            "protobuf",
+            "_virtual_imports",
+            "%s_proto" % name,
+        )
+        return os.path.join(result, file)
     if elink[0].startswith("@"):
         # external
         result = os.path.join(
@@ -157,17 +172,17 @@ def get_bazel_bin_root_path(elink):
         )
         if elink[1]:
             result = os.path.join(result, elink[1])
-        return result
+        return os.path.join(result, file)
     else:
         # internal
-        return BAZEL_BIN_ROOT
+        return os.path.join(BAZEL_BIN_ROOT, file)
 
 
 def get_external_link(file):
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
@@ -181,11 +196,12 @@ def get_external_link(file):
 def copy_upb_generated_files(rules, args):
     files = {}
     for rule in rules:
-        if rule.type == "upb_proto_library":
-            frag = ".upb"
+        if rule.type == "upb_c_proto_library":
+            # There is no .upb.c.
+            extensions = [".upb.h", ".upb_minitable.h", ".upb_minitable.c"]
             output_dir = args.upb_out
         else:
-            frag = ".upbdefs"
+            extensions = [".upbdefs.h", ".upbdefs.c"]
             output_dir = args.upbdefs_out
         for proto_file in rule.proto_files:
             elink = get_external_link(proto_file)
@@ -196,9 +212,9 @@ def copy_upb_generated_files(rules, args):
                     ' "{1}"'.format(proto_file, prefix_to_strip)
                 )
             proto_file = proto_file[len(prefix_to_strip) :]
-            for ext in (".h", ".c"):
-                file = get_upb_path(proto_file, frag + ext)
-                src = os.path.join(get_bazel_bin_root_path(elink), file)
+            for ext in extensions:
+                file = get_upb_path(proto_file, ext)
+                src = get_bazel_bin_root_path(elink, file)
                 dst = os.path.join(output_dir, file)
                 files[src] = dst
     for src, dst in files.items():
@@ -214,12 +230,12 @@ parser = argparse.ArgumentParser(description="UPB code-gen from bazel")
 parser.add_argument("--verbose", default=False, action="store_true")
 parser.add_argument(
     "--upb_out",
-    default="src/core/ext/upb-generated",
+    default="src/core/ext/upb-gen",
     help="Output directory for upb targets",
 )
 parser.add_argument(
     "--upbdefs_out",
-    default="src/core/ext/upbdefs-generated",
+    default="src/core/ext/upbdefs-gen",
     help="Output directory for upbdefs targets",
 )
 

@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -44,6 +44,9 @@ class GrpcXdsClient : public XdsClient {
   // Factory function to get or create the global XdsClient instance.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
       const ChannelArgs& args, const char* reason);
+
+  // Builds ClientStatusResponse containing all resources from all XdsClients
+  static grpc_slice DumpAllClientConfigs();
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support
