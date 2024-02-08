@@ -66,9 +66,6 @@ namespace grpc_core {
 namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 namespace {
-grpc_closure* NotifiedPointer(intptr_t index) {
-  return reinterpret_cast<grpc_closure*>(index);
-}
 const int32_t kDataAlignmentBytes = 64;
 const int32_t kTimeoutSecs = 5;
 }  // namespace
@@ -79,7 +76,7 @@ ChaoticGoodConnector::ChaoticGoodConnector(
       handshake_mgr_(std::make_shared<HandshakeManager>()) {}
 
 ChaoticGoodConnector::~ChaoticGoodConnector() {
-  GPR_ASSERT(reinterpret_cast<intptr_t>(notify_) < 20);
+  GPR_ASSERT(notify_ == nullptr);
   if (connect_activity_ != nullptr) {
     connect_activity_.reset();
   }
@@ -129,10 +126,9 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                      endpoint) mutable {
             ExecCtx exec_ctx;
             if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
-              auto error = GRPC_ERROR_CREATE("connect endpoint failed");
               ExecCtx::Run(DEBUG_LOCATION,
-                           std::exchange(self->notify_, NotifiedPointer(1)),
-                           error);
+                           std::exchange(self->notify_, nullptr),
+                           GRPC_ERROR_CREATE("connect endpoint failed"));
               return;
             }
             self->data_endpoint_ =
@@ -222,9 +218,9 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
     MutexLock lock(&mu_);
     result_ = result;
     if (is_shutdown_) {
-      auto error = GRPC_ERROR_CREATE("connector shutdown");
-      notify_ = NotifiedPointer(2);
-      ExecCtx::Run(DEBUG_LOCATION, notify, error);
+      GPR_ASSERT(notify_ == nullptr);
+      ExecCtx::Run(DEBUG_LOCATION, notify,
+                   GRPC_ERROR_CREATE("connector shutdown"));
       return;
     }
   }
@@ -243,8 +239,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
           auto endpoint_status = endpoint.status();
           auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
                                                      &endpoint_status, 1);
-          ExecCtx::Run(DEBUG_LOCATION,
-                       std::exchange(self->notify_, NotifiedPointer(3)), error);
+          ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
+                       error);
           return;
         }
         auto* p = self.release();
@@ -282,8 +278,8 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         }
       }
       self->result_->Reset();
-      ExecCtx::Run(DEBUG_LOCATION,
-                   std::exchange(self->notify_, NotifiedPointer(4)), error);
+      ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
+                   error);
       return;
     }
   }
@@ -302,6 +298,10 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         EventEngineWakeupScheduler(self->event_engine_),
         [self](absl::Status status) {
+          if (grpc_chaotic_good_trace.enabled()) {
+            gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
+                    status.ToString().c_str());
+          }
           if (status.ok()) {
             MutexLock lock(&self->mu_);
             self->result_->transport = new ChaoticGoodClientTransport(
@@ -310,10 +310,12 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                 self->event_engine_, std::move(self->hpack_parser_),
                 std::move(self->hpack_compressor_));
             self->result_->channel_args = self->args_.channel_args;
+            ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
+                         status);
+          } else if (self->notify_ != nullptr) {
+            ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr),
+                         status);
           }
-          ExecCtx::Run(DEBUG_LOCATION,
-                       std::exchange(self->notify_, NotifiedPointer(5)),
-                       status);
         },
         self->arena_.get(), self->event_engine_.get());
     MutexLock lock(&self->mu_);
@@ -325,8 +327,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     MutexLock lock(&self->mu_);
     self->result_->Reset();
     auto error = GRPC_ERROR_CREATE("handshake complete with empty endpoint.");
-    ExecCtx::Run(DEBUG_LOCATION,
-                 std::exchange(self->notify_, NotifiedPointer(6)), error);
+    ExecCtx::Run(DEBUG_LOCATION, std::exchange(self->notify_, nullptr), error);
   }
 }
 
