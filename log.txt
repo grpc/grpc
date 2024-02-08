@@ -1,0 +1,241 @@
+INFO: Running bazel wrapper (see //tools/bazel for details), bazel version 6.4.0 will be used instead of system-wide bazel installation.
+Loading: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //test/core/transport/chaotic_good:chaotic_good_server_test (0 packages loaded, 0 targets configured)
+INFO: Analyzed target //test/core/transport/chaotic_good:chaotic_good_server_test (0 packages loaded, 0 targets configured).
+INFO: Found 1 target...
+[0 / 6] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+[1 / 6] Compiling src/core/lib/surface/server.cc; 1s linux-sandbox
+[2 / 6] [Prepa] Linking libgrpc_base.so
+INFO: From Linking test/core/transport/chaotic_good/chaotic_good_server_test:
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_load1_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_load2_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_load4_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_load8_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_load16_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_store1_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_store2_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_store4_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_store8_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_report_store16_asm'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RAX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RBX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RCX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RDX'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RSI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RDI'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_RBP'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_R8'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_R9'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_R12'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_R13'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_R14'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_1_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_1_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_2_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_2_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_4_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_4_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_8_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_8_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_load_add_16_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_check_store_add_16_R15'
+/usr/bin/ld.gold: warning: Cannot export local symbol '__asan_extra_spill_area'
+Target //test/core/transport/chaotic_good:chaotic_good_server_test up-to-date:
+  bazel-bin/test/core/transport/chaotic_good/chaotic_good_server_test
+INFO: Elapsed time: 7.538s, Critical Path: 7.24s
+INFO: 5 processes: 2 internal, 3 linux-sandbox.
+INFO: Build completed successfully, 5 total actions
+INFO: Running command line: external/bazel_tools/tools/test/test-setup.sh test/core/transport/chaotic_good/chaotic_good_server_test
+exec ${PAGER:-/usr/bin/less} "$0" || exit 1
+Executing tests from //test/core/transport/chaotic_good:chaotic_good_server_test
+-----------------------------------------------------------------------------
+D0208 05:56:56.408208687 3213039 config.cc:204]                        gRPC EXPERIMENT call_status_override_on_cancellation  ON  (default:ON)
+D0208 05:56:56.408502187 3213039 config.cc:204]                        gRPC EXPERIMENT call_v3                               OFF (default:OFF)
+D0208 05:56:56.408528727 3213039 config.cc:204]                        gRPC EXPERIMENT canary_client_privacy                 OFF (default:OFF)
+D0208 05:56:56.408553097 3213039 config.cc:204]                        gRPC EXPERIMENT chaotic_good                          OFF (default:OFF)
+D0208 05:56:56.408574497 3213039 config.cc:204]                        gRPC EXPERIMENT client_idleness                       ON  (default:ON)
+D0208 05:56:56.408592477 3213039 config.cc:204]                        gRPC EXPERIMENT client_privacy                        OFF (default:OFF)
+D0208 05:56:56.408613857 3213039 config.cc:204]                        gRPC EXPERIMENT event_engine_client                   OFF (default:OFF)
+D0208 05:56:56.408644677 3213039 config.cc:204]                        gRPC EXPERIMENT event_engine_dns                      OFF (default:OFF)
+D0208 05:56:56.408668297 3213039 config.cc:204]                        gRPC EXPERIMENT event_engine_listener                 ON  (default:ON)
+D0208 05:56:56.408702587 3213039 config.cc:204]                        gRPC EXPERIMENT free_large_allocator                  OFF (default:OFF)
+D0208 05:56:56.408722877 3213039 config.cc:204]                        gRPC EXPERIMENT http2_stats_fix                       ON  (default:ON)
+D0208 05:56:56.408748687 3213039 config.cc:204]                        gRPC EXPERIMENT keepalive_fix                         OFF (default:OFF)
+D0208 05:56:56.408774947 3213039 config.cc:204]                        gRPC EXPERIMENT keepalive_server_fix                  OFF (default:OFF)
+D0208 05:56:56.408801937 3213039 config.cc:204]                        gRPC EXPERIMENT monitoring_experiment                 ON  (default:ON)
+D0208 05:56:56.408832157 3213039 config.cc:204]                        gRPC EXPERIMENT multiping                             OFF (default:OFF)
+D0208 05:56:56.408860067 3213039 config.cc:204]                        gRPC EXPERIMENT peer_state_based_framing              OFF (default:OFF)
+D0208 05:56:56.408896337 3213039 config.cc:204]                        gRPC EXPERIMENT pending_queue_cap                     ON  (default:ON)
+D0208 05:56:56.408933467 3213039 config.cc:204]                        gRPC EXPERIMENT pick_first_happy_eyeballs             ON  (default:ON)
+D0208 05:56:56.408952167 3213039 config.cc:204]                        gRPC EXPERIMENT promise_based_client_call             OFF (default:OFF)
+D0208 05:56:56.408977317 3213039 config.cc:204]                        gRPC EXPERIMENT promise_based_inproc_transport        OFF (default:OFF)
+D0208 05:56:56.409008147 3213039 config.cc:204]                        gRPC EXPERIMENT promise_based_server_call             OFF (default:OFF)
+D0208 05:56:56.409034507 3213039 config.cc:204]                        gRPC EXPERIMENT registered_method_lookup_in_transport ON  (default:ON)
+D0208 05:56:56.409065187 3213039 config.cc:204]                        gRPC EXPERIMENT rfc_max_concurrent_streams            OFF (default:OFF)
+D0208 05:56:56.409092648 3213039 config.cc:204]                        gRPC EXPERIMENT round_robin_delegate_to_pick_first    ON  (default:ON)
+D0208 05:56:56.409118587 3213039 config.cc:204]                        gRPC EXPERIMENT rstpit                                OFF (default:OFF)
+D0208 05:56:56.409144587 3213039 config.cc:204]                        gRPC EXPERIMENT schedule_cancellation_over_write      OFF (default:OFF)
+D0208 05:56:56.409170467 3213039 config.cc:204]                        gRPC EXPERIMENT server_privacy                        OFF (default:OFF)
+D0208 05:56:56.409195967 3213039 config.cc:204]                        gRPC EXPERIMENT tcp_frame_size_tuning                 OFF (default:OFF)
+D0208 05:56:56.409221437 3213039 config.cc:204]                        gRPC EXPERIMENT tcp_rcv_lowat                         OFF (default:OFF)
+D0208 05:56:56.409247467 3213039 config.cc:204]                        gRPC EXPERIMENT trace_record_callops                  OFF (default:OFF)
+D0208 05:56:56.409269177 3213039 config.cc:204]                        gRPC EXPERIMENT unconstrained_max_quota_buffer_size   OFF (default:OFF)
+D0208 05:56:56.409304377 3213039 config.cc:204]                        gRPC EXPERIMENT v3_backend_metric_filter              OFF (default:OFF)
+D0208 05:56:56.409331647 3213039 config.cc:204]                        gRPC EXPERIMENT v3_channel_idle_filters               OFF (default:OFF)
+D0208 05:56:56.409357037 3213039 config.cc:204]                        gRPC EXPERIMENT v3_compression_filter                 OFF (default:OFF)
+D0208 05:56:56.409382707 3213039 config.cc:204]                        gRPC EXPERIMENT v3_server_auth_filter                 OFF (default:OFF)
+D0208 05:56:56.409413907 3213039 config.cc:204]                        gRPC EXPERIMENT work_serializer_clears_time_cache     ON  (default:ON)
+D0208 05:56:56.409444217 3213039 config.cc:204]                        gRPC EXPERIMENT work_serializer_dispatch              OFF (default:OFF)
+D0208 05:56:56.409469957 3213039 config.cc:204]                        gRPC EXPERIMENT write_size_cap                        ON  (default:ON)
+D0208 05:56:56.409499727 3213039 config.cc:204]                        gRPC EXPERIMENT write_size_policy                     ON  (default:ON)
+D0208 05:56:56.409530717 3213039 config.cc:204]                        gRPC EXPERIMENT wrr_delegate_to_pick_first            ON  (default:ON)
+I0208 05:56:56.410638977 3213039 ev_epoll1_linux.cc:123]               grpc epoll fd: 3
+D0208 05:56:56.410850207 3213039 ev_posix.cc:113]                      Using polling engine: epoll1
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from ChaoticGoodServerTest
+[ RUN      ] ChaoticGoodServerTest.Connect
+D0208 05:56:56.413063778 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "priority_experimental"
+D0208 05:56:56.413171507 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "outlier_detection_experimental"
+D0208 05:56:56.413257807 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "weighted_target_experimental"
+D0208 05:56:56.413318917 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "pick_first"
+D0208 05:56:56.413383017 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "round_robin"
+D0208 05:56:56.413442228 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "weighted_round_robin"
+D0208 05:56:56.413671057 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "grpclb"
+D0208 05:56:56.413856847 3213039 dns_resolver_plugin.cc:52]            Using ares dns resolver
+D0208 05:56:56.414007847 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "rls_experimental"
+D0208 05:56:56.414249797 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "xds_cluster_manager_experimental"
+D0208 05:56:56.414310067 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "xds_cluster_impl_experimental"
+D0208 05:56:56.414370417 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "cds_experimental"
+D0208 05:56:56.414429507 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "xds_override_host_experimental"
+D0208 05:56:56.414477387 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "xds_wrr_locality_experimental"
+D0208 05:56:56.414526808 3213039 lb_policy_registry.cc:46]             registering LB policy factory for "ring_hash_experimental"
+D0208 05:56:56.414586168 3213039 certificate_provider_registry.cc:33]  registering certificate provider factory for "file_watcher"
+D0208 05:56:56.415141427 3213039 channel_init.cc:157]                  Filter server-auth not registered, but is referenced in the after clause of grpc-server-authz when building channel stack SERVER_CHANNEL
+I0208 05:56:56.422856218 3213039 ev_epoll1_linux.cc:359]               grpc epoll fd: 5
+I0208 05:56:56.430350078 3213039 work_stealing_thread_pool.cc:269]     WorkStealingThreadPoolImpl::Quiesce
+I0208 05:56:56.451995618 3213039 ev_epoll1_linux.cc:359]               grpc epoll fd: 5
+I0208 05:56:56.452905689 3213039 chaotic_good_server.cc:486]           BIND: [::1]:23842
+I0208 05:56:56.453263008 3213039 tcp_socket_utils.cc:629]              TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be used thereafter
+E0208 05:56:56.464902119 3213078 chaotic_good_server_test.cc:91]       OnConnectingFinished: 0x7f1fd8833fa0 OK
+[       OK ] ChaoticGoodServerTest.Connect (55 ms)
+[ RUN      ] ChaoticGoodServerTest.ConnectAndShutdown
+I0208 05:56:56.473198969 3213039 chaotic_good_server.cc:486]           BIND: [::1]:8668
+E0208 05:56:56.475741299 3213077 chaotic_good_server_test.cc:91]       OnConnectingFinished: 0x7f1fd8958e20 UNKNOWN: connector shutdown [type.googleapis.com/grpc.status.time.created_time='2024-02-08T05:56:56.475266109+00:00'] [type.googleapis.com/grpc.status.int.file_line='273'] [type.googleapis.com/grpc.status.str.file='src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc']
+E0208 05:56:56.476632319 3213079 chaotic_good_server.cc:192]           ActiveConnection::Done:0x619000031180 Server setting frame handling failed: INTERNAL:Socket closed {grpc_status:14, fd:11, target_address:"[::1]:59446"}
+[       OK ] ChaoticGoodServerTest.ConnectAndShutdown (9 ms)
+[----------] 2 tests from ChaoticGoodServerTest (65 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (65 ms total)
+[  PASSED  ] 2 tests.

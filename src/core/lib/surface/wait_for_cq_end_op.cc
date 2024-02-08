@@ -41,8 +41,9 @@ Poll<Empty> WaitForCqEndOp::operator()() {
           not_started.cq, not_started.tag, std::move(not_started.error),
           [](void* p, grpc_cq_completion*) {
             auto started = static_cast<Started*>(p);
+            auto wakeup = std::move(started->waker);
             started->done.store(true, std::memory_order_release);
-            started->waker.Wakeup();
+            wakeup.Wakeup();
           },
           &started, &started.completion);
     }
