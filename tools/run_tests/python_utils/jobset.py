@@ -31,7 +31,7 @@ measure_cpu_costs = False
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 # Maximum number of bytes of job's stdout that will be stored in the result.
 # Only last N bytes of stdout will be kept if the actual output longer.
-_MAX_RESULT_SIZE = 64 * 1024 * 1024
+_MAX_RESULT_SIZE = 64 * 1024
 
 
 # NOTE: If you change this, please make sure to test reviewing the
@@ -99,7 +99,6 @@ _TAG_COLOR = {
     "TIMEOUT_FLAKE": "purple",
     "WARNING": "yellow",
     "TIMEOUT": "red",
-    "DO NOT SUBMIT": "red",
     "PASSED": "green",
     "START": "gray",
     "WAITING": "yellow",
@@ -109,7 +108,7 @@ _TAG_COLOR = {
 }
 
 _FORMAT = "%(asctime)-15s %(message)s"
-logging.basicConfig(level=logging.DEBUG, format=_FORMAT)
+logging.basicConfig(level=logging.INFO, format=_FORMAT)
 
 
 def eintr_be_gone(fn):
@@ -123,7 +122,11 @@ def eintr_be_gone(fn):
 
 
 def message(tag, msg, explanatory_text=None, do_newline=False):
-    if message.old_tag == tag and message.old_msg == msg and not explanatory_text:
+    if (
+        message.old_tag == tag
+        and message.old_msg == msg
+        and not explanatory_text
+    ):
         return
     message.old_tag = tag
     message.old_msg = msg
@@ -142,16 +145,16 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                     % (
                         _BEGINNING_OF_LINE,
                         _CLEAR_LINE,
-                        (
-                            "\n%s" % explanatory_text
-                            if explanatory_text is not None
-                            else ""
-                        ),
+                        "\n%s" % explanatory_text
+                        if explanatory_text is not None
+                        else "",
                         _COLORS[_TAG_COLOR[tag]][1],
                         _COLORS[_TAG_COLOR[tag]][0],
                         tag,
                         msg,
-                        "\n" if do_newline or explanatory_text is not None else "",
+                        "\n"
+                        if do_newline or explanatory_text is not None
+                        else "",
                     )
                 )
             sys.stdout.flush()
@@ -189,7 +192,7 @@ class JobSpec(object):
         timeout_retries=0,
         kill_handler=None,
         cpu_cost=1.0,
-        verbose_success=True,
+        verbose_success=False,
         logfilename=None,
     ):
         """
@@ -204,7 +207,6 @@ class JobSpec(object):
             environ = {}
         self.cmdline = cmdline
         self.environ = environ
-        self.environ["GRPC_VERBOSITY"] = "debug"
         self.shortname = cmdline[0] if shortname is None else shortname
         self.cwd = cwd
         self.shell = shell
@@ -214,10 +216,16 @@ class JobSpec(object):
         self.kill_handler = kill_handler
         self.cpu_cost = cpu_cost
         self.verbose_success = verbose_success
-        self.logfilename = None
-        if self.logfilename and self.flake_retries != 0 and self.timeout_retries != 0:
+        self.logfilename = logfilename
+        if (
+            self.logfilename
+            and self.flake_retries != 0
+            and self.timeout_retries != 0
+        ):
             # Forbidden to avoid overwriting the test log when retrying.
-            raise Exception("Cannot use custom logfile when retries are enabled")
+            raise Exception(
+                "Cannot use custom logfile when retries are enabled"
+            )
 
     def identity(self):
         return "%r %r" % (self.cmdline, self.environ)
@@ -265,7 +273,9 @@ def read_from_start(f):
 class Job(object):
     """Manages one job."""
 
-    def __init__(self, spec, newline_on_success, travis, add_env, quiet_success=False):
+    def __init__(
+        self, spec, newline_on_success, travis, add_env, quiet_success=False
+    ):
         self._spec = spec
         self._newline_on_success = newline_on_success
         self._travis = travis
@@ -285,7 +295,9 @@ class Job(object):
     def start(self):
         if self._spec.logfilename:
             # make sure the log directory exists
-            logfile_dir = os.path.dirname(os.path.abspath(self._spec.logfilename))
+            logfile_dir = os.path.dirname(
+                os.path.abspath(self._spec.logfilename)
+            )
             if not os.path.exists(logfile_dir):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, "w+")
@@ -309,12 +321,11 @@ class Job(object):
             measure_cpu_costs = False
         try_start = lambda: subprocess.Popen(
             args=cmdline,
-            cwd=self._spec.cwd,
-            shell=self._spec.shell,
             stderr=subprocess.STDOUT,
             stdout=self._logfile,
+            cwd=self._spec.cwd,
+            shell=self._spec.shell,
             env=env,
-            text=True,
         )
         delay = 0.3
         for i in range(0, 4):
@@ -342,8 +353,6 @@ class Job(object):
             return stdout
 
         if self._state == _RUNNING and self._process.poll() is not None:
-            outs, errs = self._process.communicate()
-            message("DO NOT SUBMIT", outs, stdout(), do_newline=True)
             elapsed = time.time() - self._start
             self.result.elapsed_time = elapsed
             if self._process.returncode != 0:
@@ -392,11 +401,13 @@ class Job(object):
                     )
                     real = float(m.group(1))
                     user = float(m.group(2))
-                    tsys = float(m.group(3))
+                    sys = float(m.group(3))
                     if real > 0.5:
-                        cores = (user + tsys) / real
+                        cores = (user + sys) / real
                         self.result.cpu_measured = float("%.01f" % cores)
-                        self.result.cpu_estimated = float("%.01f" % self._spec.cpu_cost)
+                        self.result.cpu_estimated = float(
+                            "%.01f" % self._spec.cpu_cost
+                        )
                         measurement = "; cpu_cost=%.01f; estimated=%.01f" % (
                             self.result.cpu_measured,
                             self.result.cpu_estimated,
@@ -421,9 +432,6 @@ class Job(object):
             and self._spec.timeout_seconds is not None
             and time.time() - self._start > self._spec.timeout_seconds
         ):
-            outs, errs = self._process.communicate()
-            sys.stdout.write("DO NOT SUBMIT %s" % outs)
-            sys.stdout.flush()
             elapsed = time.time() - self._start
             self.result.elapsed_time = elapsed
             if self._timeout_retries < self._spec.timeout_retries:
@@ -512,7 +520,10 @@ class Jobset(object):
     def start(self, spec):
         """Start a job. Return True on success, False on failure."""
         while True:
-            if self._max_time > 0 and time.time() - self._start_time > self._max_time:
+            if (
+                self._max_time > 0
+                and time.time() - self._start_time > self._max_time
+            ):
                 skipped_job_result = JobResult()
                 skipped_job_result.state = "SKIPPED"
                 message("SKIPPED", spec.shortname, do_newline=True)
@@ -566,13 +577,17 @@ class Jobset(object):
                 return
             if not self._travis and platform_string() != "windows":
                 rstr = (
-                    "" if self._remaining is None else "%d queued, " % self._remaining
+                    ""
+                    if self._remaining is None
+                    else "%d queued, " % self._remaining
                 )
                 if self._remaining is not None and self._completed > 0:
                     now = time.time()
                     sofar = now - self._start_time
                     remaining = (
-                        sofar / self._completed * (self._remaining + len(self._running))
+                        sofar
+                        / self._completed
+                        * (self._remaining + len(self._running))
                     )
                     rstr = "ETA %.1f sec; %s" % (remaining, rstr)
                 if waiting_for is not None:
@@ -661,7 +676,9 @@ def run(
     js = Jobset(
         check_cancelled,
         maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-        maxjobs_cpu_agnostic if maxjobs_cpu_agnostic is not None else _DEFAULT_MAX_JOBS,
+        maxjobs_cpu_agnostic
+        if maxjobs_cpu_agnostic is not None
+        else _DEFAULT_MAX_JOBS,
         newline_on_success,
         travis,
         stop_on_failure,

@@ -111,9 +111,6 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
   && echo "Successfully built image $INTEROP_IMAGE")
 EXITCODE=$?
 
-
-# docker commit "build_grpc_interop_cxx_0adfa3ca-c2a4-4a7a-95a4-0d31f844fd8c" ""
-
 # remove intermediate container, possibly killing it first
 docker rm -f "$CONTAINER_NAME"
 

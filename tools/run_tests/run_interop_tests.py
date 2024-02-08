@@ -85,7 +85,7 @@ _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS = [
     _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
 ]
 
-_TEST_TIMEOUT = 30
+_TEST_TIMEOUT = 3 * 60
 
 # disable this test on core-based languages,
 # see https://github.com/grpc/grpc/issues/9779
@@ -104,26 +104,7 @@ class CXXLanguage:
         self.safename = "cxx"
 
     def client_cmd(self, args):
-        install_gdb = ["apt", "install", "-y", "gdb", ";"]
-        run_gdb_client = (
-            [
-                "GRPC_VERBOSITY=debug",
-                "gdb",
-                "-ex",
-                "run",
-                "-args",
-                "cmake/build/interop_client",
-            ]
-            + args
-            + [";"]
-        )
-        return (
-            install_gdb
-            + ["GRPC_EXPERIMENTS=event_engine_client"]
-            + run_gdb_client
-            + ["GRPC_EXPERIMENTS=-event_engine_client"]
-            + run_gdb_client
-        )
+        return ["cmake/build/interop_client"] + args
 
     def client_cmd_http2interop(self, args):
         return ["cmake/build/http2_client"] + args
@@ -212,7 +193,9 @@ class DartLanguage:
         )
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES
+        return (
+            _SKIP_COMPRESSION + _SKIP_SPECIAL_STATUS_MESSAGE + _ORCA_TEST_CASES
+        )
 
     def __str__(self):
         return "dart"
@@ -762,12 +745,12 @@ _TEST_CASES = [
 ]
 
 _AUTH_TEST_CASES = [
-    # "compute_engine_creds",
-    # "jwt_token_creds",
+    "compute_engine_creds",
+    "jwt_token_creds",
     "oauth2_auth_token",
-    # "per_rpc_creds",
-    # _GOOGLE_DEFAULT_CREDS_TEST_CASE,
-    # _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
+    "per_rpc_creds",
+    _GOOGLE_DEFAULT_CREDS_TEST_CASE,
+    _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE,
 ]
 
 _HTTP2_TEST_CASES = ["tls", "framing"]
@@ -899,7 +882,9 @@ def auth_options(
 
     oauth_scope_arg = "--oauth_scope=https://www.googleapis.com/auth/xapi.zoo"
     key_file_arg = "--service_account_key_file=%s" % service_account_key_file
-    default_account_arg = "--default_service_account=%s" % default_service_account
+    default_account_arg = (
+        "--default_service_account=%s" % default_service_account
+    )
 
     if test_case in ["jwt_token_creds", "per_rpc_creds", "oauth2_auth_token"]:
         if language in [
@@ -967,20 +952,15 @@ def cloud_to_prod_jobspec(
     ]
     if transport_security == "tls":
         transport_security_options = ["--use_tls=true"]
-    elif transport_security == "google_default_credentials" and str(language) in [
-        "c++",
-        "go",
-        "java",
-        "javaokhttp",
-    ]:
+    elif transport_security == "google_default_credentials" and str(
+        language
+    ) in ["c++", "go", "java", "javaokhttp"]:
         transport_security_options = [
             "--custom_credentials_type=google_default_credentials"
         ]
-    elif transport_security == "compute_engine_channel_creds" and str(language) in [
-        "go",
-        "java",
-        "javaokhttp",
-    ]:
+    elif transport_security == "compute_engine_channel_creds" and str(
+        language
+    ) in ["go", "java", "javaokhttp"]:
         transport_security_options = [
             "--custom_credentials_type=compute_engine_channel_creds"
         ]
@@ -1006,7 +986,9 @@ def cloud_to_prod_jobspec(
     cwd = language.client_cwd
 
     if docker_image:
-        container_name = dockerjob.random_name("interop_client_%s" % language.safename)
+        container_name = dockerjob.random_name(
+            "interop_client_%s" % language.safename
+        )
         cmdline = docker_run_cmdline(
             cmdline,
             image=docker_image,
@@ -1016,9 +998,8 @@ def cloud_to_prod_jobspec(
         )
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
-                manual_cmd_log.append('docker_image="%s"' % docker_image)
                 manual_cmd_log.append(
-                    'echo "Testing ${docker_image=%s}"' % docker_image
+                    'echo "Testing ${docker_image:=%s}"' % docker_image
                 )
             manual_cmd_log.append(manual_cmdline(cmdline, docker_image))
         cwd = None
@@ -1104,7 +1085,9 @@ def cloud_to_cloud_jobspec(
             cmdline = bash_cmdline(language.client_cmd(client_options))
             cwd = language.client_cwd
         else:
-            cmdline = bash_cmdline(language.client_cmd_http2interop(common_options))
+            cmdline = bash_cmdline(
+                language.client_cmd_http2interop(common_options)
+            )
             cwd = language.http2_cwd
     else:
         cmdline = bash_cmdline(
@@ -1115,7 +1098,9 @@ def cloud_to_cloud_jobspec(
     environ = language.global_env()
     if docker_image and language.safename != "objc":
         # we can't run client in docker for objc.
-        container_name = dockerjob.random_name("interop_client_%s" % language.safename)
+        container_name = dockerjob.random_name(
+            "interop_client_%s" % language.safename
+        )
         cmdline = docker_run_cmdline(
             cmdline,
             image=docker_image,
@@ -1151,7 +1136,9 @@ def server_jobspec(
     language, docker_image, transport_security="tls", manual_cmd_log=None
 ):
     """Create jobspec for running a server"""
-    container_name = dockerjob.random_name("interop_server_%s" % language.safename)
+    container_name = dockerjob.random_name(
+        "interop_server_%s" % language.safename
+    )
     server_cmd = ["--port=%s" % _DEFAULT_SERVER_PORT]
     if transport_security == "tls":
         server_cmd += ["--use_tls=true"]
@@ -1188,7 +1175,8 @@ def server_jobspec(
         # command line.
         docker_args += [
             "--health-cmd=python test/http2_test/http2_server_health_check.py "
-            "--server_host=%s --server_port=%d" % ("localhost", _DEFAULT_SERVER_PORT),
+            "--server_host=%s --server_port=%d"
+            % ("localhost", _DEFAULT_SERVER_PORT),
             "--health-interval=1s",
             "--health-retries=5",
             "--health-timeout=10s",
@@ -1206,7 +1194,9 @@ def server_jobspec(
     )
     if manual_cmd_log is not None:
         if manual_cmd_log == []:
-            manual_cmd_log.append('echo "Testing ${docker_image:=%s}"' % docker_image)
+            manual_cmd_log.append(
+                'echo "Testing ${docker_image:=%s}"' % docker_image
+            )
         manual_cmd_log.append(manual_cmdline(docker_cmdline, docker_image))
     server_job = jobset.JobSpec(
         cmdline=docker_cmdline,
@@ -1311,7 +1301,9 @@ argp.add_argument(
     choices=list(prod_servers.keys()),
     default=["default"],
     nargs="+",
-    help=("The servers to run cloud_to_prod and cloud_to_prod_auth tests against."),
+    help=(
+        "The servers to run cloud_to_prod and cloud_to_prod_auth tests against."
+    ),
 )
 argp.add_argument(
     "-s",
@@ -1343,7 +1335,9 @@ argp.add_argument(
 argp.add_argument(
     "--default_service_account",
     type=str,
-    help=("Default GCE service account email to use for some auth interop tests."),
+    help=(
+        "Default GCE service account email to use for some auth interop tests."
+    ),
     default="830293263384-compute@developer.gserviceaccount.com",
 )
 argp.add_argument(
@@ -1352,9 +1346,13 @@ argp.add_argument(
     default=False,
     action="store_const",
     const=True,
-    help=("When set, indicates that the script is running on CI (= not locally)."),
+    help=(
+        "When set, indicates that the script is running on CI (= not locally)."
+    ),
 )
-argp.add_argument("-v", "--verbose", default=False, action="store_const", const=True)
+argp.add_argument(
+    "-v", "--verbose", default=False, action="store_const", const=True
+)
 argp.add_argument(
     "--use_docker",
     default=False,
@@ -1459,8 +1457,13 @@ if args.use_docker:
     if not args.travis:
         print("Seen --use_docker flag, will run interop tests under docker.")
         print("")
-        print("IMPORTANT: The changes you are testing need to be locally" " committed")
-        print("because only the committed changes in the current branch will be")
+        print(
+            "IMPORTANT: The changes you are testing need to be locally"
+            " committed"
+        )
+        print(
+            "because only the committed changes in the current branch will be"
+        )
         print("copied to the docker environment.")
         time.sleep(5)
 
@@ -1470,7 +1473,8 @@ if args.manual_run and not args.use_docker:
 
 if not args.use_docker and servers:
     print(
-        "Running interop servers is only supported with --use_docker option" " enabled."
+        "Running interop servers is only supported with --use_docker option"
+        " enabled."
     )
     sys.exit(1)
 
@@ -1503,7 +1507,8 @@ docker_images = {}
 if args.use_docker:
     # languages for which to build docker images
     languages_to_build = set(
-        _LANGUAGES[k] for k in set([str(l) for l in languages] + [s for s in servers])
+        _LANGUAGES[k]
+        for k in set([str(l) for l in languages] + [s for s in servers])
     )
     languages_to_build = (
         languages_to_build | languages_http2_clients_for_http2_server_interop
@@ -1525,7 +1530,9 @@ if args.use_docker:
         build_jobs.append(job)
 
     if build_jobs:
-        jobset.message("START", "Building interop docker images.", do_newline=True)
+        jobset.message(
+            "START", "Building interop docker images.", do_newline=True
+        )
         if args.verbose:
             print("Jobs to run: \n%s\n" % "\n".join(str(j) for j in build_jobs))
 
@@ -1533,7 +1540,9 @@ if args.use_docker:
             build_jobs, newline_on_success=True, maxjobs=args.jobs
         )
 
-        report_utils.render_junit_xml_report(build_resultset, _DOCKER_BUILD_XML_REPORT)
+        report_utils.render_junit_xml_report(
+            build_resultset, _DOCKER_BUILD_XML_REPORT
+        )
 
         if num_failures == 0:
             jobset.message(
@@ -1608,17 +1617,21 @@ try:
                             + _SKIP_SPECIAL_STATUS_MESSAGE
                             + _ORCA_TEST_CASES
                         ):
-                            for transport_security in args.custom_credentials_type:
+                            for (
+                                transport_security
+                            ) in args.custom_credentials_type:
                                 # google_default_credentials not yet supported by all languages
                                 if (
-                                    transport_security == "google_default_credentials"
+                                    transport_security
+                                    == "google_default_credentials"
                                     and str(language)
                                     not in ["c++", "go", "java", "javaokhttp"]
                                 ):
                                     continue
                                 # compute_engine_channel_creds not yet supported by all languages
                                 if (
-                                    transport_security == "compute_engine_channel_creds"
+                                    transport_security
+                                    == "compute_engine_channel_creds"
                                     and str(language)
                                     not in ["go", "java", "javaokhttp"]
                                 ):
@@ -1629,7 +1642,9 @@ try:
                                     server_host_nickname,
                                     prod_servers[server_host_nickname],
                                     google_default_creds_use_key_file=args.google_default_creds_use_key_file,
-                                    docker_image=docker_images.get(str(language)),
+                                    docker_image=docker_images.get(
+                                        str(language)
+                                    ),
                                     manual_cmd_log=client_manual_cmd_log,
                                     service_account_key_file=args.service_account_key_file,
                                     default_service_account=args.default_service_account,
@@ -1660,16 +1675,28 @@ try:
                 for test_case in _AUTH_TEST_CASES:
                     if (
                         not args.skip_compute_engine_creds
-                        or not compute_engine_creds_required(language, test_case)
+                        or not compute_engine_creds_required(
+                            language, test_case
+                        )
                     ):
                         if not test_case in language.unimplemented_test_cases():
                             if test_case == _GOOGLE_DEFAULT_CREDS_TEST_CASE:
-                                transport_security = "google_default_credentials"
-                            elif test_case == _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE:
-                                transport_security = "compute_engine_channel_creds"
+                                transport_security = (
+                                    "google_default_credentials"
+                                )
+                            elif (
+                                test_case
+                                == _COMPUTE_ENGINE_CHANNEL_CREDS_TEST_CASE
+                            ):
+                                transport_security = (
+                                    "compute_engine_channel_creds"
+                                )
                             else:
                                 transport_security = "tls"
-                            if transport_security not in args.custom_credentials_type:
+                            if (
+                                transport_security
+                                not in args.custom_credentials_type
+                            ):
                                 continue
                             test_job = cloud_to_prod_jobspec(
                                 language,
