@@ -220,7 +220,7 @@ class InterceptorList {
   ~InterceptorList() { DeleteFactories(); }
 
   RunPromise Run(absl::optional<T> initial_value) {
-    return RunPromise(promise_memory_required_, first_map_,
+    return RunPromise(promise_memory_required_, &first_map_,
                       std::move(initial_value));
   }
 
