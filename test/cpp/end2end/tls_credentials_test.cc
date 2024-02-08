@@ -68,8 +68,8 @@ class NoOpCertificateVerifier : public ExternalCertificateVerifier {
     return true;
   }
 
-  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
-  }
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              const absl::Status&) override {}
 };
 
 class TlsCredentialsTest : public ::testing::Test {
