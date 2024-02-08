@@ -64,7 +64,7 @@ bool AsyncCertificateVerifier::Verify(
 }
 
 void AsyncCertificateVerifier::Cancel(
-    TlsCustomVerificationCheckRequest* request, const absl::Status& status) {
+    TlsCustomVerificationCheckRequest*, const absl::Status& status) {
   *status_from_cancellation_ = status;
 }
 
