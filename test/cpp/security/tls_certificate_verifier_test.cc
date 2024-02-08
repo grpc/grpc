@@ -24,8 +24,6 @@
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 
-#include "src/cpp/client/secure_credentials.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
 
@@ -88,6 +86,19 @@ TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierFails) {
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+}
+
+TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierCancelled) {
+  absl::Status status;
+  grpc_tls_custom_verification_check_request request;
+  auto verifier =
+      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(&status);
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  grpc::Status sync_status;
+  EXPECT_FALSE(
+      verifier->Verify(&cpp_request, /*callback=*/nullptr, &sync_status));
+  verifier->Cancel(&cpp_request, absl::CancelledError("cancelled"));
+  EXPECT_EQ(status, absl::CancelledError("cancelled"));
 }
 
 TEST(TlsCertificateVerifierTest, NoOpCertificateVerifierSucceeds) {
