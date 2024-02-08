@@ -969,6 +969,7 @@ grpc_cc_library(
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
         "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",

@@ -70,7 +70,7 @@ absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
   if (!policy_slice.ok()) {
     return absl::InvalidArgumentError(policy_slice.status().ToString());
   }
-  return std::string(policy_contents->as_string_view());
+  return std::string(policy_slice->as_string_view());
 }
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
