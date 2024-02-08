@@ -22,7 +22,6 @@
 #include <limits>
 #include <map>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -135,7 +134,7 @@ class FlowControlFuzzer {
   }
 
   MemoryQuotaRefPtr memory_quota_ = MakeMemoryQuota("fuzzer");
-  MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner("owner");
+  MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner();
   std::unique_ptr<TransportFlowControl> tfc_;
   absl::optional<uint32_t> queued_initial_window_size_;
   absl::optional<uint32_t> queued_send_max_frame_size_;

@@ -16,12 +16,15 @@
 //
 //
 
+#include <memory>
+
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/time.h"
@@ -39,6 +42,7 @@ CORE_END2END_TEST(Http2SingleHopTest, KeepaliveTimeout) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10)
                  .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0)
+                 .Set(GRPC_ARG_PING_TIMEOUT_MS, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
@@ -51,7 +55,7 @@ CORE_END2END_TEST(Http2SingleHopTest, KeepaliveTimeout) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_EQ(server_status.message(), "keepalive watchdog timeout");
+  EXPECT_EQ(server_status.message(), "ping timeout");
 }
 
 // Verify that reads reset the keepalive ping timer. The client sends 30 pings

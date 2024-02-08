@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -203,7 +204,9 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   grpc_call_error error;
 
   grpc_channel* client = f->MakeClient(grpc_core::ChannelArgs(), cq);
-  grpc_server* server = f->MakeServer(grpc_core::ChannelArgs(), cq);
+  absl::AnyInvocable<void(grpc_server*)> pre_start_server = [](grpc_server*) {};
+  grpc_server* server =
+      f->MakeServer(grpc_core::ChannelArgs(), cq, pre_start_server);
 
   grpc_slice host = grpc_slice_from_static_string("foo.test.google.fr:1234");
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
@@ -256,8 +259,8 @@ TEST_P(H2SslCertTest, SimpleRequestBody) {
   simple_request_body(fixture_.get(), GetParam().result);
 }
 
-// TODO(gtcooke94) SimpleRequestBodyUseEngineTest was failing on OpenSSL3.0
-// and 1.1.1 and removed. Investigate and rewrite a better test
+// TODO(b/283304471) SimpleRequestBodyUseEngineTest was failing on OpenSSL3.0
+// and 1.1.1 and removed. Investigate and rewrite a better test.
 
 INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
                          ::testing::ValuesIn(configs));

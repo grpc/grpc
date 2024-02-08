@@ -16,7 +16,6 @@
 
 #include "src/core/lib/gprpp/validation_errors.h"
 
-#include <algorithm>
 #include <utility>
 
 #include "absl/status/status.h"

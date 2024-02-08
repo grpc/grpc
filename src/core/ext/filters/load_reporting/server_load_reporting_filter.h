@@ -34,8 +34,11 @@
 
 namespace grpc_core {
 
-class ServerLoadReportingFilter : public ChannelFilter {
+class ServerLoadReportingFilter
+    : public ImplementChannelFilter<ServerLoadReportingFilter> {
  public:
+  static const grpc_channel_filter kFilter;
+
   static absl::StatusOr<ServerLoadReportingFilter> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
@@ -43,9 +46,22 @@ class ServerLoadReportingFilter : public ChannelFilter {
   const char* peer_identity() { return peer_identity_.c_str(); }
   size_t peer_identity_len() { return peer_identity_.length(); }
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ServerLoadReportingFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    void OnServerTrailingMetadata(ServerMetadata& md,
+                                  ServerLoadReportingFilter* filter);
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    void OnFinalize(const grpc_call_final_info* final_info,
+                    ServerLoadReportingFilter* filter);
+
+   private:
+    std::string client_ip_and_lr_token_;
+    std::string target_host_;
+  };
 
  private:
   // The peer's authenticated identity.

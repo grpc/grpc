@@ -35,7 +35,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 struct grpc_binder_stream;
 
@@ -43,12 +42,35 @@ struct grpc_binder_stream;
 // depends on what style we want to follow)
 // TODO(mingcl): Decide casing for this class name. Should we use C-style class
 // name here or just go with C++ style?
-struct grpc_binder_transport {
+struct grpc_binder_transport final : public grpc_core::Transport,
+                                     public grpc_core::FilterStackTransport {
   explicit grpc_binder_transport(
       std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy);
-  ~grpc_binder_transport();
+  ~grpc_binder_transport() override;
+
+  grpc_core::FilterStackTransport* filter_stack_transport() override {
+    return this;
+  }
+  grpc_core::ClientTransport* client_transport() override { return nullptr; }
+  grpc_core::ServerTransport* server_transport() override { return nullptr; }
+  absl::string_view GetTransportName() const override { return "binder"; }
+  void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
+                  const void* server_data, grpc_core::Arena* arena) override;
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+  void PerformOp(grpc_transport_op* op) override;
+  grpc_endpoint* GetEndpoint() override;
+  size_t SizeOfStream() const override;
+  bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
+    return false;
+  }
+  void PerformStreamOp(grpc_stream* gs,
+                       grpc_transport_stream_op_batch* op) override;
+  void DestroyStream(grpc_stream* gs,
+                     grpc_closure* then_schedule_closure) override;
+  void Orphan() override;
 
   int NewStreamTxCode() {
     // TODO(mingcl): Wrap around when all tx codes are used. "If we do detect a
@@ -57,8 +79,6 @@ struct grpc_binder_transport {
     GPR_ASSERT(next_free_tx_code <= LAST_CALL_TRANSACTION);
     return next_free_tx_code++;
   }
-
-  grpc_transport base;  // must be first
 
   std::shared_ptr<grpc_binder::TransportStreamReceiver>
       transport_stream_receiver;
@@ -71,9 +91,12 @@ struct grpc_binder_transport {
   grpc_core::Combiner* combiner;
 
   // The callback and the data for the callback when the stream is connected
-  // between client and server.
-  void (*accept_stream_fn)(void* user_data, grpc_transport* transport,
+  // between client and server. registered_method_matcher_cb is called before
+  // invoking the recv initial metadata callback.
+  void (*accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                            const void* server_data) = nullptr;
+  void (*registered_method_matcher_cb)(
+      void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_user_data = nullptr;
   // `accept_stream_locked()` could be called before `accept_stream_fn` has been
   // set, we need to remember those requests that comes too early and call them
@@ -87,11 +110,11 @@ struct grpc_binder_transport {
   std::atomic<int> next_free_tx_code{grpc_binder::kFirstCallId};
 };
 
-grpc_transport* grpc_create_binder_transport_client(
+grpc_core::Transport* grpc_create_binder_transport_client(
     std::unique_ptr<grpc_binder::Binder> endpoint_binder,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);
-grpc_transport* grpc_create_binder_transport_server(
+grpc_core::Transport* grpc_create_binder_transport_server(
     std::unique_ptr<grpc_binder::Binder> client_binder,
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy);

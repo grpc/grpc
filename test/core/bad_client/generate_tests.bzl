@@ -57,6 +57,7 @@ def grpc_bad_client_tests():
             name = "%s_bad_client_test" % t,
             srcs = ["tests/%s.cc" % t],
             deps = [":bad_client_test"],
+            tags = ["bad_client_test"],
             external_deps = [
                 "gtest",
             ],

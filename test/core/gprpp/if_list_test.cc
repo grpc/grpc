@@ -14,6 +14,8 @@
 
 #include "src/core/lib/gprpp/if_list.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 namespace grpc_core {

@@ -23,6 +23,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+BasicWorkQueue::BasicWorkQueue(void* owner) : owner_(owner) {}
+
 bool BasicWorkQueue::Empty() const {
   grpc_core::MutexLock lock(&mu_);
   return q_.empty();

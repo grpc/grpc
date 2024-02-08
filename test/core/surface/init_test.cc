@@ -18,11 +18,8 @@
 
 #include "src/core/lib/surface/init.h"
 
-#include <stdint.h>
-
 #include <chrono>
 #include <memory>
-#include <ratio>
 
 #include "absl/time/clock.h"
 #include "absl/time/time.h"

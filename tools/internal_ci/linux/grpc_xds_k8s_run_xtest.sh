@@ -69,7 +69,7 @@ run_test() {
     exit 1
   fi
   # Test driver usage:
-  # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
+  # https://github.com/grpc/psm-interop#basic-usage
   local client_lang="$1"
   local client_branch="$2"
   local server_lang="$3"

@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 
-#include <initializer_list>
-
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>

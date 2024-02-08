@@ -1944,8 +1944,8 @@ TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   // so we set it to some fake value
   restore_home_env = true;
   SetEnv("HOME", "/fake/home/for/bazel");
-#endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
-       // defined(GPR_LINUX_ENV))
+#endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) ||
+        // defined(GPR_LINUX_ENV))
   std::string path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(!path.empty());
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
@@ -2127,12 +2127,12 @@ void validate_external_account_creds_token_exchage_request(
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(path, "/token") == 0);
-  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(request->hdr_count == 3);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
@@ -2155,12 +2155,12 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(path, "/token_url_encode") == 0);
-  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(request->hdr_count == 3);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
@@ -2311,12 +2311,18 @@ void validate_aws_external_account_creds_token_exchage_request(
   // Check the rest of the request.
   GPR_ASSERT(strcmp(host, "foo.com:5555") == 0);
   GPR_ASSERT(strcmp(path, "/token") == 0);
-  GPR_ASSERT(request->hdr_count == 2);
+  GPR_ASSERT(request->hdr_count == 3);
   GPR_ASSERT(strcmp(request->hdrs[0].key, "Content-Type") == 0);
   GPR_ASSERT(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].key, "Authorization") == 0);
-  GPR_ASSERT(strcmp(request->hdrs[1].value,
+  GPR_ASSERT(strcmp(request->hdrs[1].key, "x-goog-api-client") == 0);
+  EXPECT_EQ(
+      request->hdrs[1].value,
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
+                      "sa-impersonation/false config-lifetime/false",
+                      grpc_version_string()));
+  GPR_ASSERT(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  GPR_ASSERT(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
 
@@ -2385,6 +2391,8 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
                                  std::vector<std::string> scopes)
       : ExternalAccountCredentials(std::move(options), std::move(scopes)) {}
 
+  std::string GetMetricsValue() { return MetricsHeaderValue(); }
+
  protected:
   void RetrieveSubjectToken(
       HTTPRequestContext* /*ctx*/, const Options& /*options*/,
@@ -2392,6 +2400,91 @@ class TestExternalAccountCredentials final : public ExternalAccountCredentials {
     cb("test_subject_token", absl::OkStatus());
   }
 };
+
+TEST(CredentialsTest, TestExternalAccountCredsMetricsHeader) {
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  TestExternalAccountCredentials creds(options, {});
+
+  EXPECT_EQ(
+      creds.GetMetricsValue(),
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+                      "sa-impersonation/false config-lifetime/false",
+                      grpc_version_string()));
+}
+
+TEST(CredentialsTest,
+     TestExternalAccountCredsMetricsHeaderWithServiceAccountImpersonation) {
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
+      "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  TestExternalAccountCredentials creds(options, {});
+
+  EXPECT_EQ(
+      creds.GetMetricsValue(),
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+                      "sa-impersonation/true config-lifetime/false",
+                      grpc_version_string()));
+}
+
+TEST(CredentialsTest, TestExternalAccountCredsMetricsHeaderWithConfigLifetime) {
+  Json credential_source = Json::FromString("");
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 5000;
+  TestExternalAccountCredentials::Options options = {
+      "external_account",    // type;
+      "audience",            // audience;
+      "subject_token_type",  // subject_token_type;
+      "https://foo.com:5555/service_account_impersonation",  // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      credential_source,                  // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  TestExternalAccountCredentials creds(options, {});
+
+  EXPECT_EQ(
+      creds.GetMetricsValue(),
+      absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/unknown "
+                      "sa-impersonation/true config-lifetime/true",
+                      grpc_version_string()));
+}
 
 TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
   ExecCtx exec_ctx;
@@ -3876,6 +3969,22 @@ TEST(CredentialsTest, TestCompositeChannelCredsCompareSuccess) {
   grpc_channel_credentials_release(insecure_creds);
   grpc_channel_credentials_release(composite_creds_1);
   grpc_channel_credentials_release(composite_creds_2);
+}
+
+TEST(CredentialsTest, RecursiveCompositeCredsDuplicateWithoutCallCreds) {
+  auto* insecure_creds = grpc_insecure_credentials_create();
+  auto inner_fake_creds = MakeRefCounted<fake_call_creds>();
+  auto outer_fake_creds = MakeRefCounted<fake_call_creds>();
+  auto* inner_composite_creds = grpc_composite_channel_credentials_create(
+      insecure_creds, inner_fake_creds.get(), nullptr);
+  auto* outer_composite_creds = grpc_composite_channel_credentials_create(
+      inner_composite_creds, outer_fake_creds.get(), nullptr);
+  auto duplicate_without_call_creds =
+      outer_composite_creds->duplicate_without_call_credentials();
+  EXPECT_EQ(duplicate_without_call_creds.get(), insecure_creds);
+  grpc_channel_credentials_release(insecure_creds);
+  grpc_channel_credentials_release(inner_composite_creds);
+  grpc_channel_credentials_release(outer_composite_creds);
 }
 
 TEST(CredentialsTest,

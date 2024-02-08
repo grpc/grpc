@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_FWD_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_FWD_H
 
-typedef struct grpc_transport grpc_transport;
+namespace grpc_core {
+class Transport;
+}
 
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_FWD_H

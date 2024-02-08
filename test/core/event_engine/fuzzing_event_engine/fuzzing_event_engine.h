@@ -22,7 +22,6 @@
 #include <map>
 #include <memory>
 #include <queue>
-#include <ratio>
 #include <set>
 #include <utility>
 #include <vector>
@@ -41,7 +40,6 @@
 
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
@@ -72,12 +70,12 @@ class FuzzingEventEngine : public EventEngine {
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
   // Tick until some time
   void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
-  // Tick until some gpr_timespec
-  void TickUntilTimespec(gpr_timespec t) ABSL_LOCKS_EXCLUDED(mu_);
-  // Tick until some grpc_core::Timestamp
-  void TickUntilTimestamp(grpc_core::Timestamp t) ABSL_LOCKS_EXCLUDED(mu_);
-  // Tick for some grpc_core::Duration
-  void TickForDuration(grpc_core::Duration d) ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick for some duration
+  void TickForDuration(Duration d) ABSL_LOCKS_EXCLUDED(mu_);
+
+  // Sets a callback to be invoked any time RunAfter() is called.
+  // Allows tests to verify the specified duration.
+  void SetRunAfterDurationCallback(absl::AnyInvocable<void(Duration)> callback);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -108,6 +106,9 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_) override;
   bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
+  TaskHandle RunAfterExactly(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_);
+
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Clear any global hooks installed by this event engine. Call prior to
@@ -115,10 +116,15 @@ class FuzzingEventEngine : public EventEngine {
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
+  Duration max_delay_write() const {
+    return max_delay_[static_cast<int>(RunType::kWrite)];
+  }
+
  private:
   enum class RunType {
     kWrite,
     kRunAfter,
+    kExact,
   };
 
   // One pending task to be run.
@@ -290,6 +296,10 @@ class FuzzingEventEngine : public EventEngine {
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
   grpc_pick_port_functions previous_pick_port_functions_;
+
+  grpc_core::Mutex run_after_duration_callback_mu_;
+  absl::AnyInvocable<void(Duration)> run_after_duration_callback_
+      ABSL_GUARDED_BY(run_after_duration_callback_mu_);
 };
 
 }  // namespace experimental

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
-#define GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
+#ifndef GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
+#define GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 
 #include <stdint.h>
 
@@ -24,16 +24,11 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "python_census_context.h"
 
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
 
 namespace grpc_observability {
 
@@ -46,15 +41,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
                                       bool is_transparent_retry);
     std::string TraceId() override {
       return absl::BytesToHexString(
-          absl::string_view(context_.SpanContext().TraceId()));
+          absl::string_view(context_.GetSpanContext().TraceId()));
     }
 
     std::string SpanId() override {
       return absl::BytesToHexString(
-          absl::string_view(context_.SpanContext().SpanId()));
+          absl::string_view(context_.GetSpanContext().SpanId()));
     }
 
-    bool IsSampled() override { return context_.SpanContext().IsSampled(); }
+    bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
     void RecordSendInitialMetadata(
         grpc_metadata_batch* send_initial_metadata) override;
@@ -77,6 +72,11 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
+    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    void AddOptionalLabels(
+        OptionalLabelComponent /*component*/,
+        std::shared_ptr<std::map<std::string, std::string>> /*labels*/)
+        override {}
 
    private:
     // Maximum size of trace context is sent on the wire.
@@ -94,22 +94,23 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit PythonOpenCensusCallTracer(const char* method, const char* trace_id,
+  explicit PythonOpenCensusCallTracer(const char* method, const char* target,
+                                      const char* trace_id,
                                       const char* parent_span_id,
                                       bool tracing_enabled);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {
     return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().TraceId()));
+        absl::string_view(context_.GetSpanContext().TraceId()));
   }
 
   std::string SpanId() override {
     return absl::BytesToHexString(
-        absl::string_view(context_.SpanContext().SpanId()));
+        absl::string_view(context_.GetSpanContext().SpanId()));
   }
 
-  bool IsSampled() override { return context_.SpanContext().IsSampled(); }
+  bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
   void GenerateContext();
   PythonOpenCensusCallAttemptTracer* StartNewAttempt(
@@ -123,6 +124,8 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
 
   // Client method.
   absl::string_view method_;
+  // Client target.
+  absl::string_view target_;
   PythonCensusContext context_;
   bool tracing_enabled_;
   mutable grpc_core::Mutex mu_;
@@ -138,4 +141,4 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
 
 }  // namespace grpc_observability
 
-#endif  // GRPC_PYRHON_OPENCENSUS_CLIENT_CALL_TRACER_H
+#endif  // GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H

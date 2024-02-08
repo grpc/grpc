@@ -85,7 +85,7 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/googleapis",
         proto_prefix="third_party/googleapis/",
     ),
-    "com_github_cncf_udpa": ExternalProtoLibrary(
+    "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
     "opencensus_proto": ExternalProtoLibrary(
@@ -99,11 +99,13 @@ EXTERNAL_PROTO_LIBRARIES = {
 # For that we need mapping from external repo name to a corresponding
 # path to a git submodule.
 EXTERNAL_SOURCE_PREFIXES = {
-    "@upb": "third_party/upb",
-    "@utf8_range": "third_party/utf8_range",
-    "@com_googlesource_code_re2": "third_party/re2",
-    "@com_google_googletest": "third_party/googletest",
-    "@zlib": "third_party/zlib",
+    # TODO(veblush): Remove @utf8_range// item once protobuf is upgraded to 26.x
+    "@utf8_range//": "third_party/utf8_range",
+    "@com_googlesource_code_re2//": "third_party/re2",
+    "@com_google_googletest//": "third_party/googletest",
+    "@com_google_protobuf//upb": "third_party/upb/upb",
+    "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
+    "@zlib//": "third_party/zlib",
 }
 
 
@@ -183,7 +185,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 "cc_proto_library",
                 "cc_proto_gen_validate",
                 "proto_library",
-                "upb_proto_library",
+                "upb_c_proto_library",
                 "upb_proto_reflection_library",
                 "alias",
                 "bind",
@@ -209,9 +211,9 @@ def _try_extract_source_file_path(label: str) -> str:
         # This is an external source file. We are only interested in sources
         # for some of the external libraries.
         for lib_name, prefix in EXTERNAL_SOURCE_PREFIXES.items():
-            if label.startswith(lib_name + "//"):
+            if label.startswith(lib_name):
                 return (
-                    label.replace("%s//" % lib_name, prefix + "/")
+                    label.replace("%s" % lib_name, prefix)
                     .replace(":", "/")
                     .replace("//", "/")
                 )
@@ -277,6 +279,9 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of source files from a bazel rule"""
     result = []
     for src in bazel_rule["srcs"]:
+        # Skip .proto files from the protobuf repo
+        if src.startswith("@com_google_protobuf//") and src.endswith(".proto"):
+            continue
         if src.endswith(".cc") or src.endswith(".c") or src.endswith(".proto"):
             source_file_maybe = _try_extract_source_file_path(src)
             if source_file_maybe:
@@ -565,13 +570,13 @@ def _get_transitive_protos(bazel_rules, t):
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
-    # upb.h and upb.c files.
-    GEN_UPB_ROOT = "//:src/core/ext/upb-generated/"
-    GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-generated/"
+    # upb files.
+    GEN_UPB_ROOT = "//:src/core/ext/upb-gen/"
+    GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
@@ -589,14 +594,14 @@ def _expand_upb_proto_library_rules(bazel_rules):
                     'upb rule "{0}" should have 1 proto dependency but has'
                     ' "{1}"'.format(name, deps)
                 )
-            # deps is not properly fetched from bazel query for upb_proto_library target
+            # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
                 "//external:upb_lib",
                 "//external:upb_lib_descriptor",
                 "//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ]
-            # populate the upb_proto_library rule with pre-generated upb headers
+            # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
             protos = _get_transitive_protos(bazel_rules, deps[0])
             if len(protos) == 0:
@@ -630,18 +635,20 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         )
                     )
 
-                ext = (
-                    ".upb"
+                extensions = (
+                    # There is no longer a .upb.c extension.
+                    [".upb.h", ".upb_minitable.h", ".upb_minitable.c"]
                     if gen_func == "grpc_upb_proto_library"
-                    else ".upbdefs"
+                    else [".upbdefs.h", ".upbdefs.c"]
                 )
                 root = (
                     GEN_UPB_ROOT
                     if gen_func == "grpc_upb_proto_library"
                     else GEN_UPBDEFS_ROOT
                 )
-                srcs.append(root + proto_src_file.replace(".proto", ext + ".c"))
-                hdrs.append(root + proto_src_file.replace(".proto", ext + ".h"))
+                for ext in extensions:
+                    srcs.append(root + proto_src_file.replace(".proto", ext))
+                    hdrs.append(root + proto_src_file.replace(".proto", ext))
             bazel_rule["srcs"] = srcs
             bazel_rule["hdrs"] = hdrs
 
@@ -665,13 +672,15 @@ def _patch_grpc_proto_library_rules(bazel_rules):
 def _patch_descriptor_upb_proto_library(bazel_rules):
     # The upb's descriptor_upb_proto library doesn't reference the generated descriptor.proto
     # sources explicitly, so we add them manually.
-    bazel_rule = bazel_rules.get("@upb//:descriptor_upb_proto", None)
+    bazel_rule = bazel_rules.get(
+        "@com_google_protobuf//upb:descriptor_upb_proto", None
+    )
     if bazel_rule:
         bazel_rule["srcs"].append(
-            ":src/core/ext/upb-generated/google/protobuf/descriptor.upb.c"
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c"
         )
         bazel_rule["hdrs"].append(
-            ":src/core/ext/upb-generated/google/protobuf/descriptor.upb.h"
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
         )
 
 
@@ -824,6 +833,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         for test in tests
         if not test.startswith("test/cpp/ext/otel:")
         and not test.startswith("test/cpp/ext/csm:")
+        and not test.startswith("test/cpp/interop:xds_interop")
     ]
 
     # missing opencensus/stats/stats.h
@@ -887,8 +897,16 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith("test/cpp/util:channelz_sampler_test")
     ]
 
+    # chaotic good not supported outside bazel
+    tests = [
+        test
+        for test in tests
+        if not test.startswith("test/core/transport/chaotic_good")
+    ]
+
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
+    tests = [test for test in tests if "_fuzzer_" not in test]
 
     return tests
 
@@ -1059,27 +1077,32 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@upb//:upb": {
+    "@com_google_protobuf//upb:base": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb",
+        "_RENAME": "upb_base_lib",
     },
-    "@upb//:collections": {
+    "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb_collections_lib",
+        "_RENAME": "upb_mem_lib",
     },
-    "@upb//:json": {
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib",
+    },
+    "@com_google_protobuf//upb/json:json": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_json_lib",
     },
-    "@upb//:textformat": {
+    "@com_google_protobuf//upb/text:text": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
-    "@utf8_range//:utf8_range": {
+    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
         "build": "all",
         # rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
@@ -1228,20 +1251,21 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "interop_server",
     },
-    "test/cpp/interop:xds_interop_client": {
-        "language": "c++",
-        "build": "test",
-        "run": False,
-        "_TYPE": "target",
-        "_RENAME": "xds_interop_client",
-    },
-    "test/cpp/interop:xds_interop_server": {
-        "language": "c++",
-        "build": "test",
-        "run": False,
-        "_TYPE": "target",
-        "_RENAME": "xds_interop_server",
-    },
+    # TODO(stanleycheung): re-enable this after cmake support for otel is added
+    # "test/cpp/interop:xds_interop_client": {
+    #     "language": "c++",
+    #     "build": "test",
+    #     "run": False,
+    #     "_TYPE": "target",
+    #     "_RENAME": "xds_interop_client",
+    # },
+    # "test/cpp/interop:xds_interop_server": {
+    #     "language": "c++",
+    #     "build": "test",
+    #     "run": False,
+    #     "_TYPE": "target",
+    #     "_RENAME": "xds_interop_server",
+    # },
     "test/cpp/interop:http2_client": {
         "language": "c++",
         "build": "test",
@@ -1295,7 +1319,7 @@ _BAZEL_DEPS_QUERIES = [
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
-    # as upb_proto_library dependencies.
+    # as upb_c_proto_library dependencies.
     'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
 ]
 
@@ -1378,6 +1402,15 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
+# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
+if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
+    md = _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    del _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)

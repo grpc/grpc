@@ -26,7 +26,7 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 # Needed for building binary distribution wheels -- bdist_wheel
-"${PYTHON}" -m pip install --upgrade wheel setuptools
+"${PYTHON}" -m pip install --upgrade pip wheel setuptools
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -89,6 +89,7 @@ ancillary_package_dir=(
   "src/python/grpcio_reflection/"
   "src/python/grpcio_status/"
   "src/python/grpcio_testing/"
+  "src/python/grpcio_observability/"
 )
 
 # Copy license to ancillary package directories so it will be distributed.
@@ -184,7 +185,7 @@ fix_faulty_universal2_wheel() {
 # This is necessary due to https://github.com/pypa/wheel/issues/406.
 # wheel incorrectly generates a universal2 artifact that only contains
 # x86_64 libraries.
-if [ "$GRPC_UNIVERSAL2_REPAIR" != "" ]; then
+if [ "$GRPC_BUILD_MAC" != "" ]; then
   for WHEEL in dist/*.whl tools/distrib/python/grpcio_tools/dist/*.whl; do
     fix_faulty_universal2_wheel "$WHEEL"
   done
@@ -234,8 +235,8 @@ then
   # through setup.py, but we can optimize it with "bdist_wheel" command, which
   # skips the wheel building step.
 
-  # Build grpcio_reflection source distribution
-  ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/build.py
+  # Build xds_protos source distribution
+  # build.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
       sdist bdist_wheel install
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
@@ -280,4 +281,14 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_observability source distribution
+  # Skips MacOS since grpcio_observability does not support MacOS.
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
+    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py \
+        sdist bdist_wheel
+    cp -r src/python/grpcio_observability/dist/* "$ARTIFACT_DIR"
+  fi
+
 fi

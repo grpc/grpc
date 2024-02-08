@@ -40,7 +40,9 @@
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
-#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
+#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+
+// IWYU pragma: no_include <ratio>
 
 namespace grpc {
 namespace load_reporter {

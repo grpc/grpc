@@ -17,8 +17,11 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -28,7 +31,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/extensions/can_track_errors.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -66,6 +71,12 @@ class EventEngineEndpointWrapper {
 
   explicit EventEngineEndpointWrapper(
       std::unique_ptr<EventEngine::Endpoint> endpoint);
+
+  EventEngine::Endpoint* endpoint() { return endpoint_.get(); }
+
+  std::unique_ptr<EventEngine::Endpoint> ReleaseEndpoint() {
+    return std::move(endpoint_);
+  }
 
   int Fd() {
     grpc_core::MutexLock lock(&mu_);
@@ -208,9 +219,10 @@ class EventEngineEndpointWrapper {
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
-      if (EventEngineSupportsFd() && fd_ > 0 && on_release_fd_) {
-        reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-            ->Shutdown(std::move(on_release_fd_));
+      auto* supports_fd =
+          QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
+      if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+        supports_fd->Shutdown(std::move(on_release_fd_));
       }
       OnShutdownInternal();
     }
@@ -222,7 +234,9 @@ class EventEngineEndpointWrapper {
   // invocation would simply return.
   void TriggerShutdown(
       absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
-    if (EventEngineSupportsFd()) {
+    auto* supports_fd =
+        QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
+    if (supports_fd != nullptr) {
       on_release_fd_ = std::move(on_release_fd);
     }
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
@@ -236,9 +250,8 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-          if (EventEngineSupportsFd() && fd_ > 0 && on_release_fd_) {
-            reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-                ->Shutdown(std::move(on_release_fd_));
+          if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+            supports_fd->Shutdown(std::move(on_release_fd_));
           }
           OnShutdownInternal();
         }
@@ -248,9 +261,10 @@ class EventEngineEndpointWrapper {
   }
 
   bool CanTrackErrors() {
-    if (EventEngineSupportsFd()) {
-      return reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-          ->CanTrackErrors();
+    auto* can_track_errors =
+        QueryExtension<EndpointCanTrackErrorsExtension>(endpoint_.get());
+    if (can_track_errors != nullptr) {
+      return can_track_errors->CanTrackErrors();
     } else {
       return false;
     }
@@ -404,9 +418,10 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
   eeep_->wrapper = this;
-  if (EventEngineSupportsFd()) {
-    fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-              ->GetWrappedFd();
+  auto* supports_fd =
+      QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
+  if (supports_fd != nullptr) {
+    fd_ = supports_fd->GetWrappedFd();
   } else {
     fd_ = -1;
   }
@@ -424,6 +439,30 @@ grpc_endpoint* grpc_event_engine_endpoint_create(
 
 bool grpc_is_event_engine_endpoint(grpc_endpoint* ep) {
   return ep->vtable == &grpc_event_engine_endpoint_vtable;
+}
+
+EventEngine::Endpoint* grpc_get_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep) {
+  if (!grpc_is_event_engine_endpoint(ep)) {
+    return nullptr;
+  }
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  return eeep->wrapper->endpoint();
+}
+
+std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
+    grpc_endpoint* ep) {
+  if (!grpc_is_event_engine_endpoint(ep)) {
+    return nullptr;
+  }
+  auto* eeep =
+      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
+          ep);
+  auto endpoint = eeep->wrapper->ReleaseEndpoint();
+  delete eeep->wrapper;
+  return endpoint;
 }
 
 void grpc_event_engine_endpoint_destroy_and_release_fd(

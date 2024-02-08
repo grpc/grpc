@@ -327,6 +327,19 @@ void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
 }
 
 // Set TCP_USER_TIMEOUT
+// As documented in
+// https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md, the
+// default values for TCP_USER_TIMEOUT are currently configured to be in line
+// with the default values of KEEPALIVE_TIMEOUT as proposed in
+// https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md. In
+// other words, by default, TCP_USER_TIMEOUT is disabled on clients (since
+// keepalive is disabled on clients by default), and enabled on servers. To
+// override the default settings of enabling/disabling TCP_USER_TIMEOUT, the
+// value of KEEPALIVE_TIME on channel args is used. If present, a value of
+// INT_MAX means that TCP_USER_TIMEOUT would be disabled, while any other value
+// would enable TCP_USER_TIMEOUT. If TCP_USER_TIMEOUT is enabled, the default
+// setting is 20 seconds (aligning with the default of KEEPALIVE_TIMEOUT). The
+// KEEPALIVE_TIMEOUT channel arg overrides the value used for TCP_USER_TIMEOUT.
 grpc_error_handle grpc_set_socket_tcp_user_timeout(
     int fd, const grpc_core::PosixTcpOptions& options, bool is_client) {
   // Use conditionally-important parameter to avoid warning

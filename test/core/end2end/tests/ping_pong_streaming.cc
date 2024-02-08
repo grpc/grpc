@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include <grpc/status.h>
 
 #include "src/core/lib/gprpp/time.h"

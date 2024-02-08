@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <thread>
@@ -57,7 +56,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
@@ -162,10 +161,10 @@ void OnFinish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(error.ok());
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));

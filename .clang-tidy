@@ -1,14 +1,23 @@
 ---
 # Note on checks are disabled on purpose
 #
+# - abseil-cleanup-ctad
+#   Requires C++17 and higher.
+#
 # - abseil-no-namespace
 #   https://bugs.llvm.org/show_bug.cgi?id=47947
+#
+# - bugprone-exception-escape
+#   https://github.com/llvm/llvm-project/issues/54668 (seems to be fixed in LLVM17)
 #
 # - bugprone-reserved-identifier
 #   Some macros need to be defined for portability purpose; e.g. _BSD_SOURCE.
 #
 # - modernize-redundant-void-arg
 #   Some source should be strictly C99 and func(void) should be used.
+#
+# - google-readability-casting
+#   https://github.com/llvm/llvm-project/issues/57959
 #
 # Note on checks which will be enabled in future. These are good to have but
 # it's not activated yet due to the existing issues with the checks.
@@ -23,6 +32,7 @@
 # - bugprone-not-null-terminated-result
 # - bugprone-signed-char-misuse
 # - bugprone-sizeof-expression
+# - bugprone-switch-missing-default-case
 # - bugprone-too-small-loop-variable
 # - bugprone-unchecked-optional-access
 # - clang-diagnostic-deprecated-declarations
@@ -41,21 +51,27 @@
 # - modernize-use-equals-default
 # - modernize-use-equals-delete
 # - modernize-use-using
+# - performance-avoid-endl
 # - performance-no-automatic-move
 # - performance-no-int-to-ptr
+# - performance-noexcept-swap
 # - performance-unnecessary-copy-initialization
 # - performance-unnecessary-value-param
 # - readability-else-after-return
 # - readability-implicit-bool-conversion
 # - readability-redundant-declaration
+# - readability-redundant-string-cstr
 #
 Checks: '-*,
   abseil-*,
+  -abseil-cleanup-ctad,
   -abseil-no-namespace,
   bugprone-*,
   -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
   -bugprone-easily-swappable-parameters,
+  -bugprone-empty-catch,
+  -bugprone-exception-escape,
   -bugprone-implicit-widening-of-multiplication-result,
   -bugprone-infinite-loop,
   -bugprone-narrowing-conversions,
@@ -63,16 +79,21 @@ Checks: '-*,
   -bugprone-reserved-identifier,
   -bugprone-signed-char-misuse,
   -bugprone-sizeof-expression,
+  -bugprone-switch-missing-default-case,
   -bugprone-too-small-loop-variable,
   -bugprone-unchecked-optional-access,
   google-*,
+  -google-readability-casting,
   -google-runtime-int,
   -google-runtime-references,
   performance-*,
+  -performance-avoid-endl,
   -performance-no-automatic-move,
   -performance-no-int-to-ptr,
+  -performance-noexcept-swap,
   -performance-unnecessary-copy-initialization,
   -performance-unnecessary-value-param,
+  clang-diagnostic-deprecated-declarations,
   clang-diagnostic-deprecated-register,
   clang-diagnostic-expansion-to-defined,
   clang-diagnostic-ignored-attributes,
@@ -120,7 +141,7 @@ Checks: '-*,
   readability-redundant-control-flow,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
-  readability-redundant-string-cstr,
+  -readability-redundant-string-cstr,
   readability-redundant-string-init,
   readability-simplify-boolean-expr,
   readability-static-definition-in-anonymous-namespace,

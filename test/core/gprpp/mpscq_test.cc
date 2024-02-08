@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>

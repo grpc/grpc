@@ -56,10 +56,7 @@ using ::testing::UnorderedElementsAre;
 
 class LoggingCensusIntegrationTest : public LoggingTest {
  protected:
-  static void SetUpTestSuite() {
-    LoggingTest::SetUpTestSuite();
-    RegisterOpenCensusPlugin();
-  }
+  static void SetUpTestSuite() { LoggingTest::SetUpTestSuite(); }
 
   static void TearDownTestSuite() { LoggingTest::TearDownTestSuite(); }
 };

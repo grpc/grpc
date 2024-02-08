@@ -26,7 +26,9 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      */
     protected $timeout_sec = 0;
     /**
-     * response header+trailer we want the values of
+     * Response header + trailer metadata entries we want the values of.
+     * Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     * * (asterisk) is a special value that will return all metadata entries
      *
      * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
      */
@@ -43,7 +45,9 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
      *     @type int $timeout_sec
      *           If num_rpcs have not completed within timeout_sec, return partial results.
      *     @type array<string>|\Google\Protobuf\Internal\RepeatedField $metadata_keys
-     *           response header+trailer we want the values of
+     *           Response header + trailer metadata entries we want the values of.
+     *           Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     *           * (asterisk) is a special value that will return all metadata entries
      * }
      */
     public function __construct($data = NULL) {
@@ -104,7 +108,9 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * response header+trailer we want the values of
+     * Response header + trailer metadata entries we want the values of.
+     * Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     * * (asterisk) is a special value that will return all metadata entries
      *
      * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
      * @return \Google\Protobuf\Internal\RepeatedField
@@ -115,7 +121,9 @@ class LoadBalancerStatsRequest extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * response header+trailer we want the values of
+     * Response header + trailer metadata entries we want the values of.
+     * Matching of the keys is case-insensitive as per rfc7540#section-8.1.2
+     * * (asterisk) is a special value that will return all metadata entries
      *
      * Generated from protobuf field <code>repeated string metadata_keys = 3;</code>
      * @param array<string>|\Google\Protobuf\Internal\RepeatedField $var

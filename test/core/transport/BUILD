@@ -36,6 +36,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "call_filters_test",
+    srcs = ["call_filters_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:call_filters",
+    ],
+)
+
+grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
     external_deps = [
@@ -91,21 +105,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "pid_controller_test",
-    srcs = ["pid_controller_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
     ],
 )
 

@@ -43,6 +43,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 

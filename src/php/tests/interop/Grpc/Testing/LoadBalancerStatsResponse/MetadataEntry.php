@@ -14,13 +14,24 @@ use Google\Protobuf\Internal\GPBUtil;
 class MetadataEntry extends \Google\Protobuf\Internal\Message
 {
     /**
+     * Key, exactly as received from the server. Case may be different from what
+     * was requested in the LoadBalancerStatsRequest)
+     *
      * Generated from protobuf field <code>string key = 1;</code>
      */
     protected $key = '';
     /**
+     * Value, exactly as received from the server.
+     *
      * Generated from protobuf field <code>string value = 2;</code>
      */
     protected $value = '';
+    /**
+     * Metadata type
+     *
+     * Generated from protobuf field <code>.grpc.testing.LoadBalancerStatsResponse.MetadataType type = 3;</code>
+     */
+    protected $type = 0;
 
     /**
      * Constructor.
@@ -29,7 +40,12 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
      *     Optional. Data for populating the Message object.
      *
      *     @type string $key
+     *           Key, exactly as received from the server. Case may be different from what
+     *           was requested in the LoadBalancerStatsRequest)
      *     @type string $value
+     *           Value, exactly as received from the server.
+     *     @type int $type
+     *           Metadata type
      * }
      */
     public function __construct($data = NULL) {
@@ -38,6 +54,9 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * Key, exactly as received from the server. Case may be different from what
+     * was requested in the LoadBalancerStatsRequest)
+     *
      * Generated from protobuf field <code>string key = 1;</code>
      * @return string
      */
@@ -47,6 +66,9 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * Key, exactly as received from the server. Case may be different from what
+     * was requested in the LoadBalancerStatsRequest)
+     *
      * Generated from protobuf field <code>string key = 1;</code>
      * @param string $var
      * @return $this
@@ -60,6 +82,8 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * Value, exactly as received from the server.
+     *
      * Generated from protobuf field <code>string value = 2;</code>
      * @return string
      */
@@ -69,6 +93,8 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
     }
 
     /**
+     * Value, exactly as received from the server.
+     *
      * Generated from protobuf field <code>string value = 2;</code>
      * @param string $var
      * @return $this
@@ -77,6 +103,32 @@ class MetadataEntry extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkString($var, True);
         $this->value = $var;
+
+        return $this;
+    }
+
+    /**
+     * Metadata type
+     *
+     * Generated from protobuf field <code>.grpc.testing.LoadBalancerStatsResponse.MetadataType type = 3;</code>
+     * @return int
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * Metadata type
+     *
+     * Generated from protobuf field <code>.grpc.testing.LoadBalancerStatsResponse.MetadataType type = 3;</code>
+     * @param int $var
+     * @return $this
+     */
+    public function setType($var)
+    {
+        GPBUtil::checkEnum($var, \Grpc\Testing\LoadBalancerStatsResponse\MetadataType::class);
+        $this->type = $var;
 
         return $this;
     }

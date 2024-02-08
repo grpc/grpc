@@ -41,6 +41,7 @@ from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
+from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
@@ -115,13 +116,15 @@ class _BaseMultiCallable:
 
     @staticmethod
     def _init_metadata(
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> Metadata:
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
+        if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
+            metadata = Metadata.from_tuple(metadata)
         if compression:
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)
@@ -137,7 +140,7 @@ class UnaryUnaryMultiCallable(
         request: RequestType,
         *,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -182,7 +185,7 @@ class UnaryStreamMultiCallable(
         request: RequestType,
         *,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -227,7 +230,7 @@ class StreamUnaryMultiCallable(
         self,
         request_iterator: Optional[RequestIterableType] = None,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -272,7 +275,7 @@ class StreamStreamMultiCallable(
         self,
         request_iterator: Optional[RequestIterableType] = None,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,

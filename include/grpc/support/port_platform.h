@@ -19,14 +19,6 @@
 #ifndef GRPC_SUPPORT_PORT_PLATFORM_H
 #define GRPC_SUPPORT_PORT_PLATFORM_H
 
-/*
- * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
- * compatible with older platforms (currently only on Linux)
- * Causes:
- *  - some libc calls to be gotten via dlsym
- *  - some syscalls to be made directly
- */
-
 // [[deprecated]] attribute is only available since C++14
 #if __cplusplus >= 201402L
 #define GRPC_DEPRECATED(reason) [[deprecated(reason)]]
@@ -502,22 +494,28 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#elif defined(__QNX__) || defined(__QNXNTO__)
+#define GPR_PLATFORM_STRING "qnx"
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STAT 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_HAS_PTHREAD_H 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
 #else
 #error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
-
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
-/*
- * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
- * a library from having non-standard symbols such as __asprintf_chk.
- * This helps non-glibc systems such as alpine using musl to find symbols.
- */
-#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
-#undef _FORTIFY_SOURCE
-#define _FORTIFY_SOURCE 0
-#endif
-#endif
 
 #if defined(__has_include)
 #if __has_include(<atomic>)
@@ -669,6 +667,18 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPC_MUST_USE_RESULT
 #else
 #define GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING
+#endif
+#endif
+
+#ifndef GRPC_REINITIALIZES
+#if defined(__clang__)
+#if GPR_HAS_CPP_ATTRIBUTE(clang::reinitializes)
+#define GRPC_REINITIALIZES [[clang::reinitializes]]
+#else
+#define GRPC_REINITIALIZES
+#endif
+#else
+#define GRPC_REINITIALIZES
 #endif
 #endif
 

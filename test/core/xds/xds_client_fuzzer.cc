@@ -47,6 +47,26 @@
 
 namespace grpc_core {
 
+namespace testing {
+
+class XdsClientTestPeer {
+ public:
+  explicit XdsClientTestPeer(XdsClient* xds_client) : xds_client_(xds_client) {}
+
+  void TestDumpClientConfig() {
+    upb::Arena arena;
+    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
+    std::set<std::string> string_pool;
+    MutexLock lock(xds_client_->mu());
+    xds_client_->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+  }
+
+ private:
+  XdsClient* xds_client_;
+};
+
+}  // namespace testing
+
 class Fuzzer {
  public:
   explicit Fuzzer(absl::string_view bootstrap_json) {
@@ -57,7 +77,8 @@ class Fuzzer {
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
+    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+        []() { Crash("Multiple concurrent reads"); });
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();
@@ -112,7 +133,7 @@ class Fuzzer {
         }
         break;
       case xds_client_fuzzer::Action::kDumpCsdsData:
-        xds_client_->DumpClientConfigBinary();
+        testing::XdsClientTestPeer(xds_client_.get()).TestDumpClientConfig();
         break;
       case xds_client_fuzzer::Action::kTriggerConnectionFailure:
         TriggerConnectionFailure(
@@ -147,20 +168,26 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const typename ResourceType::ResourceType> resource)
+        std::shared_ptr<const typename ResourceType::ResourceType> resource,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), resource->ToString().c_str());
     }
 
-    void OnError(absl::Status status) override {
+    void OnError(
+        absl::Status status,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnError(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), status.ToString().c_str());
     }
 
-    void OnResourceDoesNotExist() override {
+    void OnResourceDoesNotExist(
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnResourceDoesNotExist(%s %s)",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str());

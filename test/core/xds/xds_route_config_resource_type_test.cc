@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <limits>
 #include <map>
 #include <memory>
@@ -38,8 +37,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
@@ -1750,7 +1749,7 @@ TEST_F(RlsTest, Basic) {
       ::testing::ElementsAre(::testing::Pair(
           "rls",
           "[{\"rls_experimental\":{"
-          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicy\":[{\"cds_experimental\":{\"isDynamic\":true}}],"
           "\"childPolicyConfigTargetFieldName\":\"cluster\","
           "\"routeLookupConfig\":{"
           "\"cacheSizeBytes\":\"1024\","
@@ -1853,7 +1852,7 @@ TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
       ::testing::ElementsAre(::testing::Pair(
           "rls",
           "[{\"rls_experimental\":{"
-          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicy\":[{\"cds_experimental\":{\"isDynamic\":true}}],"
           "\"childPolicyConfigTargetFieldName\":\"cluster\","
           "\"routeLookupConfig\":{"
           "\"cacheSizeBytes\":\"1024\","

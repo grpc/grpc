@@ -126,11 +126,14 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   /// Read the next `count` bytes and append it to the given Cord.
   // (override is conditionally omitted here to support old Protobuf which
   //  doesn't have ReadCord method)
-  // NOLINTNEXTLINE(modernize-use-override)
+  // NOLINTBEGIN(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
   virtual bool ReadCord(absl::Cord* cord, int count)
-#if PROTOBUF_VERSION >= 4022000
+#if GOOGLE_PROTOBUF_VERSION >= 4022000
       override
 #endif
+  // NOLINTEND(modernize-use-override,
+  // clang-diagnostic-inconsistent-missing-override)
   {
     if (!status().ok()) {
       return false;
@@ -145,9 +148,12 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
             *slice(), GRPC_SLICE_LENGTH(*slice()) - backup_count(),
             GRPC_SLICE_LENGTH(*slice()) - backup_count() + count)));
       }
-      int64_t take = std::min(backup_count(), static_cast<int64_t>(count));
+      int64_t take = (std::min)(backup_count(), static_cast<int64_t>(count));
       set_backup_count(backup_count() - take);
-      count -= take;
+      // This cast is safe as the size of a serialized protobuf message
+      // should be smaller than 2GiB.
+      // (https://protobuf.dev/programming-guides/encoding/#size-limit)
+      count -= static_cast<int>(take);
       if (count == 0) {
         return true;
       }
@@ -160,7 +166,8 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
       set_byte_count(ByteCount() + slice_length);
       if (slice_length <= static_cast<uint64_t>(count)) {
         cord->Append(MakeCordFromSlice(grpc_slice_ref(*slice())));
-        count -= slice_length;
+        // This cast is safe as above.
+        count -= static_cast<int>(slice_length);
       } else {
         cord->Append(MakeCordFromSlice(grpc_slice_split_head(slice(), count)));
         set_backup_count(slice_length - count);
@@ -189,10 +196,17 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
   // This function takes ownership of slice and return a newly created Cord off
   // of it.
   static absl::Cord MakeCordFromSlice(grpc_slice slice) {
+    // slice_for_cord is created to keep inlined data of the given slice
+    grpc_slice* slice_for_cord = new grpc_slice;
+    *slice_for_cord = slice;
     return absl::MakeCordFromExternal(
-        absl::string_view(reinterpret_cast<char*>(GRPC_SLICE_START_PTR(slice)),
-                          GRPC_SLICE_LENGTH(slice)),
-        [slice](absl::string_view /* view */) { grpc_slice_unref(slice); });
+        absl::string_view(
+            reinterpret_cast<char*>(GRPC_SLICE_START_PTR(*slice_for_cord)),
+            GRPC_SLICE_LENGTH(*slice_for_cord)),
+        [slice_for_cord](absl::string_view /* view */) {
+          grpc_slice_unref(*slice_for_cord);
+          delete slice_for_cord;
+        });
   }
 #endif  // GRPC_PROTOBUF_CORD_SUPPORT_ENABLED
 

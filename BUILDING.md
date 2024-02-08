@@ -112,6 +112,9 @@ $ bazel build :all
 $ bazel test --config=dbg //test/...
 ```
 
+NOTE: If you're using Bazel 7 or newer and working with gRPC, you'll need to turn off bzlmod.
+This is because gRPC isn't fully compatible with bzlmod yet. To do this, add --enable_bzlmod=false to your Bazel commands.
+
 NOTE: If you are a gRPC maintainer and you have access to our test cluster, you should use our [gRPC's Remote Execution environment](tools/remote_build/README.md)
 to get significant improvement to the build and test speed (and a bunch of other very useful features).
 

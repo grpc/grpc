@@ -23,13 +23,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <algorithm>
-#include <initializer_list>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -49,6 +47,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -169,16 +168,17 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
     }
 
     switch (annotation.type()) {
-      case AnnotationType::kMetadataSizes:
-        // This annotation is expensive to create. We should only create it if
-        // the call is being sampled, not just recorded.
+      // Annotations are expensive to create. We should only create it if the
+      // call is being sampled by default.
+      default:
         if (IsSampled()) {
           context_.AddSpanAnnotation(annotation.ToString(), {});
         }
         break;
-      default:
-        context_.AddSpanAnnotation(annotation.ToString(), {});
     }
+  }
+  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+    return nullptr;
   }
 
  private:
@@ -265,7 +265,7 @@ void OpenCensusServerCallTracer::RecordEnd(
 
 grpc_core::ServerCallTracer*
 OpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
-    grpc_core::Arena* arena) {
+    grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) {
   return arena->ManagedNew<OpenCensusServerCallTracer>();
 }
 

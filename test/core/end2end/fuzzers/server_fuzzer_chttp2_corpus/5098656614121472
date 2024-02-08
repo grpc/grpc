@@ -1,0 +1,10 @@
+network_input {
+  single_read_bytes: "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n\000\000\000\004\000\000\000\000\000\000\000\365\001\004\000\000\000\001\020\005:path\010/foo/bar\020\007:scheme\004http\020\007:method\004POST\020\004host\tlocalhost\020\014content-type\036application/grpc+this-is-valid\020\024grpc-accept\253-ecofing\025iduntity,defl\305te,gzip\020\002te\010trailers\020\nuser-agent\"bad;client gqpc-c/0.12.1.0 (linux)\020\014grpc-timeout\00310nS\020\014g/2.0\r\n\r\nSM\r\n\r\n\000\000\000\004\000\000\000\000\000\000\000\365\001\004\377\371\000\001\020\005:path\010/foo/bar\020\007:scheme\004http\020\007:method\004POST\020\004host\tlocalhost\020\014content-type\036application/grpc+this-is-valid\020\024grpc-accept\253-ecofing\025iduntity,defl\305te,gzip\020\002te\010trailers\020\nuser-agent\"bad;client gqpc-c/0.12.1.0 (linux)\020\014grpc-timeout\00310nS\020\014g/2.0\r\n\r\nSM\r\n\r\n\000\000\000\004\000\000\000\000\000\000\000\365\001\004\377\371\000\001\020\005:path\010/foo/bar\020\007:scheme\004http\020\007:method\004POST\020\004host\tlocalhost\020\014conhttp-type\036applicationmgrpc+this-is-valid\020\024grpc-acceptn-ecofing\025iduntity,defl\305te,gzip\020\002te\010traklers\020\nuser-agent\"bad;client gqpc-c/0.12.1.\000\000\001\000\000\000"
+}
+event_engine_actions {
+  assign_ports: 16121856
+}
+config_vars {
+  trace: ""
+  experiments: 4194304000
+}

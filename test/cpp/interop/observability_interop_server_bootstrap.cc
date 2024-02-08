@@ -41,6 +41,8 @@ int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
+    // TODO(someone): remove deprecated usage
+    // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
     gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
     if (!status.ok()) {

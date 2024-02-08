@@ -14,7 +14,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -22,9 +21,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>

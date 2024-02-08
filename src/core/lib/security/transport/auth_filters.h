@@ -62,23 +62,90 @@ class ClientAuthFilter final : public ChannelFilter {
   grpc_call_credentials::GetRequestMetadataArgs args_;
 };
 
-class ServerAuthFilter final : public ChannelFilter {
+class LegacyServerAuthFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerAuthFilter> Create(const ChannelArgs& args,
-                                                 ChannelFilter::Args);
+  static absl::StatusOr<LegacyServerAuthFilter> Create(const ChannelArgs& args,
+                                                       ChannelFilter::Args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
-                   RefCountedPtr<grpc_auth_context> auth_context);
+  LegacyServerAuthFilter(
+      RefCountedPtr<grpc_server_credentials> server_credentials,
+      RefCountedPtr<grpc_auth_context> auth_context);
 
   class RunApplicationCode;
 
+  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
+      CallArgs call_args);
+
+  RefCountedPtr<grpc_server_credentials> server_credentials_;
+  RefCountedPtr<grpc_auth_context> auth_context_;
+};
+
+class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
+ private:
+  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
+                   RefCountedPtr<grpc_auth_context> auth_context);
+
+  class RunApplicationCode {
+   public:
+    RunApplicationCode(ServerAuthFilter* filter, ClientMetadata& metadata);
+
+    RunApplicationCode(const RunApplicationCode&) = delete;
+    RunApplicationCode& operator=(const RunApplicationCode&) = delete;
+    RunApplicationCode(RunApplicationCode&& other) noexcept
+        : state_(std::exchange(other.state_, nullptr)) {}
+    RunApplicationCode& operator=(RunApplicationCode&& other) noexcept {
+      state_ = std::exchange(other.state_, nullptr);
+      return *this;
+    }
+
+    Poll<absl::Status> operator()();
+
+   private:
+    // Called from application code.
+    static void OnMdProcessingDone(void* user_data,
+                                   const grpc_metadata* consumed_md,
+                                   size_t num_consumed_md,
+                                   const grpc_metadata* response_md,
+                                   size_t num_response_md,
+                                   grpc_status_code status,
+                                   const char* error_details);
+
+    struct State;
+    State* state_;
+  };
+
+ public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::StatusOr<ServerAuthFilter> Create(const ChannelArgs& args,
+                                                 ChannelFilter::Args);
+
+  class Call {
+   public:
+    explicit Call(ServerAuthFilter* filter);
+    auto OnClientInitialMetadata(ClientMetadata& md, ServerAuthFilter* filter) {
+      return If(
+          filter->server_credentials_ == nullptr ||
+              filter->server_credentials_->auth_metadata_processor().process ==
+                  nullptr,
+          ImmediateOkStatus(),
+          [filter, md = &md]() { return RunApplicationCode(filter, *md); });
+    }
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+  };
+
+ private:
   ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
       CallArgs call_args);
 

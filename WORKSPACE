@@ -48,7 +48,7 @@ android_workspace()
 # be invoked by binder transport implementation through JNI.
 local_repository(
     name = "binder_transport_android_helper",
-    path = "./src/core/ext/transport/binder/java",
+    path = "src/core/ext/transport/binder/java",
 )
 
 # Prevents bazel's '...' expansion from including the following folder.
@@ -59,27 +59,31 @@ local_repository(
     path = "third_party/utf8_range",
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:pip.bzl", "pip_parse")
 
-pip_install(
+pip_parse(
     name = "grpc_python_dependencies",
-    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+    requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
-load("@upb//bazel:system_python.bzl", "system_python")
+load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
+
+install_deps()
+
+load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
     minimum_python_version = "3.7",
 )
 
-load("@system_python//:pip.bzl", "pip_parse")
+load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")
 
-pip_parse(
+system_pip_parse(
     name = "pip_deps",
-    requirements = "@upb//python:requirements.txt",
+    requirements = "@com_google_protobuf//python:requirements.txt",
     requirements_overrides = {
-        "3.11": "@upb//python:requirements_311.txt",
+        "3.11": "@com_google_protobuf//python:requirements_311.txt",
     },
 )
 
@@ -88,6 +92,13 @@ http_archive(
     sha256 = "bf2861de6bf75115288468f340b0c4609cc99cc1ccc7668f0f71adfd853eedb3",
     url = "https://github.com/bazelbuild/rules_swift/releases/download/1.7.1/rules_swift.1.7.1.tar.gz",
 )
+
+load(
+    "@build_bazel_apple_support//lib:repositories.bzl",
+    "apple_support_dependencies",
+)
+
+apple_support_dependencies()
 
 load(
     "@build_bazel_rules_swift//swift:repositories.bzl",

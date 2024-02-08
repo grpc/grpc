@@ -77,7 +77,7 @@ cdef class _CallState:
       return
     _observability.delete_call_tracer(self.call_tracer_capsule)
 
-  cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name) except *:
+  cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name, bytes target) except *:
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
       if exclude_prefix in method_name:
@@ -85,14 +85,15 @@ cdef class _CallState:
     with _observability.get_plugin() as plugin:
       if not (plugin and plugin.observability_enabled):
         return
-      capsule = plugin.create_client_call_tracer(method_name)
+      capsule = plugin.create_client_call_tracer(method_name, target)
       capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
       _set_call_tracer(self.c_call, capsule_ptr)
       self.call_tracer_capsule = capsule
 
 cdef class _ChannelState:
 
-  def __cinit__(self):
+  def __cinit__(self, target):
+    self.target = target
     self.condition = threading.Condition()
     self.open = True
     self.integrated_call_states = {}
@@ -248,7 +249,7 @@ cdef void _call(
       grpc_slice_unref(method_slice)
       if host_slice_ptr:
         grpc_slice_unref(host_slice)
-      call_state.maybe_set_client_call_tracer_on_call(method)
+      call_state.maybe_set_client_call_tracer_on_call(method, channel_state.target)
       if context is not None:
         set_census_context_on_call(call_state, context)
       if credentials is not None:
@@ -473,7 +474,7 @@ cdef class Channel:
       ChannelCredentials channel_credentials):
     arguments = () if arguments is None else tuple(arguments)
     fork_handlers_and_grpc_init()
-    self._state = _ChannelState()
+    self._state = _ChannelState(target)
     self._state.c_call_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
     self._state.c_connectivity_completion_queue = (

@@ -19,7 +19,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -50,7 +49,6 @@
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/transport/transport_fwd.h"
 
 namespace grpc_core {
 
@@ -67,7 +65,7 @@ class BatchBuilder {
   }
 
   struct Target {
-    grpc_transport* transport;
+    Transport* transport;
     grpc_stream* stream;
     grpc_stream_refcount* stream_refcount;
   };
@@ -204,7 +202,7 @@ class BatchBuilder {
     ~Batch();
     Batch(const Batch&) = delete;
     Batch& operator=(const Batch&) = delete;
-    std::string DebugPrefix(Activity* activity = Activity::current()) const {
+    std::string DebugPrefix(Activity* activity = GetContext<Activity>()) const {
       return absl::StrFormat("%s[connected] [batch %p] ", activity->DebugTag(),
                              this);
     }
