@@ -17,8 +17,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
@@ -99,10 +101,15 @@ class CallSpine final : public Party {
       : Party(arena, 1), event_engine_(event_engine) {}
 
   class ScopedContext : public ScopedActivity,
-                        public promise_detail::Context<Arena> {
+                        public promise_detail::Context<Arena>,
+                        public promise_detail::Context<
+                            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(CallSpine* spine)
-        : ScopedActivity(spine), Context<Arena>(spine->arena()) {}
+        : ScopedActivity(spine),
+          Context<Arena>(spine->arena()),
+          Context<grpc_event_engine::experimental::EventEngine>(
+              spine->event_engine()) {}
   };
 
   bool RunParty() override {
