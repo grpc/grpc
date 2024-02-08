@@ -31,10 +31,10 @@
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -48,11 +48,10 @@ using grpc_event_engine::experimental::EventEngine;
 class ChaoticGoodServerTest : public ::testing::Test {
  public:
   ChaoticGoodServerTest() {
-    event_engine_ = std::shared_ptr<EventEngine>(
-        grpc_event_engine::experimental::CreateEventEngine());
     StartServer();
     ConstructConnector();
   }
+
   ~ChaoticGoodServerTest() override {
     args_.channel_args = ChannelArgs();
     if (connector_ != nullptr) connector_->Shutdown(absl::CancelledError());
@@ -67,31 +66,26 @@ class ChaoticGoodServerTest : public ::testing::Test {
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_event_engine::experimental::WaitForSingleOwner(
-        std::move(event_engine_));
+        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
   void StartServer() {
     port_ = grpc_pick_unused_port_or_die();
-    addr_ = absl::StrCat("ipv6:[::1]:", port_);
+    addr_ = absl::StrCat("[::1]:", port_);
     server_ = grpc_server_create(nullptr, nullptr);
-    core_server_ = Server::FromC(server_);
-    auto* listener =
-        new ChaoticGoodServerListener(core_server_, channel_args());
-    auto port = listener->Bind(
-        *grpc_event_engine::experimental::URIToResolvedAddress(addr_));
-    EXPECT_TRUE(port.ok());
-    EXPECT_EQ(port.value(), port_);
+    grpc_server_add_chaotic_good_port(server_, addr_.c_str());
     grpc_server_start(server_);
   }
 
   void ConstructConnector() {
-    auto uri = URI::Parse(addr_);
+    auto uri = URI::Parse("ipv6:" + addr_);
     GPR_ASSERT(uri.ok());
     GPR_ASSERT(grpc_parse_uri(*uri, &resolved_addr_));
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();
-    connector_ = MakeRefCounted<ChaoticGoodConnector>(event_engine_);
+    connector_ = MakeRefCounted<ChaoticGoodConnector>(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
  protected:
@@ -103,9 +97,9 @@ class ChaoticGoodServerTest : public ::testing::Test {
   }
 
   ChannelArgs channel_args() {
-    return ChannelArgs()
-        .SetObject(event_engine_)
-        .Set(GRPC_ARG_RESOURCE_QUOTA, ResourceQuota::Default());
+    return CoreConfiguration::Get()
+        .channel_args_preconditioning()
+        .PreconditionChannelArgs(nullptr);
   }
 
   grpc_server* server_;
@@ -117,7 +111,6 @@ class ChaoticGoodServerTest : public ::testing::Test {
   std::string addr_;
   grpc_resolved_address resolved_addr_;
   RefCountedPtr<ChaoticGoodConnector> connector_;
-  std::shared_ptr<EventEngine> event_engine_;
 };
 
 TEST_F(ChaoticGoodServerTest, Connect) {

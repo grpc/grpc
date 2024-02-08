@@ -40,7 +40,6 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "test/core/util/build.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -80,13 +79,6 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
   grpc_core::Timestamp deadline =
       grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20);
   while (engine.use_count() > 1) {
-    if (BuiltUnderAsan() && grpc_core::Timestamp::Now() > deadline) {
-      gpr_log(GPR_ERROR,
-              "Timeout waiting for single owner; exiting to try and trigger "
-              "leak detection.");
-      // Exit and trigger ASAN leak check.
-      exit(1);
-    }
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));

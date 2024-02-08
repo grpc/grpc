@@ -70,15 +70,7 @@ class ChaoticGoodServerListener final
       grpc_event_engine::experimental::EventEngine::ResolvedAddress addr);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
-  void Orphan() override {
-    {
-      absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
-      MutexLock lock(&mu_);
-      connection_list = std::move(connection_list_);
-    }
-    ee_listener_.reset();
-    Unref();
-  };
+  void Orphan() override;
 
   class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
@@ -162,6 +154,7 @@ class ChaoticGoodServerListener final
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
       ee_listener_;
   Mutex mu_;
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // Map of connection id to endpoints connectivity.
   absl::flat_hash_map<std::string,
                       std::shared_ptr<InterActivityLatch<PromiseEndpoint>>>

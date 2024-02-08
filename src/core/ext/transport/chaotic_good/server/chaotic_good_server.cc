@@ -77,28 +77,35 @@ using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : server_(server),
+    : RefCounted("listener"),
+      server_(server),
       args_(args),
-      event_engine_(grpc_event_engine::experimental::GetDefaultEventEngine()),
+      event_engine_(
+          args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       connection_id_generator_(std::move(connection_id_generator)) {}
 
 ChaoticGoodServerListener::~ChaoticGoodServerListener() {
-  event_engine_->Run([on_destroy_done = on_destroy_done_]() {
-    ExecCtx exec_ctx;
-    if (on_destroy_done != nullptr) {
+  if (on_destroy_done_ != nullptr) {
+    event_engine_->Run([on_destroy_done = on_destroy_done_]() {
+      ExecCtx exec_ctx;
       ExecCtx::Run(DEBUG_LOCATION, on_destroy_done, absl::OkStatus());
-      ExecCtx::Get()->Flush();
-    }
-  });
+    });
+  }
 }
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
+  if (grpc_chaotic_good_trace.enabled()) {
+    auto str = grpc_event_engine::experimental::ResolvedAddressToString(addr);
+    gpr_log(GPR_INFO, "CHAOTIC_GOOD: Listen on %s",
+            str.ok() ? str->c_str() : str.status().ToString().c_str());
+  }
   EventEngine::Listener::AcceptCallback accept_cb =
       [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
                      MemoryAllocator) {
         ExecCtx exec_ctx;
         MutexLock lock(&self->mu_);
+        if (self->shutdown_) return;
         self->connection_list_.emplace(
             MakeOrphanable<ActiveConnection>(self, std::move(ep)));
       };
@@ -114,6 +121,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
       std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
   if (!ee_listener.ok()) {
+    gpr_log(GPR_ERROR, "Bind failed: %s",
+            ee_listener.status().ToString().c_str());
     return ee_listener.status();
   }
   ee_listener_ = std::move(ee_listener.value());
@@ -127,6 +136,11 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
 absl::Status ChaoticGoodServerListener::StartListening() {
   GPR_ASSERT(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
+  if (!status.ok()) {
+    gpr_log(GPR_ERROR, "Start listening failed: %s", status.ToString().c_str());
+  } else if (grpc_chaotic_good_trace.enabled()) {
+    gpr_log(GPR_INFO, "CHAOTIC_GOOD: Started listening");
+  }
   return status;
 }
 
@@ -143,6 +157,9 @@ ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
 }
 
 void ChaoticGoodServerListener::ActiveConnection::Orphan() {
+  if (grpc_chaotic_good_trace.enabled()) {
+    gpr_log(GPR_INFO, "ActiveConnection::Orphan() %p", this);
+  }
   if (handshaking_state_ != nullptr) {
     handshaking_state_->Shutdown();
     handshaking_state_.reset();
@@ -281,6 +298,16 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             return latch->Wait();
           },
           [self](PromiseEndpoint ret) -> absl::Status {
+            MutexLock lock(&self->connection_->listener_->mu_);
+            if (grpc_chaotic_good_trace.enabled()) {
+              gpr_log(
+                  GPR_INFO, "%p Data endpoint setup done: shutdown=%s",
+                  self->connection_.get(),
+                  self->connection_->listener_->shutdown_ ? "true" : "false");
+            }
+            if (self->connection_->listener_->shutdown_) {
+              return absl::UnavailableError("Server shutdown");
+            }
             return self->connection_->listener_->server_->SetupTransport(
                 new ChaoticGoodServerTransport(
                     self->connection_->args(),
@@ -394,8 +421,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                                                           is_control_endpoint);
                       });
       },
-      EventEngineWakeupScheduler(
-          grpc_event_engine::experimental::GetDefaultEventEngine()),
+      EventEngineWakeupScheduler(self->connection_->listener_->event_engine_),
       [self](absl::Status status) {
         if (!status.ok()) {
           self->connection_->Done(
@@ -406,7 +432,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
         }
       },
       self->connection_->arena_.get(),
-      grpc_event_engine::experimental::GetDefaultEventEngine().get());
+      self->connection_->listener_->event_engine_.get());
   MutexLock lock(&self->connection_->mu_);
   if (self->connection_->orphaned_) return;
   self->connection_->receive_settings_activity_ = std::move(activity);
@@ -422,6 +448,20 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   }
   return Timestamp::Now() + kConnectionDeadline;
 }
+
+void ChaoticGoodServerListener::Orphan() {
+  if (grpc_chaotic_good_trace.enabled()) {
+    gpr_log(GPR_INFO, "ChaoticGoodServerListener::Orphan()");
+  }
+  {
+    absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
+    MutexLock lock(&mu_);
+    connection_list = std::move(connection_list_);
+    shutdown_ = true;
+  }
+  ee_listener_.reset();
+  Unref();
+};
 
 }  // namespace chaotic_good
 }  // namespace grpc_core

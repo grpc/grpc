@@ -446,7 +446,7 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
     }
     did_stuff = true;
   }
-  if (!op->goaway_error.ok()) {
+  if (!op->goaway_error.ok() || !op->disconnect_with_error.ok()) {
     cancelled.push_back(std::move(writer_));
     cancelled.push_back(std::move(reader_));
     did_stuff = true;
