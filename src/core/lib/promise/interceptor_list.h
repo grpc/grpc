@@ -86,8 +86,8 @@ class InterceptorList {
   // The result of Run: a promise that will execute the entire chain.
   class RunPromise {
    public:
-    RunPromise(size_t memory_required, Map* factory, absl::optional<T> value) {
-      if (!value.has_value() || factory == nullptr) {
+    RunPromise(size_t memory_required, Map** factory, absl::optional<T> value) {
+      if (!value.has_value() || *factory == nullptr) {
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG,
                   "InterceptorList::RunPromise[%p]: create immediate", this);
@@ -97,8 +97,10 @@ class InterceptorList {
       } else {
         is_immediately_resolved_ = false;
         Construct(&async_resolution_, memory_required);
-        factory->MakePromise(std::move(*value), async_resolution_.space.get());
-        async_resolution_.current_factory = factory;
+        (*factory)->MakePromise(std::move(*value),
+                                async_resolution_.space.get());
+        async_resolution_.current_factory = *factory;
+        async_resolution_.first_factory = factory;
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG,
                   "InterceptorList::RunPromise[%p]: create async; mem=%p", this,
@@ -141,6 +143,11 @@ class InterceptorList {
     RunPromise& operator=(RunPromise&& other) noexcept = delete;
 
     Poll<absl::optional<T>> operator()() {
+      if (!is_immediately_resolved_ &&
+          *async_resolution_.first_factory == nullptr) {
+        // Cancelled whilst polling
+        return absl::nullopt;
+      }
       if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "InterceptorList::RunPromise[%p]: %s", this,
                 DebugString().c_str());
@@ -194,6 +201,7 @@ class InterceptorList {
           : current_factory(std::exchange(other.current_factory, nullptr)),
             space(std::move(other.space)) {}
       Map* current_factory;
+      Map** first_factory;
       Arena::PoolPtr<char[]> space;
     };
     union {
@@ -219,15 +227,13 @@ class InterceptorList {
   // Append a new map to the end of the chain.
   template <typename Fn>
   void AppendMap(Fn fn, DebugLocation from) {
-    Append(MakeMapToAdd(
-        std::move(fn), [] {}, from));
+    Append(MakeMapToAdd(std::move(fn), [] {}, from));
   }
 
   // Prepend a new map to the beginning of the chain.
   template <typename Fn>
   void PrependMap(Fn fn, DebugLocation from) {
-    Prepend(MakeMapToAdd(
-        std::move(fn), [] {}, from));
+    Prepend(MakeMapToAdd(std::move(fn), [] {}, from));
   }
 
   // Append a new map to the end of the chain, with a cleanup function to be

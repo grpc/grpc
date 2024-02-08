@@ -3861,7 +3861,8 @@ class MaybeOpImpl {
   struct Dismissed {};
   using State = absl::variant<Dismissed, PromiseFactory, Promise>;
 
-  MaybeOpImpl() : state_(Dismissed{}) {}
+  // op_ is garbage but shouldn't be uninitialized
+  MaybeOpImpl() : state_(Dismissed{}), op_(GRPC_OP_RECV_STATUS_ON_CLIENT) {}
   MaybeOpImpl(SetupResult result, grpc_op_type op)
       : state_(PromiseFactory(std::move(result))), op_(op) {}
 
@@ -3870,6 +3871,7 @@ class MaybeOpImpl {
   MaybeOpImpl(MaybeOpImpl&& other) noexcept
       : state_(MoveState(other.state_)), op_(other.op_) {}
   MaybeOpImpl& operator=(MaybeOpImpl&& other) noexcept {
+    op_ = other.op_;
     if (absl::holds_alternative<Dismissed>(state_)) {
       state_.template emplace<Dismissed>();
       return *this;
@@ -3877,7 +3879,6 @@ class MaybeOpImpl {
     // Can't move after first poll => Promise is not an option
     state_.template emplace<PromiseFactory>(
         std::move(absl::get<PromiseFactory>(other.state_)));
-    op_ = other.op_;
     return *this;
   }
 

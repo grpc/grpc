@@ -129,6 +129,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
       on_data_endpoint_connect =
           [self](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
                      endpoint) mutable {
+            ExecCtx exec_ctx;
             if (!endpoint.ok() || self->handshake_mgr_ == nullptr) {
               auto error = GRPC_ERROR_CREATE("connect endpoint failed");
               MaybeNotify(DEBUG_LOCATION, self->notify_, error);
