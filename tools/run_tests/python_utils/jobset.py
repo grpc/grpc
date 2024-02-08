@@ -203,7 +203,7 @@ class JobSpec(object):
             environ = {}
         self.cmdline = cmdline
         self.environ = environ
-        self.environ["GRPC_VERBOSITY"] = "true"
+        self.environ["GRPC_VERBOSITY"] = "debug"
         self.shortname = cmdline[0] if shortname is None else shortname
         self.cwd = cwd
         self.shell = shell
@@ -311,7 +311,7 @@ class Job(object):
             cwd=self._spec.cwd,
             shell=self._spec.shell,
             stderr=subprocess.STDOUT,
-            stdout=subprocess.PIPE,
+            stdout=self._logfile,
             env=env,
             text=True,
         )
