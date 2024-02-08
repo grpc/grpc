@@ -67,6 +67,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -125,8 +126,6 @@ class ChannelFilter {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
-
-struct NoInterceptor {};
 
 namespace promise_filter_detail {
 
@@ -327,6 +326,16 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
   return Map(std::move(x), [call_data](ServerMetadataHandle md) {
     call_data->call.OnServerTrailingMetadata(*md);
+    return md;
+  });
+}
+
+template <typename Promise, typename Derived>
+auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
+               FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
+    call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
     return md;
   });
 }
@@ -930,6 +939,19 @@ inline void InterceptServerTrailingMetadata(
 
 template <typename Derived>
 inline void InterceptServerTrailingMetadata(
+    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  call_spine->server_trailing_metadata().sender.InterceptAndMap(
+      [call, channel](ServerMetadataHandle md) {
+        call->OnServerTrailingMetadata(*md, channel);
+        return md;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerTrailingMetadata(
     absl::Status (Derived::Call::*fn)(ServerMetadata&),
     typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
@@ -941,15 +963,26 @@ inline void InterceptServerTrailingMetadata(
       });
 }
 
-inline void InterceptFinalize(const NoInterceptor*, void*) {}
+inline void InterceptFinalize(const NoInterceptor*, void*, void*) {}
 
 template <class Call>
 inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
-                              Call* call) {
+                              void*, Call* call) {
   GPR_DEBUG_ASSERT(fn == &Call::OnFinalize);
   GetContext<CallFinalization>()->Add(
       [call](const grpc_call_final_info* final_info) {
         call->OnFinalize(final_info);
+      });
+}
+
+template <class Derived>
+inline void InterceptFinalize(
+    void (Derived::Call::*fn)(const grpc_call_final_info*, Derived*),
+    Derived* channel, typename Derived::Call* call) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnFinalize);
+  GetContext<CallFinalization>()->Add(
+      [call, channel](const grpc_call_final_info* final_info) {
+        call->OnFinalize(final_info, channel);
       });
 }
 
@@ -1050,7 +1083,8 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerTrailingMetadata(
         &Derived::Call::OnServerTrailingMetadata, call,
         static_cast<Derived*>(this), call_spine);
-    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize, call);
+    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize,
+                                             static_cast<Derived*>(this), call);
   }
 
   // Polyfill for the original promise scheme.
@@ -1067,7 +1101,7 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerToClientMessage(
         &Derived::Call::OnServerToClientMessage, call, call_args);
     promise_filter_detail::InterceptFinalize(
-        &Derived::Call::OnFinalize,
+        &Derived::Call::OnFinalize, static_cast<Derived*>(this),
         static_cast<typename Derived::Call*>(&call->call));
     return promise_filter_detail::MapResult(
         &Derived::Call::OnServerTrailingMetadata,

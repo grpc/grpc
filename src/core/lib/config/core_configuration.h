@@ -25,13 +25,13 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/handshaker_registry.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/resolver/resolver_registry.h"
 
 namespace grpc_core {
 

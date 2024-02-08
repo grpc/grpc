@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 
 #include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/ext/otel_plugin.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/util/test_config.h"
@@ -31,8 +32,8 @@ namespace testing {
 namespace {
 
 TEST(CsmObservabilityBuilderTest, Basic) {
-  EXPECT_TRUE(
-      experimental::CsmObservabilityBuilder().BuildAndRegister().status().ok());
+  EXPECT_EQ(experimental::CsmObservabilityBuilder().BuildAndRegister().status(),
+            absl::OkStatus());
 }
 
 TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {

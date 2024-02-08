@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
@@ -217,15 +218,12 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         ":peer_initwin=%d:t_win=%" PRId64 ":s_win=%d:s_delta=%" PRId64 "]",
         std::string(t->peer_string.as_string_view()).c_str(), t, s->id, staller,
         s->flow_controlled_buffer.length, s->flow_controlled_bytes_flowed,
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE],
+        t->settings.acked().initial_window_size(),
         t->flow_control.remote_window(),
         static_cast<uint32_t>(std::max(
-            int64_t{0},
-            s->flow_control.remote_window_delta() +
-                static_cast<int64_t>(
-                    t->settings[GRPC_PEER_SETTINGS]
-                               [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]))),
+            int64_t{0}, s->flow_control.remote_window_delta() +
+                            static_cast<int64_t>(
+                                t->settings.peer().initial_window_size()))),
         s->flow_control.remote_window_delta());
   }
 }
@@ -265,21 +263,12 @@ class WriteContext {
   }
 
   void FlushSettings() {
-    const bool dirty =
-        t_->dirtied_local_settings ||
-        t_->settings[GRPC_SENT_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] !=
-            t_->max_concurrent_streams_policy.AdvertiseValue();
-    if (dirty && !t_->sent_local_settings) {
-      t_->settings[GRPC_LOCAL_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS] =
-          t_->max_concurrent_streams_policy.AdvertiseValue();
-      grpc_slice_buffer_add(
-          t_->outbuf.c_slice_buffer(),
-          grpc_chttp2_settings_create(t_->settings[GRPC_SENT_SETTINGS],
-                                      t_->settings[GRPC_LOCAL_SETTINGS],
-                                      t_->force_send_settings,
-                                      GRPC_CHTTP2_NUM_SETTINGS));
+    t_->settings.mutable_local().SetMaxConcurrentStreams(
+        t_->max_concurrent_streams_policy.AdvertiseValue());
+    auto update = t_->settings.MaybeSendUpdate();
+    if (update.has_value()) {
+      grpc_core::Http2Frame frame(std::move(*update));
+      Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
       if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
         GPR_ASSERT(
             t_->settings_ack_watchdog ==
@@ -293,9 +282,6 @@ class WriteContext {
               grpc_chttp2_settings_timeout(std::move(t));
             });
       }
-      t_->force_send_settings = false;
-      t_->dirtied_local_settings = false;
-      t_->sent_local_settings = true;
       t_->flow_control.FlushedSettings();
       t_->max_concurrent_streams_policy.FlushedSettings();
       grpc_core::global_stats().IncrementHttp2SettingsWrites();
@@ -335,8 +321,7 @@ class WriteContext {
 
   void EnactHpackSettings() {
     t_->hpack_compressor.SetMaxTableSize(
-        t_->settings[GRPC_PEER_SETTINGS]
-                    [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
+        t_->settings.peer().header_table_size());
   }
 
   void UpdateStreamsNoLongerStalled() {
@@ -409,17 +394,14 @@ class DataSendContext {
     return static_cast<uint32_t>(std::max(
         int64_t{0},
         s_->flow_control.remote_window_delta() +
-            static_cast<int64_t>(
-                t_->settings[GRPC_PEER_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE])));
+            static_cast<int64_t>(t_->settings.peer().initial_window_size())));
   }
 
   uint32_t max_outgoing() const {
     return grpc_core::Clamp<uint32_t>(
         std::min<int64_t>(
-            {t_->settings[GRPC_PEER_SETTINGS]
-                         [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-             stream_remote_window(), t_->flow_control.remote_window(),
+            {t_->settings.peer().max_frame_size(), stream_remote_window(),
+             t_->flow_control.remote_window(),
              grpc_core::IsWriteSizeCapEnabled()
                  ? static_cast<int64_t>(write_context_->target_write_size())
                  : std::numeric_limits<uint32_t>::max()}),
@@ -493,14 +475,10 @@ class StreamWriteContext {
           grpc_core::HPackCompressor::EncodeHeaderOptions{
               s_->id,  // stream_id
               false,   // is_eof
-              t_->settings
-                      [GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-                  0,  // use_true_binary_metadata
-              t_->settings
-                  [GRPC_PEER_SETTINGS]
-                  [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],  // max_frame_size
-              &s_->stats.outgoing                         // stats
+              t_->settings.peer()
+                  .allow_true_binary_metadata(),     // use_true_binary_metadata
+              t_->settings.peer().max_frame_size(),  // max_frame_size
+              &s_->stats.outgoing                    // stats
           },
           *s_->send_initial_metadata, t_->outbuf.c_slice_buffer());
       grpc_chttp2_reset_ping_clock(t_);
@@ -516,7 +494,7 @@ class StreamWriteContext {
     if (s_->call_tracer) {
       s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
           grpc_core::HttpAnnotation::Type::kHeadWritten,
-          grpc_core::Timestamp::Now(), s_->t->flow_control.stats(),
+          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
           s_->flow_control.stats()));
     }
   }
@@ -595,14 +573,8 @@ class StreamWriteContext {
       }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
-              s_->id, true,
-              t_->settings
-                      [GRPC_PEER_SETTINGS]
-                      [GRPC_CHTTP2_SETTINGS_GRPC_ALLOW_TRUE_BINARY_METADATA] !=
-                  0,
-              t_->settings[GRPC_PEER_SETTINGS]
-                          [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE],
-              &s_->stats.outgoing},
+              s_->id, true, t_->settings.peer().allow_true_binary_metadata(),
+              t_->settings.peer().max_frame_size(), &s_->stats.outgoing},
           *s_->send_trailing_metadata, t_->outbuf.c_slice_buffer());
     }
     write_context_->IncTrailingMetadataWrites();
@@ -648,7 +620,7 @@ class StreamWriteContext {
                                    absl::OkStatus());
     if (s_->call_tracer) {
       s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, grpc_core::Timestamp::Now(),
+          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
           s_->t->flow_control.stats(), s_->flow_control.stats()));
     }
   }

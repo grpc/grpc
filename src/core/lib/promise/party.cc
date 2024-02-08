@@ -227,40 +227,42 @@ void Party::RunLocked() {
 bool Party::RunParty() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
-  return sync_.RunParty([this](int i) {
-    // If the participant is null, skip.
-    // This allows participants to complete whilst wakers still exist
-    // somewhere.
-    auto* participant = participants_[i].load(std::memory_order_acquire);
-    if (participant == nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
-                DebugTag().c_str(), i);
-      }
-      return false;
-    }
-    absl::string_view name;
+  return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
+}
+
+bool Party::RunOneParticipant(int i) {
+  // If the participant is null, skip.
+  // This allows participants to complete whilst wakers still exist
+  // somewhere.
+  auto* participant = participants_[i].load(std::memory_order_acquire);
+  if (participant == nullptr) {
     if (grpc_trace_promise_primitives.enabled()) {
-      name = participant->name();
-      gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
-              std::string(name).c_str(), i);
+      gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
+              DebugTag().c_str(), i);
     }
-    // Poll the participant.
-    currently_polling_ = i;
-    bool done = participant->PollParticipantPromise();
-    currently_polling_ = kNotPolling;
-    if (done) {
-      if (!name.empty()) {
-        gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
-                DebugTag().c_str(), std::string(name).c_str(), i);
-      }
-      participants_[i].store(nullptr, std::memory_order_relaxed);
-    } else if (!name.empty()) {
-      gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
-              std::string(name).c_str());
+    return false;
+  }
+  absl::string_view name;
+  if (grpc_trace_promise_primitives.enabled()) {
+    name = participant->name();
+    gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
+            std::string(name).c_str(), i);
+  }
+  // Poll the participant.
+  currently_polling_ = i;
+  bool done = participant->PollParticipantPromise();
+  currently_polling_ = kNotPolling;
+  if (done) {
+    if (!name.empty()) {
+      gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
+              DebugTag().c_str(), std::string(name).c_str(), i);
     }
-    return done;
-  });
+    participants_[i].store(nullptr, std::memory_order_relaxed);
+  } else if (!name.empty()) {
+    gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
+            std::string(name).c_str());
+  }
+  return done;
 }
 
 void Party::AddParticipants(Participant** participants, size_t count) {

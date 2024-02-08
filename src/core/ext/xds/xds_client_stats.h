@@ -37,7 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -141,7 +141,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   };
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                      const XdsBootstrap::XdsServer& lrs_server,
+                      absl::string_view lrs_server,
                       absl::string_view cluster_name,
                       absl::string_view eds_service_name);
   ~XdsClusterDropStats() override;
@@ -154,7 +154,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
-  const XdsBootstrap::XdsServer& lrs_server_;
+  absl::string_view lrs_server_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   std::atomic<uint64_t> uncategorized_drops_{0};
@@ -215,7 +215,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
-                          const XdsBootstrap::XdsServer& lrs_server_,
+                          absl::string_view lrs_server,
                           absl::string_view cluster_name,
                           absl::string_view eds_service_name,
                           RefCountedPtr<XdsLocalityName> name);
@@ -244,7 +244,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   RefCountedPtr<XdsClient> xds_client_;
-  const XdsBootstrap::XdsServer& lrs_server_;
+  absl::string_view lrs_server_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;

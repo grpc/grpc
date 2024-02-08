@@ -26,13 +26,12 @@
 
 #include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 
 namespace grpc_core {
 
@@ -190,12 +190,15 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
 }
 
 void RegisterBackendMetricFilter(CoreConfiguration::Builder* builder) {
-  builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL,
-                       IsV3BackendMetricFilterEnabled()
-                           ? &BackendMetricFilter::kFilter
-                           : &LegacyBackendMetricFilter::kFilter)
-      .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
+  if (IsV3BackendMetricFilterEnabled()) {
+    builder->channel_init()
+        ->RegisterFilter<BackendMetricFilter>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
+  } else {
+    builder->channel_init()
+        ->RegisterFilter<LegacyBackendMetricFilter>(GRPC_SERVER_CHANNEL)
+        .IfHasChannelArg(GRPC_ARG_SERVER_CALL_METRIC_RECORDING);
+  }
 }
 
 }  // namespace grpc_core

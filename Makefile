@@ -410,8 +410,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 37.0.0
-CPP_VERSION = 1.61.0-dev
+CORE_VERSION = 38.0.0
+CPP_VERSION = 1.62.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -447,7 +447,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -37
+SHARED_VERSION_CORE = -38
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -640,13 +640,13 @@ run_dep_checks:
 
 static: static_c static_cxx
 
-static_c: cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a
+static_c: cache.mk  $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a
 
 static_cxx: cache.mk 
 
 shared: shared_c shared_cxx
 
-shared_c: cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+shared_c: cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 shared_cxx: cache.mk
 
 privatelibs: privatelibs_c privatelibs_cxx
@@ -677,12 +677,14 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 	$(E) "[STRIP]   Stripping libre2.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libre2.a
-	$(E) "[STRIP]   Stripping libupb.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb.a
-	$(E) "[STRIP]   Stripping libupb_collections_lib.a"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a
+	$(E) "[STRIP]   Stripping libupb_base_lib.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[STRIP]   Stripping libupb_json_lib.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb_json_lib.a
+	$(E) "[STRIP]   Stripping libupb_mem_lib.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a
+	$(E) "[STRIP]   Stripping libupb_message_lib.a"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb_message_lib.a
 	$(E) "[STRIP]   Stripping libupb_textformat_lib.a"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a
 	$(E) "[STRIP]   Stripping libutf8_range_lib.a"
@@ -705,12 +707,14 @@ ifeq ($(CONFIG),opt)
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
-	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
+	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
+	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
 	$(Q) $(STRIP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
 	$(E) "[STRIP]   Stripping $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -814,8 +818,8 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.37 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.38 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -939,8 +943,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.37 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.38 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -952,77 +956,35 @@ endif
 
 
 # start of build recipe for library "grpc" (generated by makelib(lib) template function)
-# deps: ['upb_collections_lib', 'upb_json_lib', 'upb_textformat_lib', 'upb', 're2', 'z', 'grpc_abseil', 'cares', 'gpr', 'libssl', 'address_sorting']
-# transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_collections_lib', 'libssl']
+# deps: ['upb_json_lib', 'upb_textformat_lib', 're2', 'z', 'grpc_abseil', 'cares', 'gpr', 'libssl', 'address_sorting']
+# transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib', 'libssl']
 LIBGRPC_SRC = \
+    src/core/client_channel/backend_metric.cc \
+    src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/channel_connectivity.cc \
+    src/core/client_channel/client_channel_channelz.cc \
+    src/core/client_channel/client_channel_factory.cc \
+    src/core/client_channel/client_channel_filter.cc \
+    src/core/client_channel/client_channel_plugin.cc \
+    src/core/client_channel/client_channel_service_config.cc \
+    src/core/client_channel/config_selector.cc \
+    src/core/client_channel/dynamic_filters.cc \
+    src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/http_proxy_mapper.cc \
+    src/core/client_channel/local_subchannel_pool.cc \
+    src/core/client_channel/retry_filter.cc \
+    src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_service_config.cc \
+    src/core/client_channel/retry_throttle.cc \
+    src/core/client_channel/service_config_channel_arg_filter.cc \
+    src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_pool_interface.cc \
+    src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/client_channel_service_config.cc \
-    src/core/ext/filters/client_channel/config_selector.cc \
-    src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/http_proxy_mapper.cc \
-    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
-    src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/health_check_client.cc \
-    src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
-    src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
-    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
-    src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc \
-    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc \
-    src/core/ext/filters/client_channel/retry_filter.cc \
-    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
-    src/core/ext/filters/client_channel/retry_service_config.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
@@ -1047,6 +1009,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
@@ -1102,6 +1065,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c \
     src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c \
@@ -1155,6 +1119,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c \
+    src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c \
     src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c \
@@ -1265,6 +1230,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c \
@@ -1313,6 +1279,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c \
@@ -1453,7 +1420,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
-    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
+    src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -1480,6 +1447,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
+    src/core/lib/event_engine/windows/native_windows_dns_resolver.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
@@ -1584,16 +1552,11 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/load_balancing/lb_policy.cc \
-    src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
-    src/core/lib/resolver/endpoint_addresses.cc \
-    src/core/lib/resolver/resolver.cc \
-    src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
@@ -1698,22 +1661,75 @@ LIBGRPC_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
+    src/core/lib/transport/call_filters.cc \
+    src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_size_estimator.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
     src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/message.cc \
+    src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
-    src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
+    src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/child_policy_handler.cc \
+    src/core/load_balancing/endpoint_list.cc \
+    src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
+    src/core/load_balancing/grpclb/grpclb.cc \
+    src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc \
+    src/core/load_balancing/grpclb/grpclb_client_stats.cc \
+    src/core/load_balancing/grpclb/load_balancer_api.cc \
+    src/core/load_balancing/health_check_client.cc \
+    src/core/load_balancing/lb_policy.cc \
+    src/core/load_balancing/lb_policy_registry.cc \
+    src/core/load_balancing/oob_backend_metric.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/pick_first/pick_first.cc \
+    src/core/load_balancing/priority/priority.cc \
+    src/core/load_balancing/ring_hash/ring_hash.cc \
+    src/core/load_balancing/rls/rls.cc \
+    src/core/load_balancing/round_robin/round_robin.cc \
+    src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
+    src/core/load_balancing/weighted_target/weighted_target.cc \
+    src/core/load_balancing/xds/cds.cc \
+    src/core/load_balancing/xds/xds_cluster_impl.cc \
+    src/core/load_balancing/xds/xds_cluster_manager.cc \
+    src/core/load_balancing/xds/xds_override_host.cc \
+    src/core/load_balancing/xds/xds_wrr_locality.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
+    src/core/resolver/binder/binder_resolver.cc \
+    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/resolver/dns/dns_resolver_plugin.cc \
+    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
+    src/core/resolver/dns/event_engine/service_config_helper.cc \
+    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/endpoint_addresses.cc \
+    src/core/resolver/fake/fake_resolver.cc \
+    src/core/resolver/google_c2p/google_c2p_resolver.cc \
+    src/core/resolver/polling_resolver.cc \
+    src/core/resolver/resolver.cc \
+    src/core/resolver/resolver_registry.cc \
+    src/core/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/resolver/xds/xds_dependency_manager.cc \
+    src/core/resolver/xds/xds_resolver.cc \
+    src/core/resolver/xds/xds_resolver_trace.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1751,6 +1767,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
@@ -1832,30 +1849,30 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE
 else
 
 # static library for "grpc"
-$(LIBDIR)/$(CONFIG)/libgrpc.a: $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(OPENSSL_DEP) $(LIBGRPC_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBRE2_OBJS) $(LIBUPB_OBJS) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_COLLECTIONS_LIB_OBJS) $(OPENSSL_MERGE_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc.a: $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_DEP) $(LIBGRPC_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBRE2_OBJS) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS) $(OPENSSL_MERGE_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBRE2_OBJS) $(LIBUPB_OBJS) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_COLLECTIONS_LIB_OBJS) $(OPENSSL_MERGE_OBJS)
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBRE2_OBJS) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS) $(OPENSSL_MERGE_OBJS)
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
 
 # shared library for "grpc"
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.37 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.38 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1871,67 +1888,35 @@ endif
 
 
 # start of build recipe for library "grpc_unsecure" (generated by makelib(lib) template function)
-# deps: ['upb_collections_lib', 'upb', 'utf8_range_lib', 'z', 'grpc_abseil', 'cares', 'gpr', 'address_sorting']
-# transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb', 'upb_collections_lib']
+# deps: ['upb_message_lib', 'utf8_range_lib', 'z', 'grpc_abseil', 'cares', 'gpr', 'address_sorting']
+# transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBGRPC_UNSECURE_SRC = \
+    src/core/client_channel/backend_metric.cc \
+    src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/channel_connectivity.cc \
+    src/core/client_channel/client_channel_channelz.cc \
+    src/core/client_channel/client_channel_factory.cc \
+    src/core/client_channel/client_channel_filter.cc \
+    src/core/client_channel/client_channel_plugin.cc \
+    src/core/client_channel/client_channel_service_config.cc \
+    src/core/client_channel/config_selector.cc \
+    src/core/client_channel/dynamic_filters.cc \
+    src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/http_proxy_mapper.cc \
+    src/core/client_channel/local_subchannel_pool.cc \
+    src/core/client_channel/retry_filter.cc \
+    src/core/client_channel/retry_filter_legacy_call_data.cc \
+    src/core/client_channel/retry_service_config.cc \
+    src/core/client_channel/retry_throttle.cc \
+    src/core/client_channel/service_config_channel_arg_filter.cc \
+    src/core/client_channel/subchannel.cc \
+    src/core/client_channel/subchannel_pool_interface.cc \
+    src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/client_channel/backend_metric.cc \
-    src/core/ext/filters/client_channel/backup_poller.cc \
-    src/core/ext/filters/client_channel/channel_connectivity.cc \
-    src/core/ext/filters/client_channel/client_channel.cc \
-    src/core/ext/filters/client_channel/client_channel_channelz.cc \
-    src/core/ext/filters/client_channel/client_channel_factory.cc \
-    src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/client_channel_service_config.cc \
-    src/core/ext/filters/client_channel/config_selector.cc \
-    src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/global_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/http_proxy_mapper.cc \
-    src/core/ext/filters/client_channel/lb_policy/address_filtering.cc \
-    src/core/ext/filters/client_channel/lb_policy/child_policy_handler.cc \
-    src/core/ext/filters/client_channel/lb_policy/endpoint_list.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/health_check_client.cc \
-    src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.cc \
-    src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.cc \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
-    src/core/ext/filters/client_channel/lb_policy/priority/priority.cc \
-    src/core/ext/filters/client_channel/lb_policy/rls/rls.cc \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/weighted_round_robin.cc \
-    src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc \
-    src/core/ext/filters/client_channel/local_subchannel_pool.cc \
-    src/core/ext/filters/client_channel/resolver/binder/binder_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
-    src/core/ext/filters/client_channel/resolver/dns/dns_resolver_plugin.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/dns/event_engine/service_config_helper.cc \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/polling_resolver.cc \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
-    src/core/ext/filters/client_channel/retry_filter.cc \
-    src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc \
-    src/core/ext/filters/client_channel/retry_service_config.cc \
-    src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc \
-    src/core/ext/filters/client_channel/subchannel.cc \
-    src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
-    src/core/ext/filters/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
@@ -1949,6 +1934,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
     src/core/ext/transport/chttp2/transport/decode_huff.cc \
     src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame.cc \
     src/core/ext/transport/chttp2/transport/frame_data.cc \
     src/core/ext/transport/chttp2/transport/frame_goaway.cc \
     src/core/ext/transport/chttp2/transport/frame_ping.cc \
@@ -2035,7 +2021,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
-    src/core/lib/event_engine/posix_engine/native_dns_resolver.cc \
+    src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
     src/core/lib/event_engine/posix_engine/posix_endpoint.cc \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
@@ -2062,6 +2048,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
+    src/core/lib/event_engine/windows/native_windows_dns_resolver.cc \
     src/core/lib/event_engine/windows/win_socket.cc \
     src/core/lib/event_engine/windows/windows_endpoint.cc \
     src/core/lib/event_engine/windows/windows_engine.cc \
@@ -2162,15 +2149,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_object_loader.cc \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/load_balancing/lb_policy.cc \
-    src/core/lib/load_balancing/lb_policy_registry.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
     src/core/lib/promise/trace.cc \
-    src/core/lib/resolver/endpoint_addresses.cc \
-    src/core/lib/resolver/resolver.cc \
-    src/core/lib/resolver/resolver_registry.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/memory_quota.cc \
@@ -2241,22 +2223,65 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/version.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_factory.cc \
+    src/core/lib/transport/call_filters.cc \
+    src/core/lib/transport/call_final_info.cc \
+    src/core/lib/transport/call_size_estimator.cc \
+    src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
     src/core/lib/transport/http_connect_handshaker.cc \
+    src/core/lib/transport/message.cc \
+    src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/parsed_metadata.cc \
-    src/core/lib/transport/pid_controller.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
+    src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/child_policy_handler.cc \
+    src/core/load_balancing/endpoint_list.cc \
+    src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
+    src/core/load_balancing/grpclb/grpclb.cc \
+    src/core/load_balancing/grpclb/grpclb_balancer_addresses.cc \
+    src/core/load_balancing/grpclb/grpclb_client_stats.cc \
+    src/core/load_balancing/grpclb/load_balancer_api.cc \
+    src/core/load_balancing/health_check_client.cc \
+    src/core/load_balancing/lb_policy.cc \
+    src/core/load_balancing/lb_policy_registry.cc \
+    src/core/load_balancing/oob_backend_metric.cc \
+    src/core/load_balancing/outlier_detection/outlier_detection.cc \
+    src/core/load_balancing/pick_first/pick_first.cc \
+    src/core/load_balancing/priority/priority.cc \
+    src/core/load_balancing/rls/rls.cc \
+    src/core/load_balancing/round_robin/round_robin.cc \
+    src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
+    src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
+    src/core/load_balancing/weighted_target/weighted_target.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_noextra.cc \
+    src/core/resolver/binder/binder_resolver.cc \
+    src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
+    src/core/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+    src/core/resolver/dns/dns_resolver_plugin.cc \
+    src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc \
+    src/core/resolver/dns/event_engine/service_config_helper.cc \
+    src/core/resolver/dns/native/dns_resolver.cc \
+    src/core/resolver/endpoint_addresses.cc \
+    src/core/resolver/fake/fake_resolver.cc \
+    src/core/resolver/polling_resolver.cc \
+    src/core/resolver/resolver.cc \
+    src/core/resolver/resolver_registry.cc \
+    src/core/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
@@ -2281,6 +2306,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
     include/grpc/event_engine/memory_allocator.h \
@@ -2352,30 +2378,30 @@ LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 
 # static library for "grpc_unsecure"
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(LIBGRPC_UNSECURE_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_OBJS) $(LIBUPB_COLLECTIONS_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a: $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LIBGRPC_UNSECURE_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_OBJS) $(LIBUPB_COLLECTIONS_LIB_OBJS)
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBGRPC_UNSECURE_OBJS) $(LIBADDRESS_SORTING_OBJS) $(LIBGPR_OBJS) $(LIBGRPC_ABSEIL_OBJS) $(LIBCARES_OBJS) $(ZLIB_MERGE_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 endif
 
 # shared library for "grpc_unsecure"
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a
+$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a
+$(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_DEP) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.37 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.38 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2441,8 +2467,8 @@ $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBRE2_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libre2.so.37 -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libre2.so.38 -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2453,138 +2479,69 @@ endif
 # end of build recipe for library "re2"
 
 
-# start of build recipe for library "upb" (generated by makelib(lib) template function)
+# start of build recipe for library "upb_base_lib" (generated by makelib(lib) template function)
 # deps: []
 # transitive_deps: []
-LIBUPB_SRC = \
+LIBUPB_BASE_LIB_SRC = \
     third_party/upb/upb/base/status.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
 
 PUBLIC_HEADERS_C += \
 
-LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
+LIBUPB_BASE_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_BASE_LIB_SRC))))
 
 
-# static library for "upb"
-$(LIBDIR)/$(CONFIG)/libupb.a: $(LIBUPB_OBJS)
+# static library for "upb_base_lib"
+$(LIBDIR)/$(CONFIG)/libupb_base_lib.a: $(LIBUPB_BASE_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LIBUPB_BASE_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb.a
+	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 endif
 
-# shared library for "upb"
+# shared library for "upb_base_lib"
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)
+$(LIBDIR)/$(CONFIG)/upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_BASE_LIB_OBJS)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_base_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_BASE_LIB_OBJS) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_OBJS)
+$(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_BASE_LIB_OBJS)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_BASE_LIB_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb.so.37 -o $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so.37
-	$(Q) ln -sf $(SHARED_PREFIX)upb$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb$(SHARED_VERSION_CORE).so
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_base_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_BASE_LIB_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) ln -sf $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).so
 endif
 endif
 
 ifneq ($(NO_DEPS),true)
--include $(LIBUPB_OBJS:.o=.dep)
+-include $(LIBUPB_BASE_LIB_OBJS:.o=.dep)
 endif
-# end of build recipe for library "upb"
-
-
-# start of build recipe for library "upb_collections_lib" (generated by makelib(lib) template function)
-# deps: []
-# transitive_deps: []
-LIBUPB_COLLECTIONS_LIB_SRC = \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/hash/common.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
-    third_party/upb/upb/message/array.c \
-    third_party/upb/upb/message/map.c \
-    third_party/upb/upb/message/map_sorter.c \
-    third_party/upb/upb/message/message.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/mini_table/internal/message.c \
-    third_party/upb/upb/mini_table/message.c \
-
-PUBLIC_HEADERS_C += \
-
-LIBUPB_COLLECTIONS_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_COLLECTIONS_LIB_SRC))))
-
-
-# static library for "upb_collections_lib"
-$(LIBDIR)/$(CONFIG)/libupb_collections_lib.a: $(LIBUPB_COLLECTIONS_LIB_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a $(LIBUPB_COLLECTIONS_LIB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb_collections_lib.a
-endif
-
-# shared library for "upb_collections_lib"
-ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_COLLECTIONS_LIB_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_collections_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_collections_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_COLLECTIONS_LIB_OBJS) $(LDLIBS)
-else
-$(LIBDIR)/$(CONFIG)/libupb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_COLLECTIONS_LIB_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_COLLECTIONS_LIB_OBJS) $(LDLIBS)
-else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_collections_lib.so.37 -o $(LIBDIR)/$(CONFIG)/libupb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_COLLECTIONS_LIB_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_collections_lib$(SHARED_VERSION_CORE).so.37
-	$(Q) ln -sf $(SHARED_PREFIX)upb_collections_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_collections_lib$(SHARED_VERSION_CORE).so
-endif
-endif
-
-ifneq ($(NO_DEPS),true)
--include $(LIBUPB_COLLECTIONS_LIB_OBJS:.o=.dep)
-endif
-# end of build recipe for library "upb_collections_lib"
+# end of build recipe for library "upb_base_lib"
 
 
 # start of build recipe for library "upb_json_lib" (generated by makelib(lib) template function)
-# deps: ['utf8_range_lib']
-# transitive_deps: ['utf8_range_lib']
+# deps: ['upb_message_lib', 'utf8_range_lib']
+# transitive_deps: ['utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBUPB_JSON_LIB_SRC = \
     src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/hash/common.c \
     third_party/upb/upb/json/decode.c \
     third_party/upb/upb/json/encode.c \
     third_party/upb/upb/lex/atoi.c \
     third_party/upb/upb/lex/round_trip.c \
     third_party/upb/upb/lex/strtod.c \
     third_party/upb/upb/lex/unicode.c \
-    third_party/upb/upb/mem/alloc.c \
-    third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
-    third_party/upb/upb/message/array.c \
-    third_party/upb/upb/message/map.c \
-    third_party/upb/upb/message/map_sorter.c \
-    third_party/upb/upb/message/message.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
     third_party/upb/upb/mini_descriptor/internal/base92.c \
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/mini_table/internal/message.c \
-    third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
     third_party/upb/upb/reflection/desc_state.c \
@@ -2614,30 +2571,30 @@ LIBUPB_JSON_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 
 # static library for "upb_json_lib"
-$(LIBDIR)/$(CONFIG)/libupb_json_lib.a: $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libupb_json_lib.a: $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb_json_lib.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS)
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBUPB_JSON_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb_json_lib.a
 endif
 
 # shared library for "upb_json_lib"
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a
+$(LIBDIR)/$(CONFIG)/upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_json_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_json_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a
+$(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_json_lib.so.37 -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_json_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2648,32 +2605,121 @@ endif
 # end of build recipe for library "upb_json_lib"
 
 
-# start of build recipe for library "upb_textformat_lib" (generated by makelib(lib) template function)
-# deps: ['utf8_range_lib']
-# transitive_deps: ['utf8_range_lib']
-LIBUPB_TEXTFORMAT_LIB_SRC = \
-    src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
-    third_party/upb/upb/base/status.c \
-    third_party/upb/upb/hash/common.c \
-    third_party/upb/upb/lex/atoi.c \
-    third_party/upb/upb/lex/round_trip.c \
-    third_party/upb/upb/lex/strtod.c \
-    third_party/upb/upb/lex/unicode.c \
+# start of build recipe for library "upb_mem_lib" (generated by makelib(lib) template function)
+# deps: []
+# transitive_deps: []
+LIBUPB_MEM_LIB_SRC = \
     third_party/upb/upb/mem/alloc.c \
     third_party/upb/upb/mem/arena.c \
-    third_party/upb/upb/message/accessors.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBUPB_MEM_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_MEM_LIB_SRC))))
+
+
+# static library for "upb_mem_lib"
+$(LIBDIR)/$(CONFIG)/libupb_mem_lib.a: $(LIBUPB_MEM_LIB_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBUPB_MEM_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a
+endif
+
+# shared library for "upb_mem_lib"
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_MEM_LIB_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_mem_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MEM_LIB_OBJS) $(LDLIBS)
+else
+$(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_MEM_LIB_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MEM_LIB_OBJS) $(LDLIBS)
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_mem_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MEM_LIB_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) ln -sf $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBUPB_MEM_LIB_OBJS:.o=.dep)
+endif
+# end of build recipe for library "upb_mem_lib"
+
+
+# start of build recipe for library "upb_message_lib" (generated by makelib(lib) template function)
+# deps: ['upb_base_lib', 'upb_mem_lib']
+# transitive_deps: ['upb_mem_lib', 'upb_base_lib']
+LIBUPB_MESSAGE_LIB_SRC = \
+    third_party/upb/upb/hash/common.c \
     third_party/upb/upb/message/array.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
+    third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/internal/message.c \
+    third_party/upb/upb/mini_table/message.c \
+
+PUBLIC_HEADERS_C += \
+
+LIBUPB_MESSAGE_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_MESSAGE_LIB_SRC))))
+
+
+# static library for "upb_message_lib"
+$(LIBDIR)/$(CONFIG)/libupb_message_lib.a: $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb_message_lib.a
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb_message_lib.a
+endif
+
+# shared library for "upb_message_lib"
+ifeq ($(SYSTEM),MINGW32)
+$(LIBDIR)/$(CONFIG)/upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_message_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+else
+$(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+ifeq ($(SYSTEM),Darwin)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+else
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_message_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) ln -sf $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).so
+endif
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBUPB_MESSAGE_LIB_OBJS:.o=.dep)
+endif
+# end of build recipe for library "upb_message_lib"
+
+
+# start of build recipe for library "upb_textformat_lib" (generated by makelib(lib) template function)
+# deps: ['upb_message_lib', 'utf8_range_lib']
+# transitive_deps: ['utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
+LIBUPB_TEXTFORMAT_LIB_SRC = \
+    src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
+    third_party/upb/upb/lex/atoi.c \
+    third_party/upb/upb/lex/round_trip.c \
+    third_party/upb/upb/lex/strtod.c \
+    third_party/upb/upb/lex/unicode.c \
+    third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/mini_descriptor/build_enum.c \
     third_party/upb/upb/mini_descriptor/decode.c \
     third_party/upb/upb/mini_descriptor/internal/base92.c \
     third_party/upb/upb/mini_descriptor/internal/encode.c \
     third_party/upb/upb/mini_descriptor/link.c \
-    third_party/upb/upb/mini_table/extension_registry.c \
-    third_party/upb/upb/mini_table/internal/message.c \
-    third_party/upb/upb/mini_table/message.c \
     third_party/upb/upb/reflection/def_pool.c \
     third_party/upb/upb/reflection/def_type.c \
     third_party/upb/upb/reflection/desc_state.c \
@@ -2704,30 +2750,30 @@ LIBUPB_TEXTFORMAT_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $
 
 
 # static library for "upb_textformat_lib"
-$(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a: $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS)
+$(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a: $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a
-	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS)
+	$(Q) $(AR) $(ARFLAGS) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBUTF8_RANGE_LIB_OBJS) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBUPB_MEM_LIB_OBJS) $(LIBUPB_BASE_LIB_OBJS)
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(RANLIB) $(RANLIBFLAGS) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a
 endif
 
 # shared library for "upb_textformat_lib"
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a
+$(LIBDIR)/$(CONFIG)/upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_textformat_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/upb_textformat_lib$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a
+$(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_textformat_lib.so.37 -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_textformat_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2774,8 +2820,8 @@ $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUTF8_RANGE_LIB_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libutf8_range_lib.so.37 -o $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUTF8_RANGE_LIB_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).so.37
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libutf8_range_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUTF8_RANGE_LIB_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).so.38
 	$(Q) ln -sf $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2941,7 +2987,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
-    third_party/boringssl-with-bazel/src/crypto/kyber/keccak.c \
+    third_party/boringssl-with-bazel/src/crypto/keccak/keccak.c \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.c \
     third_party/boringssl-with-bazel/src/crypto/lhash/lhash.c \
     third_party/boringssl-with-bazel/src/crypto/mem.c \
@@ -2978,6 +3024,13 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_crypt.c \
     third_party/boringssl-with-bazel/src/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl-with-bazel/src/crypto/siphash/siphash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/address.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/fors.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/merkle.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/spx_util.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/thash.c \
+    third_party/boringssl-with-bazel/src/crypto/spx/wots.c \
     third_party/boringssl-with-bazel/src/crypto/stack/stack.c \
     third_party/boringssl-with-bazel/src/crypto/thread.c \
     third_party/boringssl-with-bazel/src/crypto/thread_none.c \
@@ -3001,6 +3054,29 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/t_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/t_x509a.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_akeya.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_alt.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_bitst.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_conf.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_cpols.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_crld.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_enum.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_extku.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_genn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ia5.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_info.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_int.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_lib.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ncons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_ocsp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pcons.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_pmaps.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_prn.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_purp.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_skey.c \
+    third_party/boringssl-with-bazel/src/crypto/x509/v3_utl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_att.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_cmp.c \
@@ -3025,9 +3101,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_attrib.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_crl.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_exten.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_info.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_name.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x_pkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_pubkey.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_sig.c \
@@ -3035,29 +3109,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_akeya.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_alt.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_bitst.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_conf.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_cpols.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_crld.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_enum.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_extku.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_genn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ia5.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_info.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_int.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_lib.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ncons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_ocsp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pcons.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_pmaps.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_prn.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_purp.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_skey.c \
-    third_party/boringssl-with-bazel/src/crypto/x509v3/v3_utl.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -3236,7 +3287,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/crc/internal/crc.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc \
-    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc \
+    third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc \
     third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
@@ -3246,7 +3297,6 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
-    third_party/abseil-cpp/absl/flags/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/commandlineflag.cc \
     third_party/abseil-cpp/absl/flags/internal/flag.cc \
     third_party/abseil-cpp/absl/flags/internal/private_handle_accessor.cc \
@@ -3270,6 +3320,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/random/internal/seed_material.cc \
     third_party/abseil-cpp/absl/random/seed_gen_exception.cc \
     third_party/abseil-cpp/absl/random/seed_sequences.cc \
+    third_party/abseil-cpp/absl/status/internal/status_internal.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
     third_party/abseil-cpp/absl/status/statusor.cc \
@@ -3287,7 +3338,6 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc \
     third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc \
-    third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc \
     third_party/abseil-cpp/absl/strings/internal/cordz_info.cc \
@@ -3372,16 +3422,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/cds.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_override_host.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/xds/xds_dependency_manager.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/resolver/xds/xds_resolver_trace.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_filter.cc: $(OPENSSL_DEP)
 src/core/ext/filters/rbac/rbac_service_config_parser.cc: $(OPENSSL_DEP)
 src/core/ext/filters/server_config_selector/server_config_selector_filter.cc: $(OPENSSL_DEP)
@@ -3418,6 +3458,7 @@ src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c: $(OPENSSL_D
 src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c: $(OPENSSL_DEP)
+src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c: $(OPENSSL_DEP)
@@ -3471,6 +3512,7 @@ src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minita
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c: $(OPENSSL_DEP)
+src/core/ext/upb-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/discovery/v3/ads.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/discovery/v3/discovery.upb_minitable.c: $(OPENSSL_DEP)
 src/core/ext/upb-gen/envoy/service/load_stats/v3/lrs.upb_minitable.c: $(OPENSSL_DEP)
@@ -3562,6 +3604,7 @@ src/core/ext/upbdefs-gen/envoy/config/core/v3/extension.upbdefs.c: $(OPENSSL_DEP
 src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_method_list.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/grpc_service.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/health_check.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-gen/envoy/config/core/v3/http_service.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/http_uri.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/protocol.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/config/core/v3/proxy_protocol.upbdefs.c: $(OPENSSL_DEP)
@@ -3610,6 +3653,7 @@ src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/common.upbdef
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/secret.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-gen/envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/discovery/v3/ads.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/discovery/v3/discovery.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-gen/envoy/service/load_stats/v3/lrs.upbdefs.c: $(OPENSSL_DEP)
@@ -3748,7 +3792,17 @@ src/core/lib/security/security_connector/local/local_security_connector.cc: $(OP
 src/core/lib/security/security_connector/ssl/ssl_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/ssl_utils.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/tls/tls_security_connector.cc: $(OPENSSL_DEP)
+src/core/load_balancing/ring_hash/ring_hash.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/cds.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_cluster_impl.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_cluster_manager.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_override_host.cc: $(OPENSSL_DEP)
+src/core/load_balancing/xds/xds_wrr_locality.cc: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry_extra.cc: $(OPENSSL_DEP)
+src/core/resolver/google_c2p/google_c2p_resolver.cc: $(OPENSSL_DEP)
+src/core/resolver/xds/xds_dependency_manager.cc: $(OPENSSL_DEP)
+src/core/resolver/xds/xds_resolver.cc: $(OPENSSL_DEP)
+src/core/resolver/xds/xds_resolver_trace.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/crypt/aes_gcm.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/crypt/gsec.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/frame_protector/alts_counter.cc: $(OPENSSL_DEP)

@@ -36,8 +36,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                                     public Transport,
                                     public ServerTransport {
  public:
-  void SetAcceptFunction(AcceptFunction accept_function) override {
-    accept_ = std::move(accept_function);
+  void SetAcceptor(Acceptor* acceptor) override {
+    acceptor_ = acceptor;
     ConnectionState expect = ConnectionState::kInitial;
     state_.compare_exchange_strong(expect, ConnectionState::kReady,
                                    std::memory_order_acq_rel,
@@ -92,7 +92,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return accept_(md);
+    return acceptor_->CreateCall(md, acceptor_->CreateArena());
   }
 
  private:
@@ -100,7 +100,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
   std::atomic<bool> disconnecting_{false};
-  AcceptFunction accept_;
+  Acceptor* acceptor_;
   absl::Status disconnect_error_;
   Mutex state_tracker_mu_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
@@ -112,17 +112,15 @@ class InprocClientTransport final : public Transport, public ClientTransport {
   void StartCall(CallHandler call_handler) override {
     call_handler.SpawnGuarded(
         "pull_initial_metadata",
-        TrySeq(
-            call_handler.PullClientInitialMetadata(),
-            [server_transport = server_transport_,
-             call_handler](ClientMetadataHandle md) {
-              auto call_initiator = server_transport->AcceptCall(*md);
-              if (!call_initiator.ok()) return call_initiator.status();
-              ForwardCall(call_handler, std::move(*call_initiator),
-                          std::move(md));
-              return absl::OkStatus();
-            },
-            ImmediateOkStatus()));
+        TrySeq(call_handler.PullClientInitialMetadata(),
+               [server_transport = server_transport_,
+                call_handler](ClientMetadataHandle md) {
+                 auto call_initiator = server_transport->AcceptCall(*md);
+                 if (!call_initiator.ok()) return call_initiator.status();
+                 ForwardCall(call_handler, std::move(*call_initiator),
+                             std::move(md));
+                 return absl::OkStatus();
+               }));
   }
 
   void Orphan() override { delete this; }
@@ -172,8 +170,9 @@ RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
 
 RefCountedPtr<Channel> MakeInprocChannel(Server* server,
                                          ChannelArgs client_channel_args) {
-  auto client_transport = MakeOrphanable<InprocClientTransport>();
-  auto server_transport = client_transport->GetServerTransport();
+  auto transports = MakeInProcessTransportPair();
+  auto client_transport = std::move(transports.first);
+  auto server_transport = std::move(transports.second);
   auto error =
       server->SetupTransport(server_transport.get(), nullptr,
                              server->channel_args()
@@ -194,6 +193,14 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
   return std::move(*channel);
 }
 }  // namespace
+
+std::pair<OrphanablePtr<Transport>, OrphanablePtr<Transport>>
+MakeInProcessTransportPair() {
+  auto client_transport = MakeOrphanable<InprocClientTransport>();
+  auto server_transport = client_transport->GetServerTransport();
+  return std::make_pair(std::move(client_transport),
+                        std::move(server_transport));
+}
 
 }  // namespace grpc_core
 

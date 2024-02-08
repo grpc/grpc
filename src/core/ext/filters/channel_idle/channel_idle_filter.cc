@@ -296,13 +296,13 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
   if (!IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientIdleFilter::kFilter)
+      ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &MaxAgeFilter::kFilter)
+      ->RegisterFilter<MaxAgeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return MaxAgeFilter::Config::FromChannelArgs(channel_args).enable();

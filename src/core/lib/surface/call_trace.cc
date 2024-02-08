@@ -56,22 +56,22 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                 gpr_log(
                     GPR_DEBUG,
                     "%s[%s] CreateCallPromise: client_initial_metadata=%s",
-                    Activity::current()->DebugTag().c_str(),
+                    GetContext<Activity>()->DebugTag().c_str(),
                     source_filter->name,
                     call_args.client_initial_metadata->DebugString().c_str());
                 return [source_filter, child = next_promise_factory(
                                            std::move(call_args))]() mutable {
                   gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: begin",
-                          Activity::current()->DebugTag().c_str(),
+                          GetContext<Activity>()->DebugTag().c_str(),
                           source_filter->name);
                   auto r = child();
                   if (auto* p = r.value_if_ready()) {
                     gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: done: %s",
-                            Activity::current()->DebugTag().c_str(),
+                            GetContext<Activity>()->DebugTag().c_str(),
                             source_filter->name, (*p)->DebugString().c_str());
                   } else {
                     gpr_log(GPR_DEBUG, "%s[%s] PollCallPromise: <<pending>>",
-                            Activity::current()->DebugTag().c_str(),
+                            GetContext<Activity>()->DebugTag().c_str(),
                             source_filter->name);
                   }
                   return r;
@@ -84,35 +84,35 @@ const grpc_channel_filter* PromiseTracingFilterFor(
                 call->client_initial_metadata().receiver.InterceptAndMap(
                     [source_filter](ClientMetadataHandle md) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnClientInitialMetadata: %s",
-                              Activity::current()->DebugTag().c_str(),
+                              GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, md->DebugString().c_str());
                       return md;
                     });
                 call->client_to_server_messages().receiver.InterceptAndMap(
                     [source_filter](MessageHandle msg) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnClientToServerMessage: %s",
-                              Activity::current()->DebugTag().c_str(),
+                              GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, msg->DebugString().c_str());
                       return msg;
                     });
                 call->server_initial_metadata().sender.InterceptAndMap(
                     [source_filter](ServerMetadataHandle md) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnServerInitialMetadata: %s",
-                              Activity::current()->DebugTag().c_str(),
+                              GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, md->DebugString().c_str());
                       return md;
                     });
                 call->server_to_client_messages().sender.InterceptAndMap(
                     [source_filter](MessageHandle msg) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnServerToClientMessage: %s",
-                              Activity::current()->DebugTag().c_str(),
+                              GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, msg->DebugString().c_str());
                       return msg;
                     });
                 call->server_trailing_metadata().sender.InterceptAndMap(
                     [source_filter](ServerMetadataHandle md) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnServerTrailingMetadata: %s",
-                              Activity::current()->DebugTag().c_str(),
+                              GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, md->DebugString().c_str());
                       return md;
                     });

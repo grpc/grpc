@@ -209,7 +209,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
 void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
   {
     MutexLock lock(&factory_->mu_);
-    auto it = factory_->transport_map_.find(&server_);
+    auto it = factory_->transport_map_.find(server_.Key());
     if (it != factory_->transport_map_.end() && it->second == this) {
       factory_->transport_map_.erase(it);
     }
@@ -277,7 +277,7 @@ FakeXdsTransportFactory::Create(
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* /*status*/) {
   MutexLock lock(&mu_);
-  auto& entry = transport_map_[&server];
+  auto& entry = transport_map_[server.Key()];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
       RefAsSubclass<FakeXdsTransportFactory>(), server,
@@ -316,7 +316,7 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
   MutexLock lock(&mu_);
-  return transport_map_[&server];
+  return transport_map_[server.Key()];
 }
 
 }  // namespace grpc_core

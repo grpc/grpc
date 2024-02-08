@@ -412,8 +412,7 @@ void Call::DeleteThis() {
   RefCountedPtr<Channel> channel = std::move(channel_);
   Arena* arena = arena_;
   this->~Call();
-  channel->UpdateCallSizeEstimate(arena->TotalUsedBytes());
-  arena->Destroy();
+  channel->DestroyArena(arena);
 }
 
 void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
@@ -814,20 +813,15 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     *composite = grpc_error_add_child(*composite, new_err);
   };
 
-  Arena* arena;
   FilterStackCall* call;
   grpc_error_handle error;
   grpc_channel_stack* channel_stack = channel->channel_stack();
-  size_t initial_size = channel->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
   size_t call_alloc_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
-  std::pair<Arena*, void*> arena_with_call = Arena::CreateWithAlloc(
-      initial_size, call_alloc_size, channel->allocator());
-  arena = arena_with_call.first;
-  call = new (arena_with_call.second) FilterStackCall(arena, *args);
+  Arena* arena = channel->CreateArena();
+  call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   GPR_DEBUG_ASSERT(FromC(call->c_ptr()) == call);
   GPR_DEBUG_ASSERT(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
@@ -859,7 +853,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-              arena);
+              arena, args->server->channel_args());
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -2488,11 +2482,8 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
-  const auto initial_size = channel->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  auto alloc =
-      Arena::CreateWithAlloc(initial_size, sizeof(T), channel->allocator());
-  PromiseBasedCall* call = new (alloc.second) T(alloc.first, args);
+  auto* arena = channel->CreateArena();
+  PromiseBasedCall* call = arena->New<T>(arena, args);
   *out_call = call->c_ptr();
   GPR_DEBUG_ASSERT(Call::FromC(*out_call) == call);
   return absl::OkStatus();
@@ -3426,7 +3417,7 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   if (args->server->server_call_tracer_factory() != nullptr) {
     auto* server_call_tracer =
         args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-            arena);
+            arena, args->server->channel_args());
     if (server_call_tracer != nullptr) {
       // Note that we are setting both
       // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -4063,17 +4054,13 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
 }
 
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel) {
-  const auto initial_size = channel->CallSizeEstimate();
-  global_stats().IncrementCallInitialSize(initial_size);
-  auto alloc = Arena::CreateWithAlloc(initial_size, sizeof(ServerCallSpine),
-                                      channel->allocator());
-  auto* call = new (alloc.second) ServerCallSpine(server, channel, alloc.first);
-  return RefCountedPtr<ServerCallSpine>(call);
+                                                 Channel* channel,
+                                                 Arena* arena) {
+  return RefCountedPtr<ServerCallSpine>(
+      arena->New<ServerCallSpine>(server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel) {
+RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
   Crash("not implemented");
 }
 #endif

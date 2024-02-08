@@ -21,27 +21,40 @@
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+
 namespace grpc_core {
 namespace chaotic_good {
 namespace {
 
+FrameLimits TestFrameLimits() { return FrameLimits{1024 * 1024 * 1024, 63}; }
+
 template <typename T>
-void AssertRoundTrips(const T input, FrameType expected_frame_type) {
+void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
-  absl::BitGen bitgen;
   auto serialized = input.Serialize(&hpack_compressor);
-  EXPECT_GE(serialized.Length(), 24);
+  GPR_ASSERT(serialized.control.Length() >=
+             24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
-  serialized.MoveFirstNBytesIntoBuffer(24, header_bytes);
+  serialized.control.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
-  EXPECT_TRUE(header.ok()) << header.status();
-  EXPECT_EQ(header->type, expected_frame_type);
+  if (!header.ok()) {
+    Crash("Failed to parse header");
+  }
+  GPR_ASSERT(header->type == expected_frame_type);
   T output;
   HPackParser hpack_parser;
-  auto deser = output.Deserialize(&hpack_parser, header.value(),
-                                  absl::BitGenRef(bitgen), serialized);
-  EXPECT_TRUE(deser.ok()) << deser;
-  EXPECT_EQ(output, input);
+  absl::BitGen bitgen;
+  MemoryAllocator allocator = MakeResourceQuota("test-quota")
+                                  ->memory_quota()
+                                  ->CreateMemoryAllocator("test-allocator");
+  ScopedArenaPtr arena = MakeScopedArena(1024, &allocator);
+  auto deser =
+      output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
+                         arena.get(), std::move(serialized), TestFrameLimits());
+  GPR_ASSERT(deser.ok());
+  GPR_ASSERT(output == input);
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

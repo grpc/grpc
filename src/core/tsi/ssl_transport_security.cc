@@ -176,6 +176,12 @@ static unsigned long openssl_thread_id_cb(void) {
 }
 #endif
 
+static void verified_root_cert_free(void* /*parent*/, void* ptr,
+                                    CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                                    long /*argl*/, void* /*argp*/) {
+  X509_free(static_cast<X509*>(ptr));
+}
+
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
@@ -207,8 +213,8 @@ static void init_openssl(void) {
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_crl_provider_index != -1);
 
-  g_ssl_ex_verified_root_cert_index =
-      SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
+      0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GPR_ASSERT(g_ssl_ex_verified_root_cert_index != -1);
 }
 
@@ -269,13 +275,14 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
+    gpr_log(GPR_DEBUG, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
+    gpr_log(GPR_DEBUG,
+            "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
@@ -899,53 +906,40 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
 // we don't really care.
-static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
+static int NullVerifyCallback(X509_STORE_CTX* /*ctx*/, void* /*arg*/) {
   return 1;
 }
 
-static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
-  if (ctx == nullptr) {
-    return preverify_ok;
+static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
+  int ret = X509_verify_cert(ctx);
+  if (ret <= 0) {
+    // Verification failed. We shouldn't expect to have a verified chain, so
+    // there is no need to attempt to extract the root cert from it.
+    return ret;
   }
 
-  // There's a case where this function is set in SSL_CTX_set_verify and a CRL
-  // related callback is set with X509_STORE_set_verify_cb. They overlap and
-  // this will take precedence, thus we need to ensure the CRL related callback
-  // is still called
-  X509_VERIFY_PARAM* param = X509_STORE_CTX_get0_param(ctx);
-  auto flags = X509_VERIFY_PARAM_get_flags(param);
-  if (flags & X509_V_FLAG_CRL_CHECK) {
-    preverify_ok = verify_cb(preverify_ok, ctx);
-  }
-
-  // If preverify_ok == 0, verification failed. We shouldn't expect to have a
-  // verified chain, so there is no need to attempt to extract the root cert
-  // from it
-  if (preverify_ok == 0) {
-    return preverify_ok;
-  }
-
-  // If we're here, verification was successful
-  // Get the verified chain from the X509_STORE_CTX and put it on the SSL object
-  // so that we have access to it when populating the tsi_peer
+  // Verification was successful. Get the verified chain from the X509_STORE_CTX
+  // and put the root on the SSL object so that we have access to it when
+  // populating the tsi_peer. On error extracting the root, we return success
+  // anyway and proceed with the connection, to preserve the behavior of an
+  // older version of this code.
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
 #else
   STACK_OF(X509)* chain = X509_STORE_CTX_get_chain(ctx);
 #endif
-
   if (chain == nullptr) {
-    return preverify_ok;
+    return ret;
   }
 
   // The root cert is the last in the chain
   size_t chain_length = sk_X509_num(chain);
   if (chain_length == 0) {
-    return preverify_ok;
+    return ret;
   }
   X509* root_cert = sk_X509_value(chain, chain_length - 1);
   if (root_cert == nullptr) {
-    return preverify_ok;
+    return ret;
   }
 
   ERR_clear_error();
@@ -955,18 +949,32 @@ static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
     gpr_log(GPR_ERROR,
             "error getting the SSL index from the X509_STORE_CTX: %s", err_str);
-    return preverify_ok;
+    return ret;
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
-    return preverify_ok;
+    return ret;
   }
+
+  // Free the old root and save the new one. There should not be an old root,
+  // but if renegotiation is not disabled (required by RFC 9113, Section
+  // 9.2.1), it is possible that this callback run multiple times for a single
+  // connection. gRPC does not always disable renegotiation. See
+  // https://github.com/grpc/grpc/issues/35368
+  X509_free(static_cast<X509*>(
+      SSL_get_ex_data(ssl, g_ssl_ex_verified_root_cert_index)));
   int success =
       SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, root_cert);
   if (success == 0) {
     gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
+  } else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    X509_up_ref(root_cert);
+#else
+    CRYPTO_add(&root_cert->references, 1, CRYPTO_LOCK_X509);
+#endif
   }
-  return preverify_ok;
+  return ret;
 }
 
 // X509_STORE_set_get_crl() sets the function to get the crl for a given
@@ -2078,6 +2086,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000
+  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
+#endif
   if (ssl_context == nullptr) {
     grpc_core::LogSslErrorStack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
@@ -2170,10 +2181,12 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
+  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   if (options->skip_server_certificate_verification) {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
+    SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
   } else {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, RootCertExtractCallback);
+    SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
+                                     nullptr);
   }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2293,6 +2306,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000
+      SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
+#endif
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();
         gpr_log(GPR_ERROR, "Could not create ssl context.");
@@ -2352,22 +2368,28 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
-                             NullVerifyCallback);
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           NullVerifyCallback, nullptr);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
-                             RootCertExtractCallback);
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           RootCertExtractCallback, nullptr);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             NullVerifyCallback);
+                             nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           NullVerifyCallback, nullptr);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             RootCertExtractCallback);
+                             nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           RootCertExtractCallback, nullptr);
           break;
       }
 

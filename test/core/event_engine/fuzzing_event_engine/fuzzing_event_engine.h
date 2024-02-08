@@ -48,9 +48,7 @@ namespace experimental {
 
 // EventEngine implementation to be used by fuzzers.
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
-class FuzzingEventEngine
-    : public EventEngine,
-      public std::enable_shared_from_this<FuzzingEventEngine> {
+class FuzzingEventEngine : public EventEngine {
  public:
   struct Options {
     Duration max_delay_run_after = std::chrono::seconds(30);
@@ -117,6 +115,10 @@ class FuzzingEventEngine
   // destruction to ensure no overlap between tests if constructing/destructing
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
+
+  Duration max_delay_write() const {
+    return max_delay_[static_cast<int>(RunType::kWrite)];
+  }
 
  private:
   enum class RunType {

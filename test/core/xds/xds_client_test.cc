@@ -131,6 +131,9 @@ class XdsClientTest : public ::testing::Test {
         return server_uri_ == o.server_uri_ &&
                ignore_resource_deletion_ == o.ignore_resource_deletion_;
       }
+      std::string Key() const override {
+        return absl::StrCat(server_uri_, "#", ignore_resource_deletion_);
+      }
 
       void set_server_uri(std::string server_uri) {
         server_uri_ = std::move(server_uri);
@@ -199,18 +202,6 @@ class XdsClientTest : public ::testing::Test {
       auto it = authorities_.find(name);
       if (it == authorities_.end()) return nullptr;
       return &it->second;
-    }
-    const XdsServer* FindXdsServer(const XdsServer& server) const override {
-      const auto& fake_server = static_cast<const FakeXdsServer&>(server);
-      if (fake_server == server_) return &server_;
-      for (const auto& p : authorities_) {
-        const auto* authority_server =
-            static_cast<const FakeXdsServer*>(p.second.server());
-        if (authority_server != nullptr && *authority_server == fake_server) {
-          return authority_server;
-        }
-      }
-      return nullptr;
     }
 
    private:
@@ -654,21 +645,16 @@ class XdsClientTest : public ::testing::Test {
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
-      const XdsBootstrap::XdsServer& server,
+      const XdsBootstrap::XdsServer& xds_server,
       absl::Duration timeout = absl::Seconds(5)) {
-    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
-    GPR_ASSERT(xds_server != nullptr);
     return transport_factory_->WaitForStream(
-        *xds_server, FakeXdsTransportFactory::kAdsMethod,
+        xds_server, FakeXdsTransportFactory::kAdsMethod,
         timeout * grpc_test_slowdown_factor());
   }
 
-  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& server,
+  void TriggerConnectionFailure(const XdsBootstrap::XdsServer& xds_server,
                                 absl::Status status) {
-    const auto* xds_server = xds_client_->bootstrap().FindXdsServer(server);
-    GPR_ASSERT(xds_server != nullptr);
-    transport_factory_->TriggerConnectionFailure(*xds_server,
-                                                 std::move(status));
+    transport_factory_->TriggerConnectionFailure(xds_server, std::move(status));
   }
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/client_channel/retry_service_config.h"
+#include "src/core/client_channel/retry_service_config.h"
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

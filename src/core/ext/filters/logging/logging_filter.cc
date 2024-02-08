@@ -47,7 +47,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -62,7 +62,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -70,6 +69,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
@@ -536,11 +536,11 @@ void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
-        ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerLoggingFilter::kFilter)
+        ->RegisterFilter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
         // TODO(yashykt) : Figure out a good place to place this channel arg
         .IfChannelArg("grpc.experimental.enable_observability", true);
     builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientLoggingFilter::kFilter)
+        ->RegisterFilter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
         // TODO(yashykt) : Figure out a good place to place this channel arg
         .IfChannelArg("grpc.experimental.enable_observability", true);
   });

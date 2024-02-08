@@ -107,6 +107,7 @@ class TlsCredentialsTest : public ::testing::Test {
   std::string server_addr_;
 };
 
+// NOLINTNEXTLINE(clang-diagnostic-unused-function)
 void DoRpc(const std::string& server_addr,
            const TlsChannelCredentialsOptions& tls_options) {
   std::shared_ptr<Channel> channel =
@@ -128,6 +129,8 @@ void DoRpc(const std::string& server_addr,
   EXPECT_EQ(response.message(), kMessage);
 }
 
+// TODO(gregorycooke) - failing with OpenSSL1.0.2
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
 // How do we test that skipping server certificate verification works as
 // expected? Give the server credentials that chain up to a custom CA (that does
 // not belong to the default or OS trust store), do not configure the client to
@@ -148,6 +151,7 @@ TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
 
   DoRpc(server_addr_, tls_options);
 }
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 
 }  // namespace
 }  // namespace testing

@@ -103,7 +103,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
    private:
     std::atomic<bool> ready_{false};
     grpc_core::Waker waker_{
-        grpc_core::Activity::current()->MakeNonOwningWaker()};
+        grpc_core::GetContext<grpc_core::Activity>()->MakeNonOwningWaker()};
     grpc_core::RefCountedPtr<grpc_plugin_credentials> call_creds_;
     grpc_auth_metadata_context context_;
     grpc_core::ClientMetadataHandle md_;

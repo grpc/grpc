@@ -51,6 +51,7 @@
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -524,7 +525,7 @@ class Server::RealRequestMatcherPromises : public RequestMatcherInterface {
               "Too many pending requests for this server"));
         }
         auto w = std::make_shared<ActivityWaiter>(
-            Activity::current()->MakeOwningWaker());
+            GetContext<Activity>()->MakeOwningWaker());
         pending_.push(w);
         return OnCancel(
             [w]() -> Poll<absl::StatusOr<MatchResult>> {
@@ -829,7 +830,11 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 Server::Server(const ChannelArgs& args)
     : channel_args_(args),
       channelz_node_(CreateChannelzNode(args)),
-      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)) {}
+      server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
+      max_time_in_pending_queue_(Duration::Seconds(
+          channel_args_
+              .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
+              .value_or(30))) {}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.
@@ -1293,6 +1298,16 @@ Server::ChannelData::~ChannelData() {
   }
 }
 
+Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
+
+absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
+    ClientMetadata& client_initial_metadata, Arena* arena) {
+  SetRegisteredMethodOnMetadata(client_initial_metadata);
+  auto call = MakeServerCall(server_.get(), channel_.get(), arena);
+  InitCall(call);
+  return CallInitiator(std::move(call));
+}
+
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
                                         RefCountedPtr<Channel> channel,
                                         size_t cq_idx, Transport* transport,
@@ -1325,13 +1340,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   }
   if (transport->server_transport() != nullptr) {
     ++accept_stream_types;
-    transport->server_transport()->SetAcceptFunction(
-        [this](ClientMetadata& metadata) {
-          SetRegisteredMethodOnMetadata(metadata);
-          auto call = MakeServerCall(server_.get(), channel_.get());
-          InitCall(call);
-          return CallInitiator(std::move(call));
-        });
+    transport->server_transport()->SetAcceptor(this);
   }
   GPR_ASSERT(accept_stream_types == 1);
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);

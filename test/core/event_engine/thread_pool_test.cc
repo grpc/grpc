@@ -16,8 +16,11 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <functional>
+#include <memory>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include "absl/time/clock.h"
@@ -31,6 +34,7 @@
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/time.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_event_engine {
@@ -286,6 +290,15 @@ TYPED_TEST(ThreadPoolTest, WorkerThreadLocalRunWorksWithOtherPools) {
   p1.Quiesce();
 }
 
+TYPED_TEST(ThreadPoolTest, DISABLED_TestDumpStack) {
+  TypeParam p1(8);
+  for (size_t i = 0; i < 8; i++) {
+    p1.Run([]() { absl::SleepFor(absl::Seconds(90)); });
+  }
+  absl::SleepFor(absl::Seconds(2));
+  p1.Quiesce();
+}
+
 class BusyThreadCountTest : public testing::Test {};
 
 TEST_F(BusyThreadCountTest, StressTest) {
@@ -452,11 +465,11 @@ TEST_F(LivingThreadCountTest, BlockUntilThreadCountTest) {
   });
   {
     auto alive = living_thread_count.MakeAutoThreadCounter();
-    living_thread_count.BlockUntilThreadCount(1,
-                                              "block until 1 thread remains");
+    std::ignore = living_thread_count.BlockUntilThreadCount(
+        1, "block until 1 thread remains", grpc_core::Duration::Infinity());
   }
-  living_thread_count.BlockUntilThreadCount(0,
-                                            "block until all threads are gone");
+  std::ignore = living_thread_count.BlockUntilThreadCount(
+      0, "block until all threads are gone", grpc_core::Duration::Infinity());
   joiner.join();
   ASSERT_EQ(living_thread_count.count(), 0);
 }

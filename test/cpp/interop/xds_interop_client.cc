@@ -67,6 +67,12 @@ ABSL_FLAG(int32_t, stats_port, 50052,
           "Port to expose peer distribution stats service.");
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
+ABSL_FLAG(int32_t, request_payload_size, 0,
+          "Set the SimpleRequest.payload.body to a string of repeated 0 (zero) "
+          "ASCII characters of the given size in bytes.");
+ABSL_FLAG(int32_t, response_payload_size, 0,
+          "Ask the server to respond with SimpleResponse.payload.body of the "
+          "given length (may not be implemented on the server).");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
@@ -117,6 +123,9 @@ struct RpcConfig {
   ClientConfigureRequest::RpcType type;
   std::vector<std::pair<std::string, std::string>> metadata;
   int timeout_sec = 0;
+  std::string request_payload;
+  int request_payload_size = 0;
+  int response_payload_size = 0;
 };
 struct RpcConfigurationsQueue {
   // A queue of RPC configurations detailing how RPCs should be sent.
@@ -154,11 +163,17 @@ class TestClient {
             std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
       }
     }
+    SimpleRequest request;
+    request.set_response_size(config.response_payload_size);
+    if (config.request_payload_size > 0) {
+      request.mutable_payload()->set_body(config.request_payload.c_str(),
+                                          config.request_payload_size);
+    }
     call->context.set_deadline(deadline);
     call->result.saved_request_id = saved_request_id;
     call->result.rpc_type = ClientConfigureRequest::UNARY_CALL;
-    call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
-        &call->context, SimpleRequest::default_instance(), &cq_);
+    call->simple_response_reader =
+        stub_->PrepareAsyncUnaryCall(&call->context, request, &cq_);
     call->simple_response_reader->StartCall();
     call->simple_response_reader->Finish(&call->result.simple_response,
                                          &call->result.status, call);
@@ -324,6 +339,10 @@ class XdsUpdateClientConfigureServiceImpl
       metadata_map[data.type()].push_back({data.key(), data.value()});
     }
     std::vector<RpcConfig> configs;
+    int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+    int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+    GPR_ASSERT(request_payload_size >= 0);
+    GPR_ASSERT(response_payload_size >= 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -332,6 +351,22 @@ class XdsUpdateClientConfigureServiceImpl
       if (metadata_iter != metadata_map.end()) {
         config.metadata = metadata_iter->second;
       }
+      if (request_payload_size > 0 &&
+          config.type == ClientConfigureRequest::EMPTY_CALL) {
+        gpr_log(GPR_ERROR,
+                "request_payload_size should not be set "
+                "for EMPTY_CALL");
+      }
+      if (response_payload_size > 0 &&
+          config.type == ClientConfigureRequest::EMPTY_CALL) {
+        gpr_log(GPR_ERROR,
+                "response_payload_size should not be set "
+                "for EMPTY_CALL");
+      }
+      config.request_payload_size = request_payload_size;
+      std::string payload(config.request_payload_size, '0');
+      config.request_payload = payload;
+      config.response_payload_size = response_payload_size;
       configs.push_back(std::move(config));
     }
     {
@@ -392,7 +427,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   GPR_UNREACHABLE_CODE(thread.join());
 }
 
-void EnableCsmObservability() {
+grpc::experimental::CsmObservability EnableCsmObservability() {
   gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
@@ -403,9 +438,11 @@ void EnableCsmObservability() {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
-  grpc::experimental::CsmObservabilityBuilder observability;
-  observability.SetMeterProvider(std::move(meter_provider));
-  auto status = observability.BuildAndRegister();
+  auto observability = grpc::experimental::CsmObservabilityBuilder()
+                           .SetMeterProvider(std::move(meter_provider))
+                           .BuildAndRegister();
+  assert(observability.ok());
+  return *std::move(observability);
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
@@ -456,6 +493,10 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   std::vector<RpcConfig> configs;
   std::vector<std::string> rpc_methods =
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
+  int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+  int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+  GPR_ASSERT(request_payload_size >= 0);
+  GPR_ASSERT(response_payload_size >= 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
@@ -469,6 +510,22 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     if (metadata_iter != metadata_map.end()) {
       config.metadata = metadata_iter->second;
     }
+    if (request_payload_size > 0 &&
+        config.type == ClientConfigureRequest::EMPTY_CALL) {
+      gpr_log(GPR_ERROR,
+              "request_payload_size should not be set "
+              "for EMPTY_CALL");
+    }
+    if (response_payload_size > 0 &&
+        config.type == ClientConfigureRequest::EMPTY_CALL) {
+      gpr_log(GPR_ERROR,
+              "response_payload_size should not be set "
+              "for EMPTY_CALL");
+    }
+    config.request_payload_size = request_payload_size;
+    std::string payload(config.request_payload_size, '0');
+    config.request_payload = payload;
+    config.response_payload_size = response_payload_size;
     configs.push_back(std::move(config));
   }
   {
@@ -496,8 +553,9 @@ int main(int argc, char** argv) {
   }
 
   BuildRpcConfigsFromFlags(&rpc_config_queue);
+  grpc::experimental::CsmObservability observability;
   if (absl::GetFlag(FLAGS_enable_csm_observability)) {
-    EnableCsmObservability();
+    observability = EnableCsmObservability();
   }
 
   std::chrono::duration<double> duration_per_query =

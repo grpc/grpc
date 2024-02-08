@@ -19,6 +19,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/util/fuzzing_channel_args.h"
 
 namespace grpc_core {
 
@@ -27,6 +28,11 @@ Duration ScheduleReads(
     grpc_endpoint* mock_endpoint,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
 
-}
+Duration ScheduleConnection(
+    const fuzzer_input::NetworkInput& network_input,
+    grpc_event_engine::experimental::FuzzingEventEngine* event_engine,
+    testing::FuzzingEnvironment environment, int port);
+
+}  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_END2END_FUZZERS_NETWORK_INPUT_H

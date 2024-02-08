@@ -435,7 +435,15 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(
       [this](auto result) {
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
         EXPECT_SUCCESS();
+#else
+        EXPECT_TRUE(result.ok());
+        EXPECT_THAT(*result,
+                    Pointwise(ResolvedAddressEq(),
+                              {*URIToResolvedAddress("ipv6:[::1]:1"),
+                               *URIToResolvedAddress("ipv4:127.0.0.1:1")}));
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
         dns_resolver_signal_.Notify();
       },
       "localhost:1", "");
