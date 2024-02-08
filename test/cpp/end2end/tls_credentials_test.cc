@@ -66,9 +66,10 @@ class NoOpCertificateVerifier : public ExternalCertificateVerifier {
 class TlsCredentialsTest : public ::testing::Test {
  protected:
   void RunServer(absl::Notification* notification) {
-    std::string root_cert = GetFileContents(kCaCertPath);
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-        GetFileContents(kServerKeyPath), GetFileContents(kServerCertPath)};
+        grpc_core::testing::GetFileContents(kServerKeyPath),
+        grpc_core::testing::GetFileContents(kServerCertPath)};
     grpc::SslServerCredentialsOptions ssl_options;
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
     ssl_options.pem_root_certs = root_cert;

@@ -60,14 +60,14 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   TlsSecurityConnectorTest() {}
 
   void SetUp() override {
-    root_cert_1_ = grpc_core::testing::GetFileContents(CA_CERT_PATH);
-    root_cert_0_ = grpc_core::testing::GetFileContents(CLIENT_CERT_PATH);
+    root_cert_1_ = testing::GetFileContents(CA_CERT_PATH);
+    root_cert_0_ = testing::GetFileContents(CLIENT_CERT_PATH);
     identity_pairs_1_.emplace_back(
-        grpc_core::testing::GetFileContents(SERVER_KEY_PATH_1),
-        grpc_core::testing::GetFileContents(SERVER_CERT_PATH_1));
+        testing::GetFileContents(SERVER_KEY_PATH_1),
+        testing::GetFileContents(SERVER_CERT_PATH_1));
     identity_pairs_0_.emplace_back(
-        grpc_core::testing::GetFileContents(SERVER_KEY_PATH_0),
-        grpc_core::testing::GetFileContents(SERVER_CERT_PATH_0));
+        testing::GetFileContents(SERVER_KEY_PATH_0),
+        testing::GetFileContents(SERVER_CERT_PATH_0));
   }
 
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {

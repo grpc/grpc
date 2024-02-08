@@ -60,9 +60,11 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
   GrpcAuthzEnd2EndTest()
       : server_address_(
             absl::StrCat("localhost:", grpc_pick_unused_port_or_die())) {
-    std::string root_cert = GetFileContents(kCaCertPath);
-    std::string identity_cert = GetFileContents(kServerCertPath);
-    std::string private_key = GetFileContents(kServerKeyPath);
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+    std::string identity_cert =
+        grpc_core::testing::GetFileContents(kServerCertPath);
+    std::string private_key =
+        grpc_core::testing::GetFileContents(kServerKeyPath);
     std::vector<experimental::IdentityKeyCertPair>
         server_identity_key_cert_pairs = {{private_key, identity_cert}};
     grpc::experimental::TlsServerCredentialsOptions server_options(
@@ -74,12 +76,14 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
         GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
     server_creds_ = grpc::experimental::TlsServerCredentials(server_options);
     std::vector<experimental::IdentityKeyCertPair>
-        channel_identity_key_cert_pairs = {{GetFileContents(kClientKeyPath),
-                                            GetFileContents(kClientCertPath)}};
+        channel_identity_key_cert_pairs = {
+            {grpc_core::testing::GetFileContents(kClientKeyPath),
+             grpc_core::testing::GetFileContents(kClientCertPath)}};
     grpc::experimental::TlsChannelCredentialsOptions channel_options;
     channel_options.set_certificate_provider(
         std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            GetFileContents(kCaCertPath), channel_identity_key_cert_pairs));
+            grpc_core::testing::GetFileContents(kCaCertPath),
+            channel_identity_key_cert_pairs));
     channel_options.watch_identity_key_cert_pairs();
     channel_options.watch_root_certs();
     channel_creds_ = grpc::experimental::TlsCredentials(channel_options);

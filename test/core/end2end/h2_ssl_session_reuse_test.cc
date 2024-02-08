@@ -58,9 +58,10 @@ namespace {
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
 grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
-  std::string ca_cert = GetFileContents(CA_CERT_PATH);
-  std::string server_cert = GetFileContents(SERVER_CERT_PATH);
-  std::string server_key = GetFileContents(SERVER_KEY_PATH);
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+  std::string server_key = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {server_key.c_str(),
                                                   server_cert.c_str()};
   grpc_server_credentials* server_creds = grpc_ssl_server_credentials_create_ex(
@@ -77,9 +78,10 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
 
 grpc_channel* client_create(const char* server_addr,
                             grpc_ssl_session_cache* cache) {
-  std::string ca_cert = GetFileContents(CA_CERT_PATH);
-  std::string client_cert = GetFileContents(CLIENT_CERT_PATH);
-  std::string client_key = GetFileContents(CLIENT_KEY_PATH);
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(CLIENT_CERT_PATH);
+  std::string client_key = grpc_core::testing::GetFileContents(CLIENT_KEY_PATH);
   grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {
       client_key.c_str(), client_cert.c_str()};
   grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(

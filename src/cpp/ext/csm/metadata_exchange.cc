@@ -132,7 +132,7 @@ std::string GetXdsBootstrapContents() {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   auto path = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
-    auto contents = LoadFile(*path, /*add_null_terminator=*/true);
+    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/true);
     if (!contents.ok()) return "";
     return std::string(contents->as_string_view());
   }
