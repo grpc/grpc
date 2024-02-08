@@ -89,6 +89,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:iomgr",
         "//src/core:env",
         "//src/core:error",
         "//src/core:error_utils",
