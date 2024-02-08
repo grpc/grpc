@@ -199,6 +199,7 @@ class InterceptorList {
       AsyncResolution& operator=(const AsyncResolution&) = delete;
       AsyncResolution(AsyncResolution&& other) noexcept
           : current_factory(std::exchange(other.current_factory, nullptr)),
+            first_factory(std::exchange(other.first_factory, nullptr)),
             space(std::move(other.space)) {}
       Map* current_factory;
       Map** first_factory;
