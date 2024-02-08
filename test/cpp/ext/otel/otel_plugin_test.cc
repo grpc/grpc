@@ -694,7 +694,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, DisableOTelPluginTest) {
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
           /*data*/) { return false; });
   // Since we've disabled the plugin, no metrics should be recorded.
-  ASSERT_TRUE(data.empty());
+  EXPECT_TRUE(data.empty());
 }
 
 using OpenTelemetryPluginOptionEnd2EndTest = OpenTelemetryPluginEnd2EndTest;
