@@ -28,8 +28,8 @@
 
 #include <grpcpp/security/binder_security_policy.h>
 
-#include "src/core/ext/filters/client_channel/connector.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/client_channel/connector.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 #include "src/core/ext/transport/binder/client/security_policy_setting.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
