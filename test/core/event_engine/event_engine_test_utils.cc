@@ -76,8 +76,6 @@ std::string GetNextSendMessage() {
 }
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
-  grpc_core::Timestamp deadline =
-      grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(20);
   while (engine.use_count() > 1) {
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());

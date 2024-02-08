@@ -53,9 +53,15 @@ class ChaoticGoodServerTest : public ::testing::Test {
   }
 
   ~ChaoticGoodServerTest() override {
+    {
+      ExecCtx exec_ctx;
+      if (connecting_successful_) {
+        connecting_result_.transport->Orphan();
+      }
+      if (connector_ != nullptr) connector_->Shutdown(absl::CancelledError());
+      connector_.reset();
+    }
     args_.channel_args = ChannelArgs();
-    if (connector_ != nullptr) connector_->Shutdown(absl::CancelledError());
-    connector_.reset();
     auto* shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
     auto ev = grpc_completion_queue_pluck(
@@ -90,8 +96,9 @@ class ChaoticGoodServerTest : public ::testing::Test {
   static void OnConnectingFinished(void* arg, grpc_error_handle error) {
     gpr_log(GPR_ERROR, "OnConnectingFinished: %p %s", arg,
             error.ToString().c_str());
-    Notification* connect_finished_ = static_cast<Notification*>(arg);
-    connect_finished_->Notify();
+    ChaoticGoodServerTest* test = static_cast<ChaoticGoodServerTest*>(arg);
+    test->connecting_successful_ = error.ok();
+    test->connect_finished_.Notify();
   }
 
   ChannelArgs channel_args() {
@@ -104,7 +111,9 @@ class ChaoticGoodServerTest : public ::testing::Test {
   Server* core_server_;
   ChaoticGoodConnector::Args args_;
   ChaoticGoodConnector::Result connecting_result_;
+  bool connecting_successful_ = false;
   grpc_closure on_connecting_finished_;
+  Notification connect_finished_;
   int port_;
   std::string addr_;
   grpc_resolved_address resolved_addr_;
@@ -112,20 +121,22 @@ class ChaoticGoodServerTest : public ::testing::Test {
 };
 
 TEST_F(ChaoticGoodServerTest, Connect) {
-  Notification connect_finished;
-  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished,
-                    &connect_finished, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
+                    grpc_schedule_on_exec_ctx);
   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
-  connect_finished.WaitForNotification();
+  connect_finished_.WaitForNotification();
 }
 
 TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
   Notification connect_finished;
-  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished,
-                    &connect_finished, grpc_schedule_on_exec_ctx);
-  connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
-  connector_->Shutdown(absl::InternalError("shutdown"));
-  connect_finished.WaitForNotification();
+  GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
+                    grpc_schedule_on_exec_ctx);
+  {
+    ExecCtx exec_ctx;
+    connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
+    connector_->Shutdown(absl::InternalError("shutdown"));
+  }
+  connect_finished_.WaitForNotification();
 }
 
 }  // namespace testing
