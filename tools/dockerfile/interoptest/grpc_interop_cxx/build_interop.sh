@@ -31,7 +31,6 @@ cp -r /var/local/jenkins/service_account $HOME || true
 cd /var/local/git/grpc
 
 grep -R 'DO NOT SUBMIT'
-exit 42
 
 # Install the roots.pem
 mkdir -p /usr/local/share/grpc
