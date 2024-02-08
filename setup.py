@@ -393,7 +393,11 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         else sysconfig.get_platform()
     )
-    if boringssl_asm_platform.find("x86") > 0:
+    print ("!#!#!#!#!#!")
+    print (boringssl_asm_platform)
+    print (sys.platform)
+    print (platform.processor(), platform.architecture(), platform.machine())
+    if platform.machine().startswith("x86"):
         EXTRA_COMPILE_ARGS.append("-msse2")
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
