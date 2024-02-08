@@ -18,12 +18,21 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/match.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace {
+
+#define FATAL_ASSERT_TRUE(condition) \
+  do {                               \
+    EXPECT_TRUE(#condition);         \
+    if (!#condition) {               \
+      abort();                       \
+    }                                \
+  } while (0)
 
 std::vector<absl::string_view> MixUp(const std::vector<absl::string_view>& v1,
                                      const std::vector<absl::string_view>& v2) {
@@ -48,6 +57,17 @@ template <class T>
 std::string MakeKey(T t) {
   return Append({t.name, t.description, t.unit}) + Append(t.label_keys) +
          Append(t.optional_label_keys);
+}
+
+std::string MakeKeyAttributes(
+    const std::vector<absl::string_view>& label_keys,
+    const std::vector<absl::string_view>& label_values,
+    const std::vector<absl::string_view>& optional_label_keys,
+    const std::vector<absl::string_view>& optional_values) {
+  FATAL_ASSERT_TRUE(label_keys_.size() == label_values.size());
+  FATAL_ASSERT_TRUE(optional_label_keys_.size() == optional_values.size());
+  return Append(MixUp(label_keys, label_values)) +
+         Append(MixUp(optional_label_keys, optional_values));
 }
 
 // TODO(yijiem): Move this to test/core/util/fake_stats_plugin.h
@@ -97,11 +117,23 @@ class FakeStatsPlugin : public StatsPlugin {
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       uint64_t value, std::vector<absl::string_view> label_values,
-      std::vector<absl::string_view> optional_values) override {}
+      std::vector<absl::string_view> optional_values) override {
+    const auto& descriptor =
+        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
+    auto iter = uint64_histograms_.find(MakeKey(descriptor));
+    ASSERT_NE(iter, uint64_histograms_.end());
+    iter->second.Record(value, label_values, optional_values);
+  }
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, std::vector<absl::string_view> label_values,
-      std::vector<absl::string_view> optional_values) override {}
+      std::vector<absl::string_view> optional_values) override {
+    const auto& descriptor =
+        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
+    auto iter = double_histograms_.find(MakeKey(descriptor));
+    ASSERT_NE(iter, double_histograms_.end());
+    iter->second.Record(value, label_values, optional_values);
+  }
 
   uint64_t GetCounterValue(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -110,8 +142,8 @@ class FakeStatsPlugin : public StatsPlugin {
     const auto& descriptor =
         GlobalInstrumentsRegistry::GetCounterDescriptor(handle);
     auto iter = uint64_counters_.find(MakeKey(descriptor));
-    EXPECT_TRUE(iter != uint64_counters_.end());
-    return iter->second.Get(label_values, optional_values);
+    FATAL_ASSERT_TRUE(iter != uint64_counters_.end());
+    return iter->second.GetValue(label_values, optional_values);
   }
   double GetCounterValue(
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
@@ -120,8 +152,28 @@ class FakeStatsPlugin : public StatsPlugin {
     const auto& descriptor =
         GlobalInstrumentsRegistry::GetCounterDescriptor(handle);
     auto iter = double_counters_.find(MakeKey(descriptor));
-    EXPECT_TRUE(iter != double_counters_.end());
-    return iter->second.Get(label_values, optional_values);
+    FATAL_ASSERT_TRUE(iter != double_counters_.end());
+    return iter->second.GetValue(label_values, optional_values);
+  }
+  std::vector<uint64_t> GetHistogramValue(
+      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
+      const std::vector<absl::string_view>& label_values,
+      const std::vector<absl::string_view>& optional_values) {
+    const auto& descriptor =
+        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
+    auto iter = uint64_histograms_.find(MakeKey(descriptor));
+    FATAL_ASSERT_TRUE(iter != uint64_histograms_.end());
+    return iter->second.GetValues(label_values, optional_values);
+  }
+  std::vector<double> GetHistogramValue(
+      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
+      const std::vector<absl::string_view>& label_values,
+      const std::vector<absl::string_view>& optional_values) {
+    const auto& descriptor =
+        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
+    auto iter = double_histograms_.find(MakeKey(descriptor));
+    FATAL_ASSERT_TRUE(iter != double_histograms_.end());
+    return iter->second.GetValues(label_values, optional_values);
   }
 
  private:
@@ -161,28 +213,22 @@ class FakeStatsPlugin : public StatsPlugin {
 
     void Add(T t, const std::vector<absl::string_view>& label_values,
              const std::vector<absl::string_view>& optional_values) {
-      auto iter = storage_.find(MakeKey(label_values, optional_values));
+      auto iter = storage_.find(MakeKeyAttributes(
+          label_keys_, label_values, optional_label_keys_, optional_values));
       if (iter != storage_.end()) {
         iter->second += t;
       } else {
-        storage_[MakeKey(label_values, optional_values)] = t;
+        storage_[MakeKeyAttributes(label_keys_, label_values,
+                                   optional_label_keys_, optional_values)] = t;
       }
     }
 
-    T Get(const std::vector<absl::string_view>& label_values,
-          const std::vector<absl::string_view>& optional_values) {
-      auto iter = storage_.find(MakeKey(label_values, optional_values));
+    T GetValue(const std::vector<absl::string_view>& label_values,
+               const std::vector<absl::string_view>& optional_values) {
+      auto iter = storage_.find(MakeKeyAttributes(
+          label_keys_, label_values, optional_label_keys_, optional_values));
       EXPECT_TRUE(iter != storage_.end());
       return iter->second;
-    }
-
-    std::string MakeKey(const std::vector<absl::string_view>& label_values,
-                        const std::vector<absl::string_view>& optional_values) {
-      std::string key;
-      EXPECT_EQ(label_keys_.size(), label_values.size());
-      EXPECT_EQ(optional_label_keys_.size(), optional_values.size());
-      return Append(MixUp(label_keys_, label_values)) +
-             Append(MixUp(optional_label_keys_, optional_values));
     }
 
    private:
@@ -191,6 +237,7 @@ class FakeStatsPlugin : public StatsPlugin {
     absl::string_view unit_;
     std::vector<absl::string_view> label_keys_;
     std::vector<absl::string_view> optional_label_keys_;
+    // Aggregation of the same key attributes.
     absl::flat_hash_map<std::string, T> storage_;
   };
 
@@ -204,7 +251,26 @@ class FakeStatsPlugin : public StatsPlugin {
           label_keys_(std::move(u.label_keys)),
           optional_label_keys_(std::move(u.optional_label_keys)) {}
 
-    void Record() {}
+    void Record(T t, const std::vector<absl::string_view>& label_values,
+                const std::vector<absl::string_view>& optional_values) {
+      storage_.emplace_back(
+          MakeKeyAttributes(label_keys_, label_values, optional_label_keys_,
+                            optional_values),
+          t);
+    }
+
+    std::vector<T> GetValues(
+        const std::vector<absl::string_view>& label_values,
+        const std::vector<absl::string_view>& optional_values) {
+      std::vector<T> res;
+      for (const auto& it : storage_) {
+        if (MakeKeyAttributes(label_keys_, label_values, optional_label_keys_,
+                              optional_values) == it.first) {
+          res.push_back(it.second);
+        }
+      }
+      return res;
+    }
 
    private:
     absl::string_view name_;
@@ -212,7 +278,7 @@ class FakeStatsPlugin : public StatsPlugin {
     absl::string_view unit_;
     std::vector<absl::string_view> label_keys_;
     std::vector<absl::string_view> optional_label_keys_;
-    absl::flat_hash_map<std::string, T> storage_;
+    std::vector<std::pair<std::string, T>> storage_;
   };
 
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
@@ -260,69 +326,189 @@ class FakeStatsPluginBuilder {
 
 class MetricsTest : public testing::Test {
  public:
+  void SetUp() override {
+    plugin1_ =
+        FakeStatsPluginBuilder()
+            .SetTargetSelector([](absl::string_view target) {
+              return absl::EndsWith(target, "domain1.domain2.domain3.domain4");
+            })
+            .BuildAndRegister();
+    plugin2_ = FakeStatsPluginBuilder()
+                   .SetTargetSelector([](absl::string_view target) {
+                     return absl::EndsWith(target, "domain2.domain3.domain4");
+                   })
+                   .BuildAndRegister();
+    plugin3_ = FakeStatsPluginBuilder()
+                   .SetTargetSelector([](absl::string_view target) {
+                     return absl::EndsWith(target, "domain3.domain4");
+                   })
+                   .BuildAndRegister();
+  }
+
+  void TearDown() override {
+    GlobalStatsPluginRegistry::Get().TestOnlyResetStatsPlugins();
+  }
+
   static void SetUpTestSuite() {
-    simple_seconds_counter_handle_ =
-        GlobalInstrumentsRegistry::RegisterUInt64Counter(
-            "simple_seconds_counter", "A simple seconds counter.", "s",
+    uint64_counter_handle_ = GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "uint64_counter", "A simple uint64 counter.", "unit",
+        {"label_key_1", "label_key_2"},
+        {"optional_label_key_1", "optional_label_key_2"});
+    double_counter_handle_ = GlobalInstrumentsRegistry::RegisterDoubleCounter(
+        "double_counter", "A simple double counter.", "unit",
+        {"label_key_1", "label_key_2"},
+        {"optional_label_key_1", "optional_label_key_2"});
+    uint64_histogram_handle_ =
+        GlobalInstrumentsRegistry::RegisterUInt64Histogram(
+            "uint64_histogram", "A simple uint64 histogram.", "unit",
+            {"label_key_1", "label_key_2"},
+            {"optional_label_key_1", "optional_label_key_2"});
+    double_histogram_handle_ =
+        GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+            "double_histogram", "A simple double histogram.", "unit",
             {"label_key_1", "label_key_2"},
             {"optional_label_key_1", "optional_label_key_2"});
   }
 
  protected:
+  std::shared_ptr<FakeStatsPlugin> plugin1_;
+  std::shared_ptr<FakeStatsPlugin> plugin2_;
+  std::shared_ptr<FakeStatsPlugin> plugin3_;
+
   static GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
-      simple_seconds_counter_handle_;
+      uint64_counter_handle_;
+  static GlobalInstrumentsRegistry::GlobalDoubleCounterHandle
+      double_counter_handle_;
+  static GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle
+      uint64_histogram_handle_;
+  static GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle
+      double_histogram_handle_;
 };
 
 GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
-    MetricsTest::simple_seconds_counter_handle_;
+    MetricsTest::uint64_counter_handle_;
+GlobalInstrumentsRegistry::GlobalDoubleCounterHandle
+    MetricsTest::double_counter_handle_;
+GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle
+    MetricsTest::uint64_histogram_handle_;
+GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle
+    MetricsTest::double_histogram_handle_;
 
-TEST_F(MetricsTest, Workflow) {
-  auto plugin1 =
-      FakeStatsPluginBuilder()
-          .SetTargetSelector([](absl::string_view target) {
-            return absl::EndsWith(target, "domain1.domain2.domain3.domain4");
-          })
-          .BuildAndRegister();
-  auto plugin2 = FakeStatsPluginBuilder()
-                     .SetTargetSelector([](absl::string_view target) {
-                       return absl::EndsWith(target, "domain2.domain3.domain4");
-                     })
-                     .BuildAndRegister();
-  auto plugin3 = FakeStatsPluginBuilder()
-                     .SetTargetSelector([](absl::string_view target) {
-                       return absl::EndsWith(target, "domain3.domain4");
-                     })
-                     .BuildAndRegister();
+TEST_F(MetricsTest, UInt64Counter) {
   GlobalStatsPluginRegistry::Get()
       .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
-      .AddCounter(simple_seconds_counter_handle_, 1,
+      .AddCounter(uint64_counter_handle_, 1, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"});
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .AddCounter(uint64_counter_handle_, 2, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"});
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain3.domain4")
+      .AddCounter(uint64_counter_handle_, 3, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"});
+  EXPECT_EQ(plugin1_->GetCounterValue(
+                uint64_counter_handle_, {"label_value_1", "label_value_2"},
+                {"optional_label_value_1", "optional_label_value_2"}),
+            1);
+  EXPECT_EQ(plugin2_->GetCounterValue(
+                uint64_counter_handle_, {"label_value_1", "label_value_2"},
+                {"optional_label_value_1", "optional_label_value_2"}),
+            3);
+  EXPECT_EQ(plugin3_->GetCounterValue(
+                uint64_counter_handle_, {"label_value_1", "label_value_2"},
+                {"optional_label_value_1", "optional_label_value_2"}),
+            6);
+}
+
+TEST_F(MetricsTest, DoubleCounter) {
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .AddCounter(double_counter_handle_, 1.23,
                   {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
       .GetStatsPluginsForTarget("domain2.domain3.domain4")
-      .AddCounter(simple_seconds_counter_handle_, 2,
+      .AddCounter(double_counter_handle_, 2.34,
                   {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
       .GetStatsPluginsForTarget("domain3.domain4")
-      .AddCounter(simple_seconds_counter_handle_, 3,
+      .AddCounter(double_counter_handle_, 3.45,
                   {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
-  EXPECT_EQ(
-      plugin1->GetCounterValue(
-          simple_seconds_counter_handle_, {"label_value_1", "label_value_2"},
-          {"optional_label_value_1", "optional_label_value_2"}),
-      1);
-  EXPECT_EQ(
-      plugin2->GetCounterValue(
-          simple_seconds_counter_handle_, {"label_value_1", "label_value_2"},
-          {"optional_label_value_1", "optional_label_value_2"}),
-      3);
-  EXPECT_EQ(
-      plugin3->GetCounterValue(
-          simple_seconds_counter_handle_, {"label_value_1", "label_value_2"},
-          {"optional_label_value_1", "optional_label_value_2"}),
-      6);
+  EXPECT_EQ(plugin1_->GetCounterValue(
+                double_counter_handle_, {"label_value_1", "label_value_2"},
+                {"optional_label_value_1", "optional_label_value_2"}),
+            1.23);
+  EXPECT_EQ(plugin2_->GetCounterValue(
+                double_counter_handle_, {"label_value_1", "label_value_2"},
+                {"optional_label_value_1", "optional_label_value_2"}),
+            3.57);
+  EXPECT_EQ(plugin3_->GetCounterValue(
+                double_counter_handle_, {"label_value_1", "label_value_2"},
+                {"optional_label_value_1", "optional_label_value_2"}),
+            7.02);
+}
+
+TEST_F(MetricsTest, UInt64Histogram) {
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .RecordHistogram(uint64_histogram_handle_, 1,
+                       {"label_value_1", "label_value_2"},
+                       {"optional_label_value_1", "optional_label_value_2"});
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .RecordHistogram(uint64_histogram_handle_, 2,
+                       {"label_value_1", "label_value_2"},
+                       {"optional_label_value_1", "optional_label_value_2"});
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain3.domain4")
+      .RecordHistogram(uint64_histogram_handle_, 3,
+                       {"label_value_1", "label_value_2"},
+                       {"optional_label_value_1", "optional_label_value_2"});
+  EXPECT_THAT(plugin1_->GetHistogramValue(
+                  uint64_histogram_handle_, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"}),
+              ::testing::UnorderedElementsAreArray({1}));
+  EXPECT_THAT(plugin2_->GetHistogramValue(
+                  uint64_histogram_handle_, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"}),
+              ::testing::UnorderedElementsAreArray({1, 2}));
+  EXPECT_THAT(plugin3_->GetHistogramValue(
+                  uint64_histogram_handle_, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"}),
+              ::testing::UnorderedElementsAreArray({1, 2, 3}));
+}
+
+TEST_F(MetricsTest, DoubleHistogram) {
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .RecordHistogram(double_histogram_handle_, 1.23,
+                       {"label_value_1", "label_value_2"},
+                       {"optional_label_value_1", "optional_label_value_2"});
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .RecordHistogram(double_histogram_handle_, 2.34,
+                       {"label_value_1", "label_value_2"},
+                       {"optional_label_value_1", "optional_label_value_2"});
+  GlobalStatsPluginRegistry::Get()
+      .GetStatsPluginsForTarget("domain3.domain4")
+      .RecordHistogram(double_histogram_handle_, 3.45,
+                       {"label_value_1", "label_value_2"},
+                       {"optional_label_value_1", "optional_label_value_2"});
+  EXPECT_THAT(plugin1_->GetHistogramValue(
+                  double_histogram_handle_, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"}),
+              ::testing::UnorderedElementsAreArray({1.23}));
+  EXPECT_THAT(plugin2_->GetHistogramValue(
+                  double_histogram_handle_, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"}),
+              ::testing::UnorderedElementsAreArray({1.23, 2.34}));
+  EXPECT_THAT(plugin3_->GetHistogramValue(
+                  double_histogram_handle_, {"label_value_1", "label_value_2"},
+                  {"optional_label_value_1", "optional_label_value_2"}),
+              ::testing::UnorderedElementsAreArray({1.23, 2.34, 3.45}));
 }
 
 }  // namespace

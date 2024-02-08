@@ -205,6 +205,8 @@ class GlobalStatsPluginRegistry {
     return *p;
   }
 
+  void TestOnlyResetStatsPlugins() { plugins_.clear(); }
+
  private:
   GlobalStatsPluginRegistry() = default;
 
