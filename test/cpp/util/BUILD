@@ -145,6 +145,7 @@ grpc_cc_library(
         ":grpc++_proto_reflection_desc_db",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

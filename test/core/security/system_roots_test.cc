@@ -34,15 +34,16 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 namespace grpc {
 namespace {
@@ -68,21 +69,12 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // Test that CreateRootCertsBundle returns a correct slice.
-  grpc_slice roots_bundle = grpc_empty_slice();
-  GRPC_LOG_IF_ERROR(
-      "load_file",
-      grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
+  std::string roots_bundle =
+      grpc_core::testing::GetFileContents("test/core/security/etc/bundle.pem");
   // result_slice should have the same content as roots_bundle.
-  grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
-  char* result_str = grpc_slice_to_c_string(result_slice);
-  char* bundle_str = grpc_slice_to_c_string(roots_bundle);
-  EXPECT_STREQ(result_str, bundle_str);
-  // Clean up.
-  gpr_free(result_str);
-  gpr_free(bundle_str);
-  grpc_slice_unref(roots_bundle);
-  grpc_slice_unref(result_slice);
+  grpc_core::Slice result_slice(
+      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots"));
+  EXPECT_EQ(result_slice.as_string_view(), roots_bundle);
 }
 
 }  // namespace

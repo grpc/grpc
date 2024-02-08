@@ -1480,8 +1480,6 @@ let package = Package(
         "src/core/lib/iomgr/iomgr_posix.cc",
         "src/core/lib/iomgr/iomgr_posix_cfstream.cc",
         "src/core/lib/iomgr/iomgr_windows.cc",
-        "src/core/lib/iomgr/load_file.cc",
-        "src/core/lib/iomgr/load_file.h",
         "src/core/lib/iomgr/lockfree_event.cc",
         "src/core/lib/iomgr/lockfree_event.h",
         "src/core/lib/iomgr/nameser.h",

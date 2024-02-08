@@ -25,7 +25,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -56,23 +55,14 @@ using experimental::RegisterAuditLoggerFactory;
 using grpc_core::experimental::AuditLoggerRegistry;
 using grpc_core::testing::TestAuditLoggerFactory;
 
-std::string ReadFile(const char* file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
-
 class GrpcAuthzEnd2EndTest : public ::testing::Test {
  protected:
   GrpcAuthzEnd2EndTest()
       : server_address_(
             absl::StrCat("localhost:", grpc_pick_unused_port_or_die())) {
-    std::string root_cert = ReadFile(kCaCertPath);
-    std::string identity_cert = ReadFile(kServerCertPath);
-    std::string private_key = ReadFile(kServerKeyPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
+    std::string identity_cert = GetFileContents(kServerCertPath);
+    std::string private_key = GetFileContents(kServerKeyPath);
     std::vector<experimental::IdentityKeyCertPair>
         server_identity_key_cert_pairs = {{private_key, identity_cert}};
     grpc::experimental::TlsServerCredentialsOptions server_options(
@@ -84,12 +74,12 @@ class GrpcAuthzEnd2EndTest : public ::testing::Test {
         GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
     server_creds_ = grpc::experimental::TlsServerCredentials(server_options);
     std::vector<experimental::IdentityKeyCertPair>
-        channel_identity_key_cert_pairs = {
-            {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
+        channel_identity_key_cert_pairs = {{GetFileContents(kClientKeyPath),
+                                            GetFileContents(kClientCertPath)}};
     grpc::experimental::TlsChannelCredentialsOptions channel_options;
     channel_options.set_certificate_provider(
         std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            ReadFile(kCaCertPath), channel_identity_key_cert_pairs));
+            GetFileContents(kCaCertPath), channel_identity_key_cert_pairs));
     channel_options.watch_identity_key_cert_pairs();
     channel_options.watch_root_certs();
     channel_creds_ = grpc::experimental::TlsCredentials(channel_options);
