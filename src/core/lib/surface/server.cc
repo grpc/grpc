@@ -1021,10 +1021,6 @@ void Server::MaybeFinishShutdown() {
     MutexLock lock(&mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
-  gpr_log(GPR_DEBUG,
-          "XXX: channels_.size()=%" PRIuPTR " listeners_destroyed=%" PRIuPTR
-          "/%" PRIuPTR,
-          channels_.size(), listeners_destroyed_, listeners_.size());
   if (!channels_.empty() || listeners_destroyed_ < listeners_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
@@ -1039,7 +1035,6 @@ void Server::MaybeFinishShutdown() {
     return;
   }
   shutdown_published_ = true;
-  gpr_log(GPR_DEBUG, "XXX shutdown_published");
   for (auto& shutdown_tag : shutdown_tags_) {
     Ref().release();
     grpc_cq_end_op(shutdown_tag.cq, shutdown_tag.tag, absl::OkStatus(),
@@ -1071,8 +1066,6 @@ void Server::ListenerDestroyDone(void* arg, grpc_error_handle /*error*/) {
   Server* server = static_cast<Server*>(arg);
   MutexLock lock(&server->mu_global_);
   server->listeners_destroyed_++;
-  gpr_log(GPR_INFO, "Listener destroyed: %d/%d",
-          (int)server->listeners_destroyed_, (int)server->listeners_.size());
   server->MaybeFinishShutdown();
 }
 

@@ -77,8 +77,7 @@ using grpc_event_engine::experimental::EventEngine;
 ChaoticGoodServerListener::ChaoticGoodServerListener(
     Server* server, const ChannelArgs& args,
     absl::AnyInvocable<std::string()> connection_id_generator)
-    : RefCounted("listener"),
-      server_(server),
+    : server_(server),
       args_(args),
       event_engine_(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),

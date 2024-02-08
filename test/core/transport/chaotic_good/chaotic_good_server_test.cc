@@ -65,8 +65,6 @@ class ChaoticGoodServerTest : public ::testing::Test {
     GPR_ASSERT(ev.tag == nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
-    grpc_event_engine::experimental::WaitForSingleOwner(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
   }
 
   void StartServer() {
