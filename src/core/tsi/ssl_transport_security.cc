@@ -73,13 +73,6 @@
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
 
-// Putting a macro like this and littering the source file with #if is really
-// bad practice.
-// TODO(jboeuf): refactor all the #if / #endif in a separate module.
-#ifndef TSI_OPENSSL_ALPN_SUPPORT
-#define TSI_OPENSSL_ALPN_SUPPORT 1
-#endif
-
 // TODO(jboeuf): I have not found a way to get this number dynamically from the
 // SSL structure. This is what we would ultimately want though...
 #define TSI_SSL_MAX_PROTECTION_OVERHEAD 100
@@ -1282,9 +1275,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
     X509_free(peer_cert);
     if (result != TSI_OK) return result;
   }
-#if TSI_OPENSSL_ALPN_SUPPORT
   SSL_get0_alpn_selected(impl->ssl, &alpn_selected, &alpn_selected_len);
-#endif  // TSI_OPENSSL_ALPN_SUPPORT
   if (alpn_selected == nullptr) {
     // Try npn.
     SSL_get0_next_proto_negotiated(impl->ssl, &alpn_selected,
@@ -1984,7 +1975,6 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
   return SSL_TLSEXT_ERR_NOACK;
 }
 
-#if TSI_OPENSSL_ALPN_SUPPORT
 static int server_handshaker_factory_alpn_callback(
     SSL* /*ssl*/, const unsigned char** out, unsigned char* outlen,
     const unsigned char* in, unsigned int inlen, void* arg) {
@@ -1994,7 +1984,6 @@ static int server_handshaker_factory_alpn_callback(
                               factory->alpn_protocol_list,
                               factory->alpn_protocol_list_length);
 }
-#endif  // TSI_OPENSSL_ALPN_SUPPORT
 
 static int server_handshaker_factory_npn_advertised_callback(
     SSL* /*ssl*/, const unsigned char** out, unsigned int* outlen, void* arg) {
@@ -2159,7 +2148,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 tsi_result_to_string(result));
         break;
       }
-#if TSI_OPENSSL_ALPN_SUPPORT
       GPR_ASSERT(impl->alpn_protocol_list_length < UINT_MAX);
       if (SSL_CTX_set_alpn_protos(
               ssl_context, impl->alpn_protocol_list,
@@ -2168,7 +2156,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
         result = TSI_INVALID_ARGUMENT;
         break;
       }
-#endif  // TSI_OPENSSL_ALPN_SUPPORT
       SSL_CTX_set_next_proto_select_cb(
           ssl_context, client_handshaker_factory_npn_callback, impl);
     }
@@ -2425,10 +2412,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           impl->ssl_contexts[i],
           ssl_server_handshaker_factory_servername_callback);
       SSL_CTX_set_tlsext_servername_arg(impl->ssl_contexts[i], impl);
-#if TSI_OPENSSL_ALPN_SUPPORT
       SSL_CTX_set_alpn_select_cb(impl->ssl_contexts[i],
                                  server_handshaker_factory_alpn_callback, impl);
-#endif  // TSI_OPENSSL_ALPN_SUPPORT
       SSL_CTX_set_next_protos_advertised_cb(
           impl->ssl_contexts[i],
           server_handshaker_factory_npn_advertised_callback, impl);

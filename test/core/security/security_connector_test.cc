@@ -40,10 +40,6 @@
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
 
-#ifndef TSI_OPENSSL_ALPN_SUPPORT
-#define TSI_OPENSSL_ALPN_SUPPORT 1
-#endif
-
 static int check_peer_property(const tsi_peer* peer,
                                const tsi_peer_property* expected) {
   size_t i;
@@ -716,7 +712,6 @@ static void test_default_ssl_roots(void) {
 }
 
 static void test_peer_alpn_check(void) {
-#if TSI_OPENSSL_ALPN_SUPPORT
   tsi_peer peer;
   const char* alpn = "h2";
   const char* wrong_alpn = "wrong";
@@ -748,9 +743,6 @@ static void test_peer_alpn_check(void) {
       TSI_OK);
   ASSERT_EQ(grpc_ssl_check_alpn(&peer), absl::OkStatus());
   tsi_peer_destruct(&peer);
-#else
-  ASSERT_EQ(grpc_ssl_check_alpn(nullptr), absl::OkStatus());
-#endif
 }
 
 TEST(SecurityConnectorTest, MainTest) {
