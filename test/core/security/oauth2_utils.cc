@@ -55,6 +55,8 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   gpr_mu* mu = nullptr;
   grpc_pollset_init(pollset, &mu);
   auto pops = grpc_polling_entity_create_from_pollset(pollset);
+  bool is_done = false;
+
   auto activity = grpc_core::MakeActivity(
       [creds, &initial_metadata, &get_request_metadata_args]() {
         return grpc_core::Map(
@@ -68,7 +70,8 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
             });
       },
       grpc_core::ExecCtxWakeupScheduler(),
-      [&done, &token, &initial_metadata](absl::Status result) {
+      [&is_done, &done, &token, &initial_metadata](absl::Status result) {
+        is_done = true;
         if (!result.ok()) {
           gpr_log(GPR_ERROR, "Fetching token failed: %s",
                   result.ToString().c_str());
@@ -85,7 +88,25 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       },
       arena.get(), &pops);
   grpc_core::ExecCtx::Get()->Flush();
-  done.WaitForNotification();
+
+  if (grpc_core::IsEventEngineClientEnabled()) {
+    done.WaitForNotification();
+  } else {
+    gpr_mu_lock(mu);
+    while (!is_done) {
+      grpc_pollset_worker* worker = nullptr;
+      if (!GRPC_LOG_IF_ERROR(
+              "pollset_work",
+              grpc_pollset_work(grpc_polling_entity_pollset(&pops), &worker,
+                                grpc_core::Timestamp::InfFuture()))) {
+        is_done = true;
+      }
+      gpr_mu_unlock(mu);
+    }
+  }
+  grpc_pollset_shutdown(
+      grpc_polling_entity_pollset(&pops),
+      GRPC_CLOSURE_CREATE([](void*, grpc_error_handle) {}, nullptr, nullptr));
   grpc_core::ExecCtx::Get()->Flush();
   return token;
 }

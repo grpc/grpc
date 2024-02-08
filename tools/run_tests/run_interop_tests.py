@@ -1005,7 +1005,7 @@ def cloud_to_prod_jobspec(
         )
         if manual_cmd_log is not None:
             if manual_cmd_log == []:
-                manual_cmd_log.append('docker_image=%s"' % docker_image)
+                manual_cmd_log.append('docker_image="%s"' % docker_image)
                 manual_cmd_log.append(
                     'echo "Testing ${docker_image=%s}"' % docker_image
                 )
