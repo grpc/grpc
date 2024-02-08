@@ -25,6 +25,8 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/sync.h>
+
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -52,6 +54,8 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string file_;
   std::string format_type_;
   std::string format_subject_token_field_name_;
+  // Used to lock the file loading.
+  gpr_mu mu_;
 };
 
 }  // namespace grpc_core
