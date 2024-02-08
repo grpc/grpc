@@ -19,7 +19,6 @@
 
 #include <string.h>
 
-#include <initializer_list>
 #include <map>
 #include <utility>
 
@@ -524,6 +523,10 @@ void AwsExternalAccountCredentials::FinishRetrieveSubjectToken(
   } else {
     cb(subject_token, absl::OkStatus());
   }
+}
+
+absl::string_view AwsExternalAccountCredentials::CredentialSourceType() {
+  return "aws";
 }
 
 }  // namespace grpc_core

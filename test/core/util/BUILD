@@ -48,6 +48,13 @@ TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
 ]
 
 grpc_cc_library(
+    name = "proto_bit_gen",
+    language = "c++",
+    public_hdrs = ["proto_bit_gen.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
@@ -59,8 +66,6 @@ grpc_cc_library(
         "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
-        "subprocess_posix.cc",
-        "subprocess_windows.cc",
         "tracer_util.cc",
     ],
     hdrs = [
@@ -75,7 +80,6 @@ grpc_cc_library(
         "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
-        "subprocess.h",
         "tracer_util.h",
     ],
     external_deps = [
@@ -302,13 +306,13 @@ grpc_cc_library(
     ],
     deps = [
         "//:config",
+        "//:endpoint_addresses",
         "//:gpr",
         "//:grpc",
         "//:grpc_client_channel",
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
-        "//:server_address",
         "//:uri_parser",
         "//src/core:channel_args",
         "//src/core:delegating_helper",
@@ -360,6 +364,36 @@ grpc_cc_library(
         "//:grpc",
         "//:sockaddr_utils",
         "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_use_after_close_detector",
+    testonly = True,
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "grpc_test_util",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_sockaddr",
+    ],
+)
+
+grpc_cc_library(
+    name = "socket_use_after_close_detector_unsecure",
+    testonly = True,
+    srcs = ["socket_use_after_close_detector.cc"],
+    hdrs = ["socket_use_after_close_detector.h"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "grpc_test_util_unsecure",
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_sockaddr",
     ],
 )
 
@@ -455,5 +489,15 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_stats_plugin",
+    srcs = ["fake_stats_plugin.cc"],
+    hdrs = ["fake_stats_plugin.h"],
+    deps = [
+        "//:grpc",
+        "//src/core:examine_stack",
     ],
 )

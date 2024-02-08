@@ -17,7 +17,6 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -38,7 +37,7 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 
 extern grpc_core::TraceFlag grpc_trace_channel;
@@ -302,6 +301,9 @@ BaseCallData::Flusher::~Flusher() {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
             grpc_transport_stream_op_batch_string(release_[0], false).c_str());
   }
+  if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+    release_[0]->is_traced = true;
+  }
   grpc_call_next_op(call_->elem(), release_[0]);
   GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
 }
@@ -372,11 +374,11 @@ void BaseCallData::SendMessage::GotPipe(T* pipe_end) {
   switch (state_) {
     case State::kInitial:
       state_ = State::kIdle;
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
       break;
     case State::kGotBatchNoPipe:
       state_ = State::kGotBatch;
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
       break;
     case State::kIdle:
     case State::kGotBatch:
@@ -565,7 +567,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       }
       if (completed_status_.ok()) {
         state_ = State::kIdle;
-        Activity::current()->ForceImmediateRepoll();
+        GetContext<Activity>()->ForceImmediateRepoll();
       } else {
         state_ = State::kCancelled;
       }
@@ -673,7 +675,7 @@ void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
       break;
     case State::kBatchCompletedNoPipe:
       state_ = State::kBatchCompleted;
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
       break;
     case State::kIdle:
     case State::kForwardedBatch:
@@ -718,7 +720,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
     case State::kForwardedBatchNoPipe:
       state_ = State::kBatchCompletedNoPipe;
-      return;
+      break;
     case State::kForwardedBatch:
       state_ = State::kBatchCompleted;
       break;
@@ -781,6 +783,8 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
       }
     } break;
     case State::kBatchCompletedNoPipe:
+      state_ = State::kBatchCompletedButCancelledNoPipe;
+      break;
     case State::kBatchCompletedButCancelled:
     case State::kBatchCompletedButCancelledNoPipe:
       Crash(absl::StrFormat("ILLEGAL STATE: %s", StateString(state_)));
@@ -1310,10 +1314,13 @@ ClientCallData::ClientCallData(grpc_call_element* elem,
 }
 
 ClientCallData::~ClientCallData() {
+  ScopedActivity scoped_activity(this);
   GPR_ASSERT(poll_ctx_ == nullptr);
   if (recv_initial_metadata_ != nullptr) {
     recv_initial_metadata_->~RecvInitialMetadata();
   }
+  initial_metadata_outstanding_token_ =
+      ClientInitialMetadataOutstandingToken::Empty();
 }
 
 std::string ClientCallData::DebugTag() const {
@@ -2044,7 +2051,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
                !batch->recv_initial_metadata && !batch->recv_message &&
                !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
-    Completed(batch->payload->cancel_stream.cancel_error, &flusher);
+    Completed(batch->payload->cancel_stream.cancel_error,
+              batch->payload->cancel_stream.tarpit, &flusher);
     if (is_last()) {
       batch.CompleteWith(&flusher);
     } else {
@@ -2163,7 +2171,8 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 }
 
 // Handle cancellation.
-void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
+void ServerCallData::Completed(grpc_error_handle error,
+                               bool tarpit_cancellation, Flusher* flusher) {
   if (grpc_trace_channel.enabled()) {
     gpr_log(
         GPR_DEBUG,
@@ -2193,6 +2202,7 @@ void ServerCallData::Completed(grpc_error_handle error, Flusher* flusher) {
             }));
         batch->cancel_stream = true;
         batch->payload->cancel_stream.cancel_error = error;
+        batch->payload->cancel_stream.tarpit = tarpit_cancellation;
         flusher->Resume(batch);
       }
       break;
@@ -2328,7 +2338,8 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   }
   Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
-  Completed(error, &flusher);
+  Completed(error, recv_trailing_metadata_->get(GrpcTarPit()).has_value(),
+            &flusher);
   flusher.AddClosure(original_recv_trailing_metadata_ready_, std::move(error),
                      "continue recv trailing");
 }
@@ -2548,7 +2559,8 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
           break;
         case SendTrailingState::kInitial: {
           GPR_ASSERT(*md->get_pointer(GrpcStatusMetadata()) != GRPC_STATUS_OK);
-          Completed(StatusFromMetadata(*md), flusher);
+          Completed(StatusFromMetadata(*md), md->get(GrpcTarPit()).has_value(),
+                    flusher);
         } break;
         case SendTrailingState::kCancelled:
           // Nothing to do.

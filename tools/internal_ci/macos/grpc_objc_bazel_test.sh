@@ -61,7 +61,8 @@ TEST_TARGETS=(
   #//src/objective-c/tests:CronetTests
   #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
-  //src/objective-c/tests:EventEngineTests
+  # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
+  //src/objective-c/tests:EventEngineClientTests
   //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test
@@ -128,6 +129,7 @@ EVENT_ENGINE_TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
+  //src/objective-c/tests:EventEngineUnitTests
   //src/objective-c/tests:tvtests_build_test
 )
 

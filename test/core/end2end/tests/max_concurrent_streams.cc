@@ -16,11 +16,14 @@
 //
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -56,7 +59,10 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 
 CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
   SKIP_IF_MINSTACK();
-  InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+  InitServer(
+      ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs());
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip
@@ -131,6 +137,11 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
   live_call = (live_call == 300) ? 400 : 300;
   Expect(live_call + 1, true);
   Step();
+  // Spin for a little: we expect to see no events now - and this time allows
+  // any overload protection machinery in the transport to settle (chttp2 tries
+  // to ensure calls are finished deleting before allowing more requests
+  // through).
+  Step();
   auto s2 = RequestCall(201);
   Expect(201, true);
   Step();
@@ -145,7 +156,10 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreams) {
 
 CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
   SKIP_IF_MINSTACK();
-  InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+  InitServer(
+      ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs());
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip
@@ -190,7 +204,10 @@ CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnFirst) {
 
 CORE_END2END_TEST(Http2SingleHopTest, MaxConcurrentStreamsTimeoutOnSecond) {
   SKIP_IF_MINSTACK();
-  InitServer(ChannelArgs().Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1));
+  InitServer(
+      ChannelArgs()
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
+          .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs());
   // perform a ping-pong to ensure that settings have had a chance to round
   // trip

@@ -98,3 +98,13 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
         absl::StrFormat("Invalid grpc_polling_entity tag '%d'", pollent->tag));
   }
 }
+
+std::string grpc_polling_entity_string(grpc_polling_entity* pollent) {
+  if (pollent->tag == GRPC_POLLS_POLLSET) {
+    return absl::StrFormat("pollset:%p", pollent->pollent.pollset);
+  } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
+    return absl::StrFormat("pollset_set:%p", pollent->pollent.pollset_set);
+  } else {
+    return absl::StrFormat("invalid_tag:%d", pollent->tag);
+  }
+}

@@ -47,6 +47,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 // Avoid some IWYU confusion:
@@ -77,7 +78,13 @@ ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
   // TODO(ctiller): remove if check once promise_based_filter is removed (Close
   // is still needed)
   if (args.server_to_client_messages != nullptr) {
-    args.server_to_client_messages->Close();
+    args.server_to_client_messages->CloseWithError();
+  }
+  if (args.client_to_server_messages != nullptr) {
+    args.client_to_server_messages->CloseWithError();
+  }
+  if (args.server_initial_metadata != nullptr) {
+    args.server_initial_metadata->CloseWithError();
   }
   args.client_initial_metadata_outstanding.Complete(true);
   return Immediate(ServerMetadataFromStatus(error_));

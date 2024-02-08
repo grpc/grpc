@@ -20,9 +20,9 @@
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <functional>
 #include <map>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,19 +36,20 @@
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -56,18 +57,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-BackendMetricData MakeBackendMetricData(double app_utilization, double qps,
-                                        double eps,
-                                        double cpu_utilization = 0) {
-  BackendMetricData b;
-  b.cpu_utilization = cpu_utilization;
-  b.application_utilization = app_utilization;
-  b.qps = qps;
-  b.eps = eps;
-  return b;
-}
-
-class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
+class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -113,8 +103,11 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
     Json::Object json_;
   };
 
-  WeightedRoundRobinTest() {
-    lb_policy_ = MakeLbPolicy("weighted_round_robin");
+  WeightedRoundRobinTest() : LoadBalancingPolicyTest("weighted_round_robin") {}
+
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    SetExpectedTimerDuration(std::chrono::seconds(1));
   }
 
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
@@ -125,10 +118,8 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     if (update_addresses.empty()) update_addresses = addresses;
     EXPECT_EQ(ApplyUpdate(BuildUpdate(update_addresses, config_builder.Build()),
-                          lb_policy_.get()),
+                          lb_policy()),
               absl::OkStatus());
-    // Expect the initial CONNECTNG update with a picker that queues.
-    ExpectConnectingUpdate(location);
     // RR should have created a subchannel for each address.
     for (size_t i = 0; i < addresses.size(); ++i) {
       auto* subchannel = FindSubchannel(addresses[i]);
@@ -142,6 +133,8 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
           << location.line();
       // The subchannel will connect successfully.
       subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+      // Expect the initial CONNECTNG update with a picker that queues.
+      if (i == 0) ExpectConnectingUpdate(location);
       subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
     }
     return WaitForConnected(location);
@@ -162,6 +155,17 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
   static std::string PickMapString(
       const std::map<absl::string_view, size_t>& pick_map) {
     return absl::StrJoin(pick_map, ",", absl::PairFormatter("="));
+  }
+
+  static BackendMetricData MakeBackendMetricData(double app_utilization,
+                                                 double qps, double eps,
+                                                 double cpu_utilization = 0) {
+    BackendMetricData b;
+    b.cpu_utilization = cpu_utilization;
+    b.application_utilization = app_utilization;
+    b.qps = qps;
+    b.eps = eps;
+    return b;
   }
 
   // Returns the number of picks we need to do to check the specified
@@ -311,24 +315,11 @@ class WeightedRoundRobinTest : public TimeAwareLoadBalancingPolicyTest {
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
         gpr_log(GPR_INFO, "running timer callback...");
-        RunTimerCallback();
+        // Increment time and run any timer callbacks.
+        IncrementTimeBy(Duration::Seconds(1));
       }
-      // Increment time.
-      time_cache_.IncrementBy(Duration::Seconds(1));
     }
   }
-
-  void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration duration)
-      override {
-    EXPECT_EQ(duration, expected_weight_update_interval_)
-        << "Expected: " << expected_weight_update_interval_.count() << "ns"
-        << "\n  Actual: " << duration.count() << "ns";
-  }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  grpc_event_engine::experimental::EventEngine::Duration
-      expected_weight_update_interval_ = std::chrono::seconds(1);
 };
 
 TEST_F(WeightedRoundRobinTest, Basic) {
@@ -643,7 +634,7 @@ TEST_F(WeightedRoundRobinTest, HonorsOobReportingPeriod) {
 TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  expected_weight_update_interval_ = std::chrono::seconds(2);
+  SetExpectedTimerDuration(std::chrono::seconds(2));
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses, ConfigBuilder().SetWeightUpdatePeriod(Duration::Seconds(2)));
   ASSERT_NE(picker, nullptr);
@@ -661,7 +652,7 @@ TEST_F(WeightedRoundRobinTest, HonorsWeightUpdatePeriod) {
 TEST_F(WeightedRoundRobinTest, WeightUpdatePeriodLowerBound) {
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  expected_weight_update_interval_ = std::chrono::milliseconds(100);
+  SetExpectedTimerDuration(std::chrono::milliseconds(100));
   auto picker = SendInitialUpdateAndWaitForConnected(
       kAddresses,
       ConfigBuilder().SetWeightUpdatePeriod(Duration::Milliseconds(10)));
@@ -697,8 +688,7 @@ TEST_F(WeightedRoundRobinTest, WeightExpirationPeriod) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  time_cache_.IncrementBy(Duration::Seconds(2));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -725,8 +715,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  time_cache_.IncrementBy(Duration::Seconds(2));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
@@ -744,8 +733,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterWeightExpiration) {
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Advance time past the blackout period.  This should cause the
   // weights to be used.
-  time_cache_.IncrementBy(Duration::Seconds(1));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(1));
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 1}});
@@ -791,8 +779,7 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodAfterDisconnect) {
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 2}});
   // Advance time to exceed the blackout period and trigger the timer
   // callback to recompute weights.
-  time_cache_.IncrementBy(Duration::Seconds(1));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(1));
   ExpectWeightedRoundRobinPicks(
       picker.get(),
       {{kAddresses[0], MakeBackendMetricData(/*app_utilization=*/0.3,
@@ -824,9 +811,9 @@ TEST_F(WeightedRoundRobinTest, BlackoutPeriodDoesNotGetResetAfterUpdate) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Send a duplicate update with the same addresses and config.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()),
-                        lb_policy_.get()),
-            absl::OkStatus());
+  EXPECT_EQ(
+      ApplyUpdate(BuildUpdate(kAddresses, config_builder.Build()), lb_policy()),
+      absl::OkStatus());
   // Note that we have not advanced time, so if the update incorrectly
   // triggers resetting the blackout period, none of the weights will
   // actually be used.
@@ -862,6 +849,146 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
       {{kAddresses[0], 1}, {kAddresses[1], 1}, {kAddresses[2], 1}});
 }
 
+TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
+  if (!IsWrrDelegateToPickFirstEnabled()) return;
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in WRR.
+  SetExpectedTimerDuration(absl::nullopt);
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  constexpr std::array<absl::string_view, 2> kEndpoint3Addresses = {
+      "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  const std::array<EndpointAddresses, 3> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses),
+      MakeEndpointAddresses(kEndpoint3Addresses)};
+  EXPECT_EQ(ApplyUpdate(BuildUpdate(kEndpoints, ConfigBuilder().Build()),
+                        lb_policy_.get()),
+            absl::OkStatus());
+  // WRR should have created a subchannel for each address.
+  auto* subchannel1_0 = FindSubchannel(kEndpoint1Addresses[0]);
+  ASSERT_NE(subchannel1_0, nullptr) << "Address: " << kEndpoint1Addresses[0];
+  auto* subchannel1_1 = FindSubchannel(kEndpoint1Addresses[1]);
+  ASSERT_NE(subchannel1_1, nullptr) << "Address: " << kEndpoint1Addresses[1];
+  auto* subchannel2_0 = FindSubchannel(kEndpoint2Addresses[0]);
+  ASSERT_NE(subchannel2_0, nullptr) << "Address: " << kEndpoint2Addresses[0];
+  auto* subchannel2_1 = FindSubchannel(kEndpoint2Addresses[1]);
+  ASSERT_NE(subchannel2_1, nullptr) << "Address: " << kEndpoint2Addresses[1];
+  auto* subchannel3_0 = FindSubchannel(kEndpoint3Addresses[0]);
+  ASSERT_NE(subchannel3_0, nullptr) << "Address: " << kEndpoint3Addresses[0];
+  auto* subchannel3_1 = FindSubchannel(kEndpoint3Addresses[1]);
+  ASSERT_NE(subchannel3_1, nullptr) << "Address: " << kEndpoint3Addresses[1];
+  // PF for each endpoint should try to connect to the first subchannel.
+  EXPECT_TRUE(subchannel1_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel1_1->ConnectionRequested());
+  EXPECT_TRUE(subchannel2_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_1->ConnectionRequested());
+  EXPECT_TRUE(subchannel3_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel3_1->ConnectionRequested());
+  // In the first endpoint, the first subchannel reports CONNECTING.
+  // This causes WRR to report CONNECTING.
+  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  ExpectConnectingUpdate();
+  // In the second endpoint, the first subchannel reports CONNECTING.
+  subchannel2_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // In the third endpoint, the first subchannel reports CONNECTING.
+  subchannel3_0->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // In the first endpoint, the first subchannel fails to connect.
+  // This causes PF to start a connection attempt on the second subchannel.
+  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                      absl::UnavailableError("ugh"));
+  EXPECT_TRUE(subchannel1_1->ConnectionRequested());
+  subchannel1_1->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // In the second endpoint, the first subchannel becomes connected.
+  // This causes WRR to report READY with all RPCs going to a single address.
+  subchannel2_0->SetConnectivityState(GRPC_CHANNEL_READY);
+  auto picker = WaitForConnected();
+  ExpectRoundRobinPicks(picker.get(), {kEndpoint2Addresses[0]});
+  // In the third endpoint, the first subchannel becomes connected.
+  // This causes WRR to add it to the rotation.
+  subchannel3_0->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = WaitForRoundRobinListChange(
+      {kEndpoint2Addresses[0]},
+      {kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
+  // In the first endpoint, the second subchannel becomes connected.
+  // This causes WRR to add it to the rotation.
+  subchannel1_1->SetConnectivityState(GRPC_CHANNEL_READY);
+  picker = WaitForRoundRobinListChange(
+      {kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
+      {kEndpoint1Addresses[1], kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
+  // No more connection attempts triggered.
+  EXPECT_FALSE(subchannel1_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel1_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel3_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel3_1->ConnectionRequested());
+  // Expected weights: 3:1:3
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kEndpoint1Addresses[1],
+        MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
+                              /*eps=*/0.0)},
+       {kEndpoint2Addresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0.9, /*qps=*/100.0,
+                              /*eps=*/0.0)},
+       {kEndpoint3Addresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
+                              /*eps=*/0.0)}},
+      {{kEndpoint1Addresses[1], 3},
+       {kEndpoint2Addresses[0], 1},
+       {kEndpoint3Addresses[0], 3}});
+  // First endpoint first subchannel finishes backoff, but this doesn't
+  // affect anything -- in fact, PF isn't even watching this subchannel
+  // anymore, since it's connected to the other one.  However, this
+  // ensures that the subchannel is in the right state when we try to
+  // reconnect below.
+  subchannel1_0->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  EXPECT_FALSE(subchannel1_0->ConnectionRequested());
+  // Endpoint 1 switches to a different address.
+  ExpectEndpointAddressChange(
+      kEndpoint1Addresses, 1, 0,
+      // When the subchannel disconnects, WRR will remove the endpoint from
+      // the rotation.
+      [&]() {
+        picker = ExpectState(GRPC_CHANNEL_READY);
+        WaitForWeightedRoundRobinPicks(
+            &picker,
+            {{kEndpoint2Addresses[0],
+              MakeBackendMetricData(/*app_utilization=*/0.9, /*qps=*/100.0,
+                                    /*eps=*/0.0)},
+             {kEndpoint3Addresses[0],
+              MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
+                                    /*eps=*/0.0)}},
+            {{kEndpoint2Addresses[0], 1}, {kEndpoint3Addresses[0], 3}});
+      });
+  // When it connects to the new address, WRR adds it to the rotation.
+  WaitForWeightedRoundRobinPicks(
+      &picker,
+      {{kEndpoint1Addresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
+                              /*eps=*/0.0)},
+       {kEndpoint2Addresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0.9, /*qps=*/100.0,
+                              /*eps=*/0.0)},
+       {kEndpoint3Addresses[0],
+        MakeBackendMetricData(/*app_utilization=*/0.3, /*qps=*/100.0,
+                              /*eps=*/0.0)}},
+      {{kEndpoint1Addresses[0], 3},
+       {kEndpoint2Addresses[0], 1},
+       {kEndpoint3Addresses[0], 3}});
+  // No more connection attempts triggered.
+  EXPECT_FALSE(subchannel1_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel1_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel2_1->ConnectionRequested());
+  EXPECT_FALSE(subchannel3_0->ConnectionRequested());
+  EXPECT_FALSE(subchannel3_1->ConnectionRequested());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
@@ -869,8 +996,5 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

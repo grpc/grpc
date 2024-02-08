@@ -69,6 +69,13 @@ class ServerInterceptor(metaclass=ABCMeta):
     ) -> grpc.RpcMethodHandler:
         """Intercepts incoming RPCs before handing them over to a handler.
 
+        State can be passed from an interceptor to downstream interceptors
+        via contextvars. The first interceptor is called from an empty
+        contextvars.Context, and the same Context is used for downstream
+        interceptors and for the final handler call. Note that there are no
+        guarantees that interceptors and handlers will be called from the
+        same thread.
+
         Args:
             continuation: A function that takes a HandlerCallDetails and
                 proceeds to invoke the next interceptor in the chain, if any,
@@ -741,7 +748,7 @@ class InterceptedUnaryStreamCall(
     # pylint: disable=too-many-arguments
     async def _invoke(
         self,
-        interceptors: Sequence[UnaryUnaryClientInterceptor],
+        interceptors: Sequence[UnaryStreamClientInterceptor],
         method: bytes,
         timeout: Optional[float],
         metadata: Optional[Metadata],
@@ -757,7 +764,7 @@ class InterceptedUnaryStreamCall(
             interceptors: List[UnaryStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
-        ) -> _base_call.UnaryUnaryCall:
+        ) -> _base_call.UnaryStreamCall:
             if interceptors:
                 continuation = functools.partial(
                     _run_interceptor, interceptors[1:]
@@ -874,7 +881,7 @@ class InterceptedStreamUnaryCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: Iterator[UnaryUnaryClientInterceptor],
+            interceptors: Iterator[StreamUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
             request_iterator: RequestIterableType,
         ) -> _base_call.StreamUnaryCall:
@@ -921,7 +928,9 @@ class InterceptedStreamStreamCall(
 
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _last_returned_call_from_interceptors = Optional[_base_call.UnaryStreamCall]
+    _last_returned_call_from_interceptors = Optional[
+        _base_call.StreamStreamCall
+    ]
 
     # pylint: disable=too-many-arguments
     def __init__(

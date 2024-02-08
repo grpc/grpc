@@ -545,8 +545,7 @@ class ServerContextBase {
     const std::function<void(grpc::Status s)> func_;
   };
 
-  typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type
-      default_reactor_;
+  alignas(Reactor) char default_reactor_[sizeof(Reactor)];
   std::atomic_bool default_reactor_used_{false};
 
   std::atomic_bool marked_cancelled_{false};

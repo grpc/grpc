@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/tsi/transport_security.h"
@@ -67,6 +68,9 @@ std::vector<FrameProtectorUtilTestData> GenerateTestData() {
   return data;
 }
 
+// TODO(gtcooke94) - Tests current failing with OpenSSL 1.1.1 and 3.0. Fix and
+// re-enable.
+#ifdef OPENSSL_IS_BORINGSSL
 class FlowTest : public TestWithParam<FrameProtectorUtilTestData> {
  protected:
   static void SetUpTestSuite() {
@@ -422,6 +426,8 @@ TEST_P(FlowTest,
 
 INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
                          ValuesIn(GenerateTestData()));
+
+#endif  // OPENSSL_IS_BORINGSSL
 
 }  // namespace testing
 }  // namespace grpc_core

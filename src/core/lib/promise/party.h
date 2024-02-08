@@ -24,13 +24,13 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -39,6 +39,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
+#include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
@@ -101,7 +102,8 @@ class PartySyncUsingAtomics {
   template <typename F>
   GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
     uint64_t prev_state;
-    do {
+    iteration_.fetch_add(1, std::memory_order_relaxed);
+    for (;;) {
       // Grab the current state, and clear the wakeup bits & add flag.
       prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
                                     std::memory_order_acquire);
@@ -132,9 +134,23 @@ class PartySyncUsingAtomics {
       // TODO(ctiller): consider mitigations for the accidental wakeup on owning
       // waker creation case -- I currently expect this will be more expensive
       // than this quick loop.
-    } while (!state_.compare_exchange_weak(
-        prev_state, (prev_state & (kRefMask | kAllocatedMask)),
-        std::memory_order_acq_rel, std::memory_order_acquire));
+      if (wake_after_poll_ == 0) {
+        if (state_.compare_exchange_weak(
+                prev_state, (prev_state & (kRefMask | kAllocatedMask)),
+                std::memory_order_acq_rel, std::memory_order_acquire)) {
+          return false;
+        }
+      } else {
+        if (state_.compare_exchange_weak(
+                prev_state,
+                (prev_state & (kRefMask | kAllocatedMask | kLocked)) |
+                    wake_after_poll_,
+                std::memory_order_acq_rel, std::memory_order_acquire)) {
+          iteration_.fetch_add(1, std::memory_order_relaxed);
+          wake_after_poll_ = 0;
+        }
+      }
+    }
     return false;
   }
 
@@ -185,6 +201,11 @@ class PartySyncUsingAtomics {
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
+  void WakeAfterPoll(WakeupMask mask) { wake_after_poll_ |= mask; }
+  uint32_t iteration() const {
+    return iteration_.load(std::memory_order_relaxed);
+  }
+
  private:
   bool UnreffedLast();
 
@@ -224,6 +245,8 @@ class PartySyncUsingAtomics {
   static constexpr uint64_t kOneRef = 1ull << kRefShift;
 
   std::atomic<uint64_t> state_;
+  std::atomic<uint32_t> iteration_{0};
+  WakeupMask wake_after_poll_ = 0;
 };
 
 class PartySyncUsingMutex {
@@ -299,7 +322,7 @@ class Party : public Activity, private Wakeable {
     explicit Participant(absl::string_view name) : name_(name) {}
     // Poll the participant. Return true if complete.
     // Participant should take care of its own deallocation in this case.
-    virtual bool Poll() = 0;
+    virtual bool PollParticipantPromise() = 0;
 
     // Destroy the participant before finishing.
     virtual void Destroy() = 0;
@@ -331,6 +354,9 @@ class Party : public Activity, private Wakeable {
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
 
+  template <typename Factory>
+  auto SpawnWaitable(absl::string_view name, Factory factory);
+
   void Orphan() final { Crash("unused"); }
 
   // Activity implementation: not allowed to be overridden by derived types.
@@ -353,6 +379,20 @@ class Party : public Activity, private Wakeable {
   }
 
   Arena* arena() const { return arena_; }
+
+  // Return a promise that resolves to Empty{} when the current party poll is
+  // complete.
+  // This is useful for implementing batching and the like: we can hold some
+  // action until the rest of the party resolves itself.
+  auto AfterCurrentPoll() {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+    sync_.WakeAfterPoll(CurrentParticipant());
+    return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
+      GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+      if (iteration == sync_.iteration()) return Pending{};
+      return Empty{};
+    };
+  }
 
   class BulkSpawner {
    public:
@@ -415,7 +455,7 @@ class Party : public Activity, private Wakeable {
       }
     }
 
-    bool Poll() override {
+    bool PollParticipantPromise() override {
       if (!started_) {
         auto p = factory_.Make();
         Destruct(&factory_);
@@ -442,6 +482,89 @@ class Party : public Activity, private Wakeable {
     bool started_ = false;
   };
 
+  template <typename SuppliedFactory>
+  class PromiseParticipantImpl final
+      : public RefCounted<PromiseParticipantImpl<SuppliedFactory>,
+                          NonPolymorphicRefCount>,
+        public Participant {
+    using Factory = promise_detail::OncePromiseFactory<void, SuppliedFactory>;
+    using Promise = typename Factory::Promise;
+    using Result = typename Promise::Result;
+
+   public:
+    PromiseParticipantImpl(absl::string_view name,
+                           SuppliedFactory promise_factory)
+        : Participant(name) {
+      Construct(&factory_, std::move(promise_factory));
+    }
+
+    ~PromiseParticipantImpl() {
+      switch (state_.load(std::memory_order_acquire)) {
+        case State::kFactory:
+          Destruct(&factory_);
+          break;
+        case State::kPromise:
+          Destruct(&promise_);
+          break;
+        case State::kResult:
+          Destruct(&result_);
+          break;
+      }
+    }
+
+    // Inside party poll: drive from factory -> promise -> result
+    bool PollParticipantPromise() override {
+      switch (state_.load(std::memory_order_relaxed)) {
+        case State::kFactory: {
+          auto p = factory_.Make();
+          Destruct(&factory_);
+          Construct(&promise_, std::move(p));
+          state_.store(State::kPromise, std::memory_order_relaxed);
+        }
+          ABSL_FALLTHROUGH_INTENDED;
+        case State::kPromise: {
+          auto p = promise_();
+          if (auto* r = p.value_if_ready()) {
+            Destruct(&promise_);
+            Construct(&result_, std::move(*r));
+            state_.store(State::kResult, std::memory_order_release);
+            waiter_.Wakeup();
+            this->Unref();
+            return true;
+          }
+          return false;
+        }
+        case State::kResult:
+          Crash(
+              "unreachable: promises should not be repolled after completion");
+      }
+    }
+
+    // Outside party poll: check whether the spawning party has completed this
+    // promise.
+    Poll<Result> PollCompletion() {
+      switch (state_.load(std::memory_order_acquire)) {
+        case State::kFactory:
+        case State::kPromise:
+          return Pending{};
+        case State::kResult:
+          return std::move(result_);
+      }
+    }
+
+    void Destroy() override { this->Unref(); }
+
+   private:
+    enum class State : uint8_t { kFactory, kPromise, kResult };
+    union {
+      GPR_NO_UNIQUE_ADDRESS Factory factory_;
+      GPR_NO_UNIQUE_ADDRESS Promise promise_;
+      GPR_NO_UNIQUE_ADDRESS Result result_;
+    };
+    Waker waiter_{GetContext<Activity>()->MakeOwningWaker()};
+    std::atomic<State> state_{State::kFactory};
+  };
+
   // Notification that the party has finished and this instance can be deleted.
   // Derived types should arrange to call CancelRemainingParticipants during
   // this sequence.
@@ -461,6 +584,7 @@ class Party : public Activity, private Wakeable {
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
+  bool RunOneParticipant(int i);
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;
@@ -484,6 +608,11 @@ class Party : public Activity, private Wakeable {
   std::atomic<Participant*> participants_[party_detail::kMaxParticipants] = {};
 };
 
+template <>
+struct ContextSubclass<Party> {
+  using Base = Activity;
+};
+
 template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
@@ -501,6 +630,17 @@ void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
   BulkSpawner(this).Spawn(name, std::move(promise_factory),
                           std::move(on_complete));
+}
+
+template <typename Factory>
+auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
+  auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
+      name, std::move(promise_factory));
+  Participant* p = participant->Ref().release();
+  AddParticipants(&p, 1);
+  return [participant = std::move(participant)]() mutable {
+    return participant->PollCompletion();
+  };
 }
 
 }  // namespace grpc_core

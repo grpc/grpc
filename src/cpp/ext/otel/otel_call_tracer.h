@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -33,6 +34,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -40,6 +42,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/cpp/ext/otel/otel_client_filter.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
@@ -48,7 +52,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
  public:
   class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
    public:
-    OpenTelemetryCallAttemptTracer(OpenTelemetryCallTracer* parent,
+    OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
                                    bool arena_allocated);
 
     std::string TraceId() override {
@@ -67,14 +71,14 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     }
 
     void RecordSendInitialMetadata(
-        grpc_metadata_batch* /*send_initial_metadata*/) override {}
+        grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
     void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
     void RecordSendCompressedMessage(
         const grpc_core::SliceBuffer& send_compressed_message) override;
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /*recv_initial_metadata*/) override {}
+        grpc_metadata_batch* recv_initial_metadata) override;
     void RecordReceivedMessage(
         const grpc_core::SliceBuffer& recv_message) override;
     void RecordReceivedDecompressedMessage(
@@ -85,16 +89,30 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view /*annotation*/) override;
+    void RecordAnnotation(const Annotation& /*annotation*/) override;
+    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    void AddOptionalLabels(OptionalLabelComponent component,
+                           std::shared_ptr<std::map<std::string, std::string>>
+                               optional_labels) override;
 
    private:
     const OpenTelemetryCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
+    std::unique_ptr<LabelsIterable> injected_labels_;
+    // The indices of the array correspond to the OptionalLabelComponent enum.
+    std::array<std::shared_ptr<std::map<std::string, std::string>>,
+               static_cast<size_t>(OptionalLabelComponent::kSize)>
+        optional_labels_array_;
+    std::vector<std::unique_ptr<LabelsIterable>>
+        injected_labels_from_plugin_options_;
   };
 
-  explicit OpenTelemetryCallTracer(grpc_core::Slice path,
-                                   grpc_core::Arena* arena);
+  explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
+                                   grpc_core::Slice path,
+                                   grpc_core::Arena* arena,
+                                   bool registered_method);
   ~OpenTelemetryCallTracer() override;
 
   std::string TraceId() override {
@@ -115,12 +133,16 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   OpenTelemetryCallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view /*annotation*/) override;
+  void RecordAnnotation(const Annotation& /*annotation*/) override;
 
  private:
+  absl::string_view MethodForStats() const;
+
+  const OpenTelemetryClientFilter* parent_;
   // Client method.
   grpc_core::Slice path_;
-  absl::string_view method_;
   grpc_core::Arena* arena_;
+  const bool registered_method_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

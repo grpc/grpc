@@ -14,7 +14,6 @@
 
 #include "src/core/lib/promise/pipe.h"
 
-#include <initializer_list>
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -30,7 +29,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"

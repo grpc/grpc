@@ -46,16 +46,9 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzz_config_vars.pb.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
-namespace grpc_event_engine {
-namespace experimental {
-extern bool g_event_engine_supports_fd;
-}
-}  // namespace grpc_event_engine
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
@@ -75,7 +68,6 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       grpc_core::CoreEnd2endTestRegistry::Get().AllTests();
   static const auto tests = []() {
     grpc_core::g_is_fuzzing_core_e2e_tests = true;
-    grpc_event_engine::experimental::g_event_engine_supports_fd = false;
     grpc_core::ForceEnableExperiment("event_engine_client", true);
     grpc_core::ForceEnableExperiment("event_engine_listener", true);
 
@@ -100,18 +92,11 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
     return tests;
   }();
   if (tests.empty()) return;
-  static const auto only_experiment =
-      grpc_core::GetEnv("GRPC_TEST_FUZZER_EXPERIMENT");
 
   const int test_id = msg.test_id() % tests.size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
-  }
-
-  if (only_experiment.has_value() &&
-      msg.config_vars().experiments() != only_experiment.value()) {
-    return;
   }
 
   // TODO(ctiller): make this per fixture?
@@ -124,7 +109,7 @@ DEFINE_PROTO_FUZZER(const core_end2end_test_fuzzer::Msg& msg) {
       [actions = msg.event_engine_actions()]() {
         FuzzingEventEngine::Options options;
         options.max_delay_run_after = std::chrono::milliseconds(500);
-        options.max_delay_write = std::chrono::milliseconds(50);
+        options.max_delay_write = std::chrono::microseconds(5);
         return std::make_unique<FuzzingEventEngine>(options, actions);
       });
   auto engine =

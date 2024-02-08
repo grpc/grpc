@@ -19,7 +19,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/time.h"
@@ -76,9 +75,6 @@ void grpc_deadline_state_reset(grpc_deadline_state* deadline_state,
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_deadline_state* deadline_state, grpc_transport_stream_op_batch* op);
-
-// Should deadline checking be performed (according to channel args)
-bool grpc_deadline_checking_enabled(const grpc_core::ChannelArgs& args);
 
 // Deadline filters for direct client channels and server channels.
 // Note: Deadlines for non-direct client channels are handled by the

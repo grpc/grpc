@@ -21,7 +21,6 @@
 #include "src/core/ext/filters/logging/logging_filter.h"
 
 #include <inttypes.h>
-#include <limits.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -43,20 +42,18 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -65,8 +62,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -74,6 +69,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
@@ -344,110 +340,104 @@ class CallData {
   LoggingSink::Config config_;
 };
 
-class ClientLoggingFilter final : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
+}  // namespace
 
-  static absl::StatusOr<ClientLoggingFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
-    absl::optional<absl::string_view> default_authority =
-        args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
-    if (default_authority.has_value()) {
-      return ClientLoggingFilter(std::string(default_authority.value()));
-    }
-    absl::optional<std::string> server_uri =
-        args.GetOwnedString(GRPC_ARG_SERVER_URI);
-    if (server_uri.has_value()) {
-      return ClientLoggingFilter(
-          CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
-              *server_uri));
-    }
-    return ClientLoggingFilter("");
+absl::StatusOr<ClientLoggingFilter> ClientLoggingFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+  absl::optional<absl::string_view> default_authority =
+      args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
+  if (default_authority.has_value()) {
+    return ClientLoggingFilter(std::string(default_authority.value()));
   }
-
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override {
-    CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
-        true, call_args, default_authority_);
-    if (!calld->ShouldLog()) {
-      return next_promise_factory(std::move(call_args));
-    }
-    calld->LogClientHeader(
-        /*is_client=*/true,
-        static_cast<CallTracerAnnotationInterface*>(
-            GetContext<grpc_call_context_element>()
-                [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                    .value),
-        call_args.client_initial_metadata);
-    call_args.server_initial_metadata->InterceptAndMap(
-        [calld](ServerMetadataHandle metadata) {
-          calld->LogServerHeader(
-              /*is_client=*/true,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value),
-              metadata.get());
-          return metadata;
-        });
-    call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
-        [calld](MessageHandle message) {
-          calld->LogClientMessage(
-              /*is_client=*/true,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value),
-              message->payload());
-          return message;
-        },
-        [calld] {
-          calld->LogClientHalfClose(
-              /*is_client=*/true,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value));
-        });
-    call_args.server_to_client_messages->InterceptAndMap(
-        [calld](MessageHandle message) {
-          calld->LogServerMessage(
-              /*is_client=*/true,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value),
-              message->payload());
-          return message;
-        });
-    return OnCancel(
-        Map(next_promise_factory(std::move(call_args)),
-            [calld](ServerMetadataHandle md) {
-              calld->LogServerTrailer(
-                  /*is_client=*/true,
-                  static_cast<CallTracerAnnotationInterface*>(
-                      GetContext<grpc_call_context_element>()
-                          [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                              .value),
-                  md.get());
-              return md;
-            }),
-        [calld]() {
-          calld->LogCancel(
-              /*is_client=*/true,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value));
-        });
+  absl::optional<std::string> server_uri =
+      args.GetOwnedString(GRPC_ARG_SERVER_URI);
+  if (server_uri.has_value()) {
+    return ClientLoggingFilter(
+        CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
+            *server_uri));
   }
+  return ClientLoggingFilter("");
+}
 
- private:
-  explicit ClientLoggingFilter(std::string default_authority)
-      : default_authority_(std::move(default_authority)) {}
-  std::string default_authority_;
-};
+// Construct a promise for one call.
+ArenaPromise<ServerMetadataHandle> ClientLoggingFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
+      true, call_args, default_authority_);
+  if (!calld->ShouldLog()) {
+    return next_promise_factory(std::move(call_args));
+  }
+  calld->LogClientHeader(
+      /*is_client=*/true,
+      static_cast<CallTracerAnnotationInterface*>(
+          GetContext<grpc_call_context_element>()
+              [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                  .value),
+      call_args.client_initial_metadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [calld](ServerMetadataHandle metadata) {
+        calld->LogServerHeader(
+            /*is_client=*/true,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value),
+            metadata.get());
+        return metadata;
+      });
+  call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
+      [calld](MessageHandle message) {
+        calld->LogClientMessage(
+            /*is_client=*/true,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value),
+            message->payload());
+        return message;
+      },
+      [calld] {
+        calld->LogClientHalfClose(
+            /*is_client=*/true,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value));
+      });
+  call_args.server_to_client_messages->InterceptAndMap(
+      [calld](MessageHandle message) {
+        calld->LogServerMessage(
+            /*is_client=*/true,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value),
+            message->payload());
+        return message;
+      });
+  return OnCancel(
+      Map(next_promise_factory(std::move(call_args)),
+          [calld](ServerMetadataHandle md) {
+            calld->LogServerTrailer(
+                /*is_client=*/true,
+                static_cast<CallTracerAnnotationInterface*>(
+                    GetContext<grpc_call_context_element>()
+                        [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                            .value),
+                md.get());
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [calld, ctx = GetContext<grpc_call_context_element>()]() {
+        calld->LogCancel(
+            /*is_client=*/true,
+            static_cast<CallTracerAnnotationInterface*>(
+                ctx[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value));
+      });
+}
 
 const grpc_channel_filter ClientLoggingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoggingFilter, FilterEndpoint::kClient,
@@ -455,91 +445,86 @@ const grpc_channel_filter ClientLoggingFilter::kFilter =
                                kFilterExaminesInboundMessages |
                                kFilterExaminesOutboundMessages>("logging");
 
-class ServerLoggingFilter final : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
+absl::StatusOr<ServerLoggingFilter> ServerLoggingFilter::Create(
+    const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
+  return ServerLoggingFilter();
+}
 
-  static absl::StatusOr<ServerLoggingFilter> Create(
-      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
-    return ServerLoggingFilter();
+// Construct a promise for one call.
+ArenaPromise<ServerMetadataHandle> ServerLoggingFilter::MakeCallPromise(
+    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+  CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
+      false, call_args, /*default_authority=*/"");
+  if (!calld->ShouldLog()) {
+    return next_promise_factory(std::move(call_args));
   }
-
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override {
-    CallData* calld = GetContext<Arena>()->ManagedNew<CallData>(
-        false, call_args, /*default_authority=*/"");
-    if (!calld->ShouldLog()) {
-      return next_promise_factory(std::move(call_args));
-    }
-    auto* call_tracer = static_cast<CallTracerAnnotationInterface*>(
-        GetContext<grpc_call_context_element>()
-            [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                .value);
-    calld->LogClientHeader(
-        /*is_client=*/false, call_tracer, call_args.client_initial_metadata);
-    call_args.server_initial_metadata->InterceptAndMap(
-        [calld](ServerMetadataHandle metadata) {
-          calld->LogServerHeader(
-              /*is_client=*/false,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value),
-              metadata.get());
-          return metadata;
-        });
-    call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
-        [calld](MessageHandle message) {
-          calld->LogClientMessage(
-              /*is_client=*/false,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value),
-              message->payload());
-          return message;
-        },
-        [calld] {
-          calld->LogClientHalfClose(
-              /*is_client=*/false,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value));
-        });
-    call_args.server_to_client_messages->InterceptAndMap(
-        [calld](MessageHandle message) {
-          calld->LogServerMessage(
-              /*is_client=*/false,
-              static_cast<CallTracerAnnotationInterface*>(
-                  GetContext<grpc_call_context_element>()
-                      [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                          .value),
-              message->payload());
-          return message;
-        });
-    return OnCancel(
-        Map(next_promise_factory(std::move(call_args)),
-            [calld](ServerMetadataHandle md) {
-              calld->LogServerTrailer(
-                  /*is_client=*/false,
-                  static_cast<CallTracerAnnotationInterface*>(
-                      GetContext<grpc_call_context_element>()
-                          [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                              .value),
-                  md.get());
-              return md;
-            }),
-        // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-        // valid for the cancellation function requiring us to capture
-        // call_tracer.
-        [calld, call_tracer]() {
-          calld->LogCancel(
-              /*is_client=*/false, call_tracer);
-        });
-  }
-};
+  auto* call_tracer = static_cast<CallTracerAnnotationInterface*>(
+      GetContext<grpc_call_context_element>()
+          [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+              .value);
+  calld->LogClientHeader(
+      /*is_client=*/false, call_tracer, call_args.client_initial_metadata);
+  call_args.server_initial_metadata->InterceptAndMap(
+      [calld](ServerMetadataHandle metadata) {
+        calld->LogServerHeader(
+            /*is_client=*/false,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value),
+            metadata.get());
+        return metadata;
+      });
+  call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
+      [calld](MessageHandle message) {
+        calld->LogClientMessage(
+            /*is_client=*/false,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value),
+            message->payload());
+        return message;
+      },
+      [calld] {
+        calld->LogClientHalfClose(
+            /*is_client=*/false,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value));
+      });
+  call_args.server_to_client_messages->InterceptAndMap(
+      [calld](MessageHandle message) {
+        calld->LogServerMessage(
+            /*is_client=*/false,
+            static_cast<CallTracerAnnotationInterface*>(
+                GetContext<grpc_call_context_element>()
+                    [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                        .value),
+            message->payload());
+        return message;
+      });
+  return OnCancel(
+      Map(next_promise_factory(std::move(call_args)),
+          [calld](ServerMetadataHandle md) {
+            calld->LogServerTrailer(
+                /*is_client=*/false,
+                static_cast<CallTracerAnnotationInterface*>(
+                    GetContext<grpc_call_context_element>()
+                        [GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                            .value),
+                md.get());
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture
+      // call_tracer.
+      [calld, call_tracer]() {
+        calld->LogCancel(
+            /*is_client=*/false, call_tracer);
+      });
+}
 
 const grpc_channel_filter ServerLoggingFilter::kFilter =
     MakePromiseBasedFilter<ServerLoggingFilter, FilterEndpoint::kServer,
@@ -547,33 +532,17 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
                                kFilterExaminesInboundMessages |
                                kFilterExaminesOutboundMessages>("logging");
 
-}  // namespace
-
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(
-        GRPC_SERVER_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-          // TODO(yashykt) : Figure out a good place to place this channel
-          // arg
-          if (builder->channel_args()
-                  .GetInt("grpc.experimental.enable_observability")
-                  .value_or(true)) {
-            builder->PrependFilter(&ServerLoggingFilter::kFilter);
-          }
-          return true;
-        });
-    builder->channel_init()->RegisterStage(
-        GRPC_CLIENT_CHANNEL, INT_MAX, [](ChannelStackBuilder* builder) {
-          // TODO(yashykt) : Figure out a good place to place this channel
-          // arg
-          if (builder->channel_args()
-                  .GetInt("grpc.experimental.enable_observability")
-                  .value_or(true)) {
-            builder->PrependFilter(&ClientLoggingFilter::kFilter);
-          }
-          return true;
-        });
+    builder->channel_init()
+        ->RegisterFilter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
+        // TODO(yashykt) : Figure out a good place to place this channel arg
+        .IfChannelArg("grpc.experimental.enable_observability", true);
+    builder->channel_init()
+        ->RegisterFilter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
+        // TODO(yashykt) : Figure out a good place to place this channel arg
+        .IfChannelArg("grpc.experimental.enable_observability", true);
   });
 }
 

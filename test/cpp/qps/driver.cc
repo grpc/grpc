@@ -105,7 +105,6 @@ static double SystemTime(const ClientStats& s) { return s.time_system(); }
 static double UserTime(const ClientStats& s) { return s.time_user(); }
 static double CliPollCount(const ClientStats& s) { return s.cq_poll_count(); }
 static double SvrPollCount(const ServerStats& s) { return s.cq_poll_count(); }
-static double ServerWallTime(const ServerStats& s) { return s.time_elapsed(); }
 static double ServerSystemTime(const ServerStats& s) { return s.time_system(); }
 static double ServerUserTime(const ServerStats& s) { return s.time_user(); }
 static double ServerTotalCpuTime(const ServerStats& s) {

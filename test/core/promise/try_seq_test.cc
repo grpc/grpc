@@ -16,7 +16,6 @@
 
 #include <stdlib.h>
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -24,53 +23,133 @@
 
 namespace grpc_core {
 
-TEST(TrySeqTest, SucceedAndThen) {
-  EXPECT_EQ(TrySeq([] { return absl::StatusOr<int>(1); },
-                   [](int i) {
-                     return [i]() { return absl::StatusOr<int>(i + 1); };
-                   })(),
-            Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
+struct AbslStatusTraits {
+  template <typename T>
+  using Promise = std::function<Poll<absl::StatusOr<T>>()>;
+
+  template <typename T>
+  static Promise<T> instant_ok(T x) {
+    return [x] { return absl::StatusOr<T>(x); };
+  }
+
+  static auto instant_ok_status() {
+    return [] { return absl::OkStatus(); };
+  }
+
+  template <typename T>
+  static Promise<T> instant_fail() {
+    return [] { return absl::StatusOr<T>(); };
+  }
+
+  template <typename T>
+  static Poll<absl::StatusOr<T>> instant_crash() {
+    abort();
+  }
+
+  template <typename T>
+  static Poll<absl::StatusOr<T>> ok(T x) {
+    return absl::StatusOr<T>(x);
+  }
+
+  static Poll<absl::Status> ok_status() { return absl::OkStatus(); }
+
+  template <typename T>
+  static Poll<absl::StatusOr<T>> fail() {
+    return absl::StatusOr<T>();
+  }
+
+  template <typename T>
+  static Promise<T> pending() {
+    return []() -> Poll<absl::StatusOr<T>> { return Pending(); };
+  }
+};
+
+struct ValueOrFailureTraits {
+  template <typename T>
+  using Promise = std::function<Poll<ValueOrFailure<T>>()>;
+
+  template <typename T>
+  static Promise<T> instant_ok(T x) {
+    return [x] { return ValueOrFailure<T>(x); };
+  }
+
+  static auto instant_ok_status() {
+    return [] { return StatusFlag(true); };
+  }
+
+  template <typename T>
+  static Promise<T> instant_fail() {
+    return [] { return Failure{}; };
+  }
+
+  template <typename T>
+  static Poll<ValueOrFailure<T>> instant_crash() {
+    abort();
+  }
+
+  template <typename T>
+  static Poll<ValueOrFailure<T>> ok(T x) {
+    return ValueOrFailure<T>(x);
+  }
+
+  static Poll<StatusFlag> ok_status() { return Success{}; }
+
+  template <typename T>
+  static Poll<ValueOrFailure<T>> fail() {
+    return Failure{};
+  }
+
+  template <typename T>
+  static Promise<T> pending() {
+    return []() -> Poll<ValueOrFailure<T>> { return Pending(); };
+  }
+};
+
+template <typename T>
+class TrySeqTest : public ::testing::Test {};
+
+using Traits = ::testing::Types<AbslStatusTraits, ValueOrFailureTraits>;
+TYPED_TEST_SUITE(TrySeqTest, Traits);
+
+TYPED_TEST(TrySeqTest, SucceedAndThen) {
+  EXPECT_EQ(TrySeq(TypeParam::instant_ok(1),
+                   [](int i) { return TypeParam::instant_ok(i + 1); })(),
+            TypeParam::ok(2));
 }
 
-TEST(TrySeqTest, SucceedDirectlyAndThenDirectly) {
+TYPED_TEST(TrySeqTest, SucceedDirectlyAndThenDirectly) {
   EXPECT_EQ(
       TrySeq([] { return 1; }, [](int i) { return [i]() { return i + 1; }; })(),
-      Poll<absl::StatusOr<int>>(absl::StatusOr<int>(2)));
+      Poll<absl::StatusOr<int>>(2));
 }
 
-TEST(TrySeqTest, SucceedAndThenChangeType) {
+TYPED_TEST(TrySeqTest, SucceedAndThenChangeType) {
   EXPECT_EQ(
-      TrySeq([] { return absl::StatusOr<int>(42); },
-             [](int i) {
-               return [i]() {
-                 return absl::StatusOr<std::string>(std::to_string(i));
-               };
-             })(),
-      Poll<absl::StatusOr<std::string>>(absl::StatusOr<std::string>("42")));
+      TrySeq(TypeParam::instant_ok(42),
+             [](int i) { return TypeParam::instant_ok(std::to_string(i)); })(),
+      TypeParam::ok(std::string("42")));
 }
 
-TEST(TrySeqTest, FailAndThen) {
-  EXPECT_EQ(TrySeq([]() { return absl::StatusOr<int>(absl::CancelledError()); },
-                   [](int) {
-                     return []() -> Poll<absl::StatusOr<double>> { abort(); };
-                   })(),
-            Poll<absl::StatusOr<double>>(
-                absl::StatusOr<double>(absl::CancelledError())));
+TYPED_TEST(TrySeqTest, FailAndThen) {
+  EXPECT_EQ(
+      TrySeq(TypeParam::template instant_fail<int>(),
+             [](int) { return TypeParam::template instant_crash<double>(); })(),
+      TypeParam::template fail<double>());
 }
 
-TEST(TrySeqTest, RawSucceedAndThen) {
-  EXPECT_EQ(TrySeq([] { return absl::OkStatus(); },
-                   [] { return []() { return absl::OkStatus(); }; })(),
-            Poll<absl::Status>(absl::OkStatus()));
+TYPED_TEST(TrySeqTest, RawSucceedAndThen) {
+  EXPECT_EQ(TrySeq(TypeParam::instant_ok_status(),
+                   [] { return TypeParam::instant_ok_status(); })(),
+            TypeParam::ok_status());
 }
 
-TEST(TrySeqTest, RawFailAndThen) {
+TYPED_TEST(TrySeqTest, RawFailAndThen) {
   EXPECT_EQ(TrySeq([] { return absl::CancelledError(); },
                    []() { return []() -> Poll<absl::Status> { abort(); }; })(),
             Poll<absl::Status>(absl::CancelledError()));
 }
 
-TEST(TrySeqTest, RawSucceedAndThenValue) {
+TYPED_TEST(TrySeqTest, RawSucceedAndThenValue) {
   EXPECT_EQ(TrySeq([] { return absl::OkStatus(); },
                    [] { return []() { return absl::StatusOr<int>(42); }; })(),
             Poll<absl::StatusOr<int>>(absl::StatusOr<int>(42)));

@@ -66,7 +66,7 @@ do
     # See https://github.com/grpc/grpc/issues/11581
     (cd third_party/zlib; git checkout zconf.h)
     ;;
-  "node"|"node_purejs")
+  "node")
     tools/run_tests/performance/build_performance_node.sh
     ;;
   "python")

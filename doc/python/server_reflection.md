@@ -54,7 +54,7 @@ is working properly by using the [`grpc_cli` command line tool]:
 
 Server Reflection can be used by clients to get information about gRPC services
 at runtime. We've provided a descriptor database called
-[ProtoReflectionDescriptorDatabase](../../src/python/grpcio_reflection/v1alpha/proto_reflection_descriptor_database.h)
+[ProtoReflectionDescriptorDatabase](../../src/python/grpcio_reflection/grpc_reflection/v1alpha/proto_reflection_descriptor_database.py)
 which implements the
 [DescriptorDatabase](https://googleapis.dev/python/protobuf/latest/google/protobuf/descriptor_database.html#google.protobuf.descriptor_database.DescriptorDatabase)
 interface. It manages the communication between clients and reflection services

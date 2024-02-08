@@ -85,7 +85,7 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/googleapis",
         proto_prefix="third_party/googleapis/",
     ),
-    "com_github_cncf_udpa": ExternalProtoLibrary(
+    "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
     "opencensus_proto": ExternalProtoLibrary(
@@ -94,12 +94,19 @@ EXTERNAL_PROTO_LIBRARIES = {
     ),
 }
 
-
-def _maybe_get_internal_path(name: str) -> Optional[str]:
-    for key in EXTERNAL_PROTO_LIBRARIES:
-        if name.startswith("@" + key):
-            return key
-    return None
+# We want to get a list of source files for some external libraries
+# to be able to include them in a non-bazel (e.g. make/cmake) build.
+# For that we need mapping from external repo name to a corresponding
+# path to a git submodule.
+EXTERNAL_SOURCE_PREFIXES = {
+    # TODO(veblush): Remove @utf8_range// item once protobuf is upgraded to 26.x
+    "@utf8_range//": "third_party/utf8_range",
+    "@com_googlesource_code_re2//": "third_party/re2",
+    "@com_google_googletest//": "third_party/googletest",
+    "@com_google_protobuf//upb": "third_party/upb/upb",
+    "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
+    "@zlib//": "third_party/zlib",
+}
 
 
 def _bazel_query_xml_tree(query: str) -> ET.Element:
@@ -117,6 +124,7 @@ def _rule_dict_from_xml_node(rule_xml_node):
         "name": rule_xml_node.attrib.get("name"),
         "srcs": [],
         "hdrs": [],
+        "textual_hdrs": [],
         "deps": [],
         "data": [],
         "tags": [],
@@ -130,7 +138,15 @@ def _rule_dict_from_xml_node(rule_xml_node):
         # all the metadata we want is stored under "list" tags
         if child.tag == "list":
             list_name = child.attrib["name"]
-            if list_name in ["srcs", "hdrs", "deps", "data", "tags", "args"]:
+            if list_name in [
+                "srcs",
+                "hdrs",
+                "textual_hdrs",
+                "deps",
+                "data",
+                "tags",
+                "args",
+            ]:
                 result[list_name] += [item.attrib["value"] for item in child]
         if child.tag == "string":
             string_name = child.attrib["name"]
@@ -141,14 +157,14 @@ def _rule_dict_from_xml_node(rule_xml_node):
             if bool_name in ["flaky"]:
                 result[bool_name] = child.attrib["value"] == "true"
         if child.tag == "label":
-            # extract actual name for alias rules
+            # extract actual name for alias and bind rules
             label_name = child.attrib["name"]
             if label_name in ["actual"]:
                 actual_name = child.attrib.get("value", None)
                 if actual_name:
                     result["actual"] = actual_name
                     # HACK: since we do a lot of transitive dependency scanning,
-                    # make it seem that the actual name is a dependency of the alias rule
+                    # make it seem that the actual name is a dependency of the alias or bind rule
                     # (aliases don't have dependencies themselves)
                     result["deps"].append(actual_name)
     return result
@@ -169,9 +185,10 @@ def _extract_rules_from_bazel_xml(xml_tree):
                 "cc_proto_library",
                 "cc_proto_gen_validate",
                 "proto_library",
-                "upb_proto_library",
+                "upb_c_proto_library",
                 "upb_proto_reflection_library",
                 "alias",
+                "bind",
             ]:
                 if rule_name in result:
                     raise Exception("Rule %s already present" % rule_name)
@@ -188,37 +205,73 @@ def _get_bazel_label(target_name: str) -> str:
         return "//:%s" % target_name
 
 
-def _extract_source_file_path(label: str) -> str:
+def _try_extract_source_file_path(label: str) -> str:
     """Gets relative path to source file from bazel deps listing"""
-    if label.startswith("//"):
-        label = label[len("//") :]
-    # labels in form //:src/core/lib/surface/call_test_only.h
-    if label.startswith(":"):
-        label = label[len(":") :]
-    # labels in form //test/core/util:port.cc
-    label = label.replace(":", "/")
-    return label
+    if label.startswith("@"):
+        # This is an external source file. We are only interested in sources
+        # for some of the external libraries.
+        for lib_name, prefix in EXTERNAL_SOURCE_PREFIXES.items():
+            if label.startswith(lib_name):
+                return (
+                    label.replace("%s" % lib_name, prefix)
+                    .replace(":", "/")
+                    .replace("//", "/")
+                )
+
+        # This source file is external, and we need to translate the
+        # @REPO_NAME to a valid path prefix. At this stage, we need
+        # to check repo name, since the label/path mapping is not
+        # available in BUILD files.
+        for lib_name, external_proto_lib in EXTERNAL_PROTO_LIBRARIES.items():
+            if label.startswith("@" + lib_name + "//"):
+                return label.replace(
+                    "@%s//" % lib_name,
+                    external_proto_lib.proto_prefix,
+                ).replace(":", "/")
+
+        # No external library match found
+        return None
+    else:
+        if label.startswith("//"):
+            label = label[len("//") :]
+        # labels in form //:src/core/lib/surface/call_test_only.h
+        if label.startswith(":"):
+            label = label[len(":") :]
+        # labels in form //test/core/util:port.cc
+        return label.replace(":", "/")
+
+
+def _has_header_suffix(label: str) -> bool:
+    """Returns True if the label has a suffix that looks like a C/C++ include file"""
+    return (
+        label.endswith(".h")
+        or label.endswith(".h")
+        or label.endswith(".hpp")
+        or label.endswith(".inc")
+    )
 
 
 def _extract_public_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of public headers from a bazel rule"""
     result = []
     for dep in bazel_rule["hdrs"]:
-        if dep.startswith("//:include/") and dep.endswith(".h"):
-            result.append(_extract_source_file_path(dep))
+        if dep.startswith("//:include/") and _has_header_suffix(dep):
+            source_file_maybe = _try_extract_source_file_path(dep)
+            if source_file_maybe:
+                result.append(source_file_maybe)
     return list(sorted(result))
 
 
 def _extract_nonpublic_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of non-public headers from a bazel rule"""
     result = []
-    for dep in bazel_rule["hdrs"]:
-        if (
-            dep.startswith("//")
-            and not dep.startswith("//:include/")
-            and dep.endswith(".h")
-        ):
-            result.append(_extract_source_file_path(dep))
+    for dep in list(
+        bazel_rule["hdrs"] + bazel_rule["textual_hdrs"] + bazel_rule["srcs"]
+    ):
+        if not dep.startswith("//:include/") and _has_header_suffix(dep):
+            source_file_maybe = _try_extract_source_file_path(dep)
+            if source_file_maybe:
+                result.append(source_file_maybe)
     return list(sorted(result))
 
 
@@ -226,25 +279,13 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of source files from a bazel rule"""
     result = []
     for src in bazel_rule["srcs"]:
+        # Skip .proto files from the protobuf repo
+        if src.startswith("@com_google_protobuf//") and src.endswith(".proto"):
+            continue
         if src.endswith(".cc") or src.endswith(".c") or src.endswith(".proto"):
-            if src.startswith("//"):
-                # This source file is local to gRPC
-                result.append(_extract_source_file_path(src))
-            else:
-                # This source file is external, and we need to translate the
-                # @REPO_NAME to a valid path prefix. At this stage, we need
-                # to check repo name, since the label/path mapping is not
-                # available in BUILD files.
-                external_proto_library_name = _maybe_get_internal_path(src)
-                if external_proto_library_name is not None:
-                    result.append(
-                        src.replace(
-                            "@%s//" % external_proto_library_name,
-                            EXTERNAL_PROTO_LIBRARIES[
-                                external_proto_library_name
-                            ].proto_prefix,
-                        ).replace(":", "/")
-                    )
+            source_file_maybe = _try_extract_source_file_path(src)
+            if source_file_maybe:
+                result.append(source_file_maybe)
     return list(sorted(result))
 
 
@@ -297,16 +338,24 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         # special case for add dependency on one of the absl libraries (there is not just one absl library)
         prefixlen = len("@com_google_absl//")
         return bazel_dep[prefixlen:]
-    elif bazel_dep == "//external:upb_lib":
-        return "upb"
-    elif bazel_dep == "//external:benchmark":
+    elif bazel_dep == "@com_github_google_benchmark//:benchmark":
         return "benchmark"
-    elif bazel_dep == "//external:libssl":
+    elif bazel_dep == "@boringssl//:ssl":
         return "libssl"
+    elif bazel_dep == "@com_github_cares_cares//:ares":
+        return "cares"
+    elif (
+        bazel_dep == "@com_google_protobuf//:protobuf"
+        or bazel_dep == "@com_google_protobuf//:protobuf_headers"
+    ):
+        return "protobuf"
+    elif bazel_dep == "@com_google_protobuf//:protoc_lib":
+        return "protoc"
     else:
-        # all the other external deps such as protobuf, cares, zlib
-        # don't need to be listed explicitly, they are handled automatically
-        # by the build system (make, cmake)
+        # Two options here:
+        # * either this is not external dependency at all (which is fine, we will treat it as internal library)
+        # * this is external dependency, but we don't want to make the dependency explicit in the build metadata
+        #   for other build systems.
         return None
 
 
@@ -493,7 +542,9 @@ def update_test_metadata_with_transitive_metadata(
             lib_dict["defaults"] = "benchmark"
 
         if "//external:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
+            # run_tests.py checks the "gtest" property to see if test should be run via gtest.
             lib_dict["gtest"] = True
+            # TODO: this might be incorrect categorization of the test...
             lib_dict["language"] = "c++"
 
 
@@ -519,13 +570,13 @@ def _get_transitive_protos(bazel_rules, t):
 
 def _expand_upb_proto_library_rules(bazel_rules):
     # Expand the .proto files from UPB proto library rules into the pre-generated
-    # upb.h and upb.c files.
-    GEN_UPB_ROOT = "//:src/core/ext/upb-generated/"
-    GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-generated/"
+    # upb files.
+    GEN_UPB_ROOT = "//:src/core/ext/upb-gen/"
+    GEN_UPBDEFS_ROOT = "//:src/core/ext/upbdefs-gen/"
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
@@ -543,14 +594,14 @@ def _expand_upb_proto_library_rules(bazel_rules):
                     'upb rule "{0}" should have 1 proto dependency but has'
                     ' "{1}"'.format(name, deps)
                 )
-            # deps is not properly fetched from bazel query for upb_proto_library target
+            # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
                 "//external:upb_lib",
                 "//external:upb_lib_descriptor",
                 "//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
             ]
-            # populate the upb_proto_library rule with pre-generated upb headers
+            # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
             protos = _get_transitive_protos(bazel_rules, deps[0])
             if len(protos) == 0:
@@ -576,21 +627,61 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         break
                 if proto_src.startswith("@"):
                     raise Exception('"{0}" is unknown workspace.'.format(name))
-                proto_src = _extract_source_file_path(proto_src)
-                ext = (
-                    ".upb"
+                proto_src_file = _try_extract_source_file_path(proto_src)
+                if not proto_src_file:
+                    raise Exception(
+                        'Failed to get source file for "{0}" in upb rule "{1}".'.format(
+                            proto_src, name
+                        )
+                    )
+
+                extensions = (
+                    # There is no longer a .upb.c extension.
+                    [".upb.h", ".upb_minitable.h", ".upb_minitable.c"]
                     if gen_func == "grpc_upb_proto_library"
-                    else ".upbdefs"
+                    else [".upbdefs.h", ".upbdefs.c"]
                 )
                 root = (
                     GEN_UPB_ROOT
                     if gen_func == "grpc_upb_proto_library"
                     else GEN_UPBDEFS_ROOT
                 )
-                srcs.append(root + proto_src.replace(".proto", ext + ".c"))
-                hdrs.append(root + proto_src.replace(".proto", ext + ".h"))
+                for ext in extensions:
+                    srcs.append(root + proto_src_file.replace(".proto", ext))
+                    hdrs.append(root + proto_src_file.replace(".proto", ext))
             bazel_rule["srcs"] = srcs
             bazel_rule["hdrs"] = hdrs
+
+
+def _patch_grpc_proto_library_rules(bazel_rules):
+    for name, bazel_rule in bazel_rules.items():
+        contains_proto = any(
+            src.endswith(".proto") for src in bazel_rule.get("srcs", [])
+        )
+        generator_func = bazel_rule.get("generator_function", None)
+
+        if (
+            name.startswith("//")
+            and contains_proto
+            and generator_func == "grpc_proto_library"
+        ):
+            # Add explicit protobuf dependency for internal c++ proto targets.
+            bazel_rule["deps"].append("//external:protobuf")
+
+
+def _patch_descriptor_upb_proto_library(bazel_rules):
+    # The upb's descriptor_upb_proto library doesn't reference the generated descriptor.proto
+    # sources explicitly, so we add them manually.
+    bazel_rule = bazel_rules.get(
+        "@com_google_protobuf//upb:descriptor_upb_proto", None
+    )
+    if bazel_rule:
+        bazel_rule["srcs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c"
+        )
+        bazel_rule["hdrs"].append(
+            ":src/core/ext/upb-gen/google/protobuf/descriptor.upb.h"
+        )
 
 
 def _generate_build_metadata(
@@ -738,7 +829,11 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
 
     # we have not added otel dependency outside of bazel
     tests = [
-        test for test in tests if not test.startswith("test/cpp/ext/otel:")
+        test
+        for test in tests
+        if not test.startswith("test/cpp/ext/otel:")
+        and not test.startswith("test/cpp/ext/csm:")
+        and not test.startswith("test/cpp/interop:xds_interop")
     ]
 
     # missing opencensus/stats/stats.h
@@ -802,8 +897,16 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith("test/cpp/util:channelz_sampler_test")
     ]
 
+    # chaotic good not supported outside bazel
+    tests = [
+        test
+        for test in tests
+        if not test.startswith("test/core/transport/chaotic_good")
+    ]
+
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
+    tests = [test for test in tests if "_fuzzer_" not in test]
 
     return tests
 
@@ -877,7 +980,7 @@ def _generate_build_extra_metadata_for_tests(
 
         # short test name without the path.
         # There can be name collisions, but we will resolve them later
-        simple_test_name = os.path.basename(_extract_source_file_path(test))
+        simple_test_name = os.path.basename(_try_extract_source_file_path(test))
         test_dict["_RENAME"] = simple_test_name
 
         test_metadata[test] = test_dict
@@ -973,6 +1076,54 @@ _BUILD_EXTRA_METADATA = {
         "language": "c",
         "build": "all",
         "_RENAME": "address_sorting",
+    },
+    "@com_google_protobuf//upb:base": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_base_lib",
+    },
+    "@com_google_protobuf//upb:mem": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mem_lib",
+    },
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib",
+    },
+    "@com_google_protobuf//upb/json:json": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_json_lib",
+    },
+    "@com_google_protobuf//upb/text:text": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_textformat_lib",
+    },
+    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
+        "language": "c",
+        "build": "all",
+        # rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
+        "_RENAME": "utf8_range_lib",
+    },
+    "@com_googlesource_code_re2//:re2": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "re2",
+    },
+    "@com_google_googletest//:gtest": {
+        "language": "c",
+        "build": "private",
+        "_RENAME": "gtest",
+    },
+    "@zlib//:zlib": {
+        "language": "c",
+        "zlib": True,
+        "build": "private",
+        "defaults": "zlib",
+        "_RENAME": "z",
     },
     "gpr": {
         "language": "c",
@@ -1100,20 +1251,21 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "interop_server",
     },
-    "test/cpp/interop:xds_interop_client": {
-        "language": "c++",
-        "build": "test",
-        "run": False,
-        "_TYPE": "target",
-        "_RENAME": "xds_interop_client",
-    },
-    "test/cpp/interop:xds_interop_server": {
-        "language": "c++",
-        "build": "test",
-        "run": False,
-        "_TYPE": "target",
-        "_RENAME": "xds_interop_server",
-    },
+    # TODO(stanleycheung): re-enable this after cmake support for otel is added
+    # "test/cpp/interop:xds_interop_client": {
+    #     "language": "c++",
+    #     "build": "test",
+    #     "run": False,
+    #     "_TYPE": "target",
+    #     "_RENAME": "xds_interop_client",
+    # },
+    # "test/cpp/interop:xds_interop_server": {
+    #     "language": "c++",
+    #     "build": "test",
+    #     "run": False,
+    #     "_TYPE": "target",
+    #     "_RENAME": "xds_interop_server",
+    # },
     "test/cpp/interop:http2_client": {
         "language": "c++",
         "build": "test",
@@ -1162,8 +1314,13 @@ _BAZEL_DEPS_QUERIES = [
     'deps("//test/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
+    # allow resolving bind() workspace rules to the actual targets they point to
+    'kind(bind, "//external:*")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
+    # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
+    # as upb_c_proto_library dependencies.
+    'deps("//external:upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
@@ -1188,6 +1345,12 @@ for query in _BAZEL_DEPS_QUERIES:
 # to expand the UPB proto library bazel rules into the generated
 # .upb.h and .upb.c files.
 _expand_upb_proto_library_rules(bazel_rules)
+
+# Step 1.6: Add explicit protobuf dependency to grpc_proto_library rules
+_patch_grpc_proto_library_rules(bazel_rules)
+
+# Step 1.7: Make sure upb descriptor.proto library uses the pre-generated sources.
+_patch_descriptor_upb_proto_library(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
@@ -1239,6 +1402,15 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
+# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
+if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
+    md = _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    del _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)

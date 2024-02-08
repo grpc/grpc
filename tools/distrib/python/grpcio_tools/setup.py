@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from distutils import cygwinccompiler
-from distutils import extension
-from distutils import util
 import errno
 import os
 import os.path
@@ -29,6 +26,7 @@ import sysconfig
 
 import pkg_resources
 import setuptools
+from setuptools import Extension
 from setuptools.command import build_ext
 
 # TODO(atash) add flag to disable Cython use
@@ -140,27 +138,16 @@ class BuildExt(build_ext.build_ext):
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = "-std=c++14"
+    EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        if sys.version_info < (3, 5):
-            # We use define flags here and don't directly add to DEFINE_MACROS below to
-            # ensure that the expert user/builder has a way of turning it off (via the
-            # envvars) without adding yet more GRPC-specific envvars.
-            # See https://sourceforge.net/p/mingw-w64/bugs/363/
-            if "32" in platform.architecture()[0]:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime32 -D_timeb=__timeb32"
-                    " -D_ftime_s=_ftime32_s -D_hypot=hypot"
-                )
-            else:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime64 -D_timeb=__timeb64 -D_hypot=hypot"
-                )
-        else:
-            # We need to statically link the C++ Runtime, only the C runtime is
-            # available dynamically
-            EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c11"
+        # We need to statically link the C++ Runtime, only the C runtime is
+        # available dynamically
+        EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform or "darwin" in sys.platform:
+        # GCC & Clang by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
@@ -191,12 +178,11 @@ if EXTRA_ENV_LINK_ARGS is None:
         EXTRA_ENV_LINK_ARGS += " -lpthread"
         if check_linker_need_libatomic():
             EXTRA_ENV_LINK_ARGS += " -latomic"
-    elif "win32" in sys.platform and sys.version_info < (3, 5):
-        msvcr = cygwinccompiler.get_msvcr()[0]
-        EXTRA_ENV_LINK_ARGS += (
-            " -static-libgcc -static-libstdc++ -mcrtdll={msvcr}"
-            " -static -lshlwapi".format(msvcr=msvcr)
-        )
+
+# Explicitly link Core Foundation framework for MacOS to ensure no symbol is
+# missing when compiled using package managers like Conda.
+if "darwin" in sys.platform:
+    EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
@@ -228,7 +214,7 @@ if "win32" in sys.platform:
 elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
-# By default, Python3 distutils enforces compatibility of
+# By default, Python3 setuptools(distutils) enforces compatibility of
 # c plugins (.so files) with the OSX version Python was built with.
 # We need OSX 10.10, the oldest which supports C++ thread_local.
 if "darwin" in sys.platform:
@@ -241,7 +227,7 @@ if "darwin" in sys.platform:
         os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
             r"macosx-[0-9]+\.[0-9]+-(.+)",
             r"macosx-10.10-\1",
-            util.get_platform(),
+            sysconfig.get_platform(),
         )
 
 
@@ -281,7 +267,7 @@ def extension_modules():
         os.path.join("grpc_root", "src", "compiler", "proto_parser_helper.cc"),
     ] + CC_FILES
 
-    plugin_ext = extension.Extension(
+    plugin_ext = Extension(
         name="grpc_tools._protoc_compiler",
         sources=plugin_sources,
         include_dirs=[

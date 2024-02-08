@@ -42,6 +42,7 @@ import unittest
 import sys
 import os
 import pkgutil
+import importlib
 
 def trace_callback(event, args):
     if event in ("switch", "throw"):
@@ -73,7 +74,9 @@ class SingleLoader(object):
         tests = []
         for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
             if pattern in module_name:
-                module = importer.find_module(module_name).load_module(module_name)
+                spec = importer.find_spec(module_name)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
                 tests.append(loader.loadTestsFromModule(module))
         if len(tests) != 1:
             raise AssertionError("Expected only 1 test module. Found {}".format(tests))

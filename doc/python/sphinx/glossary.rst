@@ -45,6 +45,7 @@ Glossary
     server object. Channel arguments are meant for advanced usages and contain
     experimental API (some may not labeled as experimental). Full list of
     available channel arguments and documentation can be found under the
-    "grpc_arg_keys" section of "grpc_types.h" header file (|grpc_types_link|).
-    For example, if you want to disable TCP port reuse, you may construct
-    channel arguments like: ``options = (('grpc.so_reuseport', 0),)``.
+    "grpc_arg_keys" section of "channel_arg_names.h" header file
+    (|channel_arg_names_link|). For example, if you want to disable TCP port
+    reuse, you may construct channel arguments like:
+    ``options = (('grpc.so_reuseport', 0),)``.

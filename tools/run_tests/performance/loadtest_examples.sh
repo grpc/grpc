@@ -105,7 +105,6 @@ basic_example() {
         -s client_pool= -s server_pool= -s big_query_table= \
         -s timeout_seconds=900 --prefix=examples -u basic -r "^${scenario}$" \
         --allow_client_language=c++ --allow_server_language=c++ \
-        --allow_server_language=node \
         -o "${outputdir}/${outputfile}"
     echo "Created example: ${outputdir}/${outputfile}"
 }
@@ -127,7 +126,6 @@ prebuilt_example() {
         -s prebuilt_image_tag="\${prebuilt_image_tag}" --prefix=examples -u prebuilt \
         -a pool="\${workers_pool}" -r "^${scenario}$" \
         --allow_client_language=c++ --allow_server_language=c++ \
-        --allow_server_language=node \
         -o "${outputdir}/${outputfile}"
     echo "Created example: ${outputdir}/${outputfile}"
 }
@@ -150,7 +148,6 @@ psm_basic_example() {
         -s timeout_seconds=900 --prefix=psm-examples -u "${uniquifier}" -r "^${scenario}$" \
         -a enablePrometheus=true \
         --allow_client_language=c++ --allow_server_language=c++ \
-        --allow_server_language=node \
         --client_channels=8 \
         --category=psm \
         --server_threads=16 \
@@ -181,7 +178,6 @@ psm_prebuilt_example() {
         -a pool="\${workers_pool}" \
         -a enablePrometheus=true \
         --allow_client_language=c++ --allow_server_language=c++ \
-        --allow_server_language=node \
         --client_channels=8 \
         --category=psm \
         --server_threads=16 \

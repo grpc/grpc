@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 
-#include <initializer_list>
 #include <limits>
 #include <map>
 #include <memory>
@@ -38,8 +37,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
@@ -154,7 +153,7 @@ TEST_F(XdsRouteConfigTest, MinimumValidConfig) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   EXPECT_THAT(resource.virtual_hosts[0].domains, ::testing::ElementsAre("*"));
@@ -208,7 +207,7 @@ TEST_F(VirtualHostTest, MultipleVirtualHosts) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
   ASSERT_EQ(resource.virtual_hosts.size(), 2UL);
   EXPECT_THAT(resource.virtual_hosts[0].domains, ::testing::ElementsAre("*"));
@@ -413,7 +412,7 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
   ASSERT_EQ(typed_per_filter_config.size(), 1UL);
   auto it = typed_per_filter_config.begin();
@@ -524,7 +523,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
   ASSERT_EQ(typed_per_filter_config.size(), 1UL);
   auto it = typed_per_filter_config.begin();
@@ -644,7 +643,7 @@ TEST_P(TypedPerFilterConfigTest,
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   auto& typed_per_filter_config = GetTypedPerFilterConfig(resource);
   EXPECT_THAT(typed_per_filter_config, ::testing::ElementsAre());
 }
@@ -741,7 +740,7 @@ TEST_P(RetryPolicyTest, Empty) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -780,7 +779,7 @@ TEST_P(RetryPolicyTest, AllFields) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -817,7 +816,7 @@ TEST_P(RetryPolicyTest, MaxIntervalDefaultsTo10xBaseInterval) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -897,7 +896,7 @@ TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -990,7 +989,7 @@ TEST_F(RouteMatchTest, PathMatchers) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   auto& virtual_host = resource.virtual_hosts.front();
   ASSERT_EQ(virtual_host.routes.size(), 3UL);
@@ -1130,7 +1129,7 @@ TEST_F(RouteMatchTest, HeaderMatchers) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   auto& virtual_host = resource.virtual_hosts.front();
   ASSERT_EQ(virtual_host.routes.size(), 1UL);
@@ -1260,7 +1259,7 @@ TEST_F(RouteMatchTest, RuntimeFractionMatcher) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   auto& virtual_host = resource.virtual_hosts.front();
   ASSERT_EQ(virtual_host.routes.size(), 4UL);
@@ -1327,7 +1326,7 @@ TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMax) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -1358,7 +1357,7 @@ TEST_F(MaxStreamDurationTest, MaxStreamDuration) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -1392,7 +1391,7 @@ TEST_F(MaxStreamDurationTest, PrefersGrpcTimeoutHeaderMaxToMaxStreamDuration) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -1503,7 +1502,7 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -1619,7 +1618,7 @@ TEST_F(WeightedClusterTest, Basic) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
@@ -1744,13 +1743,13 @@ TEST_F(RlsTest, Basic) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(
       resource.cluster_specifier_plugin_map,
       ::testing::ElementsAre(::testing::Pair(
           "rls",
           "[{\"rls_experimental\":{"
-          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicy\":[{\"cds_experimental\":{\"isDynamic\":true}}],"
           "\"childPolicyConfigTargetFieldName\":\"cluster\","
           "\"routeLookupConfig\":{"
           "\"cacheSizeBytes\":\"1024\","
@@ -1798,7 +1797,7 @@ TEST_F(RlsTest, PluginDefinedButNotUsed) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
@@ -1847,13 +1846,13 @@ TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(
       resource.cluster_specifier_plugin_map,
       ::testing::ElementsAre(::testing::Pair(
           "rls",
           "[{\"rls_experimental\":{"
-          "\"childPolicy\":[{\"cds_experimental\":{}}],"
+          "\"childPolicy\":[{\"cds_experimental\":{\"isDynamic\":true}}],"
           "\"childPolicyConfigTargetFieldName\":\"cluster\","
           "\"routeLookupConfig\":{"
           "\"cacheSizeBytes\":\"1024\","
@@ -1917,7 +1916,7 @@ TEST_F(RlsTest, ClusterSpecifierPluginsIgnoredWhenNotEnabled) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
@@ -2051,7 +2050,7 @@ TEST_F(RlsTest, UnsupportedButOptionalClusterSpecifierPlugin) {
   ASSERT_TRUE(decode_result.name.has_value());
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
-      static_cast<XdsRouteConfigResource&>(**decode_result.resource);
+      static_cast<const XdsRouteConfigResource&>(**decode_result.resource);
   EXPECT_THAT(resource.cluster_specifier_plugin_map, ::testing::ElementsAre());
   ASSERT_EQ(resource.virtual_hosts.size(), 1UL);
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);

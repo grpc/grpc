@@ -28,8 +28,8 @@
 
 #include <grpcpp/security/binder_security_policy.h>
 
-#include "src/core/ext/filters/client_channel/connector.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/client_channel/connector.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 #include "src/core/ext/transport/binder/client/security_policy_setting.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
@@ -80,7 +80,7 @@ class BinderConnector : public grpc_core::SubchannelConnector {
 
   void OnConnected(std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
     GPR_ASSERT(endpoint_binder != nullptr);
-    grpc_transport* transport = grpc_create_binder_transport_client(
+    grpc_core::Transport* transport = grpc_create_binder_transport_client(
         std::move(endpoint_binder),
         grpc_binder::GetSecurityPolicySetting()->Get(conn_id_));
     GPR_ASSERT(transport != nullptr);

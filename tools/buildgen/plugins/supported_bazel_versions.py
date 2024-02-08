@@ -25,4 +25,8 @@ def _get_supported_bazel_versions():
 
 
 def mako_plugin(dictionary):
-    dictionary["supported_bazel_versions"] = _get_supported_bazel_versions()
+    versions = _get_supported_bazel_versions()
+    dictionary["supported_bazel_versions"] = versions
+    # The entry listed in the "supported_version.txt" file is considered
+    # to be our repo-wide bazel version.
+    dictionary["primary_bazel_version"] = versions[0]

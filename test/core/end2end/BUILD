@@ -78,6 +78,7 @@ grpc_cc_library(
         "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:closure",
+        "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
@@ -95,6 +96,7 @@ grpc_cc_library(
     hdrs = ["fixtures/proxy.h"],
     language = "C++",
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
@@ -156,6 +158,7 @@ grpc_cc_library(
         "tests/cancel_test_helpers.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -164,6 +167,7 @@ grpc_cc_library(
     language = "C++",
     deps = [
         "end2end_test_lib",
+        "//:channel_arg_names",
         "//:config",
         "//:exec_ctx",
         "//:gpr",
@@ -180,7 +184,6 @@ grpc_cc_library(
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_inproc",
         "//src/core:slice",
-        "//src/core:transport_fwd",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -193,6 +196,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/meta:type_traits",
         "absl/random",
         "absl/status",
         "absl/strings:str_format",
@@ -204,12 +209,14 @@ grpc_cc_library(
         "fixture_support",
         "http_proxy",
         "proxy",
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//src/core:channel_args",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
@@ -279,7 +286,10 @@ grpc_core_end2end_test(name = "channelz")
 
 grpc_core_end2end_test(name = "client_streaming")
 
-grpc_core_end2end_test(name = "compressed_payload")
+grpc_core_end2end_test(
+    name = "compressed_payload",
+    tags = ["compression_test"],
+)
 
 grpc_core_end2end_test(name = "connectivity")
 
@@ -310,6 +320,8 @@ grpc_core_end2end_test(
     name = "hpack_size",
     shard_count = 50,
 )
+
+grpc_core_end2end_test(name = "http2_stats")
 
 grpc_core_end2end_test(name = "invoke_large_request")
 
@@ -440,6 +452,8 @@ grpc_core_end2end_test(name = "simple_request")
 
 grpc_core_end2end_test(name = "streaming_error_response")
 
+grpc_core_end2end_test(name = "timeout_before_request_call")
+
 grpc_core_end2end_test(name = "trailing_metadata")
 
 grpc_core_end2end_test(name = "write_buffering")
@@ -458,8 +472,10 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:event_engine_shim",
         "//src/core:gpr_atm",
         "//src/core:iomgr_fwd",
+        "//src/core:notification",
         "//src/core:slice",
         "//src/core:status_helper",
         "//test/core/util:grpc_test_util",
@@ -472,6 +488,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
@@ -514,17 +531,19 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:debug_location",
+        "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc_public_hdrs",
         "//:grpc_resolver_dns_ares",
-        "//:server_address",
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
@@ -560,14 +579,23 @@ grpc_cc_test(
 grpc_cc_test(
     name = "no_server_test",
     srcs = ["no_server_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+    ],
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
+        "//:grpc_resolver",
         "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:grpc_service_config",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -586,7 +614,6 @@ grpc_cc_test(
         "absl/types:optional",
         "absl/types:variant",
         "gtest",
-        "libcrypto",
     ],
     language = "C++",
     shard_count = 10,
@@ -595,6 +622,7 @@ grpc_cc_test(
         "end2end_test_lib",
         "fixture_support",
         "ssl_test_data",
+        "//:channel_arg_names",
         "//:config_vars",
         "//:debug_location",
         "//:gpr",
@@ -627,6 +655,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
@@ -656,6 +685,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "cq_verifier",
+        "//:channel_arg_names",
         "//:config_vars",
         "//:exec_ctx",
         "//:gpr",

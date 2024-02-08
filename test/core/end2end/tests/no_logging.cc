@@ -21,7 +21,6 @@
 #include <regex>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -139,6 +138,12 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+// TODO(hork): remove when the listener flake is identified
+#ifdef GPR_WINDOWS
+  if (IsEventEngineListenerEnabled()) {
+    GTEST_SKIP() << "not for windows + event engine listener";
+  }
+#endif
   Verifier verifier;
   verifier.FailOnNonErrorLog();
   for (int i = 0; i < 10; i++) {

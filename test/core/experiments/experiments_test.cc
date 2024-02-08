@@ -18,6 +18,8 @@
 
 #include "test/core/experiments/fixtures/experiments.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/experiments/config.h"

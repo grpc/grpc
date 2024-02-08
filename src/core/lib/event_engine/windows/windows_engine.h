@@ -13,7 +13,10 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_WINDOWS_WINDOWS_ENGINE_H
+
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GPR_WINDOWS
 
@@ -28,6 +31,7 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -47,7 +51,11 @@ class WindowsEventEngine : public EventEngine,
  public:
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
-    ~WindowsDNSResolver() override;
+    WindowsDNSResolver() = delete;
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+    explicit WindowsDNSResolver(
+        grpc_core::OrphanablePtr<AresResolver> ares_resolver);
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view name,
                         absl::string_view default_port) override;
@@ -55,6 +63,11 @@ class WindowsEventEngine : public EventEngine,
                    absl::string_view name) override;
     void LookupTXT(LookupTXTCallback on_resolve,
                    absl::string_view name) override;
+
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+   private:
+    grpc_core::OrphanablePtr<AresResolver> ares_resolver_;
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   };
 
   WindowsEventEngine();
@@ -100,7 +113,8 @@ class WindowsEventEngine : public EventEngine,
     grpc_core::Mutex mu
         ABSL_ACQUIRED_BEFORE(WindowsEventEngine::connection_mu_);
     EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
-    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu);
+    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu) =
+        EventEngine::TaskHandle::kInvalid;
     EventEngine::OnConnectCallback on_connected_user_callback
         ABSL_GUARDED_BY(mu);
     EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);

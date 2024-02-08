@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -53,6 +53,15 @@ RUN apt-get update && apt-get install -y \
   zip \
   && apt-get clean
 
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 
 RUN mkdir /var/local/jenkins
 
@@ -69,5 +78,16 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | b
 # Install all versions of node that we want to test
 RUN /bin/bash -l -c "nvm install 16 && npm config set cache /tmp/npm-cache"
 RUN /bin/bash -l -c "nvm alias default 16"
+
+# Include the git workaround also for the user "appuser" we just created.
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error.
+
+RUN git config --global --add safe.directory '*'
+RUN git config --global protocol.file.allow always
+
+
 # Define the default command.
 CMD ["bash"]

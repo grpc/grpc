@@ -76,10 +76,13 @@ WindowsEndpoint::~WindowsEndpoint() {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("~WindowsEndpoint::%p", this);
 }
 
-absl::Status WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
+void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", endpoint);
   if (socket->IsShutdown()) {
-    return absl::UnavailableError("Socket is shutting down.");
+    socket->read_info()->SetErrorStatus(
+        absl::UnavailableError("Socket is shutting down."));
+    thread_pool->Run(&handle_read_event);
+    return;
   }
   // Prepare the WSABUF struct
   GPR_ASSERT(buffer->Count() <= kMaxWSABUFCount);
@@ -101,26 +104,26 @@ absl::Status WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
     socket->read_info()->SetResult(
         {/*wsa_error=*/wsa_error, /*bytes_read=*/bytes_read});
     thread_pool->Run(&handle_read_event);
-    return absl::OkStatus();
+    return;
   }
   // If the endpoint has already received some data, and the next call would
   // block, return the data in case that is all the data the reader expects.
   if (handle_read_event.MaybeFinishIfDataHasAlreadyBeenRead()) {
-    return absl::OkStatus();
+    return;
   }
   // Otherwise, let's retry, by queuing a read.
-  status =
-      WSARecv(socket->raw_socket(), wsa_buffers, (DWORD)buffer->Count(),
-              &bytes_read, &flags, socket->read_info()->overlapped(), nullptr);
+  socket->NotifyOnRead(&handle_read_event);
+  status = WSARecv(socket->raw_socket(), wsa_buffers, (DWORD)buffer->Count(),
+                   nullptr, &flags, socket->read_info()->overlapped(), nullptr);
   wsa_error = status == 0 ? 0 : WSAGetLastError();
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
-    // Async read returned immediately with an error
-    return GRPC_WSA_ERROR(
+    // The async read attempt returned an error immediately.
+    socket->UnregisterReadCallback();
+    socket->read_info()->SetErrorStatus(GRPC_WSA_ERROR(
         wsa_error,
-        absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str());
+        absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
+    thread_pool->Run(&handle_read_event);
   }
-  socket->NotifyOnRead(&handle_read_event);
-  return absl::OkStatus();
 }
 
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
@@ -140,13 +143,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
     buffer->AppendIndexed(Slice(allocator_.MakeSlice(min_read_size)));
   }
   io_state_->handle_read_event.Prime(io_state_, buffer, std::move(on_read));
-  auto status = io_state_->DoTcpRead(buffer);
-  if (!status.ok()) {
-    // The read could not be completed.
-    io_state_->thread_pool->Run(
-        [cb = io_state_->handle_read_event.ResetAndReturnCallback(),
-         status]() mutable { cb(status); });
-  }
+  io_state_->DoTcpRead(buffer);
   return false;
 }
 
@@ -212,6 +209,8 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     }
   }
   auto write_info = io_state_->socket->write_info();
+  io_state_->handle_write_event.Prime(io_state_, data, std::move(on_writable));
+  io_state_->socket->NotifyOnWrite(&io_state_->handle_write_event);
   status =
       WSASend(io_state_->socket->raw_socket(), &buffers[async_buffers_offset],
               (DWORD)(data->Count() - async_buffers_offset), nullptr, 0,
@@ -219,17 +218,12 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (status != 0) {
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
-      io_state_->thread_pool->Run(
-          [cb = std::move(on_writable), wsa_error]() mutable {
-            cb(GRPC_WSA_ERROR(wsa_error, "WSASend"));
-          });
-      return false;
+      io_state_->socket->UnregisterWriteCallback();
+      io_state_->socket->write_info()->SetErrorStatus(
+          GRPC_WSA_ERROR(wsa_error, "WSASend"));
+      io_state_->thread_pool->Run(&io_state_->handle_write_event);
     }
   }
-  // As all is now setup, we can now ask for the IOCP notification. It may
-  // trigger the callback immediately however, but no matter.
-  io_state_->handle_write_event.Prime(io_state_, data, std::move(on_writable));
-  io_state_->socket->NotifyOnWrite(&io_state_->handle_write_event);
   return false;
 }
 const EventEngine::ResolvedAddress& WindowsEndpoint::GetPeerAddress() const {
@@ -284,11 +278,16 @@ void WindowsEndpoint::HandleWriteClosure::Prime(
 
 void WindowsEndpoint::HandleReadClosure::Run() {
   // Deletes the shared_ptr when this closure returns
+  // Note that the endpoint may have already been destroyed.
   auto io_state = std::move(io_state_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Read Event",
                                    io_state->endpoint);
-  absl::Status status;
   const auto result = io_state->socket->read_info()->result();
+  if (!result.error_status.ok()) {
+    buffer_->Clear();
+    return ResetAndReturnCallback()(result.error_status);
+  }
+  absl::Status status;
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "Async Read Error");
     buffer_->Clear();
@@ -297,10 +296,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   if (result.bytes_transferred == 0) {
     // Either the endpoint is shut down or we've seen the end of the stream
     if (grpc_event_engine_endpoint_data_trace.enabled()) {
-      DumpSliceBuffer(
-          buffer_, absl::StrFormat("WindowsEndpoint::%p READ (peer=%s)",
-                                   io_state->endpoint,
-                                   io_state->endpoint->peer_address_string_));
+      DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
+                                               io_state->endpoint));
     }
     status = absl::UnavailableError("End of TCP stream");
     grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
@@ -318,10 +315,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   }
   // Doing another read. Let's keep the AsyncIOState alive a bit longer.
   io_state_ = std::move(io_state);
-  status = io_state_->DoTcpRead(buffer_);
-  if (!status.ok()) {
-    return ResetAndReturnCallback()(status);
-  }
+  io_state_->DoTcpRead(buffer_);
 }
 
 bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
@@ -350,6 +344,10 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Write Event",
                                    io_state->endpoint);
   const auto result = io_state->socket->write_info()->result();
+  if (!result.error_status.ok()) {
+    buffer_->Clear();
+    return ResetAndReturnCallback()(result.error_status);
+  }
   absl::Status status;
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "WSASend");

@@ -18,6 +18,8 @@
 
 #include "test/core/util/histogram.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>

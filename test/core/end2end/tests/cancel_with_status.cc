@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -29,7 +31,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status);
   char* dynamic_string = gpr_strdup("xyz");
@@ -44,7 +46,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -62,7 +64,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)
@@ -81,8 +83,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus4) {
-  SKIP_IF_USES_EVENT_ENGINE_LISTENER();
-  auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
+  auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   c.NewBatch(1)

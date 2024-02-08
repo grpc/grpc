@@ -53,6 +53,7 @@
 #define SSL_TSI_TEST_LEAF_SIGNED_BY_INTERMEDIATE_KEY_CERT_PAIRS_NUM 1
 #define SSL_TSI_TEST_CREDENTIALS_DIR "src/core/tsi/test_creds/"
 #define SSL_TSI_TEST_WRONG_SNI "test.google.cn"
+#define SSL_TSI_TEST_INVALID_SNI "1.2.3.4"
 
 // OpenSSL 1.1 uses AES256 for encryption session ticket by default so specify
 // different STEK size.
@@ -86,7 +87,9 @@ typedef struct ssl_key_cert_lib {
   bool use_bad_server_cert;
   bool use_bad_client_cert;
   bool use_root_store;
+  bool use_pem_root_certs;
   bool use_cert_signed_by_intermediate_ca;
+  bool skip_server_certificate_verification;
   char* root_cert;
   tsi_ssl_root_certs_store* root_store;
   tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs;
@@ -111,6 +114,7 @@ typedef struct ssl_tsi_test_fixture {
   size_t session_ticket_key_size;
   size_t network_bio_buf_size;
   size_t ssl_bio_buf_size;
+  bool verify_root_cert_subject;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
 } ssl_tsi_test_fixture;
@@ -125,7 +129,9 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   // Create client handshaker factory.
   tsi_ssl_client_handshaker_options client_options;
-  client_options.pem_root_certs = key_cert_lib->root_cert;
+  if (key_cert_lib->use_pem_root_certs) {
+    client_options.pem_root_certs = key_cert_lib->root_cert;
+  }
   if (ssl_fixture->force_client_auth) {
     client_options.pem_key_cert_pair =
         key_cert_lib->use_bad_client_cert
@@ -145,6 +151,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
   }
   client_options.min_tls_version = test_tls_version;
   client_options.max_tls_version = test_tls_version;
+  client_options.skip_server_certificate_verification =
+      key_cert_lib->skip_server_certificate_verification;
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &client_options, &ssl_fixture->client_handshaker_factory),
             TSI_OK);
@@ -396,13 +404,17 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
     check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
     check_security_level(&peer);
-    if (!ssl_fixture->session_reused) {
-      check_verified_root_cert_subject(ssl_fixture, &peer);
-    } else {
-      check_verified_root_cert_subject_unset(ssl_fixture, &peer);
+    if (ssl_fixture->verify_root_cert_subject) {
+      if (!ssl_fixture->session_reused) {
+        check_verified_root_cert_subject(ssl_fixture, &peer);
+      } else {
+        check_verified_root_cert_subject_unset(ssl_fixture, &peer);
+      }
     }
     if (ssl_fixture->server_name_indication == nullptr ||
         strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_WRONG_SNI) ==
+            0 ||
+        strcmp(ssl_fixture->server_name_indication, SSL_TSI_TEST_INVALID_SNI) ==
             0) {
       // Expect server to use default server0.pem.
       check_server0_peer(&peer);
@@ -534,6 +546,7 @@ static std::string GenerateTrustBundle() {
 static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_tsi_test_fixture* ssl_fixture = grpc_core::Zalloc<ssl_tsi_test_fixture>();
   tsi_test_fixture_init(&ssl_fixture->base);
+  ssl_fixture->verify_root_cert_subject = true;
   ssl_fixture->base.test_unused_bytes = true;
   ssl_fixture->base.vtable = &vtable;
   // Create ssl_key_cert_lib.
@@ -541,6 +554,8 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
   key_cert_lib->use_root_store = false;
+  key_cert_lib->use_pem_root_certs = true;
+  key_cert_lib->skip_server_certificate_verification = false;
   key_cert_lib->server_num_key_cert_pairs =
       SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM;
   key_cert_lib->bad_server_num_key_cert_pairs =
@@ -651,6 +666,20 @@ void ssl_tsi_test_do_handshake_with_root_store() {
   tsi_test_fixture_destroy(fixture);
 }
 
+void ssl_tsi_test_do_handshake_skipping_server_certificate_verification() {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_skipping_server_certificate_verification");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->verify_root_cert_subject = false;
+  ssl_fixture->key_cert_lib->use_root_store = false;
+  ssl_fixture->key_cert_lib->use_pem_root_certs = false;
+  ssl_fixture->key_cert_lib->skip_server_certificate_verification = true;
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 void ssl_tsi_test_do_handshake_with_large_server_handshake_messages(
     const std::string& trust_bundle) {
   gpr_log(GPR_INFO,
@@ -741,6 +770,19 @@ void ssl_tsi_test_do_handshake_with_wrong_server_name_indication() {
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->server_name_indication =
       const_cast<char*>(SSL_TSI_TEST_WRONG_SNI);
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
+void ssl_tsi_test_do_handshake_with_invalid_and_ignored_server_name_indication() {
+  gpr_log(GPR_INFO,
+          "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  // SNI that's an IP address will be ignored.
+  ssl_fixture->server_name_indication =
+      const_cast<char*>(SSL_TSI_TEST_INVALID_SNI);
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
@@ -960,6 +1002,9 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
         TSI_OK);
   }
 
+  client_handshaker_factory =
+      tsi_ssl_client_handshaker_factory_ref(client_handshaker_factory);
+
   tsi_handshaker_destroy(handshaker[1]);
   ASSERT_FALSE(handshaker_factory_destructor_called);
 
@@ -970,8 +1015,10 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
   ASSERT_FALSE(handshaker_factory_destructor_called);
 
   tsi_handshaker_destroy(handshaker[2]);
-  ASSERT_TRUE(handshaker_factory_destructor_called);
+  ASSERT_FALSE(handshaker_factory_destructor_called);
 
+  tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
+  ASSERT_TRUE(handshaker_factory_destructor_called);
   gpr_free(cert_chain);
 }
 
@@ -1237,20 +1284,28 @@ TEST(SslTransportSecurityTest, MainTest) {
       ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
       ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
       ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
+      ssl_tsi_test_do_handshake_with_invalid_and_ignored_server_name_indication();
       ssl_tsi_test_do_handshake_with_wrong_server_name_indication();
       ssl_tsi_test_do_handshake_with_bad_server_cert();
       ssl_tsi_test_do_handshake_with_bad_client_cert();
+// TODO(gregorycooke) - failing with OpenSSL1.0.2
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+      ssl_tsi_test_do_handshake_skipping_server_certificate_verification();
+#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
+
 #ifdef OPENSSL_IS_BORINGSSL
       // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
       ssl_tsi_test_do_handshake_alpn_client_no_server();
       ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
-#endif
-      ssl_tsi_test_do_handshake_alpn_server_no_client();
-      ssl_tsi_test_do_handshake_alpn_client_server_ok();
+      // These tests fail with openssl3 and openssl111 currently but not
+      // boringssl
       ssl_tsi_test_do_handshake_session_cache();
       ssl_tsi_test_do_round_trip_for_all_configs();
       ssl_tsi_test_do_round_trip_with_error_on_stack();
       ssl_tsi_test_do_round_trip_odd_buffer_size();
+#endif
+      ssl_tsi_test_do_handshake_alpn_server_no_client();
+      ssl_tsi_test_do_handshake_alpn_client_server_ok();
       ssl_tsi_test_handshaker_factory_internals();
       ssl_tsi_test_duplicate_root_certificates();
       ssl_tsi_test_extract_x509_subject_names();

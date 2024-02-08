@@ -36,6 +36,8 @@ class Combiner {
   void Run(grpc_closure* closure, grpc_error_handle error);
   // TODO(yashkt) : Remove this method
   void FinallyRun(grpc_closure* closure, grpc_error_handle error);
+  // Force the next combiner execution to be offloaded
+  void ForceOffload();
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   MultiProducerSingleConsumerQueue queue;
   // either:
@@ -49,8 +51,11 @@ class Combiner {
   gpr_atm state;
   bool time_to_execute_final_list = false;
   grpc_closure_list final_list;
+  // TODO(ctiller): delete this when the combiner_offload_to_event_engine
+  // experiment is removed.
   grpc_closure offload;
   gpr_refcount refs;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
 };
 }  // namespace grpc_core
 
@@ -59,9 +64,9 @@ class Combiner {
 // The actual thread executing actions may change over time (but there will only
 // ever be one at a time).
 
-// Initialize the lock, with an optional workqueue to shift load to when
-// necessary
-grpc_core::Combiner* grpc_combiner_create(void);
+// Initialize the lock
+grpc_core::Combiner* grpc_combiner_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine);
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_ARGS \

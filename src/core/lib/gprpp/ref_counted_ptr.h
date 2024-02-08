@@ -21,9 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include <iosfwd>
 #include <type_traits>
 #include <utility>
+
+#include "absl/hash/hash.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
 
@@ -39,7 +43,8 @@ class RefCountedPtr {
   RefCountedPtr(std::nullptr_t) {}
 
   // If value is non-null, we take ownership of a ref to it.
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   explicit RefCountedPtr(Y* value) : value_(value) {}
 
   // Move ctors.
@@ -47,7 +52,8 @@ class RefCountedPtr {
     value_ = other.value_;
     other.value_ = nullptr;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(RefCountedPtr<Y>&& other) noexcept {
     value_ = static_cast<T*>(other.value_);
@@ -59,7 +65,8 @@ class RefCountedPtr {
     reset(std::exchange(other.value_, nullptr));
     return *this;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   RefCountedPtr& operator=(RefCountedPtr<Y>&& other) noexcept {
     reset(std::exchange(other.value_, nullptr));
     return *this;
@@ -70,7 +77,8 @@ class RefCountedPtr {
     if (other.value_ != nullptr) other.value_->IncrementRefCount();
     value_ = other.value_;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   // NOLINTNEXTLINE(google-explicit-constructor)
   RefCountedPtr(const RefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
@@ -88,7 +96,8 @@ class RefCountedPtr {
     reset(other.value_);
     return *this;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   RefCountedPtr& operator=(const RefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
@@ -103,6 +112,12 @@ class RefCountedPtr {
     if (value_ != nullptr) value_->Unref();
   }
 
+  // An explicit copy method that supports ref-count tracing.
+  RefCountedPtr<T> Ref(const DebugLocation& location, const char* reason) {
+    if (value_ != nullptr) value_->IncrementRefCount(location, reason);
+    return RefCountedPtr<T>(value_);
+  }
+
   void swap(RefCountedPtr& other) { std::swap(value_, other.value_); }
 
   // If value is non-null, we take ownership of a ref to it.
@@ -115,13 +130,15 @@ class RefCountedPtr {
     T* old_value = std::exchange(value_, value);
     if (old_value != nullptr) old_value->Unref(location, reason);
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   void reset(Y* value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     reset(static_cast<T*>(value));
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   void reset(const DebugLocation& location, const char* reason,
              Y* value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
@@ -139,24 +156,34 @@ class RefCountedPtr {
   T& operator*() const { return *value_; }
   T* operator->() const { return value_; }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_base_of<T, Y>::value, bool> = true>
+  RefCountedPtr<Y> TakeAsSubclass() {
+    return RefCountedPtr<Y>(static_cast<Y*>(release()));
+  }
+
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator==(const RefCountedPtr<Y>& other) const {
     return value_ == other.value_;
   }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator==(const Y* other) const {
     return value_ == other;
   }
 
   bool operator==(std::nullptr_t) const { return value_ == nullptr; }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator!=(const RefCountedPtr<Y>& other) const {
     return value_ != other.value_;
   }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator!=(const Y* other) const {
     return value_ != other;
   }
@@ -180,7 +207,8 @@ class WeakRefCountedPtr {
   WeakRefCountedPtr(std::nullptr_t) {}
 
   // If value is non-null, we take ownership of a ref to it.
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   explicit WeakRefCountedPtr(Y* value) {
     value_ = value;
   }
@@ -190,7 +218,8 @@ class WeakRefCountedPtr {
     value_ = other.value_;
     other.value_ = nullptr;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   // NOLINTNEXTLINE(google-explicit-constructor)
   WeakRefCountedPtr(WeakRefCountedPtr<Y>&& other) noexcept {
     value_ = static_cast<T*>(other.value_);
@@ -202,7 +231,8 @@ class WeakRefCountedPtr {
     reset(std::exchange(other.value_, nullptr));
     return *this;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   WeakRefCountedPtr& operator=(WeakRefCountedPtr<Y>&& other) noexcept {
     reset(std::exchange(other.value_, nullptr));
     return *this;
@@ -213,7 +243,8 @@ class WeakRefCountedPtr {
     if (other.value_ != nullptr) other.value_->IncrementWeakRefCount();
     value_ = other.value_;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   // NOLINTNEXTLINE(google-explicit-constructor)
   WeakRefCountedPtr(const WeakRefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
@@ -231,7 +262,8 @@ class WeakRefCountedPtr {
     reset(other.value_);
     return *this;
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   WeakRefCountedPtr& operator=(const WeakRefCountedPtr<Y>& other) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
@@ -246,6 +278,13 @@ class WeakRefCountedPtr {
     if (value_ != nullptr) value_->WeakUnref();
   }
 
+  // An explicit copy method that supports ref-count tracing.
+  WeakRefCountedPtr<T> WeakRef(const DebugLocation& location,
+                               const char* reason) {
+    if (value_ != nullptr) value_->IncrementWeakRefCount(location, reason);
+    return WeakRefCountedPtr<T>(value_);
+  }
+
   void swap(WeakRefCountedPtr& other) { std::swap(value_, other.value_); }
 
   // If value is non-null, we take ownership of a ref to it.
@@ -258,13 +297,15 @@ class WeakRefCountedPtr {
     T* old_value = std::exchange(value_, value);
     if (old_value != nullptr) old_value->WeakUnref(location, reason);
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   void reset(Y* value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
                   "T does not have a virtual dtor");
     reset(static_cast<T*>(value));
   }
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   void reset(const DebugLocation& location, const char* reason,
              Y* value = nullptr) {
     static_assert(std::has_virtual_destructor<T>::value,
@@ -276,35 +317,41 @@ class WeakRefCountedPtr {
   // us to pass a ref to idiomatic C code that does not use WeakRefCountedPtr<>.
   // Once all of our code has been converted to idiomatic C++, this
   // method should go away.
-  T* release() {
-    T* value = value_;
-    value_ = nullptr;
-    return value;
-  }
+  T* release() { return std::exchange(value_, nullptr); }
 
   T* get() const { return value_; }
 
   T& operator*() const { return *value_; }
   T* operator->() const { return value_; }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_base_of<T, Y>::value, bool> = true>
+  WeakRefCountedPtr<Y> TakeAsSubclass() {
+    return WeakRefCountedPtr<Y>(static_cast<Y*>(release()));
+  }
+
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator==(const WeakRefCountedPtr<Y>& other) const {
     return value_ == other.value_;
   }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator==(const Y* other) const {
     return value_ == other;
   }
 
   bool operator==(std::nullptr_t) const { return value_ == nullptr; }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator!=(const WeakRefCountedPtr<Y>& other) const {
     return value_ != other.value_;
   }
 
-  template <typename Y>
+  template <typename Y,
+            std::enable_if_t<std::is_convertible<Y*, T*>::value, bool> = true>
   bool operator!=(const Y* other) const {
     return value_ != other;
   }
@@ -332,6 +379,65 @@ template <typename T>
 bool operator<(const WeakRefCountedPtr<T>& p1, const WeakRefCountedPtr<T>& p2) {
   return p1.get() < p2.get();
 }
+
+//
+// absl::Hash integration
+//
+
+template <typename H, typename T>
+H AbslHashValue(H h, const RefCountedPtr<T>& p) {
+  return H::combine(std::move(h), p.get());
+}
+
+template <typename H, typename T>
+H AbslHashValue(H h, const WeakRefCountedPtr<T>& p) {
+  return H::combine(std::move(h), p.get());
+}
+
+// Heterogenous lookup support.
+template <typename T>
+struct RefCountedPtrHash {
+  using is_transparent = void;
+  size_t operator()(const RefCountedPtr<T>& p) const {
+    return absl::Hash<RefCountedPtr<T>>{}(p);
+  }
+  size_t operator()(const WeakRefCountedPtr<T>& p) const {
+    return absl::Hash<WeakRefCountedPtr<T>>{}(p);
+  }
+  size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+};
+template <typename T>
+struct RefCountedPtrEq {
+  using is_transparent = void;
+  bool operator()(const RefCountedPtr<T>& p1,
+                  const RefCountedPtr<T>& p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1,
+                  const WeakRefCountedPtr<T>& p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const RefCountedPtr<T>& p1,
+                  const WeakRefCountedPtr<T>& p2) const {
+    return p1 == p2.get();
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1,
+                  const RefCountedPtr<T>& p2) const {
+    return p1 == p2.get();
+  }
+  bool operator()(const RefCountedPtr<T>& p1, const T* p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1, const T* p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const T* p1, const RefCountedPtr<T>& p2) const {
+    return p2 == p1;
+  }
+  bool operator()(const T* p1, const WeakRefCountedPtr<T>& p2) const {
+    return p2 == p1;
+  }
+};
 
 }  // namespace grpc_core
 

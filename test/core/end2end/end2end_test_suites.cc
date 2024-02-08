@@ -18,8 +18,6 @@
 #include <algorithm>
 #include <atomic>
 #include <functional>
-#include <initializer_list>
-#include <map>
 #include <memory>
 #include <regex>
 #include <string>
@@ -27,6 +25,8 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -38,6 +38,7 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -45,6 +46,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -121,8 +123,9 @@ void AddFailAuthCheckIfNeeded(const ChannelArgs& args,
 
 class CensusFixture : public CoreTestFixture {
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
     auto* server = grpc_server_create(
@@ -131,6 +134,7 @@ class CensusFixture : public CoreTestFixture {
     GPR_ASSERT(
         grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -149,8 +153,9 @@ class CensusFixture : public CoreTestFixture {
 
 class CompressionFixture : public CoreTestFixture {
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(
         args.SetIfUnset(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                         GRPC_COMPRESS_GZIP)
@@ -163,6 +168,7 @@ class CompressionFixture : public CoreTestFixture {
     GPR_ASSERT(
         grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -245,11 +251,13 @@ class FdFixture : public CoreTestFixture {
   FdFixture() { create_sockets(fd_pair_); }
 
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     ExecCtx exec_ctx;
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
+    pre_server_start(server);
     grpc_server_start(server);
     grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
     grpc_server_add_channel_from_fd(server, fd_pair_[1], creds);
@@ -297,8 +305,9 @@ class HttpProxyFilter : public CoreTestFixture {
   ~HttpProxyFilter() override { grpc_end2end_http_proxy_destroy(proxy_); }
 
  private:
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
@@ -306,6 +315,7 @@ class HttpProxyFilter : public CoreTestFixture {
     GPR_ASSERT(
         grpc_server_add_http2_port(server, server_addr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -364,8 +374,9 @@ class ProxyFixture : public CoreTestFixture {
     return channel;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
@@ -373,6 +384,7 @@ class ProxyFixture : public CoreTestFixture {
     GPR_ASSERT(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), server_creds));
     grpc_server_credentials_release(server_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -442,8 +454,9 @@ class SslProxyFixture : public CoreTestFixture {
     return channel;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     grpc_slice cert_slice, key_slice;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
@@ -469,6 +482,7 @@ class SslProxyFixture : public CoreTestFixture {
     GPR_ASSERT(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
+    pre_server_start(server);
     grpc_server_start(server);
     return server;
   }
@@ -505,9 +519,10 @@ class FixtureWithTracing final : public CoreTestFixture {
     // g_fixture_slowdown_factor = 1;
   }
 
-  grpc_server* MakeServer(const ChannelArgs& args,
-                          grpc_completion_queue* cq) override {
-    return fixture_->MakeServer(args, cq);
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    return fixture_->MakeServer(args, cq, pre_server_start);
   }
 
   grpc_channel* MakeClient(const ChannelArgs& args,
@@ -538,11 +553,13 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs {
 #ifdef GRPC_POSIX_SOCKET
-    CoreTestConfiguration{
-        "Chttp2Fd", FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ, nullptr,
-        [](const ChannelArgs&, const ChannelArgs&) {
-          return std::make_unique<FdFixture>();
-        }},
+    CoreTestConfiguration{"Chttp2Fd",
+                          FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
+                              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+                          nullptr,
+                          [](const ChannelArgs&, const ChannelArgs&) {
+                            return std::make_unique<FdFixture>();
+                          }},
 #endif
         CoreTestConfiguration{
             "Chttp2FakeSecurityFullstack",
@@ -573,7 +590,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackLocalAbstractUdsPercentEncoded",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -591,7 +609,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
                               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                   FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                                   FEATURE_MASK_IS_HTTP2 |
-                                  FEATURE_MASK_DO_NOT_FUZZ,
+                                  FEATURE_MASK_DO_NOT_FUZZ |
+                                  FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
                               nullptr,
                               [](const ChannelArgs& /*client_args*/,
                                  const ChannelArgs& /*server_args*/) {
@@ -603,7 +622,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
                               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                   FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
                                   FEATURE_MASK_IS_HTTP2 |
-                                  FEATURE_MASK_DO_NOT_FUZZ,
+                                  FEATURE_MASK_DO_NOT_FUZZ |
+                                  FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
                               nullptr,
                               [](const ChannelArgs& /*client_args*/,
                                  const ChannelArgs& /*server_args*/) {
@@ -616,7 +636,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackLocalUdsPercentEncoded",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -633,7 +654,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2FullstackLocalUds",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
+                FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -695,7 +717,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2InsecureCredentials",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS_LEVEL_INSECURE |
-                FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<InsecureCredsFixture>();
@@ -705,7 +728,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2SimpleSslWithOauth2FullstackTls12",
             FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<Oauth2Fixture>(grpc_tls_version::TLS1_2);
@@ -723,7 +747,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2SimplSslFullstackTls12",
             FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SslTlsFixture>(grpc_tls_version::TLS1_2);
@@ -741,14 +766,17 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
         CoreTestConfiguration{
             "Chttp2SocketPair",
-            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ, nullptr,
+            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+            nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SockpairFixture>(ChannelArgs());
             }},
         CoreTestConfiguration{
             "Chttp2SocketPair1ByteAtATime",
             FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_1BYTE_AT_A_TIME |
-                FEATURE_MASK_DO_NOT_FUZZ,
+                FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SockpairFixture>(
@@ -778,7 +806,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             "Chttp2SslCredReloadTls12",
             FEATURE_MASK_IS_SECURE |
                 FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
-                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2,
+                FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<SslCredReloadFixture>(TLS1_2);
@@ -798,7 +827,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: certificate watcher provider + async external verifier
             // extra: TLS 1.3
             "Chttp2CertWatcherProviderAsyncVerifierTls13",
-            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(
@@ -812,7 +842,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: certificate watcher provider + sync external verifier
             // extra: TLS 1.2
             "Chttp2CertWatcherProviderSyncVerifierTls12",
-            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(
@@ -840,7 +871,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             // server: static data provider + async external verifier
             // extra: TLS 1.3
             "Chttp2StaticProviderAsyncVerifierTls13",
-            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ,
+            kH2TLSFeatureMask | FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             "foo.test.google.fr",
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<TlsFixture>(
@@ -853,7 +885,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
         CoreTestConfiguration{
             "Chttp2FullstackUdsAbstractNamespace",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_DO_NOT_FUZZ,
+                FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
@@ -907,7 +940,8 @@ std::vector<CoreTestConfiguration> AllConfigs() {
         CoreTestConfiguration{
             "Chttp2FullstackWithPipeWakeup",
             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-                FEATURE_MASK_DO_NOT_FUZZ,
+                FEATURE_MASK_DO_NOT_FUZZ |
+                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
             nullptr,
             [](const ChannelArgs& /*client_args*/,
                const ChannelArgs& /*server_args*/) {
@@ -926,7 +960,11 @@ std::vector<CoreTestConfiguration> AllConfigs() {
 // that match some criteria.
 class ConfigQuery {
  public:
-  ConfigQuery() = default;
+  ConfigQuery() {
+    if (GetEnv("GRPC_CI_EXPERIMENTS").has_value()) {
+      exclude_features_ |= FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS;
+    }
+  }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
   // Enforce that the returned configurations have the given features.
@@ -1005,6 +1043,13 @@ CORE_END2END_TEST_SUITE(
     ConfigQuery().ExcludeFeatures(FEATURE_MASK_IS_MINSTACK).Run());
 
 CORE_END2END_TEST_SUITE(
+    CoreDeadlineSingleHopTest,
+    ConfigQuery()
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+                         FEATURE_MASK_IS_MINSTACK)
+        .Run());
+
+CORE_END2END_TEST_SUITE(
     CoreClientChannelTest,
     ConfigQuery().EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL).Run());
 
@@ -1014,6 +1059,14 @@ CORE_END2END_TEST_SUITE(
         .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
         .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
                          FEATURE_MASK_ENABLES_TRACES)
+        .Run());
+
+CORE_END2END_TEST_SUITE(
+    Http2FullstackSingleHopTest,
+    ConfigQuery()
+        .EnforceFeatures(FEATURE_MASK_IS_HTTP2)
+        .EnforceFeatures(FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL)
+        .ExcludeFeatures(FEATURE_MASK_SUPPORTS_REQUEST_PROXYING)
         .Run());
 
 CORE_END2END_TEST_SUITE(

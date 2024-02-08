@@ -14,9 +14,6 @@
 
 #include "src/core/lib/promise/for_each.h"
 
-#include <stdint.h>
-
-#include <initializer_list>
 #include <memory>
 
 #include "gmock/gmock.h"
@@ -26,8 +23,7 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_join.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
+#include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
@@ -85,6 +81,44 @@ TEST_F(ForEachTest, SendThriceWithPipe) {
   EXPECT_EQ(num_received, 3);
 }
 
+TEST_F(ForEachTest, SendThriceWithInterActivityPipe) {
+  int num_received = 0;
+  StrictMock<MockFunction<void(absl::Status)>> on_done_sender;
+  StrictMock<MockFunction<void(absl::Status)>> on_done_receiver;
+  EXPECT_CALL(on_done_sender, Call(absl::OkStatus()));
+  EXPECT_CALL(on_done_receiver, Call(absl::OkStatus()));
+  InterActivityPipe<int, 1> pipe;
+  auto send_activity = MakeActivity(
+      Seq(
+          // Push 3 things into a pipe -- 1, 2, then 3 -- then close.
+          pipe.sender.Push(1), [&pipe] { return pipe.sender.Push(2); },
+          [&pipe] { return pipe.sender.Push(3); },
+          [&pipe] {
+            auto x = std::move(pipe.sender);
+            return absl::OkStatus();
+          }),
+      InlineWakeupScheduler{}, [&on_done_sender](absl::Status status) {
+        on_done_sender.Call(std::move(status));
+      });
+  MakeActivity(
+      [&num_received, &pipe] {
+        // Use a ForEach loop to read them out and verify
+        // all values are seen.
+        return ForEach(std::move(pipe.receiver), [&num_received](int i) {
+          num_received++;
+          EXPECT_EQ(num_received, i);
+          return absl::OkStatus();
+        });
+      },
+      NoWakeupScheduler(),
+      [&on_done_receiver](absl::Status status) {
+        on_done_receiver.Call(std::move(status));
+      });
+  Mock::VerifyAndClearExpectations(&on_done_sender);
+  Mock::VerifyAndClearExpectations(&on_done_receiver);
+  EXPECT_EQ(num_received, 3);
+}
+
 // Pollable type that stays movable until it's polled, then causes the test to
 // fail if it's moved again.
 // Promises have the property that they can be moved until polled, and this
@@ -104,7 +138,7 @@ class MoveableUntilPolled {
   }
 
   Poll<absl::Status> operator()() {
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
     ++polls_;
     if (polls_ == 10) return absl::OkStatus();
     return Pending();

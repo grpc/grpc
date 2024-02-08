@@ -55,6 +55,20 @@ class XdsUpdateHealthServiceStub {
     }
 
     /**
+     * @param \Grpc\Testing\HookRequest $request client request
+     * @param \Grpc\ServerContext $context server request context
+     * @return \Grpc\Testing\HookResponse for response data, null if if error occured
+     *     initial metadata (if any) and status (if not ok) should be set to $context
+     */
+    public function SendHookRequest(
+        \Grpc\Testing\HookRequest $request,
+        \Grpc\ServerContext $context
+    ): ?\Grpc\Testing\HookResponse {
+        $context->setStatus(\Grpc\Status::unimplemented());
+        return null;
+    }
+
+    /**
      * Get the method descriptors of the service for server registration
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
@@ -72,6 +86,12 @@ class XdsUpdateHealthServiceStub {
                 $this,
                 'SetNotServing',
                 '\Grpc\Testing\EmptyMessage',
+                \Grpc\MethodDescriptor::UNARY_CALL
+            ),
+            '/grpc.testing.XdsUpdateHealthService/SendHookRequest' => new \Grpc\MethodDescriptor(
+                $this,
+                'SendHookRequest',
+                '\Grpc\Testing\HookRequest',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];

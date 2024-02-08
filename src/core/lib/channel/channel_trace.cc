@@ -20,7 +20,7 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 
-#include <algorithm>
+#include <memory>
 #include <utility>
 
 #include "absl/strings/str_cat.h"

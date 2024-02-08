@@ -17,7 +17,7 @@ set -eo pipefail
 
 # Constants
 readonly GITHUB_REPOSITORY_NAME="grpc"
-readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc/${TEST_DRIVER_BRANCH:-master}/tools/internal_ci/linux/grpc_xds_k8s_install_test_driver.sh"
+readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
 ## xDS test client Docker images
 readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
@@ -99,7 +99,7 @@ build_docker_images_if_needed() {
 #######################################
 run_test() {
   # Test driver usage:
-  # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
+  # https://github.com/grpc/psm-interop#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${out_dir}"
@@ -180,6 +180,9 @@ main() {
     "remove_neg_test"
     "round_robin_test"
   )
+  if [[ "${TESTING_VERSION}" =~ "master" ]]; then
+      test_suites+=('bootstrap_generator_test')
+  fi
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))
   done

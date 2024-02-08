@@ -18,25 +18,26 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-#include <functional>
+
+#include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/handshaker_registry.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
 // Global singleton that stores library configuration - factories, etc...
 // that plugins might choose to extend.
-class CoreConfiguration {
+class GRPC_DLL CoreConfiguration {
  public:
   CoreConfiguration(const CoreConfiguration&) = delete;
   CoreConfiguration& operator=(const CoreConfiguration&) = delete;
@@ -98,7 +99,7 @@ class CoreConfiguration {
 
   // Stores a builder for RegisterBuilder
   struct RegisteredBuilder {
-    std::function<void(Builder*)> builder;
+    absl::AnyInvocable<void(Builder*)> builder;
     RegisteredBuilder* next;
   };
 
@@ -154,7 +155,7 @@ class CoreConfiguration {
   // Attach a registration function globally.
   // Each registration function is called *in addition to*
   // BuildCoreConfiguration for the default core configuration.
-  static void RegisterBuilder(std::function<void(Builder*)> builder);
+  static void RegisterBuilder(absl::AnyInvocable<void(Builder*)> builder);
 
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.

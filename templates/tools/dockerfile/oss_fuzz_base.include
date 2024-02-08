@@ -1,8 +1,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# Image(a4ad7a70fe10) is built on Apr 19, 2023
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:a4ad7a70fe10674c880ca8618a564860114a31dcdd6f9896aac89f0b2f86112a
+# Image(fd89316ac4c5) is built on Aug 17, 2023
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:fd89316ac4c5f3e25802ca95a00062cece14f0602c5512d71ffeedc22734c0b9
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing

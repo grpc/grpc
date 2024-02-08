@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
+#include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
@@ -27,7 +32,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/transport/transport.h"
 #include "test/core/util/mock_endpoint.h"
 #include "test/core/util/test_config.h"
 
@@ -38,6 +42,7 @@ class ConfigurationTest : public ::testing::Test {
  protected:
   ConfigurationTest() {
     mock_endpoint_ = grpc_mock_endpoint_create(DiscardWrite);
+    grpc_mock_endpoint_finish_put_reads(mock_endpoint_);
     args_ = args_.SetObject(ResourceQuota::Default());
     args_ = args_.SetObject(
         grpc_event_engine::experimental::GetDefaultEventEngine());
@@ -55,10 +60,10 @@ TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
       grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Infinity());
-  EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
+  EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 2);
-  grpc_transport_destroy(&t->base);
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 2);
+  t->Orphan();
 }
 
 TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
@@ -72,8 +77,8 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
-  grpc_transport_destroy(&t->base);
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
+  t->Orphan();
 }
 
 TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
@@ -83,11 +88,12 @@ TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Hours(2));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 2);
-  EXPECT_EQ(t->ping_policy.min_recv_ping_interval_without_data,
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Minutes(5));
-  EXPECT_EQ(t->ping_policy.max_ping_strikes, 2);
-  grpc_transport_destroy(&t->base);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 2);
+  t->Orphan();
 }
 
 TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
@@ -104,11 +110,12 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
-  EXPECT_EQ(t->ping_policy.min_recv_ping_interval_without_data,
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
-  EXPECT_EQ(t->ping_policy.max_ping_strikes, 0);
-  grpc_transport_destroy(&t->base);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
+  t->Orphan();
 }
 
 // This test modifies the defaults of the client side settings, so it would
@@ -130,8 +137,8 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
-  grpc_transport_destroy(&t->base);
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 3);
+  t->Orphan();
 }
 
 // This test modifies the defaults of the client side settings, so it would
@@ -155,11 +162,12 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
-  EXPECT_EQ(t->ping_policy.max_pings_without_data, 3);
-  EXPECT_EQ(t->ping_policy.min_recv_ping_interval_without_data,
+  // Server never limits based on number of pings without data.
+  EXPECT_EQ(t->ping_rate_policy.TestOnlyMaxPingsWithoutData(), 0);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMinPingIntervalWithoutData(),
             Duration::Seconds(20));
-  EXPECT_EQ(t->ping_policy.max_ping_strikes, 0);
-  grpc_transport_destroy(&t->base);
+  EXPECT_EQ(t->ping_abuse_policy.TestOnlyMaxPingStrikes(), 0);
+  t->Orphan();
 }
 
 }  // namespace
@@ -169,6 +177,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_core::ForceEnableExperiment("keepalive_fix", true);
+  grpc_core::ForceEnableExperiment("keepalive_server_fix", true);
   grpc_init();
   auto ret = RUN_ALL_TESTS();
   grpc_shutdown();

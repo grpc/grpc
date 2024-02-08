@@ -12,24 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/client_call_tracer.h"
+#include "client_call_tracer.h"
 
-#include <constants.h>
-#include <observability_util.h>
-#include <python_census_context.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
+#include "constants.h"
+#include "observability_util.h"
+#include "python_census_context.h"
 
 #include <grpc/slice.h>
 
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_observability {
@@ -44,9 +41,11 @@ constexpr uint32_t
 //
 
 PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
-    const char* method, const char* trace_id, const char* parent_span_id,
-    bool tracing_enabled)
-    : method_(GetMethod(method)), tracing_enabled_(tracing_enabled) {
+    const char* method, const char* target, const char* trace_id,
+    const char* parent_span_id, bool tracing_enabled)
+    : method_(GetMethod(method)),
+      target_(GetTarget(target)),
+      tracing_enabled_(tracing_enabled) {
   GenerateClientContext(absl::StrCat("Sent.", method_),
                         absl::string_view(trace_id),
                         absl::string_view(parent_span_id), &context_);
@@ -56,8 +55,27 @@ void PythonOpenCensusCallTracer::GenerateContext() {}
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
     absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation);
+}
+
+void PythonOpenCensusCallTracer::RecordAnnotation(
+    const Annotation& annotation) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+
+  switch (annotation.type()) {
+    // Annotations are expensive to create. We should only create it if the call
+    // is being sampled by default.
+    default:
+      if (IsSampled()) {
+        context_.AddSpanAnnotation(annotation.ToString());
+      }
+      break;
+  }
 }
 
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
@@ -68,13 +86,13 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName,
                     transparent_retries_, context_.Labels());
     RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
-                       ToDoubleMilliseconds(retry_delay_), context_.Labels());
+                       ToDoubleSeconds(retry_delay_), context_.Labels());
   }
 
   if (tracing_enabled_) {
     context_.EndSpan();
     if (IsSampled()) {
-      RecordSpan(context_.Span().ToCensusData());
+      RecordSpan(context_.GetSpan().ToCensusData());
     }
   }
 }
@@ -82,7 +100,7 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
 PythonCensusContext
 PythonOpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   auto context = PythonCensusContext(absl::StrCat("Attempt.", method_),
-                                     &(context_.Span()), context_.Labels());
+                                     &(context_.GetSpan()), context_.Labels());
   return context;
 }
 
@@ -130,6 +148,7 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     return;
   }
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
+  context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
   RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, context_.Labels());
 }
 
@@ -164,6 +183,11 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
   ++recv_message_count_;
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+    PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
+  return nullptr;
 }
 
 namespace {
@@ -204,6 +228,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
   std::string final_status = absl::StatusCodeToString(status_code_);
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
+  context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
   context_.Labels().emplace_back(kClientStatus, final_status);
   RecordDoubleMetric(
       kRpcClientSentBytesPerRpcMeasureName,
@@ -217,24 +242,13 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
                               ? transport_stream_stats->incoming.data_bytes
                               : 0),
       context_.Labels());
-  RecordDoubleMetric(
-      kRpcClientServerLatencyMeasureName,
-      absl::ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time)),
-      context_.Labels());
+  RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
+                     absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
+                     context_.Labels());
   RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
-                     absl::ToDoubleMilliseconds(absl::Now() - start_time_),
+                     absl::ToDoubleSeconds(absl::Now() - start_time_),
                      context_.Labels());
   RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels());
-  if (grpc_core::IsTransportSuppliesClientLatencyEnabled()) {
-    if (transport_stream_stats != nullptr &&
-        gpr_time_cmp(transport_stream_stats->latency,
-                     gpr_inf_future(GPR_TIMESPAN)) != 0) {
-      double latency_ms = absl::ToDoubleMilliseconds(absl::Microseconds(
-          gpr_timespec_to_micros(transport_stream_stats->latency)));
-      RecordDoubleMetric(kRpcClientTransportLatencyMeasureName, latency_ms,
-                         context_.Labels());
-    }
-  }
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -260,11 +274,11 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
 
   if (parent_->tracing_enabled_) {
     if (status_code_ != absl::StatusCode::kOk) {
-      context_.Span().SetStatus(StatusCodeToString(status_code_));
+      context_.GetSpan().SetStatus(StatusCodeToString(status_code_));
     }
     context_.EndSpan();
     if (IsSampled()) {
-      RecordSpan(context_.Span().ToCensusData());
+      RecordSpan(context_.GetSpan().ToCensusData());
     }
   }
 
@@ -275,8 +289,27 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(absl::string_view annotation) {
-  // If tracing is disabled, the following will be a no-op.
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
   context_.AddSpanAnnotation(annotation);
+}
+
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordAnnotation(const Annotation& annotation) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+
+  switch (annotation.type()) {
+    // Annotations are expensive to create. We should only create it if the call
+    // is being sampled by default.
+    default:
+      if (IsSampled()) {
+        context_.AddSpanAnnotation(annotation.ToString());
+      }
+      break;
+  }
 }
 
 }  // namespace grpc_observability

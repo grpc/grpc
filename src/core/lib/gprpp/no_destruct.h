@@ -68,7 +68,7 @@ class NoDestruct {
   const T* get() const { return reinterpret_cast<const T*>(&space_); }
 
  private:
-  typename std::aligned_storage<sizeof(T), alignof(T)>::type space_;
+  alignas(T) char space_[sizeof(T)];
 };
 
 // Helper for when a program desires a single *process wide* instance of a

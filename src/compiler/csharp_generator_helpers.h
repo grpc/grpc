@@ -26,6 +26,7 @@ namespace grpc_csharp_generator {
 
 inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
                              const std::string& file_suffix,
+                             const bool base_namespace_present,
                              const std::string& base_namespace,
                              std::string& out_file, std::string* error) {
   // Support for base_namespace option is **experimental**.
@@ -36,7 +37,7 @@ inline bool ServicesFilename(const grpc::protobuf::FileDescriptor* file,
   // make a difference (only files with punctuation or numbers in the
   // name.)
   // Otherwise the behavior remains the same as before.
-  if (base_namespace.empty()) {
+  if (!base_namespace_present) {
     out_file = grpc_generator::FileNameInUpperCamel(file, false) + file_suffix;
   } else {
     out_file = GRPC_CUSTOM_CSHARP_GETOUTPUTFILE(file, file_suffix, true,

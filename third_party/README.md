@@ -17,6 +17,7 @@ gRPC depends on several third-party libraries, their source code is available
 - gRPC C++ needs to stay buildable/installable even if the submodules are not present (e.g. the tar.gz archive with gRPC doesn't contain the submodules),
   assuming that the dependencies are already installed. This is a requirement for being able to provide a reasonable install process (e.g. using cmake)
   and to support package managers for gRPC C++.
+    - CAVEAT: upb is an exception here because of its lack of cmake support. Therefore, third_party/upb should be present to build gRPC until upb supports it.
 
 - Adding a new dependency is a lot of work (both for us and for the users).
   We currently support multiple build systems (BAZEL, cmake, make, ...) so adding a new dependency usually requires updates in multiple build systems
@@ -113,28 +114,19 @@ Updating the protobuf dependency is now part of the internal release process (se
 
 Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 
-In addition, please perform the following two steps to generate the Python `xds-protos` package:
-
-1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
-2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.
-
 ### Updating third_party/upb
 
 Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
-
 1. Update third_party/upb directory by running
    - `export GRPC_ROOT=~/git/grpc`
-   - `wget https://github.com/protocolbuffers/upb/archive/refs/heads/main.zip`
+   - `wget https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.zip`
    - `rm -rf $GRPC_ROOT/third_party/upb`
-   - `unzip main.zip -d $GRPC_ROOT/third_party`
-   - `mv $GRPC_ROOT/third_party/upb-main $GRPC_ROOT/third_party/upb`
+   - `unzip protobuf-25.1.zip -d /tmp/protobuf`
+   - `cp -r /tmp/protobuf/protobuf-25.1/upb $GRPC_ROOT/third_party/upb`
 2. Update the dependency in `grpc_deps.bzl` to the same commit
 3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
-4. Inspect `src/upb/gen_build_yaml.py` and update it with added or removed upb files
-   - Running `cd third_party/upb; bazel query "deps(upb) union deps(json) union deps(textformat)"`
-     would give some idea on what needs to be included.
-5. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
-6. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
+4. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
+5. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 
 ### Updating third_party/utf8_range
 

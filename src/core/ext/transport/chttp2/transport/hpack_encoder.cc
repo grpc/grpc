@@ -28,10 +28,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/http_trace.h"
+#include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -42,12 +42,12 @@ namespace grpc_core {
 
 namespace {
 
-constexpr size_t kDataFrameHeaderSize = 9;
+constexpr size_t kHeadersFrameHeaderSize = 9;
 
 }  // namespace
 
-// fills p (which is expected to be kDataFrameHeaderSize bytes long)
-// with a data frame header
+// fills p (which is expected to be kHeadersFrameHeaderSize bytes long)
+// with a headers frame header
 static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                        uint8_t flags) {
   // len is the current frame size (i.e. for the frame we're finishing).
@@ -99,9 +99,9 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     } else {
       len = options.max_frame_size;
     }
-    FillHeader(grpc_slice_buffer_tiny_add(output, kDataFrameHeaderSize),
+    FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
-    options.stats->framing_bytes += kDataFrameHeaderSize;
+    options.stats->framing_bytes += kHeadersFrameHeaderSize;
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;
@@ -475,31 +475,25 @@ void Encoder::EncodeRepeatingSliceValue(const absl::string_view& key,
 
 void TimeoutCompressorImpl::EncodeWith(absl::string_view key,
                                        Timestamp deadline, Encoder* encoder) {
-  Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
+  const Timeout timeout = Timeout::FromDuration(deadline - Timestamp::Now());
   auto& table = encoder->hpack_table();
-  for (auto it = previous_timeouts_.begin(); it != previous_timeouts_.end();
-       ++it) {
-    double ratio = timeout.RatioVersus(it->timeout);
+  for (size_t i = 0; i < kNumPreviousValues; i++) {
+    const auto& previous = previous_timeouts_[i];
+    if (!table.ConvertableToDynamicIndex(previous.index)) continue;
+    const double ratio = timeout.RatioVersus(previous.timeout);
     // If the timeout we're sending is shorter than a previous timeout, but
     // within 3% of it, we'll consider sending it.
-    if (ratio > -3 && ratio <= 0 &&
-        table.ConvertableToDynamicIndex(it->index)) {
-      encoder->EmitIndexed(table.DynamicIndex(it->index));
-      // Put this timeout to the front of the queue - forces common timeouts to
-      // be considered earlier.
-      std::swap(*it, *previous_timeouts_.begin());
+    if (ratio > -3 && ratio <= 0) {
+      encoder->EmitIndexed(table.DynamicIndex(previous.index));
       return;
     }
-  }
-  // Clean out some expired timeouts.
-  while (!previous_timeouts_.empty() &&
-         !table.ConvertableToDynamicIndex(previous_timeouts_.back().index)) {
-    previous_timeouts_.pop_back();
   }
   Slice encoded = timeout.Encode();
   uint32_t index = encoder->EmitLitHdrWithNonBinaryStringKeyIncIdx(
       Slice::FromStaticString(key), std::move(encoded));
-  previous_timeouts_.push_back(PreviousTimeout{timeout, index});
+  uint32_t i = next_previous_value_;
+  ++next_previous_value_;
+  previous_timeouts_[i % kNumPreviousValues] = PreviousTimeout{timeout, index};
 }
 
 Encoder::Encoder(HPackCompressor* compressor, bool use_true_binary_metadata,

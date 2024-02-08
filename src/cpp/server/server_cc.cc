@@ -33,6 +33,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -57,6 +58,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/server_interface.h>
+#include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/interceptor.h>
@@ -1265,6 +1267,8 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // shutdown. We should force a shutdown now by cancelling all inflight calls
   if (status == grpc::CompletionQueue::NextStatus::TIMEOUT) {
     grpc_server_cancel_all_calls(server_);
+    status =
+        shutdown_cq.AsyncNext(&tag, &ok, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
   // successfully shutdown

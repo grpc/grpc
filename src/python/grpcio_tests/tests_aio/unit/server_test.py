@@ -570,6 +570,9 @@ class TestServer(AioTestBase):
             server.add_secure_port(bind_address, server_credentials)
 
     async def test_maximum_concurrent_rpcs(self):
+        async def coro_wrapper(awaitable):
+            return await awaitable
+
         # Build the server with concurrent rpc argument
         server = aio.server(maximum_concurrent_rpcs=_MAXIMUM_CONCURRENT_RPCS)
         port = server.add_insecure_port("localhost:0")
@@ -579,17 +582,35 @@ class TestServer(AioTestBase):
         # Build the channel
         channel = aio.insecure_channel(bind_address)
         # Deplete the concurrent quota with 3 times of max RPCs
-        rpcs = []
+        rpc_tasks = []
         for _ in range(3 * _MAXIMUM_CONCURRENT_RPCS):
-            rpcs.append(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
-        task = self.loop.create_task(
-            asyncio.wait(rpcs, return_when=asyncio.FIRST_EXCEPTION)
+            task = asyncio.create_task(
+                coro_wrapper(channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+            )
+            rpc_tasks.append(task)
+        await_tasks = asyncio.wait(rpc_tasks, return_when=asyncio.ALL_COMPLETED)
+
+        done, _ = await await_tasks
+        exceptions = []
+        for task in done:
+            exception = task.exception()
+            if exception:
+                exceptions.append(exception)
+
+        # Check whether the number of tasks raised RESOURCE_EXHAUSTED is roughly
+        # 2 * _MAXIMUM_CONCURRENT_RPCS.
+        self.assertAlmostEqual(
+            len(exceptions),
+            2 * _MAXIMUM_CONCURRENT_RPCS,
+            delta=_MAXIMUM_CONCURRENT_RPCS,
         )
-        # Each batch took test_constants.SHORT_TIMEOUT /2
-        start_time = time.time()
-        await task
-        elapsed_time = time.time() - start_time
-        self.assertGreater(elapsed_time, test_constants.SHORT_TIMEOUT * 3 / 2)
+        for exception in exceptions:
+            self.assertTrue(isinstance(exception, aio.AioRpcError))
+            self.assertEqual(
+                grpc.StatusCode.RESOURCE_EXHAUSTED, exception.code()
+            )
+            self.assertIn("Concurrent RPC limit exceeded", exception.details())
+
         # Clean-up
         await channel.close()
         await server.stop(0)

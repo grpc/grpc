@@ -15,9 +15,10 @@
 // IWYU pragma: no_include <ratio>
 // IWYU pragma: no_include <arpa/inet.h>
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdlib>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -34,7 +35,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
@@ -43,6 +46,10 @@
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
 
+#ifdef GPR_WINDOWS
+#include "test/cpp/util/windows/manifest_file.h"
+#endif  // GPR_WINDOWS
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -50,13 +57,6 @@ void InitDNSTests() {}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#ifdef GPR_WINDOWS
-class EventEngineDNSTest : public EventEngineTest {};
-
-// TODO(yijiem): make the test run on Windows
-TEST_F(EventEngineDNSTest, TODO) {}
-#else
 
 namespace {
 
@@ -97,11 +97,21 @@ MATCHER(StatusCodeEq, "") {
   return std::get<0>(arg).code() == std::get<1>(arg);
 }
 
+#define SKIP_TEST_FOR_NATIVE_DNS_RESOLVER()                              \
+  do {                                                                   \
+    if (grpc_core::ConfigVars::Get().DnsResolver() == "native") {        \
+      GTEST_SKIP()                                                       \
+          << "This test specifies a target DNS server which the native " \
+             "DNS resolver does not support.";                           \
+    }                                                                    \
+  } while (0)
+
 }  // namespace
 
 class EventEngineDNSTest : public EventEngineTest {
  protected:
   static void SetUpTestSuite() {
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     std::string test_records_path = kDNSTestRecordGroupsYamlPath;
     std::string dns_server_path = kDNSServerRelPath;
     std::string dns_resolver_path = kDNSResolverRelPath;
@@ -109,13 +119,36 @@ class EventEngineDNSTest : public EventEngineTest {
     std::string health_check_path = kHealthCheckRelPath;
     absl::optional<std::string> runfile_dir = grpc::GetGrpcTestRunFileDir();
     if (runfile_dir.has_value()) {
-      // We sure need a portable filesystem lib for this to work on Windows.
       test_records_path = absl::StrJoin({*runfile_dir, test_records_path}, "/");
       dns_server_path = absl::StrJoin({*runfile_dir, dns_server_path}, "/");
       dns_resolver_path = absl::StrJoin({*runfile_dir, dns_resolver_path}, "/");
       tcp_connect_path = absl::StrJoin({*runfile_dir, tcp_connect_path}, "/");
       health_check_path = absl::StrJoin({*runfile_dir, health_check_path}, "/");
+#ifdef GPR_WINDOWS
+// TODO(yijiem): Misusing the GRPC_PORT_ISOLATED_RUNTIME preprocessor symbol as
+// an indication whether the test is running on RBE or not. Find a better way of
+// doing this.
+#ifndef GRPC_PORT_ISOLATED_RUNTIME
+      gpr_log(GPR_ERROR,
+              "You are invoking the test locally with Bazel, you may need to "
+              "invoke Bazel with --enable_runfiles=yes.");
+#endif  // GRPC_PORT_ISOLATED_RUNTIME
+      test_records_path = grpc::testing::NormalizeFilePath(test_records_path);
+      dns_server_path =
+          grpc::testing::NormalizeFilePath(dns_server_path + ".exe");
+      dns_resolver_path =
+          grpc::testing::NormalizeFilePath(dns_resolver_path + ".exe");
+      tcp_connect_path =
+          grpc::testing::NormalizeFilePath(tcp_connect_path + ".exe");
+      health_check_path =
+          grpc::testing::NormalizeFilePath(health_check_path + ".exe");
+#endif  // GPR_WINDOWS
     } else {
+#ifdef GPR_WINDOWS
+      grpc_core::Crash(
+          "The EventEngineDNSTest does not support running without Bazel on "
+          "Windows for now.");
+#endif  // GPR_WINDOWS
       // Invoke the .py scripts directly where they are in source code if we are
       // not running with bazel.
       dns_server_path += ".py";
@@ -141,19 +174,20 @@ class EventEngineDNSTest : public EventEngineTest {
         tcp_connect_path,
     });
     int status = health_check.Join();
-    // TODO(yijiem): make this portable for Windows
-    // TODO(yijiem): remove the if block and reenable the ASSERT_TRUE below once
-    // we have added twisted to the docker images.
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-      skip_end2end_tests_ = true;
-    }
-    // ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+#ifdef GPR_WINDOWS
+    ASSERT_EQ(status, 0);
+#else
+    ASSERT_TRUE(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+#endif  // GPR_WINDOWS
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
   static void TearDownTestSuite() {
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
     dns_server_.server_process->Interrupt();
     dns_server_.server_process->Join();
     delete dns_server_.server_process;
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
   }
 
   std::unique_ptr<EventEngine::DNSResolver> CreateDefaultDNSResolver() {
@@ -191,7 +225,6 @@ class EventEngineDNSTest : public EventEngineTest {
     grpc::SubProcess* server_process;
   };
   grpc_core::Notification dns_resolver_signal_;
-  static bool skip_end2end_tests_;
 
  private:
   static DNSServer dns_server_;
@@ -199,13 +232,12 @@ class EventEngineDNSTest : public EventEngineTest {
 };
 
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
-bool EventEngineDNSTest::skip_end2end_tests_ = false;
+
+// TODO(hork): implement XFAIL for resolvers that don't support TXT or SRV
+#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -221,10 +253,7 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
 }
 
 TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -240,10 +269,7 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
 }
 
 TEST_F(EventEngineDNSTest, QueryARecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -261,10 +287,7 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryAAAARecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -285,10 +308,7 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
 }
 
 TEST_F(EventEngineDNSTest, TestAddressSorting) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -306,10 +326,7 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   const SRVRecord kExpectedRecords[] = {
       {/*host=*/"ipv4-only-multi-target.dns-test.event-engine", /*port=*/1234,
        /*priority=*/0, /*weight=*/0},
@@ -328,10 +345,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupSRV(
       [this](auto result) {
@@ -344,10 +358,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecord) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   // clang-format off
   const std::string kExpectedRecord =
       "grpc_config=[{"
@@ -377,10 +388,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupTXT(
       [this](auto result) {
@@ -393,10 +401,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
 }
 
 TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
-  // TODO(yijiem): remove once the docker images are fixed.
-  if (skip_end2end_tests_) {
-    GTEST_SKIP();
-  }
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   dns_resolver->LookupHostname(
@@ -412,6 +417,7 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   dns_resolver.reset();
   dns_resolver_signal_.WaitForNotification();
 }
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
 
 #define EXPECT_SUCCESS()           \
   do {                             \
@@ -429,7 +435,15 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(
       [this](auto result) {
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
         EXPECT_SUCCESS();
+#else
+        EXPECT_TRUE(result.ok());
+        EXPECT_THAT(*result,
+                    Pointwise(ResolvedAddressEq(),
+                              {*URIToResolvedAddress("ipv6:[::1]:1"),
+                               *URIToResolvedAddress("ipv4:127.0.0.1:1")}));
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
         dns_resolver_signal_.Notify();
       },
       "localhost:1", "");
@@ -585,6 +599,9 @@ TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhostWithPort) {
   TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
                           &dns_resolver_signal_, "[localhost]:1");
 }
-// END
 
-#endif  // GPR_WINDOWS
+TEST_F(EventEngineDNSTest, UnparseableHostPortsEmptyHostname) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, ":443");
+}
+// END

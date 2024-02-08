@@ -44,8 +44,9 @@ EXTERNAL_DEPS = {
     "absl/algorithm/container.h": "absl/algorithm:container",
     "absl/base/attributes.h": "absl/base:core_headers",
     "absl/base/call_once.h": "absl/base",
+    "absl/base/config.h": "absl/base:config",
     # TODO(ctiller) remove this
-    "absl/base/internal/endian.h": "absl/base",
+    "absl/base/internal/endian.h": "absl/base:endian",
     "absl/base/thread_annotations.h": "absl/base:core_headers",
     "absl/container/flat_hash_map.h": "absl/container:flat_hash_map",
     "absl/container/flat_hash_set.h": "absl/container:flat_hash_set",
@@ -67,6 +68,8 @@ EXTERNAL_DEPS = {
     "absl/meta/type_traits.h": "absl/meta:type_traits",
     "absl/numeric/int128.h": "absl/numeric:int128",
     "absl/random/random.h": "absl/random",
+    "absl/random/bit_gen_ref.h": "absl/random:bit_gen_ref",
+    "absl/random/mocking_bit_gen.h": "absl/random:mocking_bit_gen",
     "absl/random/distributions.h": "absl/random:distributions",
     "absl/random/uniform_int_distribution.h": "absl/random:distributions",
     "absl/status/status.h": "absl/status",
@@ -93,6 +96,11 @@ EXTERNAL_DEPS = {
     "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
     "address_sorting/address_sorting.h": "address_sorting",
+    "google/cloud/opentelemetry/resource_detector.h": "google_cloud_cpp:opentelemetry",
+    "opentelemetry/common/attribute_value.h": "otel/api",
+    "opentelemetry/common/key_value_iterable.h": "otel/api",
+    "opentelemetry/nostd/function_ref.h": "otel/api",
+    "opentelemetry/nostd/string_view.h": "otel/api",
     "opentelemetry/context/context.h": "otel/api",
     "opentelemetry/metrics/meter.h": "otel/api",
     "opentelemetry/metrics/meter_provider.h": "otel/api",
@@ -100,7 +108,11 @@ EXTERNAL_DEPS = {
     "opentelemetry/metrics/sync_instruments.h": "otel/api",
     "opentelemetry/nostd/shared_ptr.h": "otel/api",
     "opentelemetry/nostd/unique_ptr.h": "otel/api",
-    "sdk/include/opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
+    "opentelemetry/sdk/metrics/meter_provider.h": "otel/sdk/src/metrics",
+    "opentelemetry/sdk/common/attribute_utils.h": "otel/sdk:headers",
+    "opentelemetry/sdk/resource/resource.h": "otel/sdk:headers",
+    "opentelemetry/sdk/resource/resource_detector.h": "otel/sdk:headers",
+    "opentelemetry/sdk/resource/semantic_conventions.h": "otel/sdk:headers",
     "ares.h": "cares",
     "fuzztest/fuzztest.h": ["fuzztest", "fuzztest_main"],
     "google/api/monitored_resource.pb.h": (
@@ -139,6 +151,8 @@ EXTERNAL_DEPS = {
     "openssl/err.h": "libcrypto",
     "openssl/evp.h": "libcrypto",
     "openssl/hmac.h": "libcrypto",
+    "openssl/mem.h": "libcrypto",
+    "openssl/param_build.h": "libcrypto",
     "openssl/pem.h": "libcrypto",
     "openssl/rsa.h": "libcrypto",
     "openssl/sha.h": "libcrypto",
@@ -147,16 +161,16 @@ EXTERNAL_DEPS = {
     "openssl/x509.h": "libcrypto",
     "openssl/x509v3.h": "libcrypto",
     "re2/re2.h": "re2",
-    "upb/arena.h": "upb_lib",
-    "upb/base/string_view.h": "upb_lib",
-    "upb/collections/map.h": "upb_collections_lib",
-    "upb/def.h": "upb_lib",
-    "upb/json_encode.h": "upb_json_lib",
-    "upb/mem/arena.h": "upb_lib",
-    "upb/text_encode.h": "upb_textformat_lib",
-    "upb/def.hpp": "upb_reflection",
-    "upb/upb.h": "upb_lib",
-    "upb/upb.hpp": "upb_lib",
+    "upb/base/status.hpp": "upb_base_lib",
+    "upb/base/string_view.h": "upb_base_lib",
+    "upb/message/map.h": "upb_message_lib",
+    "upb/reflection/def.h": "upb_reflection",
+    "upb/json/encode.h": "upb_json_lib",
+    "upb/mem/arena.h": "upb_mem_lib",
+    "upb/mem/arena.hpp": "upb_mem_lib",
+    "upb/text/encode.h": "upb_textformat_lib",
+    "upb/reflection/def.hpp": "upb_reflection",
+    "upb/upb.h": "upb_amalgamation_lib",
     "xxhash.h": "xxhash",
     "zlib.h": "madler_zlib",
 }
@@ -167,7 +181,7 @@ INTERNAL_DEPS = {
     ),
     "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h": "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
     "test/core/experiments/test_experiments.h": "//test/core/experiments:test_experiments_lib",
-    "google/api/expr/v1alpha1/syntax.upb.h": "google_type_expr_upb",
+    "google/api/expr/v1alpha1/syntax.upb.h": "google_api_expr_v1alpha1_syntax_upb",
     "google/rpc/status.upb.h": "google_rpc_status_upb",
     "google/protobuf/any.upb.h": "protobuf_any_upb",
     "google/protobuf/duration.upb.h": "protobuf_duration_upb",
@@ -346,9 +360,7 @@ SCORERS = {
 }
 
 parser = argparse.ArgumentParser(description="Fix build dependencies")
-parser.add_argument(
-    "targets", nargs="*", default=[], help="targets to fix (empty => all)"
-)
+parser.add_argument("targets", nargs="+", help="targets to fix")
 parser.add_argument(
     "--score",
     type=str,
@@ -379,6 +391,7 @@ for dirname in [
     "",
     "src/core",
     "src/cpp/ext/gcp",
+    "src/cpp/ext/csm",
     "src/cpp/ext/otel",
     "test/core/backoff",
     "test/core/experiments",
@@ -390,8 +403,10 @@ for dirname in [
     "test/core/promise",
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
+    "test/core/transport/test_suite",
     "fuzztest",
     "fuzztest/core/channel",
+    "fuzztest/core/transport/chttp2",
 ]:
     parsing_path = dirname
     exec(
@@ -409,12 +424,13 @@ for dirname in [
             "grpc_cc_library": grpc_cc_library,
             "grpc_cc_test": grpc_cc_library,
             "grpc_core_end2end_test": lambda **kwargs: None,
+            "grpc_transport_test": lambda **kwargs: None,
             "grpc_fuzzer": grpc_cc_library,
             "grpc_fuzz_test": grpc_cc_library,
             "grpc_proto_fuzzer": grpc_cc_library,
             "grpc_proto_library": grpc_proto_library,
             "select": lambda d: d["//conditions:default"],
-            "glob": lambda files: None,
+            "glob": lambda files, **kwargs: None,
             "grpc_end2end_tests": lambda: None,
             "grpc_upb_proto_library": lambda name, **kwargs: None,
             "grpc_upb_proto_reflection_library": lambda name, **kwargs: None,
@@ -641,14 +657,28 @@ def make_library(library):
     return (library, error, deps, external_deps)
 
 
+def matches_target(library, target):
+    if not target.startswith("//"):
+        if "/" in target:
+            target = "//" + target
+        else:
+            target = "//:" + target
+    if target == "..." or target == "//...":
+        return True
+    if target.endswith("/..."):
+        return library.startswith(target[:-4])
+    return library == target
+
+
 def main() -> None:
     update_libraries = []
     for library in sorted(consumes.keys()):
         if library in no_update:
             continue
-        if args.targets and library not in args.targets:
-            continue
-        update_libraries.append(library)
+        for target in args.targets:
+            if matches_target(library, target):
+                update_libraries.append(library)
+                break
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
         updated_libraries = p.map(make_library, update_libraries, 1)
 

@@ -183,9 +183,9 @@ class _TestGenericHandlerForMethods(grpc.GenericRpcHandler):
         context.set_trailing_metadata(_TRAILING_METADATA)
 
         # ensure that we can read back the data we set on the context
-        assert context.get_code() == _NON_OK_CODE
-        assert context.get_details() == _DETAILS
-        assert context.get_trailing_metadata() == _TRAILING_METADATA
+        assert context.code() == _NON_OK_CODE
+        assert context.details() == _DETAILS
+        assert context.trailing_metadata() == _TRAILING_METADATA
         return _RESPONSE
 
     def service(self, handler_call_details):

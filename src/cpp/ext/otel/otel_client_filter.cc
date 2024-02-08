@@ -20,33 +20,42 @@
 
 #include "src/cpp/ext/otel/otel_client_filter.h"
 
+#include <stdint.h>
+
+#include <array>
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 
+#include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
@@ -63,9 +72,9 @@ const grpc_channel_filter OpenTelemetryClientFilter::kFilter =
         "otel_client");
 
 absl::StatusOr<OpenTelemetryClientFilter> OpenTelemetryClientFilter::Create(
-    const grpc_core::ChannelArgs& /*args*/,
-    ChannelFilter::Args /*filter_args*/) {
-  return OpenTelemetryClientFilter();
+    const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+  return OpenTelemetryClientFilter(
+      args.GetOwnedString(GRPC_ARG_SERVER_URI).value_or(""));
 }
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
@@ -74,11 +83,15 @@ OpenTelemetryClientFilter::MakeCallPromise(
     grpc_core::NextPromiseFactory next_promise_factory) {
   auto* path = call_args.client_initial_metadata->get_pointer(
       grpc_core::HttpPathMetadata());
+  bool registered_method = reinterpret_cast<uintptr_t>(
+      call_args.client_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
+          .value_or(nullptr));
   auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-  auto* tracer = grpc_core::GetContext<grpc_core::Arena>()
-                     ->ManagedNew<OpenTelemetryCallTracer>(
-                         path != nullptr ? path->Ref() : grpc_core::Slice(),
-                         grpc_core::GetContext<grpc_core::Arena>());
+  auto* tracer =
+      grpc_core::GetContext<grpc_core::Arena>()
+          ->ManagedNew<OpenTelemetryCallTracer>(
+              this, path != nullptr ? path->Ref() : grpc_core::Slice(),
+              grpc_core::GetContext<grpc_core::Arena>(), registered_method);
   GPR_DEBUG_ASSERT(
       call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
       nullptr);
@@ -87,19 +100,69 @@ OpenTelemetryClientFilter::MakeCallPromise(
   return next_promise_factory(std::move(call_args));
 }
 
+OpenTelemetryClientFilter::OpenTelemetryClientFilter(std::string target)
+    : active_plugin_options_view_(
+          ActivePluginOptionsView::MakeForClient(target)) {
+  // Use the original target string only if a filter on the attribute is not
+  // registered or if the filter returns true, otherwise use "other".
+  if (OpenTelemetryPluginState().target_attribute_filter == nullptr ||
+      OpenTelemetryPluginState().target_attribute_filter(target)) {
+    filtered_target_ = std::move(target);
+  } else {
+    filtered_target_ = "other";
+  }
+}
+
 //
 // OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer
 //
 
 OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
-    OpenTelemetryCallAttemptTracer(OpenTelemetryCallTracer* parent,
+    OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
                                    bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
-  // TODO(yashykt): Figure out how to get this to work with absl::string_view
-  OTelPluginState().client.attempt.started->Add(
-      1, {{std::string(OTelMethodKey()), std::string(parent_->method_)}});
+  if (OpenTelemetryPluginState().client.attempt.started != nullptr) {
+    std::array<std::pair<absl::string_view, absl::string_view>, 2>
+        additional_labels = {
+            {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
+             {OpenTelemetryTargetKey(), parent_->parent_->filtered_target()}}};
+    // We might not have all the injected labels that we want at this point, so
+    // avoid recording a subset of injected labels here.
+    OpenTelemetryPluginState().client.attempt.started->Add(
+        1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
+                            additional_labels,
+                            /*active_plugin_options_view=*/nullptr,
+                            /*optional_labels_span=*/{}, /*is_client=*/true));
+  }
+}
+
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
+    RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
+  parent_->parent_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t /*index*/) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          injected_labels_from_plugin_options_.push_back(
+              labels_injector->GetLabels(recv_initial_metadata));
+        }
+        return true;
+      });
+}
+
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
+    RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
+  parent_->parent_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t /*index*/) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          labels_injector->AddLabels(send_initial_metadata, nullptr);
+        }
+        return true;
+      });
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordSendMessage(
@@ -132,22 +195,40 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* transport_stream_stats) {
-  absl::InlinedVector<std::pair<std::string, std::string>, 2> attributes = {
-      {std::string(OTelMethodKey()), std::string(parent_->method_)},
-      {std::string(OTelStatusKey()), absl::StatusCodeToString(status.code())}};
-  OTelPluginState().client.attempt.duration->Record(
-      absl::ToDoubleSeconds(absl::Now() - start_time_), attributes,
-      opentelemetry::context::Context{});
-  OTelPluginState().client.attempt.sent_total_compressed_message_size->Record(
-      transport_stream_stats != nullptr
-          ? transport_stream_stats->outgoing.data_bytes
-          : 0,
-      attributes, opentelemetry::context::Context{});
-  OTelPluginState().client.attempt.rcvd_total_compressed_message_size->Record(
-      transport_stream_stats != nullptr
-          ? transport_stream_stats->incoming.data_bytes
-          : 0,
-      attributes, opentelemetry::context::Context{});
+  std::array<std::pair<absl::string_view, absl::string_view>, 3>
+      additional_labels = {
+          {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
+           {OpenTelemetryTargetKey(), parent_->parent_->filtered_target()},
+           {OpenTelemetryStatusKey(),
+            grpc_status_code_to_string(
+                static_cast<grpc_status_code>(status.code()))}}};
+  KeyValueIterable labels(injected_labels_from_plugin_options_,
+                          additional_labels,
+                          &parent_->parent_->active_plugin_options_view(),
+                          optional_labels_array_, /*is_client=*/true);
+  if (OpenTelemetryPluginState().client.attempt.duration != nullptr) {
+    OpenTelemetryPluginState().client.attempt.duration->Record(
+        absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
+        opentelemetry::context::Context{});
+  }
+  if (OpenTelemetryPluginState()
+          .client.attempt.sent_total_compressed_message_size != nullptr) {
+    OpenTelemetryPluginState()
+        .client.attempt.sent_total_compressed_message_size->Record(
+            transport_stream_stats != nullptr
+                ? transport_stream_stats->outgoing.data_bytes
+                : 0,
+            labels, opentelemetry::context::Context{});
+  }
+  if (OpenTelemetryPluginState()
+          .client.attempt.rcvd_total_compressed_message_size != nullptr) {
+    OpenTelemetryPluginState()
+        .client.attempt.rcvd_total_compressed_message_size->Record(
+            transport_stream_stats != nullptr
+                ? transport_stream_stats->incoming.data_bytes
+                : 0,
+            labels, opentelemetry::context::Context{});
+  }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordCancel(
@@ -167,15 +248,35 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
   // Not implemented
 }
 
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordAnnotation(
+    const Annotation& /*annotation*/) {
+  // Not implemented
+}
+
+std::shared_ptr<grpc_core::TcpTracerInterface>
+OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::StartNewTcpTrace() {
+  // No TCP trace.
+  return nullptr;
+}
+
+void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
+    OptionalLabelComponent component,
+    std::shared_ptr<std::map<std::string, std::string>> optional_labels) {
+  optional_labels_array_[static_cast<std::size_t>(component)] =
+      std::move(optional_labels);
+}
+
 //
 // OpenTelemetryCallTracer
 //
 
-OpenTelemetryCallTracer::OpenTelemetryCallTracer(grpc_core::Slice path,
-                                                 grpc_core::Arena* arena)
-    : path_(std::move(path)),
-      method_(absl::StripPrefix(path_.as_string_view(), "/")),
-      arena_(arena) {}
+OpenTelemetryCallTracer::OpenTelemetryCallTracer(
+    OpenTelemetryClientFilter* parent, grpc_core::Slice path,
+    grpc_core::Arena* arena, bool registered_method)
+    : parent_(parent),
+      path_(std::move(path)),
+      arena_(arena),
+      registered_method_(registered_method) {}
 
 OpenTelemetryCallTracer::~OpenTelemetryCallTracer() {}
 
@@ -203,8 +304,23 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
   return new OpenTelemetryCallAttemptTracer(this, /*arena_allocated=*/false);
 }
 
+absl::string_view OpenTelemetryCallTracer::MethodForStats() const {
+  absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
+  if (registered_method_ ||
+      (OpenTelemetryPluginState().generic_method_attribute_filter != nullptr &&
+       OpenTelemetryPluginState().generic_method_attribute_filter(method))) {
+    return method;
+  }
+  return "other";
+}
+
 void OpenTelemetryCallTracer::RecordAnnotation(
     absl::string_view /*annotation*/) {
+  // Not implemented
+}
+
+void OpenTelemetryCallTracer::RecordAnnotation(
+    const Annotation& /*annotation*/) {
   // Not implemented
 }
 

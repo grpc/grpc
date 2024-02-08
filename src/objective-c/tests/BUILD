@@ -334,20 +334,36 @@ grpc_objc_ios_unit_test(
 )
 
 grpc_objc_testing_library(
-    name = "EventEngineTests-lib",
-    srcs = glob(["EventEngineTests/*.mm"]),
+    name = "EventEngineClientTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineClientTests.mm"],
     # defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
+    ],
+)
+
+grpc_objc_testing_library(
+    name = "EventEngineUnitTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
+    defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
+    deps = [
+        "//src/core:cf_event_engine",
+        "//test/core/event_engine/cf:cf_engine_unit_test_lib",
+        "//test/core/event_engine/test_suite/tests:dns",
         "//test/core/event_engine/test_suite/tests:timer",
     ],
 )
 
 grpc_objc_ios_unit_test(
-    name = "EventEngineTests",
-    deps = [":EventEngineTests-lib"],
+    name = "EventEngineClientTests",
+    deps = [":EventEngineClientTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
+    name = "EventEngineUnitTests",
+    deps = [":EventEngineUnitTests-lib"],
 )
 
 # Note that bazel currently doesn't support running tvos_unit_test

@@ -112,8 +112,7 @@ class XdsHttpFilterImpl {
   // there is no override in any of those locations.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override,
-      absl::string_view filter_name) const = 0;
+      const FilterConfig* filter_config_override) const = 0;
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;
@@ -139,8 +138,7 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,
-      const FilterConfig* /*filter_config_override*/,
-      absl::string_view /*filter_name*/) const override {
+      const FilterConfig* /*filter_config_override*/) const override {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }

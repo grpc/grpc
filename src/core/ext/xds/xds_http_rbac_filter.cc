@@ -40,7 +40,7 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 
 #include <grpc/support/json.h>
 
@@ -486,8 +486,10 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
           ValidationErrors::ScopedField field(errors, ".audit_condition");
           errors->AddError("invalid audit condition");
       }
-      if (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_has_logger_configs(
-              audit_logging_options)) {
+      size_t size;
+      envoy_config_rbac_v3_RBAC_AuditLoggingOptions_logger_configs(
+          audit_logging_options, &size);
+      if (size != 0) {
         inner_rbac_json.emplace("audit_loggers",
                                 ParseAuditLoggerConfigsToJson(
                                     context, audit_logging_options, errors));
@@ -575,17 +577,12 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override,
-    absl::string_view filter_name) const {
+    const FilterConfig* filter_config_override) const {
   const Json& policy_json = filter_config_override != nullptr
                                 ? filter_config_override->config
                                 : hcm_filter_config.config;
-  auto json_object = policy_json.object();
-  json_object.emplace("filter_name",
-                      Json::FromString(std::string(filter_name)));
-  // The policy JSON may be empty other than the filter name, that's allowed.
-  return ServiceConfigJsonEntry{"rbacPolicy",
-                                JsonDump(Json::FromObject(json_object))};
+  // The policy JSON may be empty and that's allowed.
+  return ServiceConfigJsonEntry{"rbacPolicy", JsonDump(policy_json)};
 }
 
 }  // namespace grpc_core

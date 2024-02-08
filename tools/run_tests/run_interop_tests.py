@@ -555,7 +555,6 @@ class RubyLanguage:
         return (
             _SKIP_SERVER_COMPRESSION
             + _SKIP_DATA_FRAME_PADDING
-            + _SKIP_SPECIAL_STATUS_MESSAGE
             + _SKIP_GOOGLE_DEFAULT_CREDS
             + _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
             + _ORCA_TEST_CASES

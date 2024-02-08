@@ -20,6 +20,9 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
+#include "opentelemetry/exporters/prometheus/exporter_factory.h"
+#include "opentelemetry/exporters/prometheus/exporter_options.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -27,6 +30,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/ext/gcp_observability.h>
+#include <grpcpp/ext/otel_plugin.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -116,6 +120,14 @@ ABSL_FLAG(int32_t, soak_overall_timeout_seconds, 0,
 ABSL_FLAG(int32_t, soak_min_time_ms_between_rpcs, 0,
           "The minimum time in milliseconds between consecutive RPCs in a "
           "soak test (rpc_soak or channel_soak), useful for limiting QPS");
+ABSL_FLAG(
+    int32_t, soak_request_size, 271828,
+    "The request size in a soak RPC. "
+    "The default value is set based on the interop large unary test case.");
+ABSL_FLAG(
+    int32_t, soak_response_size, 314159,
+    "The response size in a soak RPC. "
+    "The default value is set based on the interop large unary test case.");
 ABSL_FLAG(int32_t, iteration_interval, 10,
           "The interval in seconds between rpcs. This is used by "
           "long_connection test");
@@ -128,6 +140,8 @@ ABSL_FLAG(
     "grpc-status and error message to the console, in a stable format.");
 ABSL_FLAG(bool, enable_observability, false,
           "Whether to enable GCP Observability");
+ABSL_FLAG(bool, enable_otel_plugin, false,
+          "Whether to enable OpenTelemetry Plugin");
 
 using grpc::testing::CreateChannelForTestCase;
 using grpc::testing::GetServiceAccountJsonKey;
@@ -199,11 +213,32 @@ int main(int argc, char** argv) {
   int ret = 0;
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
+    // TODO(someone): remove deprecated usage
+    // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
     gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
     if (!status.ok()) {
       return 1;
     }
+  }
+
+  // TODO(stanleycheung): switch to CsmObservabilityBuilder once xds setup is
+  // ready
+  if (absl::GetFlag(FLAGS_enable_otel_plugin)) {
+    gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+    opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
+    // default was "localhost:9464" which causes connection issue across GKE
+    // pods
+    opts.url = "0.0.0.0:9464";
+    auto prometheus_exporter =
+        opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(
+            opts);
+    auto meter_provider =
+        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+    meter_provider->AddMetricReader(std::move(prometheus_exporter));
+    grpc::OpenTelemetryPluginBuilder otel_builder;
+    otel_builder.SetMeterProvider(std::move(meter_provider));
+    assert(otel_builder.BuildAndRegisterGlobal().ok());
   }
 
   grpc::testing::ChannelCreationFunc channel_creation_func;
@@ -319,14 +354,18 @@ int main(int argc, char** argv) {
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
       absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
-      absl::GetFlag(FLAGS_soak_overall_timeout_seconds));
+      absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
+      absl::GetFlag(FLAGS_soak_request_size),
+      absl::GetFlag(FLAGS_soak_response_size));
   actions["rpc_soak"] = std::bind(
       &grpc::testing::InteropClient::DoRpcSoakTest, &client,
       absl::GetFlag(FLAGS_server_host), absl::GetFlag(FLAGS_soak_iterations),
       absl::GetFlag(FLAGS_soak_max_failures),
       absl::GetFlag(FLAGS_soak_per_iteration_max_acceptable_latency_ms),
       absl::GetFlag(FLAGS_soak_min_time_ms_between_rpcs),
-      absl::GetFlag(FLAGS_soak_overall_timeout_seconds));
+      absl::GetFlag(FLAGS_soak_overall_timeout_seconds),
+      absl::GetFlag(FLAGS_soak_request_size),
+      absl::GetFlag(FLAGS_soak_response_size));
   actions["long_lived_channel"] =
       std::bind(&grpc::testing::InteropClient::DoLongLivedChannelTest, &client,
                 absl::GetFlag(FLAGS_soak_iterations),
@@ -356,6 +395,8 @@ int main(int argc, char** argv) {
   }
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
+    // TODO(someone): remove deprecated usage
+    // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     grpc::experimental::GcpObservabilityClose();
   }
 

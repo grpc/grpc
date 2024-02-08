@@ -14,19 +14,19 @@
 // limitations under the License.
 //
 
+#include <memory>
 #include <new>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -104,6 +104,7 @@ class InjectStatusFilter {
 grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
     nullptr,
+    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -117,18 +118,6 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
     "InjectStatusFilter",
 };
 
-bool AddFilter(ChannelStackBuilder* builder) {
-  // Skip on proxy (which explicitly disables retries).
-  if (!builder->channel_args()
-           .GetBool(GRPC_ARG_ENABLE_RETRIES)
-           .value_or(true)) {
-    return true;
-  }
-  // Install filter.
-  builder->PrependFilter(&InjectStatusFilter::kFilterVtable);
-  return true;
-}
-
 // Tests that we honor the error passed to recv_trailing_metadata_ready
 // when determining the call's status, even if the op completion runs before
 // the recv_trailing_metadata op is started from the surface.
@@ -137,8 +126,11 @@ bool AddFilter(ChannelStackBuilder* builder) {
 //   so no retry is done
 CORE_END2END_TEST(RetryTest, RetryRecvTrailingMetadataError) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterStage(GRPC_CLIENT_SUBCHANNEL, 0,
-                                           AddFilter);
+    builder->channel_init()
+        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                         &InjectStatusFilter::kFilterVtable)
+        // Skip on proxy (which explicitly disables retries).
+        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
   });
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(

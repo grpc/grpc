@@ -19,30 +19,35 @@ import os
 from grpc_tools import protoc
 import pkg_resources
 
+
+def localize_path(p):
+    return os.path.join(*p.split("/"))
+
+
 # We might not want to compile all the protos
-EXCLUDE_PROTO_PACKAGES_LIST = [
-    # Requires extra dependency to Prometheus protos
-    "envoy/service/metrics/v2",
-    "envoy/service/metrics/v3",
-    "envoy/service/metrics/v4alpha",
-]
+EXCLUDE_PROTO_PACKAGES_LIST = tuple(
+    localize_path(p)
+    for p in (
+        # Requires extra dependency to Prometheus protos
+        "envoy/service/metrics/v2",
+        "envoy/service/metrics/v3",
+        "envoy/service/metrics/v4alpha",
+    )
+)
 
 # Compute the pathes
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
-XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
-UDPA_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "udpa")
+ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
+XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "xds")
 GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, "third_party", "googleapis")
 VALIDATE_ROOT = os.path.join(GRPC_ROOT, "third_party", "protoc-gen-validate")
 OPENCENSUS_PROTO_ROOT = os.path.join(
     GRPC_ROOT, "third_party", "opencensus-proto", "src"
 )
-OPENTELEMETRY_PROTO_ROOT = os.path.join(
-    GRPC_ROOT, "third_party", "opentelemetry"
-)
-WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename(
-    "grpc_tools", "_proto"
-)
+OPENTELEMETRY_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "opentelemetry")
+WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename("grpc_tools", "_proto")
+
 OUTPUT_PATH = WORK_DIR
 
 # Prepare the test file generation
@@ -56,22 +61,20 @@ PKGUTIL_STYLE_INIT = (
 NAMESPACE_PACKAGES = ["google"]
 
 
-def add_test_import(
-    proto_package_path: str, file_name: str, service: bool = False
-):
+def add_test_import(proto_package_path: str, file_name: str, service: bool = False):
     TEST_IMPORTS.append(
         "from %s import %s\n"
         % (
-            proto_package_path.replace("/", "."),
-            file_name.replace(".proto", "_pb2"),
+            proto_package_path.replace("/", ".").replace("-", "_"),
+            file_name.replace(".proto", "_pb2").replace("-", "_"),
         )
     )
     if service:
         TEST_IMPORTS.append(
             "from %s import %s\n"
             % (
-                proto_package_path.replace("/", "."),
-                file_name.replace(".proto", "_pb2_grpc"),
+                proto_package_path.replace("/", ".").replace("-", "_"),
+                file_name.replace(".proto", "_pb2_grpc").replace("-", "_"),
             )
         )
 
@@ -79,8 +82,8 @@ def add_test_import(
 # Prepare Protoc command
 COMPILE_PROTO_ONLY = [
     "grpc_tools.protoc",
+    "--proto_path={}".format(ENVOY_API_PROTO_ROOT),
     "--proto_path={}".format(XDS_PROTO_ROOT),
-    "--proto_path={}".format(UDPA_PROTO_ROOT),
     "--proto_path={}".format(GOOGLEAPIS_ROOT),
     "--proto_path={}".format(VALIDATE_ROOT),
     "--proto_path={}".format(WELL_KNOWN_PROTOS_INCLUDE),
@@ -92,10 +95,11 @@ COMPILE_BOTH = COMPILE_PROTO_ONLY + ["--grpc_python_out={}".format(OUTPUT_PATH)]
 
 
 def has_grpc_service(proto_package_path: str) -> bool:
-    return proto_package_path.startswith("envoy/service")
+    return proto_package_path.startswith(os.path.join("envoy", "service"))
 
 
 def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
+    compiled_any = False
     for root, _, files in os.walk(os.path.join(proto_root, sub_dir)):
         proto_package_path = os.path.relpath(root, proto_root)
         if proto_package_path in EXCLUDE_PROTO_PACKAGES_LIST:
@@ -104,6 +108,7 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
         for file_name in files:
             if file_name.endswith(".proto"):
                 # Compile proto
+                compiled_any = True
                 if has_grpc_service(proto_package_path):
                     return_code = protoc.main(
                         COMPILE_BOTH + [os.path.join(root, file_name)]
@@ -113,11 +118,17 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
                     return_code = protoc.main(
                         COMPILE_PROTO_ONLY + [os.path.join(root, file_name)]
                     )
-                    add_test_import(
-                        proto_package_path, file_name, service=False
-                    )
+                    add_test_import(proto_package_path, file_name, service=False)
                 if return_code != 0:
                     raise Exception("error: {} failed".format(COMPILE_BOTH))
+    # Ensure a deterministic order.
+    TEST_IMPORTS.sort()
+    if not compiled_any:
+        raise Exception(
+            "No proto files found at {}. Did you update git submodules?".format(
+                proto_root, sub_dir
+            )
+        )
 
 
 def create_init_file(path: str, package_path: str = "") -> None:
@@ -131,8 +142,8 @@ def create_init_file(path: str, package_path: str = "") -> None:
 
 def main():
     # Compile xDS protos
+    compile_protos(ENVOY_API_PROTO_ROOT)
     compile_protos(XDS_PROTO_ROOT)
-    compile_protos(UDPA_PROTO_ROOT)
     # We don't want to compile the entire GCP surface API, just the essential ones
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "rpc"))

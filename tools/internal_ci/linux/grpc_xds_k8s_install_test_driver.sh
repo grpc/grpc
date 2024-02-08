@@ -18,11 +18,11 @@ set -eo pipefail
 # Constants
 readonly PYTHON_VERSION="${PYTHON_VERSION:-3.10}"
 # Test driver
-readonly TEST_DRIVER_REPO_NAME="grpc"
-readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/grpc.git"
-readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-master}"
-readonly TEST_DRIVER_PATH="tools/run_tests/xds_k8s_test_driver"
-readonly TEST_DRIVER_PROTOS_PATH="src/proto/grpc/testing"
+readonly TEST_DRIVER_REPO_NAME="psm-interop"
+readonly TEST_DRIVER_REPO_URL="https://github.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop.git"
+readonly TEST_DRIVER_BRANCH="${TEST_DRIVER_BRANCH:-main}"
+readonly TEST_DRIVER_PATH=""
+readonly TEST_DRIVER_PROTOS_PATH="protos/grpc/testing"
 readonly FORCE_TESTING_VERSION="${FORCE_TESTING_VERSION:-}"
 
 # GKE cluster identifiers.
@@ -48,6 +48,14 @@ activate_gke_cluster() {
       ;;
     GKE_CLUSTER_PSM_SECURITY)
       GKE_CLUSTER_NAME="psm-interop-security"
+      GKE_CLUSTER_ZONE="us-central1-a"
+      ;;
+    GKE_CLUSTER_PSM_CSM)
+      GKE_CLUSTER_NAME="psm-interop-csm"
+      GKE_CLUSTER_ZONE="us-east7-c"
+      ;;
+    GKE_CLUSTER_PSM_GAMMA)
+      GKE_CLUSTER_NAME="psm-interop-gamma"
       GKE_CLUSTER_ZONE="us-central1-a"
       ;;
     GKE_CLUSTER_PSM_BASIC)
@@ -253,7 +261,7 @@ test_driver_pip_install() {
 #   Writes the output of `python -m grpc_tools.protoc` to stdout, stderr
 #   Writes the list if compiled python code to stdout
 #   Writes compiled python code with proto messages and grpc services to
-#   $TEST_DRIVER_FULL_DIR/src/proto
+#   $TEST_DRIVER_FULL_DIR/protos/grpc/testing
 #######################################
 test_driver_compile_protos() {
   declare -a protos
@@ -276,7 +284,7 @@ test_driver_compile_protos() {
 
 #######################################
 # Installs the test driver and it's requirements.
-# https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#installation
+# https://github.com/grpc/psm-interop#installation
 # Globals:
 #   TEST_DRIVER_REPO_DIR: Populated with the path to the repo containing
 #                         the test driver
@@ -288,7 +296,7 @@ test_driver_compile_protos() {
 #######################################
 test_driver_install() {
   readonly TEST_DRIVER_REPO_DIR="${1:?Usage test_driver_install TEST_DRIVER_REPO_DIR}"
-  readonly TEST_DRIVER_FULL_DIR="${TEST_DRIVER_REPO_DIR}/${TEST_DRIVER_PATH}"
+  readonly TEST_DRIVER_FULL_DIR="${TEST_DRIVER_REPO_DIR}"
   test_driver_get_source
   test_driver_pip_install
   test_driver_compile_protos

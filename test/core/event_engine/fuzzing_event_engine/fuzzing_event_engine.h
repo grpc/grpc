@@ -22,7 +22,6 @@
 #include <map>
 #include <memory>
 #include <queue>
-#include <ratio>
 #include <set>
 #include <utility>
 #include <vector>
@@ -59,6 +58,8 @@ class FuzzingEventEngine : public EventEngine {
                               const fuzzing_event_engine::Actions& actions);
   ~FuzzingEventEngine() override { UnsetGlobalHooks(); }
 
+  using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
+
   // Once the fuzzing work is completed, this method should be called to speed
   // quiescence.
   void FuzzingDone() ABSL_LOCKS_EXCLUDED(mu_);
@@ -67,6 +68,14 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_);
   // Repeatedly call Tick() until there is no more work to do.
   void TickUntilIdle() ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick until some time
+  void TickUntil(Time t) ABSL_LOCKS_EXCLUDED(mu_);
+  // Tick for some duration
+  void TickForDuration(Duration d) ABSL_LOCKS_EXCLUDED(mu_);
+
+  // Sets a callback to be invoked any time RunAfter() is called.
+  // Allows tests to verify the specified duration.
+  void SetRunAfterDurationCallback(absl::AnyInvocable<void(Duration)> callback);
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -97,7 +106,8 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_LOCKS_EXCLUDED(mu_) override;
   bool Cancel(TaskHandle handle) ABSL_LOCKS_EXCLUDED(mu_) override;
 
-  using Time = std::chrono::time_point<FuzzingEventEngine, Duration>;
+  TaskHandle RunAfterExactly(Duration when, absl::AnyInvocable<void()> closure)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   Time Now() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -106,10 +116,15 @@ class FuzzingEventEngine : public EventEngine {
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
 
+  Duration max_delay_write() const {
+    return max_delay_[static_cast<int>(RunType::kWrite)];
+  }
+
  private:
   enum class RunType {
     kWrite,
     kRunAfter,
+    kExact,
   };
 
   // One pending task to be run.
@@ -281,6 +296,10 @@ class FuzzingEventEngine : public EventEngine {
   std::queue<std::queue<size_t>> write_sizes_for_future_connections_
       ABSL_GUARDED_BY(mu_);
   grpc_pick_port_functions previous_pick_port_functions_;
+
+  grpc_core::Mutex run_after_duration_callback_mu_;
+  absl::AnyInvocable<void(Duration)> run_after_duration_callback_
+      ABSL_GUARDED_BY(run_after_duration_callback_mu_);
 };
 
 }  // namespace experimental

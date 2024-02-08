@@ -8,8 +8,8 @@
 
     dnl # --with-grpc -> add include path
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-generated)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upbdefs-generated)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-gen)
+    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upbdefs-gen)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/abseil-cpp)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
@@ -49,9 +49,14 @@
     php_full_deps = []
     for dep in php_deps:
       php_full_deps.append(dep)
-      php_full_deps.extend(lib_maps[dep].transitive_deps)
-    for dep in set(php_full_deps) - set({'z'}):
-      srcs.extend(lib_maps[dep].src)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        php_full_deps.extend(lib.transitive_deps)
+    # construct list of all source files, but explicitly exclude zlib and cares
+    for dep in set(php_full_deps) - set({'z', 'cares'}):
+      lib = lib_maps.get(dep, None)
+      if lib:
+        srcs.extend(lib.src)
     srcs = sorted(set(srcs))
   %>
     PHP_NEW_EXTENSION(grpc,

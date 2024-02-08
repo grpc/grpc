@@ -14,6 +14,8 @@
 
 #include "test/core/util/osa_distance.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 namespace grpc_core {

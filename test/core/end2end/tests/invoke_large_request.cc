@@ -18,9 +18,11 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -33,13 +35,13 @@ namespace {
 
 CORE_END2END_TEST(Http2SingleHopTest, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
+  auto send_from_client = RandomSlice(kMessageSize);
+  auto send_from_server = RandomSlice(kMessageSize);
   InitServer(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(5)).Create();
-  auto send_from_client = RandomSlice(kMessageSize);
-  auto send_from_server = RandomSlice(kMessageSize);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingMessage server_message;

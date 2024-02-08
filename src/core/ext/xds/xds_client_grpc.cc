@@ -19,25 +19,33 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "upb/base/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_channel_args.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -132,6 +140,19 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
       "not defined");
 }
 
+std::vector<RefCountedPtr<GrpcXdsClient>> GetAllXdsClients() {
+  MutexLock lock(g_mu);
+  std::vector<RefCountedPtr<GrpcXdsClient>> xds_clients;
+  if (g_xds_client != nullptr) {
+    auto xds_client =
+        g_xds_client->RefIfNonZero(DEBUG_LOCATION, "DumpAllClientConfigs");
+    if (xds_client != nullptr) {
+      xds_clients.emplace_back(xds_client.TakeAsSubclass<GrpcXdsClient>());
+    }
+  }
+  return xds_clients;
+}
+
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
@@ -154,7 +175,9 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   MutexLock lock(g_mu);
   if (g_xds_client != nullptr) {
     auto xds_client = g_xds_client->RefIfNonZero(DEBUG_LOCATION, reason);
-    if (xds_client != nullptr) return xds_client;
+    if (xds_client != nullptr) {
+      return xds_client.TakeAsSubclass<GrpcXdsClient>();
+    }
   }
   // Find bootstrap contents.
   auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);
@@ -173,6 +196,34 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client = xds_client.get();
   return xds_client;
+}
+
+// ABSL_NO_THREAD_SAFETY_ANALYSIS because we have to manually manage locks for
+// individual XdsClients and compiler struggles with checking the validity
+grpc_slice GrpcXdsClient::DumpAllClientConfigs()
+    ABSL_NO_THREAD_SAFETY_ANALYSIS {
+  auto xds_clients = GetAllXdsClients();
+  upb::Arena arena;
+  // Contains strings that should survive till serialization
+  std::set<std::string> string_pool;
+  auto response = envoy_service_status_v3_ClientStatusResponse_new(arena.ptr());
+  // We lock each XdsClient mutex till we are done with the serialization to
+  // ensure that all data referenced from the UPB proto message stays alive.
+  for (const auto& xds_client : xds_clients) {
+    auto client_config =
+        envoy_service_status_v3_ClientStatusResponse_add_config(response,
+                                                                arena.ptr());
+    xds_client->mu()->Lock();
+    xds_client->DumpClientConfig(&string_pool, arena.ptr(), client_config);
+  }
+  // Serialize the upb message to bytes
+  size_t output_length;
+  char* output = envoy_service_status_v3_ClientStatusResponse_serialize(
+      response, arena.ptr(), &output_length);
+  for (const auto& xds_client : xds_clients) {
+    xds_client->mu()->Unlock();
+  }
+  return grpc_slice_from_cpp_string(std::string(output, output_length));
 }
 
 GrpcXdsClient::GrpcXdsClient(
@@ -230,11 +281,5 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 grpc_slice grpc_dump_xds_configs(void) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      grpc_core::ChannelArgs(), "grpc_dump_xds_configs()");
-  if (!xds_client.ok()) {
-    // If we aren't using xDS, just return an empty string.
-    return grpc_empty_slice();
-  }
-  return grpc_slice_from_cpp_string((*xds_client)->DumpClientConfigBinary());
+  return grpc_core::GrpcXdsClient::DumpAllClientConfigs();
 }

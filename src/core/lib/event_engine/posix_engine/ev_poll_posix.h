@@ -17,7 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
 #include <memory>
 #include <string>
 
@@ -38,7 +37,8 @@ namespace experimental {
 class PollEventHandle;
 
 // Definition of poll based poller.
-class PollPoller : public PosixEventPoller {
+class PollPoller : public PosixEventPoller,
+                   public std::enable_shared_from_this<PollPoller> {
  public:
   explicit PollPoller(Scheduler* scheduler);
   PollPoller(Scheduler* scheduler, bool use_phony_poll);
@@ -54,13 +54,14 @@ class PollPoller : public PosixEventPoller {
   bool CanTrackErrors() const override { return false; }
   ~PollPoller() override;
 
+  // Forkable
+  void PrepareFork() override;
+  void PostforkParent() override;
+  void PostforkChild() override;
+
+  void Close();
+
  private:
-  void Ref() { ref_count_.fetch_add(1, std::memory_order_relaxed); }
-  void Unref() {
-    if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      delete this;
-    }
-  }
   void KickExternal(bool ext);
   void PollerHandlesListAddHandle(PollEventHandle* handle)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -76,20 +77,21 @@ class PollPoller : public PosixEventPoller {
   };
   grpc_core::Mutex mu_;
   Scheduler* scheduler_;
-  std::atomic<int> ref_count_{1};
   bool use_phony_poll_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
   bool was_kicked_ext_ ABSL_GUARDED_BY(mu_);
   int num_poll_handles_ ABSL_GUARDED_BY(mu_);
   PollEventHandle* poll_handles_list_head_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::unique_ptr<WakeupFd> wakeup_fd_;
+  bool closed_ ABSL_GUARDED_BY(mu_);
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.
 // It use_phony_poll is true, it implies that the poller is declared
 // non-polling and any attempt to schedule a blocking poll will result in a
 // crash failure.
-PollPoller* MakePollPoller(Scheduler* scheduler, bool use_phony_poll);
+std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
+                                           bool use_phony_poll);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

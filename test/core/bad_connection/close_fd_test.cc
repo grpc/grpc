@@ -23,11 +23,10 @@
 //
 #include <stdint.h>
 
-#include <initializer_list>
-
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -41,7 +40,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/lib/transport/transport.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -88,7 +87,7 @@ static test_ctx g_ctx;
 // chttp2 transport that is immediately available (used for testing
 // connected_channel without a client_channel
 
-static void server_setup_transport(grpc_transport* transport) {
+static void server_setup_transport(grpc_core::Transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->server, grpc_cq_pollset(g_ctx.cq));
   grpc_core::Server* core_server = grpc_core::Server::FromC(g_ctx.server);
@@ -98,7 +97,7 @@ static void server_setup_transport(grpc_transport* transport) {
                                   core_server->channel_args(), nullptr)));
 }
 
-static void client_setup_transport(grpc_transport* transport) {
+static void client_setup_transport(grpc_core::Transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_add_to_pollset(g_ctx.ep->client,
                                grpc_cq_pollset(g_ctx.client_cq));
@@ -118,7 +117,7 @@ static void client_setup_transport(grpc_transport* transport) {
 
 static void init_client() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_transport* transport;
+  grpc_core::Transport* transport;
   transport = grpc_create_chttp2_transport(grpc_core::ChannelArgs(),
                                            g_ctx.ep->client, true);
   client_setup_transport(transport);
@@ -128,7 +127,7 @@ static void init_client() {
 
 static void init_server() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_transport* transport;
+  grpc_core::Transport* transport;
   GPR_ASSERT(!g_ctx.server);
   g_ctx.server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(g_ctx.server, g_ctx.cq, nullptr);

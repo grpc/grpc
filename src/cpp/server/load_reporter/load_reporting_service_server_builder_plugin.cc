@@ -22,7 +22,6 @@
 
 #include <utility>
 
-#include <grpcpp/grpcpp.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/server_builder.h>
 

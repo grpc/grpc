@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 
+#include <cstdint>
 #include <memory>
 
 #include <grpc/grpc.h>
@@ -86,12 +87,14 @@ class InteropClient {
                          int32_t max_failures,
                          int64_t max_acceptable_per_iteration_latency_ms,
                          int32_t soak_min_time_ms_between_rpcs,
-                         int32_t overall_timeout_seconds);
+                         int32_t overall_timeout_seconds, int32_t request_size,
+                         int32_t response_size);
   bool DoRpcSoakTest(const std::string& server_uri, int32_t soak_iterations,
                      int32_t max_failures,
                      int64_t max_acceptable_per_iteration_latency_ms,
                      int32_t soak_min_time_ms_between_rpcs,
-                     int32_t overall_timeout_seconds);
+                     int32_t overall_timeout_seconds, int32_t request_size,
+                     int32_t response_size);
   bool DoLongLivedChannelTest(int32_t soak_iterations,
                               int32_t iteration_interval);
 
@@ -146,7 +149,8 @@ class InteropClient {
   std::tuple<bool, int32_t, std::string, std::string>
   PerformOneSoakTestIteration(
       const bool reset_channel,
-      const int32_t max_acceptable_per_iteration_latency_ms);
+      const int32_t max_acceptable_per_iteration_latency_ms,
+      const int32_t request_size, const int32_t response_size);
 
   void PerformSoakTest(const std::string& server_uri,
                        const bool reset_channel_per_iteration,
@@ -154,7 +158,8 @@ class InteropClient {
                        const int32_t max_failures,
                        const int32_t max_acceptable_per_iteration_latency_ms,
                        const int32_t min_time_ms_between_rpcs,
-                       const int32_t overall_timeout_seconds);
+                       const int32_t overall_timeout_seconds,
+                       const int32_t request_size, const int32_t response_size);
 
   ServiceStub serviceStub_;
   /// If true, abort() is not called for transient failures

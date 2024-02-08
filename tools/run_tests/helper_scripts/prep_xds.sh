@@ -17,12 +17,24 @@ trap 'date' DEBUG
 set -ex
 
 # change to grpc repo root
-cd "$(dirname "$0")/../../.."
+pushd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 
-sudo apt-get install -y python3-pip
-sudo python3 -m pip install --upgrade pip
-sudo python3 -m pip install --upgrade setuptools
-sudo python3 -m pip install --upgrade grpcio==1.31.0 grpcio-tools==1.31.0 protobuf google-api-python-client google-auth-httplib2 oauth2client xds-protos
+# Note: we don't use venv here because then per-language build files would need
+#   to source this script to have venv python be on the PATH. This would require
+#   backport this change to ~30 branches. Instead, we just install pip packages
+#   globally here. If this ever breaks, uncomment the following lines, remove
+#   sudo from pip install, and do the backports.
+#
+# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
+# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
+# VIRTUAL_ENV=$(mktemp -d)
+# python3 -m venv "${VIRTUAL_ENV}"
+# source "${VIRTUAL_ENV}/bin/activate"
+
+sudo python3 -m pip install --upgrade pip==19.3.1
+# TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
+#   compatible with protobuf 4.X is uploaded to PyPi.
+sudo python3 -m pip install --upgrade grpcio grpcio-tools==1.48.1 google-api-python-client google-auth-httplib2 oauth2client xds-protos
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
@@ -47,3 +59,5 @@ python3 -m grpc_tools.protoc \
     --python_out=${TOOLS_DIR} \
     --grpc_python_out=${TOOLS_DIR} \
     ${HEALTH_PROTO_SOURCE_DIR}/health.proto
+
+popd

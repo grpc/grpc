@@ -77,7 +77,7 @@ function venv_relative_python() {
   fi
 }
 
-# Distutils toolchain to use depending on the system.
+# Toolchain to use depending on the system.
 function toolchain() {
   if [ "$(is_mingw)" ]; then
     echo 'mingw32'
@@ -123,26 +123,20 @@ if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  $PYTHON -m pip install --user virtualenv==20.0.23
-  $PYTHON -m virtualenv "$VENV"
+  $PYTHON -m pip install --user virtualenv==20.25.0
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
-
-# On library/version/platforms combo that do not have a binary
-# published, we may end up building a dependency from source. In that
-# case, several of our build environment variables may disrupt the
-# third-party build process. This function pipes through only the
-# minimal environment necessary.
 pip_install() {
-  /usr/bin/env -i PATH="$PATH" "$VENV_PYTHON" -m pip install "$@"
+  $VENV_PYTHON -m pip install "$@"
 }
 
-# Pin setuptools to < 60.0.0 to restore the distutil installation, see:
-# https://github.com/pypa/setuptools/pull/2896
-export SETUPTOOLS_USE_DISTUTILS=stdlib
-pip_install --upgrade pip==21.3.1
-pip_install --upgrade setuptools==59.6.0
+pip_install --upgrade pip
+pip_install --upgrade wheel
+pip_install --upgrade setuptools==66.1.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -177,6 +171,15 @@ pip_install_dir "$ROOT"
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
+# Build/install Observability
+# Observability does not support Windows and MacOS.
+if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
+  echo "Skip building grpcio_observability for Windows or MacOS"
+else
+  $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+fi
+
 # Build/install Channelz
 $VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_channelz/setup.py" build_package_protos
@@ -197,6 +200,11 @@ $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
+
+# Build/install status proto mapping
+# build.py is invoked as part of generate_projects.sh
+pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
+
 # Build/install csds
 pip_install_dir "$ROOT/src/python/grpcio_csds"
 
@@ -207,9 +215,10 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
-pip_install coverage==4.4 oauth2client==4.1.0 \
-            google-auth>=1.17.2 requests==2.14.2 \
-            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0
+pip_install coverage==7.2.0 oauth2client==4.1.0 \
+            google-auth>=1.35.0 requests==2.31.0 \
+            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0 \
+            opentelemetry-sdk==1.21.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

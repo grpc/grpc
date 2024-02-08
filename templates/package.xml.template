@@ -37,10 +37,14 @@
     php_deps = php_config_m4.get('deps', [])
     lib_maps = {lib.name: lib for lib in libs}
     for dep in php_deps[:]:
-      php_deps.extend(lib_maps[dep].transitive_deps)
-    for dep in php_deps:
-      lib = lib_maps[dep]
-      srcs.extend(lib.get('public_headers', []) + lib.headers + lib.src)
+      lib = lib_maps.get(dep, None)
+      if lib:
+        php_deps.extend(lib.transitive_deps)
+    # construct list of all source files, but explicitly exclude cares
+    for dep in set(php_deps) - set({'cares'}):
+      lib = lib_maps.get(dep, None)
+      if lib:
+         srcs.extend(lib.get('public_headers', []) + lib.headers + lib.src)
     srcs = sorted(set(srcs))
   %>
       % for src in srcs:

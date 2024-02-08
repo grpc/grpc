@@ -29,15 +29,13 @@ namespace grpc_core {
 // A type that signals a Promise is still pending and not yet completed.
 // Allows writing 'return Pending{}' and with automatic conversions gets
 // upgraded to a Poll<> object.
-struct Pending {
-  constexpr bool operator==(Pending) const { return true; }
-};
+struct Pending {};
+inline bool operator==(const Pending&, const Pending&) { return true; }
 
 // A type that contains no value. Useful for simulating 'void' in promises that
 // always need to return some kind of value.
-struct Empty {
-  constexpr bool operator==(Empty) const { return true; }
-};
+struct Empty {};
+inline bool operator==(const Empty&, const Empty&) { return true; }
 
 // The result of polling a Promise once.
 //
@@ -188,25 +186,13 @@ class Poll<Pending>;
 template <class T>
 class Poll<Poll<T>>;
 
-template <typename T>
-bool operator==(const Poll<T>& a, const Poll<T>& b) {
-  if (a.pending() && b.pending()) return true;
-  if (a.ready() && b.ready()) return a.value() == b.value();
-  return false;
-}
-
-template <typename T, typename U>
-Poll<T> poll_cast(Poll<U> poll) {
-  if (poll.pending()) return Pending{};
-  return static_cast<T>(std::move(poll.value()));
-}
-
 // PollTraits tells us whether a type is Poll<> or some other type, and is
 // leveraged in the PromiseLike/PromiseFactory machinery to select the
 // appropriate implementation of those concepts based upon the return type of a
 // lambda, for example (via enable_if).
 template <typename T>
 struct PollTraits {
+  using Type = T;
   static constexpr bool is_poll() { return false; }
 };
 
@@ -215,6 +201,44 @@ struct PollTraits<Poll<T>> {
   using Type = T;
   static constexpr bool is_poll() { return true; }
 };
+
+template <typename T>
+bool operator==(const Poll<T>& a, const Poll<T>& b) {
+  if (a.pending() && b.pending()) return true;
+  if (a.ready() && b.ready()) return a.value() == b.value();
+  return false;
+}
+
+template <typename T, typename U, typename SfinaeVoid = void>
+struct PollCastImpl;
+
+template <typename T, typename U>
+struct PollCastImpl<T, Poll<U>> {
+  static Poll<T> Cast(Poll<U>&& poll) {
+    if (poll.pending()) return Pending{};
+    return static_cast<T>(std::move(poll.value()));
+  }
+};
+
+template <typename T, typename U>
+struct PollCastImpl<T, U, std::enable_if<!PollTraits<U>::is_poll()>> {
+  static Poll<T> Cast(U&& poll) { return Poll<T>(T(std::move(poll))); }
+};
+
+template <typename T>
+struct PollCastImpl<T, T> {
+  static Poll<T> Cast(T&& poll) { return Poll<T>(std::move(poll)); }
+};
+
+template <typename T>
+struct PollCastImpl<T, Poll<T>> {
+  static Poll<T> Cast(Poll<T>&& poll) { return std::move(poll); }
+};
+
+template <typename T, typename U>
+Poll<T> poll_cast(U poll) {
+  return PollCastImpl<T, U>::Cast(std::move(poll));
+}
 
 // Convert a poll to a string
 template <typename T, typename F>

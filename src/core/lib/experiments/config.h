@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
@@ -30,6 +31,8 @@ struct ExperimentMetadata {
   const char* name;
   const char* description;
   const char* additional_constaints;
+  const uint8_t* required_experiments;
+  uint8_t num_required_experiments;
   bool default_value;
   bool allow_in_fuzzing_config;
 };

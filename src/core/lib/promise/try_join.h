@@ -17,15 +17,17 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <type_traits>
+#include <tuple>
+#include <variant>
 
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-#include "src/core/lib/promise/detail/basic_join.h"
-#include "src/core/lib/promise/detail/status.h"
+#include "src/core/lib/promise/detail/join_state.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
 
 namespace grpc_core {
 
@@ -43,38 +45,86 @@ T IntoResult(absl::StatusOr<T>* status) {
 inline Empty IntoResult(absl::Status*) { return Empty{}; }
 
 // Traits object to pass to BasicJoin
+template <template <typename> class Result>
 struct TryJoinTraits {
   template <typename T>
-  using ResultType =
-      decltype(IntoResult(std::declval<absl::remove_reference_t<T>*>()));
-  template <typename T, typename F>
-  static auto OnResult(T result, F kontinue)
-      -> decltype(kontinue(IntoResult(&result))) {
-    using Result =
-        typename PollTraits<decltype(kontinue(IntoResult(&result)))>::Type;
-    if (!result.ok()) {
-      return Result(IntoStatus(&result));
-    }
-    return kontinue(IntoResult(&result));
+  using ResultType = Result<absl::remove_reference_t<T>>;
+  template <typename T>
+  static bool IsOk(const absl::StatusOr<T>& x) {
+    return x.ok();
+  }
+  static bool IsOk(const absl::Status& x) { return x.ok(); }
+  static bool IsOk(StatusFlag x) { return x.ok(); }
+  template <typename T>
+  static bool IsOk(const ValueOrFailure<T>& x) {
+    return x.ok();
   }
   template <typename T>
-  static absl::StatusOr<T> Wrap(T x) {
-    return absl::StatusOr<T>(std::move(x));
+  static T Unwrapped(absl::StatusOr<T> x) {
+    return std::move(*x);
+  }
+  template <typename T>
+  static T Unwrapped(ValueOrFailure<T> x) {
+    return std::move(*x);
+  }
+  static Empty Unwrapped(absl::Status) { return Empty{}; }
+  static Empty Unwrapped(StatusFlag) { return Empty{}; }
+  template <typename R, typename T>
+  static R EarlyReturn(absl::StatusOr<T> x) {
+    return x.status();
+  }
+  template <typename R>
+  static R EarlyReturn(absl::Status x) {
+    return FailureStatusCast<R>(std::move(x));
+  }
+  template <typename R>
+  static R EarlyReturn(StatusFlag x) {
+    return FailureStatusCast<R>(x);
+  }
+  template <typename R, typename T>
+  static R EarlyReturn(const ValueOrFailure<T>& x) {
+    GPR_ASSERT(!x.ok());
+    return FailureStatusCast<R>(Failure{});
+  }
+  template <typename... A>
+  static auto FinalReturn(A&&... a) {
+    return Result<std::tuple<A...>>(std::make_tuple(std::forward<A>(a)...));
   }
 };
 
 // Implementation of TryJoin combinator.
-template <typename... Promises>
-using TryJoin = BasicJoin<TryJoinTraits, Promises...>;
+template <template <typename> class R, typename... Promises>
+class TryJoin {
+ public:
+  explicit TryJoin(Promises... promises) : state_(std::move(promises)...) {}
+  auto operator()() { return state_.PollOnce(); }
+
+ private:
+  JoinState<TryJoinTraits<R>, Promises...> state_;
+};
+
+template <template <typename> class R>
+struct WrapInStatusOrTuple {
+  template <typename T>
+  R<std::tuple<T>> operator()(R<T> x) {
+    if (!x.ok()) return x.status();
+    return std::make_tuple(std::move(*x));
+  }
+};
 
 }  // namespace promise_detail
 
 // Run all promises.
 // If any fail, cancel the rest and return the failure.
 // If all succeed, return Ok(tuple-of-results).
-template <typename... Promises>
-promise_detail::TryJoin<Promises...> TryJoin(Promises... promises) {
-  return promise_detail::TryJoin<Promises...>(std::move(promises)...);
+template <template <typename> class R, typename... Promises>
+promise_detail::TryJoin<R, Promises...> TryJoin(Promises... promises) {
+  return promise_detail::TryJoin<R, Promises...>(std::move(promises)...);
+}
+
+template <template <typename> class R, typename F>
+auto TryJoin(F promise) {
+  return Map(promise, promise_detail::WrapInStatusOrTuple<R>{});
 }
 
 }  // namespace grpc_core

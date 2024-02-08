@@ -22,13 +22,11 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

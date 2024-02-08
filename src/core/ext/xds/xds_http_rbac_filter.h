@@ -48,8 +48,7 @@ class XdsHttpRbacFilter : public XdsHttpFilterImpl {
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override,
-      absl::string_view filter_name) const override;
+      const FilterConfig* filter_config_override) const override;
   bool IsSupportedOnClients() const override { return false; }
   bool IsSupportedOnServers() const override { return true; }
 };

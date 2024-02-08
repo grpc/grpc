@@ -49,6 +49,8 @@ class CompressionExampleTest(unittest.TestCase):
                     str(test_port),
                     "--server_compression",
                     "gzip",
+                    "--no_compress_every_n",
+                    "3",
                 )
             )
             try:

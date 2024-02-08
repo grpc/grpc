@@ -29,15 +29,14 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/pick_first.pb.h"
-#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -80,8 +79,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, PickFirstTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(PickFirstTest, PickFirstConfigurationIsPropagated) {
-  grpc_core::testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_PICKFIRST_LB_CONFIG");
   CreateAndStartBackends(6);
   // Change cluster to use pick_first with shuffle option.
   auto cluster = default_cluster_;

@@ -1,8 +1,0 @@
-syntax = "proto3";
-
-package protos_generator.test;
-
-message HasChildCount {
-  optional HasChildCount has_child_count = 1;
-  optional int32 child_count = 2;
-}

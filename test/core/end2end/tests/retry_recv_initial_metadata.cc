@@ -16,11 +16,12 @@
 //
 //
 
-#include "absl/strings/string_view.h"
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -35,7 +36,6 @@ namespace {
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
 CORE_END2END_TEST(RetryTest, RetryRecvInitialMetadata) {
-  SKIP_IF_USES_EVENT_ENGINE_CLIENT();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

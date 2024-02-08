@@ -32,6 +32,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -47,6 +48,7 @@ grpc_proto_fuzzer(
         "//:grpc",
         "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:proto_bit_gen",
     ],
 )
 
@@ -75,6 +77,7 @@ grpc_fuzzer(
         "absl/cleanup",
         "absl/status:statusor",
         "absl/status",
+        "absl/random:mocking_bit_gen",
     ],
     tags = ["no_windows"],
     uses_polling = False,
@@ -146,6 +149,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "frame_test",
+    srcs = ["frame_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:http2_errors",
+    ],
+)
+
+grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
     external_deps = ["gtest"],
@@ -161,6 +177,34 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "ping_abuse_policy_test",
+    srcs = ["ping_abuse_policy_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "ping_rate_policy_test",
+    srcs = ["ping_rate_policy_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
     name = "ping_configuration_test",
     srcs = ["ping_configuration_test.cc"],
     external_deps = ["gtest"],
@@ -171,6 +215,36 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "ping_callbacks_test",
+    srcs = ["ping_callbacks_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/event_engine:mock_event_engine",
+    ],
+)
+
+grpc_cc_test(
+    name = "write_size_policy_test",
+    srcs = ["write_size_policy_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//src/core:write_size_policy",
     ],
 )
 
@@ -251,6 +325,16 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_test(
+    name = "max_concurrent_streams_policy_test",
+    srcs = ["max_concurrent_streams_policy_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//src/core:max_concurrent_streams_policy",
     ],
 )
 
@@ -359,6 +443,23 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "http2_settings_test",
+    srcs = [
+        "http2_settings_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:http2_settings",
         "//test/core/util:grpc_test_util",
     ],
 )

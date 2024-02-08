@@ -35,7 +35,7 @@ namespace grpc {
 
 class SecureServerCredentials;
 
-class AuthMetadataProcessorAyncWrapper final {
+class AuthMetadataProcessorAsyncWrapper final {
  public:
   static void Destroy(void* wrapper);
 
@@ -43,7 +43,7 @@ class AuthMetadataProcessorAyncWrapper final {
                       const grpc_metadata* md, size_t num_md,
                       grpc_process_auth_metadata_done_cb cb, void* user_data);
 
-  explicit AuthMetadataProcessorAyncWrapper(
+  explicit AuthMetadataProcessorAsyncWrapper(
       const std::shared_ptr<AuthMetadataProcessor>& processor)
       : processor_(processor) {
     if (processor && processor->IsBlocking()) {
@@ -78,7 +78,7 @@ class SecureServerCredentials final : public ServerCredentials {
   SecureServerCredentials* AsSecureServerCredentials() override { return this; }
 
   grpc_server_credentials* creds_;
-  std::unique_ptr<grpc::AuthMetadataProcessorAyncWrapper> processor_;
+  std::unique_ptr<grpc::AuthMetadataProcessorAsyncWrapper> processor_;
 };
 
 }  // namespace grpc

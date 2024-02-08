@@ -21,7 +21,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <initializer_list>
 #include <limits>
 #include <map>
 #include <memory>
@@ -53,7 +52,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 #include "upb/text/encode.h"
 
 #include <grpc/status.h>
@@ -75,8 +74,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 
@@ -290,32 +289,43 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 }
 
 //
+// XdsRouteConfigResource::Route
+//
+
+std::string XdsRouteConfigResource::VirtualHost::ToString() const {
+  std::vector<std::string> parts;
+  parts.push_back(
+      absl::StrCat("vhost={\n"
+                   "  domains=[",
+                   absl::StrJoin(domains, ", "),
+                   "]\n"
+                   "  routes=[\n"));
+  for (const XdsRouteConfigResource::Route& route : routes) {
+    parts.push_back("    {\n");
+    parts.push_back(route.ToString());
+    parts.push_back("\n    }\n");
+  }
+  parts.push_back("  ]\n");
+  parts.push_back("  typed_per_filter_config={\n");
+  for (const auto& p : typed_per_filter_config) {
+    const std::string& name = p.first;
+    const auto& config = p.second;
+    parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
+  }
+  parts.push_back("  }\n");
+  parts.push_back("}\n");
+  return absl::StrJoin(parts, "");
+}
+
+//
 // XdsRouteConfigResource
 //
 
 std::string XdsRouteConfigResource::ToString() const {
   std::vector<std::string> parts;
+  parts.reserve(virtual_hosts.size());
   for (const VirtualHost& vhost : virtual_hosts) {
-    parts.push_back(
-        absl::StrCat("vhost={\n"
-                     "  domains=[",
-                     absl::StrJoin(vhost.domains, ", "),
-                     "]\n"
-                     "  routes=[\n"));
-    for (const XdsRouteConfigResource::Route& route : vhost.routes) {
-      parts.push_back("    {\n");
-      parts.push_back(route.ToString());
-      parts.push_back("\n    }\n");
-    }
-    parts.push_back("  ]\n");
-    parts.push_back("  typed_per_filter_config={\n");
-    for (const auto& p : vhost.typed_per_filter_config) {
-      const std::string& name = p.first;
-      const auto& config = p.second;
-      parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
-    }
-    parts.push_back("  }\n");
-    parts.push_back("]\n");
+    parts.push_back(vhost.ToString());
   }
   parts.push_back("cluster_specifier_plugins={\n");
   for (const auto& it : cluster_specifier_plugin_map) {
@@ -1036,20 +1046,20 @@ absl::optional<XdsRouteConfigResource::Route> ParseRoute(
 
 }  // namespace
 
-XdsRouteConfigResource XdsRouteConfigResource::Parse(
+std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResource::Parse(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     ValidationErrors* errors) {
-  XdsRouteConfigResource rds_update;
+  auto rds_update = std::make_shared<XdsRouteConfigResource>();
   // Get the cluster spcifier plugin map.
   if (XdsRlsEnabled()) {
-    rds_update.cluster_specifier_plugin_map =
+    rds_update->cluster_specifier_plugin_map =
         ClusterSpecifierPluginParse(context, route_config, errors);
   }
   // Build a set of configured cluster_specifier_plugin names to make sure
   // each is actually referenced by a route action.
   std::set<absl::string_view> cluster_specifier_plugins_not_seen;
-  for (auto& plugin : rds_update.cluster_specifier_plugin_map) {
+  for (auto& plugin : rds_update->cluster_specifier_plugin_map) {
     cluster_specifier_plugins_not_seen.emplace(plugin.first);
   }
   // Get the virtual hosts.
@@ -1060,9 +1070,9 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
   for (size_t i = 0; i < num_virtual_hosts; ++i) {
     ValidationErrors::ScopedField field(
         errors, absl::StrCat(".virtual_hosts[", i, "]"));
-    rds_update.virtual_hosts.emplace_back();
+    rds_update->virtual_hosts.emplace_back();
     XdsRouteConfigResource::VirtualHost& vhost =
-        rds_update.virtual_hosts.back();
+        rds_update->virtual_hosts.back();
     // Parse domains.
     size_t domain_size;
     upb_StringView const* domains = envoy_config_route_v3_VirtualHost_domains(
@@ -1111,7 +1121,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
     for (size_t j = 0; j < num_routes; ++j) {
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", j, "]"));
       auto route = ParseRoute(context, routes[j], virtual_host_retry_policy,
-                              rds_update.cluster_specifier_plugin_map,
+                              rds_update->cluster_specifier_plugin_map,
                               &cluster_specifier_plugins_not_seen, errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
@@ -1119,7 +1129,7 @@ XdsRouteConfigResource XdsRouteConfigResource::Parse(
   // For cluster specifier plugins that were not used in any route action,
   // delete them from the update, since they will never be used.
   for (auto& unused_plugin : cluster_specifier_plugins_not_seen) {
-    rds_update.cluster_specifier_plugin_map.erase(std::string(unused_plugin));
+    rds_update->cluster_specifier_plugin_map.erase(std::string(unused_plugin));
   }
   return rds_update;
 }
@@ -1138,7 +1148,8 @@ void MaybeLogRouteConfiguration(
     const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];
-    upb_TextEncode(route_config, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(route_config), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", context.client,
             buf);
   }
@@ -1177,10 +1188,9 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
     if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed RouteConfiguration %s: %s",
               context.client, result.name->c_str(),
-              rds_update.ToString().c_str());
+              rds_update->ToString().c_str());
     }
-    result.resource =
-        std::make_unique<XdsRouteConfigResource>(std::move(rds_update));
+    result.resource = std::move(rds_update);
   }
   return result;
 }

@@ -26,7 +26,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_join.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -305,10 +304,10 @@ class Fuzzer {
           if (!called) {
             if (config.owning()) {
               wakers_[config.waker()].push_back(
-                  Activity::current()->MakeOwningWaker());
+                  GetContext<Activity>()->MakeOwningWaker());
             } else {
               wakers_[config.waker()].push_back(
-                  Activity::current()->MakeNonOwningWaker());
+                  GetContext<Activity>()->MakeNonOwningWaker());
             }
             return Pending();
           }

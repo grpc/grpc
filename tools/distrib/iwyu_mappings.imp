@@ -1,9 +1,0 @@
-[
-    { include: ["<ext/alloc_traits.h>", "private", "<vector>", "public"] },
-    { include: ["<netinet/in.h>", "public", "\"src/core/lib/iomgr/sockaddr.h\"", "public"]},
-    { include: ["<sys/socket.h>", "public", "\"src/core/lib/iomgr/sockaddr.h\"", "public"]},
-    { include: ["<openssl/base.h>", "private", "<openssl/crypto.h>", "public"] },
-    { include: ["<openssl/digest.h>", "private", "<openssl/evp.h>", "public"] },
-    # workaround: https://github.com/include-what-you-use/include-what-you-use/issues/908
-    { symbol: ["std::max", "private", "<algorithm>", "public" ] },
-] 

@@ -14,13 +14,14 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/client_channel/retry_service_config.h"
+#include "src/core/client_channel/retry_service_config.h"
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 

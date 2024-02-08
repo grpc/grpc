@@ -91,6 +91,7 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:error_utils",
         "//src/core:json",
         "//src/core:json_args",
         "//src/core:json_object_loader",
@@ -126,6 +127,7 @@ grpc_cc_library(
     deps = [
         "environment_autodetect",
         "observability_config",
+        "//:channel_arg_names",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:gpr_platform",
@@ -152,7 +154,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
-        "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",

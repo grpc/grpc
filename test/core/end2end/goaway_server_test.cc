@@ -34,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -41,9 +42,9 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -55,7 +56,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -66,7 +68,7 @@ static int g_resolve_port = -1;
 static grpc_ares_request* (*iomgr_dns_lookup_ares)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms);
 
 static void (*iomgr_cancel_ares_request)(grpc_ares_request* request);
@@ -169,7 +171,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 static grpc_ares_request* my_dns_lookup_ares(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms) {
   if (0 != strcmp(addr, "test")) {
     // A records should suffice
@@ -184,7 +186,7 @@ static grpc_ares_request* my_dns_lookup_ares(
     gpr_mu_unlock(&g_mu);
     error = GRPC_ERROR_CREATE("Forced Failure");
   } else {
-    *addresses = std::make_unique<grpc_core::ServerAddressList>();
+    *addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address address;
     memset(&address, 0, sizeof(address));
     auto* sa = reinterpret_cast<grpc_sockaddr_in*>(&address.addr);
@@ -206,6 +208,13 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 }
 
 int main(int argc, char** argv) {
+  // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    gpr_log(
+        GPR_ERROR,
+        "Skipping iomgr-specific DNS test because EventEngine DNS is enabled");
+    return 0;
+  }
   grpc_completion_queue* cq;
   grpc_op ops[6];
   grpc_op* op;

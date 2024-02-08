@@ -34,24 +34,26 @@ The following example counts scenarios in the `scalable` category:
 $ ./tools/run_tests/performance/scenario_config_exporter.py --count_scenarios --category=scalable
 Scenario count for all languages (category: scalable):
 Count  Language         Client   Server   Categories
-   77  c++                                scalable
+   56  c++                                scalable
    19  python_asyncio                     scalable
    16  java                               scalable
    12  go                                 scalable
-   12  node                      node     scalable
-   12  node_purejs               node     scalable
+   12  node                               scalable
     9  csharp                             scalable
+    9  dotnet                             scalable
     7  python                             scalable
     5  ruby                               scalable
     4  csharp                    c++      scalable
+    4  dotnet                    c++      scalable
     4  php7                      c++      scalable
     4  php7_protobuf_c           c++      scalable
     3  python_asyncio            c++      scalable
     2  ruby                      c++      scalable
     2  python                    c++      scalable
     1  csharp           c++               scalable
+    1  dotnet           c++               scalable
 
-  189  total scenarios (category: scalable)
+  170  total scenarios (category: scalable)
 ```
 
 Client and server languages are only set for cross-language scenarios, where the

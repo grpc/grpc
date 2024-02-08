@@ -12,9 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
 licenses(["notice"])
+
+grpc_cc_library(
+    name = "cf_engine_unit_test_lib",
+    testonly = True,
+    srcs = ["cf_engine_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = [
+        "no_linux",
+        "no_windows",
+    ],
+    visibility = [
+        "//src/objective-c/tests:__subpackages__",
+        "//test:__subpackages__",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//src/core:cf_event_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+    alwayslink = 1,
+)
 
 grpc_cc_test(
     name = "cf_engine_test",

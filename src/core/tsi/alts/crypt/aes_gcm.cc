@@ -20,11 +20,15 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+
+#include "absl/types/span.h"
 
 #include <grpc/support/alloc.h>
 
@@ -35,21 +39,111 @@ constexpr size_t kKdfCounterLen = 6;
 constexpr size_t kKdfCounterOffset = 2;
 constexpr size_t kRekeyAeadKeyLen = kAes128GcmKeyLength;
 
-// Struct for additional data required if rekeying is enabled.
-struct gsec_aes_gcm_aead_rekey_data {
-  uint8_t kdf_counter[kKdfCounterLen];
-  uint8_t nonce_mask[kAesGcmNonceLength];
-};
+namespace grpc_core {
+
+GsecKeyFactory::GsecKeyFactory(absl::Span<const uint8_t> key, bool is_rekey)
+    : key_(key.begin(), key.end()), is_rekey_(is_rekey) {}
+
+std::unique_ptr<GsecKeyInterface> GsecKeyFactory::Create() const {
+  return std::make_unique<GsecKey>(key_, is_rekey_);
+}
+
+GsecKey::GsecKey(absl::Span<const uint8_t> key, bool is_rekey)
+    : is_rekey_(is_rekey) {
+  if (is_rekey_) {
+    aead_key_.resize(kRekeyAeadKeyLen);
+    kdf_buffer_.resize(EVP_MAX_MD_SIZE);
+    nonce_mask_.resize(kAesGcmNonceLength);
+    memcpy(nonce_mask_.data(), key.data() + kKdfKeyLen, kAesGcmNonceLength);
+    kdf_counter_.resize(kKdfCounterLen, 0);
+  }
+  key_.resize(is_rekey_ ? kKdfKeyLen : key.size());
+  memcpy(key_.data(), key.data(), key_.size());
+}
+
+bool GsecKey::IsRekey() { return is_rekey_; }
+
+absl::Span<const uint8_t> GsecKey::key() { return key_; }
+
+absl::Span<const uint8_t> GsecKey::nonce_mask() { return nonce_mask_; }
+
+absl::Span<uint8_t> GsecKey::kdf_counter() {
+  return absl::MakeSpan(kdf_counter_);
+}
+
+absl::Span<uint8_t> GsecKey::aead_key() { return absl::MakeSpan(aead_key_); }
+
+absl::Span<uint8_t> GsecKey::kdf_buffer() {
+  return absl::MakeSpan(kdf_buffer_);
+}
+
+}  // namespace grpc_core
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+const char kEvpMacAlgorithm[] = "HMAC";
+char kEvpDigest[] = "SHA-256";
+#endif
+
+static grpc_status_code aes_gcm_derive_aead_key(
+    absl::Span<uint8_t> dst, uint8_t* buf, absl::Span<const uint8_t> kdf_key,
+    absl::Span<const uint8_t> kdf_counter) {
+  unsigned char ctr = 1;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  HMAC_CTX hmac;
+  HMAC_CTX_init(&hmac);
+  if (!HMAC_Init_ex(&hmac, kdf_key.data(), kdf_key.size(), EVP_sha256(),
+                    nullptr) ||
+      !HMAC_Update(&hmac, kdf_counter.data(), kdf_counter.size()) ||
+      !HMAC_Update(&hmac, &ctr, 1) || !HMAC_Final(&hmac, buf, nullptr)) {
+    HMAC_CTX_cleanup(&hmac);
+    return GRPC_STATUS_INTERNAL;
+  }
+  HMAC_CTX_cleanup(&hmac);
+#elif OPENSSL_VERSION_NUMBER < 0x30000000L
+  HMAC_CTX* hmac = HMAC_CTX_new();
+  if (hmac == nullptr) {
+    return GRPC_STATUS_INTERNAL;
+  }
+  if (!HMAC_Init_ex(hmac, kdf_key.data(), kdf_key.size(), EVP_sha256(),
+                    nullptr) ||
+      !HMAC_Update(hmac, kdf_counter.data(), kdf_counter.size()) ||
+      !HMAC_Update(hmac, &ctr, 1) || !HMAC_Final(hmac, buf, nullptr)) {
+    HMAC_CTX_free(hmac);
+    return GRPC_STATUS_INTERNAL;
+  }
+  HMAC_CTX_free(hmac);
+#else
+  EVP_MAC* mac = EVP_MAC_fetch(nullptr, kEvpMacAlgorithm, nullptr);
+  EVP_MAC_CTX* ctx = EVP_MAC_CTX_new(mac);
+  if (ctx == nullptr) {
+    return GRPC_STATUS_INTERNAL;
+  }
+  OSSL_PARAM params[2];
+  params[0] = OSSL_PARAM_construct_utf8_string("digest", kEvpDigest, 0);
+  params[1] = OSSL_PARAM_construct_end();
+
+  if (!EVP_MAC_init(ctx, kdf_key.data(), kdf_key.size(), params) ||
+      !EVP_MAC_update(ctx, kdf_counter.data(), kdf_counter.size()) ||
+      !EVP_MAC_update(ctx, &ctr, 1) ||
+      !EVP_MAC_final(ctx, buf, nullptr, EVP_MAX_MD_SIZE)) {
+    EVP_MAC_CTX_free(ctx);
+    EVP_MAC_free(mac);
+    return GRPC_STATUS_INTERNAL;
+  }
+  EVP_MAC_CTX_free(ctx);
+  EVP_MAC_free(mac);
+#endif
+  memcpy(dst.data(), buf, dst.size());
+  return GRPC_STATUS_OK;
+}
 
 // Main struct for AES_GCM crypter interface.
 struct gsec_aes_gcm_aead_crypter {
   gsec_aead_crypter crypter;
-  size_t key_length;
   size_t nonce_length;
   size_t tag_length;
-  uint8_t* key;
-  gsec_aes_gcm_aead_rekey_data* rekey_data;
   EVP_CIPHER_CTX* ctx;
+  grpc_core::GsecKeyInterface* gsec_key;
 };
 
 static char* aes_gcm_get_openssl_errors() {
@@ -147,7 +241,7 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_key_length(
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
       reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
           const_cast<gsec_aead_crypter*>(crypter));
-  *key_length = aes_gcm_crypter->key_length;
+  *key_length = aes_gcm_crypter->gsec_key->key().size();
   return GRPC_STATUS_OK;
 }
 
@@ -181,38 +275,6 @@ static void aes_gcm_mask_nonce(uint8_t* dst, const uint8_t* nonce,
   memcpy(dst + sizeof(nonce1), &nonce2, sizeof(nonce2));
 }
 
-static grpc_status_code aes_gcm_derive_aead_key(uint8_t* dst,
-                                                const uint8_t* kdf_key,
-                                                const uint8_t* kdf_counter) {
-  unsigned char buf[EVP_MAX_MD_SIZE];
-  unsigned char ctr = 1;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-  HMAC_CTX hmac;
-  HMAC_CTX_init(&hmac);
-  if (!HMAC_Init_ex(&hmac, kdf_key, kKdfKeyLen, EVP_sha256(), nullptr) ||
-      !HMAC_Update(&hmac, kdf_counter, kKdfCounterLen) ||
-      !HMAC_Update(&hmac, &ctr, 1) || !HMAC_Final(&hmac, buf, nullptr)) {
-    HMAC_CTX_cleanup(&hmac);
-    return GRPC_STATUS_INTERNAL;
-  }
-  HMAC_CTX_cleanup(&hmac);
-#else
-  HMAC_CTX* hmac = HMAC_CTX_new();
-  if (hmac == nullptr) {
-    return GRPC_STATUS_INTERNAL;
-  }
-  if (!HMAC_Init_ex(hmac, kdf_key, kKdfKeyLen, EVP_sha256(), nullptr) ||
-      !HMAC_Update(hmac, kdf_counter, kKdfCounterLen) ||
-      !HMAC_Update(hmac, &ctr, 1) || !HMAC_Final(hmac, buf, nullptr)) {
-    HMAC_CTX_free(hmac);
-    return GRPC_STATUS_INTERNAL;
-  }
-  HMAC_CTX_free(hmac);
-#endif
-  memcpy(dst, buf, kRekeyAeadKeyLen);
-  return GRPC_STATUS_OK;
-}
-
 static grpc_status_code aes_gcm_rekey_if_required(
     gsec_aes_gcm_aead_crypter* aes_gcm_crypter, const uint8_t* nonce,
     char** error_details) {
@@ -220,21 +282,25 @@ static grpc_status_code aes_gcm_rekey_if_required(
   // If bytes 2-7 of kdf_counter differ from the (per message) nonce, then the
   // encryption key is recomputed from a new kdf_counter to ensure that we don't
   // encrypt more than 2^16 messages per encryption key (in each direction).
-  if (aes_gcm_crypter->rekey_data == nullptr ||
-      memcmp(aes_gcm_crypter->rekey_data->kdf_counter,
-             nonce + kKdfCounterOffset, kKdfCounterLen) == 0) {
+  if (!aes_gcm_crypter->gsec_key->IsRekey() ||
+      memcmp(aes_gcm_crypter->gsec_key->kdf_counter().data(),
+             nonce + kKdfCounterOffset,
+             aes_gcm_crypter->gsec_key->kdf_counter().size()) == 0) {
     return GRPC_STATUS_OK;
   }
-  memcpy(aes_gcm_crypter->rekey_data->kdf_counter, nonce + kKdfCounterOffset,
-         kKdfCounterLen);
-  uint8_t aead_key[kRekeyAeadKeyLen];
-  if (aes_gcm_derive_aead_key(aead_key, aes_gcm_crypter->key,
-                              aes_gcm_crypter->rekey_data->kdf_counter) !=
+  memcpy(aes_gcm_crypter->gsec_key->kdf_counter().data(),
+         nonce + kKdfCounterOffset,
+         aes_gcm_crypter->gsec_key->kdf_counter().size());
+  if (aes_gcm_derive_aead_key(aes_gcm_crypter->gsec_key->aead_key(),
+                              aes_gcm_crypter->gsec_key->kdf_buffer().data(),
+                              aes_gcm_crypter->gsec_key->key(),
+                              aes_gcm_crypter->gsec_key->kdf_counter()) !=
       GRPC_STATUS_OK) {
     aes_gcm_format_errors("Rekeying failed in key derivation.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
-  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, aead_key,
+  if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr,
+                          aes_gcm_crypter->gsec_key->aead_key().data(),
                           nullptr)) {
     aes_gcm_format_errors("Rekeying failed in context update.", error_details);
     return GRPC_STATUS_INTERNAL;
@@ -283,9 +349,9 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
   // mask nonce if required
   const uint8_t* nonce_aead = nonce;
   uint8_t nonce_masked[kAesGcmNonceLength];
-  if (aes_gcm_crypter->rekey_data != nullptr) {
-    aes_gcm_mask_nonce(nonce_masked, aes_gcm_crypter->rekey_data->nonce_mask,
-                       nonce);
+  if (aes_gcm_crypter->gsec_key->IsRekey()) {
+    aes_gcm_mask_nonce(nonce_masked,
+                       aes_gcm_crypter->gsec_key->nonce_mask().data(), nonce);
     nonce_aead = nonce_masked;
   }
   // init openssl context
@@ -434,9 +500,9 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
   // mask nonce if required
   const uint8_t* nonce_aead = nonce;
   uint8_t nonce_masked[kAesGcmNonceLength];
-  if (aes_gcm_crypter->rekey_data != nullptr) {
-    aes_gcm_mask_nonce(nonce_masked, aes_gcm_crypter->rekey_data->nonce_mask,
-                       nonce);
+  if (aes_gcm_crypter->gsec_key->IsRekey()) {
+    aes_gcm_mask_nonce(nonce_masked,
+                       aes_gcm_crypter->gsec_key->nonce_mask().data(), nonce);
     nonce_aead = nonce_masked;
   }
   // init openssl context
@@ -578,9 +644,8 @@ static void gsec_aes_gcm_aead_crypter_destroy(gsec_aead_crypter* crypter) {
   gsec_aes_gcm_aead_crypter* aes_gcm_crypter =
       reinterpret_cast<gsec_aes_gcm_aead_crypter*>(
           const_cast<gsec_aead_crypter*>(crypter));
-  gpr_free(aes_gcm_crypter->key);
-  gpr_free(aes_gcm_crypter->rekey_data);
   EVP_CIPHER_CTX_free(aes_gcm_crypter->ctx);
+  delete aes_gcm_crypter->gsec_key;
 }
 
 static const gsec_aead_crypter_vtable vtable = {
@@ -596,25 +661,30 @@ static const gsec_aead_crypter_vtable vtable = {
 static grpc_status_code aes_gcm_new_evp_cipher_ctx(
     gsec_aes_gcm_aead_crypter* aes_gcm_crypter, char** error_details) {
   const EVP_CIPHER* cipher = nullptr;
-  bool is_rekey = aes_gcm_crypter->rekey_data != nullptr;
-  switch (is_rekey ? kRekeyAeadKeyLen : aes_gcm_crypter->key_length) {
+  bool is_rekey = aes_gcm_crypter->gsec_key->IsRekey();
+  switch (is_rekey ? kRekeyAeadKeyLen
+                   : aes_gcm_crypter->gsec_key->key().size()) {
     case kAes128GcmKeyLength:
       cipher = EVP_aes_128_gcm();
       break;
     case kAes256GcmKeyLength:
       cipher = EVP_aes_256_gcm();
       break;
+    default:
+      aes_gcm_format_errors("Invalid key length.", error_details);
+      return GRPC_STATUS_INTERNAL;
   }
-  const uint8_t* aead_key = aes_gcm_crypter->key;
-  uint8_t aead_key_rekey[kRekeyAeadKeyLen];
+  const uint8_t* aead_key = aes_gcm_crypter->gsec_key->key().data();
   if (is_rekey) {
-    if (aes_gcm_derive_aead_key(aead_key_rekey, aes_gcm_crypter->key,
-                                aes_gcm_crypter->rekey_data->kdf_counter) !=
+    if (aes_gcm_derive_aead_key(aes_gcm_crypter->gsec_key->aead_key(),
+                                aes_gcm_crypter->gsec_key->kdf_buffer().data(),
+                                aes_gcm_crypter->gsec_key->key(),
+                                aes_gcm_crypter->gsec_key->kdf_counter()) !=
         GRPC_STATUS_OK) {
       aes_gcm_format_errors("Deriving key failed.", error_details);
       return GRPC_STATUS_INTERNAL;
     }
-    aead_key = aead_key_rekey;
+    aead_key = aes_gcm_crypter->gsec_key->aead_key().data();
   }
   if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, cipher, nullptr, aead_key,
                           nullptr)) {
@@ -630,12 +700,9 @@ static grpc_status_code aes_gcm_new_evp_cipher_ctx(
   return GRPC_STATUS_OK;
 }
 
-grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
-                                                  size_t key_length,
-                                                  size_t nonce_length,
-                                                  size_t tag_length, bool rekey,
-                                                  gsec_aead_crypter** crypter,
-                                                  char** error_details) {
+grpc_status_code gsec_aes_gcm_aead_crypter_create(
+    std::unique_ptr<grpc_core::GsecKeyInterface> key, size_t nonce_length,
+    size_t tag_length, gsec_aead_crypter** crypter, char** error_details) {
   if (key == nullptr) {
     aes_gcm_format_errors("key is nullptr.", error_details);
     return GRPC_STATUS_FAILED_PRECONDITION;
@@ -645,9 +712,9 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
     return GRPC_STATUS_FAILED_PRECONDITION;
   }
   *crypter = nullptr;
-  if ((rekey && key_length != kAes128GcmRekeyKeyLength) ||
-      (!rekey && key_length != kAes128GcmKeyLength &&
-       key_length != kAes256GcmKeyLength) ||
+  if ((key->IsRekey() && key->key().size() != kKdfKeyLen) ||
+      (!key->IsRekey() && key->key().size() != kAes128GcmKeyLength &&
+       key->key().size() != kAes256GcmKeyLength) ||
       (tag_length != kAesGcmTagLength) ||
       (nonce_length != kAesGcmNonceLength)) {
     aes_gcm_format_errors(
@@ -662,21 +729,7 @@ grpc_status_code gsec_aes_gcm_aead_crypter_create(const uint8_t* key,
   aes_gcm_crypter->crypter.vtable = &vtable;
   aes_gcm_crypter->nonce_length = nonce_length;
   aes_gcm_crypter->tag_length = tag_length;
-  if (rekey) {
-    aes_gcm_crypter->key_length = kKdfKeyLen;
-    aes_gcm_crypter->rekey_data = static_cast<gsec_aes_gcm_aead_rekey_data*>(
-        gpr_malloc(sizeof(gsec_aes_gcm_aead_rekey_data)));
-    memcpy(aes_gcm_crypter->rekey_data->nonce_mask, key + kKdfKeyLen,
-           kAesGcmNonceLength);
-    // Set kdf_counter to all-zero for initial key derivation.
-    memset(aes_gcm_crypter->rekey_data->kdf_counter, 0, kKdfCounterLen);
-  } else {
-    aes_gcm_crypter->key_length = key_length;
-    aes_gcm_crypter->rekey_data = nullptr;
-  }
-  aes_gcm_crypter->key =
-      static_cast<uint8_t*>(gpr_malloc(aes_gcm_crypter->key_length));
-  memcpy(aes_gcm_crypter->key, key, aes_gcm_crypter->key_length);
+  aes_gcm_crypter->gsec_key = key.release();
   aes_gcm_crypter->ctx = EVP_CIPHER_CTX_new();
   grpc_status_code status =
       aes_gcm_new_evp_cipher_ctx(aes_gcm_crypter, error_details);

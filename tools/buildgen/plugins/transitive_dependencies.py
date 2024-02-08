@@ -30,13 +30,17 @@ def transitive_deps(lib_map, node):
     start = node
 
     def recursive_helper(node):
-        if node is None:
-            return
         for dep in node.get("deps", []):
             if dep not in seen:
                 seen.add(dep)
                 next_node = lib_map.get(dep)
-                recursive_helper(next_node)
+                if next_node:
+                    recursive_helper(next_node)
+                else:
+                    # For some deps, the corrensponding library entry doesn't exist,
+                    # but we still want to preserve the dependency so that the build
+                    # system can provide custom handling for that depdendency.
+                    result.append(dep)
         if node is not start:
             result.insert(0, node["name"])
 

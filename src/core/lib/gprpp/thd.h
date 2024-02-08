@@ -31,6 +31,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/thd_id.h>
 
 namespace grpc_core {
 namespace internal {
@@ -47,6 +48,13 @@ class ThreadInternalsInterface {
 
 class Thread {
  public:
+  // Send a signal to the thread.
+  // This is not supported on all platforms
+  static void Signal(gpr_thd_id tid, int sig);
+  // Kill the running thread. Likely not a clean operation.
+  // This is not supported on all platforms.
+  static void Kill(gpr_thd_id tid);
+
   class Options {
    public:
     Options() : joinable_(true), tracked_(true), stack_size_(0) {}

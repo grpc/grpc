@@ -14,9 +14,6 @@
 
 #include "src/core/lib/promise/map_pipe.h"
 
-#include <stdint.h>
-
-#include <initializer_list>
 #include <memory>
 #include <utility>
 
@@ -27,8 +24,6 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/detail/basic_join.h"
-#include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
@@ -52,7 +47,7 @@ class Delayed {
   explicit Delayed(T x) : x_(x) {}
 
   Poll<T> operator()() {
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
     ++polls_;
     if (polls_ == 10) return std::move(x_);
     return Pending();

@@ -21,18 +21,24 @@
 #include <condition_variable>
 #include <deque>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <set>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_split.h"
+#include "opentelemetry/exporters/prometheus/exporter_factory.h"
+#include "opentelemetry/exporters/prometheus/exporter_options.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
@@ -46,6 +52,7 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
+#include "test/cpp/interop/xds_stats_watcher.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(bool, fail_on_failed_rpc, false,
@@ -60,12 +67,20 @@ ABSL_FLAG(int32_t, stats_port, 50052,
           "Port to expose peer distribution stats service.");
 ABSL_FLAG(std::string, rpc, "UnaryCall",
           "a comma separated list of rpc methods.");
+ABSL_FLAG(int32_t, request_payload_size, 0,
+          "Set the SimpleRequest.payload.body to a string of repeated 0 (zero) "
+          "ASCII characters of the given size in bytes.");
+ABSL_FLAG(int32_t, response_payload_size, 0,
+          "Ask the server to respond with SimpleResponse.payload.body of the "
+          "given length (may not be implemented on the server).");
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
 ABSL_FLAG(
     bool, secure_mode, false,
     "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
+ABSL_FLAG(bool, enable_csm_observability, false,
+          "Whether to enable CSM Observability");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -75,8 +90,8 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::testing::AsyncClientCallResult;
 using grpc::testing::ClientConfigureRequest;
-using grpc::testing::ClientConfigureRequest_RpcType_Name;
 using grpc::testing::ClientConfigureResponse;
 using grpc::testing::Empty;
 using grpc::testing::LoadBalancerAccumulatedStatsRequest;
@@ -86,166 +101,37 @@ using grpc::testing::LoadBalancerStatsResponse;
 using grpc::testing::LoadBalancerStatsService;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
+using grpc::testing::StatsWatchers;
 using grpc::testing::TestService;
+using grpc::testing::XdsStatsWatcher;
 using grpc::testing::XdsUpdateClientConfigureService;
 
-class XdsStatsWatcher;
+struct AsyncClientCall {
+  ClientContext context;
+  std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
+  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
+      simple_response_reader;
 
-struct StatsWatchers {
-  // Unique ID for each outgoing RPC
-  int global_request_id = 0;
-  // Unique ID for each outgoing RPC by RPC method type
-  std::map<int, int> global_request_id_by_type;
-  // Stores a set of watchers that should be notified upon outgoing RPC
-  // completion
-  std::set<XdsStatsWatcher*> watchers;
-  // Global watcher for accumululated stats.
-  XdsStatsWatcher* global_watcher;
-  // Mutex for global_request_id and watchers
-  std::mutex mu;
+  AsyncClientCallResult result;
 };
-// Whether at least one RPC has succeeded, indicating xDS resolution completed.
+
+// Whether at least one RPC has succeeded, indicating xDS resolution
+// completed.
 std::atomic<bool> one_rpc_succeeded(false);
 // RPC configuration detailing how RPC should be sent.
 struct RpcConfig {
   ClientConfigureRequest::RpcType type;
   std::vector<std::pair<std::string, std::string>> metadata;
   int timeout_sec = 0;
+  std::string request_payload;
+  int request_payload_size = 0;
+  int response_payload_size = 0;
 };
 struct RpcConfigurationsQueue {
   // A queue of RPC configurations detailing how RPCs should be sent.
   std::deque<std::vector<RpcConfig>> rpc_configs_queue;
   // Mutex for rpc_configs_queue
   std::mutex mu_rpc_configs_queue;
-};
-struct AsyncClientCall {
-  Empty empty_response;
-  SimpleResponse simple_response;
-  ClientContext context;
-  Status status;
-  int saved_request_id;
-  ClientConfigureRequest::RpcType rpc_type;
-  std::unique_ptr<ClientAsyncResponseReader<Empty>> empty_response_reader;
-  std::unique_ptr<ClientAsyncResponseReader<SimpleResponse>>
-      simple_response_reader;
-};
-
-/// Records the remote peer distribution for a given range of RPCs.
-class XdsStatsWatcher {
- public:
-  XdsStatsWatcher(int start_id, int end_id)
-      : start_id_(start_id), end_id_(end_id), rpcs_needed_(end_id - start_id) {}
-
-  // Upon the completion of an RPC, we will look at the request_id, the
-  // rpc_type, and the peer the RPC was sent to in order to count
-  // this RPC into the right stats bin.
-  void RpcCompleted(AsyncClientCall* call, const std::string& peer) {
-    // We count RPCs for global watcher or if the request_id falls into the
-    // watcher's interested range of request ids.
-    if ((start_id_ == 0 && end_id_ == 0) ||
-        (start_id_ <= call->saved_request_id &&
-         call->saved_request_id < end_id_)) {
-      {
-        std::lock_guard<std::mutex> lock(m_);
-        if (peer.empty()) {
-          no_remote_peer_++;
-          ++no_remote_peer_by_type_[call->rpc_type];
-        } else {
-          // RPC is counted into both per-peer bin and per-method-per-peer bin.
-          rpcs_by_peer_[peer]++;
-          rpcs_by_type_[call->rpc_type][peer]++;
-        }
-        rpcs_needed_--;
-        // Report accumulated stats.
-        auto& stats_per_method = *accumulated_stats_.mutable_stats_per_method();
-        auto& method_stat =
-            stats_per_method[ClientConfigureRequest_RpcType_Name(
-                call->rpc_type)];
-        auto& result = *method_stat.mutable_result();
-        grpc_status_code code =
-            static_cast<grpc_status_code>(call->status.error_code());
-        auto& num_rpcs = result[code];
-        ++num_rpcs;
-        auto rpcs_started = method_stat.rpcs_started();
-        method_stat.set_rpcs_started(++rpcs_started);
-      }
-      cv_.notify_one();
-    }
-  }
-
-  void WaitForRpcStatsResponse(LoadBalancerStatsResponse* response,
-                               int timeout_sec) {
-    std::unique_lock<std::mutex> lock(m_);
-    cv_.wait_for(lock, std::chrono::seconds(timeout_sec),
-                 [this] { return rpcs_needed_ == 0; });
-    response->mutable_rpcs_by_peer()->insert(rpcs_by_peer_.begin(),
-                                             rpcs_by_peer_.end());
-    auto& response_rpcs_by_method = *response->mutable_rpcs_by_method();
-    for (const auto& rpc_by_type : rpcs_by_type_) {
-      std::string method_name;
-      if (rpc_by_type.first == ClientConfigureRequest::EMPTY_CALL) {
-        method_name = "EmptyCall";
-      } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
-        method_name = "UnaryCall";
-      } else {
-        GPR_ASSERT(0);
-      }
-      // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
-      // and UNARY_CALL we will just use the name of the enum instead of the
-      // method_name variable.
-      auto& response_rpc_by_method = response_rpcs_by_method[method_name];
-      auto& response_rpcs_by_peer =
-          *response_rpc_by_method.mutable_rpcs_by_peer();
-      for (const auto& rpc_by_peer : rpc_by_type.second) {
-        auto& response_rpc_by_peer = response_rpcs_by_peer[rpc_by_peer.first];
-        response_rpc_by_peer = rpc_by_peer.second;
-      }
-    }
-    response->set_num_failures(no_remote_peer_ + rpcs_needed_);
-  }
-
-  void GetCurrentRpcStats(LoadBalancerAccumulatedStatsResponse* response,
-                          StatsWatchers* stats_watchers) {
-    std::unique_lock<std::mutex> lock(m_);
-    response->CopyFrom(accumulated_stats_);
-    // TODO(@donnadionne): delete deprecated stats below when the test is no
-    // longer using them.
-    auto& response_rpcs_started_by_method =
-        *response->mutable_num_rpcs_started_by_method();
-    auto& response_rpcs_succeeded_by_method =
-        *response->mutable_num_rpcs_succeeded_by_method();
-    auto& response_rpcs_failed_by_method =
-        *response->mutable_num_rpcs_failed_by_method();
-    for (const auto& rpc_by_type : rpcs_by_type_) {
-      auto total_succeeded = 0;
-      for (const auto& rpc_by_peer : rpc_by_type.second) {
-        total_succeeded += rpc_by_peer.second;
-      }
-      response_rpcs_succeeded_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] = total_succeeded;
-      response_rpcs_started_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] =
-          stats_watchers->global_request_id_by_type[rpc_by_type.first];
-      response_rpcs_failed_by_method[ClientConfigureRequest_RpcType_Name(
-          rpc_by_type.first)] = no_remote_peer_by_type_[rpc_by_type.first];
-    }
-  }
-
- private:
-  int start_id_;
-  int end_id_;
-  int rpcs_needed_;
-  int no_remote_peer_ = 0;
-  std::map<int, int> no_remote_peer_by_type_;
-  // A map of stats keyed by peer name.
-  std::map<std::string, int> rpcs_by_peer_;
-  // A two-level map of stats keyed at top level by RPC method and second level
-  // by peer name.
-  std::map<int, std::map<std::string, int>> rpcs_by_type_;
-  // Storing accumulated stats in the response proto format.
-  LoadBalancerAccumulatedStatsResponse accumulated_stats_;
-  std::mutex m_;
-  std::condition_variable cv_;
 };
 
 class TestClient {
@@ -277,14 +163,20 @@ class TestClient {
             std::chrono::system_clock::now() + std::chrono::seconds(INT_MAX);
       }
     }
+    SimpleRequest request;
+    request.set_response_size(config.response_payload_size);
+    if (config.request_payload_size > 0) {
+      request.mutable_payload()->set_body(config.request_payload.c_str(),
+                                          config.request_payload_size);
+    }
     call->context.set_deadline(deadline);
-    call->saved_request_id = saved_request_id;
-    call->rpc_type = ClientConfigureRequest::UNARY_CALL;
-    call->simple_response_reader = stub_->PrepareAsyncUnaryCall(
-        &call->context, SimpleRequest::default_instance(), &cq_);
+    call->result.saved_request_id = saved_request_id;
+    call->result.rpc_type = ClientConfigureRequest::UNARY_CALL;
+    call->simple_response_reader =
+        stub_->PrepareAsyncUnaryCall(&call->context, request, &cq_);
     call->simple_response_reader->StartCall();
-    call->simple_response_reader->Finish(&call->simple_response, &call->status,
-                                         call);
+    call->simple_response_reader->Finish(&call->result.simple_response,
+                                         &call->result.status, call);
   }
 
   void AsyncEmptyCall(const RpcConfig& config) {
@@ -311,13 +203,13 @@ class TestClient {
       }
     }
     call->context.set_deadline(deadline);
-    call->saved_request_id = saved_request_id;
-    call->rpc_type = ClientConfigureRequest::EMPTY_CALL;
+    call->result.saved_request_id = saved_request_id;
+    call->result.rpc_type = ClientConfigureRequest::EMPTY_CALL;
     call->empty_response_reader = stub_->PrepareAsyncEmptyCall(
         &call->context, Empty::default_instance(), &cq_);
     call->empty_response_reader->StartCall();
-    call->empty_response_reader->Finish(&call->empty_response, &call->status,
-                                        call);
+    call->empty_response_reader->Finish(&call->result.empty_response,
+                                        &call->result.status, call);
   }
 
   void AsyncCompleteRpc() {
@@ -335,17 +227,19 @@ class TestClient {
             metadata_hostname != call->context.GetServerInitialMetadata().end()
                 ? std::string(metadata_hostname->second.data(),
                               metadata_hostname->second.length())
-                : call->simple_response.hostname();
+                : call->result.simple_response.hostname();
         for (auto watcher : stats_watchers_->watchers) {
-          watcher->RpcCompleted(call, hostname);
+          watcher->RpcCompleted(call->result, hostname,
+                                call->context.GetServerInitialMetadata(),
+                                call->context.GetServerTrailingMetadata());
         }
       }
 
       if (!RpcStatusCheckSuccess(call)) {
         if (absl::GetFlag(FLAGS_print_response) ||
             absl::GetFlag(FLAGS_fail_on_failed_rpc)) {
-          std::cout << "RPC failed: " << call->status.error_code() << ": "
-                    << call->status.error_message() << std::endl;
+          std::cout << "RPC failed: " << call->result.status.error_code()
+                    << ": " << call->result.status.error_message() << std::endl;
         }
         if (absl::GetFlag(FLAGS_fail_on_failed_rpc) &&
             one_rpc_succeeded.load()) {
@@ -360,7 +254,7 @@ class TestClient {
                       call->context.GetServerInitialMetadata().end()
                   ? std::string(metadata_hostname->second.data(),
                                 metadata_hostname->second.length())
-                  : call->simple_response.hostname();
+                  : call->result.simple_response.hostname();
           std::cout << "Greeting: Hello world, this is " << hostname
                     << ", from " << call->context.peer() << std::endl;
         }
@@ -377,7 +271,8 @@ class TestClient {
     grpc_status_code code;
     GPR_ASSERT(grpc_status_code_from_string(
         absl::GetFlag(FLAGS_expect_status).c_str(), &code));
-    return code == static_cast<grpc_status_code>(call->status.error_code());
+    return code ==
+           static_cast<grpc_status_code>(call->result.status.error_code());
   }
 
   std::unique_ptr<TestService::Stub> stub_;
@@ -395,20 +290,22 @@ class LoadBalancerStatsServiceImpl : public LoadBalancerStatsService::Service {
                         LoadBalancerStatsResponse* response) override {
     int start_id;
     int end_id;
-    XdsStatsWatcher* watcher;
+    std::unique_ptr<XdsStatsWatcher> watcher;
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
       start_id = stats_watchers_->global_request_id + 1;
       end_id = start_id + request->num_rpcs();
-      watcher = new XdsStatsWatcher(start_id, end_id);
-      stats_watchers_->watchers.insert(watcher);
+      watcher = std::make_unique<XdsStatsWatcher>(
+          start_id, end_id,
+          std::vector<std::string>(request->metadata_keys().begin(),
+                                   request->metadata_keys().end()));
+      stats_watchers_->watchers.insert(watcher.get());
     }
-    watcher->WaitForRpcStatsResponse(response, request->timeout_sec());
+    *response = watcher->WaitForRpcStatsResponse(request->timeout_sec());
     {
       std::lock_guard<std::mutex> lock(stats_watchers_->mu);
-      stats_watchers_->watchers.erase(watcher);
+      stats_watchers_->watchers.erase(watcher.get());
     }
-    delete watcher;
     return Status::OK;
   }
 
@@ -442,6 +339,10 @@ class XdsUpdateClientConfigureServiceImpl
       metadata_map[data.type()].push_back({data.key(), data.value()});
     }
     std::vector<RpcConfig> configs;
+    int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+    int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+    GPR_ASSERT(request_payload_size >= 0);
+    GPR_ASSERT(response_payload_size >= 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -450,6 +351,22 @@ class XdsUpdateClientConfigureServiceImpl
       if (metadata_iter != metadata_map.end()) {
         config.metadata = metadata_iter->second;
       }
+      if (request_payload_size > 0 &&
+          config.type == ClientConfigureRequest::EMPTY_CALL) {
+        gpr_log(GPR_ERROR,
+                "request_payload_size should not be set "
+                "for EMPTY_CALL");
+      }
+      if (response_payload_size > 0 &&
+          config.type == ClientConfigureRequest::EMPTY_CALL) {
+        gpr_log(GPR_ERROR,
+                "response_payload_size should not be set "
+                "for EMPTY_CALL");
+      }
+      config.request_payload_size = request_payload_size;
+      std::string payload(config.request_payload_size, '0');
+      config.request_payload = payload;
+      config.response_payload_size = response_payload_size;
       configs.push_back(std::move(config));
     }
     {
@@ -486,8 +403,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
   std::vector<RpcConfig> configs;
   while (true) {
     {
-      std::lock_guard<std::mutex> lockk(
-          rpc_configs_queue->mu_rpc_configs_queue);
+      std::lock_guard<std::mutex> lock(rpc_configs_queue->mu_rpc_configs_queue);
       if (!rpc_configs_queue->rpc_configs_queue.empty()) {
         configs = std::move(rpc_configs_queue->rpc_configs_queue.front());
         rpc_configs_queue->rpc_configs_queue.pop_front();
@@ -509,6 +425,24 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
     }
   }
   GPR_UNREACHABLE_CODE(thread.join());
+}
+
+grpc::experimental::CsmObservability EnableCsmObservability() {
+  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
+  // default was "localhost:9464" which causes connection issue across GKE
+  // pods
+  opts.url = "0.0.0.0:9464";
+  auto prometheus_exporter =
+      opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
+  auto meter_provider =
+      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  meter_provider->AddMetricReader(std::move(prometheus_exporter));
+  auto observability = grpc::experimental::CsmObservabilityBuilder()
+                           .SetMeterProvider(std::move(meter_provider))
+                           .BuildAndRegister();
+  assert(observability.ok());
+  return *std::move(observability);
 }
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
@@ -559,6 +493,10 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   std::vector<RpcConfig> configs;
   std::vector<std::string> rpc_methods =
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
+  int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
+  int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
+  GPR_ASSERT(request_payload_size >= 0);
+  GPR_ASSERT(response_payload_size >= 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
@@ -572,6 +510,22 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     if (metadata_iter != metadata_map.end()) {
       config.metadata = metadata_iter->second;
     }
+    if (request_payload_size > 0 &&
+        config.type == ClientConfigureRequest::EMPTY_CALL) {
+      gpr_log(GPR_ERROR,
+              "request_payload_size should not be set "
+              "for EMPTY_CALL");
+    }
+    if (response_payload_size > 0 &&
+        config.type == ClientConfigureRequest::EMPTY_CALL) {
+      gpr_log(GPR_ERROR,
+              "response_payload_size should not be set "
+              "for EMPTY_CALL");
+    }
+    config.request_payload_size = request_payload_size;
+    std::string payload(config.request_payload_size, '0');
+    config.request_payload = payload;
+    config.response_payload_size = response_payload_size;
     configs.push_back(std::move(config));
   }
   {
@@ -594,11 +548,15 @@ int main(int argc, char** argv) {
 
   {
     std::lock_guard<std::mutex> lock(stats_watchers.mu);
-    stats_watchers.global_watcher = new XdsStatsWatcher(0, 0);
+    stats_watchers.global_watcher = new XdsStatsWatcher(0, 0, {});
     stats_watchers.watchers.insert(stats_watchers.global_watcher);
   }
 
   BuildRpcConfigsFromFlags(&rpc_config_queue);
+  grpc::experimental::CsmObservability observability;
+  if (absl::GetFlag(FLAGS_enable_csm_observability)) {
+    observability = EnableCsmObservability();
+  }
 
   std::chrono::duration<double> duration_per_query =
       std::chrono::nanoseconds(std::chrono::seconds(1)) /
