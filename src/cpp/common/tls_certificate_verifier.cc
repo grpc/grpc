@@ -16,7 +16,6 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <functional>
 #include <map>
 #include <utility>
@@ -141,10 +140,16 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
   return is_done;
 }
 
-void CertificateVerifier::Cancel(TlsCustomVerificationCheckRequest* request) {
+void CertificateVerifier::Cancel(TlsCustomVerificationCheckRequest* request,
+                                 const absl::Status& status) {
   GPR_ASSERT(request != nullptr);
   GPR_ASSERT(request->c_request() != nullptr);
-  grpc_tls_certificate_verifier_cancel(verifier_, request->c_request());
+  // A copy of the status message has to be made since the API takes const
+  // char*.
+  grpc_tls_certificate_verifier_cancel(
+      verifier_, request->c_request(),
+      static_cast<grpc_status_code>(status.code()),
+      std::string(status.message()).c_str());
 }
 
 void CertificateVerifier::AsyncCheckDone(
@@ -229,7 +234,8 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
 }
 
 void ExternalCertificateVerifier::CancelInCoreExternalVerifier(
-    void* user_data, grpc_tls_custom_verification_check_request* request) {
+    void* user_data, grpc_tls_custom_verification_check_request* request,
+    grpc_status_code code, const char* error_details) {
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   TlsCustomVerificationCheckRequest* cpp_request = nullptr;
   {
@@ -240,7 +246,8 @@ void ExternalCertificateVerifier::CancelInCoreExternalVerifier(
     }
   }
   if (cpp_request != nullptr) {
-    self->Cancel(cpp_request);
+    self->Cancel(cpp_request, absl::Status(static_cast<absl::StatusCode>(code),
+                                           error_details));
   }
 }
 

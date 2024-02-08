@@ -1074,9 +1074,12 @@ typedef struct grpc_tls_certificate_verifier_external {
    * request: request information exposed to the function implementer. It will
    *          be the same request object that was passed to verify(), and it
    *          tells the cancel() which request to cancel.
+   * code: status code for the cancellation.
+   * error_details: status message for the cancellation.
    */
   void (*cancel)(void* user_data,
-                 grpc_tls_custom_verification_check_request* request);
+                 grpc_tls_custom_verification_check_request* request,
+                 grpc_status_code code, const char* error_details);
   /**
    * A function pointer that does some additional destruction work when the
    * verifier is destroyed. This is used when the caller wants to associate some
@@ -1186,7 +1189,8 @@ int grpc_tls_certificate_verifier_verify(
  */
 void grpc_tls_certificate_verifier_cancel(
     grpc_tls_certificate_verifier* verifier,
-    grpc_tls_custom_verification_check_request* request);
+    grpc_tls_custom_verification_check_request* request, grpc_status_code code,
+    const char* error_details);
 
 /**
  * EXPERIMENTAL API - Subject to change
