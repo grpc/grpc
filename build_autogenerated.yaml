@@ -2039,6 +2039,7 @@ libs:
   - z
   - absl/algorithm:container
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -3095,6 +3096,7 @@ libs:
   - z
   - absl/algorithm:container
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -5008,6 +5010,7 @@ libs:
   - utf8_range_lib
   - z
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -6483,6 +6486,7 @@ targets:
   - upb_message_lib
   - utf8_range_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
