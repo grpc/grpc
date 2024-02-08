@@ -43,6 +43,21 @@
 namespace grpc {
 namespace internal {
 
+// TODO(yashykt): Extend this to allow multiple OpenTelemetry plugins to be
+// registered in the same binary.
+struct OpenTelemetryPluginState* g_otel_plugin_state_;
+
+const struct OpenTelemetryPluginState& OpenTelemetryPluginState() {
+  GPR_DEBUG_ASSERT(g_otel_plugin_state_ != nullptr);
+  return *g_otel_plugin_state_;
+}
+
+absl::string_view OpenTelemetryMethodKey() { return "grpc.method"; }
+
+absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
+
+absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
+
 namespace {
 absl::flat_hash_set<std::string> BaseMetrics() {
   return absl::flat_hash_set<std::string>{
@@ -65,26 +80,7 @@ absl::flat_hash_set<std::string> BaseMetrics() {
       std::string(grpc::OpenTelemetryPluginBuilder::
                       kServerCallRcvdTotalCompressedMessageSizeInstrumentName)};
 }
-
-// TODO(yashykt): This should go away when we move to the
-// GlobalStatsPluginRegistry.
-
 }  // namespace
-
-// TODO(yashykt): Extend this to allow multiple OpenTelemetry plugins to be
-// registered in the same binary.
-struct OpenTelemetryPluginState* g_otel_plugin_state_;
-
-const struct OpenTelemetryPluginState& OpenTelemetryPluginState() {
-  GPR_DEBUG_ASSERT(g_otel_plugin_state_ != nullptr);
-  return *g_otel_plugin_state_;
-}
-
-absl::string_view OpenTelemetryMethodKey() { return "grpc.method"; }
-
-absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
-
-absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 
 //
 // OpenTelemetryPluginBuilderImpl

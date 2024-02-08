@@ -115,6 +115,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
     ot_builder.AddPluginOption(std::move(option));
   }
   ASSERT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
+  ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = config.labels_to_inject;
     grpc_core::CoreConfiguration::RegisterBuilder(
@@ -122,19 +123,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
           builder->channel_init()->RegisterFilter(
               GRPC_CLIENT_SUBCHANNEL, &AddServiceLabelsFilter::kFilter);
         });
+    channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
   }
   grpc_init();
-  // Create the server and channel stub.
-  ResetServerAndStub();
-}
-
-void OpenTelemetryPluginEnd2EndTest::TearDown() {
-  server_->Shutdown();
-  grpc_shutdown_blocking();
-  grpc_core::ServerCallTracerFactory::TestOnlyReset();
-}
-
-void OpenTelemetryPluginEnd2EndTest::ResetServerAndStub() {
   grpc::ServerBuilder builder;
   int port;
   // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
@@ -147,12 +138,16 @@ void OpenTelemetryPluginEnd2EndTest::ResetServerAndStub() {
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
 
-  ChannelArguments channel_args;
-  channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
   auto channel = grpc::CreateCustomChannel(
       server_address_, grpc::InsecureChannelCredentials(), channel_args);
   stub_ = EchoTestService::NewStub(channel);
   generic_stub_ = std::make_unique<GenericStub>(std::move(channel));
+}
+
+void OpenTelemetryPluginEnd2EndTest::TearDown() {
+  server_->Shutdown();
+  grpc_shutdown_blocking();
+  grpc_core::ServerCallTracerFactory::TestOnlyReset();
 }
 
 void OpenTelemetryPluginEnd2EndTest::ResetStub(
