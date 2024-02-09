@@ -2896,10 +2896,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_service_config_impl",
     srcs = [
-        "//src/core:lib/service_config/service_config_impl.cc",
+        "//src/core:service_config/service_config_impl.cc",
     ],
     hdrs = [
-        "//src/core:lib/service_config/service_config_impl.h",
+        "//src/core:service_config/service_config_impl.h",
     ],
     external_deps = [
         "absl/status",
