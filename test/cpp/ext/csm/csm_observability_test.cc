@@ -41,7 +41,7 @@ TEST(GsmDependencyTest, GoogleCloudOpenTelemetryDependency) {
 }
 
 TEST(CsmChannelTargetSelectorTest, NonXdsTargets) {
-  auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister();
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
   EXPECT_FALSE(internal::CsmChannelTargetSelector("dns:///foo.bar.google.com"));
   EXPECT_FALSE(
@@ -51,24 +51,24 @@ TEST(CsmChannelTargetSelectorTest, NonXdsTargets) {
 }
 
 TEST(CsmChannelTargetSelectorTest, XdsTargets) {
-  auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister();
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo"));
   EXPECT_TRUE(internal::CsmChannelTargetSelector("xds:///foo.bar"));
 }
 
 TEST(CsmChannelTargetSelectorTest, XdsTargetsWithNonTDAuthority) {
-  auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister();
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_FALSE(internal::CsmChannelTargetSelector("xds://authority/foo"));
 }
 
 TEST(CsmChannelTargetSelectorTest, XdsTargetsWithTDAuthority) {
-  auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister();
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_TRUE(internal::CsmChannelTargetSelector(
       "xds://traffic-director-global.xds.googleapis.com/foo"));
 }
 
 TEST(CsmChannelTargetSelectorTest, CsmObservabilityOutOfScope) {
-  { auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister(); }
+  { auto obs = CsmObservabilityBuilder().BuildAndRegister(); }
   // When CsmObservability goes out of scope, the target selector should return
   // false as well.
   EXPECT_FALSE(internal::CsmChannelTargetSelector("foo.bar.google.com"));
@@ -78,18 +78,18 @@ TEST(CsmChannelTargetSelectorTest, CsmObservabilityOutOfScope) {
 }
 
 TEST(CsmServerSelectorTest, ChannelArgsWithoutXdsServerArg) {
-  auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister();
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_FALSE(internal::CsmServerSelector(grpc_core::ChannelArgs()));
 }
 
 TEST(CsmServerSelectorTest, ChannelArgsWithXdsServerArg) {
-  auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister();
+  auto obs = CsmObservabilityBuilder().BuildAndRegister();
   EXPECT_TRUE(internal::CsmServerSelector(
       grpc_core::ChannelArgs().Set(GRPC_ARG_XDS_ENABLED_SERVER, true)));
 }
 
 TEST(CsmServerSelectorTest, CsmObservabilityOutOfScope) {
-  { auto obs = experimental::CsmObservabilityBuilder().BuildAndRegister(); }
+  { auto obs = CsmObservabilityBuilder().BuildAndRegister(); }
   // When CsmObservability goes out of scope, the server selector should return
   // false as well.
   EXPECT_FALSE(internal::CsmServerSelector(grpc_core::ChannelArgs()));
