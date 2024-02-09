@@ -95,7 +95,6 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
       format_subject_token_field_name_ = format_it->second.string();
     }
   }
-  gpr_mu_init(&mu_);
 }
 
 void FileExternalAccountCredentials::RetrieveSubjectToken(
@@ -106,12 +105,10 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     grpc_slice slice = grpc_empty_slice();
   };
   SliceWrapper content_slice;
-  gpr_mu_lock(&mu_);
   // To retrieve the subject token, we read the file every time we make a
   // request because it may have changed since the last request.
   grpc_error_handle error =
       grpc_load_file(file_.c_str(), 0, &content_slice.slice);
-  gpr_mu_unlock(&mu_);
   if (!error.ok()) {
     cb("", error);
     return;
