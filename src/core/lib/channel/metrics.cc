@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/metrics.h"
 
 #include "absl/algorithm/container.h"
@@ -136,13 +138,13 @@ std::atomic<GlobalStatsPluginRegistry*> GlobalStatsPluginRegistry::self_{
 
 void GlobalStatsPluginRegistry::RegisterStatsPlugin(
     std::shared_ptr<StatsPlugin> plugin) {
-  grpc_core::MutexLock lock(&mutex_);
+  MutexLock lock(&mutex_);
   plugins_.push_back(std::move(plugin));
 }
 
 GlobalStatsPluginRegistry::StatsPluginsGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForTarget(absl::string_view target) {
-  grpc_core::MutexLock lock(&mutex_);
+  MutexLock lock(&mutex_);
   StatsPluginsGroup group;
   absl::c_for_each(plugins_, [&group, target](const auto& plugin) {
     if (plugin->IsEnabledForTarget(target)) {

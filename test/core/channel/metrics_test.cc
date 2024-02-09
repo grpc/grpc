@@ -77,9 +77,7 @@ class FakeStatsPlugin : public StatsPlugin {
     return target_selector_(target);
   }
 
-  bool IsEnabledForServer(grpc_core::ChannelArgs& args) override {
-    return false;
-  }
+  bool IsEnabledForServer(ChannelArgs& args) override { return false; }
 
   void SetTargetSelector(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>

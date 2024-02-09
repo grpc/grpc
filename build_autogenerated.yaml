@@ -11977,6 +11977,19 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/channel/metrics.h
+  src:
+  - src/core/lib/channel/metrics.cc
+  - test/core/channel/metrics_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: minimal_stack_is_minimal_test
   gtest: true
   build: test

@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -61,8 +63,7 @@ class GlobalInstrumentsRegistry {
   struct GlobalUInt64HistogramHandle : GlobalHandle {};
   struct GlobalDoubleHistogramHandle : GlobalHandle {};
 
-  // These functions below will create a global instrument
-  // The handle will most likely just be an index in the list of instruments.
+  // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, std::vector<absl::string_view> label_keys,
@@ -80,7 +81,6 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, std::vector<absl::string_view> label_keys,
       std::vector<absl::string_view> optional_label_keys);
 
-  // Getter functions for stats plugins to query registered counters.
   static const GlobalCounterDescriptor& GetCounterDescriptor(
       GlobalUInt64CounterHandle handle);
   static const GlobalCounterDescriptor& GetCounterDescriptor(
@@ -89,6 +89,7 @@ class GlobalInstrumentsRegistry {
       GlobalUInt64HistogramHandle handle);
   static const GlobalHistogramDescriptor& GetHistogramDescriptor(
       GlobalDoubleHistogramHandle handle);
+  // Getter functions for StatsPlugins to query registered counters/histograms.
   static const std::vector<GlobalCounterDescriptor>& counters();
   static const std::vector<GlobalHistogramDescriptor>& histograms();
 
@@ -104,7 +105,7 @@ class StatsPlugin {
  public:
   virtual ~StatsPlugin() = default;
   virtual bool IsEnabledForTarget(absl::string_view target) = 0;
-  virtual bool IsEnabledForServer(grpc_core::ChannelArgs& args) = 0;
+  virtual bool IsEnabledForServer(ChannelArgs& args) = 0;
 
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -189,7 +190,7 @@ class GlobalStatsPluginRegistry {
   // a specified scope.
   StatsPluginsGroup GetStatsPluginsForTarget(absl::string_view target);
   // TODO(yijiem): Implement this.
-  // StatsPluginsGroup GetStatsPluginsForServer(grpc_core::ChannelArgs& args);
+  // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
   static GlobalStatsPluginRegistry& Get() {
     GlobalStatsPluginRegistry* p = self_.load(std::memory_order_acquire);
@@ -207,7 +208,7 @@ class GlobalStatsPluginRegistry {
   }
 
   void TestOnlyResetStatsPlugins() {
-    grpc_core::MutexLock lock(&mutex_);
+    MutexLock lock(&mutex_);
     plugins_.clear();
   }
 
@@ -216,7 +217,7 @@ class GlobalStatsPluginRegistry {
 
   static std::atomic<GlobalStatsPluginRegistry*> self_;
 
-  grpc_core::Mutex mutex_;
+  Mutex mutex_;
   std::vector<std::shared_ptr<StatsPlugin>> plugins_ ABSL_GUARDED_BY(mutex_);
 };
 
