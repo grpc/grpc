@@ -389,7 +389,7 @@ void TlsChannelSecurityConnector::check_peer(
 }
 
 void TlsChannelSecurityConnector::cancel_check_peer(
-    grpc_closure* on_peer_checked, grpc_error_handle /*error*/) {
+    grpc_closure* on_peer_checked, grpc_error_handle error) {
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
     grpc_tls_custom_verification_check_request* pending_verifier_request =
@@ -406,7 +406,7 @@ void TlsChannelSecurityConnector::cancel_check_peer(
       }
     }
     if (pending_verifier_request != nullptr) {
-      verifier->Cancel(pending_verifier_request);
+      verifier->Cancel(pending_verifier_request, error);
     }
   }
 }
@@ -668,7 +668,7 @@ void TlsServerSecurityConnector::check_peer(
 }
 
 void TlsServerSecurityConnector::cancel_check_peer(
-    grpc_closure* on_peer_checked, grpc_error_handle /*error*/) {
+    grpc_closure* on_peer_checked, grpc_error_handle error) {
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
     grpc_tls_custom_verification_check_request* pending_verifier_request =
@@ -685,7 +685,7 @@ void TlsServerSecurityConnector::cancel_check_peer(
       }
     }
     if (pending_verifier_request != nullptr) {
-      verifier->Cancel(pending_verifier_request);
+      verifier->Cancel(pending_verifier_request, error);
     }
   }
 }

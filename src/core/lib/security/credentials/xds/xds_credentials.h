@@ -52,7 +52,8 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)>,
               absl::Status* sync_status) override;
-  void Cancel(grpc_tls_custom_verification_check_request*) override;
+  void Cancel(grpc_tls_custom_verification_check_request*,
+              const absl::Status&) override;
 
   UniqueTypeName type() const override;
 
