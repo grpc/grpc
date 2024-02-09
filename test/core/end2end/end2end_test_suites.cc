@@ -44,6 +44,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
+#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/env.h"
@@ -535,6 +537,38 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
+class ChaoticGoodFixture final : public CoreTestFixture {
+ public:
+  explicit ChaoticGoodFixture(std::string localaddr = JoinHostPort(
+                                  "localhost", grpc_pick_unused_port_or_die()))
+      : localaddr_(std::move(localaddr)) {}
+
+ protected:
+  const std::string& localaddr() const { return localaddr_; }
+
+ private:
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
+    GPR_ASSERT(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
+    pre_server_start(server);
+    grpc_server_start(server);
+    return server;
+  }
+
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue*) override {
+    auto* client = grpc_chaotic_good_channel_create(
+        localaddr_.c_str(),
+        args.Set(GRPC_ARG_ENABLE_RETRIES, false).ToC().get());
+    return client;
+  }
+
+  std::string localaddr_;
+};
+
 #ifdef GRPC_POSIX_WAKEUP_FD
 class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
  public:
@@ -550,8 +584,8 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 };
 #endif
 
-std::vector<CoreTestConfiguration> AllConfigs() {
-  std::vector<CoreTestConfiguration> configs {
+std::vector<CoreTestConfiguration> DefaultConfigs() {
+  return std::vector<CoreTestConfiguration> {
 #ifdef GRPC_POSIX_SOCKET
     CoreTestConfiguration{"Chttp2Fd",
                           FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
@@ -949,6 +983,28 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
 #endif
   };
+}
+
+std::vector<CoreTestConfiguration> ChaoticGoodFixtures() {
+  return std::vector<CoreTestConfiguration>{
+      CoreTestConfiguration{"ChaoticGoodFullStack",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+                            nullptr,
+                            [](const ChannelArgs& /*client_args*/,
+                               const ChannelArgs& /*server_args*/) {
+                              return std::make_unique<ChaoticGoodFixture>();
+                            }}};
+}
+
+std::vector<CoreTestConfiguration> AllConfigs() {
+  std::vector<CoreTestConfiguration> configs;
+  if (IsExperimentEnabledInConfiguration(kExperimentIdChaoticGood)) {
+    configs = ChaoticGoodFixtures();
+  } else {
+    configs = DefaultConfigs();
+  }
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;

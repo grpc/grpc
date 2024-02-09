@@ -1908,6 +1908,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
+                      'src/core/lib/surface/wait_for_cq_end_op.cc',
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/batch_builder.cc',
                       'src/core/lib/transport/batch_builder.h',

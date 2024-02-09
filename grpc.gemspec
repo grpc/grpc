@@ -1801,6 +1801,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/validate_metadata.cc )
   s.files += %w( src/core/lib/surface/validate_metadata.h )
   s.files += %w( src/core/lib/surface/version.cc )
+  s.files += %w( src/core/lib/surface/wait_for_cq_end_op.cc )
   s.files += %w( src/core/lib/surface/wait_for_cq_end_op.h )
   s.files += %w( src/core/lib/transport/batch_builder.cc )
   s.files += %w( src/core/lib/transport/batch_builder.h )

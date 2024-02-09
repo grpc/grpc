@@ -91,6 +91,12 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   });
 }
 
+ChannelArgs MakeChannelArgs() {
+  return CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(nullptr);
+}
+
 TEST_F(TransportTest, AddOneStream) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
@@ -107,7 +113,8 @@ TEST_F(TransportTest, AddOneStream) {
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
+      event_engine(), HPackParser(), HPackCompressor());
   auto call =
       MakeCall(event_engine().get(), Arena::Create(1024, memory_allocator()));
   transport->StartCall(std::move(call.handler));
@@ -189,7 +196,8 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       .WillOnce(Return(false));
   auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
+      event_engine(), HPackParser(), HPackCompressor());
   auto call =
       MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
   transport->StartCall(std::move(call.handler));

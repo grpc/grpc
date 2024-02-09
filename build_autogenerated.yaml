@@ -1932,6 +1932,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/call_factory.cc
@@ -3013,6 +3014,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/call_factory.cc
@@ -4971,6 +4973,7 @@ libs:
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
+  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
@@ -5808,6 +5811,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -5824,6 +5843,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6013,6 +6041,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6029,6 +6073,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6250,6 +6303,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6266,6 +6335,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6462,6 +6540,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6478,6 +6572,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6511,6 +6614,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6527,6 +6646,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6547,6 +6675,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6563,6 +6707,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6583,6 +6736,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6599,6 +6768,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6619,6 +6797,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6635,6 +6829,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6672,6 +6875,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6688,6 +6907,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6723,6 +6951,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6739,6 +6983,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6759,6 +7012,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6775,6 +7044,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -7313,6 +7591,7 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.h
   - src/core/ext/transport/chaotic_good/server_transport.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -7345,6 +7624,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -7735,6 +8015,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -7751,6 +8047,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -7888,6 +8193,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -7904,6 +8225,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8003,6 +8333,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8019,6 +8365,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8145,6 +8500,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8161,6 +8532,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8218,6 +8598,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8234,6 +8630,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8327,6 +8732,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8343,6 +8764,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9096,6 +9526,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9112,6 +9558,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9132,6 +9587,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9148,6 +9619,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9168,6 +9648,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9184,6 +9680,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9222,6 +9727,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9238,6 +9759,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9735,6 +10265,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9751,6 +10297,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9912,6 +10467,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9928,6 +10499,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10458,6 +11038,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -10474,6 +11070,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10637,6 +11242,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -10653,6 +11274,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10697,6 +11327,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -10713,6 +11359,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10884,6 +11539,7 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
 - name: insecure_security_connector_test
   gtest: true
   build: test
@@ -11149,6 +11805,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11165,6 +11837,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11328,6 +12009,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11344,6 +12041,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11376,6 +12082,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11392,6 +12114,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11751,6 +12482,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11767,6 +12514,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11787,6 +12543,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11803,6 +12575,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11823,6 +12604,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11839,6 +12636,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11859,6 +12665,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11875,6 +12697,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12107,6 +12938,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12123,6 +12970,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12155,6 +13011,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12171,6 +13043,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12191,6 +13072,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12207,6 +13104,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12505,6 +13411,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12521,6 +13443,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12742,6 +13673,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12758,6 +13705,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12811,6 +13767,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12827,6 +13799,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13202,6 +14183,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13218,6 +14215,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13435,6 +14441,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13451,6 +14473,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13485,6 +14516,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13501,6 +14548,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13521,6 +14577,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13537,6 +14609,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13717,6 +14798,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13733,6 +14830,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13764,6 +14870,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13780,6 +14902,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13800,6 +14931,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13816,6 +14963,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13836,6 +14992,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13852,6 +15024,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13872,6 +15053,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13888,6 +15085,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13908,6 +15114,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13924,6 +15146,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13944,6 +15175,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13960,6 +15207,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13980,6 +15236,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13996,6 +15268,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14016,6 +15297,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14032,6 +15329,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14052,6 +15358,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14068,6 +15390,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14088,6 +15419,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14104,6 +15451,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14124,6 +15480,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14140,6 +15512,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14160,6 +15541,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14176,6 +15573,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14196,6 +15602,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14212,6 +15634,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14232,6 +15663,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14248,6 +15695,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14268,6 +15724,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14284,6 +15756,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14304,6 +15785,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14320,6 +15817,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14340,6 +15846,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14356,6 +15878,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14376,6 +15907,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14392,6 +15939,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14412,6 +15968,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14428,6 +16000,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14448,6 +16029,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14464,6 +16061,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14484,6 +16090,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14500,6 +16122,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14520,6 +16151,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14536,6 +16183,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14556,6 +16212,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14572,6 +16244,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14603,6 +16284,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14619,6 +16316,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14639,6 +16345,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14655,6 +16377,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14675,6 +16406,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14691,6 +16438,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14711,6 +16467,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14727,6 +16499,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14758,6 +16539,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14774,6 +16571,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14794,6 +16600,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14810,6 +16632,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14830,6 +16661,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14846,6 +16693,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14866,6 +16722,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14882,6 +16754,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14902,6 +16783,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14918,6 +16815,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14938,6 +16844,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14954,6 +16876,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14974,6 +16905,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14990,6 +16937,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15357,6 +17313,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15373,6 +17345,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15482,6 +17463,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15498,6 +17495,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15587,6 +17593,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15603,6 +17625,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15623,6 +17654,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15639,6 +17686,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15674,6 +17730,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15690,6 +17762,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15710,6 +17791,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15726,6 +17823,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15760,6 +17866,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15776,6 +17898,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16092,6 +18223,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16108,6 +18255,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16431,6 +18587,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16447,6 +18619,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16917,6 +19098,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16933,6 +19130,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17113,6 +19319,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17129,6 +19351,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17771,6 +20002,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17787,6 +20034,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17807,6 +20063,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/settings_metadata.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17823,6 +20095,15 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/test_lb_policies.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/settings_metadata.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
