@@ -25,7 +25,7 @@
 #include <grpcpp/support/slice.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/load_file.h"
 
 ABSL_RETIRED_FLAG(bool, enable_ssl, false,
                   "Replaced by --channel_creds_type=ssl.");
@@ -94,24 +94,26 @@ CliCredentials::GetChannelCredentials() const {
     grpc::SslCredentialsOptions ssl_creds_options;
     // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
     if (!absl::GetFlag(FLAGS_ssl_client_cert).empty()) {
-      grpc_slice cert_slice = grpc_empty_slice();
-      GRPC_LOG_IF_ERROR(
-          "load_file",
-          grpc_load_file(absl::GetFlag(FLAGS_ssl_client_cert).c_str(), 1,
-                         &cert_slice));
-      ssl_creds_options.pem_cert_chain =
-          grpc::StringFromCopiedSlice(cert_slice);
-      grpc_slice_unref(cert_slice);
+      auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert),
+                                      /*add_null_terminator=*/false);
+      if (!cert.ok()) {
+        gpr_log(GPR_ERROR, "error loading file %s: %s",
+                absl::GetFlag(FLAGS_ssl_client_cert).c_str(),
+                cert.status().ToString().c_str());
+      } else {
+        ssl_creds_options.pem_cert_chain = std::string(cert->as_string_view());
+      }
     }
     if (!absl::GetFlag(FLAGS_ssl_client_key).empty()) {
-      grpc_slice key_slice = grpc_empty_slice();
-      GRPC_LOG_IF_ERROR(
-          "load_file",
-          grpc_load_file(absl::GetFlag(FLAGS_ssl_client_key).c_str(), 1,
-                         &key_slice));
-      ssl_creds_options.pem_private_key =
-          grpc::StringFromCopiedSlice(key_slice);
-      grpc_slice_unref(key_slice);
+      auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key),
+                                     /*add_null_terminator=*/false);
+      if (!key.ok()) {
+        gpr_log(GPR_ERROR, "error loading file %s: %s",
+                absl::GetFlag(FLAGS_ssl_client_key).c_str(),
+                key.status().ToString().c_str());
+      } else {
+        ssl_creds_options.pem_private_key = std::string(key->as_string_view());
+      }
     }
     return grpc::SslCredentials(ssl_creds_options);
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "gdc") {

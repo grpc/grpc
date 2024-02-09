@@ -933,9 +933,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // message for a connection failure.
   static std::string MakeConnectionFailureRegex(absl::string_view prefix);
 
-  // Returns the contents of the specified file.
-  static std::string ReadFile(const char* file_path);
-
   // Returns a private key pair, read from local files.
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(
       const char* key_path, const char* cert_path);

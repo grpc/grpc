@@ -148,6 +148,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:load_file",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",

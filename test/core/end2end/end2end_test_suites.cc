@@ -54,7 +54,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -70,6 +69,7 @@
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -417,20 +417,12 @@ class SslProxyFixture : public CoreTestFixture {
   static grpc_server* CreateProxyServer(const char* port,
                                         const grpc_channel_args* server_args) {
     grpc_server* s = grpc_server_create(server_args, nullptr);
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
+    std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                    server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
     GPR_ASSERT(grpc_server_add_http2_port(s, port, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     return s;
@@ -459,20 +451,12 @@ class SslProxyFixture : public CoreTestFixture {
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
+    std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                    server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
     if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
       grpc_auth_metadata_processor processor = {ProcessAuthFailure, nullptr,
                                                 nullptr};
