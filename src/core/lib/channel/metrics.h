@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -205,14 +206,18 @@ class GlobalStatsPluginRegistry {
     return *p;
   }
 
-  void TestOnlyResetStatsPlugins() { plugins_.clear(); }
+  void TestOnlyResetStatsPlugins() {
+    grpc_core::MutexLock lock(&mutex_);
+    plugins_.clear();
+  }
 
  private:
   GlobalStatsPluginRegistry() = default;
 
   static std::atomic<GlobalStatsPluginRegistry*> self_;
 
-  std::vector<std::shared_ptr<StatsPlugin>> plugins_;
+  grpc_core::Mutex mutex_;
+  std::vector<std::shared_ptr<StatsPlugin>> plugins_ ABSL_GUARDED_BY(mutex_);
 };
 
 }  // namespace grpc_core

@@ -96,7 +96,7 @@ class FakeStatsPlugin : public StatsPlugin {
     // currently don't allow), we might not have seen that descriptor nor have
     // we created an instrument for it. We probably could copy the existing
     // instruments at build time and for the handle that we haven't seen we will
-    // just ignore it here. This would also prevent having to lock the
+    // just ignore it here. This would also prevent us from having to lock the
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
     const auto& descriptor =
@@ -282,8 +282,6 @@ class FakeStatsPlugin : public StatsPlugin {
   };
 
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
-  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-      target_attribute_filter_;
   // Instruments.
   absl::flat_hash_map<
       std::string,

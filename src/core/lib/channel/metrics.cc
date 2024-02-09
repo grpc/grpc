@@ -136,12 +136,13 @@ std::atomic<GlobalStatsPluginRegistry*> GlobalStatsPluginRegistry::self_{
 
 void GlobalStatsPluginRegistry::RegisterStatsPlugin(
     std::shared_ptr<StatsPlugin> plugin) {
-  // TODO(yijiem): need to hold lock
+  grpc_core::MutexLock lock(&mutex_);
   plugins_.push_back(std::move(plugin));
 }
 
 GlobalStatsPluginRegistry::StatsPluginsGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForTarget(absl::string_view target) {
+  grpc_core::MutexLock lock(&mutex_);
   StatsPluginsGroup group;
   absl::c_for_each(plugins_, [&group, target](const auto& plugin) {
     if (plugin->IsEnabledForTarget(target)) {
