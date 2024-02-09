@@ -143,6 +143,8 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
 
 void CertificateVerifier::Cancel(TlsCustomVerificationCheckRequest* request,
                                  const absl::Status& status) {
+  GPR_ASSERT(request != nullptr);
+  GPR_ASSERT(request->c_request() != nullptr);
   // A copy of the status message has to be made since the API takes const
   // char*.
   grpc_tls_certificate_verifier_cancel(
