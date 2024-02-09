@@ -34,6 +34,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
@@ -43,7 +44,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
 
 namespace grpc {
 namespace {
@@ -69,12 +69,16 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // Test that CreateRootCertsBundle returns a correct slice.
-  std::string roots_bundle =
-      grpc_core::testing::GetFileContents("test/core/security/etc/bundle.pem");
+  absl::string_view roots_bundle_str;
+  auto roots_bundle = grpc_core::LoadFile("test/core/security/etc/bundle.pem",
+                                          /*add_null_terminator=*/false);
+  if (roots_bundle.ok()) roots_bundle_str = roots_bundle->as_string_view();
   // result_slice should have the same content as roots_bundle.
   grpc_core::Slice result_slice(
       grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots"));
-  EXPECT_EQ(result_slice.as_string_view(), roots_bundle);
+  EXPECT_EQ(result_slice.as_string_view(), roots_bundle_str)
+      << "Expected: \"" << result_slice.as_string_view() << "\"\n"
+      << "Actual:   \"" << roots_bundle_str << "\"";
 }
 
 }  // namespace
