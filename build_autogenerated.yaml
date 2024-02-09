@@ -9972,7 +9972,6 @@ targets:
   deps:
   - grpc++
   - protoc
-  - grpc_test_util
   - grpc++_test_config
 - name: grpc_completion_queue_test
   gtest: true

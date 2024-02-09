@@ -25,7 +25,7 @@
 #include <grpcpp/support/slice.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/tls_utils.h"
+#include "src/core/lib/gprpp/load_file.h"
 
 ABSL_RETIRED_FLAG(bool, enable_ssl, false,
                   "Replaced by --channel_creds_type=ssl.");
@@ -94,12 +94,26 @@ CliCredentials::GetChannelCredentials() const {
     grpc::SslCredentialsOptions ssl_creds_options;
     // TODO(@Capstan): This won't affect Google Default Credentials using SSL.
     if (!absl::GetFlag(FLAGS_ssl_client_cert).empty()) {
-      ssl_creds_options.pem_cert_chain = grpc_core::testing::GetFileContents(
-          absl::GetFlag(FLAGS_ssl_client_cert));
+      auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert),
+                                      /*add_null_terminator=*/false);
+      if (!cert.ok()) {
+        gpr_log(GPR_ERROR, "error loading file %s: %s",
+                absl::GetFlag(FLAGS_ssl_client_cert).c_str(),
+                cert.status().ToString().c_str());
+      } else {
+        ssl_creds_options.pem_cert_chain = std::string(cert->as_string_view());
+      }
     }
     if (!absl::GetFlag(FLAGS_ssl_client_key).empty()) {
-      ssl_creds_options.pem_private_key = grpc_core::testing::GetFileContents(
-          absl::GetFlag(FLAGS_ssl_client_key));
+      auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key),
+                                     /*add_null_terminator=*/false);
+      if (!key.ok()) {
+        gpr_log(GPR_ERROR, "error loading file %s: %s",
+                absl::GetFlag(FLAGS_ssl_client_key).c_str(),
+                key.status().ToString().c_str());
+      } else {
+        ssl_creds_options.pem_private_key = std::string(key->as_string_view());
+      }
     }
     return grpc::SslCredentials(ssl_creds_options);
   } else if (absl::GetFlag(FLAGS_channel_creds_type) == "gdc") {

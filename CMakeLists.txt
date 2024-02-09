@@ -15144,7 +15144,6 @@ target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
-  grpc_test_util
   grpc++_test_config
 )
 
