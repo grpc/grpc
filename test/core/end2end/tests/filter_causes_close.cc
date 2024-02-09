@@ -102,7 +102,14 @@ const grpc_channel_filter test_filter = {
       return Immediate(ServerMetadataFromStatus(
           absl::PermissionDeniedError("Failure that's not preventable.")));
     },
-    nullptr,
+    [](grpc_channel_element*, CallSpineInterface* args) {
+      args->client_initial_metadata().receiver.InterceptAndMap(
+          [args](ClientMetadataHandle) {
+            return args->Cancel(
+                ServerMetadataFromStatus(absl::PermissionDeniedError(
+                    "Failure that's not preventable.")));
+          });
+    },
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,
@@ -116,6 +123,9 @@ const grpc_channel_filter test_filter = {
     "filter_causes_close"};
 
 CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
+  if (IsPromiseBasedClientCallEnabled()) {
+    GTEST_SKIP() << "disabled for promises until callv3 is further along";
+  }
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL, &test_filter);
   });

@@ -133,21 +133,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "load_file_test",
-    srcs = ["load_file_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
     name = "resolve_address_using_ares_resolver_posix_test",
     srcs = ["resolve_address_posix_test.cc"],
     args = [

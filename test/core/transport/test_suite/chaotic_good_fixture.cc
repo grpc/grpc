@@ -45,8 +45,8 @@ class MockEndpointConfig : public EndpointConfig {
 };
 
 struct EndpointPair {
-  std::unique_ptr<PromiseEndpoint> client;
-  std::unique_ptr<PromiseEndpoint> server;
+  PromiseEndpoint client;
+  PromiseEndpoint server;
 };
 
 EndpointPair CreateEndpointPair(
@@ -84,10 +84,9 @@ EndpointPair CreateEndpointPair(
     event_engine->Tick();
   }
 
-  return EndpointPair{std::make_unique<PromiseEndpoint>(
-                          std::move(client_endpoint), SliceBuffer()),
-                      std::make_unique<PromiseEndpoint>(
-                          std::move(server_endpoint), SliceBuffer())};
+  return EndpointPair{
+      PromiseEndpoint(std::move(client_endpoint), SliceBuffer()),
+      PromiseEndpoint(std::move(server_endpoint), SliceBuffer())};
 }
 
 }  // namespace
@@ -105,11 +104,13 @@ TRANSPORT_FIXTURE(ChaoticGood) {
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
           std::move(control_endpoints.client), std::move(data_endpoints.client),
-          event_engine);
+          ChannelArgs().SetObject(resource_quota), event_engine, HPackParser(),
+          HPackCompressor());
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
           channel_args, std::move(control_endpoints.server),
-          std::move(data_endpoints.server), event_engine);
+          std::move(data_endpoints.server), event_engine, HPackParser(),
+          HPackCompressor());
   return ClientAndServerTransportPair{std::move(client_transport),
                                       std::move(server_transport)};
 }

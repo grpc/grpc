@@ -36,13 +36,13 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/build.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"
@@ -504,17 +504,9 @@ static const struct tsi_test_fixture_vtable vtable = {
     ssl_test_setup_handshakers, ssl_test_check_handshaker_peers,
     ssl_test_destruct};
 
-static char* load_file(const char* dir_path, const char* file_name) {
-  char* file_path = static_cast<char*>(
-      gpr_zalloc(sizeof(char) * (strlen(dir_path) + strlen(file_name) + 1)));
-  memcpy(file_path, dir_path, strlen(dir_path));
-  memcpy(file_path + strlen(dir_path), file_name, strlen(file_name));
-  grpc_slice slice;
-  EXPECT_EQ(grpc_load_file(file_path, 1, &slice), absl::OkStatus());
-  char* data = grpc_slice_to_c_string(slice);
-  grpc_slice_unref(slice);
-  gpr_free(file_path);
-  return data;
+static char* load_file(std::string path) {
+  std::string data = grpc_core::testing::GetFileContents(path);
+  return gpr_strdup(data.c_str());
 }
 
 static bool is_slow_build() {
@@ -575,32 +567,30 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
           sizeof(tsi_ssl_pem_key_cert_pair) *
           key_cert_lib->leaf_signed_by_intermediate_num_key_cert_pairs));
   key_cert_lib->server_pem_key_cert_pairs[0].private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
   key_cert_lib->server_pem_key_cert_pairs[0].cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.pem");
   key_cert_lib->server_pem_key_cert_pairs[1].private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server1.key");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server1.key");
   key_cert_lib->server_pem_key_cert_pairs[1].cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server1.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server1.pem");
   key_cert_lib->bad_server_pem_key_cert_pairs[0].private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badserver.key");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badserver.key");
   key_cert_lib->bad_server_pem_key_cert_pairs[0].cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badserver.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badserver.pem");
   key_cert_lib->client_pem_key_cert_pair.private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "client.key");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.key");
   key_cert_lib->client_pem_key_cert_pair.cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "client.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.pem");
   key_cert_lib->bad_client_pem_key_cert_pair.private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.key");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badclient.key");
   key_cert_lib->bad_client_pem_key_cert_pair.cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "badclient.pem");
   key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs[0].private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR,
-                "leaf_signed_by_intermediate.key");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "leaf_signed_by_intermediate.key");
   key_cert_lib->leaf_signed_by_intermediate_key_cert_pairs[0].cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR,
-                "leaf_and_intermediate_chain.pem");
-  key_cert_lib->root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "leaf_and_intermediate_chain.pem");
+  key_cert_lib->root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "ca.pem");
   key_cert_lib->root_store =
       tsi_ssl_root_certs_store_create(key_cert_lib->root_cert);
   EXPECT_NE(key_cert_lib->root_store, nullptr);
@@ -979,7 +969,7 @@ static tsi_ssl_handshaker_factory_vtable test_handshaker_factory_vtable = {
 
 void test_tsi_ssl_client_handshaker_factory_refcounting() {
   int i;
-  char* cert_chain = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "client.pem");
+  char* cert_chain = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.pem");
 
   tsi_ssl_client_handshaker_options options;
   options.pem_root_certs = cert_chain;
@@ -1027,12 +1017,11 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
   tsi_ssl_server_handshaker_factory* server_handshaker_factory;
   tsi_handshaker* handshaker[3];
   const char* cert_chain =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.pem");
+      load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.pem");
   tsi_ssl_pem_key_cert_pair cert_pair;
 
   cert_pair.cert_chain = cert_chain;
-  cert_pair.private_key =
-      load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
+  cert_pair.private_key = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server0.key");
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = &cert_pair;
   options.num_key_cert_pairs = 1;
@@ -1091,7 +1080,7 @@ void ssl_tsi_test_handshaker_factory_internals() {
 
 void ssl_tsi_test_duplicate_root_certificates() {
   gpr_log(GPR_INFO, "ssl_tsi_test_duplicate_root_certificates");
-  char* root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "ca.pem");
   char* dup_root_cert = static_cast<char*>(
       gpr_zalloc(sizeof(char) * (strlen(root_cert) * 2 + 1)));
   memcpy(dup_root_cert, root_cert, strlen(root_cert));
@@ -1107,7 +1096,7 @@ void ssl_tsi_test_duplicate_root_certificates() {
 
 void ssl_tsi_test_extract_x509_subject_names() {
   gpr_log(GPR_INFO, "ssl_tsi_test_extract_x509_subject_names");
-  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "multi-domain.pem");
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "multi-domain.pem");
   tsi_peer peer;
   ASSERT_EQ(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer),
             TSI_OK);
@@ -1211,8 +1200,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
 
 void ssl_tsi_test_extract_cert_chain() {
   gpr_log(GPR_INFO, "ssl_tsi_test_extract_cert_chain");
-  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server1.pem");
-  char* ca = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server1.pem");
+  char* ca = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "ca.pem");
   char* chain = static_cast<char*>(
       gpr_zalloc(sizeof(char) * (strlen(cert) + strlen(ca) + 1)));
   memcpy(chain, cert, strlen(cert));

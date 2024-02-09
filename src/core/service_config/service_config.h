@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_H
-#define GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_H
+#ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H
+#define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -27,7 +27,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/service_config/service_config_parser.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:
@@ -86,4 +86,4 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SERVICE_CONFIG_SERVICE_CONFIG_H
+#endif  // GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H

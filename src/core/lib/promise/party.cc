@@ -33,6 +33,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
 
+grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");
+
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -50,12 +52,15 @@ GRPC_MUST_USE_RESULT bool PartySyncUsingAtomics::RefIfNonZero() {
   } while (!state_.compare_exchange_weak(count, count + kOneRef,
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed));
+  LogStateChange("RefIfNonZero", count, count + kOneRef);
   return true;
 }
 
 bool PartySyncUsingAtomics::UnreffedLast() {
   uint64_t prev_state =
       state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
+  LogStateChange("UnreffedLast", prev_state,
+                 prev_state | kDestroying | kLocked);
   return (prev_state & kLocked) == 0;
 }
 
@@ -63,6 +68,8 @@ bool PartySyncUsingAtomics::ScheduleWakeup(WakeupMask mask) {
   // Or in the wakeup bit for the participant, AND the locked bit.
   uint64_t prev_state = state_.fetch_or((mask & kWakeupMask) | kLocked,
                                         std::memory_order_acq_rel);
+  LogStateChange("ScheduleWakeup", prev_state,
+                 prev_state | (mask & kWakeupMask) | kLocked);
   // If the lock was not held now we hold it, so we need to run.
   return ((prev_state & kLocked) == 0);
 }
@@ -269,6 +276,11 @@ void Party::AddParticipants(Participant** participants, size_t count) {
   bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
+      if (grpc_trace_party_state.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "Party %p                 AddParticipant: %s @ %" PRIdPTR,
+                &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
+      }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }
   });
