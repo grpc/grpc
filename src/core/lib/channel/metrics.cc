@@ -142,10 +142,10 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
   plugins_.push_back(std::move(plugin));
 }
 
-GlobalStatsPluginRegistry::StatsPluginsGroup
+GlobalStatsPluginRegistry::StatsPluginGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForTarget(absl::string_view target) {
   MutexLock lock(&mutex_);
-  StatsPluginsGroup group;
+  StatsPluginGroup group;
   absl::c_for_each(plugins_, [&group, target](const auto& plugin) {
     if (plugin->IsEnabledForTarget(target)) {
       group.push_back(plugin);

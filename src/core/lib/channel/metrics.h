@@ -132,19 +132,18 @@ class StatsPlugin {
   //     absl::string_view unit);
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
   // representation of the label_values and use it multiple times. We would
-  // change the AddCounter and the RecordHistogram to take
-  // RefCountedPtr<LabelValueSet> and also change the StatsPluginsGroup to
-  // support this.
-  // Use the stats plugin to get a representation of label values
-  // that can be saved for multiple uses later. virtual
-  // RefCountedPtr<LabelValueSet> MakeLabelValueSet(
+  // change AddCounter and RecordHistogram to take RefCountedPtr<LabelValueSet>
+  // and also change the StatsPluginsGroup to support this.
+  // Use the StatsPlugin to get a representation of label values that can be
+  // saved for multiple uses later.
+  // virtual RefCountedPtr<LabelValueSet> MakeLabelValueSet(
   //     absl::Span<absl::string_view> label_values) = 0;
 };
 
 // Singleton.
 class GlobalStatsPluginRegistry {
  public:
-  class StatsPluginsGroup {
+  class StatsPluginGroup {
    public:
     void push_back(std::shared_ptr<StatsPlugin> plugin) {
       plugins_.push_back(std::move(plugin));
@@ -186,9 +185,9 @@ class GlobalStatsPluginRegistry {
   };
 
   void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
-  // The following two functions can be invoked to get a stats plugins group for
+  // The following two functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  StatsPluginsGroup GetStatsPluginsForTarget(absl::string_view target);
+  StatsPluginGroup GetStatsPluginsForTarget(absl::string_view target);
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
