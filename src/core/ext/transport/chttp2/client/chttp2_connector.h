@@ -26,7 +26,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/client_channel/connector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"

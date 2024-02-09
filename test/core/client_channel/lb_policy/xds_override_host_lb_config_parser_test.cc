@@ -22,13 +22,13 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_service_config.h"
+#include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/load_balancing/xds/xds_override_host.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

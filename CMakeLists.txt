@@ -1777,32 +1777,32 @@ endif()
 
 
 add_library(grpc
+  src/core/client_channel/backend_metric.cc
+  src/core/client_channel/backup_poller.cc
+  src/core/client_channel/channel_connectivity.cc
+  src/core/client_channel/client_channel_channelz.cc
+  src/core/client_channel/client_channel_factory.cc
+  src/core/client_channel/client_channel_filter.cc
+  src/core/client_channel/client_channel_plugin.cc
+  src/core/client_channel/client_channel_service_config.cc
+  src/core/client_channel/config_selector.cc
+  src/core/client_channel/dynamic_filters.cc
+  src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/http_proxy_mapper.cc
+  src/core/client_channel/local_subchannel_pool.cc
+  src/core/client_channel/retry_filter.cc
+  src/core/client_channel/retry_filter_legacy_call_data.cc
+  src/core/client_channel/retry_service_config.cc
+  src/core/client_channel/retry_throttle.cc
+  src/core/client_channel/service_config_channel_arg_filter.cc
+  src/core/client_channel/subchannel.cc
+  src/core/client_channel/subchannel_pool_interface.cc
+  src/core/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
-  src/core/ext/filters/client_channel/backend_metric.cc
-  src/core/ext/filters/client_channel/backup_poller.cc
-  src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/client_channel.cc
-  src/core/ext/filters/client_channel/client_channel_channelz.cc
-  src/core/ext/filters/client_channel/client_channel_factory.cc
-  src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/client_channel_service_config.cc
-  src/core/ext/filters/client_channel/config_selector.cc
-  src/core/ext/filters/client_channel/dynamic_filters.cc
-  src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/http_proxy_mapper.cc
-  src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  src/core/ext/filters/client_channel/retry_filter.cc
-  src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc
-  src/core/ext/filters/client_channel/retry_service_config.cc
-  src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
-  src/core/ext/filters/client_channel/subchannel.cc
-  src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
@@ -2447,8 +2447,6 @@ add_library(grpc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config_impl.cc
-  src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2548,6 +2546,8 @@ add_library(grpc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
   src/core/resolver/xds/xds_resolver_trace.cc
+  src/core/service_config/service_config_impl.cc
+  src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2875,32 +2875,32 @@ endif()
 
 
 add_library(grpc_unsecure
+  src/core/client_channel/backend_metric.cc
+  src/core/client_channel/backup_poller.cc
+  src/core/client_channel/channel_connectivity.cc
+  src/core/client_channel/client_channel_channelz.cc
+  src/core/client_channel/client_channel_factory.cc
+  src/core/client_channel/client_channel_filter.cc
+  src/core/client_channel/client_channel_plugin.cc
+  src/core/client_channel/client_channel_service_config.cc
+  src/core/client_channel/config_selector.cc
+  src/core/client_channel/dynamic_filters.cc
+  src/core/client_channel/global_subchannel_pool.cc
+  src/core/client_channel/http_proxy_mapper.cc
+  src/core/client_channel/local_subchannel_pool.cc
+  src/core/client_channel/retry_filter.cc
+  src/core/client_channel/retry_filter_legacy_call_data.cc
+  src/core/client_channel/retry_service_config.cc
+  src/core/client_channel/retry_throttle.cc
+  src/core/client_channel/service_config_channel_arg_filter.cc
+  src/core/client_channel/subchannel.cc
+  src/core/client_channel/subchannel_pool_interface.cc
+  src/core/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/channel_idle/channel_idle_filter.cc
   src/core/ext/filters/channel_idle/idle_filter_state.cc
   src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
-  src/core/ext/filters/client_channel/backend_metric.cc
-  src/core/ext/filters/client_channel/backup_poller.cc
-  src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/client_channel.cc
-  src/core/ext/filters/client_channel/client_channel_channelz.cc
-  src/core/ext/filters/client_channel/client_channel_factory.cc
-  src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/client_channel_service_config.cc
-  src/core/ext/filters/client_channel/config_selector.cc
-  src/core/ext/filters/client_channel/dynamic_filters.cc
-  src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/http_proxy_mapper.cc
-  src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  src/core/ext/filters/client_channel/retry_filter.cc
-  src/core/ext/filters/client_channel/retry_filter_legacy_call_data.cc
-  src/core/ext/filters/client_channel/retry_service_config.cc
-  src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/service_config_channel_arg_filter.cc
-  src/core/ext/filters/client_channel/subchannel.cc
-  src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/client_channel/subchannel_stream_client.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_filter.cc
   src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc
@@ -3175,8 +3175,6 @@ add_library(grpc_unsecure
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config_impl.cc
-  src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3266,6 +3264,8 @@ add_library(grpc_unsecure
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/service_config/service_config_impl.cc
+  src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
@@ -5300,7 +5300,6 @@ add_library(grpc_authorization_provider
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -5352,6 +5351,7 @@ add_library(grpc_authorization_provider
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
+  src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
