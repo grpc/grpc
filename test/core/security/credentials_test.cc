@@ -3038,6 +3038,58 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   gpr_free(subject_token_path);
 }
 
+TEST(CredentialsTest,
+     TestFileExternalAccountCredsSuccessFormatJsonManyRequests) {
+  ExecCtx exec_ctx;
+  char* subject_token_path =
+      write_tmp_jwt_file("{\"access_token\":\"test_subject_token\"}");
+  auto credential_source = JsonParse(absl::StrFormat(
+      "{\n"
+      "\"file\":\"%s\",\n"
+      "\"format\":\n"
+      "{\n"
+      "\"type\":\"json\",\n"
+      "\"subject_token_field_name\":\"access_token\"\n"
+      "}\n"
+      "}",
+      absl::StrReplaceAll(subject_token_path, {{"\\", "\\\\"}})));
+  GPR_ASSERT(credential_source.ok());
+  TestExternalAccountCredentials::ServiceAccountImpersonation
+      service_account_impersonation;
+  service_account_impersonation.token_lifetime_seconds = 3600;
+  ExternalAccountCredentials::Options options = {
+      "external_account",                 // type;
+      "audience",                         // audience;
+      "subject_token_type",               // subject_token_type;
+      "",                                 // service_account_impersonation_url;
+      service_account_impersonation,      // service_account_impersonation;
+      "https://foo.com:5555/token",       // token_url;
+      "https://foo.com:5555/token_info",  // token_info_url;
+      *credential_source,                 // credential_source;
+      "quota_project_id",                 // quota_project_id;
+      "client_id",                        // client_id;
+      "client_secret",                    // client_secret;
+      "",                                 // workforce_pool_user_project;
+  };
+  grpc_error_handle error;
+  auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
+  GPR_ASSERT(creds != nullptr);
+  GPR_ASSERT(error.ok());
+  GPR_ASSERT(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  for (int i = 0; i < 100; ++i) {
+    auto state = RequestMetadataState::NewInstance(
+        absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
+    HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                             external_account_creds_httpcli_post_success,
+                             httpcli_put_should_not_be_called);
+    state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                  kTestPath);
+  }
+  ExecCtx::Get()->Flush();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+  gpr_free(subject_token_path);
+}
+
 TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   ExecCtx exec_ctx;
   auto credential_source = JsonParse("{\"file\":\"non_exisiting_file\"}");

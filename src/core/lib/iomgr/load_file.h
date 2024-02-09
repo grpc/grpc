@@ -21,14 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <stdio.h>
-
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/error.h"
 
 // Loads the content of a file into a slice. add_null_terminator will add
 // a NULL terminator if non-zero.
+// This API is NOT thread-safe and requires proper synchronization when used by
+// multiple threads, especially when they can happen to be reading from the same
+// file.
 grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
                                  grpc_slice* output);
 
