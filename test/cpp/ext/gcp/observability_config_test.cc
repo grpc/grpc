@@ -266,11 +266,9 @@ TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
 
-  EXPECT_EQ(config.status().code(),
-            absl::StatusCode::kFailedPrecondition);
-  EXPECT_THAT(
-      config.status().message(),
-      ::testing::StartsWith(absl::StrCat("error loading file ", kPath)));
+  EXPECT_EQ(config.status().code(), absl::StatusCode::kFailedPrecondition);
+  EXPECT_THAT(config.status().message(), ::testing::StartsWith(absl::StrCat(
+                                             "error loading file ", kPath)));
 
   grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
 }
