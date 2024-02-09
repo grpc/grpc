@@ -36,8 +36,6 @@ namespace internal {
 class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
 
-namespace experimental {
-
 // This object maintains state around the registered CsmObservability plugin.
 // The application is responsible for retaining this object until it has closed
 // all channels and servers that are recording metrics.
@@ -102,7 +100,15 @@ class CsmObservabilityBuilder {
   std::unique_ptr<grpc::internal::OpenTelemetryPluginBuilderImpl> builder_;
 };
 
+namespace experimental {
+// TODO(yashykt): Remove this once no longer needed.
+using CsmObservability GRPC_DEPRECATED("Use grpc::CsmObservability instead.") =
+    grpc::CsmObservability;
+using CsmObservabilityBuilder GRPC_DEPRECATED(
+    "Use grpc::CsmObservabilityBuilder instead.") =
+    grpc::CsmObservabilityBuilder;
 }  // namespace experimental
+
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_CSM_OBSERVABILITY_H

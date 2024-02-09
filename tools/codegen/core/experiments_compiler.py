@@ -629,6 +629,14 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
+    def _ExperimentEnableSet(self, name):
+        s = set()
+        s.add(name)
+        for exp in self._experiment_definitions[name]._requires:
+            for req in self._ExperimentEnableSet(exp):
+                s.add(req)
+        return s
+
     def GenExperimentsBzl(self, mode, output_file):
         assert self._FinalizeExperiments()
         if self._bzl_list_for_defaults is None:
@@ -680,10 +688,9 @@ class ExperimentsCompiler(object):
             else:
                 print("EXPERIMENT_ENABLES = {", file=B)
             for name, exp in self._experiment_definitions.items():
-                enables = exp._requires.copy()
-                enables.add(name)
                 print(
-                    f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
+                    f"    \"{name}\": \"{','.join(sorted(self._ExperimentEnableSet(name)))}\",",
+                    file=B,
                 )
             print("}", file=B)
 

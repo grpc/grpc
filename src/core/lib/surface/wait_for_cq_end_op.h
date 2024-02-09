@@ -32,32 +32,7 @@ class WaitForCqEndOp {
                  grpc_completion_queue* cq)
       : state_{NotStarted{is_closure, tag, std::move(error), cq}} {}
 
-  Poll<Empty> operator()() {
-    if (auto* n = absl::get_if<NotStarted>(&state_)) {
-      if (n->is_closure) {
-        ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(n->tag),
-                     std::move(n->error));
-        return Empty{};
-      } else {
-        auto not_started = std::move(*n);
-        auto& started =
-            state_.emplace<Started>(GetContext<Activity>()->MakeOwningWaker());
-        grpc_cq_end_op(
-            not_started.cq, not_started.tag, std::move(not_started.error),
-            [](void* p, grpc_cq_completion*) {
-              auto started = static_cast<Started*>(p);
-              started->done.store(true, std::memory_order_release);
-            },
-            &started, &started.completion);
-      }
-    }
-    auto& started = absl::get<Started>(state_);
-    if (started.done.load(std::memory_order_acquire)) {
-      return Empty{};
-    } else {
-      return Pending{};
-    }
-  }
+  Poll<Empty> operator()();
 
   WaitForCqEndOp(const WaitForCqEndOp&) = delete;
   WaitForCqEndOp& operator=(const WaitForCqEndOp&) = delete;
@@ -86,6 +61,9 @@ class WaitForCqEndOp {
   };
   struct Invalid {};
   using State = absl::variant<NotStarted, Started, Invalid>;
+
+  static std::string StateString(const State& state);
+
   State state_{Invalid{}};
 };
 
