@@ -43,7 +43,7 @@ std::string Utf8Encode(const std::wstring& wstr) {
   if (wstr.empty()) return "";
 
   int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(),
-                                       NULL, 0, NULL, NULL);
+                                        NULL, 0, NULL, NULL);
   std::string str_to(size_needed, 0);
   WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &str_to[0],
                       size_needed, NULL, NULL);
