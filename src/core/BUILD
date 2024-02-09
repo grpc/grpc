@@ -6842,6 +6842,7 @@ grpc_cc_library(
     deps = [
         "1999",
         "call_filters",
+        "default_event_engine",
         "for_each",
         "if",
         "latch",
@@ -6852,6 +6853,7 @@ grpc_cc_library(
         "promise_status",
         "status_flag",
         "try_seq",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )

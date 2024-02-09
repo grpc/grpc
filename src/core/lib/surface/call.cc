@@ -139,8 +139,6 @@ class Call : public CppImplOf<Call, grpc_call> {
   // Return the EventEngine used for this call's async execution.
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;
-
- protected:
 };
 
 class ChannelBasedCall : public Call {
