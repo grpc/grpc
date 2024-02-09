@@ -1049,6 +1049,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/strings",
         "gtest",
     ],
     tags = ["ssl_credentials_test"],

@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/strings/str_split.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc_security.h>
@@ -72,6 +73,12 @@ constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kMessage[] = "Hello";
+
+struct ToStringJoinFormatter {
+  void operator()(std::string* out, grpc::string_ref s) const {
+    out->append(s.data(), s.size());
+  }
+};
 
 std::string ReadFile(const std::string& file_path) {
   grpc_slice slice;
@@ -172,15 +179,14 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     return absl::string_view(properties[0].data(), properties[0].size());
   }
 
-  static absl::flat_hash_set<std::string> GetAuthContextPropertyAsSet(
+  static std::vector<absl::string_view> GetAuthContextPropertyAsList(
       const AuthContext& auth_context, const std::string& property) {
-    std::vector<grpc::string_ref> properties =
-        auth_context.FindPropertyValues(property);
-    absl::flat_hash_set<std::string> set;
-    for (size_t i = 0; i < properties.size(); ++i) {
-      set.insert(ToString(properties[i]));
+    std::vector<absl::string_view> properties;
+    for (grpc::string_ref property :
+         auth_context.FindPropertyValues(property)) {
+      properties.push_back(absl::string_view(property.data(), property.size()));
     }
-    return set;
+    return properties;
   }
 
   TestServiceImpl service_;
@@ -227,8 +233,8 @@ TEST_P(SslCredentialsTest, FullHandshake) {
                                    GRPC_X509_SUBJECT_PROPERTY_NAME),
             "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
   EXPECT_THAT(
-      GetAuthContextPropertyAsSet(**full_handshake_context,
-                                  GRPC_X509_SAN_PROPERTY_NAME),
+      GetAuthContextPropertyAsList(**full_handshake_context,
+                                   GRPC_X509_SAN_PROPERTY_NAME),
       UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
                            "*.test.youtube.com", "192.168.1.3"));
   EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
@@ -238,18 +244,18 @@ TEST_P(SslCredentialsTest, FullHandshake) {
                                    GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME),
             ReadFile(kServerCertPath));
   EXPECT_THAT(
-      GetAuthContextPropertyAsSet(**full_handshake_context,
-                                  GRPC_PEER_DNS_PROPERTY_NAME),
+      GetAuthContextPropertyAsList(**full_handshake_context,
+                                   GRPC_PEER_DNS_PROPERTY_NAME),
       UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
                            "*.test.youtube.com"));
-  EXPECT_THAT(GetAuthContextPropertyAsSet(**full_handshake_context,
-                                          GRPC_PEER_URI_PROPERTY_NAME),
+  EXPECT_THAT(GetAuthContextPropertyAsList(**full_handshake_context,
+                                           GRPC_PEER_URI_PROPERTY_NAME),
               IsEmpty());
-  EXPECT_THAT(GetAuthContextPropertyAsSet(**full_handshake_context,
-                                          GRPC_PEER_EMAIL_PROPERTY_NAME),
+  EXPECT_THAT(GetAuthContextPropertyAsList(**full_handshake_context,
+                                           GRPC_PEER_EMAIL_PROPERTY_NAME),
               IsEmpty());
-  EXPECT_THAT(GetAuthContextPropertyAsSet(**full_handshake_context,
-                                          GRPC_PEER_IP_PROPERTY_NAME),
+  EXPECT_THAT(GetAuthContextPropertyAsList(**full_handshake_context,
+                                           GRPC_PEER_IP_PROPERTY_NAME),
               UnorderedElementsAre("192.168.1.3"));
   EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
                                    GRPC_PEER_SPIFFE_ID_PROPERTY_NAME),
@@ -308,8 +314,8 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
                                    GRPC_X509_SUBJECT_PROPERTY_NAME),
             "CN=*.test.google.com,O=Example\\, Co.,L=Chicago,ST=Illinois,C=US");
   EXPECT_THAT(
-      GetAuthContextPropertyAsSet(**resumed_handshake_context,
-                                  GRPC_X509_SAN_PROPERTY_NAME),
+      GetAuthContextPropertyAsList(**resumed_handshake_context,
+                                   GRPC_X509_SAN_PROPERTY_NAME),
       UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
                            "*.test.youtube.com", "192.168.1.3"));
   EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
@@ -319,18 +325,18 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
                                    GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME),
             ReadFile(kServerCertPath));
   EXPECT_THAT(
-      GetAuthContextPropertyAsSet(**resumed_handshake_context,
-                                  GRPC_PEER_DNS_PROPERTY_NAME),
+      GetAuthContextPropertyAsList(**resumed_handshake_context,
+                                   GRPC_PEER_DNS_PROPERTY_NAME),
       UnorderedElementsAre("*.test.google.fr", "waterzooi.test.google.be",
                            "*.test.youtube.com"));
-  EXPECT_THAT(GetAuthContextPropertyAsSet(**resumed_handshake_context,
-                                          GRPC_PEER_URI_PROPERTY_NAME),
+  EXPECT_THAT(GetAuthContextPropertyAsList(**resumed_handshake_context,
+                                           GRPC_PEER_URI_PROPERTY_NAME),
               IsEmpty());
-  EXPECT_THAT(GetAuthContextPropertyAsSet(**resumed_handshake_context,
-                                          GRPC_PEER_EMAIL_PROPERTY_NAME),
+  EXPECT_THAT(GetAuthContextPropertyAsList(**resumed_handshake_context,
+                                           GRPC_PEER_EMAIL_PROPERTY_NAME),
               IsEmpty());
-  EXPECT_THAT(GetAuthContextPropertyAsSet(**resumed_handshake_context,
-                                          GRPC_PEER_IP_PROPERTY_NAME),
+  EXPECT_THAT(GetAuthContextPropertyAsList(**resumed_handshake_context,
+                                           GRPC_PEER_IP_PROPERTY_NAME),
               UnorderedElementsAre("192.168.1.3"));
   EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
                                    GRPC_PEER_SPIFFE_ID_PROPERTY_NAME),
