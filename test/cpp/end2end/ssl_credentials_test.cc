@@ -171,14 +171,6 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
     return context.auth_context();
   }
 
-  static absl::string_view GetAuthContextProperty(
-      const AuthContext& auth_context, const std::string& property) {
-    std::vector<grpc::string_ref> properties =
-        auth_context.FindPropertyValues(property);
-    if (properties.size() != 1) return "";
-    return absl::string_view(properties[0].data(), properties[0].size());
-  }
-
   static std::vector<absl::string_view> GetAuthContextPropertyAsList(
       const AuthContext& auth_context, const std::string& property) {
     std::vector<absl::string_view> properties;
@@ -187,6 +179,13 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
       properties.push_back(absl::string_view(property.data(), property.size()));
     }
     return properties;
+  }
+
+  static absl::string_view GetAuthContextProperty(
+      const AuthContext& auth_context, const std::string& property) {
+    std::vector<absl::string_view> properties =
+        GetAuthContextPropertyAsList(auth_context, property);
+    return properties.size() == 1 ? properties[0] : "";
   }
 
   TestServiceImpl service_;
