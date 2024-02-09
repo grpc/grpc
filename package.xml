@@ -1732,12 +1732,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_call_data.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_impl.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_impl.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/b64.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/b64.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/percent_encoding.cc" role="src" />
@@ -1930,6 +1924,12 @@
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_attributes.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config_impl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config_impl.h" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />
