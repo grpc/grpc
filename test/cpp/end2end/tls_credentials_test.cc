@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/status/status.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc_security.h>
@@ -32,7 +33,6 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/iomgr/load_file.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
@@ -68,8 +68,8 @@ class NoOpCertificateVerifier : public ExternalCertificateVerifier {
     return true;
   }
 
-  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
-  }
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              const absl::Status&) override {}
 };
 
 class TlsCredentialsTest : public ::testing::Test {
