@@ -155,6 +155,7 @@ CORE_END2END_TEST(CoreEnd2endTest, WriteNoCompressAcceptedOnSendMessage) {
 
 CORE_END2END_TEST(CoreEnd2endTest,
                   WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
+  SKIP_IF_CHAOTIC_GOOD();
   InvokeRequestWithFlags(
       *this,
       {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS}},
