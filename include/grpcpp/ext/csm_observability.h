@@ -38,16 +38,21 @@ class OpenTelemetryPluginBuilderImpl;
 
 namespace experimental {
 
-// This is a no-op at present, but in the future, this object would be useful
-// for performing cleanup.
+// This object maintains state around the registered CsmObservability plugin.
+// The application is responsible for retaining this object until it has closed
+// all channels and servers that are recording metrics.
 class CsmObservability {
  public:
   CsmObservability() = default;
+  ~CsmObservability();
   // Disable copy constructor and copy-assignment operator.
   CsmObservability(const CsmObservability&) = delete;
   CsmObservability& operator=(const CsmObservability&) = delete;
-  CsmObservability(CsmObservability&&) = default;
-  CsmObservability& operator=(CsmObservability&&) = default;
+  CsmObservability(CsmObservability&&) noexcept;
+  CsmObservability& operator=(CsmObservability&&) noexcept;
+
+ private:
+  bool valid_ = true;
 };
 
 // CsmObservabilityBuilder configures observability for all service mesh traffic

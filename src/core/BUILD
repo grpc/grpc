@@ -2886,8 +2886,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_service_config",
     hdrs = [
-        "lib/service_config/service_config.h",
-        "lib/service_config/service_config_call_data.h",
+        "service_config/service_config.h",
+        "service_config/service_config_call_data.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -2908,10 +2908,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "service_config_parser",
     srcs = [
-        "lib/service_config/service_config_parser.cc",
+        "service_config/service_config_parser.cc",
     ],
     hdrs = [
-        "lib/service_config/service_config_parser.h",
+        "service_config/service_config_parser.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
