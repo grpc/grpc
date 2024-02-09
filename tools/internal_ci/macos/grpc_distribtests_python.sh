@@ -49,6 +49,9 @@ cp -r input_artifacts/python_*/* artifacts/ || true
 # TODO(jtattermusch): Here we would normally run python macos distribtests, but currently no such tests are defined
 # in distribtest_targets.py
 
+# This step checks if any of the artifacts exceeds a per-file size limit.
+tools/internal_ci/helper_scripts/check_python_artifacts_size.sh
+
 tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
 if [ "$FAILED" != "" ]
