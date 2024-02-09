@@ -182,7 +182,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
   static std::vector<absl::string_view> GetAuthContextPropertyAsList(
       const AuthContext& auth_context, const std::string& property) {
     std::vector<absl::string_view> properties;
-    for (grpc::string_ref property :
+    for (const grpc::string_ref& property :
          auth_context.FindPropertyValues(property)) {
       properties.push_back(absl::string_view(property.data(), property.size()));
     }
