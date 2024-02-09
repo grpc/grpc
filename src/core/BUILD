@@ -7097,6 +7097,7 @@ grpc_cc_library(
         "//:handshaker",
         "//:hpack_encoder",
         "//:hpack_parser",
+        "//:iomgr",
         "//:ref_counted_ptr",
     ],
 )
