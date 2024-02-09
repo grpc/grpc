@@ -38,15 +38,15 @@
 namespace grpc_core {
 namespace {
 
-std::string utf8Encode(const std::wstring& wstr) {
-  if (wstr.empty()) return std::string();
+std::string Utf8Encode(const std::wstring& wstr) {
+  if (wstr.empty()) return "";
 
-  int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(),
+  int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(),
                                        NULL, 0, NULL, NULL);
-  std::string strTo(sizeNeeded, 0);
-  WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0],
-                      sizeNeeded, NULL, NULL);
-  return strTo;
+  std::string str_to(size_needed, 0);
+  WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &str_to[0],
+                      size_needed, NULL, NULL);
+  return str_to;
 }
 
 }  // namespace
@@ -55,34 +55,30 @@ grpc_slice LoadSystemRootCerts() {
   std::string bundle_string;
 
   // Open root certificate store.
-  HANDLE hRootCertStore = CertOpenSystemStoreW(NULL, L"ROOT");
-  if (!hRootCertStore) {
+  HANDLE root_cert_store = CertOpenSystemStoreW(NULL, L"ROOT");
+  if (!root_cert_store) {
     return grpc_empty_slice();
   }
 
   // Load all root certificates from certificate store.
-  PCCERT_CONTEXT pCert = NULL;
-  while ((pCert = CertEnumCertificatesInStore(hRootCertStore, pCert)) != NULL) {
+  PCCERT_CONTEXT cert = NULL;
+  while ((cert = CertEnumCertificatesInStore(root_cert_store, cert)) != NULL) {
     // Append each certificate in PEM format.
     DWORD size = 0;
-    CryptBinaryToStringW(pCert->pbCertEncoded, pCert->cbCertEncoded,
+    CryptBinaryToStringW(cert->pbCertEncoded, cert->cbCertEncoded,
                          CRYPT_STRING_BASE64HEADER, NULL, &size);
     std::vector<WCHAR> pem(size);
-    CryptBinaryToStringW(pCert->pbCertEncoded, pCert->cbCertEncoded,
+    CryptBinaryToStringW(cert->pbCertEncoded, cert->cbCertEncoded,
                          CRYPT_STRING_BASE64HEADER, pem.data(), &size);
-    bundle_string += utf8Encode(pem.data());
+    bundle_string += Utf8Encode(pem.data());
   }
 
-  CertCloseStore(hRootCertStore, 0);
+  CertCloseStore(root_cert_store, 0);
   if (bundle_string.size() == 0) {
     return grpc_empty_slice();
   }
 
-  char* result_bundle_string =
-      static_cast<char*>(gpr_zalloc(bundle_string.size() + 1));
-  strcpy(result_bundle_string, bundle_string.data());
-  return grpc_slice_new(result_bundle_string, bundle_string.size() + 1,
-                        gpr_free);
+  return grpc_slice_from_cpp_string(std::move(bundle_string));
 }
 
 }  // namespace grpc_core

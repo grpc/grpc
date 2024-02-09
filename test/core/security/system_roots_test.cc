@@ -50,6 +50,9 @@
 namespace grpc {
 namespace {
 
+// The GetAbsoluteFilePath and CreateRootCertsBundle helper functions are only
+// defined on some platforms. On other platforms (e.g. Windows), we rely on
+// built-in helper functions to play similar (but not exactly the same) roles.
 #if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
