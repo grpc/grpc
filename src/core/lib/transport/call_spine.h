@@ -20,16 +20,13 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/detail/status.h"
-#include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/pipe.h"
-#include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -39,9 +36,19 @@ namespace grpc_core {
 class CallSpine final : public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
-      grpc_event_engine::experimental::EventEngine* event_engine,
-      Arena* arena) {
-    return RefCountedPtr<CallSpine>(arena->New<CallSpine>(event_engine, arena));
+      grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+      grpc_call_context_element* legacy_context) {
+    return RefCountedPtr<CallSpine>(
+        arena->New<CallSpine>(event_engine, arena, legacy_context));
+  }
+
+  ~CallSpine() {
+    if (legacy_context_is_owned_) {
+      for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
+        grpc_call_context_element& elem = legacy_context_[i];
+        if (elem.destroy != nullptr) elem.destroy(&elem);
+      }
+    }
   }
 
   CallFilters& call_filters() { return call_filters_; }
@@ -94,22 +101,38 @@ class CallSpine final : public Party {
     });
   }
 
+  grpc_call_context_element& legacy_context(grpc_context_index index) const {
+    return legacy_context_[index];
+  }
+
  private:
   friend class Arena;
   CallSpine(grpc_event_engine::experimental::EventEngine* event_engine,
-            Arena* arena)
-      : Party(arena, 1), event_engine_(event_engine) {}
+            Arena* arena, grpc_call_context_element* legacy_context)
+      : Party(arena, 1), event_engine_(event_engine) {
+    if (legacy_context == nullptr) {
+      legacy_context_ = static_cast<grpc_call_context_element*>(
+          arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
+      legacy_context_is_owned_ = true;
+    } else {
+      legacy_context_ = legacy_context;
+      legacy_context_is_owned_ = false;
+    }
+  }
 
-  class ScopedContext : public ScopedActivity,
-                        public promise_detail::Context<Arena>,
-                        public promise_detail::Context<
-                            grpc_event_engine::experimental::EventEngine> {
+  class ScopedContext
+      : public ScopedActivity,
+        public promise_detail::Context<Arena>,
+        public promise_detail::Context<
+            grpc_event_engine::experimental::EventEngine>,
+        public promise_detail::Context<grpc_call_context_element> {
    public:
     explicit ScopedContext(CallSpine* spine)
         : ScopedActivity(spine),
           Context<Arena>(spine->arena()),
           Context<grpc_event_engine::experimental::EventEngine>(
-              spine->event_engine()) {}
+              spine->event_engine()),
+          Context<grpc_call_context_element>(spine->legacy_context_) {}
   };
 
   bool RunParty() override {
@@ -136,6 +159,10 @@ class CallSpine final : public Party {
   CallFilters call_filters_;
   // Event engine associated with this call
   grpc_event_engine::experimental::EventEngine* const event_engine_;
+  // Legacy context
+  // TODO(ctiller): remove
+  grpc_call_context_element* legacy_context_;
+  bool legacy_context_is_owned_;
 };
 
 class CallInitiator {
@@ -276,6 +303,10 @@ class CallHandler {
   }
 
   Arena* arena() { return spine_->arena(); }
+
+  grpc_call_context_element& legacy_context(grpc_context_index index) const {
+    return spine_->legacy_context(index);
+  }
 
  private:
   RefCountedPtr<CallSpine> spine_;

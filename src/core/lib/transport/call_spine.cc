@@ -16,6 +16,10 @@
 
 #include "src/core/lib/transport/call_spine.h"
 
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_seq.h"
+
 namespace grpc_core {
 
 void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
@@ -87,7 +91,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
 
 CallInitiatorAndHandler MakeCall(
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
-  auto spine = CallSpine::Create(event_engine, arena);
+  auto spine = CallSpine::Create(event_engine, arena, nullptr);
   return {CallInitiator(spine), CallHandler(spine)};
 }
 

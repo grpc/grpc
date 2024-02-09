@@ -118,6 +118,7 @@ namespace grpc_core {
 
 class Call : public CppImplOf<Call, grpc_call> {
  public:
+  virtual Arena* arena() = 0;
   virtual void ContextSet(grpc_context_index elem, void* value,
                           void (*destroy)(void* value)) = 0;
   virtual void* ContextGet(grpc_context_index elem) const = 0;
@@ -143,7 +144,7 @@ class Call : public CppImplOf<Call, grpc_call> {
 
 class ChannelBasedCall : public Call {
  public:
-  Arena* arena() { return arena_; }
+  Arena* arena() override { return arena_; }
   bool is_client() const { return is_client_; }
 
   grpc_compression_algorithm test_only_compression_algorithm() {
@@ -3624,9 +3625,36 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Server Call
 
-class ServerCall final : public ServerCallContext, public Call {
+class ServerCall final : public Call {
  public:
   explicit ServerCall(CallHandler call_handler);
+
+  Arena* arena() override { return call_handler_.arena(); }
+  void ContextSet(grpc_context_index elem, void* value,
+                  void (*destroy)(void* value)) override {
+    call_handler_.legacy_context(elem) =
+        grpc_call_context_element{value, destroy};
+  }
+  void* ContextGet(grpc_context_index elem) const override {
+    return call_handler_.legacy_context(elem).value;
+  }
+  bool Completed() override;
+  void CancelWithError(grpc_error_handle error) override;
+  void SetCompletionQueue(grpc_completion_queue* cq) override;
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+  bool failed_before_recv_message() const override;
+  bool is_trailers_only() const override;
+  absl::string_view GetServerAuthority() const override;
+  void ExternalRef() override { ref_count_.Ref(); }
+  void ExternalUnref() override {
+    if (ref_count_.Unref()) delete this;
+  }
+  void InternalRef(const char*) override { ExternalRef(); }
+  void InternalUnref(const char*) override { ExternalUnref(); }
+
+  // Return the EventEngine used for this call's async execution.
+  grpc_event_engine::experimental::EventEngine* event_engine() const override;
 
  private:
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
@@ -3636,6 +3664,7 @@ class ServerCall final : public ServerCallContext, public Call {
   grpc_byte_buffer** recv_message_ = nullptr;
   ClientMetadataHandle client_initial_metadata_stored_;
   CallHandler call_handler_;
+  RefCount ref_count_;
 };
 
 ServerCall::ServerCall(CallHandler call_handler)
@@ -3890,11 +3919,8 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
   }
 }
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel,
-                                                 Arena* arena) {
-  return RefCountedPtr<ServerCallSpine>(
-      arena->New<ServerCallSpine>(server, channel, arena));
+grpc_call* MakeServerCall(CallHandler call_handler) {
+  return (new ServerCall(std::move(call_handler)))->c_ptr();
 }
 #else
 RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
@@ -3991,15 +4017,20 @@ void grpc_call_cancel_internal(grpc_call* call) {
 
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call* call) {
-  return grpc_core::Call::FromC(call)->test_only_compression_algorithm();
+  return grpc_core::down_cast<grpc_core::ChannelBasedCall*>(
+             grpc_core::Call::FromC(call))
+      ->test_only_compression_algorithm();
 }
 
 uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {
-  return grpc_core::Call::FromC(call)->test_only_message_flags();
+  return grpc_core::down_cast<grpc_core::ChannelBasedCall*>(
+             grpc_core::Call::FromC(call))
+      ->test_only_message_flags();
 }
 
 uint32_t grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call* call) {
-  return grpc_core::Call::FromC(call)
+  return grpc_core::down_cast<grpc_core::ChannelBasedCall*>(
+             grpc_core::Call::FromC(call))
       ->encodings_accepted_by_peer()
       .ToLegacyBitmask();
 }
@@ -4009,7 +4040,9 @@ grpc_core::Arena* grpc_call_get_arena(grpc_call* call) {
 }
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
-  return grpc_core::Call::FromC(call)->call_stack();
+  return grpc_core::down_cast<grpc_core::ChannelBasedCall*>(
+             grpc_core::Call::FromC(call))
+      ->call_stack();
 }
 
 grpc_call_error grpc_call_start_batch(grpc_call* call, const grpc_op* ops,
@@ -4045,12 +4078,15 @@ void* grpc_call_context_get(grpc_call* call, grpc_context_index elem) {
 }
 
 uint8_t grpc_call_is_client(grpc_call* call) {
-  return grpc_core::Call::FromC(call)->is_client();
+  return grpc_core::down_cast<grpc_core::ChannelBasedCall*>(
+             grpc_core::Call::FromC(call))
+      ->is_client();
 }
 
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level) {
-  return grpc_core::Call::FromC(call)
+  return grpc_core::down_cast<grpc_core::ChannelBasedCall*>(
+             grpc_core::Call::FromC(call))
       ->encodings_accepted_by_peer()
       .CompressionAlgorithmForLevel(level);
 }

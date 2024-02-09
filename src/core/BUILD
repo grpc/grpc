@@ -6848,13 +6848,13 @@ grpc_cc_library(
         "latch",
         "message",
         "metadata",
-        "pipe",
-        "prioritized_race",
         "promise_status",
+        "seq",
         "status_flag",
         "try_seq",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:legacy_context",
     ],
 )
 
