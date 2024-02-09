@@ -34,6 +34,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
 namespace {
