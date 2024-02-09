@@ -43,7 +43,7 @@ ABSL_FLAG(bool, secure_mode, false,
 ABSL_FLAG(bool, enable_csm_observability, false,
           "Whether to enable CSM Observability");
 
-grpc::experimental::CsmObservability EnableCsmObservability() {
+grpc::CsmObservability EnableCsmObservability() {
   gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
@@ -54,7 +54,7 @@ grpc::experimental::CsmObservability EnableCsmObservability() {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
-  auto observability = grpc::experimental::CsmObservabilityBuilder()
+  auto observability = grpc::CsmObservabilityBuilder()
                            .SetMeterProvider(std::move(meter_provider))
                            .BuildAndRegister();
   assert(observability.ok());
@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   }
   grpc::EnableDefaultHealthCheckService(false);
   bool enable_csm_observability = absl::GetFlag(FLAGS_enable_csm_observability);
-  grpc::experimental::CsmObservability observability;
+  grpc::CsmObservability observability;
   if (enable_csm_observability) {
     observability = EnableCsmObservability();
   }
