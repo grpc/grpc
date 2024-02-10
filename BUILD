@@ -567,6 +567,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_handshaker",
+        "http_proxy_mapper",
         "iomgr_timer",
         "service_config_channel_arg_filter",
         "//src/core:channel_args",
@@ -645,6 +646,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_trace",
         "http_connect_handshaker",
+        "http_proxy_mapper",
         "httpcli",
         "iomgr_timer",
         "promise",
@@ -3186,6 +3188,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http_proxy_mapper",
+    srcs = [
+        "//src/core:client_channel/http_proxy_mapper.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/http_proxy_mapper.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_arg_names",
+        "config",
+        "gpr",
+        "grpc_base",
+        "http_connect_handshaker",
+        "parse_address",
+        "sockaddr_utils",
+        "uri_parser",
+        "//src/core:channel_args",
+        "//src/core:env",
+        "//src/core:proxy_mapper",
+        "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3196,7 +3229,6 @@ grpc_cc_library(
         "//src/core:client_channel/config_selector.cc",
         "//src/core:client_channel/dynamic_filters.cc",
         "//src/core:client_channel/global_subchannel_pool.cc",
-        "//src/core:client_channel/http_proxy_mapper.cc",
         "//src/core:client_channel/local_subchannel_pool.cc",
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
@@ -3215,7 +3247,6 @@ grpc_cc_library(
         "//src/core:client_channel/connector.h",
         "//src/core:client_channel/dynamic_filters.h",
         "//src/core:client_channel/global_subchannel_pool.h",
-        "//src/core:client_channel/http_proxy_mapper.h",
         "//src/core:client_channel/local_subchannel_pool.h",
         "//src/core:client_channel/retry_filter.h",
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
