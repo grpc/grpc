@@ -3376,6 +3376,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "retry_throttle",
+    srcs = [
+        "//src/core:client_channel/retry_throttle.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/retry_throttle.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "ref_counted_ptr",
+        "//src/core:gpr_atm",
+        "//src/core:ref_counted",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3387,7 +3407,6 @@ grpc_cc_library(
         "//src/core:client_channel/local_subchannel_pool.cc",
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
-        "//src/core:client_channel/retry_throttle.cc",
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
     ],
@@ -3399,7 +3418,6 @@ grpc_cc_library(
         "//src/core:client_channel/local_subchannel_pool.h",
         "//src/core:client_channel/retry_filter.h",
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
-        "//src/core:client_channel/retry_throttle.h",
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
@@ -3453,6 +3471,7 @@ grpc_cc_library(
         "protobuf_duration_upb",
         "ref_counted_ptr",
         "retry_service_config",
+        "retry_throttle",
         "sockaddr_utils",
         "stats",
         "subchannel_connector",
