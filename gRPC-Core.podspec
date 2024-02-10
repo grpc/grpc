@@ -228,9 +228,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/client_channel/backend_metric.cc',
-                      'src/core/client_channel/backend_metric.h',
-                      'src/core/client_channel/backup_poller.cc',
+    ss.source_files = 'src/core/client_channel/backup_poller.cc',
                       'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/channel_connectivity.cc',
                       'src/core/client_channel/client_channel_channelz.cc',
@@ -1960,6 +1958,8 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/address_filtering.cc',
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/backend_metric_data.h',
+                      'src/core/load_balancing/backend_metric_parser.cc',
+                      'src/core/load_balancing/backend_metric_parser.h',
                       'src/core/load_balancing/child_policy_handler.cc',
                       'src/core/load_balancing/child_policy_handler.h',
                       'src/core/load_balancing/delegating_helper.h',
@@ -2332,8 +2332,7 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.c',
                       'third_party/zlib/zutil.h'
-    ss.private_header_files = 'src/core/client_channel/backend_metric.h',
-                              'src/core/client_channel/backup_poller.h',
+    ss.private_header_files = 'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel_channelz.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
@@ -3297,6 +3296,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/backend_metric_data.h',
+                              'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',
                               'src/core/load_balancing/delegating_helper.h',
                               'src/core/load_balancing/endpoint_list.h',

@@ -3003,9 +3003,72 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "backend_metric_parser",
+    srcs = [
+        "//src/core:load_balancing/backend_metric_parser.cc",
+    ],
+    hdrs = [
+        "//src/core:load_balancing/backend_metric_parser.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "upb_base_lib",
+        "upb_mem_lib",
+        "upb_message_lib",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+        "xds_orca_upb",
+        "//src/core:grpc_backend_metric_data",
+    ],
+)
+
+grpc_cc_library(
+    name = "oob_backend_metric",
+    srcs = [
+        "//src/core:load_balancing/oob_backend_metric.cc",
+    ],
+    hdrs = [
+        "//src/core:load_balancing/oob_backend_metric.h",
+        "//src/core:load_balancing/oob_backend_metric_internal.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/strings",
+        "upb_base_lib",
+        "upb_mem_lib",
+    ],
+    language = "c++",
+    deps = [
+        "backend_metric_parser",
+        "debug_location",
+        "exec_ctx",
+        "gpr",
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_trace",
+        "orphanable",
+        "protobuf_duration_upb",
+        "ref_counted_ptr",
+        "xds_orca_service_upb",
+        "xds_orca_upb",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:grpc_backend_metric_data",
+        "//src/core:iomgr_fwd",
+        "//src/core:pollset_set",
+        "//src/core:slice",
+        "//src/core:subchannel_interface",
+        "//src/core:time",
+        "//src/core:unique_type_name",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
-        "//src/core:client_channel/backend_metric.cc",
         "//src/core:client_channel/backup_poller.cc",
         "//src/core:client_channel/channel_connectivity.cc",
         "//src/core:client_channel/client_channel_channelz.cc",
@@ -3027,10 +3090,8 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_pool_interface.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
         "//src/core:load_balancing/child_policy_handler.cc",
-        "//src/core:load_balancing/oob_backend_metric.cc",
     ],
     hdrs = [
-        "//src/core:client_channel/backend_metric.h",
         "//src/core:client_channel/backup_poller.h",
         "//src/core:client_channel/client_channel_channelz.h",
         "//src/core:client_channel/client_channel_factory.h",
@@ -3052,8 +3113,6 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_pool_interface.h",
         "//src/core:client_channel/subchannel_stream_client.h",
         "//src/core:load_balancing/child_policy_handler.h",
-        "//src/core:load_balancing/oob_backend_metric.h",
-        "//src/core:load_balancing/oob_backend_metric_internal.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3074,6 +3133,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "backend_metric_parser",
         "backoff",
         "channel_arg_names",
         "config",

@@ -32,6 +32,7 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        "//:oob_backend_metric",
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
         "//test/core/event_engine:event_engine_test_utils",

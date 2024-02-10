@@ -103,8 +103,6 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/backend_metric.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/channel_connectivity.cc" role="src" />
@@ -1835,6 +1833,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/address_filtering.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/address_filtering.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/child_policy_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/child_policy_handler.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/delegating_helper.h" role="src" />
