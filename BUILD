@@ -3278,9 +3278,9 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "//src/core:channel_args",
-        "//src/core:useful",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
+        "//src/core:useful",
     ],
 )
 
@@ -3449,8 +3449,8 @@ grpc_cc_library(
         "client_channel_internal_header",
         "client_channel_service_config",
         "config",
-        "config_vars",
         "config_selector",
+        "config_vars",
         "debug_location",
         "endpoint_addresses",
         "exec_ctx",
