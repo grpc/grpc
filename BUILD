@@ -3047,6 +3047,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "backend_metric_parser",
+        "client_channel_channelz",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -3162,10 +3163,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "client_channel_channelz",
+    srcs = [
+        "//src/core:client_channel/client_channel_channelz.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/client_channel_channelz.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "//src/core:connectivity_state",
+        "//src/core:json",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
-        "//src/core:client_channel/client_channel_channelz.cc",
         "//src/core:client_channel/client_channel_factory.cc",
         "//src/core:client_channel/client_channel_filter.cc",
         "//src/core:client_channel/client_channel_plugin.cc",
@@ -3184,7 +3207,6 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
-        "//src/core:client_channel/client_channel_channelz.h",
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
         "//src/core:client_channel/client_channel_internal.h",
@@ -3227,6 +3249,7 @@ grpc_cc_library(
         "backoff",
         "channel_arg_names",
         "client_channel_backup_poller",
+        "client_channel_channelz",
         "config",
         "config_vars",
         "debug_location",

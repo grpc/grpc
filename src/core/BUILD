@@ -5018,6 +5018,7 @@ grpc_cc_library(
         "subchannel_interface",
         "unique_type_name",
         "//:channel_arg_names",
+        "//:client_channel_channelz",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
