@@ -6291,6 +6291,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:subchannel_connector",
     ],
 )
 
@@ -7081,6 +7082,7 @@ grpc_cc_library(
         "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
+        "//:subchannel_connector",
     ],
 )
 

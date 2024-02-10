@@ -1114,6 +1114,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "orphanable",
         "ref_counted_ptr",
+        "subchannel_connector",
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -3238,6 +3239,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "subchannel_connector",
+    hdrs = [
+        "//src/core:client_channel/connector.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+        "grpc_base",
+        "orphanable",
+        "ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:iomgr_fwd",
+        "//src/core:resolved_address",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3262,7 +3283,6 @@ grpc_cc_library(
         "//src/core:client_channel/client_channel_filter.h",
         "//src/core:client_channel/client_channel_service_config.h",
         "//src/core:client_channel/config_selector.h",
-        "//src/core:client_channel/connector.h",
         "//src/core:client_channel/dynamic_filters.h",
         "//src/core:client_channel/global_subchannel_pool.h",
         "//src/core:client_channel/local_subchannel_pool.h",
@@ -3323,6 +3343,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "sockaddr_utils",
         "stats",
+        "subchannel_connector",
         "uri_parser",
         "work_serializer",
         "xds_orca_service_upb",
