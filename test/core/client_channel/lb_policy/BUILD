@@ -130,6 +130,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//:client_channel_service_config",
         "//test/core/util:grpc_test_util",
     ],
 )

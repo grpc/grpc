@@ -3315,13 +3315,43 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "client_channel_service_config",
+    srcs = [
+        "//src/core:client_channel/client_channel_service_config.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/client_channel_service_config.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "gpr_platform",
+        "ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:json",
+        "//src/core:json_args",
+        "//src/core:json_object_loader",
+        "//src/core:lb_policy",
+        "//src/core:lb_policy_registry",
+        "//src/core:service_config_parser",
+        "//src/core:time",
+        "//src/core:validation_errors",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
         "//src/core:client_channel/client_channel_factory.cc",
         "//src/core:client_channel/client_channel_filter.cc",
         "//src/core:client_channel/client_channel_plugin.cc",
-        "//src/core:client_channel/client_channel_service_config.cc",
         "//src/core:client_channel/dynamic_filters.cc",
         "//src/core:client_channel/global_subchannel_pool.cc",
         "//src/core:client_channel/local_subchannel_pool.cc",
@@ -3335,7 +3365,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
-        "//src/core:client_channel/client_channel_service_config.h",
         "//src/core:client_channel/dynamic_filters.h",
         "//src/core:client_channel/global_subchannel_pool.h",
         "//src/core:client_channel/local_subchannel_pool.h",
@@ -3372,6 +3401,7 @@ grpc_cc_library(
         "client_channel_backup_poller",
         "client_channel_channelz",
         "client_channel_internal_header",
+        "client_channel_service_config",
         "config",
         "config_vars",
         "config_selector",
