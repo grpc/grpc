@@ -5985,6 +5985,7 @@ grpc_cc_library(
         "//:channel_arg_names",
         "//:client_channel_internal_header",
         "//:config",
+        "//:config_selector",
         "//:debug_location",
         "//:endpoint_addresses",
         "//:gpr",

@@ -3285,6 +3285,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "config_selector",
+    srcs = [
+        "//src/core:client_channel/config_selector.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/config_selector.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "client_channel_internal_header",
+        "gpr_public_hdrs",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:channel_args",
+        "//src/core:channel_fwd",
+        "//src/core:grpc_service_config",
+        "//src/core:metadata_batch",
+        "//src/core:ref_counted",
+        "//src/core:slice",
+        "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3292,7 +3322,6 @@ grpc_cc_library(
         "//src/core:client_channel/client_channel_filter.cc",
         "//src/core:client_channel/client_channel_plugin.cc",
         "//src/core:client_channel/client_channel_service_config.cc",
-        "//src/core:client_channel/config_selector.cc",
         "//src/core:client_channel/dynamic_filters.cc",
         "//src/core:client_channel/global_subchannel_pool.cc",
         "//src/core:client_channel/local_subchannel_pool.cc",
@@ -3307,7 +3336,6 @@ grpc_cc_library(
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
         "//src/core:client_channel/client_channel_service_config.h",
-        "//src/core:client_channel/config_selector.h",
         "//src/core:client_channel/dynamic_filters.h",
         "//src/core:client_channel/global_subchannel_pool.h",
         "//src/core:client_channel/local_subchannel_pool.h",
@@ -3346,6 +3374,7 @@ grpc_cc_library(
         "client_channel_internal_header",
         "config",
         "config_vars",
+        "config_selector",
         "debug_location",
         "endpoint_addresses",
         "exec_ctx",

@@ -525,6 +525,7 @@ grpc_cc_test(
     deps = [
         ":connection_attempt_injector",
         ":test_service_impl",
+        "//:config_selector",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
