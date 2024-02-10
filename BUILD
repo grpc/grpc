@@ -3067,6 +3067,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_child_policy_handler",
+    srcs = [
+        "//src/core:load_balancing/child_policy_handler.cc",
+    ],
+    hdrs = [
+        "//src/core:load_balancing/child_policy_handler.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "config",
+        "debug_location",
+        "gpr_public_hdrs",
+        "grpc_public_hdrs",
+        "grpc_trace",
+        "orphanable",
+        "ref_counted_ptr",
+        "//src/core:channel_args",
+        "//src/core:connectivity_state",
+        "//src/core:delegating_helper",
+        "//src/core:lb_policy",
+        "//src/core:lb_policy_registry",
+        "//src/core:pollset_set",
+        "//src/core:resolved_address",
+        "//src/core:subchannel_interface",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/backup_poller.cc",
@@ -3089,7 +3121,6 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_pool_interface.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
-        "//src/core:load_balancing/child_policy_handler.cc",
     ],
     hdrs = [
         "//src/core:client_channel/backup_poller.h",
@@ -3112,7 +3143,6 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_pool_interface.h",
         "//src/core:client_channel/subchannel_stream_client.h",
-        "//src/core:load_balancing/child_policy_handler.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3150,6 +3180,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "lb_child_policy_handler",
         "legacy_context",
         "orphanable",
         "parse_address",
