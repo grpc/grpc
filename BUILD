@@ -556,6 +556,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "channel_stack_builder",
+        "client_channel_backup_poller",
         "config",
         "exec_ctx",
         "gpr",
@@ -628,6 +629,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "channel_stack_builder",
+        "client_channel_backup_poller",
         "config",
         "exec_ctx",
         "gpr",
@@ -3099,9 +3101,34 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_client_channel",
+    name = "client_channel_backup_poller",
     srcs = [
         "//src/core:client_channel/backup_poller.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/backup_poller.h",
+    ],
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    deps = [
+        "config_vars",
+        "gpr",
+        "gpr_platform",
+        "grpc_base",
+        "iomgr_timer",
+        "//src/core:closure",
+        "//src/core:error",
+        "//src/core:iomgr_fwd",
+        "//src/core:pollset_set",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_client_channel",
+    srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
         "//src/core:client_channel/client_channel_channelz.cc",
         "//src/core:client_channel/client_channel_factory.cc",
@@ -3123,7 +3150,6 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
-        "//src/core:client_channel/backup_poller.h",
         "//src/core:client_channel/client_channel_channelz.h",
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
@@ -3166,6 +3192,7 @@ grpc_cc_library(
         "backend_metric_parser",
         "backoff",
         "channel_arg_names",
+        "client_channel_backup_poller",
         "config",
         "config_vars",
         "debug_location",
