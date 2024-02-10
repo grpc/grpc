@@ -20,6 +20,28 @@ grpc_package(name = "test/core/slice")
 licenses(["notice"])
 
 grpc_fuzzer(
+    name = "b64_encode_fuzzer",
+    srcs = ["b64_encode_fuzzer.cc"],
+    corpus = "b64_encode_corpus",
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_fuzzer(
+    name = "b64_decode_fuzzer",
+    srcs = ["b64_decode_fuzzer.cc"],
+    corpus = "b64_decode_corpus",
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_fuzzer(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
     corpus = "percent_encode_corpus",
@@ -105,6 +127,21 @@ grpc_cc_test(
 grpc_cc_test(
     name = "c_slice_buffer_test",
     srcs = ["c_slice_buffer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:slice",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "b64_test",
+    srcs = ["b64_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,

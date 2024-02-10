@@ -1746,6 +1746,8 @@ let package = Package(
         "src/core/lib/security/transport/tsi_error.h",
         "src/core/lib/security/util/json_util.cc",
         "src/core/lib/security/util/json_util.h",
+        "src/core/lib/slice/b64.cc",
+        "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.cc",
         "src/core/lib/slice/percent_encoding.h",
         "src/core/lib/slice/slice.cc",

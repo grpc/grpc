@@ -1748,6 +1748,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/transport/tsi_error.h )
   s.files += %w( src/core/lib/security/util/json_util.cc )
   s.files += %w( src/core/lib/security/util/json_util.h )
+  s.files += %w( src/core/lib/slice/b64.cc )
+  s.files += %w( src/core/lib/slice/b64.h )
   s.files += %w( src/core/lib/slice/percent_encoding.cc )
   s.files += %w( src/core/lib/slice/percent_encoding.h )
   s.files += %w( src/core/lib/slice/slice.cc )
