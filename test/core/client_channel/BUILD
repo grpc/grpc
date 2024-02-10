@@ -27,6 +27,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc_client_channel",
+        "//:subchannel_pool_interface",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
     ],

@@ -34,6 +34,7 @@ grpc_cc_library(
     deps = [
         "//:client_channel_internal_header",
         "//:oob_backend_metric",
+        "//:subchannel_pool_interface",
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
         "//test/core/event_engine:event_engine_test_utils",

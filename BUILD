@@ -3259,6 +3259,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "subchannel_pool_interface",
+    srcs = [
+        "//src/core:client_channel/subchannel_pool_interface.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/subchannel_pool_interface.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_platform",
+        "grpc_trace",
+        "ref_counted_ptr",
+        "sockaddr_utils",
+        "//src/core:channel_args",
+        "//src/core:useful",
+        "//src/core:ref_counted",
+        "//src/core:resolved_address",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3275,7 +3301,6 @@ grpc_cc_library(
         "//src/core:client_channel/retry_service_config.cc",
         "//src/core:client_channel/retry_throttle.cc",
         "//src/core:client_channel/subchannel.cc",
-        "//src/core:client_channel/subchannel_pool_interface.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
@@ -3292,7 +3317,6 @@ grpc_cc_library(
         "//src/core:client_channel/retry_throttle.h",
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
-        "//src/core:client_channel/subchannel_pool_interface.h",
         "//src/core:client_channel/subchannel_stream_client.h",
     ],
     external_deps = [
@@ -3344,6 +3368,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "stats",
         "subchannel_connector",
+        "subchannel_pool_interface",
         "uri_parser",
         "work_serializer",
         "xds_orca_service_upb",
