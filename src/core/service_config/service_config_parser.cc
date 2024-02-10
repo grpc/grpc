@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/service_config/service_config_parser.h"
 
 #include <stdlib.h>
 

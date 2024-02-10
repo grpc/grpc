@@ -134,9 +134,10 @@ class InterActivityLatch<void> {
 
  private:
   std::string DebugTag() {
-    return absl::StrCat(GetContext<Activity>()->DebugTag(),
-                        " INTER_ACTIVITY_LATCH[0x",
-                        reinterpret_cast<uintptr_t>(this), "]: ");
+    return absl::StrCat(
+        HasContext<Activity>() ? GetContext<Activity>()->DebugTag()
+                               : "NO_ACTIVITY:",
+        " INTER_ACTIVITY_LATCH[0x", reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
   std::string StateString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {

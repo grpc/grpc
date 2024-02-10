@@ -48,6 +48,12 @@ bool IsExperimentEnabled(size_t experiment_id);
 // method.
 bool IsTestExperimentEnabled(size_t experiment_id);
 
+// Slow check for if a named experiment is enabled.
+// Parses the configuration and looks up the experiment in that, so it does not
+// affect any global state, but it does require parsing the configuration every
+// call!
+bool IsExperimentEnabledInConfiguration(size_t experiment_id);
+
 // Reload experiment state from config variables.
 // Does not change ForceEnableExperiment state.
 // Expects the caller to handle global thread safety - so really only

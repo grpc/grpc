@@ -873,6 +873,11 @@ class CoreEnd2endTestRegistry {
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
 
+#define SKIP_IF_CHAOTIC_GOOD()                                   \
+  if (IsChaoticGoodEnabled()) {                                  \
+    GTEST_SKIP() << "Disabled for initial chaotic good testing"; \
+  }
+
 #define CORE_END2END_TEST(suite, name)                                       \
   class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \
    public:                                                                   \

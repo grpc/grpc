@@ -634,7 +634,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -757,8 +756,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config_impl.cc \
-    src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
@@ -786,6 +783,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_factory.cc \
@@ -857,6 +855,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
     src/core/resolver/xds/xds_resolver_trace.cc \
+    src/core/service_config/service_config_impl.cc \
+    src/core/service_config/service_config_parser.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1552,7 +1552,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector/tls)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/transport)
@@ -1579,6 +1578,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/google_c2p)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/crypt)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)

@@ -66,6 +66,7 @@ grpc_cc_library(
         "//src/core:json_args",
         "//src/core:json_object_loader",
         "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:xds_enabled_server",
