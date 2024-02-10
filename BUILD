@@ -3219,6 +3219,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "client_channel_internal_header",
+    hdrs = [
+        "//src/core:client_channel/client_channel_internal.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+    ],
+    language = "c++",
+    deps = [
+        "gpr_public_hdrs",
+        "legacy_context",
+        "//src/core:arena",
+        "//src/core:grpc_service_config",
+        "//src/core:lb_policy",
+        "//src/core:unique_type_name",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3241,7 +3260,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
-        "//src/core:client_channel/client_channel_internal.h",
         "//src/core:client_channel/client_channel_service_config.h",
         "//src/core:client_channel/config_selector.h",
         "//src/core:client_channel/connector.h",
@@ -3281,6 +3299,7 @@ grpc_cc_library(
         "channel_arg_names",
         "client_channel_backup_poller",
         "client_channel_channelz",
+        "client_channel_internal_header",
         "config",
         "config_vars",
         "debug_location",
