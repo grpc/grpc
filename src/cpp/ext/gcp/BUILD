@@ -172,6 +172,7 @@ grpc_cc_library(
         "//:grpc++",
         "//:grpc_base",
         "//:grpc_trace",
+        "//:iomgr",
         "//:orphanable",
         "//src/core:closure",
         "//src/core:default_event_engine",
