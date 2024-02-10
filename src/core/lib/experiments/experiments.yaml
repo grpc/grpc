@@ -40,6 +40,11 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
+- name: absl_base64
+  description: Use abseil base64 functions.
+  expiry: 2024/06/01
+  owner: roth@google.com
+  test_tags: ["credential_token_tests"]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with

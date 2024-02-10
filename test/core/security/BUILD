@@ -140,6 +140,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["credential_token_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -156,6 +157,7 @@ grpc_cc_test(
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
+    tags = ["credential_token_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
