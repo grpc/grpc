@@ -3346,6 +3346,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "retry_service_config",
+    srcs = [
+        "//src/core:client_channel/retry_service_config.cc",
+    ],
+    hdrs = [
+        "//src/core:client_channel/retry_service_config.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_arg_names",
+        "config",
+        "gpr_public_hdrs",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "//src/core:channel_args",
+        "//src/core:json",
+        "//src/core:json_args",
+        "//src/core:json_channel_args",
+        "//src/core:json_object_loader",
+        "//src/core:service_config_parser",
+        "//src/core:time",
+        "//src/core:validation_errors",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3357,7 +3387,6 @@ grpc_cc_library(
         "//src/core:client_channel/local_subchannel_pool.cc",
         "//src/core:client_channel/retry_filter.cc",
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
-        "//src/core:client_channel/retry_service_config.cc",
         "//src/core:client_channel/retry_throttle.cc",
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
@@ -3370,7 +3399,6 @@ grpc_cc_library(
         "//src/core:client_channel/local_subchannel_pool.h",
         "//src/core:client_channel/retry_filter.h",
         "//src/core:client_channel/retry_filter_legacy_call_data.h",
-        "//src/core:client_channel/retry_service_config.h",
         "//src/core:client_channel/retry_throttle.h",
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
@@ -3424,6 +3452,7 @@ grpc_cc_library(
         "promise",
         "protobuf_duration_upb",
         "ref_counted_ptr",
+        "retry_service_config",
         "sockaddr_utils",
         "stats",
         "subchannel_connector",
