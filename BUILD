@@ -568,6 +568,7 @@ grpc_cc_library(
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
+        "service_config_channel_arg_filter",
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
@@ -648,6 +649,7 @@ grpc_cc_library(
         "iomgr_timer",
         "promise",
         "ref_counted_ptr",
+        "service_config_channel_arg_filter",
         "sockaddr_utils",
         "tsi_base",
         "uri_parser",
@@ -3127,6 +3129,39 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "service_config_channel_arg_filter",
+    srcs = [
+        "//src/core:service_config/service_config_channel_arg_filter.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    deps = [
+        "channel_arg_names",
+        "config",
+        "gpr_platform",
+        "gpr_public_hdrs",
+        "grpc_base",
+        "grpc_service_config_impl",
+        "legacy_context",
+        "ref_counted_ptr",
+        "//src/core:arena",
+        "//src/core:arena_promise",
+        "//src/core:channel_args",
+        "//src/core:channel_fwd",
+        "//src/core:channel_stack_type",
+        "//src/core:context",
+        "//src/core:grpc_message_size_filter",
+        "//src/core:grpc_service_config",
+        "//src/core:metadata_batch",
+        "//src/core:service_config_parser",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "//src/core:client_channel/channel_connectivity.cc",
@@ -3144,7 +3179,6 @@ grpc_cc_library(
         "//src/core:client_channel/retry_filter_legacy_call_data.cc",
         "//src/core:client_channel/retry_service_config.cc",
         "//src/core:client_channel/retry_throttle.cc",
-        "//src/core:client_channel/service_config_channel_arg_filter.cc",
         "//src/core:client_channel/subchannel.cc",
         "//src/core:client_channel/subchannel_pool_interface.cc",
         "//src/core:client_channel/subchannel_stream_client.cc",
