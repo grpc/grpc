@@ -138,9 +138,9 @@ grpc_cc_test(
     srcs = ["json_token_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["credential_token_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -155,9 +155,9 @@ grpc_cc_test(
     srcs = ["jwt_verifier_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
-    tags = ["credential_token_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
