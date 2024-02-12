@@ -285,7 +285,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.8)
+  cmake_minimum_required(VERSION 3.13)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -312,7 +312,7 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
-  option(gRPC_BACKWARDS_COMPATIBILITY_MODE "Build libraries that are binary compatible across a larger number of OS and libc versions" OFF)
+  option(gRPC_DOWNLOAD_ARCHIVES "Download archives for empty 3rd party directories" ON)
 
   set(gRPC_INSTALL_default ON)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -442,14 +442,6 @@
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
   endif()
 
-  if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
-    add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
-    if(_gRPC_PLATFORM_MAC)
-      # some C++11 constructs not supported before OS X 10.10
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
-    endif()
-  endif()
-
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
     set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
   else()
@@ -514,7 +506,7 @@
   # Setup external proto library at ${external_proto_library.destination} if it doesn't exist
   % endif
   % for download_url in external_proto_library.urls:
-  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination})
+  if (NOT EXISTS <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination} AND gRPC_DOWNLOAD_ARCHIVES)
     # Download the archive via HTTP, validate the checksum, and extract to ${external_proto_library.destination}.
     download_archive(
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/${external_proto_library.destination}

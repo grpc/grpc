@@ -22,7 +22,7 @@ jobs:
         with:
           format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@e12d46a63a90f2fae62d114769bbf2a179198b5c # v3.3.3
+        uses: actions/cache@13aacd865c20de90d75de3b17ebe84f7a17d57d2 # v4.0.0
         env:
           cache-name: bazel-cache
         with:
@@ -38,7 +38,7 @@ jobs:
       # Cancel current runs if they're still running
       # (saves processing on fast pushes)
       - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@01ce38bf961b4e243a6342cbade0dbc8ba3f0432 # 0.12.0
+        uses: styfle/cancel-workflow-action@85880fa0301c86cca9da44039ee3bb12d3bedbfa # 0.12.1
         with:
           access_token: ${{ github.token }}
       # Allow opt-out for some users
@@ -90,7 +90,7 @@ jobs:
         run: ANDROID_NDK_HOME= ${{ github.workspace }}/tools/distrib/sanitize.sh
       # Report back with a PR if things are broken
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@153407881ec5c347639a548ade7d8ad1d6740e38 # v5.0.2
+        uses: peter-evans/create-pull-request@b1ddad2c994a25fbc81a28b3ec0e368bb2021c50 # v6.0.0
         with:
           delete-branch: true
           branch-suffix: short-commit-hash

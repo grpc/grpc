@@ -54,6 +54,7 @@ class PromiseEndpoint {
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint,
       SliceBuffer already_received);
+  PromiseEndpoint() = default;
   ~PromiseEndpoint() = default;
   /// Prevent copying of PromiseEndpoint; moving is fine.
   PromiseEndpoint(const PromiseEndpoint&) = delete;
@@ -80,7 +81,7 @@ class PromiseEndpoint {
                              data.c_slice_buffer());
       // If `Write()` returns true immediately, the callback will not be called.
       // We still need to call our callback to pick up the result.
-      write_state_->waker = Activity::current()->MakeNonOwningWaker();
+      write_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       completed = endpoint_->Write(
           [write_state = write_state_](absl::Status status) {
             ApplicationCallbackExecCtx callback_exec_ctx;
@@ -124,7 +125,7 @@ class PromiseEndpoint {
               static_cast<int64_t>(num_bytes - read_state_->buffer.Length())};
       // If `Read()` returns true immediately, the callback will not be
       // called.
-      read_state_->waker = Activity::current()->MakeNonOwningWaker();
+      read_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
       if (endpoint_->Read(
               [read_state = read_state_, num_bytes](absl::Status status) {
                 ApplicationCallbackExecCtx callback_exec_ctx;

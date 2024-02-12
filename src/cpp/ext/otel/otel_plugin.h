@@ -84,6 +84,7 @@ class LabelsInjector {
   // corresponds to the CallAttemptTracer::OptionalLabelComponent enum. Returns
   // false when callback returns false.
   virtual bool AddOptionalLabels(
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span,
       opentelemetry::nostd::function_ref<
@@ -94,6 +95,7 @@ class LabelsInjector {
   // Gets the actual size of the optional labels that the Plugin is going to
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
+      bool is_client,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span) const = 0;
 };
@@ -133,7 +135,6 @@ struct OpenTelemetryPluginState {
   } server;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider;
-  std::unique_ptr<LabelsInjector> labels_injector;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attribute_filter;
   absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -171,9 +172,6 @@ class OpenTelemetryPluginBuilderImpl {
   OpenTelemetryPluginBuilderImpl& EnableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilderImpl& DisableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilderImpl& DisableAllMetrics();
-  // Allows setting a labels injector on calls traced through this plugin.
-  OpenTelemetryPluginBuilderImpl& SetLabelsInjector(
-      std::unique_ptr<LabelsInjector> labels_injector);
   // If set, \a target_selector is called per channel to decide whether to
   // collect metrics on that target or not.
   OpenTelemetryPluginBuilderImpl& SetTargetSelector(
@@ -204,7 +202,7 @@ class OpenTelemetryPluginBuilderImpl {
           generic_method_attribute_filter);
   OpenTelemetryPluginBuilderImpl& AddPluginOption(
       std::unique_ptr<InternalOpenTelemetryPluginOption> option);
-  void BuildAndRegisterGlobal();
+  absl::Status BuildAndRegisterGlobal();
 
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;

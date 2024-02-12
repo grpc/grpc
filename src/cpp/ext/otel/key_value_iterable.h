@@ -49,46 +49,32 @@ inline opentelemetry::nostd::string_view AbslStrViewToOpenTelemetryStrView(
 class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
  public:
   explicit KeyValueIterable(
-      LabelsIterable* injected_labels_iterable,
       const std::vector<std::unique_ptr<LabelsIterable>>&
           injected_labels_from_plugin_options,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels,
       const ActivePluginOptionsView* active_plugin_options_view,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span)
-      : injected_labels_iterable_(injected_labels_iterable),
-        injected_labels_from_plugin_options_(
+          optional_labels_span,
+      bool is_client)
+      : injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
         active_plugin_options_view_(active_plugin_options_view),
-        optional_labels_(optional_labels_span) {}
+        optional_labels_(optional_labels_span),
+        is_client_(is_client) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
                            callback) const noexcept override {
-    if (injected_labels_iterable_ != nullptr) {
-      injected_labels_iterable_->ResetIteratorPosition();
-      while (const auto& pair = injected_labels_iterable_->Next()) {
-        if (!callback(AbslStrViewToOpenTelemetryStrView(pair->first),
-                      AbslStrViewToOpenTelemetryStrView(pair->second))) {
-          return false;
-        }
-      }
-    }
-    if (OpenTelemetryPluginState().labels_injector != nullptr &&
-        !OpenTelemetryPluginState().labels_injector->AddOptionalLabels(
-            optional_labels_, callback)) {
-      return false;
-    }
     if (active_plugin_options_view_ != nullptr &&
         !active_plugin_options_view_->ForEach(
             [callback, this](
                 const InternalOpenTelemetryPluginOption& plugin_option,
                 size_t /*index*/) {
               return plugin_option.labels_injector()->AddOptionalLabels(
-                  optional_labels_, callback);
+                  is_client_, optional_labels_, callback);
             })) {
       return false;
     }
@@ -114,9 +100,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   }
 
   size_t size() const noexcept override {
-    size_t size = injected_labels_iterable_ != nullptr
-                      ? injected_labels_iterable_->Size()
-                      : 0;
+    size_t size = 0;
     for (const auto& plugin_option_injected_iterable :
          injected_labels_from_plugin_options_) {
       if (plugin_option_injected_iterable != nullptr) {
@@ -124,16 +108,12 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
       }
     }
     size += additional_labels_.size();
-    if (OpenTelemetryPluginState().labels_injector != nullptr) {
-      size += OpenTelemetryPluginState().labels_injector->GetOptionalLabelsSize(
-          optional_labels_);
-    }
     if (active_plugin_options_view_ != nullptr) {
       active_plugin_options_view_->ForEach(
           [&size, this](const InternalOpenTelemetryPluginOption& plugin_option,
                         size_t /*index*/) {
             size += plugin_option.labels_injector()->GetOptionalLabelsSize(
-                optional_labels_);
+                is_client_, optional_labels_);
             return true;
           });
     }
@@ -141,7 +121,6 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   }
 
  private:
-  LabelsIterable* injected_labels_iterable_;
   const std::vector<std::unique_ptr<LabelsIterable>>&
       injected_labels_from_plugin_options_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
@@ -149,6 +128,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   const ActivePluginOptionsView* active_plugin_options_view_;
   absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       optional_labels_;
+  bool is_client_;
 };
 
 }  // namespace internal

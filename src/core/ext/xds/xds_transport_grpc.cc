@@ -37,7 +37,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -281,8 +281,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   if (IsLameChannel(channel_)) {
     *status = absl::UnavailableError("xds client has a lame channel");
   } else {
-    ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(Channel::FromC(channel_));
+    ClientChannelFilter* client_channel =
+        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(std::move(on_connectivity_failure));
     client_channel->AddConnectivityWatcher(
@@ -297,8 +297,8 @@ GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
   if (!IsLameChannel(channel_)) {
-    ClientChannel* client_channel =
-        ClientChannel::GetFromChannel(Channel::FromC(channel_));
+    ClientChannelFilter* client_channel =
+        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
     GPR_ASSERT(client_channel != nullptr);
     client_channel->RemoveConnectivityWatcher(watcher_);
   }

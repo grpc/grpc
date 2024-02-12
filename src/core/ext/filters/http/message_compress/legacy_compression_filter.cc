@@ -291,7 +291,7 @@ LegacyServerCompressionFilter::MakeCallPromise(
         auto r = DecompressMessage(std::move(message), decompress_args);
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_DEBUG, "%s[compression] DecompressMessage returned %s",
-                  Activity::current()->DebugTag().c_str(),
+                  GetContext<Activity>()->DebugTag().c_str(),
                   r.status().ToString().c_str());
         }
         if (!r.ok()) {
@@ -306,7 +306,7 @@ LegacyServerCompressionFilter::MakeCallPromise(
       [this, compression_algorithm](ServerMetadataHandle md) {
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_INFO, "%s[compression] Write metadata",
-                  Activity::current()->DebugTag().c_str());
+                  GetContext<Activity>()->DebugTag().c_str());
         }
         // Find the compression algorithm.
         *compression_algorithm = HandleOutgoingMetadata(*md);

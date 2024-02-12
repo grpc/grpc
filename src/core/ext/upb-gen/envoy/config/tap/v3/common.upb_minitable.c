@@ -10,6 +10,7 @@
 #include "envoy/config/tap/v3/common.upb_minitable.h"
 #include "envoy/config/common/matcher/v3/matcher.upb_minitable.h"
 #include "envoy/config/core/v3/base.upb_minitable.h"
+#include "envoy/config/core/v3/extension.upb_minitable.h"
 #include "envoy/config/core/v3/grpc_service.upb_minitable.h"
 #include "envoy/config/route/v3/route_components.upb_minitable.h"
 #include "google/protobuf/duration.upb_minitable.h"
@@ -204,25 +205,27 @@ const upb_MiniTable envoy__config__tap__v3__OutputConfig_msg_init = {
   })
 };
 
-static const upb_MiniTableSub envoy_config_tap_v3_OutputSink_submsgs[4] = {
+static const upb_MiniTableSub envoy_config_tap_v3_OutputSink_submsgs[5] = {
   {.submsg = &envoy__config__tap__v3__StreamingAdminSink_msg_init},
   {.submsg = &envoy__config__tap__v3__FilePerTapSink_msg_init},
   {.submsg = &envoy__config__tap__v3__StreamingGrpcSink_msg_init},
   {.submsg = &envoy__config__tap__v3__BufferedAdminSink_msg_init},
+  {.submsg = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
 };
 
-static const upb_MiniTableField envoy_config_tap_v3_OutputSink__fields[5] = {
+static const upb_MiniTableField envoy_config_tap_v3_OutputSink__fields[6] = {
   {1, 0, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 8, -5, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, 8, -5, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, 8, -5, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, 8, -5, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {6, 8, -5, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__tap__v3__OutputSink_msg_init = {
   &envoy_config_tap_v3_OutputSink_submsgs[0],
   &envoy_config_tap_v3_OutputSink__fields[0],
-  16, 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+  16, 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(56), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000000003f000008, &upb_psv4_1bt},
@@ -230,7 +233,7 @@ const upb_MiniTable envoy__config__tap__v3__OutputSink_msg_init = {
     {0x000800040301001a, &upb_pom_1bt_max64b},
     {0x0008000404020022, &upb_pom_1bt_max64b},
     {0x000800040503002a, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0008000406040032, &upb_pom_1bt_maxmaxb},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

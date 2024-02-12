@@ -20,10 +20,10 @@ import grpc
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._cyobservability import MetricsName
 from grpc_observability._observability import StatsData
-from opentelemetry.sdk.metrics import Counter
-from opentelemetry.sdk.metrics import Histogram
-from opentelemetry.sdk.metrics import Meter
-from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.metrics import Counter
+from opentelemetry.metrics import Histogram
+from opentelemetry.metrics import Meter
+from opentelemetry.metrics import MeterProvider
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
@@ -90,21 +90,40 @@ class OpenTelemetryPluginOption(abc.ABC):
 
 # pylint: disable=no-self-use
 class OpenTelemetryPlugin:
-    """Describes a Plugin for OpenTelemetry observability."""
+    """Describes a Plugin for OpenTelemetry observability.
+
+    This is class is part of an EXPERIMENTAL API.
+    """
 
     def get_plugin_options(
         self,
     ) -> Iterable[OpenTelemetryPluginOption]:
+        """
+        This function will be used to get plugin options which are enabled for
+        this OpenTelemetryPlugin instance.
+
+        Returns:
+            An Iterable of class OpenTelemetryPluginOption which will be enabled for
+            this OpenTelemetryPlugin.
+        """
         return []
 
     def get_meter_provider(self) -> Optional[MeterProvider]:
+        """
+        This function will be used to get the MeterProvider for this OpenTelemetryPlugin
+        instance.
+
+        Returns:
+            A MeterProvider which will be used to collect telemetry data, or None which
+            means no metrics will be collected.
+        """
         return None
 
     def target_attribute_filter(
         self, target: str  # pylint: disable=unused-argument
     ) -> bool:
         """
-        If set, this will be called per channel to decide whether to record the
+        Once overridden, this will be called per channel to decide whether to record the
         target attribute on client or to replace it with "other".
         This helps reduce the cardinality on metrics in cases where many channels
         are created with different targets in the same binary (which might happen
@@ -123,7 +142,7 @@ class OpenTelemetryPlugin:
         self, method: str  # pylint: disable=unused-argument
     ) -> bool:
         """
-        If set, this will be called with a generic method type to decide whether to
+        Once overridden, this will be called with a generic method type to decide whether to
         record the method name or to replace it with "other".
 
         Note that pre-registered methods will always be recorded no matter what this

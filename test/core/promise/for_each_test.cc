@@ -138,7 +138,7 @@ class MoveableUntilPolled {
   }
 
   Poll<absl::Status> operator()() {
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
     ++polls_;
     if (polls_ == 10) return absl::OkStatus();
     return Pending();
