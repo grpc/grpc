@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: grand
   protobuf_version: 3.25.1
-  version: 1.61.0
+  version: 1.61.1
 configs:
   asan:
     CC: clang
