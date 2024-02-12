@@ -4148,6 +4148,7 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/ext/chaotic_good.h",
     ],
+    visibility = ["@grpc:chaotic_good"],
     deps = [
         "gpr",
         "grpc++_public_hdrs",
