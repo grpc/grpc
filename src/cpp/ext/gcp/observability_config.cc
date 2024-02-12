@@ -34,10 +34,10 @@
 #include <grpc/status.h>
 
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -56,17 +56,12 @@ absl::StatusOr<std::string> GetGcpObservabilityConfigContents() {
   std::string contents_str;
   auto path = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
   if (path.has_value() && !path.value().empty()) {
-    grpc_slice contents;
-    grpc_error_handle error =
-        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!error.ok()) {
-      return grpc_error_to_absl_status(
-          grpc_error_set_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                             GRPC_STATUS_FAILED_PRECONDITION));
+    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/true);
+    if (!contents.ok()) {
+      return absl::FailedPreconditionError(absl::StrCat(
+          "error loading file ", *path, ": ", contents.status().ToString()));
     }
-    std::string contents_str(grpc_core::StringViewFromSlice(contents));
-    grpc_slice_unref(contents);
-    return std::move(contents_str);
+    return std::string(contents->as_string_view());
   }
   // Next, try GRPC_GCP_OBSERVABILITY_CONFIG env var.
   auto env_config = grpc_core::GetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");

@@ -27,10 +27,10 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
+#include "test/core/util/tls_utils.h"
 
 class SslTlsFixture : public SecureFixture {
  public:
@@ -67,16 +67,12 @@ class SslTlsFixture : public SecureFixture {
 
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs& args) override {
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(ServerCertPath(), 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(ServerKeyPath(), 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    std::string server_cert =
+        grpc_core::testing::GetFileContents(ServerCertPath());
+    std::string server_key =
+        grpc_core::testing::GetFileContents(ServerKeyPath());
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                    server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
     if (ssl_creds != nullptr) {
@@ -86,8 +82,6 @@ class SslTlsFixture : public SecureFixture {
       creds->set_min_tls_version(tls_version_);
       creds->set_max_tls_version(tls_version_);
     }
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
     if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
       grpc_auth_metadata_processor processor = {process_auth_failure, nullptr,
                                                 nullptr};

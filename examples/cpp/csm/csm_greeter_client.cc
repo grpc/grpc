@@ -158,7 +158,7 @@ class GreeterClient {
   absl::optional<Cookie> cookie_from_server_;
 };
 
-absl::StatusOr<grpc::experimental::CsmObservability> InitializeObservability() {
+absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
@@ -167,7 +167,7 @@ absl::StatusOr<grpc::experimental::CsmObservability> InitializeObservability() {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
-  return grpc::experimental::CsmObservabilityBuilder()
+  return grpc::CsmObservabilityBuilder()
       .SetMeterProvider(std::move(meter_provider))
       .BuildAndRegister();
 }

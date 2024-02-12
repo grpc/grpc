@@ -41,9 +41,9 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
@@ -56,22 +56,15 @@ static void server_thread(void* arg) {
   const int port = *static_cast<int*>(arg);
 
   // Load key pair and establish server SSL credentials.
+  std::string ca_cert = grpc_core::testing::GetFileContents(SSL_CA_PATH);
+  std::string cert = grpc_core::testing::GetFileContents(SSL_CERT_PATH);
+  std::string key = grpc_core::testing::GetFileContents(SSL_KEY_PATH);
+
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  pem_key_cert_pair.private_key = key.c_str();
+  pem_key_cert_pair.cert_chain = cert.c_str();
   grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
-      ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
+      ca_cert.c_str(), &pem_key_cert_pair, 1, 0, nullptr);
 
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
@@ -106,9 +99,6 @@ static void server_thread(void* arg) {
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
   grpc_server_credentials_release(ssl_creds);
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
 }
 
 // This test launches a minimal TLS grpc server on a separate thread and then
@@ -123,26 +113,19 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
 
   // Load key pair and establish client SSL credentials.
   // NOTE: we intentionally load the credential files before starting
-  // the server thread because grpc_load_file can experience trouble
+  // the server thread because loading the file can experience trouble
   // when two threads attempt to load the same file concurrently
   // and server thread also reads the same files as soon as it starts.
   // See https://github.com/grpc/grpc/issues/23503 for details.
+  std::string ca_cert = grpc_core::testing::GetFileContents(SSL_CA_PATH);
+  std::string cert = grpc_core::testing::GetFileContents(SSL_CERT_PATH);
+  std::string key = grpc_core::testing::GetFileContents(SSL_KEY_PATH);
+
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CA_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  pem_key_cert_pair.private_key = key.c_str();
+  pem_key_cert_pair.cert_chain = cert.c_str();
   grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
-      ca_cert, &pem_key_cert_pair, verify_options, nullptr);
+      ca_cert.c_str(), &pem_key_cert_pair, verify_options, nullptr);
 
   // Launch the gRPC server thread.
   bool ok;
@@ -193,9 +176,6 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
 
   grpc_channel_destroy(channel);
   grpc_channel_credentials_release(ssl_creds);
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
 
   // Now that the client is completely cleaned up, trigger the server to
   // shutdown
@@ -242,11 +222,7 @@ int main(int argc, char* argv[]) {
   verify_peer_options verify_options;
 
   // Load the server's cert so that we can assert it gets passed to the callback
-  grpc_slice cert_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
+  std::string server_cert = grpc_core::testing::GetFileContents(SSL_CERT_PATH);
 
   // Running with all-null values should have no effect
   verify_options.verify_peer_callback = nullptr;
@@ -264,15 +240,13 @@ int main(int argc, char* argv[]) {
   verify_options.verify_peer_destruct = verify_destruct;
   GPR_ASSERT(verify_peer_options_test(&verify_options));
   GPR_ASSERT(strcmp(callback_target_host, "foo.test.google.fr") == 0);
-  GPR_ASSERT(strcmp(callback_target_pem, server_cert) == 0);
+  GPR_ASSERT(strcmp(callback_target_pem, server_cert.c_str()) == 0);
   GPR_ASSERT(callback_userdata == static_cast<void*>(&userdata));
   GPR_ASSERT(destruct_userdata == static_cast<void*>(&userdata));
 
   // If the callback returns non-zero, initializing the channel should fail.
   callback_return_value = 1;
   GPR_ASSERT(!verify_peer_options_test(&verify_options));
-
-  grpc_slice_unref(cert_slice);
 
   grpc_shutdown();
   return 0;

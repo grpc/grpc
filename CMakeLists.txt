@@ -1156,6 +1156,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
   add_dependencies(buildtests_cxx load_config_test)
+  add_dependencies(buildtests_cxx load_file_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx lock_free_event_test)
   endif()
@@ -1418,9 +1419,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
   add_dependencies(buildtests_cxx test_core_gpr_time_test)
-  add_dependencies(buildtests_cxx test_core_gprpp_load_file_test)
   add_dependencies(buildtests_cxx test_core_gprpp_time_test)
-  add_dependencies(buildtests_cxx test_core_iomgr_load_file_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
   add_dependencies(buildtests_cxx test_core_security_ssl_credentials_test)
@@ -2325,7 +2324,6 @@ add_library(grpc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_posix_cfstream.cc
   src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -2448,8 +2446,6 @@ add_library(grpc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config_impl.cc
-  src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2478,6 +2474,7 @@ add_library(grpc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/surface/wait_for_cq_end_op.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/call_factory.cc
@@ -2549,6 +2546,8 @@ add_library(grpc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
   src/core/resolver/xds/xds_resolver_trace.cc
+  src/core/service_config/service_config_impl.cc
+  src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -3089,7 +3088,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_posix_cfstream.cc
   src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -3176,8 +3174,6 @@ add_library(grpc_unsecure
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config_impl.cc
-  src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3206,6 +3202,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/surface/wait_for_cq_end_op.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/call_factory.cc
@@ -3267,6 +3264,8 @@ add_library(grpc_unsecure
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/service_config/service_config_impl.cc
+  src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
@@ -5212,7 +5211,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_posix_cfstream.cc
   src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
@@ -5301,7 +5299,6 @@ add_library(grpc_authorization_provider
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/service_config/service_config_parser.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -5329,6 +5326,7 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
+  src/core/lib/surface/wait_for_cq_end_op.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
@@ -5353,6 +5351,7 @@ add_library(grpc_authorization_provider
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
+  src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
@@ -7461,6 +7460,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(bad_ping_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -7929,6 +7937,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binary_metadata_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8360,6 +8377,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_creds_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8554,6 +8580,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_host_override_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8650,6 +8685,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_accept_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8703,6 +8747,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_client_done_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8756,6 +8809,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_invoke_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8809,6 +8871,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_round_trip_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8909,6 +8980,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_before_invoke_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -9004,6 +9084,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_in_a_vacuum_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -9057,6 +9146,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_with_status_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -10760,6 +10858,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_streaming_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -11091,6 +11198,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(compressed_payload_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -11367,6 +11483,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(connectivity_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -11786,6 +11911,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(default_host_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -11984,6 +12118,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(disappearing_server_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -12294,6 +12437,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(empty_batch_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -13666,6 +13818,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_causes_close_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -13719,6 +13880,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_context_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -13772,6 +13942,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_init_fails_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -13875,6 +14054,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filtered_metadata_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -14653,6 +14841,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(graceful_server_shutdown_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -15012,6 +15209,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authz_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -16398,6 +16604,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(high_initial_seqno_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -16701,6 +16916,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_size_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -16847,6 +17071,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_stats_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -17730,6 +17963,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(invoke_large_request_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18111,6 +18353,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(keepalive_timeout_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18207,6 +18458,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(large_metadata_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18434,6 +18694,48 @@ target_link_libraries(load_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(load_file_test
+  test/core/gprpp/load_file_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(load_file_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(load_file_test PUBLIC cxx_std_14)
+target_include_directories(load_file_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(load_file_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -18828,6 +19130,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_concurrent_streams_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18881,6 +19192,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_connection_age_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18934,6 +19254,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_connection_idle_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18987,6 +19316,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_message_length_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19618,6 +19956,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(negative_deadline_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19703,6 +20050,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(no_logging_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19756,6 +20112,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(no_op_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -20609,6 +20974,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(payload_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -20975,6 +21349,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_pong_streaming_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -21080,6 +21463,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -22064,6 +22456,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(proxy_auth_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -22631,6 +23032,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(registered_call_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -22728,6 +23138,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(request_with_flags_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -22781,6 +23200,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(request_with_payload_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23109,6 +23537,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(resource_quota_server_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23204,6 +23641,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancel_after_first_attempt_starts_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23257,6 +23703,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancel_during_delay_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23310,6 +23765,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancel_with_multiple_send_batches_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23363,6 +23827,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancellation_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23416,6 +23889,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_disabled_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23469,6 +23951,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_exceeds_buffer_size_in_delay_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23522,6 +24013,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_exceeds_buffer_size_in_initial_batch_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23575,6 +24075,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23628,6 +24137,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_lb_drop_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23681,6 +24199,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_lb_fail_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23734,6 +24261,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_non_retriable_status_before_trailers_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23787,6 +24323,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_non_retriable_status_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23840,6 +24385,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23893,6 +24447,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_per_attempt_recv_timeout_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23946,6 +24509,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_initial_metadata_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23999,6 +24571,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_message_replay_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24052,6 +24633,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_message_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24105,6 +24695,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_trailing_metadata_error_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24158,6 +24757,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_send_initial_metadata_refs_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24211,6 +24819,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_send_op_fails_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24264,6 +24881,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_send_recv_batch_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24317,6 +24943,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_server_pushback_delay_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24370,6 +25005,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_server_pushback_disabled_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24465,6 +25109,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_streaming_after_commit_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24518,6 +25171,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_streaming_succeeds_before_replay_finished_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24571,6 +25233,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_streaming_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24624,6 +25295,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24719,6 +25399,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_throttled_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24772,6 +25461,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_too_many_attempts_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24825,6 +25523,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_transparent_goaway_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24878,6 +25585,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_transparent_max_concurrent_streams_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24931,6 +25647,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_transparent_not_sent_on_wire_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24984,6 +25709,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_unref_before_finish_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25037,6 +25771,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_unref_before_recv_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26014,6 +26757,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_finishes_request_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26289,6 +27041,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_streaming_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26542,6 +27303,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shutdown_finishes_calls_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26595,6 +27365,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shutdown_finishes_tags_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26711,6 +27490,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_delayed_request_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26764,6 +27552,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_metadata_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26861,6 +27658,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_request_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -27778,6 +28584,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(streaming_error_response_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -28505,6 +29320,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_end2end_channelz_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -28744,48 +29568,6 @@ target_link_libraries(test_core_gpr_time_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_gprpp_load_file_test
-  test/core/gprpp/load_file_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_gprpp_load_file_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_gprpp_load_file_test PUBLIC cxx_std_14)
-target_include_directories(test_core_gprpp_load_file_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_gprpp_load_file_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(test_core_gprpp_time_test
   src/core/lib/gprpp/time.cc
   test/core/gprpp/time_test.cc
@@ -28823,58 +29605,6 @@ target_link_libraries(test_core_gprpp_time_test
   gtest
   absl::statusor
   gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(test_core_iomgr_load_file_test
-  test/core/iomgr/load_file_test.cc
-  test/core/util/cmdline.cc
-  test/core/util/fuzzer_util.cc
-  test/core/util/grpc_profiler.cc
-  test/core/util/histogram.cc
-  test/core/util/mock_endpoint.cc
-  test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
-  test/core/util/resolve_localhost_ip46.cc
-  test/core/util/slice_splitter.cc
-  test/core/util/tracer_util.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_iomgr_load_file_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_iomgr_load_file_test PUBLIC cxx_std_14)
-target_include_directories(test_core_iomgr_load_file_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_iomgr_load_file_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
 )
 
 
@@ -29734,6 +30464,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(timeout_before_request_call_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -30230,6 +30969,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(trailing_metadata_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -31455,6 +32203,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_buffering_at_end_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -31508,6 +32265,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_buffering_test
+  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/settings_metadata.cc
+  src/core/lib/transport/promise_endpoint.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
