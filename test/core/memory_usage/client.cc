@@ -46,9 +46,6 @@
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
-// Hundred channels max. Should be enough.
-static grpc_channel* channel[100];
-static size_t num_channels;
 static grpc_completion_queue* cq;
 static grpc_op metadata_ops[2];
 static grpc_op status_ops[2];
@@ -72,7 +69,8 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 // A call is intentionally divided into two steps. First step is to initiate a
 // call (i.e send and recv metadata). A call is outstanding after we initated,
 // so we can measure the call memory usage.
-static void init_ping_pong_request(int call_idx) {
+static void init_ping_pong_request(const std::vector<grpc_channel*>& channels,
+                                   int call_idx) {
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
 
   memset(metadata_ops, 0, sizeof(metadata_ops));
@@ -88,8 +86,8 @@ static void init_ping_pong_request(int call_idx) {
 
   grpc_slice hostname = grpc_slice_from_static_string("localhost");
   calls[call_idx].call = grpc_channel_create_call(
-      channel[call_idx % num_channels], nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      grpc_slice_from_static_string("/Reflector/reflectUnary"), &hostname,
+      channels[call_idx % channels.size()], nullptr, GRPC_PROPAGATE_DEFAULTS,
+      cq, grpc_slice_from_static_string("/Reflector/reflectUnary"), &hostname,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
@@ -124,7 +122,9 @@ static void finish_ping_pong_request(int call_idx) {
   calls[call_idx].call = nullptr;
 }
 
-static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
+static MemStats send_snapshot_request(
+    const std::vector<grpc_channel*>& channels, int call_idx,
+    grpc_slice call_type) {
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_init(&calls[call_idx].trailing_metadata_recv);
 
@@ -155,8 +155,8 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
   grpc_slice hostname = grpc_slice_from_static_string("localhost");
   // Will use channels in order
   calls[call_idx].call = grpc_channel_create_call(
-      channel[call_idx % num_channels], nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
-      call_type, &hostname, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      channels[call_idx % channels.size()], nullptr, GRPC_PROPAGATE_DEFAULTS,
+      cq, call_type, &hostname, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
                                                    snapshot_ops,
                                                    (size_t)(op - snapshot_ops),
@@ -188,12 +188,13 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
 }
 
 // Create iterations calls, return MemStats when all outstanding
-std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
+std::pair<MemStats, MemStats> run_test_loop(
+    const std::vector<grpc_channel*>& channels, int iterations, int* call_idx) {
   grpc_event event;
 
   // benchmark period
   for (int i = 0; i < iterations; ++i) {
-    init_ping_pong_request(*call_idx + i + 1);
+    init_ping_pong_request(channels, *call_idx + i + 1);
   }
 
   auto peak = std::make_pair(
@@ -201,7 +202,8 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
       MemStats::Snapshot(),
       // server
       send_snapshot_request(
-          0, grpc_slice_from_static_string("Reflector/DestroyCalls")));
+          channels, 0,
+          grpc_slice_from_static_string("Reflector/DestroyCalls")));
 
   do {
     event = grpc_completion_queue_next(
@@ -260,11 +262,11 @@ int main(int argc, char** argv) {
   }
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
   auto targets = absl::GetFlag(FLAGS_target);
-  num_channels =
-      targets.size() < 100 ? targets.size() : 100;  // Max - 100 targets
-  for (size_t i = 0; i < num_channels; i++) {
-    channel[i] = grpc_channel_create(targets[i].c_str(),
-                                     grpc_insecure_credentials_create(), &args);
+  std::vector<grpc_channel*> channels;
+  channels.reserve(targets.size());
+  for (const auto& target : targets) {
+    channels.emplace_back(grpc_channel_create(
+        target.c_str(), grpc_insecure_credentials_create(), &args));
   }
 
   int call_idx = 0;
@@ -273,19 +275,19 @@ int main(int argc, char** argv) {
 
   // warmup period
   MemStats server_benchmark_calls_start = send_snapshot_request(
-      0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
+      channels, 0, grpc_slice_from_static_string("Reflector/SimpleSnapshot"));
   MemStats client_benchmark_calls_start = MemStats::Snapshot();
 
-  run_test_loop(warmup_iterations, &call_idx);
+  run_test_loop(channels, warmup_iterations, &call_idx);
 
   std::pair<MemStats, MemStats> peak =
-      run_test_loop(benchmark_iterations, &call_idx);
+      run_test_loop(channels, benchmark_iterations, &call_idx);
 
   MemStats client_calls_inflight = peak.first;
   MemStats server_calls_inflight = peak.second;
 
-  for (size_t i = 0; i < num_channels; i++) {
-    grpc_channel_destroy(channel[i]);
+  for (auto channel : channels) {
+    grpc_channel_destroy(channel);
   }
   grpc_completion_queue_shutdown(cq);
 
