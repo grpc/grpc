@@ -172,8 +172,9 @@ int main(int argc, char** argv) {
   }
 
   std::string prefix;
-  if (absl::StartsWith(absl::GetFlag(FLAGS_target).front(), "xds:"))
+  if (absl::StartsWith(absl::GetFlag(FLAGS_target).front(), "xds:")) {
     prefix = "xds ";
+  }
   if (absl::GetFlag(FLAGS_server_pid) == 0) {
     absl::StrAppend(&prefix, "multi_address ");
   }

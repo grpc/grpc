@@ -243,7 +243,7 @@ XdsServer StartXdsServerAndConfigureBootstrap(
         xds_server.ads_service.get(), XdsResourceUtils::DefaultServerListener(),
         port, XdsResourceUtils::DefaultServerRouteConfig());
   }
-  for (auto host : hosts) {
+  for (const auto& host : hosts) {
     XdsResourceUtils::SetListenerAndRouteConfiguration(
         xds_server.ads_service.get(), ListenerForServer(host),
         XdsResourceUtils::DefaultRouteConfig());
