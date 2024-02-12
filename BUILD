@@ -4141,6 +4141,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_chaotic_good",
+    srcs = [
+        "src/cpp/ext/chaotic_good.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/chaotic_good.h",
+    ],
+    visibility = ["@grpc:chaotic_good"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+    ],
+)
+
+grpc_cc_library(
     name = "subprocess",
     srcs = [
         "//src/core:lib/gpr/subprocess_posix.cc",
