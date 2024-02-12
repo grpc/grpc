@@ -294,6 +294,42 @@ bool HasCrlSignBit(X509* cert) {
 #endif  // OPENSSL_VERSION_NUMBEr < 0x10100000
 }
 
+absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_get_ext_by_NID(cert, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
+      return absl::InvalidArgumentError("Could not get AKID from certificate.");
+    }
+    akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
+  }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
+  }
+  return std::string(reinterpret_cast<char const*>(buf), len);
+}
+
+absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
+      return absl::InvalidArgumentError("Could not get AKID from crlificate.");
+    }
+    akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
+  }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from crlificate.");
+  }
+  return std::string(reinterpret_cast<char const*>(buf), len);
+}
+
 bool VerifyAKIDMatch(X509_CRL* crl, X509* issuer) {
   ASN1_OCTET_STRING* crl_akid = nullptr;
   ASN1_OCTET_STRING* cert_akid = nullptr;

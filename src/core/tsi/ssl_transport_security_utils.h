@@ -165,6 +165,16 @@ bool VerifyAKIDMatch(X509_CRL* crl, X509* issuer);
 // return: a std::string of the DER encoding of the X509_NAME issuer name.
 absl::StatusOr<std::string> IssuerFromCert(X509* cert);
 
+// Gets a stable representation of the authority key identifier from an X509
+// certificate.
+// return: a std::string of the DER encoding of the AKID or a status on failure.
+absl::StatusOr<std::string> AkidFromCertificate(X509* cert);
+
+// Gets a stable representation of the authority key identifier from an X509
+// crl.
+// return: a std::string of the DER encoding of the AKID or a status on failure.
+absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
