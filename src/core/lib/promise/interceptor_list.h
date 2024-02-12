@@ -86,8 +86,8 @@ class InterceptorList {
   // The result of Run: a promise that will execute the entire chain.
   class RunPromise {
    public:
-    RunPromise(size_t memory_required, Map* factory, absl::optional<T> value) {
-      if (!value.has_value() || factory == nullptr) {
+    RunPromise(size_t memory_required, Map** factory, absl::optional<T> value) {
+      if (!value.has_value() || *factory == nullptr) {
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG,
                   "InterceptorList::RunPromise[%p]: create immediate", this);
@@ -97,8 +97,10 @@ class InterceptorList {
       } else {
         is_immediately_resolved_ = false;
         Construct(&async_resolution_, memory_required);
-        factory->MakePromise(std::move(*value), async_resolution_.space.get());
-        async_resolution_.current_factory = factory;
+        (*factory)->MakePromise(std::move(*value),
+                                async_resolution_.space.get());
+        async_resolution_.current_factory = *factory;
+        async_resolution_.first_factory = factory;
         if (grpc_trace_promise_primitives.enabled()) {
           gpr_log(GPR_DEBUG,
                   "InterceptorList::RunPromise[%p]: create async; mem=%p", this,
@@ -147,6 +149,10 @@ class InterceptorList {
       }
       if (is_immediately_resolved_) return std::move(result_);
       while (true) {
+        if (*async_resolution_.first_factory == nullptr) {
+          // Cancelled whilst polling
+          return absl::nullopt;
+        }
         auto r = async_resolution_.current_factory->PollOnce(
             async_resolution_.space.get());
         if (auto* p = r.value_if_ready()) {
@@ -192,8 +198,10 @@ class InterceptorList {
       AsyncResolution& operator=(const AsyncResolution&) = delete;
       AsyncResolution(AsyncResolution&& other) noexcept
           : current_factory(std::exchange(other.current_factory, nullptr)),
+            first_factory(std::exchange(other.first_factory, nullptr)),
             space(std::move(other.space)) {}
       Map* current_factory;
+      Map** first_factory;
       Arena::PoolPtr<char[]> space;
     };
     union {
@@ -212,7 +220,7 @@ class InterceptorList {
   ~InterceptorList() { DeleteFactories(); }
 
   RunPromise Run(absl::optional<T> initial_value) {
-    return RunPromise(promise_memory_required_, first_map_,
+    return RunPromise(promise_memory_required_, &first_map_,
                       std::move(initial_value));
   }
 

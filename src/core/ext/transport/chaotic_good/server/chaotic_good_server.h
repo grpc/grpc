@@ -66,20 +66,11 @@ class ChaoticGoodServerListener final
           DefaultConnectionIDGenerator());
   ~ChaoticGoodServerListener() override;
   // Bind address to EventEngine listener.
-  absl::StatusOr<int> Bind(const char* addr);
+  absl::StatusOr<int> Bind(
+      grpc_event_engine::experimental::EventEngine::ResolvedAddress addr);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
-  void Orphan() override {
-    gpr_log(GPR_INFO, "ORPHAN");
-    {
-      absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
-      MutexLock lock(&mu_);
-      connection_list = std::move(connection_list_);
-    }
-    ee_listener_.reset();
-    Unref();
-    gpr_log(GPR_INFO, "~ORPHAN");
-  };
+  void Orphan() override;
 
   class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
@@ -90,22 +81,7 @@ class ChaoticGoodServerListener final
     ~ActiveConnection() override;
     const ChannelArgs& args() const { return listener_->args(); }
 
-    void Orphan() override {
-      gpr_log(GPR_INFO, "ORPHAN ActiveConnection:%p", this);
-      if (handshaking_state_ != nullptr) {
-        handshaking_state_->Shutdown();
-        handshaking_state_.reset();
-      }
-      ActivityPtr activity;
-      {
-        MutexLock lock(&mu_);
-        orphaned_ = true;
-        activity = std::move(receive_settings_activity_);
-      }
-      activity.reset();
-      Unref();
-      gpr_log(GPR_INFO, "~ORPHAN ActiveConnection");
-    }
+    void Orphan() override;
 
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
@@ -116,7 +92,6 @@ class ChaoticGoodServerListener final
                      endpoint);
 
       void Shutdown() {
-        gpr_log(GPR_INFO, "Shutdown:%p", this);
         handshake_mgr_->Shutdown(absl::CancelledError("Shutdown"));
       }
 
@@ -141,7 +116,7 @@ class ChaoticGoodServerListener final
     };
 
    private:
-    void Fail(absl::string_view error);
+    void Done(absl::optional<absl::string_view> error = absl::nullopt);
     void NewConnectionID();
     const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
         memory_allocator_;
@@ -151,7 +126,7 @@ class ChaoticGoodServerListener final
     Mutex mu_;
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
-    std::shared_ptr<PromiseEndpoint> endpoint_;
+    PromiseEndpoint endpoint_;
     HPackCompressor hpack_compressor_;
     HPackParser hpack_parser_;
     absl::BitGen bitgen_;
@@ -173,16 +148,16 @@ class ChaoticGoodServerListener final
   };
 
  private:
-  Server* server_;
+  Server* const server_;
   ChannelArgs args_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>
       ee_listener_;
   Mutex mu_;
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<
-      std::string,
-      std::shared_ptr<InterActivityLatch<std::shared_ptr<PromiseEndpoint>>>>
+  absl::flat_hash_map<std::string,
+                      std::shared_ptr<InterActivityLatch<PromiseEndpoint>>>
       connectivity_map_ ABSL_GUARDED_BY(mu_);
   absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
@@ -198,5 +173,7 @@ class ChaoticGoodServerListener final
 
 }  // namespace chaotic_good
 }  // namespace grpc_core
+
+int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
