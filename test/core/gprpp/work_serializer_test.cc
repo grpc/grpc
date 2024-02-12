@@ -74,9 +74,11 @@ TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
   gpr_event done;
   gpr_event_init(&done);
   lock->Schedule(
-      [&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
+      [&done]() {
+        EXPECT_EQ(gpr_event_get(&done), nullptr);
+        gpr_event_set(&done, reinterpret_cast<void*>(1));
+      },
       DEBUG_LOCATION);
-  EXPECT_EQ(gpr_event_get(&done), nullptr);
   lock->DrainQueue();
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
@@ -288,6 +290,9 @@ TEST(WorkSerializerTest, MetricsWork) {
   auto before = global_stats().Collect();
   auto stats_diff_from = [&before](absl::AnyInvocable<void()> f) {
     f();
+    // Insert a pause for the work serialier to update the stats. Reading stats
+    // here can still race with the work serializer's update attempt.
+    gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
     auto after = global_stats().Collect();
     auto diff = after->Diff(*before);
     before = std::move(after);
