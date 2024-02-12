@@ -127,7 +127,7 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
 
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
-  static absl::StatusOr<T> Cast(StatusFlag flag) {
+  static absl::StatusOr<T> Cast(GRPC_UNUSED StatusFlag flag) {
     GPR_DEBUG_ASSERT(!flag.ok());
     return absl::CancelledError();
   }
@@ -135,7 +135,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
 
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
-  static absl::StatusOr<T> Cast(StatusFlag flag) {
+  static absl::StatusOr<T> Cast(GRPC_UNUSED StatusFlag flag) {
     GPR_DEBUG_ASSERT(!flag.ok());
     return absl::CancelledError();
   }
@@ -143,7 +143,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
 
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
-  static absl::StatusOr<T> Cast(StatusFlag flag) {
+  static absl::StatusOr<T> Cast(GRPC_UNUSED StatusFlag flag) {
     GPR_DEBUG_ASSERT(!flag.ok());
     return absl::CancelledError();
   }

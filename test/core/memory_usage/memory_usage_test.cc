@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -50,6 +51,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
+#include "src/proto/grpc/testing/xds/v3/listener.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
@@ -71,12 +73,14 @@ ABSL_FLAG(std::string, scenario_config, "insecure",
 ABSL_FLAG(bool, memory_profiling, false,
           "Run memory profiling");  // TODO (chennancy) Connect this flag
 ABSL_FLAG(bool, use_xds, false, "Use xDS");
+ABSL_FLAG(size_t, xds_targets, 1,
+          "Number of xDS targets (LDS resources) to setup");
 
 // TODO(roth, ctiller): Add support for multiple addresses per channel.
 
 class Subprocess {
  public:
-  explicit Subprocess(std::vector<std::string> args) {
+  explicit Subprocess(const std::vector<std::string>& args) {
     std::vector<const char*> args_c;
     args_c.reserve(args.size());
     for (const auto& arg : args) {
@@ -95,8 +99,25 @@ class Subprocess {
   gpr_subprocess* process_;
 };
 
+void AddTargetArgs(const std::vector<std::string>& hosts,
+                   std::vector<std::string>* out_args) {
+  bool is_xds = absl::GetFlag(FLAGS_use_xds);
+  for (const auto& host : hosts) {
+    out_args->emplace_back("--target");
+    out_args->emplace_back(is_xds ? absl::StrCat("xds:", host) : host);
+  }
+}
+
+envoy::config::listener::v3::Listener ListenerForServer(
+    const absl::string_view host) {
+  auto listener = XdsResourceUtils::DefaultListener();
+  listener.set_name(host);
+  return listener;
+}
+
 // per-call memory usage benchmark
 int RunCallBenchmark(int port, char* root,
+                     const std::vector<std::string>& hosts,
                      std::vector<std::string> server_scenario_flags,
                      std::vector<std::string> client_scenario_flags) {
   int status;
@@ -124,14 +145,11 @@ int RunCallBenchmark(int port, char* root,
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_client",
                    gpr_subprocess_binary_extension()),
-      "--target",
-      absl::GetFlag(FLAGS_use_xds)
-          ? absl::StrCat("xds:", XdsResourceUtils::kServerName)
-          : grpc_core::LocalIpAndPort(port),
       "--grpc_experiments",
       std::string(grpc_core::ConfigVars::Get().Experiments()),
       absl::StrCat("--warmup=", 10000),
       absl::StrCat("--benchmark=", absl::GetFlag(FLAGS_size))};
+  AddTargetArgs(hosts, &client_flags);
   // Add scenario-specific client flags to the end of the client_flags
   absl::c_move(client_scenario_flags, std::back_inserter(client_flags));
   Subprocess cli(client_flags);
@@ -141,13 +159,13 @@ int RunCallBenchmark(int port, char* root,
     printf("client failed with: %d", status);
     return 1;
   }
-
   svr.Interrupt();
   return svr.Join() == 0 ? 0 : 2;
 }
 
 // Per-channel benchmark
-int RunChannelBenchmark(const std::vector<int>& server_ports, char* root) {
+int RunChannelBenchmark(const std::vector<int>& server_ports,
+                        const std::vector<std::string>& hosts, char* root) {
   // TODO(chennancy) Add the scenario specific flags
 
   // start the servers
@@ -173,11 +191,8 @@ int RunChannelBenchmark(const std::vector<int>& server_ports, char* root) {
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
-      "--target",
-      absl::GetFlag(FLAGS_use_xds)
-          ? absl::StrCat("xds:", XdsResourceUtils::kServerName)
-          : grpc_core::LocalIpAndPort(server_ports[0]),
       "--nosecure", absl::StrCat("--size=", absl::GetFlag(FLAGS_size))};
+  AddTargetArgs(hosts, &client_flags);
   if (server_ports.size() == 1) {
     client_flags.emplace_back(
         absl::StrCat("--server_pid=", servers[0].GetPID()));
@@ -203,7 +218,8 @@ struct XdsServer {
 };
 
 XdsServer StartXdsServerAndConfigureBootstrap(
-    const std::vector<int>& server_ports) {
+    const std::vector<int>& server_ports,
+    const std::vector<std::string>& hosts) {
   XdsServer xds_server;
   int xds_server_port = grpc_pick_unused_port_or_die();
   gpr_log(GPR_INFO, "xDS server port: %d", xds_server_port);
@@ -227,9 +243,11 @@ XdsServer StartXdsServerAndConfigureBootstrap(
         xds_server.ads_service.get(), XdsResourceUtils::DefaultServerListener(),
         port, XdsResourceUtils::DefaultServerRouteConfig());
   }
-  XdsResourceUtils::SetListenerAndRouteConfiguration(
-      xds_server.ads_service.get(), XdsResourceUtils::DefaultListener(),
-      XdsResourceUtils::DefaultRouteConfig());
+  for (auto host : hosts) {
+    XdsResourceUtils::SetListenerAndRouteConfiguration(
+        xds_server.ads_service.get(), ListenerForServer(host),
+        XdsResourceUtils::DefaultRouteConfig());
+  }
   auto cluster = XdsResourceUtils::DefaultCluster();
   cluster.mutable_circuit_breakers()
       ->add_thresholds()
@@ -263,16 +281,26 @@ int RunBenchmark(char* root, absl::string_view benchmark,
   }
   gpr_log(GPR_INFO, "server ports: %s",
           absl::StrJoin(server_ports, ",").c_str());
+  std::vector<std::string> hosts;
+  if (absl::GetFlag(FLAGS_use_xds)) {
+    hosts.emplace_back(XdsResourceUtils::kServerName);
+    for (size_t i = 1; i < absl::GetFlag(FLAGS_xds_targets); ++i) {
+      hosts.emplace_back(absl::StrFormat("server%lu.example.com", i));
+    }
+  } else {
+    hosts.emplace_back(grpc_core::LocalIpAndPort(server_ports[0]));
+  }
+  gpr_log(GPR_INFO, "target hosts: %s", absl::StrJoin(hosts, ",").c_str());
   XdsServer xds_server;
   if (absl::GetFlag(FLAGS_use_xds)) {
-    xds_server = StartXdsServerAndConfigureBootstrap(server_ports);
+    xds_server = StartXdsServerAndConfigureBootstrap(server_ports, hosts);
   }
   int retval;
   if (benchmark == "call") {
-    retval = RunCallBenchmark(server_ports[0], root, server_scenario_flags,
-                              client_scenario_flags);
+    retval = RunCallBenchmark(server_ports[0], root, hosts,
+                              server_scenario_flags, client_scenario_flags);
   } else if (benchmark == "channel" || benchmark == "channel_multi_address") {
-    retval = RunChannelBenchmark(server_ports, root);
+    retval = RunChannelBenchmark(server_ports, hosts, root);
   } else {
     gpr_log(GPR_INFO, "Not a valid benchmark name");
     retval = 4;
@@ -331,6 +359,7 @@ int main(int argc, char** argv) {
                          it_scenario->second.client);
     if (r != 0) return r;
   }
+  std::cout << "---------Tests Done---------\n";
   grpc_shutdown();
   return 0;
 }

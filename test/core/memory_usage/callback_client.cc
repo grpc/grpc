@@ -29,6 +29,7 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
@@ -43,7 +44,11 @@
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
-ABSL_FLAG(std::string, target, "", "Target host:port");
+// Default value is a single empty address, so we can still get the first
+// element
+ABSL_FLAG(std::vector<std::string>, target, {""},
+          "Target host:port. Multiple targets are supported with connections "
+          "opened in the order the targets are specified");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
 ABSL_FLAG(int, server_pid, 0, "Server's pid");
 ABSL_FLAG(int, size, 50, "Number of channels");
@@ -65,9 +70,11 @@ std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // have the same channel args. Allows for one channel per connection
   channel_args.SetInt("grpc.memory_usage_counter", index);
 
+  auto targets = absl::GetFlag(FLAGS_target);
+
   // Create a channel to the server and a stub
   std::shared_ptr<grpc::Channel> channel =
-      CreateCustomChannel(absl::GetFlag(FLAGS_target), creds, channel_args);
+      CreateCustomChannel(targets[index % targets.size()], creds, channel_args);
   return channel;
 }
 
@@ -131,7 +138,8 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "Client: No target port entered");
     return 1;
   }
-  gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
+  gpr_log(GPR_INFO, "Client Targets: %s",
+          absl::StrJoin(absl::GetFlag(FLAGS_target), ", ").c_str());
   gpr_log(GPR_INFO, "Client Size: %d", absl::GetFlag(FLAGS_size));
 
   // Getting initial memory usage
@@ -145,9 +153,8 @@ int main(int argc, char** argv) {
   int size = absl::GetFlag(FLAGS_size);
   std::vector<std::shared_ptr<grpc::Channel>> channels_list(size);
   for (int i = 0; i < size; ++i) {
-    std::shared_ptr<grpc::Channel> channel = CreateChannelForTest(i);
-    channels_list[i] = channel;
-    UnaryCall(channel)->done.WaitForNotification();
+    channels_list[i] = CreateChannelForTest(i);
+    UnaryCall(channels_list[i])->done.WaitForNotification();
   }
 
   // Getting peak memory usage
@@ -165,7 +172,8 @@ int main(int argc, char** argv) {
   }
 
   std::string prefix;
-  if (absl::StartsWith(absl::GetFlag(FLAGS_target), "xds:")) prefix = "xds ";
+  if (absl::StartsWith(absl::GetFlag(FLAGS_target).front(), "xds:"))
+    prefix = "xds ";
   if (absl::GetFlag(FLAGS_server_pid) == 0) {
     absl::StrAppend(&prefix, "multi_address ");
   }

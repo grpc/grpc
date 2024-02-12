@@ -46,7 +46,9 @@
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/util/test_config.h"
 
-static grpc_channel* channel;
+// Hundred channels max. Should be enough.
+static grpc_channel* channel[100];
+static size_t num_channels;
 static grpc_completion_queue* cq;
 static grpc_op metadata_ops[2];
 static grpc_op status_ops[2];
@@ -86,7 +88,7 @@ static void init_ping_pong_request(int call_idx) {
 
   grpc_slice hostname = grpc_slice_from_static_string("localhost");
   calls[call_idx].call = grpc_channel_create_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+      channel[call_idx % num_channels], nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/Reflector/reflectUnary"), &hostname,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
@@ -151,9 +153,10 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
   op++;
 
   grpc_slice hostname = grpc_slice_from_static_string("localhost");
+  // Will use channels in order
   calls[call_idx].call = grpc_channel_create_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, call_type, &hostname,
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+      channel[call_idx % num_channels], nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
+      call_type, &hostname, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
                                                    snapshot_ops,
                                                    (size_t)(op - snapshot_ops),
@@ -226,7 +229,8 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
   return peak;
 }
 
-ABSL_FLAG(std::string, target, "localhost:443", "Target host:port");
+ABSL_FLAG(std::vector<std::string>, target, {"localhost:443"},
+          "Target host:port");
 ABSL_FLAG(int, warmup, 100, "Warmup iterations");
 ABSL_FLAG(int, benchmark, 1000, "Benchmark iterations");
 ABSL_FLAG(bool, minstack, false, "Use minimal stack");
@@ -255,9 +259,13 @@ int main(int argc, char** argv) {
         const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
   }
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
-
-  channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
-                                grpc_insecure_credentials_create(), &args);
+  auto targets = absl::GetFlag(FLAGS_target);
+  num_channels =
+      targets.size() < 100 ? targets.size() : 100;  // Max - 100 targets
+  for (size_t i = 0; i < num_channels; i++) {
+    channel[i] = grpc_channel_create(targets[i].c_str(),
+                                     grpc_insecure_credentials_create(), &args);
+  }
 
   int call_idx = 0;
   const int warmup_iterations = absl::GetFlag(FLAGS_warmup);
@@ -276,7 +284,9 @@ int main(int argc, char** argv) {
   MemStats client_calls_inflight = peak.first;
   MemStats server_calls_inflight = peak.second;
 
-  grpc_channel_destroy(channel);
+  for (size_t i = 0; i < num_channels; i++) {
+    grpc_channel_destroy(channel[i]);
+  }
   grpc_completion_queue_shutdown(cq);
 
   grpc_event event;
@@ -290,7 +300,7 @@ int main(int argc, char** argv) {
   grpc_shutdown_blocking();
 
   const char* prefix = "";
-  if (absl::StartsWith(absl::GetFlag(FLAGS_target), "xds:")) prefix = "xds ";
+  if (absl::StartsWith(targets.front(), "xds:")) prefix = "xds ";
   printf("---------client stats--------\n");
   printf("%sclient call memory usage: %f bytes per call\n", prefix,
          static_cast<double>(client_calls_inflight.rss -
