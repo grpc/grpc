@@ -157,10 +157,6 @@ bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert);
 // OpenSSL == 1.0.2 return: true always
 bool HasCrlSignBit(X509* cert);
 
-// Verifies the Authority Key Identifier of `crl` and `cert` match.
-// return: true if equal, false otherwise.
-bool VerifyAKIDMatch(X509_CRL* crl, X509* issuer);
-
 // Gets a stable representation of the issuer name from an X509 certificate.
 // return: a std::string of the DER encoding of the X509_NAME issuer name.
 absl::StatusOr<std::string> IssuerFromCert(X509* cert);
