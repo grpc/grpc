@@ -27,4 +27,4 @@ std::shared_ptr<ServerCredentials> ChaoticGoodInsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
