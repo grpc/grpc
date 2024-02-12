@@ -42,7 +42,7 @@ class CallSpine final : public Party {
         arena->New<CallSpine>(event_engine, arena, legacy_context));
   }
 
-  ~CallSpine() {
+  ~CallSpine() override {
     if (legacy_context_is_owned_) {
       for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
         grpc_call_context_element& elem = legacy_context_[i];
