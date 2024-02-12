@@ -1486,8 +1486,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/iomgr_posix.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_posix_cfstream.cc )
   s.files += %w( src/core/lib/iomgr/iomgr_windows.cc )
-  s.files += %w( src/core/lib/iomgr/load_file.cc )
-  s.files += %w( src/core/lib/iomgr/load_file.h )
   s.files += %w( src/core/lib/iomgr/lockfree_event.cc )
   s.files += %w( src/core/lib/iomgr/lockfree_event.h )
   s.files += %w( src/core/lib/iomgr/nameser.h )

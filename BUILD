@@ -969,6 +969,7 @@ grpc_cc_library(
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
         "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1321,7 +1322,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/iomgr_posix.cc",
         "//src/core:lib/iomgr/iomgr_posix_cfstream.cc",
         "//src/core:lib/iomgr/iomgr_windows.cc",
-        "//src/core:lib/iomgr/load_file.cc",
         "//src/core:lib/iomgr/lockfree_event.cc",
         "//src/core:lib/iomgr/polling_entity.cc",
         "//src/core:lib/iomgr/pollset.cc",
@@ -1415,7 +1415,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/gethostname.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
-        "//src/core:lib/iomgr/load_file.h",
         "//src/core:lib/iomgr/lockfree_event.h",
         "//src/core:lib/iomgr/nameser.h",
         "//src/core:lib/iomgr/polling_entity.h",
@@ -1987,6 +1986,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
         "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -3424,6 +3424,7 @@ grpc_cc_library(
         "grpc_security_base",
         "//src/core:error",
         "//src/core:json",
+        "//src/core:load_file",
         "//src/core:useful",
     ],
 )
@@ -3581,6 +3582,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
+        "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:tsi_ssl_types",
@@ -4135,6 +4137,24 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_chaotic_good",
+    srcs = [
+        "src/cpp/ext/chaotic_good.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/chaotic_good.h",
+    ],
+    visibility = ["@grpc:chaotic_good"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
     ],
 )
 

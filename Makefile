@@ -1506,7 +1506,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -2105,7 +2104,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \

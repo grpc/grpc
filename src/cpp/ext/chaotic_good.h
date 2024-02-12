@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2015 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#ifndef GRPC_SRC_CORE_LIB_IOMGR_LOAD_FILE_H
-#define GRPC_SRC_CORE_LIB_IOMGR_LOAD_FILE_H
+#ifndef GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
+#define GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
 
-#include <grpc/support/port_platform.h>
+#include <memory>
 
-#include <stdio.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
 
-#include <grpc/slice.h>
+namespace grpc {
 
-#include "src/core/lib/iomgr/error.h"
+std::shared_ptr<ChannelCredentials> ChaoticGoodInsecureChannelCredentials();
+std::shared_ptr<ServerCredentials> ChaoticGoodInsecureServerCredentials();
 
-// Loads the content of a file into a slice. add_null_terminator will add
-// a NULL terminator if non-zero.
-grpc_error_handle grpc_load_file(const char* filename, int add_null_terminator,
-                                 grpc_slice* output);
+}  // namespace grpc
 
-#endif  // GRPC_SRC_CORE_LIB_IOMGR_LOAD_FILE_H
+#endif  // GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H

@@ -2707,6 +2707,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
 }
 
 TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
+  const absl::Duration timeout = absl::Seconds(5) * grpc_test_slowdown_factor();
   InitXdsClient();
   // Start watches for "foo1" and "foo2".
   auto watcher1 = StartFooWatch("foo1");
@@ -2759,11 +2760,11 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"1", /*response_nonce=*/"A",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  EXPECT_EQ(stream->reads_started(), 1);
+  EXPECT_TRUE(stream->WaitForReadsStarted(1, timeout));
   resource1->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 1);
+  EXPECT_TRUE(stream->WaitForReadsStarted(1, timeout));
   resource2->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 2);
+  EXPECT_TRUE(stream->WaitForReadsStarted(2, timeout));
   resource1 = watcher1->WaitForNextResourceAndHandle();
   ASSERT_NE(resource1, absl::nullopt);
   EXPECT_EQ(resource1->resource->name, "foo1");
@@ -2776,9 +2777,9 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*version_info=*/"2", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
-  EXPECT_EQ(stream->reads_started(), 2);
+  EXPECT_TRUE(stream->WaitForReadsStarted(2, timeout));
   resource1->read_delay_handle.reset();
-  EXPECT_EQ(stream->reads_started(), 3);
+  EXPECT_TRUE(stream->WaitForReadsStarted(3, timeout));
   // Cancel watch.
   CancelFooWatch(watcher1.get(), "foo1");
   request = WaitForRequest(stream.get());
