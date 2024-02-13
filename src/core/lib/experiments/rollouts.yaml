@@ -46,6 +46,11 @@
   default: false
 - name: canary_client_privacy
   default: false
+- name: chaotic_good
+  default:
+    ios: broken
+    posix: false
+    windows: broken
 - name: client_idleness
   default: true
 - name: client_privacy
