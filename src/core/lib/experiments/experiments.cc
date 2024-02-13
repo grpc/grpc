@@ -183,11 +183,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -196,7 +191,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     kDefaultForDebugOnly, true},
+     false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -456,11 +451,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -469,7 +459,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     kDefaultForDebugOnly, true},
+     false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -729,11 +719,6 @@ const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
 const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -742,7 +727,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     kDefaultForDebugOnly, true},
+     false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
