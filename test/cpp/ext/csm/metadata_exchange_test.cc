@@ -155,7 +155,7 @@ class MetadataExchangeTest
     : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
  protected:
-  void Init(absl::flat_hash_set<absl::string_view> metric_names,
+  void Init(const std::vector<absl::string_view>& metric_names,
             bool enable_client_side_injector = true,
             std::map<std::string, std::string> labels_to_inject = {}) {
     const char* kBootstrap =
@@ -178,7 +178,7 @@ class MetadataExchangeTest
     }
     OpenTelemetryPluginEnd2EndTest::Init(std::move(
         Options()
-            .set_metric_names(std::move(metric_names))
+            .set_metric_names(metric_names)
             .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
                 GetParam().GetTestResource().GetAttributes()))
             .set_labels_to_inject(std::move(labels_to_inject))
