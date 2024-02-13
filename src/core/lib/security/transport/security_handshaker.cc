@@ -603,8 +603,8 @@ class FailHandshaker : public Handshaker {
   }
 
  private:
-  absl::Status status_;
   ~FailHandshaker() override = default;
+  absl::Status status_;
 };
 
 //
