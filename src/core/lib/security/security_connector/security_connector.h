@@ -80,6 +80,13 @@ class grpc_security_connector
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) = 0;
 
+  // Enriches auth_context with extra information from local (self) peer.
+  // Callee takes ownership of the local peer object.
+  // When done, sets *auth_context.
+  virtual void enrich_auth_context(
+      tsi_peer local_peer,
+      grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) = 0;
+
   // Cancels the pending check_peer() request associated with on_peer_checked.
   // If there is no such request pending, this is a no-op.
   virtual void cancel_check_peer(grpc_closure* on_peer_checked,

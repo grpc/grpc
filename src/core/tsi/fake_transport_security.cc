@@ -545,6 +545,22 @@ static tsi_result fake_handshaker_result_extract_peer(
   return result;
 }
 
+static tsi_result fake_handshaker_result_extract_local_peer(
+    const tsi_handshaker_result* /*self*/, tsi_peer* local_peer) {
+  // Construct a tsi_peer with 1 property: certificate type, security_level.
+  tsi_result result = tsi_construct_peer(2, local_peer);
+  if (result != TSI_OK) return result;
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_FAKE_CERTIFICATE_TYPE,
+      &local_peer->properties[0]);
+  if (result != TSI_OK) tsi_peer_destruct(local_peer);
+  result = tsi_construct_string_peer_property_from_cstring(
+      TSI_SECURITY_LEVEL_PEER_PROPERTY,
+      tsi_security_level_to_string(TSI_SECURITY_NONE), &local_peer->properties[1]);
+  if (result != TSI_OK) tsi_peer_destruct(local_peer);
+  return result;
+}
+
 static tsi_result fake_handshaker_result_get_frame_protector_type(
     const tsi_handshaker_result* /*self*/,
     tsi_frame_protector_type* frame_protector_type) {
@@ -587,6 +603,7 @@ static void fake_handshaker_result_destroy(tsi_handshaker_result* self) {
 
 static const tsi_handshaker_result_vtable handshaker_result_vtable = {
     fake_handshaker_result_extract_peer,
+    fake_handshaker_result_extract_local_peer,
     fake_handshaker_result_get_frame_protector_type,
     fake_handshaker_result_create_zero_copy_grpc_protector,
     fake_handshaker_result_create_frame_protector,
