@@ -356,10 +356,11 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       });
   connection_state->timer_handle =
       RunAfter(timeout, [this, connection_state]() {
-        grpc_core::MutexLock lock(&connection_state->mu);
+        grpc_core::ReleasableMutexLock lock(&connection_state->mu);
         if (CancelConnectFromDeadlineTimer(connection_state.get())) {
-          connection_state->on_connected_user_callback(
-              absl::DeadlineExceededError("Connection timed out"));
+          auto cb = std::move(connection_state->on_connected_user_callback);
+          lock.Release();
+          cb(absl::DeadlineExceededError("Connection timed out"));
         }
         // else: The connection attempt could not be canceled. We can assume
         // the connection callback will be called.
@@ -380,8 +381,12 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
       connection_state->socket->Shutdown(DEBUG_LOCATION, "ConnectEx");
       Run([connection_state = std::move(connection_state),
            status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
-        grpc_core::MutexLock lock(&connection_state->mu);
-        connection_state->on_connected_user_callback(status);
+        EventEngine::OnConnectCallback cb;
+        {
+          grpc_core::MutexLock lock(&connection_state->mu);
+          cb = std::move(connection_state->on_connected_user_callback);
+        }
+        cb(status);
       });
       return EventEngine::ConnectionHandle::kInvalid;
     }
