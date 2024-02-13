@@ -24,6 +24,8 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
+const char* const description_absl_base64 = "Use abseil base64 functions.";
+const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -193,6 +195,8 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
+     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -297,6 +301,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
+const char* const description_absl_base64 = "Use abseil base64 functions.";
+const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -466,6 +472,8 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
+     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -570,6 +578,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
+const char* const description_absl_base64 = "Use abseil base64 functions.";
+const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -739,6 +749,8 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
+     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,

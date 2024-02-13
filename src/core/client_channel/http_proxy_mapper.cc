@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -45,6 +46,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -258,11 +260,17 @@ absl::optional<std::string> HttpProxyMapper::MapName(
                     MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")));
   if (user_cred.has_value()) {
     // Use base64 encoding for user credentials as stated in RFC 7617
-    auto encoded_user_cred = UniquePtr<char>(
-        grpc_base64_encode(user_cred->data(), user_cred->length(), 0, 0));
+    std::string encoded_user_cred;
+    if (IsAbslBase64Enabled()) {
+      encoded_user_cred = absl::Base64Escape(*user_cred);
+    } else {
+      UniquePtr<char> tmp(
+          grpc_base64_encode(user_cred->data(), user_cred->length(), 0, 0));
+      encoded_user_cred = tmp.get();
+    }
     *args = args->Set(
         GRPC_ARG_HTTP_CONNECT_HEADERS,
-        absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred.get()));
+        absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred));
   }
   return name_to_resolve;
 }

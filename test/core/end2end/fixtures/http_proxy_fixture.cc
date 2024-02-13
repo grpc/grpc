@@ -28,7 +28,9 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -62,7 +64,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/slice/b64.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_http_proxy {
@@ -490,19 +491,14 @@ static void on_server_connect_done(void* arg, grpc_error_handle error) {
 /// Basic <base64_encoded_expected_cred>
 /// Returns true if it matches, false otherwise
 ///
-static bool proxy_auth_header_matches(char* proxy_auth_header_val,
-                                      char* expected_cred) {
-  GPR_ASSERT(proxy_auth_header_val != nullptr);
-  GPR_ASSERT(expected_cred != nullptr);
-  if (strncmp(proxy_auth_header_val, "Basic ", 6) != 0) {
+static bool proxy_auth_header_matches(absl::string_view proxy_auth_header_val,
+                                      absl::string_view expected_cred) {
+  if (!absl::ConsumePrefix(&proxy_auth_header_val, "Basic ")) {
     return false;
   }
-  proxy_auth_header_val += 6;
-  grpc_slice decoded_slice = grpc_base64_decode(proxy_auth_header_val, 0);
-  const bool header_matches =
-      grpc_slice_str_cmp(decoded_slice, expected_cred) == 0;
-  grpc_slice_unref(decoded_slice);
-  return header_matches;
+  std::string decoded;
+  absl::Base64Unescape(proxy_auth_header_val, &decoded);
+  return expected_cred == decoded;
 }
 
 // Callback to read the HTTP CONNECT request.
