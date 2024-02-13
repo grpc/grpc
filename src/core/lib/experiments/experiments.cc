@@ -171,6 +171,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -283,7 +285,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,
@@ -444,6 +447,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -556,7 +561,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,
@@ -717,6 +723,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -829,7 +837,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,

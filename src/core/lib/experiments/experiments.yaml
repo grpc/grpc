@@ -282,9 +282,10 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/02/10
-  owner: ctiller@google.com
+  expiry: 2024/03/31
+  owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
+  requires: ["event_engine_client"]
 - name: write_size_cap
   description:
     Limit outgoing writes proportional to the target write size
