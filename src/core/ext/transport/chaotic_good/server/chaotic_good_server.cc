@@ -331,37 +331,29 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     ControlEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
+  self->connection_->NewConnectionID();
+  SettingsFrame frame;
+  frame.headers =
+      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
+                       absl::nullopt}
+          .ToMetadataBatch(GetContext<Arena>());
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
-      [self]() {
-        self->connection_->NewConnectionID();
-        SettingsFrame frame;
-        frame.headers =
-            SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                             absl::nullopt}
-                .ToMetadataBatch(GetContext<Arena>());
-        auto write_buffer =
-            frame.Serialize(&self->connection_->hpack_compressor_);
-        return self->connection_->endpoint_.Write(
-            std::move(write_buffer.control));
-      },
+      self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       WaitForDataEndpointSetup(self));
 }
 
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     DataEndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self) {
+  // Send data endpoint setting frame
+  SettingsFrame frame;
+  frame.headers =
+      SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
+                       self->connection_->data_alignment_}
+          .ToMetadataBatch(GetContext<Arena>());
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
-      [self]() {
-        // Send data endpoint setting frame
-        SettingsFrame frame;
-        frame.headers =
-            SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
-                             self->connection_->data_alignment_}
-                .ToMetadataBatch(GetContext<Arena>());
-        auto write_buffer =
-            frame.Serialize(&self->connection_->hpack_compressor_);
-        return self->connection_->endpoint_.Write(
-            std::move(write_buffer.control));
-      },
+      self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       [self]() mutable {
         MutexLock lock(&self->connection_->listener_->mu_);
         // Set endpoint to latch
@@ -380,8 +372,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     EndpointWriteSettingsFrame(RefCountedPtr<HandshakingState> self,
                                bool is_control_endpoint) {
-  return If(is_control_endpoint, ControlEndpointWriteSettingsFrame(self),
-            DataEndpointWriteSettingsFrame(self));
+  return If(
+      is_control_endpoint,
+      [&self] { return ControlEndpointWriteSettingsFrame(self); },
+      [&self] { return DataEndpointWriteSettingsFrame(self); });
 }
 
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
