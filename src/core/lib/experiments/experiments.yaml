@@ -65,7 +65,7 @@
   expiry: 2024/09/09
   owner: ctiller@google.com
   requires: [promise_based_client_call, promise_based_server_call]
-  test_tags: [core_end2end_test]
+  test_tags: []
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
   expiry: 2024/03/15
