@@ -1124,12 +1124,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       if (subchannel_call_tracker != nullptr) {
         *subchannel_call_tracker = std::move(complete->subchannel_call_tracker);
       } else {
-        CompleteCall(std::move(complete->subchannel_call_tracker), address);
+        ReportCompletionToCallTracker(
+            std::move(complete->subchannel_call_tracker), address);
       }
     }
     return address;
   }
-  void CompleteCall(
+
+  void ReportCompletionToCallTracker(
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
           subchannel_call_tracker,
       absl::string_view address, absl::Status status = absl::OkStatus()) {
