@@ -565,13 +565,9 @@ TEST_F(CrlUtils, VerifyIssuerNameNullCrlAndCert) {
 
 TEST_F(CrlUtils, HasCrlSignBitExists) { EXPECT_TRUE(HasCrlSignBit(root_ca_)); }
 
-// On OpenSSL 1.0.2 this would be expected to just pass all the time because
-// X509_get_key_usage doesn't exist, so we make it a passthrough
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
 TEST_F(CrlUtils, HasCrlSignBitMissing) {
   EXPECT_FALSE(HasCrlSignBit(leaf_cert_));
 }
-#endif  // OPENSSL_VERSION_NUMBEr < 0x10100000
 
 TEST_F(CrlUtils, HasCrlSignBitNullCert) {
   EXPECT_FALSE(HasCrlSignBit(nullptr));
