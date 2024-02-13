@@ -247,10 +247,9 @@ class PromiseEndpoint {
 
   struct WriteState : public RefCounted<WriteState> {
     enum State : uint8_t {
-      kIdle,       // Not writing.
-      kWriting,    // Write started, but not completed.
-      kWritten,    // Write completed.
-      kCancelled,  // A started write was cancelled (by not polling the result).
+      kIdle,     // Not writing.
+      kWriting,  // Write started, but not completed.
+      kWritten,  // Write completed.
     };
 
     std::atomic<State> state{kIdle};
