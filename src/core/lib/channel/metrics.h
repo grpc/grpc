@@ -34,21 +34,20 @@ namespace grpc_core {
 // Static only.
 class GlobalInstrumentsRegistry {
  public:
-  enum class Type {
+  enum class ValueType {
     kUndefined,
     kUInt64,
     kDouble,
   };
-  struct GlobalCounterDescriptor {
-    Type type;
-    absl::string_view name;
-    absl::string_view description;
-    absl::string_view unit;
-    std::vector<absl::string_view> label_keys;
-    std::vector<absl::string_view> optional_label_keys;
+  enum class InstrumentType {
+    kUndefined,
+    kCounter,
+    kHistogram,
   };
-  struct GlobalHistogramDescriptor {
-    Type type;
+  struct GlobalInstrumentDescriptor {
+    ValueType value_type;
+    InstrumentType instrument_type;
+    uint32_t index;
     absl::string_view name;
     absl::string_view description;
     absl::string_view unit;
@@ -56,6 +55,9 @@ class GlobalInstrumentsRegistry {
     std::vector<absl::string_view> optional_label_keys;
   };
   struct GlobalHandle {
+    // This is the index for the corresponding registered instrument that
+    // StatsPlugins can use to uniquely identify an instrument. This is not
+    // guaranteed to be stable and may change between different versions.
     uint32_t index;
   };
   struct GlobalUInt64CounterHandle : GlobalHandle {};
@@ -80,24 +82,13 @@ class GlobalInstrumentsRegistry {
       absl::string_view name, absl::string_view description,
       absl::string_view unit, std::vector<absl::string_view> label_keys,
       std::vector<absl::string_view> optional_label_keys);
-
-  static const GlobalCounterDescriptor& GetCounterDescriptor(
-      GlobalUInt64CounterHandle handle);
-  static const GlobalCounterDescriptor& GetCounterDescriptor(
-      GlobalDoubleCounterHandle handle);
-  static const GlobalHistogramDescriptor& GetHistogramDescriptor(
-      GlobalUInt64HistogramHandle handle);
-  static const GlobalHistogramDescriptor& GetHistogramDescriptor(
-      GlobalDoubleHistogramHandle handle);
   // Getter functions for StatsPlugins to query registered counters/histograms.
-  static const std::vector<GlobalCounterDescriptor>& counters();
-  static const std::vector<GlobalHistogramDescriptor>& histograms();
+  static const std::vector<GlobalInstrumentDescriptor>& instruments();
 
   GlobalInstrumentsRegistry() = delete;
 
  private:
-  static std::vector<GlobalCounterDescriptor> counters_;
-  static std::vector<GlobalHistogramDescriptor> histograms_;
+  static std::vector<GlobalInstrumentDescriptor> instruments_;
 };
 
 // Interface.

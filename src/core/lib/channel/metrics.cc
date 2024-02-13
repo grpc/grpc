@@ -20,24 +20,26 @@
 
 namespace grpc_core {
 
-std::vector<GlobalInstrumentsRegistry::GlobalCounterDescriptor>
-    GlobalInstrumentsRegistry::counters_;
-std::vector<GlobalInstrumentsRegistry::GlobalHistogramDescriptor>
-    GlobalInstrumentsRegistry::histograms_;
+std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>
+    GlobalInstrumentsRegistry::instruments_;
 
 GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
 GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  counters_.push_back({.type = Type::kUInt64,
-                       .name = name,
-                       .description = description,
-                       .unit = unit,
-                       .label_keys = std::move(label_keys),
-                       .optional_label_keys = std::move(optional_label_keys)});
+  uint32_t index = instruments_.size();
+  instruments_.push_back(
+      {.value_type = ValueType::kUInt64,
+       .instrument_type = InstrumentType::kCounter,
+       .index = index,
+       .name = name,
+       .description = description,
+       .unit = unit,
+       .label_keys = std::move(label_keys),
+       .optional_label_keys = std::move(optional_label_keys)});
   GlobalUInt64CounterHandle handle;
-  handle.index = counters_.size() - 1;
+  handle.index = index;
   return handle;
 }
 
@@ -46,14 +48,18 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  counters_.push_back({.type = Type::kDouble,
-                       .name = name,
-                       .description = description,
-                       .unit = unit,
-                       .label_keys = std::move(label_keys),
-                       .optional_label_keys = std::move(optional_label_keys)});
+  uint32_t index = instruments_.size();
+  instruments_.push_back(
+      {.value_type = ValueType::kDouble,
+       .instrument_type = InstrumentType::kCounter,
+       .index = index,
+       .name = name,
+       .description = description,
+       .unit = unit,
+       .label_keys = std::move(label_keys),
+       .optional_label_keys = std::move(optional_label_keys)});
   GlobalDoubleCounterHandle handle;
-  handle.index = counters_.size() - 1;
+  handle.index = index;
   return handle;
 }
 
@@ -62,15 +68,18 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  histograms_.push_back(
-      {.type = Type::kUInt64,
+  uint32_t index = instruments_.size();
+  instruments_.push_back(
+      {.value_type = ValueType::kUInt64,
+       .instrument_type = InstrumentType::kHistogram,
+       .index = index,
        .name = name,
        .description = description,
        .unit = unit,
        .label_keys = std::move(label_keys),
        .optional_label_keys = std::move(optional_label_keys)});
   GlobalUInt64HistogramHandle handle;
-  handle.index = histograms_.size() - 1;
+  handle.index = index;
   return handle;
 }
 
@@ -79,58 +88,24 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  histograms_.push_back(
-      {.type = Type::kDouble,
+  uint32_t index = instruments_.size();
+  instruments_.push_back(
+      {.value_type = ValueType::kDouble,
+       .instrument_type = InstrumentType::kHistogram,
+       .index = index,
        .name = name,
        .description = description,
        .unit = unit,
        .label_keys = std::move(label_keys),
        .optional_label_keys = std::move(optional_label_keys)});
   GlobalDoubleHistogramHandle handle;
-  handle.index = histograms_.size() - 1;
+  handle.index = index;
   return handle;
 }
 
-const GlobalInstrumentsRegistry::GlobalCounterDescriptor&
-GlobalInstrumentsRegistry::GetCounterDescriptor(
-    GlobalUInt64CounterHandle handle) {
-  GPR_ASSERT(handle.index < counters_.size());
-  GPR_ASSERT(counters_[handle.index].type == Type::kUInt64);
-  return counters_[handle.index];
-}
-
-const GlobalInstrumentsRegistry::GlobalCounterDescriptor&
-GlobalInstrumentsRegistry::GetCounterDescriptor(
-    GlobalDoubleCounterHandle handle) {
-  GPR_ASSERT(handle.index < counters_.size());
-  GPR_ASSERT(counters_[handle.index].type == Type::kDouble);
-  return counters_[handle.index];
-}
-
-const GlobalInstrumentsRegistry::GlobalHistogramDescriptor&
-GlobalInstrumentsRegistry::GetHistogramDescriptor(
-    GlobalUInt64HistogramHandle handle) {
-  GPR_ASSERT(handle.index < histograms_.size());
-  GPR_ASSERT(counters_[handle.index].type == Type::kUInt64);
-  return histograms_[handle.index];
-}
-
-const GlobalInstrumentsRegistry::GlobalHistogramDescriptor&
-GlobalInstrumentsRegistry::GetHistogramDescriptor(
-    GlobalDoubleHistogramHandle handle) {
-  GPR_ASSERT(handle.index < histograms_.size());
-  GPR_ASSERT(counters_[handle.index].type == Type::kDouble);
-  return histograms_[handle.index];
-}
-
-const std::vector<GlobalInstrumentsRegistry::GlobalCounterDescriptor>&
-GlobalInstrumentsRegistry::counters() {
-  return counters_;
-}
-
-const std::vector<GlobalInstrumentsRegistry::GlobalHistogramDescriptor>&
-GlobalInstrumentsRegistry::histograms() {
-  return histograms_;
+const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+GlobalInstrumentsRegistry::instruments() {
+  return instruments_;
 }
 
 std::atomic<GlobalStatsPluginRegistry*> GlobalStatsPluginRegistry::self_{

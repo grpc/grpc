@@ -53,12 +53,6 @@ std::string Append(const std::vector<absl::string_view>& svs) {
   return res;
 }
 
-template <class T>
-std::string MakeKey(T t) {
-  return Append({t.name, t.description, t.unit}) + Append(t.label_keys) +
-         Append(t.optional_label_keys);
-}
-
 std::string MakeKeyAttributes(
     const std::vector<absl::string_view>& label_keys,
     const std::vector<absl::string_view>& label_values,
@@ -97,39 +91,31 @@ class FakeStatsPlugin : public StatsPlugin {
     // just ignore it here. This would also prevent us from having to lock the
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetCounterDescriptor(handle);
-    auto iter = uint64_counters_.find(MakeKey(descriptor));
-    ASSERT_NE(iter, uint64_counters_.end());
+    auto iter = uint64_counters_.find(handle.index);
+    ASSERT_TRUE(iter != uint64_counters_.end());
     iter->second.Add(value, label_values, optional_values);
   }
   void AddCounter(GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
                   double value, std::vector<absl::string_view> label_values,
                   std::vector<absl::string_view> optional_values) override {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetCounterDescriptor(handle);
-    auto iter = double_counters_.find(MakeKey(descriptor));
-    ASSERT_NE(iter, double_counters_.end());
+    auto iter = double_counters_.find(handle.index);
+    ASSERT_TRUE(iter != double_counters_.end());
     iter->second.Add(value, label_values, optional_values);
   }
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       uint64_t value, std::vector<absl::string_view> label_values,
       std::vector<absl::string_view> optional_values) override {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
-    auto iter = uint64_histograms_.find(MakeKey(descriptor));
-    ASSERT_NE(iter, uint64_histograms_.end());
+    auto iter = uint64_histograms_.find(handle.index);
+    ASSERT_TRUE(iter != uint64_histograms_.end());
     iter->second.Record(value, label_values, optional_values);
   }
   void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, std::vector<absl::string_view> label_values,
       std::vector<absl::string_view> optional_values) override {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
-    auto iter = double_histograms_.find(MakeKey(descriptor));
-    ASSERT_NE(iter, double_histograms_.end());
+    auto iter = double_histograms_.find(handle.index);
+    ASSERT_TRUE(iter != double_histograms_.end());
     iter->second.Record(value, label_values, optional_values);
   }
 
@@ -137,9 +123,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       const std::vector<absl::string_view>& label_values,
       const std::vector<absl::string_view>& optional_values) {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetCounterDescriptor(handle);
-    auto iter = uint64_counters_.find(MakeKey(descriptor));
+    auto iter = uint64_counters_.find(handle.index);
     FATAL_ASSERT_TRUE(iter != uint64_counters_.end());
     return iter->second.GetValue(label_values, optional_values);
   }
@@ -147,9 +131,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
       const std::vector<absl::string_view>& label_values,
       const std::vector<absl::string_view>& optional_values) {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetCounterDescriptor(handle);
-    auto iter = double_counters_.find(MakeKey(descriptor));
+    auto iter = double_counters_.find(handle.index);
     FATAL_ASSERT_TRUE(iter != double_counters_.end());
     return iter->second.GetValue(label_values, optional_values);
   }
@@ -157,9 +139,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       const std::vector<absl::string_view>& label_values,
       const std::vector<absl::string_view>& optional_values) {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
-    auto iter = uint64_histograms_.find(MakeKey(descriptor));
+    auto iter = uint64_histograms_.find(handle.index);
     FATAL_ASSERT_TRUE(iter != uint64_histograms_.end());
     return iter->second.GetValues(label_values, optional_values);
   }
@@ -167,9 +147,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       const std::vector<absl::string_view>& label_values,
       const std::vector<absl::string_view>& optional_values) {
-    const auto& descriptor =
-        GlobalInstrumentsRegistry::GetHistogramDescriptor(handle);
-    auto iter = double_histograms_.find(MakeKey(descriptor));
+    auto iter = double_histograms_.find(handle.index);
     FATAL_ASSERT_TRUE(iter != double_histograms_.end());
     return iter->second.GetValues(label_values, optional_values);
   }
@@ -181,28 +159,32 @@ class FakeStatsPlugin : public StatsPlugin {
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_selector)
       : target_selector_(std::move(target_selector)) {
-    for (const auto& descriptor : GlobalInstrumentsRegistry::counters()) {
-      if (descriptor.type == GlobalInstrumentsRegistry::Type::kUInt64) {
-        uint64_counters_.emplace(MakeKey(descriptor), descriptor);
+    for (const auto& descriptor : GlobalInstrumentsRegistry::instruments()) {
+      if (descriptor.instrument_type ==
+          GlobalInstrumentsRegistry::InstrumentType::kCounter) {
+        if (descriptor.value_type ==
+            GlobalInstrumentsRegistry::ValueType::kUInt64) {
+          uint64_counters_.emplace(descriptor.index, descriptor);
+        } else {
+          double_counters_.emplace(descriptor.index, descriptor);
+        }
       } else {
-        EXPECT_EQ(descriptor.type, GlobalInstrumentsRegistry::Type::kDouble);
-        double_counters_.emplace(MakeKey(descriptor), descriptor);
-      }
-    }
-    for (const auto& descriptor : GlobalInstrumentsRegistry::histograms()) {
-      if (descriptor.type == GlobalInstrumentsRegistry::Type::kUInt64) {
-        uint64_histograms_.emplace(MakeKey(descriptor), descriptor);
-      } else {
-        EXPECT_EQ(descriptor.type, GlobalInstrumentsRegistry::Type::kDouble);
-        double_histograms_.emplace(MakeKey(descriptor), descriptor);
+        EXPECT_EQ(descriptor.instrument_type,
+                  GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+        if (descriptor.value_type ==
+            GlobalInstrumentsRegistry::ValueType::kUInt64) {
+          uint64_histograms_.emplace(descriptor.index, descriptor);
+        } else {
+          double_histograms_.emplace(descriptor.index, descriptor);
+        }
       }
     }
   }
 
-  template <class T, class U>
+  template <class T>
   class Counter {
    public:
-    explicit Counter(U u)
+    explicit Counter(GlobalInstrumentsRegistry::GlobalInstrumentDescriptor u)
         : name_(u.name),
           description_(u.description),
           unit_(u.unit),
@@ -239,10 +221,10 @@ class FakeStatsPlugin : public StatsPlugin {
     absl::flat_hash_map<std::string, T> storage_;
   };
 
-  template <class T, class U>
+  template <class T>
   class Histogram {
    public:
-    explicit Histogram(U u)
+    explicit Histogram(GlobalInstrumentsRegistry::GlobalInstrumentDescriptor u)
         : name_(u.name),
           description_(u.description),
           unit_(u.unit),
@@ -281,22 +263,10 @@ class FakeStatsPlugin : public StatsPlugin {
 
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
   // Instruments.
-  absl::flat_hash_map<
-      std::string,
-      Counter<uint64_t, GlobalInstrumentsRegistry::GlobalCounterDescriptor>>
-      uint64_counters_;
-  absl::flat_hash_map<
-      std::string,
-      Counter<double, GlobalInstrumentsRegistry::GlobalCounterDescriptor>>
-      double_counters_;
-  absl::flat_hash_map<
-      std::string,
-      Histogram<uint64_t, GlobalInstrumentsRegistry::GlobalHistogramDescriptor>>
-      uint64_histograms_;
-  absl::flat_hash_map<
-      std::string,
-      Histogram<double, GlobalInstrumentsRegistry::GlobalHistogramDescriptor>>
-      double_histograms_;
+  absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_;
+  absl::flat_hash_map<uint32_t, Counter<double>> double_counters_;
+  absl::flat_hash_map<uint32_t, Histogram<uint64_t>> uint64_histograms_;
+  absl::flat_hash_map<uint32_t, Histogram<double>> double_histograms_;
 };
 
 // TODO(yijiem): Move this to test/core/util/fake_stats_plugin.h
