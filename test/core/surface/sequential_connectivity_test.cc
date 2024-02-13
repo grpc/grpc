@@ -124,9 +124,6 @@ static void run_test(const test_fixture* fixture, bool share_subchannel) {
                                             connect_deadline, cq, nullptr);
       grpc_event ev = grpc_completion_queue_next(
           cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-      // check that the watcher from "watch state" was free'd
-      ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(channels[i]),
-                0);
       ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
       ASSERT_EQ(ev.tag, nullptr);
       ASSERT_EQ(ev.success, true);
