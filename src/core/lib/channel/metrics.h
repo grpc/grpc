@@ -56,8 +56,9 @@ class GlobalInstrumentsRegistry {
   };
   struct GlobalHandle {
     // This is the index for the corresponding registered instrument that
-    // StatsPlugins can use to uniquely identify an instrument. This is not
-    // guaranteed to be stable and may change between different versions.
+    // StatsPlugins can use to uniquely identify an instrument in the current
+    // process. Though this is not guaranteed to be stable between different
+    // runs or between different versions.
     uint32_t index;
   };
   struct GlobalUInt64CounterHandle : GlobalHandle {};
