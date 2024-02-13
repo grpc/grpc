@@ -811,6 +811,12 @@ TEST_P(End2endServerTryCancelTest, BidiStreamServerCancelAfter) {
   TestBidiStreamServerCancel(CANCEL_AFTER_PROCESSING, 5);
 }
 
+TEST_P(End2endTest, WaitForConnected) {
+  ResetStub();
+  EXPECT_TRUE(
+      channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10000)));
+}
+
 TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
   // User-Agent is an HTTP header for HTTP transports only
   if (GetParam().inproc()) {

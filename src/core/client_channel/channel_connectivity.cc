@@ -70,6 +70,9 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   grpc_core::ClientChannelFilter* client_channel =
       grpc_core::ClientChannelFilter::GetFromChannel(channel);
   if (GPR_UNLIKELY(client_channel == nullptr)) {
+    if (channel->target() == "inproc") {
+      return GRPC_CHANNEL_READY;
+    }
     if (grpc_core::IsLameChannel(channel)) {
       return GRPC_CHANNEL_TRANSIENT_FAILURE;
     }
