@@ -664,9 +664,9 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
         absl::Status(handshaker.status().code(),
                      absl::StrCat("Failed to create security handshaker: ",
                                   handshaker.status().message())));
+  } else if (*handshaker == nullptr) {
     // TODO(gtcooke94) Once all TSI impls are updated to pass StatusOr<> instead
     // of null, we should change this to use absl::InternalError().
-  } else if (*handshaker == nullptr) {
     return MakeRefCounted<FailHandshaker>(
         absl::UnknownError("Failed to create security handshaker."));
   } else {
