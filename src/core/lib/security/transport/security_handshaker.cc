@@ -592,16 +592,14 @@ class FailHandshaker : public Handshaker {
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
-    grpc_error_handle error = GRPC_ERROR_CREATE(absl::StrCat(
-        "Failed to create security handshaker: ", status_.ToString()));
-    grpc_endpoint_shutdown(args->endpoint, error);
+    grpc_endpoint_shutdown(args->endpoint, status_);
     grpc_endpoint_destroy(args->endpoint);
     args->endpoint = nullptr;
     args->args = ChannelArgs();
     grpc_slice_buffer_destroy(args->read_buffer);
     gpr_free(args->read_buffer);
     args->read_buffer = nullptr;
-    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, status_);
   }
 
  private:
