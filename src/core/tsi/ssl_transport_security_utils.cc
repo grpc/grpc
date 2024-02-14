@@ -309,7 +309,9 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
   if (len <= 0) {
     return absl::InvalidArgumentError("Could not get AKID from certificate.");
   }
-  return std::string(reinterpret_cast<char const*>(buf), len);
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
 }
 
 absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
@@ -327,7 +329,9 @@ absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
   if (len <= 0) {
     return absl::InvalidArgumentError("Could not get AKID from crlificate.");
   }
-  return std::string(reinterpret_cast<char const*>(buf), len);
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
 }
 
 absl::StatusOr<std::string> IssuerFromCert(X509* cert) {

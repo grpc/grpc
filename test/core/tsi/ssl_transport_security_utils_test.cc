@@ -56,6 +56,9 @@ const char* kIntermediateCrlIssuer =
 const char* kLeafCert =
     "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.pem";
 const char* kEvilCa = "test/core/tsi/test_creds/crl_data/evil_ca.pem";
+const char* kCaWithAkid = "test/core/tsi/test_creds/crl_data/ca_with_akid.pem";
+const char* kCrlWithAkid =
+    "test/core/tsi/test_creds/crl_data/crl_with_akid.crl";
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
@@ -462,6 +465,9 @@ class CrlUtils : public ::testing::Test {
     ASSERT_EQ(invalid_signature_crl.status(), absl::OkStatus())
         << invalid_signature_crl.status();
     invalid_signature_crl_ = ReadCrl(invalid_signature_crl->as_string_view());
+    absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid, false);
+    ASSERT_EQ(akid_crl.status(), absl::OkStatus()) << akid_crl.status();
+    akid_crl_ = ReadCrl(akid_crl->as_string_view());
 
     absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer, false);
     ASSERT_EQ(root_ca.status(), absl::OkStatus());
@@ -476,26 +482,34 @@ class CrlUtils : public ::testing::Test {
     absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa, false);
     ASSERT_EQ(evil_ca.status(), absl::OkStatus());
     evil_ca_ = ReadPemCert(evil_ca->as_string_view());
+
+    absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid, false);
+    ASSERT_EQ(ca_with_akid.status(), absl::OkStatus());
+    ca_with_akid_ = ReadPemCert(ca_with_akid->as_string_view());
   }
 
   void TearDown() override {
     X509_CRL_free(root_crl_);
     X509_CRL_free(intermediate_crl_);
     X509_CRL_free(invalid_signature_crl_);
+    X509_CRL_free(akid_crl_);
     X509_free(root_ca_);
     X509_free(intermediate_ca_);
     X509_free(leaf_cert_);
     X509_free(evil_ca_);
+    X509_free(ca_with_akid_);
   }
 
  protected:
   X509_CRL* root_crl_;
   X509_CRL* intermediate_crl_;
   X509_CRL* invalid_signature_crl_;
+  X509_CRL* akid_crl_;
   X509* root_ca_;
   X509* intermediate_ca_;
   X509* leaf_cert_;
   X509* evil_ca_;
+  X509* ca_with_akid_;
 };
 
 TEST_F(CrlUtils, VerifySignatureValid) {
@@ -623,14 +637,9 @@ TEST_F(CrlUtils, IssuerFromCertNull) {
   EXPECT_EQ(issuer.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
-TEST(CrlUtils, VerifyAKIDMatch) {
-  absl::StatusOr<Slice> crl_slice = LoadFile(kValidCrl, false);
-  ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
-  absl::StatusOr<Slice> issuer_slice = LoadFile(kIntermediateCrlIssuer, false);
-  ASSERT_EQ(issuer_slice.status(), absl::OkStatus());
-  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
-  X509* issuer = ReadPemCert(issuer_slice->as_string_view());
-  EXPECT_TRUE(VerifyAKIDMatch(crl, issuer));
+TEST_F(CrlUtils, Akid) {
+  auto akid = AkidFromCertificate(ca_with_akid_);
+  EXPECT_EQ(akid.status(), absl::OkStatus());
 }
 
 }  // namespace testing
