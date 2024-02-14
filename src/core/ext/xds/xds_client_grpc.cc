@@ -53,13 +53,13 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -109,13 +109,9 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
               "environment variable: %s",
               path->c_str());
     }
-    grpc_slice contents;
-    grpc_error_handle error =
-        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!error.ok()) return grpc_error_to_absl_status(error);
-    std::string contents_str(StringViewFromSlice(contents));
-    CSliceUnref(contents);
-    return contents_str;
+    auto contents = LoadFile(*path, /*add_null_terminator=*/true);
+    if (!contents.ok()) return contents.status();
+    return std::string(contents->as_string_view());
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
   auto env_config = GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");

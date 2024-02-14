@@ -15,6 +15,7 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/end2end/fuzzers/server_fuzzer.h"
 
@@ -28,9 +29,14 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
             [next = uint64_t(0)]() mutable {
               return absl::StrCat(absl::Hex(next++));
             });
-        auto port =
-            listener->Bind(absl::StrCat("ipv4:0.0.0.0:", port_num).c_str());
+        auto port = listener->Bind(
+            grpc_event_engine::experimental::URIToResolvedAddress(
+                absl::StrCat("ipv4:0.0.0.0:", port_num))
+                .value());
         GPR_ASSERT(port.ok());
         GPR_ASSERT(port.value() == port_num);
+        grpc_core::Server::FromC(server)->AddListener(
+            grpc_core::OrphanablePtr<
+                grpc_core::chaotic_good::ChaoticGoodServerListener>(listener));
       });
 }

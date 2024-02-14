@@ -40,6 +40,11 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
+- name: absl_base64
+  description: Use abseil base64 functions.
+  expiry: 2024/06/01
+  owner: roth@google.com
+  test_tags: ["credential_token_tests"]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with
@@ -59,6 +64,13 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: chaotic_good
+  description:
+    If set, enable the chaotic good load transport (this is mostly here for testing)
+  expiry: 2024/09/09
+  owner: ctiller@google.com
+  requires: [promise_based_client_call, promise_based_server_call]
+  test_tags: [core_end2end_test]
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
   expiry: 2024/03/15

@@ -27,11 +27,11 @@
 #include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
-#include "src/core/lib/service_config/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/service_config/service_config_parser.h"
 
 namespace grpc_core {
 

@@ -48,9 +48,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/config_selector.h"
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
+#include "src/core/client_channel/backup_poller.h"
+#include "src/core/client_channel/config_selector.h"
+#include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -65,12 +65,12 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"

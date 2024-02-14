@@ -18,10 +18,10 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
@@ -36,11 +36,8 @@ namespace grpc {
 namespace testing {
 
 static void RunScenario() {
-  grpc_slice buffer;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(absl::GetFlag(FLAGS_loadtest_config).c_str(),
-                                  0, &buffer)));
-  std::string json_str(grpc_core::StringViewFromSlice(buffer));
+  std::string json_str =
+      grpc_core::testing::GetFileContents(absl::GetFlag(FLAGS_loadtest_config));
   Scenarios scenarios;
   ParseJson(json_str, "grpc.testing.Scenarios", &scenarios);
   gpr_log(GPR_INFO, "Running %s", scenarios.scenarios(0).name().c_str());

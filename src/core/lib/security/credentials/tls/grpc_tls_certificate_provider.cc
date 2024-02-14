@@ -32,11 +32,11 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -280,17 +280,15 @@ absl::optional<std::string>
 FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
-  grpc_slice root_slice = grpc_empty_slice();
-  grpc_error_handle root_error =
-      grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
-  if (!root_error.ok()) {
+  auto root_slice =
+      LoadFile(root_cert_full_path, /*add_null_terminator=*/false);
+  if (!root_slice.ok()) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
-            root_cert_full_path.c_str(), StatusToString(root_error).c_str());
+            root_cert_full_path.c_str(),
+            root_slice.status().ToString().c_str());
     return absl::nullopt;
   }
-  std::string root_cert(StringViewFromSlice(root_slice));
-  CSliceUnref(root_slice);
-  return root_cert;
+  return std::string(root_slice->as_string_view());
 }
 
 namespace {
@@ -309,10 +307,6 @@ absl::optional<PemKeyCertPairList>
 FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     const std::string& private_key_path,
     const std::string& identity_certificate_path) {
-  struct SliceWrapper {
-    grpc_slice slice = grpc_empty_slice();
-    ~SliceWrapper() { CSliceUnref(slice); }
-  };
   const int kNumRetryAttempts = 3;
   for (int i = 0; i < kNumRetryAttempts; ++i) {
     // TODO(ZhenLian): replace the timestamp approach with key-match approach
@@ -337,24 +331,22 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       continue;
     }
     // Read the identity files.
-    SliceWrapper key_slice, cert_slice;
-    grpc_error_handle key_error =
-        grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
-    if (!key_error.ok()) {
+    auto key_slice = LoadFile(private_key_path, /*add_null_terminator=*/false);
+    if (!key_slice.ok()) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              private_key_path.c_str(), StatusToString(key_error).c_str());
+              private_key_path.c_str(), key_slice.status().ToString().c_str());
       continue;
     }
-    grpc_error_handle cert_error =
-        grpc_load_file(identity_certificate_path.c_str(), 0, &cert_slice.slice);
-    if (!cert_error.ok()) {
+    auto cert_slice =
+        LoadFile(identity_certificate_path, /*add_null_terminator=*/false);
+    if (!cert_slice.ok()) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
               identity_certificate_path.c_str(),
-              StatusToString(cert_error).c_str());
+              cert_slice.status().ToString().c_str());
       continue;
     }
-    std::string private_key(StringViewFromSlice(key_slice.slice));
-    std::string cert_chain(StringViewFromSlice(cert_slice.slice));
+    std::string private_key(key_slice->as_string_view());
+    std::string cert_chain(cert_slice->as_string_view());
     PemKeyCertPairList identity_pairs;
     identity_pairs.emplace_back(private_key, cert_chain);
     // Checking the last modification of identity files before reading.

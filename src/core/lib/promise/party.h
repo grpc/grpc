@@ -53,6 +53,8 @@
 // There's a thought of fuzzing the two implementations against each other as
 // a correctness check of both, but that's not implemented yet.
 
+extern grpc_core::DebugOnlyTraceFlag grpc_trace_party_state;
+
 #define GRPC_PARTY_SYNC_USING_ATOMICS
 // #define GRPC_PARTY_SYNC_USING_MUTEX
 
@@ -78,13 +80,17 @@ class PartySyncUsingAtomics {
       : state_(kOneRef * initial_refs) {}
 
   void IncrementRefCount() {
-    state_.fetch_add(kOneRef, std::memory_order_relaxed);
+    const uint64_t prev_state =
+        state_.fetch_add(kOneRef, std::memory_order_relaxed);
+    LogStateChange("IncrementRefCount", prev_state, prev_state + kOneRef);
   }
   GRPC_MUST_USE_RESULT bool RefIfNonZero();
   // Returns true if the ref count is now zero and the caller should call
   // PartyOver
   GRPC_MUST_USE_RESULT bool Unref() {
-    uint64_t prev_state = state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+    const uint64_t prev_state =
+        state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
+    LogStateChange("Unref", prev_state, prev_state - kOneRef);
     if ((prev_state & kRefMask) == kOneRef) {
       return UnreffedLast();
     }
@@ -93,7 +99,9 @@ class PartySyncUsingAtomics {
   void ForceImmediateRepoll(WakeupMask mask) {
     // Or in the bit for the currently polling participant.
     // Will be grabbed next round to force a repoll of this promise.
-    state_.fetch_or(mask, std::memory_order_relaxed);
+    const uint64_t prev_state =
+        state_.fetch_or(mask, std::memory_order_relaxed);
+    LogStateChange("ForceImmediateRepoll", prev_state, prev_state | mask);
   }
 
   // Run the update loop: poll_one_participant is called with an integral index
@@ -107,6 +115,8 @@ class PartySyncUsingAtomics {
       // Grab the current state, and clear the wakeup bits & add flag.
       prev_state = state_.fetch_and(kRefMask | kLocked | kAllocatedMask,
                                     std::memory_order_acquire);
+      LogStateChange("Run", prev_state,
+                     prev_state & (kRefMask | kLocked | kAllocatedMask));
       GPR_ASSERT(prev_state & kLocked);
       if (prev_state & kDestroying) return true;
       // From the previous state, extract which participants we're to wakeup.
@@ -138,6 +148,8 @@ class PartySyncUsingAtomics {
         if (state_.compare_exchange_weak(
                 prev_state, (prev_state & (kRefMask | kAllocatedMask)),
                 std::memory_order_acq_rel, std::memory_order_acquire)) {
+          LogStateChange("Run:End", prev_state,
+                         prev_state & (kRefMask | kAllocatedMask));
           return false;
         }
       } else {
@@ -146,6 +158,8 @@ class PartySyncUsingAtomics {
                 (prev_state & (kRefMask | kAllocatedMask | kLocked)) |
                     wake_after_poll_,
                 std::memory_order_acq_rel, std::memory_order_acquire)) {
+          LogStateChange("Run:EndIteration", prev_state,
+                         prev_state & (kRefMask | kAllocatedMask));
           iteration_.fetch_add(1, std::memory_order_relaxed);
           wake_after_poll_ = 0;
         }
@@ -187,11 +201,14 @@ class PartySyncUsingAtomics {
     } while (!state_.compare_exchange_weak(
         state, (state | (allocated << kAllocatedShift)) + kOneRef,
         std::memory_order_acq_rel, std::memory_order_acquire));
+    LogStateChange("AddParticipantsAndRef", state,
+                   (state | (allocated << kAllocatedShift)) + kOneRef);
 
     store(slots);
 
     // Now we need to wake up the party.
     state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
+    LogStateChange("AddParticipantsAndRef:Wakeup", state, state | kLocked);
 
     // If the party was already locked, we're done.
     return ((state & kLocked) == 0);
@@ -208,6 +225,15 @@ class PartySyncUsingAtomics {
 
  private:
   bool UnreffedLast();
+
+  void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
+                      DebugLocation loc = {}) {
+    if (grpc_trace_party_state.enabled()) {
+      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_DEBUG,
+              "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
+              prev_state, new_state);
+    }
+  }
 
   // State bits:
   // The atomic state_ field is composed of the following:
