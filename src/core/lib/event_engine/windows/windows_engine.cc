@@ -306,7 +306,10 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   if (ResolvedAddressToV4Mapped(addr, &addr6_v4mapped)) {
     address = addr6_v4mapped;
   }
-  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
+  const int addr_family =
+      (address.address()->sa_family == AF_UNIX) ? AF_UNIX : AF_INET6;
+  const int protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+  SOCKET sock = WSASocket(addr_family, SOCK_STREAM, protocol, nullptr, 0,
                           IOCP::GetDefaultSocketFlags());
   if (sock == INVALID_SOCKET) {
     Run([on_connect = std::move(on_connect),
@@ -315,7 +318,11 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  status = PrepareSocket(sock);
+  if (addr_family == AF_UNIX) {
+    status = SetSocketNonBlock(sock);
+  } else {
+    status = PrepareSocket(sock);
+  }
   if (!status.ok()) {
     Run([on_connect = std::move(on_connect), status]() mutable {
       on_connect(status);
@@ -340,7 +347,16 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     return EventEngine::ConnectionHandle::kInvalid;
   }
   // bind the local address
-  auto local_address = ResolvedAddressMakeWild6(0);
+  ResolvedAddress local_address;
+  if (addr_family == AF_UNIX) {
+    // For ConnectEx() to work for AF_UNIX, the sock needs to be bound to
+    // the local address of an unnamed socket.
+    sockaddr addr = {};
+    addr.sa_family = AF_UNIX;
+    local_address = ResolvedAddress(&addr, sizeof(addr));
+  } else {
+    local_address = ResolvedAddressMakeWild6(0);
+  }
   istatus = bind(sock, local_address.address(), local_address.size());
   if (istatus != 0) {
     Run([on_connect = std::move(on_connect),
