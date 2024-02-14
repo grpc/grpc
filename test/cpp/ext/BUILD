@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
@@ -32,8 +32,8 @@ grpc_cc_test(
     language = "C++",
     tags = [],
     deps = [
-        "//test/core/util:grpc_test_util",
         "//:grpc++",
         "//:grpcpp_chaotic_good",
+        "//test/core/util:grpc_test_util",
     ],
 )
