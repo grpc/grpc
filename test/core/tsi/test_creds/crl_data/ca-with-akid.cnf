@@ -15,4 +15,18 @@ commonName_default = testca
 [v3_req]
 basicConstraints = CA:true
 keyUsage = critical, keyCertSign, cRLSign
-authorityKeyIdentifier = keyid:always, issuer
+authorityKeyIdentifier=keyid:always,issuer:always
+
+[ ca ]
+default_ca = my_ca
+
+[ my_ca ]
+default_md = sha256
+database = index.txt
+crlnumber = crlnumber
+default_crl_days = 3650
+crl_extensions = crl_ext
+
+[crl_ext]
+# Authority Key Identifier extension
+authorityKeyIdentifier=keyid:always,issuer:always

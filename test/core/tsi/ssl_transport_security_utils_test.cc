@@ -637,9 +637,12 @@ TEST_F(CrlUtils, IssuerFromCertNull) {
   EXPECT_EQ(issuer.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
-TEST_F(CrlUtils, Akid) {
+TEST_F(CrlUtils, CertCrlAkidValid) {
   auto akid = AkidFromCertificate(ca_with_akid_);
   EXPECT_EQ(akid.status(), absl::OkStatus());
+  auto crl_akid = AkidFromCrl(akid_crl_);
+  EXPECT_EQ(crl_akid.status(), absl::OkStatus());
+  EXPECT_EQ(*akid, *crl_akid);
 }
 
 }  // namespace testing
