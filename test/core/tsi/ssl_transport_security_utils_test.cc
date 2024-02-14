@@ -642,6 +642,9 @@ TEST_F(CrlUtils, CertCrlAkidValid) {
   EXPECT_EQ(akid.status(), absl::OkStatus());
   auto crl_akid = AkidFromCrl(akid_crl_);
   EXPECT_EQ(crl_akid.status(), absl::OkStatus());
+  EXPECT_NE(*akid, "");
+  // It's easiest to fuzz that these two pull the right value, it's very
+  // difficult to create the known AKID value as a constant.
   EXPECT_EQ(*akid, *crl_akid);
 }
 
