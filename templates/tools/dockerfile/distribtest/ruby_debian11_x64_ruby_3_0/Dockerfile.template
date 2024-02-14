@@ -18,6 +18,7 @@
 
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../ruby_3_0_deps.include"/>
+  <%include file="../../rvm_mkdir_workaround.include"/>
 
   # Define the default command.
   CMD ["bash"]

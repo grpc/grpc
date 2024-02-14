@@ -104,6 +104,10 @@ RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.0.5' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
 
+# Workaround for rvm unable to find mkdir properly
+# https://stackoverflow.com/questions/64653051
+RUN ln -s /bin/mkdir /usr/bin/mkdir
+
 #=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
