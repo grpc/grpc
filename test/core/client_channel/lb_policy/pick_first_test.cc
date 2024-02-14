@@ -56,7 +56,7 @@ namespace {
 
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
-  PickFirstTest(ChannelArgs channel_args = ChannelArgs())
+  explicit PickFirstTest(ChannelArgs channel_args = ChannelArgs())
       : LoadBalancingPolicyTest("pick_first", channel_args) {}
 
   void SetUp() override {
