@@ -21,7 +21,7 @@ from grpc_tools import _protoc_compiler
 from grpc_tools import grpc_version
 
 if sys.version_info >= (3, 9, 0):
-    from importlib import metadata
+    from importlib import resources
 else:
     import pkg_resources
 
