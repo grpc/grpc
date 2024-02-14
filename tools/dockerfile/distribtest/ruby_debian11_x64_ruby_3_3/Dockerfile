@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:10
+FROM debian:11
 
 #=================
 # Basic C core dependencies
