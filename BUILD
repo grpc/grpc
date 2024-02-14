@@ -554,6 +554,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "api_trace",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -629,6 +630,7 @@ grpc_cc_library(
         "@grpc:public",
     ],
     deps = [
+        "api_trace",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -1102,6 +1104,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "api_trace",
         "config",
         "debug_location",
         "exec_ctx",
@@ -1252,6 +1255,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "api_trace",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",
@@ -1402,6 +1406,21 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:thread_quota",
+    ],
+)
+
+grpc_cc_library(
+    name = "api_trace",
+    srcs = [
+        "//src/core:lib/surface/api_trace.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/surface/api_trace.h",
+    ],
+    language = "c++",
+    deps = [
+        "gpr",
+        "grpc_trace",
     ],
 )
 
@@ -1638,7 +1657,6 @@ grpc_cc_library(
         "//src/core:lib/compression/compression.cc",
         "//src/core:lib/compression/message_compress.cc",
         "//src/core:lib/slice/b64.cc",
-        "//src/core:lib/surface/api_trace.cc",
         "//src/core:lib/surface/builtins.cc",
         "//src/core:lib/surface/byte_buffer.cc",
         "//src/core:lib/surface/byte_buffer_reader.cc",
@@ -1669,7 +1687,6 @@ grpc_cc_library(
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/message_compress.h",
         "//src/core:lib/slice/b64.h",
-        "//src/core:lib/surface/api_trace.h",
         "//src/core:lib/surface/builtins.h",
         "//src/core:lib/surface/call.h",
         "//src/core:lib/surface/call_test_only.h",
@@ -1717,6 +1734,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "api_trace",
         "call_combiner",
         "call_trace",
         "channel_arg_names",
@@ -2012,6 +2030,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["@grpc:public"],
     deps = [
+        "api_trace",
         "call_trace",
         "channel_arg_names",
         "channelz",
@@ -3354,6 +3373,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:client_channel"],
     deps = [
+        "api_trace",
         "backoff",
         "call_combiner",
         "channel_arg_names",
@@ -3668,6 +3688,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [
+        "api_trace",
         "exec_ctx",
         "gpr",
         "grpc_base",
