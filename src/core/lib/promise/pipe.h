@@ -638,11 +638,6 @@ class PipeReceiver {
   friend struct Pipe<T>;
   explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
   RefCountedPtr<pipe_detail::Center<T>> center_;
-
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
-#endif
 };
 
 namespace pipe_detail {

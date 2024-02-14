@@ -67,10 +67,12 @@ void CancelAfterClientDone(
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelAfterClientDone) {
+  SKIP_IF_CHAOTIC_GOOD();
   CancelAfterClientDone(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterClientDone) {
+  SKIP_IF_CHAOTIC_GOOD();
   CancelAfterClientDone(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

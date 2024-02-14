@@ -40,12 +40,19 @@
 #
 # Supported platforms: ios, windows, posix
 
+- name: absl_base64
+  default: true
 - name: call_status_override_on_cancellation
   default: debug
 - name: call_v3
   default: false
 - name: canary_client_privacy
   default: false
+- name: chaotic_good
+  default:
+    ios: broken
+    posix: false
+    windows: broken
 - name: client_idleness
   default: true
 - name: client_privacy

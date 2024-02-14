@@ -53,7 +53,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/service_config/service_config.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 #if GRPC_ARES == 1
@@ -67,7 +67,7 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"

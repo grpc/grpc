@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.62.0-dev'
+  version = '1.63.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -225,7 +225,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20240116.0'
+    abseil_version = '1.20240116.1'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -1068,7 +1068,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr.h',
                       'src/core/lib/iomgr/iomgr_fwd.h',
                       'src/core/lib/iomgr/iomgr_internal.h',
-                      'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/polling_entity.h',
@@ -1209,10 +1208,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/transport/security_handshaker.h',
                       'src/core/lib/security/transport/tsi_error.h',
                       'src/core/lib/security/util/json_util.h',
-                      'src/core/lib/service_config/service_config.h',
-                      'src/core/lib/service_config/service_config_call_data.h',
-                      'src/core/lib/service_config/service_config_impl.h',
-                      'src/core/lib/service_config/service_config_parser.h',
                       'src/core/lib/slice/b64.h',
                       'src/core/lib/slice/percent_encoding.h',
                       'src/core/lib/slice/slice.h',
@@ -1306,6 +1301,10 @@ Pod::Spec.new do |s|
                       'src/core/resolver/xds/xds_dependency_manager.h',
                       'src/core/resolver/xds/xds_resolver_attributes.h',
                       'src/core/resolver/xds/xds_resolver_trace.h',
+                      'src/core/service_config/service_config.h',
+                      'src/core/service_config/service_config_call_data.h',
+                      'src/core/service_config/service_config_impl.h',
+                      'src/core/service_config/service_config_parser.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -2325,7 +2324,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_fwd.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
-                              'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/polling_entity.h',
@@ -2466,10 +2464,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/transport/security_handshaker.h',
                               'src/core/lib/security/transport/tsi_error.h',
                               'src/core/lib/security/util/json_util.h',
-                              'src/core/lib/service_config/service_config.h',
-                              'src/core/lib/service_config/service_config_call_data.h',
-                              'src/core/lib/service_config/service_config_impl.h',
-                              'src/core/lib/service_config/service_config_parser.h',
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',
                               'src/core/lib/slice/slice.h',
@@ -2563,6 +2557,10 @@ Pod::Spec.new do |s|
                               'src/core/resolver/xds/xds_dependency_manager.h',
                               'src/core/resolver/xds/xds_resolver_attributes.h',
                               'src/core/resolver/xds/xds_resolver_trace.h',
+                              'src/core/service_config/service_config.h',
+                              'src/core/service_config/service_config_call_data.h',
+                              'src/core/service_config/service_config_impl.h',
+                              'src/core/service_config/service_config_parser.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',
