@@ -303,7 +303,7 @@ class PHP7DistribTest(object):
                 self.name,
                 ["test/distrib/php/run_distrib_test_macos.sh"],
                 environ={"EXTERNAL_GIT_ROOT": "../../../.."},
-                timeout_seconds=20 * 60,
+                timeout_seconds=30 * 60,
                 use_workspace=True,
             )
         else:

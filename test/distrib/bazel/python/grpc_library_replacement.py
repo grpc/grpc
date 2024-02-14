@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_version.py.template`!!!
-
-VERSION = '1.63.0.dev0'
+# Intentionally empty.
+# This is used to test the grpc_library attribute of py_grpc_library works.
