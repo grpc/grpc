@@ -292,7 +292,7 @@ bool HasCrlSignBit(X509* cert) {
   if (!cert->ex_flags & EXFLAG_KUSAGE) {
     return true;
   }
-  return cert->ex_kusage & KU_CRL_SIGN
+  return cert->ex_kusage & KU_CRL_SIGN;
 #else
   return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
 #endif  // OPENSSL_VERSION_NUMBER < 0x10100000
