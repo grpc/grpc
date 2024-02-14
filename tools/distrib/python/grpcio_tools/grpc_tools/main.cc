@@ -57,8 +57,24 @@ int protoc_main(int argc, char* argv[]) {
   cli.RegisterGenerator("--pyi_out", &pyi_generator,
                         "Generate Python pyi stub.");
 
+  // Get grpc_tools version
+  std::string grpc_tools_version = "";
+  std::string arg_str("--grpc_tools_version");
+  if (argc > 0) {
+    std::string argv_version = argv[argc - 1];
+    size_t start_position = argv_version.find(arg_str);
+    if (start_position != std::string::npos) {
+      start_position += arg_str.size();
+      if (argv_version[start_position] == '=') {
+        grpc_tools_version = argv_version.substr(start_position + 1);
+        argv[argc - 1] = nullptr;
+        argc--;
+      }
+    }
+  }
+
   // gRPC Python
-  grpc_python_generator::GeneratorConfiguration grpc_py_config;
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator,
                         "Generate Python source file.");
