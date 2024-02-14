@@ -74,7 +74,8 @@ int protoc_main(int argc, char* argv[]) {
   }
 
   // gRPC Python
-  grpc_python_generator::GeneratorConfiguration grpc_py_config(grpc_tools_version);
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(
+      grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator,
                         "Generate Python source file.");

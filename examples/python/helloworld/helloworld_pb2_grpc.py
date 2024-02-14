@@ -5,7 +5,7 @@ import warnings
 
 import helloworld_pb2 as helloworld__pb2
 
-GRPC_GENERATE_VERSION='1.2.0.dev0'
+GRPC_GENERATE_VERSION='1.62.0.dev0'
 GRPC_VERSION=grpc.__version__
 
 def _first_version_is_lower(version1, version2):
