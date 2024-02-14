@@ -16,20 +16,16 @@
 
 #include "src/core/lib/channel/metrics.h"
 
-#include "absl/algorithm/container.h"
-
 namespace grpc_core {
-
-std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>
-    GlobalInstrumentsRegistry::instruments_;
 
 GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
 GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  uint32_t index = instruments_.size();
-  instruments_.push_back(
+  auto& instruments = gInstruments();
+  uint32_t index = instruments.size();
+  instruments.push_back(
       {.value_type = ValueType::kUInt64,
        .instrument_type = InstrumentType::kCounter,
        .index = index,
@@ -48,8 +44,9 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  uint32_t index = instruments_.size();
-  instruments_.push_back(
+  auto& instruments = gInstruments();
+  uint32_t index = instruments.size();
+  instruments.push_back(
       {.value_type = ValueType::kDouble,
        .instrument_type = InstrumentType::kCounter,
        .index = index,
@@ -68,8 +65,9 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  uint32_t index = instruments_.size();
-  instruments_.push_back(
+  auto& instruments = gInstruments();
+  uint32_t index = instruments.size();
+  instruments.push_back(
       {.value_type = ValueType::kUInt64,
        .instrument_type = InstrumentType::kHistogram,
        .index = index,
@@ -88,8 +86,9 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::vector<absl::string_view> label_keys,
     std::vector<absl::string_view> optional_label_keys) {
-  uint32_t index = instruments_.size();
-  instruments_.push_back(
+  auto& instruments = gInstruments();
+  uint32_t index = instruments.size();
+  instruments.push_back(
       {.value_type = ValueType::kDouble,
        .instrument_type = InstrumentType::kHistogram,
        .index = index,
@@ -103,9 +102,11 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
   return handle;
 }
 
-const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
-GlobalInstrumentsRegistry::instruments() {
-  return instruments_;
+void GlobalInstrumentsRegistry::ForEach(
+    absl::AnyInvocable<void(const GlobalInstrumentDescriptor&)> f) {
+  for (const auto& instrument : gInstruments()) {
+    f(instrument);
+  }
 }
 
 std::atomic<GlobalStatsPluginRegistry*> GlobalStatsPluginRegistry::self_{
@@ -118,14 +119,15 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
 }
 
 GlobalStatsPluginRegistry::StatsPluginGroup
-GlobalStatsPluginRegistry::GetStatsPluginsForTarget(absl::string_view target) {
+GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+    const StatsPlugin::Scope& scope) {
   MutexLock lock(&mutex_);
   StatsPluginGroup group;
-  absl::c_for_each(plugins_, [&group, target](const auto& plugin) {
-    if (plugin->IsEnabledForTarget(target)) {
+  for (const auto& plugin : plugins_) {
+    if (plugin->IsEnabledForChannel(scope)) {
       group.push_back(plugin);
     }
-  });
+  }
   return group;
 }
 

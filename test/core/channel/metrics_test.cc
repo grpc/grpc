@@ -64,19 +64,29 @@ std::string MakeKeyAttributes(
          Append(MixUp(optional_label_keys, optional_values));
 }
 
+class ChannelScope {
+ public:
+  ChannelScope(absl::string_view target, absl::string_view authority) {
+    scope_.target = target;
+    scope_.authority = authority;
+  }
+
+  absl::string_view target() const { return scope_.target; }
+  absl::string_view authority() const { return scope_.authority; }
+
+ private:
+  StatsPlugin::Scope scope_;
+};
+
 // TODO(yijiem): Move this to test/core/util/fake_stats_plugin.h
 class FakeStatsPlugin : public StatsPlugin {
  public:
-  bool IsEnabledForTarget(absl::string_view target) override {
-    return target_selector_(target);
+  bool IsEnabledForChannel(const Scope& scope) const override {
+    return channel_filter_(ChannelScope(scope.target, scope.authority));
   }
 
-  bool IsEnabledForServer(ChannelArgs& args) override { return false; }
-
-  void SetTargetSelector(
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector) {
-    target_selector_ = std::move(target_selector);
+  bool IsEnabledForServer(const ChannelArgs& args) const override {
+    return false;
   }
 
   void AddCounter(GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -156,29 +166,31 @@ class FakeStatsPlugin : public StatsPlugin {
   friend class FakeStatsPluginBuilder;
 
   explicit FakeStatsPlugin(
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector)
-      : target_selector_(std::move(target_selector)) {
-    for (const auto& descriptor : GlobalInstrumentsRegistry::instruments()) {
-      if (descriptor.instrument_type ==
-          GlobalInstrumentsRegistry::InstrumentType::kCounter) {
-        if (descriptor.value_type ==
-            GlobalInstrumentsRegistry::ValueType::kUInt64) {
-          uint64_counters_.emplace(descriptor.index, descriptor);
-        } else {
-          double_counters_.emplace(descriptor.index, descriptor);
-        }
-      } else {
-        EXPECT_EQ(descriptor.instrument_type,
-                  GlobalInstrumentsRegistry::InstrumentType::kHistogram);
-        if (descriptor.value_type ==
-            GlobalInstrumentsRegistry::ValueType::kUInt64) {
-          uint64_histograms_.emplace(descriptor.index, descriptor);
-        } else {
-          double_histograms_.emplace(descriptor.index, descriptor);
-        }
-      }
-    }
+      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+          channel_filter)
+      : channel_filter_(std::move(channel_filter)) {
+    GlobalInstrumentsRegistry::ForEach(
+        [this](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
+                   descriptor) {
+          if (descriptor.instrument_type ==
+              GlobalInstrumentsRegistry::InstrumentType::kCounter) {
+            if (descriptor.value_type ==
+                GlobalInstrumentsRegistry::ValueType::kUInt64) {
+              uint64_counters_.emplace(descriptor.index, descriptor);
+            } else {
+              double_counters_.emplace(descriptor.index, descriptor);
+            }
+          } else {
+            EXPECT_EQ(descriptor.instrument_type,
+                      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+            if (descriptor.value_type ==
+                GlobalInstrumentsRegistry::ValueType::kUInt64) {
+              uint64_histograms_.emplace(descriptor.index, descriptor);
+            } else {
+              double_histograms_.emplace(descriptor.index, descriptor);
+            }
+          }
+        });
   }
 
   template <class T>
@@ -261,7 +273,7 @@ class FakeStatsPlugin : public StatsPlugin {
     std::vector<std::pair<std::string, T>> storage_;
   };
 
-  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
+  absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
   // Instruments.
   absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_;
   absl::flat_hash_map<uint32_t, Counter<double>> double_counters_;
@@ -272,41 +284,42 @@ class FakeStatsPlugin : public StatsPlugin {
 // TODO(yijiem): Move this to test/core/util/fake_stats_plugin.h
 class FakeStatsPluginBuilder {
  public:
-  FakeStatsPluginBuilder& SetTargetSelector(
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector) {
-    target_selector_ = std::move(target_selector);
+  FakeStatsPluginBuilder& SetChannelFilter(
+      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+          channel_filter) {
+    channel_filter_ = std::move(channel_filter);
     return *this;
   }
 
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
     auto f = std::shared_ptr<FakeStatsPlugin>(
-        new FakeStatsPlugin(std::move(target_selector_)));
+        new FakeStatsPlugin(std::move(channel_filter_)));
     GlobalStatsPluginRegistry::Get().RegisterStatsPlugin(f);
     return f;
   }
 
  private:
-  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
+  absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
 };
 
 class MetricsTest : public testing::Test {
  public:
   void SetUp() override {
-    plugin1_ =
-        FakeStatsPluginBuilder()
-            .SetTargetSelector([](absl::string_view target) {
-              return absl::EndsWith(target, "domain1.domain2.domain3.domain4");
-            })
-            .BuildAndRegister();
-    plugin2_ = FakeStatsPluginBuilder()
-                   .SetTargetSelector([](absl::string_view target) {
-                     return absl::EndsWith(target, "domain2.domain3.domain4");
+    plugin1_ = FakeStatsPluginBuilder()
+                   .SetChannelFilter([](const ChannelScope& scope) {
+                     return absl::EndsWith(scope.target(),
+                                           "domain1.domain2.domain3.domain4");
                    })
                    .BuildAndRegister();
+    plugin2_ =
+        FakeStatsPluginBuilder()
+            .SetChannelFilter([](const ChannelScope& scope) {
+              return absl::EndsWith(scope.target(), "domain2.domain3.domain4");
+            })
+            .BuildAndRegister();
     plugin3_ = FakeStatsPluginBuilder()
-                   .SetTargetSelector([](absl::string_view target) {
-                     return absl::EndsWith(target, "domain3.domain4");
+                   .SetChannelFilter([](const ChannelScope& scope) {
+                     return absl::EndsWith(scope.target(), "domain3.domain4");
                    })
                    .BuildAndRegister();
   }
@@ -362,15 +375,15 @@ GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle
 
 TEST_F(MetricsTest, UInt64Counter) {
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain1.domain2.domain3.domain4"})
       .AddCounter(uint64_counter_handle_, 1, {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain2.domain3.domain4"})
       .AddCounter(uint64_counter_handle_, 2, {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain3.domain4"})
       .AddCounter(uint64_counter_handle_, 3, {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   EXPECT_EQ(plugin1_->GetCounterValue(
@@ -389,17 +402,17 @@ TEST_F(MetricsTest, UInt64Counter) {
 
 TEST_F(MetricsTest, DoubleCounter) {
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain1.domain2.domain3.domain4"})
       .AddCounter(double_counter_handle_, 1.23,
                   {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain2.domain3.domain4"})
       .AddCounter(double_counter_handle_, 2.34,
                   {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain3.domain4"})
       .AddCounter(double_counter_handle_, 3.45,
                   {"label_value_1", "label_value_2"},
                   {"optional_label_value_1", "optional_label_value_2"});
@@ -419,17 +432,17 @@ TEST_F(MetricsTest, DoubleCounter) {
 
 TEST_F(MetricsTest, UInt64Histogram) {
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain1.domain2.domain3.domain4"})
       .RecordHistogram(uint64_histogram_handle_, 1,
                        {"label_value_1", "label_value_2"},
                        {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain2.domain3.domain4"})
       .RecordHistogram(uint64_histogram_handle_, 2,
                        {"label_value_1", "label_value_2"},
                        {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain3.domain4"})
       .RecordHistogram(uint64_histogram_handle_, 3,
                        {"label_value_1", "label_value_2"},
                        {"optional_label_value_1", "optional_label_value_2"});
@@ -449,17 +462,17 @@ TEST_F(MetricsTest, UInt64Histogram) {
 
 TEST_F(MetricsTest, DoubleHistogram) {
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain1.domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain1.domain2.domain3.domain4"})
       .RecordHistogram(double_histogram_handle_, 1.23,
                        {"label_value_1", "label_value_2"},
                        {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain2.domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain2.domain3.domain4"})
       .RecordHistogram(double_histogram_handle_, 2.34,
                        {"label_value_1", "label_value_2"},
                        {"optional_label_value_1", "optional_label_value_2"});
   GlobalStatsPluginRegistry::Get()
-      .GetStatsPluginsForTarget("domain3.domain4")
+      .GetStatsPluginsForChannel({.target = "domain3.domain4"})
       .RecordHistogram(double_histogram_handle_, 3.45,
                        {"label_value_1", "label_value_2"},
                        {"optional_label_value_1", "optional_label_value_2"});

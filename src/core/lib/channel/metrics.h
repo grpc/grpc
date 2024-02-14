@@ -31,7 +31,10 @@
 
 namespace grpc_core {
 
-// Static only.
+// A global instruments registry whose API is designed to be used to register
+// instruments (Counter and Histogram) as part of program startup, before the
+// execution of the main function. Using this API after the main function begins
+// may result into those instruments missing in StatsPlugins.
 class GlobalInstrumentsRegistry {
  public:
   enum class ValueType {
@@ -61,10 +64,10 @@ class GlobalInstrumentsRegistry {
     // runs or between different versions.
     uint32_t index;
   };
-  struct GlobalUInt64CounterHandle : GlobalHandle {};
-  struct GlobalDoubleCounterHandle : GlobalHandle {};
-  struct GlobalUInt64HistogramHandle : GlobalHandle {};
-  struct GlobalDoubleHistogramHandle : GlobalHandle {};
+  struct GlobalUInt64CounterHandle : public GlobalHandle {};
+  struct GlobalDoubleCounterHandle : public GlobalHandle {};
+  struct GlobalUInt64HistogramHandle : public GlobalHandle {};
+  struct GlobalDoubleHistogramHandle : public GlobalHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -83,21 +86,31 @@ class GlobalInstrumentsRegistry {
       absl::string_view name, absl::string_view description,
       absl::string_view unit, std::vector<absl::string_view> label_keys,
       std::vector<absl::string_view> optional_label_keys);
-  // Getter functions for StatsPlugins to query registered counters/histograms.
-  static const std::vector<GlobalInstrumentDescriptor>& instruments();
+  static void ForEach(
+      absl::AnyInvocable<void(const GlobalInstrumentDescriptor&)> f);
 
   GlobalInstrumentsRegistry() = delete;
 
  private:
-  static std::vector<GlobalInstrumentDescriptor> instruments_;
+  // Uses the Construct-on-First-Use idiom to avoid the static initialization
+  // order fiasco.
+  static std::vector<GlobalInstrumentDescriptor>& gInstruments() {
+    static std::vector<GlobalInstrumentDescriptor> instruments_;
+    return instruments_;
+  }
 };
 
-// Interface.
+// The StatsPlugin interface.
 class StatsPlugin {
  public:
   virtual ~StatsPlugin() = default;
-  virtual bool IsEnabledForTarget(absl::string_view target) = 0;
-  virtual bool IsEnabledForServer(ChannelArgs& args) = 0;
+
+  struct Scope {
+    absl::string_view target;
+    absl::string_view authority;
+  };
+  virtual bool IsEnabledForChannel(const Scope& scope) const = 0;
+  virtual bool IsEnabledForServer(const ChannelArgs& args) const = 0;
 
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -122,6 +135,7 @@ class StatsPlugin {
   // AsyncInstrument* GetObservableCounter(
   //     absl::string_view name, absl::string_view description,
   //     absl::string_view unit);
+
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
   // representation of the label_values and use it multiple times. We would
   // change AddCounter and RecordHistogram to take RefCountedPtr<LabelValueSet>
@@ -179,7 +193,7 @@ class GlobalStatsPluginRegistry {
   void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
   // The following two functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  StatsPluginGroup GetStatsPluginsForTarget(absl::string_view target);
+  StatsPluginGroup GetStatsPluginsForChannel(const StatsPlugin::Scope& scope);
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
