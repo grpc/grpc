@@ -1876,7 +1876,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/call_details.cc',
                       'src/core/lib/surface/call_log_batch.cc',
                       'src/core/lib/surface/call_test_only.h',
-                      'src/core/lib/surface/call_trace.cc',
                       'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.cc',
                       'src/core/lib/surface/channel.h',

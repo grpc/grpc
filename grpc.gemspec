@@ -1769,7 +1769,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/call_details.cc )
   s.files += %w( src/core/lib/surface/call_log_batch.cc )
   s.files += %w( src/core/lib/surface/call_test_only.h )
-  s.files += %w( src/core/lib/surface/call_trace.cc )
   s.files += %w( src/core/lib/surface/call_trace.h )
   s.files += %w( src/core/lib/surface/channel.cc )
   s.files += %w( src/core/lib/surface/channel.h )
