@@ -1012,7 +1012,7 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
   std::string akid_to_use;
   if (!akid.ok()) {
-    gpr_log(GPR_INFO, "Could not get certificate akid.");
+    gpr_log(GPR_INFO, "Could not get certificate authority key identifier.");
   } else {
     akid_to_use = *akid;
   }
