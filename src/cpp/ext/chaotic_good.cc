@@ -44,7 +44,6 @@ class ChaoticGoodInsecureChannelCredentialsImpl final
     auto channel = grpc::CreateChannelInternal(
         "", grpc_chaotic_good_channel_create(target.c_str(), &channel_args),
         std::move(interceptor_creators));
-    grpc_channel_args_destroy(&channel_args);
     return channel;
   }
 
