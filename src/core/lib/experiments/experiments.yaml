@@ -40,12 +40,22 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
+- name: absl_base64
+  description: Use abseil base64 functions.
+  expiry: 2024/06/01
+  owner: roth@google.com
+  test_tags: ["credential_token_tests"]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with
     cancellation.
   expiry: 2024/04/01
   owner: vigneshbabu@google.com
+  test_tags: []
+- name: call_v3
+  description: Promise-based call version 3.
+  expiry: 2024/06/01
+  owner: ctiller@google.com
   test_tags: []
 - name: canary_client_privacy
   description:
@@ -54,6 +64,13 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: chaotic_good
+  description:
+    If set, enable the chaotic good load transport (this is mostly here for testing)
+  expiry: 2024/09/09
+  owner: ctiller@google.com
+  requires: [promise_based_client_call, promise_based_server_call]
+  test_tags: [core_end2end_test]
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
   expiry: 2024/03/15
@@ -178,12 +195,6 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
-- name: registered_methods_map
-  description:
-    Use absl::flat_hash_map for registered methods.
-  expiry: 2024/01/31
-  owner: alishananda@google.com
-  test_tags: []
 - name: rfc_max_concurrent_streams
   description:
     If set, enable rfc-compliant behavior (cancellation) in the advent that
@@ -276,9 +287,10 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/02/10
-  owner: ctiller@google.com
+  expiry: 2024/03/31
+  owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
+  requires: ["event_engine_client"]
 - name: write_size_cap
   description:
     Limit outgoing writes proportional to the target write size

@@ -44,7 +44,9 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
@@ -124,6 +126,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Start() {
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     absl::Status status) {
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Acceptor[%p]: NotifyOnAccept: %s", this,
+                                   status.ToString().c_str());
   if (!status.ok()) {
     // Shutting down the acceptor. Unref the ref grabbed in
     // AsyncConnectionAcceptor::Start().
@@ -173,7 +177,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
           return;
         default:
           gpr_log(GPR_ERROR, "Closing acceptor. Failed accept4: %s",
-                  strerror(errno));
+                  grpc_core::StrError(errno).c_str());
           // Shutting down the acceptor. Unref the ref grabbed in
           // AsyncConnectionAcceptor::Start().
           Unref();
@@ -189,15 +193,13 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         gpr_log(
             GPR_ERROR,
-            "Failed getpeername: %s. This is a critical failure, the "
-            "listener on %s:%d is shutting down.",
-            strerror(errno),
+            "Failed getpeername: %s. Dropping the connection, and continuing "
+            "to listen on %s:%d.",
+            grpc_core::StrError(errno).c_str(),
             listener_addr_uri.ok() ? listener_addr_uri->c_str() : "<unknown>",
             socket_.port);
         close(fd);
-        // Shutting down the acceptor. Unref the ref grabbed in
-        // AsyncConnectionAcceptor::Start().
-        Unref();
+        handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
       addr = EventEngine::ResolvedAddress(addr.address(), len);

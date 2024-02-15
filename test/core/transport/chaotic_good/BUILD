@@ -67,7 +67,10 @@ grpc_fuzzer(
     external_deps = ["absl/status:statusor"],
     language = "C++",
     tags = ["no_windows"],
-    deps = ["//src/core:chaotic_good_frame_header"],
+    deps = [
+        "//:grpc",
+        "//src/core:chaotic_good_frame_header",
+    ],
 )
 
 grpc_cc_test(

@@ -135,7 +135,6 @@ struct OpenTelemetryPluginState {
   } server;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider;
-  std::unique_ptr<LabelsInjector> labels_injector;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attribute_filter;
   absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -173,9 +172,6 @@ class OpenTelemetryPluginBuilderImpl {
   OpenTelemetryPluginBuilderImpl& EnableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilderImpl& DisableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilderImpl& DisableAllMetrics();
-  // Allows setting a labels injector on calls traced through this plugin.
-  OpenTelemetryPluginBuilderImpl& SetLabelsInjector(
-      std::unique_ptr<LabelsInjector> labels_injector);
   // If set, \a target_selector is called per channel to decide whether to
   // collect metrics on that target or not.
   OpenTelemetryPluginBuilderImpl& SetTargetSelector(

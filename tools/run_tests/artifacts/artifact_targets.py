@@ -152,6 +152,7 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip3".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            environ["LDFLAGS"] = "-s"
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_linux_{}".format(
@@ -462,16 +463,16 @@ def targets():
             PythonArtifact("macos", "x64", "python3.8"),
             PythonArtifact("macos", "x64", "python3.9"),
             PythonArtifact("macos", "x64", "python3.10"),
-            PythonArtifact("macos", "x64", "python3.11", presubmit=True),
+            PythonArtifact("macos", "x64", "python3.11"),
             PythonArtifact("macos", "x64", "python3.12", presubmit=True),
             PythonArtifact("windows", "x86", "Python37_32bit", presubmit=True),
-            PythonArtifact("windows", "x86", "Python38_32bit", presubmit=True),
+            PythonArtifact("windows", "x86", "Python38_32bit"),
             PythonArtifact("windows", "x86", "Python39_32bit"),
             PythonArtifact("windows", "x86", "Python310_32bit"),
             PythonArtifact("windows", "x86", "Python311_32bit"),
             PythonArtifact("windows", "x86", "Python312_32bit", presubmit=True),
             PythonArtifact("windows", "x64", "Python37", presubmit=True),
-            PythonArtifact("windows", "x64", "Python38", presubmit=True),
+            PythonArtifact("windows", "x64", "Python38"),
             PythonArtifact("windows", "x64", "Python39"),
             PythonArtifact("windows", "x64", "Python310"),
             PythonArtifact("windows", "x64", "Python311"),

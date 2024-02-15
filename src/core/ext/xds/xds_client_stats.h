@@ -37,7 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -86,13 +86,9 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
 
-  const std::string& AsHumanReadableString() {
-    if (human_readable_string_.empty()) {
-      human_readable_string_ =
-          absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                          region_, zone_, sub_zone_);
-    }
-    return human_readable_string_;
+  std::string AsHumanReadableString() const {
+    return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                           region_, zone_, sub_zone_);
   }
 
   // Channel args traits.
@@ -108,7 +104,6 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
-  std::string human_readable_string_;
 };
 
 // Drop stats for an xds cluster.

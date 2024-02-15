@@ -4,6 +4,12 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+DEFAULT_VISIBILITY = [
+    "//third_party/protobuf:__subpackages__",
+    "//:__subpackages__",
+    "//util/utf8/internal:__subpackages__",
+]
+
 package(default_visibility = ["//visibility:public"])
 
 licenses(["notice"])
@@ -21,6 +27,7 @@ filegroup(
     ],
     visibility = [
         "@com_google_protobuf//:__subpackages__",
+        "@upb//:__subpackages__",
     ],
 )
 

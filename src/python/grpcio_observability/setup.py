@@ -22,7 +22,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import pkg_resources
 import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
@@ -206,22 +205,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) PyObject*'
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
 
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target and (
-        pkg_resources.parse_version(mac_target)
-        < pkg_resources.parse_version("10.10.0")
-    ):
-        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-        os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-            r"macosx-[0-9]+\.[0-9]+-(.+)",
-            r"macosx-10.10-\1",
-            sysconfig.get_platform(),
-        )
-
 
 def extension_modules():
     if BUILD_WITH_CYTHON:
@@ -290,7 +273,6 @@ setuptools.setup(
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
         "setuptools>=59.6.0",
-        "opentelemetry-sdk==1.21.0",
         "opentelemetry-api==1.21.0",
     ],
     cmdclass={
