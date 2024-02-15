@@ -37,7 +37,7 @@ cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
     int column
     string message
 
-  int protoc_main(int argc, char *argv[])
+  int protoc_main(int argc, char *argv[], char* version)
   int protoc_get_protos(char* protobuf_path,
                         vector[string]* include_path,
                         vector[pair[string, string]]* files_out,
@@ -50,12 +50,10 @@ cdef extern from "grpc_tools/main.h" namespace "grpc_tools":
                           vector[cProtocWarning]* wrnings) nogil except +
 
 def run_main(list args not None):
-  version = "--grpc_tools_version={}".format(grpc_version.VERSION)
-  args.append(version.encode())
   cdef char **argv = <char **>stdlib.malloc(len(args)*sizeof(char *))
   for i in range(len(args)):
     argv[i] = args[i]
-  return protoc_main(len(args), argv)
+  return protoc_main(len(args), argv, grpc_version.VERSION.encode())
 
 class ProtocError(Exception):
     def __init__(self, filename, line, column, message):

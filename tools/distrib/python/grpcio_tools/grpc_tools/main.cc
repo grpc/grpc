@@ -43,7 +43,7 @@ using ::google::protobuf::io::StringOutputStream;
 using ::google::protobuf::io::ZeroCopyOutputStream;
 
 namespace grpc_tools {
-int protoc_main(int argc, char* argv[]) {
+int protoc_main(int argc, char* argv[], char* version) {
   google::protobuf::compiler::CommandLineInterface cli;
   cli.AllowPlugins("protoc-");
 
@@ -58,20 +58,7 @@ int protoc_main(int argc, char* argv[]) {
                         "Generate Python pyi stub.");
 
   // Get grpc_tools version
-  std::string grpc_tools_version = "";
-  std::string arg_str("--grpc_tools_version");
-  if (argc > 0) {
-    std::string argv_version = argv[argc - 1];
-    size_t start_position = argv_version.find(arg_str);
-    if (start_position != std::string::npos) {
-      start_position += arg_str.size();
-      if (argv_version[start_position] == '=') {
-        grpc_tools_version = argv_version.substr(start_position + 1);
-        argv[argc - 1] = nullptr;
-        argc--;
-      }
-    }
-  }
+  std::string grpc_tools_version = version;
 
   // gRPC Python
   grpc_python_generator::GeneratorConfiguration grpc_py_config(

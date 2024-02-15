@@ -9,15 +9,15 @@ GRPC_GENERATED_VERSION = '1.63.0.dev0'
 GRPC_VERSION = grpc.__version__
 EXPECTED_ERROR_RELEASE = '1.64.0'
 SCHEDULED_RELEASE_DATE = 'May 14,2024'
-_version_not_support = False
+_version_not_supported = False
 
 try:
     from grpc._utilities import first_version_is_lower
-    _version_not_support = first_version_is_lower(GRPC_VERSION, GRPC_GENERATED_VERSION)
+    _version_not_supported = first_version_is_lower(GRPC_VERSION, GRPC_GENERATED_VERSION)
 except ImportError:
-    _version_not_support = True
+    _version_not_supported = True
 
-if _version_not_support:
+if _version_not_supported:
     warnings.warn(
         f'The grpc package installed is at version {GRPC_VERSION},'
         + f' but the generated code in helloworld_pb2_grpc.py depends on'

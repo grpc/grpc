@@ -743,21 +743,21 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       out->Print("GRPC_VERSION = grpc.__version__\n");
       out->Print("EXPECTED_ERROR_RELEASE = '1.64.0'\n");
       out->Print("SCHEDULED_RELEASE_DATE = 'May 14,2024'\n");
-      out->Print("_version_not_support = False\n\n");
+      out->Print("_version_not_supported = False\n\n");
       out->Print("try:\n");
       {
         IndentScope raii_import_indent(out);
         out->Print(
             "from grpc._utilities import first_version_is_lower\n"
-            "_version_not_support = first_version_is_lower(GRPC_VERSION, "
+            "_version_not_supported = first_version_is_lower(GRPC_VERSION, "
             "GRPC_GENERATED_VERSION)\n");
       }
       out->Print("except ImportError:\n");
       {
         IndentScope raii_import_error_indent(out);
-        out->Print("_version_not_support = True\n");
+        out->Print("_version_not_supported = True\n");
       }
-      out->Print("\nif _version_not_support:\n");
+      out->Print("\nif _version_not_supported:\n");
       {
         IndentScope raii_warning_indent(out);
         out->Print("warnings.warn(\n");
