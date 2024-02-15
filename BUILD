@@ -1646,7 +1646,6 @@ grpc_cc_library(
         "//src/core:lib/surface/call_details.cc",
         "//src/core:lib/surface/call_log_batch.cc",
         "//src/core:lib/surface/channel.cc",
-        "//src/core:lib/surface/channel_ping.cc",
         "//src/core:lib/surface/completion_queue.cc",
         "//src/core:lib/surface/completion_queue_factory.cc",
         "//src/core:lib/surface/event_string.cc",
@@ -3313,7 +3312,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
-        "//src/core:client_channel/channel_connectivity.cc",
         "//src/core:client_channel/client_channel_factory.cc",
         "//src/core:client_channel/client_channel_filter.cc",
         "//src/core:client_channel/client_channel_plugin.cc",
