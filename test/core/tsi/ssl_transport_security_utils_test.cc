@@ -643,9 +643,20 @@ TEST_F(CrlUtils, CertCrlAkidValid) {
   auto crl_akid = AkidFromCrl(akid_crl_);
   EXPECT_EQ(crl_akid.status(), absl::OkStatus());
   EXPECT_NE(*akid, "");
-  // It's easiest to fuzz that these two pull the right value, it's very
-  // difficult to create the known AKID value as a constant.
+  // It's easiest to compare that these two pull the same value, it's very
+  // difficult to create the known AKID value as a test constant, so we just
+  // check that they are not empty and that they are the same.
   EXPECT_EQ(*akid, *crl_akid);
+}
+
+TEST_F(CrlUtils, CertNoAkid) {
+  auto akid = AkidFromCertificate(root_ca_);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
+
+TEST_F(CrlUtils, CrlNoAkid) {
+  auto akid = AkidFromCrl(root_crl_);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
 }  // namespace testing
