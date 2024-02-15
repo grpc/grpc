@@ -112,10 +112,22 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
     kEnd,
   };
 
-  HttpAnnotation(
-      Type type, gpr_timespec time,
-      absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
-      absl::optional<chttp2::StreamFlowControl::Stats> stream_stats);
+  HttpAnnotation(Type type, gpr_timespec time);
+
+  HttpAnnotation& Add(const chttp2::TransportFlowControl::Stats& stats) {
+    transport_stats_ = stats;
+    return *this;
+  }
+
+  HttpAnnotation& Add(const chttp2::StreamFlowControl::Stats& stats) {
+    stream_stats_ = stats;
+    return *this;
+  }
+
+  HttpAnnotation& Add(size_t target_wire_size) {
+    target_wire_size_ = target_wire_size;
+    return *this;
+  }
 
   std::string ToString() const override;
 
@@ -133,6 +145,7 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   const gpr_timespec time_;
   absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
   absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
+  absl::optional<size_t> target_wire_size_;
 };
 
 }  // namespace grpc_core
