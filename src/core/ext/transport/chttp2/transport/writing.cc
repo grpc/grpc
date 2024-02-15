@@ -492,10 +492,13 @@ class StreamWriteContext {
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kHeadWritten,
-          gpr_now(GPR_CLOCK_REALTIME), s_->t->flow_control.stats(),
-          s_->flow_control.stats()));
+      s_->call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(
+              grpc_core::HttpAnnotation::Type::kHeadWritten,
+              gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s_->t->flow_control.stats())
+              .Add(s_->flow_control.stats())
+              .Add(write_context_->target_write_size()));
     }
   }
 
@@ -619,9 +622,11 @@ class StreamWriteContext {
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
     if (s_->call_tracer) {
-      s_->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kEnd, gpr_now(GPR_CLOCK_REALTIME),
-          s_->t->flow_control.stats(), s_->flow_control.stats()));
+      s_->call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
+                                    gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s_->t->flow_control.stats())
+              .Add(s_->flow_control.stats()));
     }
   }
 
