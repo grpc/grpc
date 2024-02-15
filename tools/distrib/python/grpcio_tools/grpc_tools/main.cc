@@ -198,11 +198,14 @@ int protoc_get_protos(
 }
 
 int protoc_get_services(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
+    char* protobuf_path, char* version,
+    const std::vector<std::string>* include_paths,
     std::vector<std::pair<std::string, std::string>>* files_out,
     std::vector<::grpc_tools::ProtocError>* errors,
     std::vector<::grpc_tools::ProtocWarning>* warnings) {
-  grpc_python_generator::GeneratorConfiguration grpc_py_config;
+  std::string grpc_tools_version = version;
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(
+      grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   return generate_code(&grpc_py_generator, protobuf_path, include_paths,
                        files_out, errors, warnings);

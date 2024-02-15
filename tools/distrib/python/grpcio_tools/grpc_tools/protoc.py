@@ -38,9 +38,9 @@ def main(command_arguments):
       command_arguments: a list of strings representing command line arguments to
           `protoc`.
     """
-    command_arguments += [
-        "--grpc_tools_version={}".format(grpc_version.VERSION)
-    ]
+    # command_arguments += [
+    #     "--grpc_tools_version={}".format(grpc_version.VERSION)
+    # ]
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
 

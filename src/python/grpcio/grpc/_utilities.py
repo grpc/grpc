@@ -189,3 +189,32 @@ def channel_ready_future(channel: grpc.Channel) -> _ChannelReadyFuture:
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()
     return ready_future
+
+
+def first_version_is_lower(version1: str, version2: str) -> bool:
+    """
+    Compares two versions in the format '1.60.1' or '1.60.1.dev0'.
+
+    Args:
+        version1: The first version string.
+        version2: The second version string.
+
+    Returns:
+        True if version1 is lower, False otherwise.
+    """
+    version1_list = version1.split(".")
+    version2_list = version2.split(".")
+
+    try:
+        for i in range(3):
+            if int(version1_list[i]) < int(version2_list[i]):
+                return True
+            elif int(version1_list[i]) > int(version2_list[i]):
+                return False
+    except ValueError:
+        # Return false in case we can't convert version to int.
+        return False
+
+    # If we reach here, the versions are equal up to the compared elements.
+    # The version without dev0 will be considered lower.
+    return len(version1_list) < len(version2_list)
