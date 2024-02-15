@@ -492,13 +492,15 @@ class StreamWriteContext {
         t_, s_, &s_->send_initial_metadata_finished, absl::OkStatus(),
         "send_initial_metadata_finished");
     if (s_->call_tracer) {
+      grpc_core::HttpAnnotation::WriteStats write_stats;
+      write_stats.target_write_size = write_context_->target_write_size();
       s_->call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(
               grpc_core::HttpAnnotation::Type::kHeadWritten,
               gpr_now(GPR_CLOCK_REALTIME))
               .Add(s_->t->flow_control.stats())
               .Add(s_->flow_control.stats())
-              .Add(write_context_->target_write_size()));
+              .Add(write_stats));
     }
   }
 

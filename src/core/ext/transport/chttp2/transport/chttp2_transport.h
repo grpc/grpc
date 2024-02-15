@@ -112,6 +112,11 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
     kEnd,
   };
 
+  // A snapshot of write stats to export.
+  struct WriteStats {
+    size_t target_write_size;
+  };
+
   HttpAnnotation(Type type, gpr_timespec time);
 
   HttpAnnotation& Add(const chttp2::TransportFlowControl::Stats& stats) {
@@ -124,8 +129,8 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
     return *this;
   }
 
-  HttpAnnotation& Add(size_t target_wire_size) {
-    target_wire_size_ = target_wire_size;
+  HttpAnnotation& Add(const WriteStats& stats) {
+    write_stats_ = stats;
     return *this;
   }
 
@@ -145,7 +150,7 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   const gpr_timespec time_;
   absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
   absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
-  absl::optional<size_t> target_wire_size_;
+  absl::optional<WriteStats> write_stats_;
 };
 
 }  // namespace grpc_core
