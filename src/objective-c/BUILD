@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//releasetools/apple/privacy/privacymanifests/rules:apple_xcprivacy_import.bzl", "apple_xcprivacy_import")
 load("//bazel:grpc_build_system.bzl", "grpc_generate_objc_one_off_targets", "grpc_objc_library")
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
@@ -131,6 +132,7 @@ grpc_objc_library(
         "GRPCClient/GRPCCall+OAuth2.h",
         "GRPCClient/GRPCCall+Tests.h",
     ],
+    aspect_hints = [":grpc_privacy_manifest_import"],
     data = [":gRPCCertificates"],
     includes = ["."],
     textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
@@ -169,6 +171,7 @@ grpc_objc_library(
         "ProtoRPC/ProtoRPC.h",
         "ProtoRPC/ProtoService.h",
     ],
+    aspect_hints = [":grpc_privacy_manifest_import"],
     defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
     includes = ["."],
     deps = [
@@ -276,4 +279,9 @@ grpc_objc_library(
 alias(
     name = "grpc_objc_client_internal_testing",
     actual = "proto_objc_rpc_internal_testing",
+)
+
+apple_xcprivacy_import(
+    name = "grpc_privacy_manifest_import",
+    src = "PrivacyInfo.xcprivacy",
 )
