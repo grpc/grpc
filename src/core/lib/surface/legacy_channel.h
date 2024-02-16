@@ -67,11 +67,11 @@ class LegacyChannel : public Channel {
 
   bool IsLame() const override;
 
-  grpc_call* CreateCall(
-      grpc_call* parent_call, uint32_t propagation_mask,
-      grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
-      Slice path, absl::optional<Slice> authority, Timestamp deadline,
-      bool registered_method) override;
+  grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
+                        grpc_completion_queue* cq,
+                        grpc_pollset_set* pollset_set_alternative, Slice path,
+                        absl::optional<Slice> authority, Timestamp deadline,
+                        bool registered_method) override;
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel_stack_->EventEngine();
@@ -81,9 +81,9 @@ class LegacyChannel : public Channel {
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect) override;
 
-  void WatchConnectivityState(
-      grpc_connectivity_state last_observed_state,
-      Timestamp deadline, grpc_completion_queue* cq, void* tag) override;
+  void WatchConnectivityState(grpc_connectivity_state last_observed_state,
+                              Timestamp deadline, grpc_completion_queue* cq,
+                              void* tag) override;
 
   void AddConnectivityWatcher(
       grpc_connectivity_state initial_state,

@@ -1744,11 +1744,11 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel",
-        "legacy_channel",
         "channel_arg_names",
         "channelz",
         "gpr",
         "grpc_base",
+        "legacy_channel",
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",

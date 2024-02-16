@@ -107,11 +107,11 @@ class NotReallyACallFactory final : public CallFactory {
 
 }  // namespace
 
-LegacyChannel::LegacyChannel(
-    bool is_client, bool is_promising, std::string target,
-    const ChannelArgs& channel_args,
-    grpc_compression_options compression_options,
-    RefCountedPtr<grpc_channel_stack> channel_stack)
+LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
+                             std::string target,
+                             const ChannelArgs& channel_args,
+                             grpc_compression_options compression_options,
+                             RefCountedPtr<grpc_channel_stack> channel_stack)
     : Channel(std::move(target), channel_args, compression_options),
       is_client_(is_client),
       is_promising_(is_promising),
@@ -155,8 +155,8 @@ bool LegacyChannel::IsLame() const {
 grpc_call* LegacyChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
-    grpc_core::Slice path, absl::optional<grpc_core::Slice> authority,
-    grpc_core::Timestamp deadline, bool registered_method) {
+    Slice path, absl::optional<Slice> authority, Timestamp deadline,
+    bool registered_method) {
   GPR_ASSERT(is_client_);
   GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
@@ -259,8 +259,8 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
   void StartTimer(Timestamp deadline) {
     const Duration timeout = deadline - Timestamp::Now();
     MutexLock lock(&mu_);
-    timer_handle_ = channel_->event_engine()->RunAfter(
-        timeout, [self = Ref()]() mutable {
+    timer_handle_ =
+        channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->TimeoutComplete();
@@ -324,10 +324,10 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
 };
 
 void LegacyChannel::WatchConnectivityState(
-    grpc_connectivity_state last_observed_state,
-    Timestamp deadline, grpc_completion_queue* cq, void* tag) {
-  new StateWatcher(RefAsSubclass<LegacyChannel>(), cq, tag,
-                   last_observed_state, deadline);
+    grpc_connectivity_state last_observed_state, Timestamp deadline,
+    grpc_completion_queue* cq, void* tag) {
+  new StateWatcher(RefAsSubclass<LegacyChannel>(), cq, tag, last_observed_state,
+                   deadline);
 }
 
 void LegacyChannel::AddConnectivityWatcher(
@@ -367,11 +367,9 @@ struct ping_result {
   grpc_completion_queue* cq;
   grpc_cq_completion completion_storage;
 };
-static void ping_destroy(void* arg, grpc_cq_completion* /*storage*/) {
-  gpr_free(arg);
-}
+void ping_destroy(void* arg, grpc_cq_completion* /*storage*/) { gpr_free(arg); }
 
-static void ping_done(void* arg, grpc_error_handle error) {
+void ping_done(void* arg, grpc_error_handle error) {
   ping_result* pr = static_cast<ping_result*>(arg);
   grpc_cq_end_op(pr->cq, pr->tag, error, ping_destroy, pr,
                  &pr->completion_storage);

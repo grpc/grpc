@@ -47,16 +47,14 @@ absl::StatusOr<OrphanablePtr<Channel>> Channel::Create(
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     // Get parameters needed to create the channelz node.
     const size_t channel_tracer_max_memory = std::max(
-        0,
-        args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
-            .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
+        0, args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
+               .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
     const bool is_internal_channel =
         args.GetBool(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL).value_or(false);
     // Create the channelz node.
     std::string channelz_node_target{target.empty() ? "unknown" : target};
     auto channelz_node = MakeRefCounted<channelz::ChannelNode>(
-        channelz_node_target, channel_tracer_max_memory,
-        is_internal_channel);
+        channelz_node_target, channel_tracer_max_memory, is_internal_channel);
     channelz_node->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));

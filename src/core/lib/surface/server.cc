@@ -773,8 +773,7 @@ class ChannelBroadcaster {
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
-    elem =
-        grpc_channel_stack_element(channel->channel_stack(), 0);
+    elem = grpc_channel_stack_element(channel->channel_stack(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 

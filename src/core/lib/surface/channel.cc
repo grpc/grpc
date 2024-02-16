@@ -152,8 +152,7 @@ grpc_call* grpc_channel_create_registered_call(
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
-      parent_call, propagation_mask, completion_queue, nullptr,
-      rc->path.Ref(),
+      parent_call, propagation_mask, completion_queue, nullptr, rc->path.Ref(),
       rc->authority.has_value()
           ? absl::optional<grpc_core::Slice>(rc->authority->Ref())
           : absl::nullopt,

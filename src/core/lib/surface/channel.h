@@ -72,7 +72,7 @@ class Channel : public RefCounted<Channel>,
       grpc_channel_stack_type channel_stack_type,
       Transport* optional_transport);
 
-  virtual ~Channel() override;
+  ~Channel() override;
 
   virtual void Orphan() = 0;
 
@@ -82,14 +82,15 @@ class Channel : public RefCounted<Channel>,
   virtual bool IsLame() const = 0;
 
   // TODO(roth): This should return a C++ type.
-  virtual grpc_call* CreateCall(
-      grpc_call* parent_call, uint32_t propagation_mask,
-      grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
-      Slice path, absl::optional<Slice> authority, Timestamp deadline,
-      bool registered_method) = 0;
+  virtual grpc_call* CreateCall(grpc_call* parent_call,
+                                uint32_t propagation_mask,
+                                grpc_completion_queue* cq,
+                                grpc_pollset_set* pollset_set_alternative,
+                                Slice path, absl::optional<Slice> authority,
+                                Timestamp deadline, bool registered_method) = 0;
 
-  virtual grpc_event_engine::experimental::EventEngine* event_engine() const =
-      0;
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
   virtual bool SupportsConnectivityWatcher() const = 0;
 
@@ -98,8 +99,8 @@ class Channel : public RefCounted<Channel>,
 
   // For external watched via the C-core API.
   virtual void WatchConnectivityState(
-      grpc_connectivity_state last_observed_state,
-      Timestamp deadline, grpc_completion_queue* cq, void* tag) = 0;
+      grpc_connectivity_state last_observed_state, Timestamp deadline,
+      grpc_completion_queue* cq, void* tag) = 0;
 
   // For internal watches.
   virtual void AddConnectivityWatcher(
