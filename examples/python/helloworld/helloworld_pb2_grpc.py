@@ -126,7 +126,6 @@ class Greeter(object):
             '/helloworld.Greeter/SayHello',
             helloworld__pb2.HelloRequest.SerializeToString,
             helloworld__pb2.HelloReply.FromString,
-<<<<<<< HEAD
             options,
             channel_credentials,
             insecure,
@@ -136,10 +135,6 @@ class Greeter(object):
             timeout,
             metadata,
             _registered_method=True)
-=======
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
->>>>>>> 198f30155b ([Python Stub] Add version check to stubs)
 
     @staticmethod
     def SayHelloStreamReply(request,
@@ -152,7 +147,6 @@ class Greeter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-<<<<<<< HEAD
         return grpc.experimental.unary_stream(
             request,
             target,
@@ -168,13 +162,6 @@ class Greeter(object):
             timeout,
             metadata,
             _registered_method=True)
-=======
-        return grpc.experimental.unary_stream(request, target, '/helloworld.Greeter/SayHelloStreamReply',
-            helloworld__pb2.HelloRequest.SerializeToString,
-            helloworld__pb2.HelloReply.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
->>>>>>> 198f30155b ([Python Stub] Add version check to stubs)
 
     @staticmethod
     def SayHelloBidiStream(request_iterator,
@@ -187,7 +174,6 @@ class Greeter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-<<<<<<< HEAD
         return grpc.experimental.stream_stream(
             request_iterator,
             target,
@@ -203,10 +189,3 @@ class Greeter(object):
             timeout,
             metadata,
             _registered_method=True)
-=======
-        return grpc.experimental.stream_stream(request_iterator, target, '/helloworld.Greeter/SayHelloBidiStream',
-            helloworld__pb2.HelloRequest.SerializeToString,
-            helloworld__pb2.HelloReply.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
->>>>>>> 198f30155b ([Python Stub] Add version check to stubs)
