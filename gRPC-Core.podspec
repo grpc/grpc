@@ -1446,7 +1446,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/windows/sync.cc',
                       'src/core/lib/gpr/windows/time.cc',
                       'src/core/lib/gpr/windows/tmpfile.cc',
-                      'src/core/lib/gpr/wrap_memcpy.cc',
                       'src/core/lib/gprpp/atomic_utils.h',
                       'src/core/lib/gprpp/bitset.h',
                       'src/core/lib/gprpp/chunked_vector.h',
