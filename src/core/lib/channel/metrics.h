@@ -17,7 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -27,14 +26,16 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
-// A global instruments registry whose API is designed to be used to register
-// instruments (Counter and Histogram) as part of program startup, before the
-// execution of the main function. Using this API after the main function begins
-// may result into those instruments missing in StatsPlugins.
+// A global registry of instruments(metrics). This API is designed to be used to
+// register instruments (Counter and Histogram) as part of program startup,
+// before the execution of the main function (during dynamic initialization
+// time). Using this API after the main function begins may result into missing
+// instruments. This API is thread-unsafe.
 class GlobalInstrumentsRegistry {
  public:
   enum class ValueType {
@@ -72,20 +73,20 @@ class GlobalInstrumentsRegistry {
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
       absl::string_view name, absl::string_view description,
-      absl::string_view unit, std::vector<absl::string_view> label_keys,
-      std::vector<absl::string_view> optional_label_keys);
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys);
   static GlobalDoubleCounterHandle RegisterDoubleCounter(
       absl::string_view name, absl::string_view description,
-      absl::string_view unit, std::vector<absl::string_view> label_keys,
-      std::vector<absl::string_view> optional_label_keys);
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys);
   static GlobalUInt64HistogramHandle RegisterUInt64Histogram(
       absl::string_view name, absl::string_view description,
-      absl::string_view unit, std::vector<absl::string_view> label_keys,
-      std::vector<absl::string_view> optional_label_keys);
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys);
   static GlobalDoubleHistogramHandle RegisterDoubleHistogram(
       absl::string_view name, absl::string_view description,
-      absl::string_view unit, std::vector<absl::string_view> label_keys,
-      std::vector<absl::string_view> optional_label_keys);
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys);
   static void ForEach(
       absl::AnyInvocable<void(const GlobalInstrumentDescriptor&)> f);
 
@@ -95,8 +96,8 @@ class GlobalInstrumentsRegistry {
   // Uses the Construct-on-First-Use idiom to avoid the static initialization
   // order fiasco.
   static std::vector<GlobalInstrumentDescriptor>& gInstruments() {
-    static std::vector<GlobalInstrumentDescriptor> instruments_;
-    return instruments_;
+    static NoDestruct<std::vector<GlobalInstrumentDescriptor>> instruments_;
+    return *instruments_;
   }
 };
 
@@ -114,20 +115,20 @@ class StatsPlugin {
 
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-      uint64_t value, std::vector<absl::string_view> label_values,
-      std::vector<absl::string_view> optional_values) = 0;
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
-      std::vector<absl::string_view> label_values,
-      std::vector<absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
-      uint64_t value, std::vector<absl::string_view> label_values,
-      std::vector<absl::string_view> optional_values) = 0;
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
-      double value, std::vector<absl::string_view> label_values,
-      std::vector<absl::string_view> optional_values) = 0;
+      double value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
   // TODO(yijiem): Details pending.
   // std::unique_ptr<AsyncInstrument> GetObservableGauge(
   //     absl::string_view name, absl::string_view description,
@@ -146,7 +147,9 @@ class StatsPlugin {
   //     absl::Span<absl::string_view> label_values) = 0;
 };
 
-// Singleton.
+// A global registry of StatsPlugins. It has shared ownership to the registered
+// StatsPlugins. This API is supposed to be used during runtime after the main
+// function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
   class StatsPluginGroup {
@@ -156,31 +159,33 @@ class GlobalStatsPluginRegistry {
     }
 
     void AddCounter(GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-                    uint64_t value, std::vector<absl::string_view> label_values,
-                    std::vector<absl::string_view> optional_values) {
+                    uint64_t value,
+                    absl::Span<const absl::string_view> label_values,
+                    absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
     void AddCounter(GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
-                    double value, std::vector<absl::string_view> label_values,
-                    std::vector<absl::string_view> optional_values) {
+                    double value,
+                    absl::Span<const absl::string_view> label_values,
+                    absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
     void RecordHistogram(
         GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
-        uint64_t value, std::vector<absl::string_view> label_values,
-        std::vector<absl::string_view> optional_values) {
+        uint64_t value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
     }
     void RecordHistogram(
         GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
-        double value, std::vector<absl::string_view> label_values,
-        std::vector<absl::string_view> optional_values) {
+        double value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
@@ -190,40 +195,25 @@ class GlobalStatsPluginRegistry {
     std::vector<std::shared_ptr<StatsPlugin>> plugins_;
   };
 
-  void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
+  static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
   // The following two functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  StatsPluginGroup GetStatsPluginsForChannel(const StatsPlugin::Scope& scope);
+  static StatsPluginGroup GetStatsPluginsForChannel(
+      const StatsPlugin::Scope& scope);
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
-  static GlobalStatsPluginRegistry& Get() {
-    GlobalStatsPluginRegistry* p = self_.load(std::memory_order_acquire);
-    if (p != nullptr) {
-      return *p;
-    }
-    p = new GlobalStatsPluginRegistry();
-    GlobalStatsPluginRegistry* expected = nullptr;
-    if (!self_.compare_exchange_strong(expected, p, std::memory_order_acq_rel,
-                                       std::memory_order_acquire)) {
-      delete p;
-      return *expected;
-    }
-    return *p;
-  }
-
-  void TestOnlyResetStatsPlugins() {
-    MutexLock lock(&mutex_);
-    plugins_.clear();
+  static void TestOnlyResetStatsPlugins() {
+    MutexLock lock(&*mutex_);
+    plugins_->clear();
   }
 
  private:
   GlobalStatsPluginRegistry() = default;
 
-  static std::atomic<GlobalStatsPluginRegistry*> self_;
-
-  Mutex mutex_;
-  std::vector<std::shared_ptr<StatsPlugin>> plugins_ ABSL_GUARDED_BY(mutex_);
+  static NoDestruct<Mutex> mutex_;
+  static NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>> plugins_
+      ABSL_GUARDED_BY(mutex_);
 };
 
 }  // namespace grpc_core

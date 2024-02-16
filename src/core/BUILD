@@ -6972,6 +6972,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
+        "no_destruct",
         "//:gpr",
     ],
 )
