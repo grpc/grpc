@@ -861,6 +861,23 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return status;
   }
 
+  // Invoke ExitIdle on the LB policy
+  void ExitIdle() {
+    ExecCtx exec_ctx;
+    absl::Notification notification;
+    // Note: ExitIdle() will enqueue a bunch of connectivity state
+    // notifications on the WorkSerializer, and we want to wait until
+    // those are delivered to the LB policy.
+    work_serializer_->Run(
+        [&]() {
+          lb_policy_->ExitIdleLocked();
+          work_serializer_->Run([&]() { notification.Notify(); },
+                                DEBUG_LOCATION);
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotification();
+  }
+
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
     helper_->ExpectQueueEmpty(location);
   }
@@ -1087,6 +1104,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       const CallAttributes& call_attributes = {},
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
+      SubchannelState::FakeSubchannel** picked_subchannel = nullptr,
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
@@ -1100,20 +1118,29 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (complete == nullptr) return absl::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
+    if (picked_subchannel != nullptr) *picked_subchannel = subchannel;
     std::string address = subchannel->state()->address();
     if (complete->subchannel_call_tracker != nullptr) {
       if (subchannel_call_tracker != nullptr) {
         *subchannel_call_tracker = std::move(complete->subchannel_call_tracker);
       } else {
-        complete->subchannel_call_tracker->Start();
-        FakeMetadata metadata({});
-        FakeBackendMetricAccessor backend_metric_accessor({});
-        LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-            address, absl::OkStatus(), &metadata, &backend_metric_accessor};
-        complete->subchannel_call_tracker->Finish(args);
+        ReportCompletionToCallTracker(
+            std::move(complete->subchannel_call_tracker), address);
       }
     }
     return address;
+  }
+
+  void ReportCompletionToCallTracker(
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          subchannel_call_tracker,
+      absl::string_view address, absl::Status status = absl::OkStatus()) {
+    subchannel_call_tracker->Start();
+    FakeMetadata metadata({});
+    FakeBackendMetricAccessor backend_metric_accessor({});
+    LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+        address, status, &metadata, &backend_metric_accessor};
+    subchannel_call_tracker->Finish(args);
   }
 
   // Gets num_picks complete picks from picker and returns the resulting
@@ -1137,7 +1164,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                         subchannel_call_trackers == nullptr
                                             ? nullptr
                                             : &subchannel_call_tracker,
-                                        location);
+                                        nullptr, location);
       if (!address.has_value()) return absl::nullopt;
       results.emplace_back(std::move(*address));
       if (subchannel_call_trackers != nullptr) {

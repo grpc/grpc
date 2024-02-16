@@ -153,8 +153,7 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer);
 bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert);
 
 // Verifies the certificate in question has the cRLSign bit present.
-// OpenSSL >= 1.1.1 return: true if cRLSign bit is present, false otherwise.
-// OpenSSL == 1.0.2 return: true always
+// return: true if cRLSign bit is present, false otherwise.
 bool HasCrlSignBit(X509* cert);
 
 // Gets a stable representation of the issuer name from an X509 certificate.
@@ -170,7 +169,6 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert);
 // crl.
 // return: a std::string of the DER encoding of the AKID or a status on failure.
 absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl);
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

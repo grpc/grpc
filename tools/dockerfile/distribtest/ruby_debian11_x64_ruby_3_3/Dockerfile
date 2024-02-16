@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:10
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -78,6 +78,10 @@ RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.3.0' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
+
+# Workaround for rvm unable to find mkdir properly
+# https://stackoverflow.com/questions/64653051
+RUN ln -s /bin/mkdir /usr/bin/mkdir
 
 
 # Define the default command.

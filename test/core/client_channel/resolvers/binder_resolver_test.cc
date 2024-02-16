@@ -33,8 +33,15 @@
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/socket.h>
 #include <sys/un.h>
+#endif  // GPR_WINDOWS
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -201,7 +208,7 @@ TEST_F(BinderResolverTest, ValidCases) {
       "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~");
 }
 
-#endif
+#endif  // GRPC_HAVE_UNIX_SOCKET
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -56,9 +56,12 @@ const char* kIntermediateCrlIssuer =
 const char* kLeafCert =
     "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.pem";
 const char* kEvilCa = "test/core/tsi/test_creds/crl_data/evil_ca.pem";
+<<<<<<< HEAD
 const char* kCaWithAkid = "test/core/tsi/test_creds/crl_data/ca_with_akid.pem";
 const char* kCrlWithAkid =
     "test/core/tsi/test_creds/crl_data/crl_with_akid.crl";
+=======
+>>>>>>> master
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
@@ -465,9 +468,12 @@ class CrlUtils : public ::testing::Test {
     ASSERT_EQ(invalid_signature_crl.status(), absl::OkStatus())
         << invalid_signature_crl.status();
     invalid_signature_crl_ = ReadCrl(invalid_signature_crl->as_string_view());
+<<<<<<< HEAD
     absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid, false);
     ASSERT_EQ(akid_crl.status(), absl::OkStatus()) << akid_crl.status();
     akid_crl_ = ReadCrl(akid_crl->as_string_view());
+=======
+>>>>>>> master
 
     absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer, false);
     ASSERT_EQ(root_ca.status(), absl::OkStatus());
@@ -482,34 +488,49 @@ class CrlUtils : public ::testing::Test {
     absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa, false);
     ASSERT_EQ(evil_ca.status(), absl::OkStatus());
     evil_ca_ = ReadPemCert(evil_ca->as_string_view());
+<<<<<<< HEAD
 
     absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid, false);
     ASSERT_EQ(ca_with_akid.status(), absl::OkStatus());
     ca_with_akid_ = ReadPemCert(ca_with_akid->as_string_view());
+=======
+>>>>>>> master
   }
 
   void TearDown() override {
     X509_CRL_free(root_crl_);
     X509_CRL_free(intermediate_crl_);
     X509_CRL_free(invalid_signature_crl_);
+<<<<<<< HEAD
     X509_CRL_free(akid_crl_);
+=======
+>>>>>>> master
     X509_free(root_ca_);
     X509_free(intermediate_ca_);
     X509_free(leaf_cert_);
     X509_free(evil_ca_);
+<<<<<<< HEAD
     X509_free(ca_with_akid_);
+=======
+>>>>>>> master
   }
 
  protected:
   X509_CRL* root_crl_;
   X509_CRL* intermediate_crl_;
   X509_CRL* invalid_signature_crl_;
+<<<<<<< HEAD
   X509_CRL* akid_crl_;
+=======
+>>>>>>> master
   X509* root_ca_;
   X509* intermediate_ca_;
   X509* leaf_cert_;
   X509* evil_ca_;
+<<<<<<< HEAD
   X509* ca_with_akid_;
+=======
+>>>>>>> master
 };
 
 TEST_F(CrlUtils, VerifySignatureValid) {
@@ -579,6 +600,7 @@ TEST_F(CrlUtils, VerifyIssuerNameNullCrlAndCert) {
 
 TEST_F(CrlUtils, HasCrlSignBitExists) { EXPECT_TRUE(HasCrlSignBit(root_ca_)); }
 
+<<<<<<< HEAD
 // On OpenSSL 1.0.2 this would be expected to just pass all the time because
 // X509_get_key_usage doesn't exist, so we make it a passthrough
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -586,6 +608,10 @@ TEST_F(CrlUtils, HasCrlSignBitMissing) {
   EXPECT_FALSE(HasCrlSignBit(leaf_cert_));
 }
 #endif  // OPENSSL_VERSION_NUMBEr < 0x10100000
+======= TEST_F(CrlUtils, HasCrlSignBitMissing) {
+  EXPECT_FALSE(HasCrlSignBit(leaf_cert_));
+}
+>>>>>>> master
 
 TEST_F(CrlUtils, HasCrlSignBitNullCert) {
   EXPECT_FALSE(HasCrlSignBit(nullptr));
@@ -658,7 +684,6 @@ TEST_F(CrlUtils, CrlNoAkid) {
   auto akid = AkidFromCrl(root_crl_);
   EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
 }
-
 }  // namespace testing
 }  // namespace grpc_core
 

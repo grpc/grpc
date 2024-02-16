@@ -285,6 +285,7 @@ class CLanguage(object):
                     "cmake",
                     "cmake_ninja_vs2019",
                     "cmake_vs2019",
+                    "cmake_vs2022",
                 ],
             )
             _check_arch(self.args.arch, ["default", "x64", "x86"])
@@ -301,6 +302,8 @@ class CLanguage(object):
                 activate_vs_tools = "2019"
             elif self.args.compiler == "cmake_vs2019":
                 cmake_generator = "Visual Studio 16 2019"
+            elif self.args.compiler == "cmake_vs2022":
+                cmake_generator = "Visual Studio 17 2022"
             else:
                 print("should never reach here.")
                 sys.exit(1)
@@ -1684,6 +1687,7 @@ argp.add_argument(
         "cmake",
         "cmake_ninja_vs2019",
         "cmake_vs2019",
+        "cmake_vs2022",
         "mono",
     ],
     default="default",
