@@ -111,6 +111,7 @@ static void client_setup_transport(grpc_core::Transport* transport) {
   g_ctx.client = (*grpc_core::Channel::Create(
                       "socketpair-target", grpc_core::ChannelArgs::FromC(args),
                       GRPC_CLIENT_DIRECT_CHANNEL, transport))
+                     .release()
                      ->c_ptr();
   grpc_channel_args_destroy(args);
 }

@@ -40,10 +40,18 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/connectivity_state.h"
+
+// Forward declaration to avoid dependency loop.
+struct grpc_channel_stack;
 
 namespace grpc_core {
+
+// Forward declaration to avoid dependency loop.
+class Transport;
 
 class Channel : public RefCounted<Channel>,
                 public CppImplOf<Channel, grpc_channel> {
@@ -59,7 +67,7 @@ class Channel : public RefCounted<Channel>,
     ~RegisteredCall();
   };
 
-  static absl::StatusOr<RefCountedPtr<Channel>> Create(
+  static absl::StatusOr<OrphanablePtr<Channel>> Create(
       std::string target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type,
       Transport* optional_transport);
@@ -70,6 +78,8 @@ class Channel : public RefCounted<Channel>,
 
   virtual Arena* CreateArena() = 0;
   virtual void DestroyArena(Arena* arena) = 0;
+
+  virtual bool IsLame() const = 0;
 
   // TODO(roth): This should return a C++ type.
   virtual grpc_call* CreateCall(
@@ -121,6 +131,11 @@ class Channel : public RefCounted<Channel>,
   // failure to the CQ.
   virtual void Ping(grpc_completion_queue* cq, void* tag) = 0;
 
+  // TODO(roth): Remove these methods when LegacyChannel goes away.
+  virtual grpc_channel_stack* channel_stack() const { return nullptr; }
+  virtual bool is_client() const { return true; }
+  virtual bool is_promising() const { return true; }
+
  protected:
   Channel(std::string target, const ChannelArgs& channel_args,
           grpc_compression_options compression_options);
@@ -145,19 +160,6 @@ class Channel : public RefCounted<Channel>,
 inline void grpc_channel_destroy_internal(grpc_channel* channel) {
   grpc_core::Channel::FromC(channel)->Orphan();
 }
-
-/// Create a call given a grpc_channel, in order to call \a method.
-/// Progress is tied to activity on \a pollset_set. The returned call object is
-/// meant to be used with \a grpc_call_start_batch_and_execute, which relies on
-/// callbacks to signal completions. \a method and \a host need
-/// only live through the invocation of this function. If \a parent_call is
-/// non-NULL, it must be a server-side call. It will be used to propagate
-/// properties from the server call to this new client call, depending on the
-/// value of \a propagation_mask (see propagation_bits.h for possible values)
-grpc_call* grpc_channel_create_pollset_set_call(
-    grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_pollset_set* pollset_set, const grpc_slice& method,
-    const grpc_slice* host, grpc_core::Timestamp deadline, void* reserved);
 
 // Return the channel's compression options.
 inline grpc_compression_options grpc_channel_compression_options(

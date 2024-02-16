@@ -16,44 +16,29 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
-#define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H
 
 #include <grpc/support/port_platform.h>
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include <atomic>
-#include <map>
 #include <string>
-#include <utility>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/slice.h>
 
-#include "src/core/lib/channel/channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
-#include "src/core/lib/channel/channel_stack_builder.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/gprpp/cpp_impl_of.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
@@ -62,10 +47,16 @@ namespace grpc_core {
 
 class LegacyChannel : public Channel {
  public:
-  static absl::StatusOr<RefCountedPtr<Channel>> Create(
+  static absl::StatusOr<OrphanablePtr<Channel>> Create(
       std::string target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type,
       grpc_compression_options compression_options);
+
+  // Do not instantiate directly -- use Create() instead.
+  LegacyChannel(bool is_client, bool is_promising, std::string target,
+                const ChannelArgs& channel_args,
+                grpc_compression_options compression_options,
+                RefCountedPtr<grpc_channel_stack> channel_stack);
 
   void Orphan() override;
 
@@ -73,6 +64,8 @@ class LegacyChannel : public Channel {
   void DestroyArena(Arena* arena) override {
     return call_factory_->DestroyArena(arena);
   }
+
+  bool IsLame() const override;
 
   grpc_call* CreateCall(
       grpc_call* parent_call, uint32_t propagation_mask,
@@ -104,30 +97,25 @@ class LegacyChannel : public Channel {
 
   void Ping(grpc_completion_queue* cq, void* tag) override;
 
-  bool is_client() const { return is_client_; }
-  bool is_promising() const { return is_promising_; }
-  grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
+  bool is_client() const override { return is_client_; }
+  bool is_promising() const override { return is_promising_; }
+  grpc_channel_stack* channel_stack() const override {
+    return channel_stack_.get();
+  }
 
  private:
   class StateWatcher;
-
-  LegacyChannel(bool is_client, bool is_promising, std::string target,
-                const ChannelArgs& channel_args,
-                grpc_compression_options compression_options,
-                RefCountedPtr<grpc_channel_stack> channel_stack);
 
   // Returns the client channel filter if this is a client channel,
   // otherwise null.
   ClientChannelFilter* GetClientChannelFilter() const;
 
-  bool IsLameChannel() const;
-
   const bool is_client_;
   const bool is_promising_;
-  const RefCountedPtr<grpc_channel_stack> channel_stack_;
+  RefCountedPtr<grpc_channel_stack> channel_stack_;
   const RefCountedPtr<CallFactory> call_factory_;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H

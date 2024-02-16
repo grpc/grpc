@@ -69,15 +69,16 @@ namespace grpc_core {
 //
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
-    RefCountedPtr<GrpcXdsTransportFactory> factory, grpc_channel* channel,
+    RefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
   // Create call.
-  call_ = grpc_channel_create_pollset_set_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, factory_->interested_parties(),
-      StaticSlice::FromStaticString(method).c_slice(), nullptr,
-      Timestamp::InfFuture(), nullptr);
+  call_ = channel->CreateCall(
+      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
+      factory_->interested_parties(), Slice::FromStaticString(method),
+      /*host=*/absl::nullopt, Timestamp::InfFuture(),
+      /*registered_method=*/true);
   GPR_ASSERT(call_ != nullptr);
   // Init data associated with the call.
   grpc_metadata_array_init(&initial_metadata_recv_);
@@ -252,19 +253,14 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 
 namespace {
 
-grpc_channel* CreateXdsChannel(const ChannelArgs& args,
-                               const GrpcXdsBootstrap::GrpcXdsServer& server) {
+OrphanablePtr<Channel> CreateXdsChannel(
+    const ChannelArgs& args, const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
-  return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
-                             args.ToC().get());
-}
-
-bool IsLameChannel(grpc_channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return elem->filter == &LameClientFilter::kFilter;
+  return OrphanablePtr<Channel>(Channel::FromC(
+      grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
+                          args.ToC().get())));
 }
 
 }  // namespace
@@ -278,29 +274,19 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
       factory->args_,
       static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
   GPR_ASSERT(channel_ != nullptr);
-  if (IsLameChannel(channel_)) {
+  if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
   } else {
-    ClientChannelFilter* client_channel =
-        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
-    GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(std::move(on_connectivity_failure));
-    client_channel->AddConnectivityWatcher(
+    channel_->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
   }
 }
 
-GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
-  grpc_channel_destroy_internal(channel_);
-}
-
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
-  if (!IsLameChannel(channel_)) {
-    ClientChannelFilter* client_channel =
-        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
-    GPR_ASSERT(client_channel != nullptr);
-    client_channel->RemoveConnectivityWatcher(watcher_);
+  if (!channel_->IsLame()) {
+    channel_->RemoveConnectivityWatcher(watcher_);
   }
   // Do an async hop before unreffing.  This avoids a deadlock upon
   // shutdown in the case where the xDS channel is itself an xDS channel
@@ -319,11 +305,11 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
   return MakeOrphanable<GrpcStreamingCall>(
       factory_->RefAsSubclass<GrpcXdsTransportFactory>(DEBUG_LOCATION,
                                                        "StreamingCall"),
-      channel_, method, std::move(event_handler));
+      channel_.get(), method, std::move(event_handler));
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
-  grpc_channel_reset_connect_backoff(channel_);
+  channel_->ResetConnectionBackoff();
 }
 
 //

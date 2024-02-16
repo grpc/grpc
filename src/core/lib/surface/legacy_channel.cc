@@ -18,15 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/channel.h"
-
-#include <inttypes.h>
-#include <string.h>
-
-#include <algorithm>
-#include <atomic>
-#include <functional>
-#include <memory>
+#include "src/core/lib/surface/legacy_channel.h"
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
@@ -35,39 +27,18 @@
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel_init.h"
-#include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/init_internally.h"
-#include "src/core/lib/transport/call_factory.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -76,46 +47,51 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_init.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "src/core/lib/transport/call_factory.h"
+#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
-absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
+absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
-    grpc_channel_stack_type channel_stack_type, Transport* optional_transport) {
+    grpc_channel_stack_type channel_stack_type,
+    grpc_compression_options compression_options) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
     if (channel_args_mutator != nullptr) {
-      args = channel_args_mutator(target, args, channel_stack_type);
+      args = channel_args_mutator(target.c_str(), args, channel_stack_type);
     }
   }
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
       args);
-  builder.SetTarget(target);
+  builder.SetTarget(target.c_str());
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }
   // Only need to update stats for server channels here.  Stats for client
   // channels are handled in our base class.
-  if (builder->channel_stack_type() == GRPC_SERVER_CHANNEL) {
+  if (builder.channel_stack_type() == GRPC_SERVER_CHANNEL) {
     global_stats().IncrementServerChannelsCreated();
   }
-  absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder->Build();
+  absl::StatusOr<RefCountedPtr<grpc_channel_stack>> r = builder.Build();
   if (!r.ok()) {
     auto status = r.status();
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             status.ToString().c_str());
     return status;
   }
-  return MakeRefCounted<LegacyChannel>(
-      grpc_channel_stack_type_is_client(builder->channel_stack_type()),
-      builder->IsPromising(), std::move(target), args, compression_options,
+  return MakeOrphanable<LegacyChannel>(
+      grpc_channel_stack_type_is_client(builder.channel_stack_type()),
+      builder.IsPromising(), std::move(target), args, compression_options,
       std::move(*r));
 }
 
@@ -139,12 +115,26 @@ LegacyChannel::LegacyChannel(
     : Channel(std::move(target), channel_args, compression_options),
       is_client_(is_client),
       is_promising_(is_promising),
-      compression_options_(compression_options),
       channel_stack_(std::move(channel_stack)),
       call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
-  // Make sure this object won't be destroyed until the channel stack is
-  // destroyed.
-  *channel_stack_->on_destroy = [this]() { Unref(); };
+  // We need to make sure that grpc_shutdown() does not shut things down
+  // until after the channel is destroyed.  However, the channel may not
+  // actually be destroyed by the time grpc_channel_destroy() returns,
+  // since there may be other existing refs to the channel.  If those
+  // refs are held by things that are visible to the wrapped language
+  // (such as outstanding calls on the channel), then the wrapped
+  // language can be responsible for making sure that grpc_shutdown()
+  // does not run until after those refs are released.  However, the
+  // channel may also have refs to itself held internally for various
+  // things that need to be cleaned up at channel destruction (e.g.,
+  // LB policies, subchannels, etc), and because these refs are not
+  // visible to the wrapped language, it cannot be responsible for
+  // deferring grpc_shutdown() until after they are released.  To
+  // accommodate that, we call grpc_init() here and then call
+  // grpc_shutdown() when the channel is actually destroyed, thus
+  // ensuring that shutdown is deferred until that point.
+  InitInternally();
+  *channel_stack_->on_destroy = []() { ShutdownInternally(); };
 }
 
 void LegacyChannel::Orphan() {
@@ -153,6 +143,13 @@ void LegacyChannel::Orphan() {
   grpc_channel_element* elem =
       grpc_channel_stack_element(channel_stack_.get(), 0);
   elem->filter->start_transport_op(elem, op);
+  Unref();
+}
+
+bool LegacyChannel::IsLame() const {
+  grpc_channel_element* elem =
+      grpc_channel_stack_last_element(channel_stack_.get());
+  return elem->filter == &LameClientFilter::kFilter;
 }
 
 grpc_call* LegacyChannel::CreateCall(
@@ -180,11 +177,11 @@ grpc_call* LegacyChannel::CreateCall(
 }
 
 grpc_connectivity_state LegacyChannel::CheckConnectivityState(
-    int try_to_connect) {
+    bool try_to_connect) {
   // Forward through to the underlying client channel.
   ClientChannelFilter* client_channel = GetClientChannelFilter();
   if (GPR_UNLIKELY(client_channel == nullptr)) {
-    if (IsLameChannel()) return GRPC_CHANNEL_TRANSIENT_FAILURE;
+    if (IsLame()) return GRPC_CHANNEL_TRANSIENT_FAILURE;
     gpr_log(GPR_ERROR,
             "grpc_channel_check_connectivity_state called on something that is "
             "not a client channel");
@@ -216,7 +213,7 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
       // channel.  In that case, connectivity state will never change (it
       // will always be TRANSIENT_FAILURE), so we don't actually start a
       // watch, but we are hiding that fact from the application.
-      if (channel_->IsLameChannel()) {
+      if (channel_->IsLame()) {
         // A ref is held by the timer callback.
         StartTimer(deadline);
         // Ref from object creation needs to be freed here since lame channel
@@ -229,8 +226,7 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
           "not a client channel");
     }
     // Ref from object creation is held by the watcher callback.
-    auto* watcher_timer_init_state = new WatcherTimerInitState(
-        this, Timestamp::FromTimespecRoundUp(deadline));
+    auto* watcher_timer_init_state = new WatcherTimerInitState(this, deadline);
     client_channel->AddExternalConnectivityWatcher(
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &state_,
         &on_complete_, watcher_timer_init_state->closure());
@@ -330,7 +326,8 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
 void LegacyChannel::WatchConnectivityState(
     grpc_connectivity_state last_observed_state,
     Timestamp deadline, grpc_completion_queue* cq, void* tag) {
-  new StateWatcher(Ref(), cq, tag, last_observed_state, deadline);
+  new StateWatcher(RefAsSubclass<LegacyChannel>(), cq, tag,
+                   last_observed_state, deadline);
 }
 
 void LegacyChannel::AddConnectivityWatcher(
@@ -399,17 +396,11 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
 ClientChannelFilter* LegacyChannel::GetClientChannelFilter() const {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel_stack_.get());
-  if (elem->filter != &kFilterVtableWithPromises &&
-      elem->filter != &kFilterVtableWithoutPromises) {
+  if (elem->filter != &ClientChannelFilter::kFilterVtableWithPromises &&
+      elem->filter != &ClientChannelFilter::kFilterVtableWithoutPromises) {
     return nullptr;
   }
   return static_cast<ClientChannelFilter*>(elem->channel_data);
-}
-
-bool LegacyChannel::IsLameChannel() const {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(channel_stack_.get());
-  return elem->filter == &LameClientFilter::kFilter;
 }
 
 }  // namespace grpc_core

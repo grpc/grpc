@@ -1777,7 +1777,6 @@ endif()
 
 add_library(grpc
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/channel_connectivity.cc
   src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -2457,8 +2456,8 @@ add_library(grpc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
   src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
@@ -2466,6 +2465,7 @@ add_library(grpc
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
@@ -2874,7 +2874,6 @@ endif()
 
 add_library(grpc_unsecure
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/channel_connectivity.cc
   src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -3184,8 +3183,8 @@ add_library(grpc_unsecure
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
   src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
@@ -3193,6 +3192,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
@@ -5311,7 +5311,6 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/call_log_batch.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc

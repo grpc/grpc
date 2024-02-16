@@ -47,6 +47,7 @@ grpc_cc_library(
         "client/secure/cronet_channel_create.h",
     ],
     deps = [
+        "//:channel",
         "//:grpc_base",
         "//:grpc_transport_chttp2",
         "//src/core:channel_args",

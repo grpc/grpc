@@ -224,7 +224,7 @@ class Server : public InternallyRefCounted<Server>,
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
-                       RefCountedPtr<Channel> channel, size_t cq_idx,
+                       OrphanablePtr<Channel> channel, size_t cq_idx,
                        Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
@@ -257,7 +257,7 @@ class Server : public InternallyRefCounted<Server>,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    RefCountedPtr<Channel> channel_;
+    OrphanablePtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;

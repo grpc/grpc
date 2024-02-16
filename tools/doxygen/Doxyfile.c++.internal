@@ -1083,7 +1083,6 @@ include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
 src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
-src/core/client_channel/channel_connectivity.cc \
 src/core/client_channel/client_channel_channelz.cc \
 src/core/client_channel/client_channel_channelz.h \
 src/core/client_channel/client_channel_factory.cc \
@@ -2771,9 +2770,9 @@ src/core/lib/surface/call_test_only.h \
 src/core/lib/surface/call_trace.h \
 src/core/lib/surface/channel.cc \
 src/core/lib/surface/channel.h \
+src/core/lib/surface/channel_create.cc \
 src/core/lib/surface/channel_init.cc \
 src/core/lib/surface/channel_init.h \
-src/core/lib/surface/channel_ping.cc \
 src/core/lib/surface/channel_stack_type.cc \
 src/core/lib/surface/channel_stack_type.h \
 src/core/lib/surface/completion_queue.cc \
@@ -2788,6 +2787,8 @@ src/core/lib/surface/init_internally.cc \
 src/core/lib/surface/init_internally.h \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
+src/core/lib/surface/legacy_channel.cc \
+src/core/lib/surface/legacy_channel.h \
 src/core/lib/surface/metadata_array.cc \
 src/core/lib/surface/server.cc \
 src/core/lib/surface/server.h \
