@@ -2673,9 +2673,9 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:grpc++_test"],
     deps = [
+        "channel",
         "grpc++",
         "grpc_base",
-        "channel",
     ],
 )
 
