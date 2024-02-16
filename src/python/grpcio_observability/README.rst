@@ -1,5 +1,5 @@
 gRPC Python Observability
-========================
+=========================
 
 Package for gRPC Python Observability.
 
