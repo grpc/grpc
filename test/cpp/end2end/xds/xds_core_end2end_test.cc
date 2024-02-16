@@ -23,8 +23,6 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "xds_server.h"
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
@@ -32,6 +30,7 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
 namespace testing {
