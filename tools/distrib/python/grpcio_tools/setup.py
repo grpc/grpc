@@ -259,7 +259,6 @@ def extension_modules():
             os.path.join("grpc_root", "include"),
         ]
         + CC_INCLUDES,
-        language="c++",
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
         extra_link_args=list(EXTRA_LINK_ARGS),
