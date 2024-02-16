@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import threading
 import time
 from typing import Any, Iterable, Optional
 
@@ -54,6 +55,38 @@ GRPC_STATUS_CODE_TO_STRING = {
     grpc.StatusCode.DATA_LOSS: "DATA_LOSS",
 }
 
+_observability_lock: threading.RLock = threading.RLock()
+_OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
+
+
+def start_open_telemetry_observability(
+    *,
+    plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
+) -> None:
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    with _observability_lock:
+        if _OPEN_TELEMETRY_OBSERVABILITY is None:
+            _OPEN_TELEMETRY_OBSERVABILITY = OpenTelemetryObservability(
+                plugins=plugins
+            )
+            _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
+        else:
+            raise RuntimeError(
+                "gPRC Python observability was already initiated!"
+            )
+
+
+def end_open_telemetry_observability() -> None:
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    with _observability_lock:
+        if not _OPEN_TELEMETRY_OBSERVABILITY:
+            raise RuntimeError(
+                "end_open_telemetry_observability() was called without initiate observability!"
+            )
+        else:
+            _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
+            _OPEN_TELEMETRY_OBSERVABILITY = None
+
 
 # pylint: disable=no-self-use
 class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
@@ -66,7 +99,6 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     """
 
     exporter: "grpc_observability.Exporter"
-    plugins: Iterable[OpenTelemetryPlugin]
 
     def __init__(
         self,
@@ -80,13 +112,30 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
         self.exporter = _OpenTelemetryExporterDelegator(_plugins)
 
+    def __enter__(self):
+        global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+        with _observability_lock:
+            if _OPEN_TELEMETRY_OBSERVABILITY:
+                raise RuntimeError(
+                    "gPRC Python observability was already initiated!"
+                )
+            self.observability_init()
+            _OPEN_TELEMETRY_OBSERVABILITY = self
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+        with _observability_lock:
+            self.observability_deinit()
+            _OPEN_TELEMETRY_OBSERVABILITY = None
+
+    def observability_init(self):
         try:
             _cyobservability.activate_stats()
             self.set_stats(True)
         except Exception as e:  # pylint: disable=broad-except
             raise ValueError(f"Activate observability metrics failed with: {e}")
 
-    def __enter__(self):
         try:
             _cyobservability.cyobservability_init(self.exporter)
         # TODO(xuanwn): Use specific exceptons
@@ -94,12 +143,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             _LOGGER.exception("Initiate observability failed with: %s", e)
 
         grpc._observability.observability_init(self)
-        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self.exit()
-
-    def exit(self) -> None:
+    def observability_deinit(self) -> None:
         # Sleep so we don't loss any data. If we shutdown export thread
         # immediately after exit, it's possible that core didn't call RecordEnd
         # in callTracer, and all data recorded by calling RecordEnd will be
