@@ -7439,6 +7439,7 @@ grpc_cc_library(
         "time",
         "try_seq",
         "wait_for_callback",
+        "//:api_trace",
         "//:channel",
         "//:debug_location",
         "//:exec_ctx",

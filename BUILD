@@ -2675,6 +2675,7 @@ grpc_cc_library(
     deps = [
         "grpc++",
         "grpc_base",
+        "channel",
     ],
 )
 
