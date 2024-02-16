@@ -741,8 +741,8 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       var["ToolsVersion"] = config.grpc_tools_version;
       out->Print(var, "\nGRPC_GENERATED_VERSION = '$ToolsVersion$'\n");
       out->Print("GRPC_VERSION = grpc.__version__\n");
-      out->Print("EXPECTED_ERROR_RELEASE = '1.64.0'\n");
-      out->Print("SCHEDULED_RELEASE_DATE = 'May 14,2024'\n");
+      out->Print("EXPECTED_ERROR_RELEASE = '1.65.0'\n");
+      out->Print("SCHEDULED_RELEASE_DATE = 'June 25, 2024'\n");
       out->Print("_version_not_supported = False\n\n");
       out->Print("try:\n");
       {
