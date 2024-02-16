@@ -14,10 +14,11 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
 
-  FROM debian:10
+  FROM debian:11
 
   <%include file="../../apt_get_basic.include"/>
-  <%include file="../../ruby_3_1_deps.include"/>
+  <%include file="../../ruby_3_0_deps.include"/>
+  <%include file="../../rvm_mkdir_workaround.include"/>
 
   # Define the default command.
   CMD ["bash"]

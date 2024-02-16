@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guardian"  # @unused
+g_stands_for = "giggle"  # @unused
 
-core_version = "38.0.0"  # @unused
+core_version = "39.0.0"  # @unused
 
-version = "1.62.0-dev"  # @unused
+version = "1.63.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -714,7 +714,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/windows/sync.cc",
         "//src/core:lib/gpr/windows/time.cc",
         "//src/core:lib/gpr/windows/tmpfile.cc",
-        "//src/core:lib/gpr/wrap_memcpy.cc",
         "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -3821,6 +3820,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
@@ -4580,6 +4580,24 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_chaotic_good",
+    srcs = [
+        "src/cpp/ext/chaotic_good.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/chaotic_good.h",
+    ],
+    visibility = ["@grpc:chaotic_good"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
     ],
 )
 

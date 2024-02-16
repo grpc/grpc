@@ -3411,6 +3411,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "env",
+        "experiments",
         "proxy_mapper",
         "resolved_address",
         "//:channel_arg_names",
@@ -6940,6 +6941,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "cancel_callback",
         "event_engine_common",
         "if",
         "map",
