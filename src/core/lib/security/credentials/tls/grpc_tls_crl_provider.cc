@@ -57,7 +57,7 @@ namespace {
 // and add this to it.
 absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
-    return "";
+    return absl::InvalidArgumentError("crl cannot be null");
   }
   X509_NAME* issuer = X509_CRL_get_issuer(crl);
   if (issuer == nullptr) {
