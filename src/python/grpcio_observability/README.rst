@@ -1,5 +1,6 @@
 gRPC Python Observability
-===========
+========================
+
 Package for gRPC Python Observability.
 
 More details can be found in `OpenTelemetry Metrics gRFC <https://github.com/grpc/proposal/blob/master/A66-otel-stats.md#opentelemetry-metrics>`_.
