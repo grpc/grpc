@@ -61,28 +61,28 @@ int GetMaxExportBufferSize() {
 }  // namespace
 
 void RecordIntMetric(MetricsName name, int64_t value,
-                     const bool registered_method,
-                     const std::vector<Label>& labels) {
+                     const std::vector<Label>& labels, std::string identifier,
+                     const bool registered_method) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;
   measurement_data.registered_method = registered_method;
   measurement_data.value.value_int = value;
 
-  CensusData data = CensusData(measurement_data, labels);
+  CensusData data = CensusData(measurement_data, labels, identifier);
   AddCensusDataToBuffer(data);
 }
 
 void RecordDoubleMetric(MetricsName name, double value,
-                        const bool registered_method,
-                        const std::vector<Label>& labels) {
+                        const std::vector<Label>& labels, std::string identifier,
+                        const bool registered_method) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
   measurement_data.name = name;
   measurement_data.registered_method = registered_method;
   measurement_data.value.value_double = value;
 
-  CensusData data = CensusData(measurement_data, labels);
+  CensusData data = CensusData(measurement_data, labels, identifier);
   AddCensusDataToBuffer(data);
 }
 
@@ -95,18 +95,19 @@ void NativeObservabilityInit() {
   g_census_data_buffer = new std::queue<CensusData>;
 }
 
-void* CreateClientCallTracer(const char* method, const char* target,
-                             const char* trace_id, const char* parent_span_id,
-                             bool registered_method) {
+void* CreateClientCallTracer(const char* method, const char* target, const char* trace_id,
+                             const char* parent_span_id, const char* identifier,
+                             const std::vector<Label> exchange_labels,
+                             bool add_csm_optional_labels, bool registered_method) {
   void* client_call_tracer = new PythonOpenCensusCallTracer(
-      method, target, trace_id, parent_span_id, PythonCensusTracingEnabled(),
-      registered_method);
+      method, target, trace_id, parent_span_id, identifier, exchange_labels,
+      PythonCensusTracingEnabled(), add_csm_optional_labels, registered_method);
   return client_call_tracer;
 }
 
-void* CreateServerCallTracerFactory() {
+void* CreateServerCallTracerFactory(const std::vector<Label> exchange_labels, const char* identifier) {
   void* server_call_tracer_factory =
-      new PythonOpenCensusServerCallTracerFactory();
+      new PythonOpenCensusServerCallTracerFactory(exchange_labels, identifier);
   return server_call_tracer_factory;
 }
 

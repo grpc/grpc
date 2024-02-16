@@ -29,6 +29,7 @@ zope.interface==6.1
 opentelemetry-sdk==1.21.0
 opentelemetry-api==1.21.0
 importlib-metadata==6.11.0
+opentelemetry-resourcedetector-gcp==1.6.0a0
 Deprecated==1.2.14
 opentelemetry-semantic-conventions==0.42b0
 typing-extensions==4.9.0

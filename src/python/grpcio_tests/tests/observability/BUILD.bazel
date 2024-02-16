@@ -42,6 +42,21 @@ py_test(
 )
 
 py_test(
+    name = "_observability_plugin_test",
+    size = "small",
+    srcs = ["_observability_plugin_test.py"],
+    imports = ["../../"],
+    main = "_observability_plugin_test.py",
+    deps = [
+        ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_test(
     name = "_observability_api_test",
     size = "small",
     srcs = ["_observability_api_test.py"],

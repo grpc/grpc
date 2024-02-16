@@ -23,11 +23,13 @@ cdef const char* CLIENT_CALL_TRACER = "client_call_tracer"
 cdef const char* SERVER_CALL_TRACER_FACTORY = "server_call_tracer_factory"
 
 
-def set_server_call_tracer_factory(object observability_plugin) -> None:
-  capsule = observability_plugin.create_server_call_tracer_factory()
-  capsule_ptr = cpython.PyCapsule_GetPointer(capsule, SERVER_CALL_TRACER_FACTORY)
-  _register_server_call_tracer_factory(capsule_ptr)
-
+def get_server_call_tracer_factory_address(object observability_plugin, bint xds) -> Optional[int]:
+  capsule = observability_plugin.create_server_call_tracer_factory(xds=xds)
+  if capsule:
+    capsule_ptr = cpython.PyCapsule_GetPointer(capsule, SERVER_CALL_TRACER_FACTORY)
+    return int(<uintptr_t>capsule_ptr)
+  else:
+    return None
 
 def clear_server_call_tracer_factory() -> None:
   _register_server_call_tracer_factory(NULL)

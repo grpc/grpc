@@ -13,69 +13,74 @@
 # limitations under the License.
 
 import abc
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
 # pytype: disable=pyi-error
 from grpc_observability import _open_telemetry_observability
+from grpc_observability._observability import OptionalLabelType
 from opentelemetry.metrics import MeterProvider
+
+GRPC_METHOD_LABEL = "grpc.method"
+GRPC_TARGET_LABEL = "grpc.target"
+GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
+GRPC_OTHER_LABEL_VALUE = "other"
 
 
 class OpenTelemetryLabelInjector(abc.ABC):
     """
     An interface that allows you to add additional labels on the calls traced.
-
-    Please note that this class is still work in progress and NOT READY to be used.
     """
 
-    _labels: List[Dict[str, str]]
+    @abc.abstractmethod
+    def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
+        """
+        Get labels used for metadata exchange.
 
-    def __init__(self):
-        # Calls Python OTel API to detect resource and get labels, save
-        # those lables to OpenTelemetryLabelInjector.labels.
-        pass
+        Returns:
+          A dict of labels, with a string as key representing label name, string or bytes
+        as value representing label value.
+        """
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_labels(self):
-        # Get additional labels for this OpenTelemetryLabelInjector.
+    def get_additional_labels(self) -> Dict[str, str]:
+        """
+        Get additional labels added by this injector.
+
+        The return value from this method will be added directly to metric data.
+
+        Returns:
+          A dict of labels.
+        """
         raise NotImplementedError()
+
+    def deserialize_labels(
+        self, labels: Dict[str, AnyStr]
+    ) -> Dict[str, AnyStr]:
+        """
+        Deserialize the labels if required.
+
+        If this injector added labels for metadata exchange, this method will be called to
+        deserialize the exchanged labels.
+
+        For example, if this injector added xds_peer_metadata_label for exchange:
+
+            labels: {"labelA": b"valueA", "xds_peer_metadata_label": b"exchanged_bytes"}
+
+        This method should deserialize xds_peer_metadata_label and return labels as:
+
+            labels: {"labelA": b"valueA", "xds_label_A": "xds_label_A", "xds_label_B": "xds_label_B"}
+
+        Returns:
+          A dict of deserialized labels.
+        """
+        return labels
 
 
 class OpenTelemetryPluginOption(abc.ABC):
     """
     An interface that allows you to add additional function to OpenTelemetryPlugin.
-
-    Please note that this class is still work in progress and NOT READY to be used.
     """
-
-    @abc.abstractmethod
-    def is_active_on_method(self, method: str) -> bool:
-        """Determines whether this plugin option is active on a given method.
-
-        Args:
-          method: Required. The RPC method, for example: `/helloworld.Greeter/SayHello`.
-
-        Returns:
-          True if this this plugin option is active on the giving method, false otherwise.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def is_active_on_server(self, channel_args: List[str]) -> bool:
-        """Determines whether this plugin option is active on a given server.
-
-        Args:
-          channel_args: Required. The channel args used for server.
-          TODO(xuanwn): detail on what channel_args will contain.
-
-        Returns:
-          True if this this plugin option is active on the server, false otherwise.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_label_injector(self) -> Optional[OpenTelemetryLabelInjector]:
-        # Returns the LabelsInjector used by this plugin option, or None.
-        raise NotImplementedError()
 
 
 # pylint: disable=no-self-use
@@ -159,3 +164,6 @@ class OpenTelemetryPlugin:
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         _open_telemetry_observability.end_open_telemetry_observability()
+
+    def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
+        return []

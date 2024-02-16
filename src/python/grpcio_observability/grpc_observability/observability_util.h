@@ -37,11 +37,12 @@ struct CensusData {
   DataType type;
   std::vector<Label> labels;
   // TODO(xuanwn): We can use union here
+  std::string identifier;
   SpanCensusData span_data;
   Measurement measurement_data;
   CensusData() {}
-  CensusData(const Measurement& mm, const std::vector<Label>& labels)
-      : type(kMetricData), labels(std::move(labels)), measurement_data(mm) {}
+  CensusData(const Measurement& mm, const std::vector<Label>& labels, std::string id)
+      : type(kMetricData), labels(std::move(labels)), identifier(id), measurement_data(mm) {}
   CensusData(const SpanCensusData& sd) : type(kSpanData), span_data(sd) {}
 };
 
@@ -52,9 +53,12 @@ extern std::condition_variable g_census_data_buffer_cv;
 
 void* CreateClientCallTracer(const char* method, const char* target,
                              const char* trace_id, const char* parent_span_id,
+                             const char* identifier,
+                             const std::vector<Label> exchange_labels,
+                             bool add_csm_optional_labels,
                              bool registered_method);
 
-void* CreateServerCallTracerFactory();
+void* CreateServerCallTracerFactory(const std::vector<Label> exchange_labels, const char* identifier);
 
 void NativeObservabilityInit();
 
@@ -63,12 +67,10 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms);
 void AddCensusDataToBuffer(const CensusData& buffer);
 
 void RecordIntMetric(MetricsName name, int64_t value,
-                     const bool registered_method,
-                     const std::vector<Label>& labels);
+                     const std::vector<Label>& labels, std::string identifier, const bool registered_method);
 
 void RecordDoubleMetric(MetricsName name, double value,
-                        const bool registered_method,
-                        const std::vector<Label>& labels);
+                        const std::vector<Label>& labels, std::string identifier, const bool registered_method);
 
 void RecordSpan(const SpanCensusData& span_census_data);
 

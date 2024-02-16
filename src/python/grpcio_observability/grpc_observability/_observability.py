@@ -16,7 +16,8 @@ from __future__ import annotations
 import abc
 from dataclasses import dataclass
 from dataclasses import field
-from typing import List, Mapping, Tuple
+import enum
+from typing import AnyStr, Dict, List, Mapping, Set, Tuple
 
 
 class Exporter(metaclass=abc.ABCMeta):
@@ -41,7 +42,7 @@ class Exporter(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-@dataclass(frozen=True)
+@dataclass
 class StatsData:
     """A data class representing stats data.
 
@@ -52,19 +53,21 @@ class StatsData:
         value.
       value_int: The actual metric value if measure_double is False.
       value_float: The actual metric value if measure_double is True.
-      registered_method: Whether the method in this data is a registered method
-        in stubs.
       labels: A dictionary that maps label tags associated with this metric to
        corresponding label value.
+      identifiers: A set of strings identifying which stats plugins this StatsData
+        belongs to.
+      registered_method: Whether the method in this data is a registered method
+        in stubs.
     """
 
     name: "grpc_observability._cyobservability.MetricsName"
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
+    labels: Dict[str, AnyStr] = field(default_factory=dict)
+    identifiers: Set[str] = field(default_factory=set)
     registered_method: bool = False
-    labels: Mapping[str, str] = field(default_factory=dict)
-
 
 @dataclass(frozen=True)
 class TracingData:
@@ -102,5 +105,12 @@ class TracingData:
     status: str
     should_sample: bool
     child_span_count: int
-    span_labels: Mapping[str, str] = field(default_factory=dict)
+    span_labels: Mapping[str, AnyStr] = field(default_factory=dict)
     span_annotations: List[Tuple[str, str]] = field(default_factory=list)
+
+
+@enum.unique
+class OptionalLabelType(enum.Enum):
+    """What kinds of optional labels to add to metrics."""
+
+    XDS_SERVICE_LABELS = "kXdsServiceLabels"

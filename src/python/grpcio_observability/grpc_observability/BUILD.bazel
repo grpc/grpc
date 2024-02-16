@@ -26,6 +26,7 @@ cc_library(
         "rpc_encoding.cc",
         "sampler.cc",
         "server_call_tracer.cc",
+        "metadata_exchange.cc",
     ],
     hdrs = [
         "client_call_tracer.h",
@@ -35,6 +36,7 @@ cc_library(
         "rpc_encoding.h",
         "sampler.h",
         "server_call_tracer.h",
+        "metadata_exchange.h",
     ],
     includes = ["."],
     deps = [
