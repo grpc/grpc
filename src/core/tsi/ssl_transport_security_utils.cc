@@ -296,62 +296,61 @@ bool HasCrlSignBit(X509* cert) {
 #else
   return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
 #endif  // OPENSSL_VERSION_NUMBER < 0x10100000
+}
 
-  absl::StatusOr<std::string> AkidFromCertificate(X509 * cert) {
-    ASN1_OCTET_STRING* akid = nullptr;
-    int j = X509_get_ext_by_NID(cert, NID_authority_key_identifier, -1);
-    // Can't have multiple occurrences
-    if (j >= 0) {
-      if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
-        return absl::InvalidArgumentError(
-            "Could not get AKID from certificate.");
-      }
-      akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
-    }
-    unsigned char* buf = nullptr;
-    int len = i2d_ASN1_OCTET_STRING(akid, &buf);
-    if (len <= 0) {
+absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError("cert cannot be null");
+  }
+  X509_NAME* issuer = X509_get_issuer_name(cert);
+  unsigned char* buf = nullptr;
+  int len = i2d_X509_NAME(issuer, &buf);
+  if (len < 0 || buf == nullptr) {
+    return absl::InvalidArgumentError("could not read issuer name from cert");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
+
+absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_get_ext_by_NID(cert, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
       return absl::InvalidArgumentError("Could not get AKID from certificate.");
     }
-    std::string ret(reinterpret_cast<char const*>(buf), len);
-    OPENSSL_free(buf);
-    return ret;
+    akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
   }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
 
-  absl::StatusOr<std::string> AkidFromCrl(X509_CRL * crl) {
-    ASN1_OCTET_STRING* akid = nullptr;
-    int j = X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, -1);
-    // Can't have multiple occurrences
-    if (j >= 0) {
-      if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
-        return absl::InvalidArgumentError(
-            "Could not get AKID from crlificate.");
-      }
-      akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
-    }
-    unsigned char* buf = nullptr;
-    int len = i2d_ASN1_OCTET_STRING(akid, &buf);
-    if (len <= 0) {
+absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
       return absl::InvalidArgumentError("Could not get AKID from crlificate.");
     }
-    std::string ret(reinterpret_cast<char const*>(buf), len);
-    OPENSSL_free(buf);
-    return ret;
+    akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
   }
-
-  absl::StatusOr<std::string> IssuerFromCert(X509 * cert) {
-    if (cert == nullptr) {
-      return absl::InvalidArgumentError("cert cannot be null");
-    }
-    X509_NAME* issuer = X509_get_issuer_name(cert);
-    unsigned char* buf = nullptr;
-    int len = i2d_X509_NAME(issuer, &buf);
-    if (len < 0 || buf == nullptr) {
-      return absl::InvalidArgumentError("could not read issuer name from cert");
-    }
-    std::string ret(reinterpret_cast<char const*>(buf), len);
-    OPENSSL_free(buf);
-    return ret;
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from crlificate.");
   }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
 
 }  // namespace grpc_core
