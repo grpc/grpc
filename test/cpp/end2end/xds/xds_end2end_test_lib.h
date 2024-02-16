@@ -335,16 +335,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         return Echo(context, request, response);
       }
 
-      Status BidiStream(
-          ServerContext* context,
-          ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
-        {
-          grpc_core::MutexLock lock(&mu_);
-          clients_.insert(context->peer());
-        }
-        return TestMultipleServiceImpl<RpcService>::BidiStream(context, stream);
-      }
-
       void Start() {}
       void Shutdown() {}
 
