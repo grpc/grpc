@@ -13,14 +13,18 @@
 // limitations under the License.
 //
 
+#include <algorithm>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
+#include "xds_server.h"
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
@@ -238,19 +242,14 @@ TEST_P(
 // is shared.
 TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   CreateBackends(2, true);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto listener = default_server_listener_;
   listener.clear_address();
   listener.set_name(GetServerListenerName(backends_[0]->port()));
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[0]->Start();
-  listener = default_server_listener_;
-  listener.clear_address();
-  listener.set_name(GetServerListenerName(backends_[1]->port()));
-  balancer_->ads_service()->SetLdsResource(listener);
-  backends_[1]->Start();
-  const auto response_state = WaitForLdsNack(DEBUG_LOCATION);
+  auto response_state = WaitForLdsNack(DEBUG_LOCATION);
   ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
   EXPECT_EQ(
       response_state->error_message,
@@ -258,11 +257,53 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
           "xDS response validation errors: ["
           "resource index 0: "
           "grpc/server?xds.resource.listening_address=127.0.0.1:%lu: "
-          "INVALID_ARGUMENT: Listener has neither address nor ApiListener; "
-          "resource index 1: "
-          "grpc/server?xds.resource.listening_address=127.0.0.1:%lu: "
           "INVALID_ARGUMENT: Listener has neither address nor ApiListener]",
-          backends_[0]->port(), backends_[1]->port()));
+          backends_[0]->port()));
+  listener = default_server_listener_;
+  listener.clear_address();
+  listener.set_name(GetServerListenerName(backends_[1]->port()));
+  balancer_->ads_service()->SetLdsResource(listener);
+  backends_[1]->Start();
+  // Sort as the message will output resources in sorted order
+  int error_count = 0;
+  response_state = WaitForNack(
+      DEBUG_LOCATION, [&]() -> absl::optional<AdsServiceImpl::ResponseState> {
+        auto response = balancer_->ads_service()->lds_response_state();
+        if (!response.has_value() ||
+            response->state != AdsServiceImpl::ResponseState::NACKED ||
+            ++error_count < 2) {
+          return absl::nullopt;
+        }
+        return response;
+      });
+  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
+  // Order is not guaranteed
+  std::array<std::string, 2> ports = {
+      absl::StrFormat(
+          "xDS response validation errors: ["
+          "resource index 0: "
+          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
+          "INVALID_ARGUMENT: Listener has neither address nor "
+          "ApiListener; "
+          "resource index 1: "
+          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
+          "INVALID_ARGUMENT: Listener has neither address nor "
+          "ApiListener"
+          "]",
+          backends_[0]->port(), backends_[1]->port()),
+      absl::StrFormat(
+          "xDS response validation errors: ["
+          "resource index 0: "
+          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
+          "INVALID_ARGUMENT: Listener has neither address nor "
+          "ApiListener; "
+          "resource index 1: "
+          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
+          "INVALID_ARGUMENT: Listener has neither address nor "
+          "ApiListener"
+          "]",
+          backends_[1]->port(), backends_[0]->port())};
+  EXPECT_THAT(ports, ::testing::Contains(response_state->error_message));
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource
