@@ -7441,6 +7441,7 @@ grpc_cc_library(
         "wait_for_callback",
         "//:api_trace",
         "//:channel",
+        "//:channel_create",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",

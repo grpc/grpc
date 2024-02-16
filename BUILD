@@ -1747,7 +1747,7 @@ grpc_cc_library(
         "channel_arg_names",
         "channelz",
         "gpr",
-        "grpc_base",
+        "grpc_public_hdrs",
         "legacy_channel",
         "ref_counted_ptr",
         "stats",
