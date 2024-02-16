@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/bin/bash
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])
-
-exports_files([
-    "ca.pem",
-    "revoked.key",
-    "revoked.pem",
-    "valid.key",
-    "valid.pem",
-    "leaf_signed_by_intermediate.key",
-    "leaf_signed_by_intermediate.pem",
-    "leaf_and_intermediate_chain.pem",
-    "intermediate_ca.key",
-    "intermediate_ca.pem",
-    "evil_ca.pem",
-])
+# Generates a CA with the same issuer name as the good CA in this directory
+openssl req -x509 -new -newkey rsa:2048 -nodes -keyout evil_ca.key -out evil_ca.pem \
+  -config ca-openssl.cnf -days 3650 -extensions v3_req

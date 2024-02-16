@@ -10772,12 +10772,14 @@ targets:
   headers:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/tsi/transport_security_test_lib.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/util/fuzz_config_vars.proto
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/security/grpc_tls_crl_provider_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
   - protobuf
@@ -18037,9 +18039,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/tsi/transport_security_test_lib.h
   src:
   - test/core/tsi/ssl_transport_security_utils_test.cc
+  - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
   - grpc_test_util
