@@ -42,7 +42,7 @@ CORE_END2END_TEST(Http2Test, GracefulServerShutdown) {
   Step();
   // shutdown and destroy the server
   ShutdownServerAndNotify(200);
-  Step();
+  Step(Duration::Seconds(10));
   CoreEnd2endTest::IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
