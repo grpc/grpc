@@ -301,194 +301,160 @@ class FakeStatsPluginBuilder {
   absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
 };
 
+std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
+    absl::string_view target_suffix) {
+  return FakeStatsPluginBuilder()
+      .SetChannelFilter([target_suffix](const ChannelScope& scope) {
+        return absl::EndsWith(scope.target(), target_suffix);
+      })
+      .BuildAndRegister();
+}
+
 class MetricsTest : public testing::Test {
  public:
-  void SetUp() override {
-    plugin1_ = FakeStatsPluginBuilder()
-                   .SetChannelFilter([](const ChannelScope& scope) {
-                     return absl::EndsWith(scope.target(),
-                                           "domain1.domain2.domain3.domain4");
-                   })
-                   .BuildAndRegister();
-    plugin2_ =
-        FakeStatsPluginBuilder()
-            .SetChannelFilter([](const ChannelScope& scope) {
-              return absl::EndsWith(scope.target(), "domain2.domain3.domain4");
-            })
-            .BuildAndRegister();
-    plugin3_ = FakeStatsPluginBuilder()
-                   .SetChannelFilter([](const ChannelScope& scope) {
-                     return absl::EndsWith(scope.target(), "domain3.domain4");
-                   })
-                   .BuildAndRegister();
-  }
-
   void TearDown() override {
-    GlobalStatsPluginRegistry::TestOnlyResetStatsPlugins();
+    GlobalInstrumentsRegistry::TestOnlyResetGlobalInstrumentsRegistry();
+    GlobalStatsPluginRegistry::TestOnlyResetGlobalStatsPluginRegistry();
   }
-
-  static void SetUpTestSuite() {
-    // Initializer list.
-    uint64_counter_handle_ = GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "uint64_counter", "A simple uint64 counter.", "unit",
-        {"label_key_1", "label_key_2"},
-        {"optional_label_key_1", "optional_label_key_2"});
-    // C-style array.
-    constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-    constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                        "optional_label_key_2"};
-    double_counter_handle_ = GlobalInstrumentsRegistry::RegisterDoubleCounter(
-        "double_counter", "A simple double counter.", "unit", kLabelKeys,
-        kOptionalLabelKeys);
-    // Explicit container.
-    const std::vector<absl::string_view> kLabelKeysContainer = {"label_key_1",
-                                                                "label_key_2"};
-    const std::vector<absl::string_view> kOptionalLabelKeysContainer = {
-        "optional_label_key_1", "optional_label_key_2"};
-    uint64_histogram_handle_ =
-        GlobalInstrumentsRegistry::RegisterUInt64Histogram(
-            "uint64_histogram", "A simple uint64 histogram.", "unit",
-            kLabelKeysContainer, kOptionalLabelKeysContainer);
-    double_histogram_handle_ =
-        GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-            "double_histogram", "A simple double histogram.", "unit",
-            kLabelKeysContainer, kOptionalLabelKeysContainer);
-  }
-
- protected:
-  std::shared_ptr<FakeStatsPlugin> plugin1_;
-  std::shared_ptr<FakeStatsPlugin> plugin2_;
-  std::shared_ptr<FakeStatsPlugin> plugin3_;
-
-  static GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
-      uint64_counter_handle_;
-  static GlobalInstrumentsRegistry::GlobalDoubleCounterHandle
-      double_counter_handle_;
-  static GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle
-      uint64_histogram_handle_;
-  static GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle
-      double_histogram_handle_;
 };
 
-GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
-    MetricsTest::uint64_counter_handle_;
-GlobalInstrumentsRegistry::GlobalDoubleCounterHandle
-    MetricsTest::double_counter_handle_;
-GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle
-    MetricsTest::uint64_histogram_handle_;
-GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle
-    MetricsTest::double_histogram_handle_;
-
 TEST_F(MetricsTest, UInt64Counter) {
+  auto uint64_counter_handle = GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      "uint64_counter", "A simple uint64 counter.", "unit",
+      {"label_key_1", "label_key_2"},
+      {"optional_label_key_1", "optional_label_key_2"});
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain1.domain2.domain3.domain4"})
-      .AddCounter(uint64_counter_handle_, 1, kLabelValues,
-                  kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain2.domain3.domain4"})
-      .AddCounter(uint64_counter_handle_, 2, kLabelValues,
-                  kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain3.domain4"})
-      .AddCounter(uint64_counter_handle_, 3, kLabelValues,
-                  kOptionalLabelValues);
-  EXPECT_THAT(plugin1_->GetCounterValue(uint64_counter_handle_, kLabelValues,
-                                        kOptionalLabelValues),
+  constexpr absl::string_view domain1_to_4 = "domain1.domain2.domain3.domain4";
+  constexpr absl::string_view domain2_to_4 = "domain2.domain3.domain4";
+  constexpr absl::string_view domain3_to_4 = "domain3.domain4";
+  auto plugin1 = MakeStatsPluginForTarget(domain1_to_4);
+  auto plugin2 = MakeStatsPluginForTarget(domain2_to_4);
+  auto plugin3 = MakeStatsPluginForTarget(domain3_to_4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain1_to_4})
+      .AddCounter(uint64_counter_handle, 1, kLabelValues, kOptionalLabelValues);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain2_to_4})
+      .AddCounter(uint64_counter_handle, 2, kLabelValues, kOptionalLabelValues);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain3_to_4})
+      .AddCounter(uint64_counter_handle, 3, kLabelValues, kOptionalLabelValues);
+  EXPECT_THAT(plugin1->GetCounterValue(uint64_counter_handle, kLabelValues,
+                                       kOptionalLabelValues),
               ::testing::Optional(1));
-  EXPECT_THAT(plugin2_->GetCounterValue(uint64_counter_handle_, kLabelValues,
-                                        kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetCounterValue(uint64_counter_handle, kLabelValues,
+                                       kOptionalLabelValues),
               ::testing::Optional(3));
-  EXPECT_THAT(plugin3_->GetCounterValue(uint64_counter_handle_, kLabelValues,
-                                        kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetCounterValue(uint64_counter_handle, kLabelValues,
+                                       kOptionalLabelValues),
               ::testing::Optional(6));
 }
 
 TEST_F(MetricsTest, DoubleCounter) {
+  auto double_counter_handle = GlobalInstrumentsRegistry::RegisterDoubleCounter(
+      "double_counter", "A simple double counter.", "unit",
+      {"label_key_1", "label_key_2"},
+      {"optional_label_key_1", "optional_label_key_2"});
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain1.domain2.domain3.domain4"})
-      .AddCounter(double_counter_handle_, 1.23, kLabelValues,
+  constexpr absl::string_view domain1_to_4 = "domain1.domain2.domain3.domain4";
+  constexpr absl::string_view domain2_to_4 = "domain2.domain3.domain4";
+  constexpr absl::string_view domain3_to_4 = "domain3.domain4";
+  auto plugin1 = MakeStatsPluginForTarget(domain1_to_4);
+  auto plugin2 = MakeStatsPluginForTarget(domain2_to_4);
+  auto plugin3 = MakeStatsPluginForTarget(domain3_to_4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain1_to_4})
+      .AddCounter(double_counter_handle, 1.23, kLabelValues,
                   kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain2.domain3.domain4"})
-      .AddCounter(double_counter_handle_, 2.34, kLabelValues,
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain2_to_4})
+      .AddCounter(double_counter_handle, 2.34, kLabelValues,
                   kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain3.domain4"})
-      .AddCounter(double_counter_handle_, 3.45, kLabelValues,
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain3_to_4})
+      .AddCounter(double_counter_handle, 3.45, kLabelValues,
                   kOptionalLabelValues);
-  EXPECT_THAT(plugin1_->GetCounterValue(double_counter_handle_, kLabelValues,
-                                        kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetCounterValue(double_counter_handle, kLabelValues,
+                                       kOptionalLabelValues),
               ::testing::Optional(1.23));
-  EXPECT_THAT(plugin2_->GetCounterValue(double_counter_handle_, kLabelValues,
-                                        kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetCounterValue(double_counter_handle, kLabelValues,
+                                       kOptionalLabelValues),
               ::testing::Optional(3.57));
-  EXPECT_THAT(plugin3_->GetCounterValue(double_counter_handle_, kLabelValues,
-                                        kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetCounterValue(double_counter_handle, kLabelValues,
+                                       kOptionalLabelValues),
               ::testing::Optional(7.02));
 }
 
 TEST_F(MetricsTest, UInt64Histogram) {
+  auto uint64_histogram_handle =
+      GlobalInstrumentsRegistry::RegisterUInt64Histogram(
+          "uint64_histogram", "A simple uint64 histogram.", "unit",
+          {"label_key_1", "label_key_2"},
+          {"optional_label_key_1", "optional_label_key_2"});
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain1.domain2.domain3.domain4"})
-      .RecordHistogram(uint64_histogram_handle_, 1, kLabelValues,
+  constexpr absl::string_view domain1_to_4 = "domain1.domain2.domain3.domain4";
+  constexpr absl::string_view domain2_to_4 = "domain2.domain3.domain4";
+  constexpr absl::string_view domain3_to_4 = "domain3.domain4";
+  auto plugin1 = MakeStatsPluginForTarget(domain1_to_4);
+  auto plugin2 = MakeStatsPluginForTarget(domain2_to_4);
+  auto plugin3 = MakeStatsPluginForTarget(domain3_to_4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain1_to_4})
+      .RecordHistogram(uint64_histogram_handle, 1, kLabelValues,
                        kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain2.domain3.domain4"})
-      .RecordHistogram(uint64_histogram_handle_, 2, kLabelValues,
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain2_to_4})
+      .RecordHistogram(uint64_histogram_handle, 2, kLabelValues,
                        kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain3.domain4"})
-      .RecordHistogram(uint64_histogram_handle_, 3, kLabelValues,
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain3_to_4})
+      .RecordHistogram(uint64_histogram_handle, 3, kLabelValues,
                        kOptionalLabelValues);
-  EXPECT_THAT(plugin1_->GetHistogramValue(uint64_histogram_handle_,
-                                          kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetHistogramValue(uint64_histogram_handle, kLabelValues,
+                                         kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1)));
-  EXPECT_THAT(plugin2_->GetHistogramValue(uint64_histogram_handle_,
-                                          kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetHistogramValue(uint64_histogram_handle, kLabelValues,
+                                         kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1, 2)));
-  EXPECT_THAT(plugin3_->GetHistogramValue(uint64_histogram_handle_,
-                                          kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetHistogramValue(uint64_histogram_handle, kLabelValues,
+                                         kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1, 2, 3)));
 }
 
 TEST_F(MetricsTest, DoubleHistogram) {
+  auto double_histogram_handle =
+      GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          "double_histogram", "A simple double histogram.", "unit",
+          {"label_key_1", "label_key_2"},
+          {"optional_label_key_1", "optional_label_key_2"});
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain1.domain2.domain3.domain4"})
-      .RecordHistogram(double_histogram_handle_, 1.23, kLabelValues,
+  constexpr absl::string_view domain1_to_4 = "domain1.domain2.domain3.domain4";
+  constexpr absl::string_view domain2_to_4 = "domain2.domain3.domain4";
+  constexpr absl::string_view domain3_to_4 = "domain3.domain4";
+  auto plugin1 = MakeStatsPluginForTarget(domain1_to_4);
+  auto plugin2 = MakeStatsPluginForTarget(domain2_to_4);
+  auto plugin3 = MakeStatsPluginForTarget(domain3_to_4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain1_to_4})
+      .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
                        kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain2.domain3.domain4"})
-      .RecordHistogram(double_histogram_handle_, 2.34, kLabelValues,
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain2_to_4})
+      .RecordHistogram(double_histogram_handle, 2.34, kLabelValues,
                        kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      {.target = "domain3.domain4"})
-      .RecordHistogram(double_histogram_handle_, 3.45, kLabelValues,
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = domain3_to_4})
+      .RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
                        kOptionalLabelValues);
-  EXPECT_THAT(plugin1_->GetHistogramValue(double_histogram_handle_,
-                                          kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetHistogramValue(double_histogram_handle, kLabelValues,
+                                         kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1.23)));
-  EXPECT_THAT(plugin2_->GetHistogramValue(double_histogram_handle_,
-                                          kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetHistogramValue(double_histogram_handle, kLabelValues,
+                                         kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34)));
   EXPECT_THAT(
-      plugin3_->GetHistogramValue(double_histogram_handle_, kLabelValues,
-                                  kOptionalLabelValues),
+      plugin3->GetHistogramValue(double_histogram_handle, kLabelValues,
+                                 kOptionalLabelValues),
       ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34, 3.45)));
 }
 

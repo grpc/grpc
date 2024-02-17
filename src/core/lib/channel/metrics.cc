@@ -17,14 +17,25 @@
 #include "src/core/lib/channel/metrics.h"
 
 namespace grpc_core {
+namespace {
+// Uses the Construct-on-First-Use idiom to avoid the static initialization
+// order fiasco.
+std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>& Get() {
+  static NoDestruct<
+      std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>>
+      instruments;
+  return *instruments;
+}
+}  // namespace
 
 GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
 GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = gInstruments();
+  auto& instruments = Get();
   uint32_t index = instruments.size();
+  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kUInt64,
                          .instrument_type = InstrumentType::kCounter,
                          .index = index,
@@ -44,8 +55,9 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = gInstruments();
+  auto& instruments = Get();
   uint32_t index = instruments.size();
+  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kDouble,
                          .instrument_type = InstrumentType::kCounter,
                          .index = index,
@@ -65,8 +77,9 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = gInstruments();
+  auto& instruments = Get();
   uint32_t index = instruments.size();
+  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kUInt64,
                          .instrument_type = InstrumentType::kHistogram,
                          .index = index,
@@ -86,8 +99,9 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = gInstruments();
+  auto& instruments = Get();
   uint32_t index = instruments.size();
+  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kDouble,
                          .instrument_type = InstrumentType::kHistogram,
                          .index = index,
@@ -103,10 +117,15 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
 }
 
 void GlobalInstrumentsRegistry::ForEach(
-    absl::AnyInvocable<void(const GlobalInstrumentDescriptor&)> f) {
-  for (const auto& instrument : gInstruments()) {
+    absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f) {
+  for (const auto& instrument : Get()) {
     f(instrument);
   }
+}
+
+void GlobalInstrumentsRegistry::TestOnlyResetGlobalInstrumentsRegistry() {
+  auto& instruments = Get();
+  instruments.clear();
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;

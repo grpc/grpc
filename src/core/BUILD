@@ -6965,9 +6965,9 @@ grpc_cc_library(
         "lib/channel/metrics.h",
     ],
     external_deps = [
-        "absl/algorithm:container",
-        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
         "absl/strings",
+        "absl/types:span",
     ],
     language = "c++",
     deps = [

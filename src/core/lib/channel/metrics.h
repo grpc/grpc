@@ -21,7 +21,9 @@
 #include <memory>
 #include <vector>
 
+#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 #include <grpc/support/log.h>
 
@@ -88,17 +90,11 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys);
   static void ForEach(
-      absl::AnyInvocable<void(const GlobalInstrumentDescriptor&)> f);
+      absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
+
+  static void TestOnlyResetGlobalInstrumentsRegistry();
 
   GlobalInstrumentsRegistry() = delete;
-
- private:
-  // Uses the Construct-on-First-Use idiom to avoid the static initialization
-  // order fiasco.
-  static std::vector<GlobalInstrumentDescriptor>& gInstruments() {
-    static NoDestruct<std::vector<GlobalInstrumentDescriptor>> instruments_;
-    return *instruments_;
-  }
 };
 
 // The StatsPlugin interface.
@@ -203,7 +199,7 @@ class GlobalStatsPluginRegistry {
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
-  static void TestOnlyResetStatsPlugins() {
+  static void TestOnlyResetGlobalStatsPluginRegistry() {
     MutexLock lock(&*mutex_);
     plugins_->clear();
   }
