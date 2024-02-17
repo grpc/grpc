@@ -41,7 +41,7 @@ import grpc_version
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
-    "Private :: Do Not Upload",
+    "Development Status :: 4 - Beta",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -274,6 +274,7 @@ setuptools.setup(
     name="grpcio-observability",
     version=grpc_version.VERSION,
     description="gRPC Python observability package",
+    long_description_content_type="text/x-rst",
     long_description=open(README_PATH, "r").read(),
     author="The gRPC Authors",
     author_email="grpc-io@googlegroups.com",
