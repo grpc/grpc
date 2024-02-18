@@ -706,7 +706,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/windows/sync.cc",
         "//src/core:lib/gpr/windows/time.cc",
         "//src/core:lib/gpr/windows/tmpfile.cc",
-        "//src/core:lib/gpr/wrap_memcpy.cc",
         "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -3562,6 +3561,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "libcrypto",
         "libssl",

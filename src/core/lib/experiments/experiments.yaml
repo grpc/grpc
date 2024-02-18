@@ -126,7 +126,7 @@
   description:
     Allows overriding keepalive_permit_without_calls for servers.
     Refer https://github.com/grpc/grpc/pull/33917 for more information.
-  expiry: 2023/12/31
+  expiry: 2024/12/31
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -287,9 +287,10 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/02/10
-  owner: ctiller@google.com
+  expiry: 2024/03/31
+  owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
+  requires: ["event_engine_client"]
 - name: write_size_cap
   description:
     Limit outgoing writes proportional to the target write size

@@ -2111,7 +2111,6 @@ src/core/lib/gpr/windows/string_util.cc \
 src/core/lib/gpr/windows/sync.cc \
 src/core/lib/gpr/windows/time.cc \
 src/core/lib/gpr/windows/tmpfile.cc \
-src/core/lib/gpr/wrap_memcpy.cc \
 src/core/lib/gprpp/README.md \
 src/core/lib/gprpp/atomic_utils.h \
 src/core/lib/gprpp/bitset.h \
