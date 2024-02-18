@@ -745,7 +745,7 @@ class Server::ChannelBroadcaster {
       SendShutdown(channel->c_ptr(), send_goaway, force_disconnect);
     }
     if (send_goaway) {
-      for (const RefCountedPtr<ServerChannel>& channel : channels_.channels) {
+      for (const RefCountedPtr<Connection>& channel : channels_.channels) {
         channel->transport().SendGoaway("Server shutdown");
       }
     }
@@ -950,7 +950,7 @@ grpc_error_handle Server::SetupTransport(
     if (!stack_segment.ok()) return stack_segment.status();
     CallFilters::StackBuilder builder;
     stack_segment->AddToCallFilterStack(builder);
-    auto server_channel = MakeRefCounted<ServerChannel>(
+    auto server_channel = MakeRefCounted<Connection>(
         this, builder.Build(), OrphanablePtr<Transport>(transport), cq_idx);
     MutexLock lock(&mu_global_);
     channels_.insert(std::move(server_channel));
@@ -1083,7 +1083,7 @@ Server::ChannelSet Server::GetChannelsLocked() const {
     channels.ye_olde_channels.push_back(chand->channel()->Ref());
   }
   channels.channels.reserve(channels_.size());
-  for (const RefCountedPtr<ServerChannel>& channel : channels_) {
+  for (const RefCountedPtr<Connection>& channel : channels_) {
     channels.channels.emplace_back(channel);
   }
   return channels;
@@ -1327,14 +1327,6 @@ Server::ChannelData::~ChannelData() {
       server_->MaybeFinishShutdown();
     }
   }
-}
-
-CallInitiator Server::ServerChannel::CreateCall(
-    ClientMetadataHandle client_initial_metadata, Arena* arena) {
-  server_->SetRegisteredMethodOnMetadata(*client_initial_metadata);
-  auto call = MakeCall(server_->event_engine_.get(), arena);
-  server_->MatchThenPublish(std::move(call.handler), cq_idx_);
-  return std::move(call.initiator);
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
@@ -1924,10 +1916,10 @@ void Server::CallData::StartTransportStreamOpBatch(
 // Server::ServerChannel::ConnectivityWatcher
 //
 
-class Server::ServerChannel::ConnectivityWatcher
+class Server::Connection::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  explicit ConnectivityWatcher(WeakRefCountedPtr<ServerChannel> channel)
+  explicit ConnectivityWatcher(WeakRefCountedPtr<Connection> channel)
       : channel_(std::move(channel)) {}
 
   void Orphan() override { Remove(); }
@@ -1943,22 +1935,23 @@ class Server::ServerChannel::ConnectivityWatcher
 
   void Remove() {
     auto server = channel_->server_;
-    RefCountedPtr<ServerChannel> channel;
+    RefCountedPtr<Connection> channel;
     MutexLock lock(&server->mu_global_);
     auto x = server->channels_.extract(channel_);
     if (!x.empty()) channel = std::move(x.value());
   }
 
-  WeakRefCountedPtr<ServerChannel> channel_;
+  WeakRefCountedPtr<Connection> channel_;
 };
 
 //
-// Server::ServerChannel
+// Server::Connection
 //
 
-Server::ServerChannel::ServerChannel(
-    Server* server, RefCountedPtr<CallFilters::Stack> filter_stack,
-    OrphanablePtr<Transport> transport, size_t cq_idx)
+Server::Connection::Connection(Server* server,
+                               RefCountedPtr<CallFilters::Stack> filter_stack,
+                               OrphanablePtr<Transport> transport,
+                               size_t cq_idx)
     : CallFactory(server->channel_args_),
       transport_(std::move(transport)),
       filter_stack_(std::move(filter_stack)),
@@ -1966,17 +1959,23 @@ Server::ServerChannel::ServerChannel(
       cq_idx_(cq_idx) {
   server_->num_channels_.fetch_add(1, std::memory_order_relaxed);
   transport_->StartConnectivityWatch(
-      MakeOrphanable<ConnectivityWatcher>(WeakRefAsSubclass<ServerChannel>()));
+      MakeOrphanable<ConnectivityWatcher>(WeakRefAsSubclass<Connection>()));
 }
 
-Server::ServerChannel::~ServerChannel() {
+Server::Connection::~Connection() {
   if (1 == server_->num_channels_.fetch_sub(1, std::memory_order_relaxed)) {
     MutexLock lock(&server_->mu_global_);
     server_->MaybeFinishShutdown();
   }
 }
 
-void Server::ServerChannel::Orphan() { transport_.reset(); }
+CallInitiator Server::Connection::CreateCall(
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  server_->SetRegisteredMethodOnMetadata(*client_initial_metadata);
+  auto call = MakeCall(server_->event_engine_.get(), arena);
+  server_->MatchThenPublish(std::move(call.handler), cq_idx_);
+  return std::move(call.initiator);
+}
 
 }  // namespace grpc_core
 

@@ -83,12 +83,11 @@ class Server : public InternallyRefCounted<Server>,
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
 
-  class ServerChannel final : public CallFactory {
+  class Connection final : public CallFactory {
    public:
-    ServerChannel(Server* server,
-                  RefCountedPtr<CallFilters::Stack> filter_stack,
-                  OrphanablePtr<Transport> transport, size_t cq_idx);
-    ~ServerChannel() override;
+    Connection(Server* server, RefCountedPtr<CallFilters::Stack> filter_stack,
+               OrphanablePtr<Transport> transport, size_t cq_idx);
+    ~Connection() override;
     CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
                              Arena* arena) override;
     void Orphan() override;
@@ -395,7 +394,7 @@ class Server : public InternallyRefCounted<Server>,
 
   struct ChannelSet {
     std::vector<RefCountedPtr<Channel>> ye_olde_channels;
-    std::vector<RefCountedPtr<ServerChannel>> channels;
+    std::vector<RefCountedPtr<Connection>> channels;
   };
 
   class ChannelBroadcaster;
@@ -522,9 +521,9 @@ class Server : public InternallyRefCounted<Server>,
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> ye_olde_channels_ ABSL_GUARDED_BY(mu_global_);
-  using ServerChannelSet = absl::flat_hash_set<RefCountedPtr<ServerChannel>,
-                                               RefCountedPtrHash<ServerChannel>,
-                                               RefCountedPtrEq<ServerChannel>>;
+  using ServerChannelSet = absl::flat_hash_set<RefCountedPtr<Connection>,
+                                               RefCountedPtrHash<Connection>,
+                                               RefCountedPtrEq<Connection>>;
   ServerChannelSet channels_ ABSL_GUARDED_BY(mu_global_);
   std::atomic<size_t> num_channels_{0};
 
