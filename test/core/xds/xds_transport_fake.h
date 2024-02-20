@@ -88,9 +88,15 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool Orphaned();
 
-    size_t reads_started() {
+    bool WaitForReadsStarted(size_t expected, absl::Duration timeout) {
       MutexLock lock(&mu_);
-      return reads_started_;
+      const absl::Time deadline = absl::Now() + timeout;
+      do {
+        if (reads_started_ == expected) {
+          return true;
+        }
+      } while (!cv_reads_started_.WaitWithDeadline(&mu_, deadline));
+      return false;
     }
 
    private:
@@ -122,7 +128,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const char* method_;
 
     Mutex mu_;
-    CondVar cv_;
+    CondVar cv_reads_started_;
+    CondVar cv_client_msg_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;

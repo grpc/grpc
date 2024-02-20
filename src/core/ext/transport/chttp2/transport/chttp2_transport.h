@@ -112,10 +112,27 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
     kEnd,
   };
 
-  HttpAnnotation(
-      Type type, gpr_timespec time,
-      absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
-      absl::optional<chttp2::StreamFlowControl::Stats> stream_stats);
+  // A snapshot of write stats to export.
+  struct WriteStats {
+    size_t target_write_size;
+  };
+
+  HttpAnnotation(Type type, gpr_timespec time);
+
+  HttpAnnotation& Add(const chttp2::TransportFlowControl::Stats& stats) {
+    transport_stats_ = stats;
+    return *this;
+  }
+
+  HttpAnnotation& Add(const chttp2::StreamFlowControl::Stats& stats) {
+    stream_stats_ = stats;
+    return *this;
+  }
+
+  HttpAnnotation& Add(const WriteStats& stats) {
+    write_stats_ = stats;
+    return *this;
+  }
 
   std::string ToString() const override;
 
@@ -133,6 +150,7 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   const gpr_timespec time_;
   absl::optional<chttp2::TransportFlowControl::Stats> transport_stats_;
   absl::optional<chttp2::StreamFlowControl::Stats> stream_stats_;
+  absl::optional<WriteStats> write_stats_;
 };
 
 }  // namespace grpc_core

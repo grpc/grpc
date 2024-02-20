@@ -62,7 +62,6 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     This is class is part of an EXPERIMENTAL API.
 
     Args:
-      exporter: Exporter used to export data.
       plugin: OpenTelemetryPlugin to enable.
     """
 
@@ -73,17 +72,13 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self,
         *,
         plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
-        exporter: "grpc_observability.Exporter" = None,
     ):
         _plugins = []
         if plugins:
             for plugin in plugins:
                 _plugins.append(_OpenTelemetryPlugin(plugin))
 
-        if exporter:
-            self.exporter = exporter
-        else:
-            self.exporter = _OpenTelemetryExporterDelegator(_plugins)
+        self.exporter = _OpenTelemetryExporterDelegator(_plugins)
 
         try:
             _cyobservability.activate_stats()

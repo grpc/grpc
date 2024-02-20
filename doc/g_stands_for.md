@@ -61,4 +61,5 @@
 - 1.59 'g' stands for ['generative'](https://github.com/grpc/grpc/tree/v1.59.x)
 - 1.60 'g' stands for ['gjallarhorn'](https://github.com/grpc/grpc/tree/v1.60.x)
 - 1.61 'g' stands for ['grand'](https://github.com/grpc/grpc/tree/v1.61.x)
-- 1.62 'g' stands for ['guardian'](https://github.com/grpc/grpc/tree/master)
+- 1.62 'g' stands for ['guardian'](https://github.com/grpc/grpc/tree/v1.62.x)
+- 1.63 'g' stands for ['giggle'](https://github.com/grpc/grpc/tree/master)

@@ -40,7 +40,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -66,26 +65,18 @@ gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
                            grpc_tls_certificate_provider** server_provider,
                            grpc_tls_certificate_verifier** verifier) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+  std::string server_key = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
 
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   // Set credential provider.
   grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();
-  grpc_tls_identity_pairs_add_pair(server_pairs, server_key, server_cert);
-  *server_provider =
-      grpc_tls_certificate_provider_static_data_create(ca_cert, server_pairs);
+  grpc_tls_identity_pairs_add_pair(server_pairs, server_key.c_str(),
+                                   server_cert.c_str());
+  *server_provider = grpc_tls_certificate_provider_static_data_create(
+      ca_cert.c_str(), server_pairs);
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         *server_provider);
   grpc_tls_credentials_options_watch_root_certs(options);
@@ -108,35 +99,24 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
 
   grpc_server_start(server);
 
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
   return server;
 }
 
 grpc_channel* client_create(const char* server_addr,
                             grpc_tls_certificate_provider** client_provider,
                             grpc_tls_certificate_verifier** verifier) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CLIENT_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* client_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* client_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(CLIENT_CERT_PATH);
+  std::string client_key = grpc_core::testing::GetFileContents(CLIENT_KEY_PATH);
 
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   // Set credential provider.
   grpc_tls_identity_pairs* client_pairs = grpc_tls_identity_pairs_create();
-  grpc_tls_identity_pairs_add_pair(client_pairs, client_key, client_cert);
-  *client_provider =
-      grpc_tls_certificate_provider_static_data_create(ca_cert, client_pairs);
+  grpc_tls_identity_pairs_add_pair(client_pairs, client_key.c_str(),
+                                   client_cert.c_str());
+  *client_provider = grpc_tls_certificate_provider_static_data_create(
+      ca_cert.c_str(), client_pairs);
 
   grpc_tls_credentials_options_set_certificate_provider(options,
                                                         *client_provider);
@@ -171,9 +151,6 @@ grpc_channel* client_create(const char* server_addr,
     grpc_channel_args_destroy(client_args);
   }
 
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
   return client;
 }
 

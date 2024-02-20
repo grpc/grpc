@@ -22,7 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"

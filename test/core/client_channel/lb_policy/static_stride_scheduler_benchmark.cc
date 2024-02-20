@@ -28,8 +28,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 
 namespace grpc_core {
 namespace {
