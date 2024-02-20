@@ -1395,6 +1395,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_arg_names",
         "config",
@@ -4017,6 +4018,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "libcrypto",
         "libssl",
