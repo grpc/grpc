@@ -3010,6 +3010,7 @@ grpc_cc_library(
         "iomgr_fwd",
         "resolved_address",
         "time",
+        "//:channelz",
         "//:gpr_platform",
         "//:grpc_base",
         "//:iomgr",
