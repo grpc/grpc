@@ -49,6 +49,16 @@
 
 namespace grpc_core {
 
+// Given a metadata key and a value, return the encoded size.
+// Defaults to calling the key's Encode() method and then calculating the size
+// of that, but can be overridden for specific keys if there's a better way of
+// doing this.
+// May return 0 if the size is unknown/unknowable.
+template <typename Key>
+size_t EncodedSizeOfKey(Key, const typename Key::ValueType& value) {
+  return Key::Encode(value).size();
+}
+
 // grpc-timeout metadata trait.
 // ValueType is defined as Timestamp - an absolute timestamp (i.e. a
 // deadline!), that is converted to a duration by transports before being
@@ -87,6 +97,10 @@ struct TeMetadata {
   }
   static const char* DisplayValue(MementoType te);
 };
+
+inline size_t EncodedSizeOfKey(TeMetadata, TeMetadata::ValueType x) {
+  return x == TeMetadata::kTrailers ? 8 : 0;
+}
 
 // content-type metadata trait.
 struct ContentTypeMetadata {
@@ -131,6 +145,8 @@ struct HttpSchemeMetadata {
   static StaticSlice Encode(ValueType x);
   static const char* DisplayValue(MementoType content_type);
 };
+
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x);
 
 // method metadata trait.
 struct HttpMethodMetadata {
@@ -338,6 +354,11 @@ struct GrpcLbClientStatsMetadata {
     return nullptr;
   }
 };
+
+inline size_t EncodedSizeOfKey(GrpcLbClientStatsMetadata,
+                               GrpcLbClientStatsMetadata::ValueType) {
+  return 0;
+}
 
 // lb-token metadata
 struct LbTokenMetadata : public SimpleSliceBasedMetadata {

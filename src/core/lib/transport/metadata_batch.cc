@@ -168,6 +168,17 @@ StaticSlice HttpSchemeMetadata::Encode(ValueType x) {
   }
 }
 
+size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x) {
+  switch (x) {
+    case HttpSchemeMetadata::kHttp:
+      return 4;
+    case HttpSchemeMetadata::kHttps:
+      return 5;
+    default:
+      return 0;
+  }
+}
+
 const char* HttpSchemeMetadata::DisplayValue(MementoType content_type) {
   switch (content_type) {
     case kHttp:
