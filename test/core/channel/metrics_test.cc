@@ -335,12 +335,16 @@ TEST_F(MetricsTest, UInt64Counter) {
   auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain1To4})
-      .AddCounter(uint64_counter_handle, 1, kLabelValues, kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain2To4})
-      .AddCounter(uint64_counter_handle, 2, kLabelValues, kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain3To4})
-      .AddCounter(uint64_counter_handle, 3, kLabelValues, kOptionalLabelValues);
+  StatsPlugin::Scope scope;
+  scope.target = kDomain1To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).AddCounter(
+      uint64_counter_handle, 1, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain2To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).AddCounter(
+      uint64_counter_handle, 2, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain3To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).AddCounter(
+      uint64_counter_handle, 3, kLabelValues, kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetCounterValue(uint64_counter_handle, kLabelValues,
                                        kOptionalLabelValues),
               ::testing::Optional(1));
@@ -369,15 +373,16 @@ TEST_F(MetricsTest, DoubleCounter) {
   auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain1To4})
-      .AddCounter(double_counter_handle, 1.23, kLabelValues,
-                  kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain2To4})
-      .AddCounter(double_counter_handle, 2.34, kLabelValues,
-                  kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain3To4})
-      .AddCounter(double_counter_handle, 3.45, kLabelValues,
-                  kOptionalLabelValues);
+  StatsPlugin::Scope scope;
+  scope.target = kDomain1To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).AddCounter(
+      double_counter_handle, 1.23, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain2To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).AddCounter(
+      double_counter_handle, 2.34, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain3To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).AddCounter(
+      double_counter_handle, 3.45, kLabelValues, kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetCounterValue(double_counter_handle, kLabelValues,
                                        kOptionalLabelValues),
               ::testing::Optional(1.23));
@@ -407,15 +412,16 @@ TEST_F(MetricsTest, UInt64Histogram) {
   auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain1To4})
-      .RecordHistogram(uint64_histogram_handle, 1, kLabelValues,
-                       kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain2To4})
-      .RecordHistogram(uint64_histogram_handle, 2, kLabelValues,
-                       kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain3To4})
-      .RecordHistogram(uint64_histogram_handle, 3, kLabelValues,
-                       kOptionalLabelValues);
+  StatsPlugin::Scope scope;
+  scope.target = kDomain1To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).RecordHistogram(
+      uint64_histogram_handle, 1, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain2To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).RecordHistogram(
+      uint64_histogram_handle, 2, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain3To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).RecordHistogram(
+      uint64_histogram_handle, 3, kLabelValues, kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetHistogramValue(uint64_histogram_handle, kLabelValues,
                                          kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1)));
@@ -445,15 +451,16 @@ TEST_F(MetricsTest, DoubleHistogram) {
   auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain1To4})
-      .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
-                       kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain2To4})
-      .RecordHistogram(double_histogram_handle, 2.34, kLabelValues,
-                       kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel({.target = kDomain3To4})
-      .RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
-                       kOptionalLabelValues);
+  StatsPlugin::Scope scope;
+  scope.target = kDomain1To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).RecordHistogram(
+      double_histogram_handle, 1.23, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain2To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).RecordHistogram(
+      double_histogram_handle, 2.34, kLabelValues, kOptionalLabelValues);
+  scope.target = kDomain3To4;
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).RecordHistogram(
+      double_histogram_handle, 3.45, kLabelValues, kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetHistogramValue(double_histogram_handle, kLabelValues,
                                          kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1.23)));
