@@ -1640,7 +1640,6 @@ LIBGRPC_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_ping.cc \
@@ -2202,7 +2201,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_ping.cc \
