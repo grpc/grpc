@@ -1,4 +1,4 @@
-// Copyright 2022 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_TRACE_H
-#define GRPC_SRC_CORE_LIB_SURFACE_CALL_TRACE_H
+#include "src/cpp/ext/chaotic_good.h"
 
-#include <grpc/support/port_platform.h>
+#include "gtest/gtest.h"
 
-#include "src/core/lib/debug/trace.h"
+#include <grpcpp/create_channel.h>
 
-extern grpc_core::TraceFlag grpc_call_trace;
+#include "test/core/util/test_config.h"
 
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_CALL_TRACE_H
+namespace grpc {
+namespace {
+
+TEST(ChaoticGoodTest, CreateChannel) {
+  auto creds = ChaoticGoodInsecureChannelCredentials();
+  auto channel = CreateChannel("localhost:50051", creds);
+}
+
+}  // namespace
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

@@ -22,7 +22,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import pkg_resources
 import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
@@ -41,7 +40,7 @@ import grpc_version
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [
-    "Private :: Do Not Upload",
+    "Development Status :: 4 - Beta",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
@@ -206,22 +205,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) PyObject*'
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
 
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target and (
-        pkg_resources.parse_version(mac_target)
-        < pkg_resources.parse_version("10.10.0")
-    ):
-        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-        os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-            r"macosx-[0-9]+\.[0-9]+-(.+)",
-            r"macosx-10.10-\1",
-            sysconfig.get_platform(),
-        )
-
 
 def extension_modules():
     if BUILD_WITH_CYTHON:
@@ -274,6 +257,7 @@ setuptools.setup(
     name="grpcio-observability",
     version=grpc_version.VERSION,
     description="gRPC Python observability package",
+    long_description_content_type="text/x-rst",
     long_description=open(README_PATH, "r").read(),
     author="The gRPC Authors",
     author_email="grpc-io@googlegroups.com",

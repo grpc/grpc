@@ -96,7 +96,10 @@
 - name: pick_first_happy_eyeballs
   default: true
 - name: promise_based_client_call
-  default: false
+  default:
+    ios: broken
+    windows: broken
+    posix: false
 - name: promise_based_server_call
   default: false
 - name: registered_method_lookup_in_transport

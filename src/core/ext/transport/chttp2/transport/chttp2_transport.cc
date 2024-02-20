@@ -338,16 +338,11 @@ void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
   delete context_list;
 }
 
-HttpAnnotation::HttpAnnotation(
-    Type type, gpr_timespec time,
-    absl::optional<chttp2::TransportFlowControl::Stats> transport_stats,
-    absl::optional<chttp2::StreamFlowControl::Stats> stream_stats)
+HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)
     : CallTracerAnnotationInterface::Annotation(
           CallTracerAnnotationInterface::AnnotationType::kHttpTransport),
       type_(type),
-      time_(time),
-      transport_stats_(transport_stats),
-      stream_stats_(stream_stats) {}
+      time_(time) {}
 
 std::string HttpAnnotation::ToString() const {
   std::string s = "HttpAnnotation type: ";
@@ -1433,9 +1428,11 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_initial_metadata) {
     if (s->call_tracer) {
-      s->call_tracer->RecordAnnotation(grpc_core::HttpAnnotation(
-          grpc_core::HttpAnnotation::Type::kStart, gpr_now(GPR_CLOCK_REALTIME),
-          s->t->flow_control.stats(), s->flow_control.stats()));
+      s->call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                    gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s->t->flow_control.stats())
+              .Add(s->flow_control.stats()));
     }
     if (t->is_client && t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromLocal();
@@ -2897,7 +2894,6 @@ static void next_bdp_ping_timer_expired_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
-  GPR_ASSERT(t->next_bdp_ping_timer_handle != TaskHandle::kInvalid);
   t->next_bdp_ping_timer_handle = TaskHandle::kInvalid;
   if (t->flow_control.bdp_estimator()->accumulator() == 0) {
     // Block the bdp ping till we receive more data.

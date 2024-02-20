@@ -96,25 +96,33 @@ class EmptyMessageTest(unittest.TestCase):
         self._channel.close()
 
     def testUnaryUnary(self):
-        response = self._channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        response = self._channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )(_REQUEST)
         self.assertEqual(_RESPONSE, response)
 
     def testUnaryStream(self):
-        response_iterator = self._channel.unary_stream(_UNARY_STREAM)(_REQUEST)
+        response_iterator = self._channel.unary_stream(
+            _UNARY_STREAM,
+            _registered_method=True,
+        )(_REQUEST)
         self.assertSequenceEqual(
             [_RESPONSE] * test_constants.STREAM_LENGTH, list(response_iterator)
         )
 
     def testStreamUnary(self):
-        response = self._channel.stream_unary(_STREAM_UNARY)(
-            iter([_REQUEST] * test_constants.STREAM_LENGTH)
-        )
+        response = self._channel.stream_unary(
+            _STREAM_UNARY,
+            _registered_method=True,
+        )(iter([_REQUEST] * test_constants.STREAM_LENGTH))
         self.assertEqual(_RESPONSE, response)
 
     def testStreamStream(self):
-        response_iterator = self._channel.stream_stream(_STREAM_STREAM)(
-            iter([_REQUEST] * test_constants.STREAM_LENGTH)
-        )
+        response_iterator = self._channel.stream_stream(
+            _STREAM_STREAM,
+            _registered_method=True,
+        )(iter([_REQUEST] * test_constants.STREAM_LENGTH))
         self.assertSequenceEqual(
             [_RESPONSE] * test_constants.STREAM_LENGTH, list(response_iterator)
         )

@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,24 +16,24 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/cpp/performance")
+grpc_package(
+    name = "test/cpp/ext",
+    visibility = "tests",
+)
 
 grpc_cc_test(
-    name = "writes_per_rpc_test",
-    srcs = ["writes_per_rpc_test.cc"],
+    name = "chaotic_good_test",
+    srcs = [
+        "chaotic_good_test.cc",
+    ],
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
+    language = "C++",
+    tags = [],
     deps = [
-        "//:gpr",
-        "//:grpc",
         "//:grpc++",
-        "//src/core:channel_args",
-        "//src/proto/grpc/testing:echo_proto",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/event_engine/fuzzing_event_engine",
+        "//:grpcpp_chaotic_good",
         "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
     ],
 )

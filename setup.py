@@ -37,7 +37,6 @@ import sys
 import sysconfig
 
 import _metadata
-import pkg_resources
 from setuptools import Extension
 from setuptools.command import egg_info
 
@@ -453,22 +452,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     )
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
     DEFINE_MACROS += (("GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK", 1),)
-
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-# Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target:
-        mac_target = pkg_resources.parse_version(str(mac_target))
-        if mac_target < pkg_resources.parse_version("10.10.0"):
-            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-            os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-                r"macosx-[0-9]+\.[0-9]+-(.+)",
-                r"macosx-10.10-\1",
-                sysconfig.get_platform(),
-            )
 
 
 def cython_extensions_and_necessity():
