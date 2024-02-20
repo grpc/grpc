@@ -79,7 +79,6 @@ EXPERIMENTS = {
             ],
             "core_end2end_test": [
                 "event_engine_client",
-                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -100,9 +99,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lame_client_test": [
-                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -164,7 +160,6 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
-                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -182,9 +177,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lame_client_test": [
-                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
