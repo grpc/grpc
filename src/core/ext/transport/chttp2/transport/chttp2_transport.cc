@@ -123,6 +123,8 @@
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
+#define MIN_PING_TIME 5 // ms
+
 #define GRPC_ARG_HTTP2_PING_ON_RST_STREAM_PERCENT \
   "grpc.http2.ping_on_rst_stream_percent"
 
@@ -2876,7 +2878,8 @@ static void finish_bdp_ping_locked(
                                     nullptr);
   GPR_ASSERT(t->next_bdp_ping_timer_handle == TaskHandle::kInvalid);
   t->next_bdp_ping_timer_handle =
-      t->event_engine->RunAfter(next_ping - grpc_core::Timestamp::Now(), [t] {
+      t->event_engine->RunAfter(std::max(next_ping - grpc_core::Timestamp::Now(),
+                                         grpc_core::Duration::Milliseconds(MIN_PING_TIME)), [t] {
         grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
         grpc_core::ExecCtx exec_ctx;
         next_bdp_ping_timer_expired(t.get());
