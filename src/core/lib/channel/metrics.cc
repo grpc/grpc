@@ -20,7 +20,8 @@ namespace grpc_core {
 namespace {
 // Uses the Construct-on-First-Use idiom to avoid the static initialization
 // order fiasco.
-std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>& Get() {
+std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+GetInstrumentList() {
   static NoDestruct<
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>>
       instruments;
@@ -33,7 +34,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = Get();
+  auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kUInt64,
@@ -55,7 +56,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = Get();
+  auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kDouble,
@@ -77,7 +78,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = Get();
+  auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kUInt64,
@@ -99,7 +100,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys) {
-  auto& instruments = Get();
+  auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   instruments.push_back({.value_type = ValueType::kDouble,
@@ -118,13 +119,13 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
 
 void GlobalInstrumentsRegistry::ForEach(
     absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f) {
-  for (const auto& instrument : Get()) {
+  for (const auto& instrument : GetInstrumentList()) {
     f(instrument);
   }
 }
 
 void GlobalInstrumentsRegistry::TestOnlyResetGlobalInstrumentsRegistry() {
-  auto& instruments = Get();
+  auto& instruments = GetInstrumentList();
   instruments.clear();
 }
 
