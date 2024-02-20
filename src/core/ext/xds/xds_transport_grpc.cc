@@ -77,7 +77,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   call_ = channel->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       factory_->interested_parties(), Slice::FromStaticString(method),
-      /*host=*/absl::nullopt, Timestamp::InfFuture(),
+      /*authority=*/absl::nullopt, Timestamp::InfFuture(),
       /*registered_method=*/true);
   GPR_ASSERT(call_ != nullptr);
   // Init data associated with the call.

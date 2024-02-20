@@ -1680,7 +1680,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   call_ = rls_channel_->channel()->CreateCall(
       /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       lb_policy_->interested_parties(),
-      Slice::FromStaticString(kRlsRequestPath), /*host=*/absl::nullopt,
+      Slice::FromStaticString(kRlsRequestPath), /*authority=*/absl::nullopt,
       deadline_, /*registered_method=*/true);
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
