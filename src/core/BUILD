@@ -6923,6 +6923,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "cancel_callback",
         "event_engine_common",
         "if",
         "map",

@@ -86,7 +86,10 @@ class TestCsds(unittest.TestCase):
 
         # Force the XdsClient to initialize and request a resource
         with self.assertRaises(grpc.RpcError) as rpc_error:
-            dummy_channel.unary_unary("")(b"", wait_for_ready=False, timeout=1)
+            dummy_channel.unary_unary(
+                "",
+                _registered_method=True,
+            )(b"", wait_for_ready=False, timeout=1)
         self.assertEqual(
             grpc.StatusCode.DEADLINE_EXCEEDED, rpc_error.exception.code()
         )

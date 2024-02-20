@@ -17,6 +17,7 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
+    "absl_base64": "absl_base64",
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
@@ -53,7 +54,7 @@ EXPERIMENT_ENABLES = {
     "v3_compression_filter": "v3_compression_filter",
     "v3_server_auth_filter": "v3_server_auth_filter",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
-    "work_serializer_dispatch": "work_serializer_dispatch",
+    "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
     "write_size_policy": "write_size_policy",
     "write_size_cap": "write_size_cap,write_size_policy",
     "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
@@ -77,8 +78,6 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
-                "chaotic_good",
-                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -96,9 +95,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lame_client_test": [
-                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -123,6 +119,9 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "credential_token_tests": [
+                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -157,8 +156,6 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
-                "chaotic_good",
-                "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
             ],
@@ -176,9 +173,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lame_client_test": [
-                "promise_based_client_call",
             ],
             "lb_unit_test": [
                 "work_serializer_dispatch",
@@ -200,6 +194,9 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "credential_token_tests": [
+                "absl_base64",
             ],
             "flow_control_test": [
                 "write_size_cap",
@@ -287,6 +284,9 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "credential_token_tests": [
+                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

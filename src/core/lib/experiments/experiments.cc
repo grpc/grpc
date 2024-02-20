@@ -24,6 +24,8 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
+const char* const description_absl_base64 = "Use abseil base64 functions.";
+const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -171,6 +173,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -193,6 +197,8 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
+     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -283,7 +289,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,
@@ -297,6 +304,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
+const char* const description_absl_base64 = "Use abseil base64 functions.";
+const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -444,6 +453,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -466,6 +477,8 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
+     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -556,7 +569,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,
@@ -570,6 +584,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
+const char* const description_absl_base64 = "Use abseil base64 functions.";
+const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -717,6 +733,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 const char* const description_write_size_policy =
     "Try to size writes such that they don't create too large of a backlog";
 const char* const additional_constraints_write_size_policy = "{}";
@@ -739,6 +757,8 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
+    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
+     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -829,7 +849,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
     {"write_size_policy", description_write_size_policy,
      additional_constraints_write_size_policy, nullptr, 0, true, true},
     {"write_size_cap", description_write_size_cap,

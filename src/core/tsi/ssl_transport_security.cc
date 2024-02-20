@@ -1004,15 +1004,14 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   auto* provider = static_cast<grpc_core::experimental::CrlProvider*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
 
-  char* buf = X509_NAME_oneline(X509_get_issuer_name(cert), nullptr, 0);
-  if (buf == nullptr) {
-    gpr_log(GPR_ERROR, "Certificate has null issuer, cannot do CRL lookup");
+  absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
+  if (!issuer_name.ok()) {
+    gpr_log(GPR_ERROR, "Could not get certificate issuer name");
     return 0;
   }
-  grpc_core::experimental::CertificateInfoImpl cert_impl(buf);
+  grpc_core::experimental::CertificateInfoImpl cert_impl(*issuer_name);
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
       provider->GetCrl(cert_impl);
-  OPENSSL_free(buf);
   // There wasn't a CRL found in the provider. Returning 0 will end up causing
   // OpenSSL to return X509_V_ERR_UNABLE_TO_GET_CRL. We then catch that error
   // and behave how we want for a missing CRL.
@@ -2082,7 +2081,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
 #endif
   if (ssl_context == nullptr) {
@@ -2185,7 +2184,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                                      nullptr);
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
@@ -2302,7 +2301,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
       SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
@@ -2389,7 +2388,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           break;
       }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
       if (options->crl_provider != nullptr) {
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,

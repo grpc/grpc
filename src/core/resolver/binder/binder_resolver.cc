@@ -24,8 +24,15 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 
 #include <string.h>
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/socket.h>
 #include <sys/un.h>
+#endif // GPR_WINDOWS
 
 #include <memory>
 #include <utility>

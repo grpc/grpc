@@ -698,8 +698,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     const absl::optional<BackendMetricData> backend_metric_data_;
   };
 
-  explicit LoadBalancingPolicyTest(absl::string_view lb_policy_name)
-      : lb_policy_name_(lb_policy_name) {}
+  explicit LoadBalancingPolicyTest(absl::string_view lb_policy_name,
+                                   ChannelArgs channel_args = ChannelArgs())
+      : lb_policy_name_(lb_policy_name),
+        channel_args_(std::move(channel_args)) {}
 
   void SetUp() override {
     // Order is important here: Fuzzing EE needs to be created before
@@ -715,7 +717,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     auto helper = std::make_unique<FakeHelper>(this);
     helper_ = helper.get();
     LoadBalancingPolicy::Args args = {work_serializer_, std::move(helper),
-                                      ChannelArgs()};
+                                      channel_args_};
     lb_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             lb_policy_name_, std::move(args));
@@ -859,6 +861,23 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     notification.WaitForNotification();
     gpr_log(GPR_INFO, "health notifications delivered");
     return status;
+  }
+
+  // Invoke ExitIdle on the LB policy
+  void ExitIdle() {
+    ExecCtx exec_ctx;
+    absl::Notification notification;
+    // Note: ExitIdle() will enqueue a bunch of connectivity state
+    // notifications on the WorkSerializer, and we want to wait until
+    // those are delivered to the LB policy.
+    work_serializer_->Run(
+        [&]() {
+          lb_policy_->ExitIdleLocked();
+          work_serializer_->Run([&]() { notification.Notify(); },
+                                DEBUG_LOCATION);
+        },
+        DEBUG_LOCATION);
+    notification.WaitForNotification();
   }
 
   void ExpectQueueEmpty(SourceLocation location = SourceLocation()) {
@@ -1087,6 +1106,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       const CallAttributes& call_attributes = {},
       std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>*
           subchannel_call_tracker = nullptr,
+      SubchannelState::FakeSubchannel** picked_subchannel = nullptr,
       SourceLocation location = SourceLocation()) {
     EXPECT_NE(picker, nullptr);
     if (picker == nullptr) {
@@ -1100,20 +1120,29 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     if (complete == nullptr) return absl::nullopt;
     auto* subchannel = static_cast<SubchannelState::FakeSubchannel*>(
         complete->subchannel.get());
+    if (picked_subchannel != nullptr) *picked_subchannel = subchannel;
     std::string address = subchannel->state()->address();
     if (complete->subchannel_call_tracker != nullptr) {
       if (subchannel_call_tracker != nullptr) {
         *subchannel_call_tracker = std::move(complete->subchannel_call_tracker);
       } else {
-        complete->subchannel_call_tracker->Start();
-        FakeMetadata metadata({});
-        FakeBackendMetricAccessor backend_metric_accessor({});
-        LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-            address, absl::OkStatus(), &metadata, &backend_metric_accessor};
-        complete->subchannel_call_tracker->Finish(args);
+        ReportCompletionToCallTracker(
+            std::move(complete->subchannel_call_tracker), address);
       }
     }
     return address;
+  }
+
+  void ReportCompletionToCallTracker(
+      std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
+          subchannel_call_tracker,
+      absl::string_view address, absl::Status status = absl::OkStatus()) {
+    subchannel_call_tracker->Start();
+    FakeMetadata metadata({});
+    FakeBackendMetricAccessor backend_metric_accessor({});
+    LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
+        address, status, &metadata, &backend_metric_accessor};
+    subchannel_call_tracker->Finish(args);
   }
 
   // Gets num_picks complete picks from picker and returns the resulting
@@ -1137,7 +1166,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                                         subchannel_call_trackers == nullptr
                                             ? nullptr
                                             : &subchannel_call_tracker,
-                                        location);
+                                        nullptr, location);
       if (!address.has_value()) return absl::nullopt;
       results.emplace_back(std::move(*address));
       if (subchannel_call_trackers != nullptr) {
@@ -1464,6 +1493,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   std::map<SubchannelKey, SubchannelState> subchannel_pool_;
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   const absl::string_view lb_policy_name_;
+  const ChannelArgs channel_args_;
 };
 
 }  // namespace testing

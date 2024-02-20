@@ -23,6 +23,6 @@
 
 #include <grpc/grpc.h>
 
-const char* grpc_version_string(void) { return "38.0.0"; }
+const char* grpc_version_string(void) { return "39.0.0"; }
 
-const char* grpc_g_stands_for(void) { return "guardian"; }
+const char* grpc_g_stands_for(void) { return "giggle"; }

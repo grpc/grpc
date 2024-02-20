@@ -95,6 +95,7 @@ def _update_visibility(visibility):
         "alt_grpc++_base_unsecure_legacy": PRIVATE,
         "alts_frame_protector": PRIVATE,
         "channelz": PRIVATE,
+        "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
         "debug_location": PRIVATE,

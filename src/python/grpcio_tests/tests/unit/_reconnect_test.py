@@ -52,7 +52,10 @@ class ReconnectTest(unittest.TestCase):
             server.add_insecure_port(addr)
             server.start()
         channel = grpc.insecure_channel(addr)
-        multi_callable = channel.unary_unary(_UNARY_UNARY)
+        multi_callable = channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
         server.stop(None)
         # By default, the channel connectivity is checked every 5s
