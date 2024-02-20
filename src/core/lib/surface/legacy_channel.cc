@@ -100,6 +100,7 @@ namespace {
 class NotReallyACallFactory final : public CallFactory {
  public:
   using CallFactory::CallFactory;
+  void Orphan() override { delete this; }
   CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
     Crash("NotReallyACallFactory::CreateCall should never be called");
   }

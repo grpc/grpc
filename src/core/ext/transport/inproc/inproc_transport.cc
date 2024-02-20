@@ -114,11 +114,17 @@ class InprocClientTransport final : public Transport, public ClientTransport {
         "pull_initial_metadata",
         TrySeq(call_handler.PullClientInitialMetadata(),
                [server_transport = server_transport_,
-                call_handler](ClientMetadataHandle md) {
+                call_handler](ClientMetadataHandle md) mutable {
                  auto call_initiator = server_transport->AcceptCall(*md);
                  if (!call_initiator.ok()) return call_initiator.status();
-                 ForwardCall(call_handler, std::move(*call_initiator),
-                             std::move(md));
+                 ForwardCall(call_handler, *call_initiator);
+                 call_initiator->SpawnGuarded(
+                     "send_initial_metadata",
+                     [md = std::move(md),
+                      call_initiator = *call_initiator]() mutable {
+                       return call_initiator.PushClientInitialMetadata(
+                           std::move(md));
+                     });
                  return absl::OkStatus();
                }));
   }

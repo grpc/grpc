@@ -28,6 +28,7 @@
 #include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -321,6 +322,10 @@ class CallHandler {
  public:
   explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
+
+  void SetStack(RefCountedPtr<CallFilters::Stack> stack) {
+// FIXME: Implement.
+  }
 
   auto PullClientInitialMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());

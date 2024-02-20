@@ -7223,6 +7223,7 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "call_filters",
         "call_final_info",
         "for_each",
         "if",

@@ -23,30 +23,67 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/client_channel/config_selector.h"
+#include "src/core/client_channel/client_channel_factory.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/observable.h"
-#include "src/core/lib/surface/channel_interface.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/call_destination.h"
+#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/call_filters.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/service_config/service_config.h"
 
 namespace grpc_core {
 
-class ClientChannel : public ChannelInterface {
+class ClientChannel : public Channel {
  public:
-  ClientChannel(absl::string_view target_uri, ChannelArgs args);
+  static absl::StatusOr<OrphanablePtr<Channel>> Create(
+      std::string target, ChannelArgs channel_args,
+      grpc_channel_stack_type channel_stack_type,
+      grpc_compression_options compression_options);
+
+  // Do not instantiate directly -- use Create() instead.
+  ClientChannel(std::string target_uri, ChannelArgs args,
+                grpc_compression_options compression_options,
+                std::string uri_to_resolve,
+                RefCountedPtr<ServiceConfig> default_service_config,
+                ClientChannelFactory* client_channel_factory);
 
   ~ClientChannel() override;
 
   void Orphan() override;
 
-  absl::string_view target() const override;
+  Arena* CreateArena() override { return call_factory_->CreateArena(); }
+  void DestroyArena(Arena* arena) override {
+    return call_factory_->DestroyArena(arena);
+  }
 
-  void GetChannelInfo(const grpc_channel_info* channel_info) override;
+  bool IsLame() const override;
+
+  grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
+                        grpc_completion_queue* cq,
+                        grpc_pollset_set* /*pollset_set_alternative*/,
+                        Slice path, absl::optional<Slice> authority,
+                        Timestamp deadline, bool registered_method) override;
+
+  grpc_event_engine::experimental::EventEngine* event_engine()
+      const override;
+
+  bool SupportsConnectivityWatcher() const override;
 
   // Returns the current connectivity state.  If try_to_connect is true,
   // triggers a connection attempt if not already connected.
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect) override;
+
+  void WatchConnectivityState(
+      grpc_connectivity_state last_observed_state, Timestamp deadline,
+      grpc_completion_queue* cq, void* tag) override;
 
   // Starts and stops a connectivity watch.  The watcher will be initially
   // notified as soon as the state changes from initial_state and then on
@@ -61,18 +98,15 @@ class ClientChannel : public ChannelInterface {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher) override;
 
+  void GetInfo(const grpc_channel_info* channel_info) override;
+
   void ResetConnectionBackoff() override;
 
-  void SendPing(absl::AnyInvocable<void(absl::Status)> on_initiate,
-                absl::AnyInvocable<void(absl::Status)> on_ack) override;
-
-  // Creates a call on the channel.
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
-                           Arena* arena) override;
+  void Ping(grpc_completion_queue* cq, void* tag) override;
 
   // Creates a load balanced call on the channel.
   CallInitiator CreateLoadBalancedCall(
-      ClientInitialMetadata client_initial_metadata,
+      ClientMetadataHandle client_initial_metadata,
       absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
 
   // Flag that this object gets stored in channel args as a raw pointer.
@@ -85,6 +119,7 @@ class ClientChannel : public ChannelInterface {
   class ResolverResultHandler;
   class ClientChannelControlHelper;
   class SubchannelWrapper;
+  class ClientChannelCallFactory;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
@@ -146,12 +181,13 @@ class ClientChannel : public ChannelInterface {
   // Fields set at construction and never modified.
   //
   ChannelArgs channel_args_;
-  ClientChannelFactory* client_channel_factory_;
+  std::string uri_to_resolve_;
   const size_t service_config_parser_index_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  std::string uri_to_resolve_;
+  ClientChannelFactory* client_channel_factory_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
+  RefCountedPtr<CallFactory> call_factory_;
   OrphanablePtr<CallDestination> call_destination_;
 
   //
@@ -164,7 +200,7 @@ class ClientChannel : public ChannelInterface {
   // Idleness state.
   //
   const Duration idle_timeout_;
-  IdleFilterState idle_state_(false);
+  IdleFilterState idle_state_{false};
   SingleSetPtr<Activity, typename ActivityPtr::deleter_type> idle_activity_;
 
   //

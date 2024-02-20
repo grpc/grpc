@@ -2367,6 +2367,7 @@ src/core/lib/promise/interceptor_list.h \
 src/core/lib/promise/latch.h \
 src/core/lib/promise/loop.h \
 src/core/lib/promise/map.h \
+src/core/lib/promise/observable.h \
 src/core/lib/promise/party.cc \
 src/core/lib/promise/party.h \
 src/core/lib/promise/pipe.h \
@@ -2579,6 +2580,7 @@ src/core/lib/transport/batch_builder.cc \
 src/core/lib/transport/batch_builder.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
+src/core/lib/transport/call_destination.h \
 src/core/lib/transport/call_factory.cc \
 src/core/lib/transport/call_factory.h \
 src/core/lib/transport/call_filters.cc \

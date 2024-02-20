@@ -1026,6 +1026,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -1130,6 +1131,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -2519,6 +2521,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -2592,6 +2595,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
+  - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h

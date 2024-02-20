@@ -37,6 +37,7 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
