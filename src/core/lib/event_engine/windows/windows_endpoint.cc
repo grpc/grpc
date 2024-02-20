@@ -361,8 +361,6 @@ absl::Status WindowsEndpoint::TcpAnnotateError(absl::Status& src_error) {
   grpc_core::StatusSetStr(&src_error,
                           grpc_core::StatusStrProperty::kTargetAddress,
                           peer_address_string_);
-  grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
-                          handle_->WrappedFd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
 }
