@@ -547,7 +547,7 @@ class GrpcLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // The channel for communicating with the LB server.
-  grpc_channel* lb_channel_ = nullptr;
+  OrphanablePtr<Channel> lb_channel_;
   StateWatcher* watcher_ = nullptr;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;
@@ -898,11 +898,11 @@ GrpcLb::BalancerCallState::BalancerCallState(
       grpclb_policy()->lb_call_timeout_ == Duration::Zero()
           ? Timestamp::InfFuture()
           : Timestamp::Now() + grpclb_policy()->lb_call_timeout_;
-  lb_call_ = grpc_channel_create_pollset_set_call(
-      grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
-      grpclb_policy_->interested_parties(),
-      Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad").c_slice(),
-      nullptr, deadline, nullptr);
+  lb_call_ = grpclb_policy()->lb_channel_->CreateCall(
+      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
+      /*cq=*/nullptr, grpclb_policy_->interested_parties(),
+      Slice::FromStaticString("/grpc.lb.v1.LoadBalancer/BalanceLoad"),
+      /*host=*/absl::nullopt, deadline, /*registered_method=*/true);
   // Init the LB call request payload.
   upb::Arena arena;
   grpc_slice request_payload_slice = GrpcLbRequestCreate(
@@ -1504,13 +1504,11 @@ void GrpcLb::ShutdownLocked() {
   // alive when that callback is invoked.
   if (lb_channel_ != nullptr) {
     if (parent_channelz_node_ != nullptr) {
-      channelz::ChannelNode* child_channelz_node =
-          grpc_channel_get_channelz_node(lb_channel_);
+      channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
-    grpc_channel_destroy_internal(lb_channel_);
-    lb_channel_ = nullptr;
+    lb_channel_.reset();
   }
 }
 
@@ -1520,7 +1518,7 @@ void GrpcLb::ShutdownLocked() {
 
 void GrpcLb::ResetBackoffLocked() {
   if (lb_channel_ != nullptr) {
-    grpc_channel_reset_connect_backoff(lb_channel_);
+    lb_channel_->ResetConnectionBackoff();
   }
   if (child_policy_ != nullptr) {
     child_policy_->ResetBackoffLocked();
@@ -1592,13 +1590,9 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
     // Start watching the channel's connectivity state.  If the channel
     // goes into state TRANSIENT_FAILURE before the timer fires, we go into
     // fallback mode even if the fallback timeout has not elapsed.
-    ClientChannelFilter* client_channel =
-        ClientChannelFilter::GetFromChannel(Channel::FromC(lb_channel_));
-    GPR_ASSERT(client_channel != nullptr);
-    // Ref held by callback.
     watcher_ =
         new StateWatcher(RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "StateWatcher"));
-    client_channel->AddConnectivityWatcher(
+    lb_channel_->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
     // Start balancer call.
@@ -1633,13 +1627,13 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   if (lb_channel_ == nullptr) {
     std::string uri_str =
         absl::StrCat("fake:///", channel_control_helper()->GetAuthority());
-    lb_channel_ =
-        grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
-                            lb_channel_args.ToC().get());
+    lb_channel_.reset(
+        Channel::FromC(
+            grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
+                                lb_channel_args.ToC().get())));
     GPR_ASSERT(lb_channel_ != nullptr);
     // Set up channelz linkage.
-    channelz::ChannelNode* child_channelz_node =
-        grpc_channel_get_channelz_node(lb_channel_);
+    channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
     auto parent_channelz_node = args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
       parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
@@ -1659,10 +1653,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
 }
 
 void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
-  ClientChannelFilter* client_channel =
-      ClientChannelFilter::GetFromChannel(Channel::FromC(lb_channel_));
-  GPR_ASSERT(client_channel != nullptr);
-  client_channel->RemoveConnectivityWatcher(watcher_);
+  lb_channel_->RemoveConnectivityWatcher(watcher_);
 }
 
 //
@@ -1678,7 +1669,7 @@ void GrpcLb::StartBalancerCallLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
-            this, lb_channel_, lb_calld_.get());
+            this, lb_channel_.get(), lb_calld_.get());
   }
   lb_calld_->StartQuery();
 }

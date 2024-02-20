@@ -49,7 +49,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/client_channel/backend_metric.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -92,20 +91,20 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_impl.h"
 
 //
 // Client channel filter
@@ -1190,16 +1189,6 @@ class ClientChannelFilter::ClientChannelControlHelper
 //
 // ClientChannelFilter implementation
 //
-
-ClientChannelFilter* ClientChannelFilter::GetFromChannel(Channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtableWithPromises &&
-      elem->filter != &kFilterVtableWithoutPromises) {
-    return nullptr;
-  }
-  return static_cast<ClientChannelFilter*>(elem->channel_data);
-}
 
 grpc_error_handle ClientChannelFilter::Init(grpc_channel_element* elem,
                                             grpc_channel_element_args* args) {

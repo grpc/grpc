@@ -42,6 +42,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -56,6 +57,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -81,11 +83,11 @@ class ChaoticGoodServerTransport final : public Transport,
                                          public ServerTransport {
  public:
   ChaoticGoodServerTransport(
-      const ChannelArgs& args,
-      std::unique_ptr<PromiseEndpoint> control_endpoint,
-      std::unique_ptr<PromiseEndpoint> data_endpoint,
+      const ChannelArgs& args, PromiseEndpoint control_endpoint,
+      PromiseEndpoint data_endpoint,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      HPackParser hpack_parser, HPackCompressor hpack_encoder);
   ~ChaoticGoodServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -94,7 +96,7 @@ class ChaoticGoodServerTransport final : public Transport,
   absl::string_view GetTransportName() const override { return "chaotic_good"; }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
-  void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
+  void PerformOp(grpc_transport_op*) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override { delete this; }
 
@@ -116,25 +118,28 @@ class ChaoticGoodServerTransport final : public Transport,
                            MpscSender<ServerFrame> outgoing_frames);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
-  auto TransportReadLoop();
-  auto TransportWriteLoop();
+  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto ReadOneFrame(ChaoticGoodTransport& transport);
+  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Read different parts of the server frame from control/data endpoints
   // based on frame header.
   // Resolves to a StatusOr<tuple<SliceBuffer, SliceBuffer>>
   auto ReadFrameBody(Slice read_buffer);
   void SendCancel(uint32_t stream_id, absl::Status why);
   auto DeserializeAndPushFragmentToNewCall(FrameHeader frame_header,
-                                           BufferPair buffers);
-  auto DeserializeAndPushFragmentToExistingCall(FrameHeader frame_header,
-                                                BufferPair buffers);
+                                           BufferPair buffers,
+                                           ChaoticGoodTransport& transport);
+  auto DeserializeAndPushFragmentToExistingCall(
+      FrameHeader frame_header, BufferPair buffers,
+      ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
                                  absl::Status error, ClientFragmentFrame frame);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
                             ClientFragmentFrame frame);
 
   Acceptor* acceptor_ = nullptr;
+  InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
-  ChaoticGoodTransport transport_;
   // Assigned aligned bytes from setting frame.
   size_t aligned_bytes_ = 64;
   Mutex mu_;
@@ -142,9 +147,10 @@ class ChaoticGoodServerTransport final : public Transport,
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   uint32_t last_seen_new_stream_id_ = 0;
   grpc_event_engine::experimental::MemoryAllocator allocator_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  ActivityPtr writer_;
-  ActivityPtr reader_;
+  ActivityPtr writer_ ABSL_GUARDED_BY(mu_);
+  ActivityPtr reader_ ABSL_GUARDED_BY(mu_);
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
+      "chaotic_good_server", GRPC_CHANNEL_READY};
 };
 
 }  // namespace chaotic_good

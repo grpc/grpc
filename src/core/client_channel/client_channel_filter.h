@@ -63,9 +63,8 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -114,10 +113,6 @@ class ClientChannelFilter {
     return "grpc.internal.client_channel_filter";
   }
 
-  // Returns the ClientChannelFilter object from channel, or null if channel
-  // is not a client channel.
-  static ClientChannelFilter* GetFromChannel(Channel* channel);
-
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,
       NextPromiseFactory next_promise_factory);
@@ -146,11 +141,6 @@ class ClientChannelFilter {
   void CancelExternalConnectivityWatcher(grpc_closure* on_complete) {
     ExternalConnectivityWatcher::RemoveWatcherFromExternalWatchersMap(
         this, on_complete, /*cancel=*/true);
-  }
-
-  int NumExternalConnectivityWatchers() const {
-    MutexLock lock(&external_watchers_mu_);
-    return static_cast<int>(external_watchers_.size());
   }
 
   // Starts and stops a connectivity watch.  The watcher will be initially

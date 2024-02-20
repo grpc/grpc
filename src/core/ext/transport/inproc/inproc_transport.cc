@@ -155,7 +155,7 @@ bool UsePromiseBasedTransport() {
   return true;
 }
 
-RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
+OrphanablePtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
           std::string(error.message()).c_str());
@@ -164,11 +164,11 @@ RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
     status = static_cast<grpc_status_code>(integer);
   }
-  return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
+  return OrphanablePtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }
 
-RefCountedPtr<Channel> MakeInprocChannel(Server* server,
+OrphanablePtr<Channel> MakeInprocChannel(Server* server,
                                          ChannelArgs client_channel_args) {
   auto transports = MakeInProcessTransportPair();
   auto client_transport = std::move(transports.first);

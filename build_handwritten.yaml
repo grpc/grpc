@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 38.0.0
+  core_version: 39.0.0
   csharp_major_version: 2
-  g_stands_for: guardian
+  g_stands_for: giggle
   protobuf_version: 3.25.1
-  version: 1.62.0-dev
+  version: 1.63.0-dev
 configs:
   asan:
     CC: clang

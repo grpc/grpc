@@ -191,6 +191,9 @@ class ChannelNode : public BaseNode {
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_CHANNELZ_CHANNEL_NODE;
   }
+  static int ChannelArgsCompare(const ChannelNode* a, const ChannelNode* b) {
+    return QsortCompare(a, b);
+  }
 
   // Returns the string description of the given connectivity state.
   static const char* GetChannelConnectivityStateChangeString(

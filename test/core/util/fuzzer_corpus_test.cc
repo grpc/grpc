@@ -36,8 +36,8 @@
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/util/test_config.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
@@ -54,16 +54,13 @@ TEST_P(FuzzerCorpusTest, RunOneExample) {
   // implementations of that function will initialize and shutdown gRPC
   // internally.
   fprintf(stderr, "Example file: %s\n", GetParam().c_str());
-  grpc_slice buffer;
   squelch = false;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(GetParam().c_str(), 0, &buffer)));
-  size_t length = GRPC_SLICE_LENGTH(buffer);
+  std::string buffer = grpc_core::testing::GetFileContents(GetParam());
+  size_t length = buffer.size();
   void* data = gpr_malloc(length);
   if (length > 0) {
-    memcpy(data, GRPC_SLICE_START_PTR(buffer), length);
+    memcpy(data, buffer.data(), length);
   }
-  grpc_slice_unref(buffer);
   LLVMFuzzerTestOneInput(static_cast<uint8_t*>(data), length);
   gpr_free(data);
 }

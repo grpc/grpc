@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.62.0-dev'
+  version = '1.63.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20240116.0'
+  abseil_version = '1.20240116.1'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -228,11 +228,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/client_channel/backend_metric.cc',
-                      'src/core/client_channel/backend_metric.h',
-                      'src/core/client_channel/backup_poller.cc',
+    ss.source_files = 'src/core/client_channel/backup_poller.cc',
                       'src/core/client_channel/backup_poller.h',
-                      'src/core/client_channel/channel_connectivity.cc',
                       'src/core/client_channel/client_channel.cc',
                       'src/core/client_channel/client_channel.h',
                       'src/core/client_channel/client_channel_channelz.cc',
@@ -264,7 +261,6 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/retry_service_config.h',
                       'src/core/client_channel/retry_throttle.cc',
                       'src/core/client_channel/retry_throttle.h',
-                      'src/core/client_channel/service_config_channel_arg_filter.cc',
                       'src/core/client_channel/subchannel.cc',
                       'src/core/client_channel/subchannel.h',
                       'src/core/client_channel/subchannel_interface_internal.h',
@@ -1448,7 +1444,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/windows/sync.cc',
                       'src/core/lib/gpr/windows/time.cc',
                       'src/core/lib/gpr/windows/tmpfile.cc',
-                      'src/core/lib/gpr/wrap_memcpy.cc',
                       'src/core/lib/gprpp/atomic_utils.h',
                       'src/core/lib/gprpp/bitset.h',
                       'src/core/lib/gprpp/chunked_vector.h',
@@ -1595,8 +1590,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/iomgr_posix.cc',
                       'src/core/lib/iomgr/iomgr_posix_cfstream.cc',
                       'src/core/lib/iomgr/iomgr_windows.cc',
-                      'src/core/lib/iomgr/load_file.cc',
-                      'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.cc',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
@@ -1859,12 +1852,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/transport/tsi_error.h',
                       'src/core/lib/security/util/json_util.cc',
                       'src/core/lib/security/util/json_util.h',
-                      'src/core/lib/service_config/service_config.h',
-                      'src/core/lib/service_config/service_config_call_data.h',
-                      'src/core/lib/service_config/service_config_impl.cc',
-                      'src/core/lib/service_config/service_config_impl.h',
-                      'src/core/lib/service_config/service_config_parser.cc',
-                      'src/core/lib/service_config/service_config_parser.h',
                       'src/core/lib/slice/b64.cc',
                       'src/core/lib/slice/b64.h',
                       'src/core/lib/slice/percent_encoding.cc',
@@ -1889,14 +1876,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/call_details.cc',
                       'src/core/lib/surface/call_log_batch.cc',
                       'src/core/lib/surface/call_test_only.h',
-                      'src/core/lib/surface/call_trace.cc',
                       'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.cc',
                       'src/core/lib/surface/channel.h',
+                      'src/core/lib/surface/channel_create.cc',
                       'src/core/lib/surface/channel_init.cc',
                       'src/core/lib/surface/channel_init.h',
-                      'src/core/lib/surface/channel_interface.h',
-                      'src/core/lib/surface/channel_ping.cc',
                       'src/core/lib/surface/channel_stack_type.cc',
                       'src/core/lib/surface/channel_stack_type.h',
                       'src/core/lib/surface/completion_queue.cc',
@@ -1911,12 +1896,15 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/init_internally.h',
                       'src/core/lib/surface/lame_client.cc',
                       'src/core/lib/surface/lame_client.h',
+                      'src/core/lib/surface/legacy_channel.cc',
+                      'src/core/lib/surface/legacy_channel.h',
                       'src/core/lib/surface/metadata_array.cc',
                       'src/core/lib/surface/server.cc',
                       'src/core/lib/surface/server.h',
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
+                      'src/core/lib/surface/wait_for_cq_end_op.cc',
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/batch_builder.cc',
                       'src/core/lib/transport/batch_builder.h',
@@ -1970,6 +1958,8 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/address_filtering.cc',
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/backend_metric_data.h',
+                      'src/core/load_balancing/backend_metric_parser.cc',
+                      'src/core/load_balancing/backend_metric_parser.h',
                       'src/core/load_balancing/child_policy_handler.cc',
                       'src/core/load_balancing/child_policy_handler.h',
                       'src/core/load_balancing/delegating_helper.h',
@@ -2058,6 +2048,13 @@ Pod::Spec.new do |s|
                       'src/core/resolver/xds/xds_resolver_attributes.h',
                       'src/core/resolver/xds/xds_resolver_trace.cc',
                       'src/core/resolver/xds/xds_resolver_trace.h',
+                      'src/core/service_config/service_config.h',
+                      'src/core/service_config/service_config_call_data.h',
+                      'src/core/service_config/service_config_channel_arg_filter.cc',
+                      'src/core/service_config/service_config_impl.cc',
+                      'src/core/service_config/service_config_impl.h',
+                      'src/core/service_config/service_config_parser.cc',
+                      'src/core/service_config/service_config_parser.h',
                       'src/core/tsi/alts/crypt/aes_gcm.cc',
                       'src/core/tsi/alts/crypt/gsec.cc',
                       'src/core/tsi/alts/crypt/gsec.h',
@@ -2336,8 +2333,7 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.c',
                       'third_party/zlib/zutil.h'
-    ss.private_header_files = 'src/core/client_channel/backend_metric.h',
-                              'src/core/client_channel/backup_poller.h',
+    ss.private_header_files = 'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel.h',
                               'src/core/client_channel/client_channel_channelz.h',
                               'src/core/client_channel/client_channel_factory.h',
@@ -3109,7 +3105,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/iomgr.h',
                               'src/core/lib/iomgr/iomgr_fwd.h',
                               'src/core/lib/iomgr/iomgr_internal.h',
-                              'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/polling_entity.h',
@@ -3250,10 +3245,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/transport/security_handshaker.h',
                               'src/core/lib/security/transport/tsi_error.h',
                               'src/core/lib/security/util/json_util.h',
-                              'src/core/lib/service_config/service_config.h',
-                              'src/core/lib/service_config/service_config_call_data.h',
-                              'src/core/lib/service_config/service_config_impl.h',
-                              'src/core/lib/service_config/service_config_parser.h',
                               'src/core/lib/slice/b64.h',
                               'src/core/lib/slice/percent_encoding.h',
                               'src/core/lib/slice/slice.h',
@@ -3268,7 +3259,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
                               'src/core/lib/surface/channel_init.h',
-                              'src/core/lib/surface/channel_interface.h',
                               'src/core/lib/surface/channel_stack_type.h',
                               'src/core/lib/surface/completion_queue.h',
                               'src/core/lib/surface/completion_queue_factory.h',
@@ -3276,6 +3266,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/init_internally.h',
                               'src/core/lib/surface/lame_client.h',
+                              'src/core/lib/surface/legacy_channel.h',
                               'src/core/lib/surface/server.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/surface/wait_for_cq_end_op.h',
@@ -3308,6 +3299,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/backend_metric_data.h',
+                              'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',
                               'src/core/load_balancing/delegating_helper.h',
                               'src/core/load_balancing/endpoint_list.h',
@@ -3348,6 +3340,10 @@ Pod::Spec.new do |s|
                               'src/core/resolver/xds/xds_dependency_manager.h',
                               'src/core/resolver/xds/xds_resolver_attributes.h',
                               'src/core/resolver/xds/xds_resolver_trace.h',
+                              'src/core/service_config/service_config.h',
+                              'src/core/service_config/service_config_call_data.h',
+                              'src/core/service_config/service_config_impl.h',
+                              'src/core/service_config/service_config_parser.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',

@@ -46,9 +46,9 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/util/json_util.h"
@@ -220,30 +220,19 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
                         "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
-  grpc_slice json_string = grpc_empty_slice();
   auto sts_creds_path = grpc_core::GetEnv("STS_CREDENTIALS");
-  grpc_error_handle error;
-  grpc::Status status;
-  // NOLINTNEXTLINE(clang-diagnostic-unused-lambda-capture)
-  auto cleanup = [&json_string, &status]() {
-    grpc_slice_unref(json_string);
-    return status;
-  };
   if (!sts_creds_path.has_value()) {
-    status = grpc::Status(grpc::StatusCode::NOT_FOUND,
-                          "STS_CREDENTIALS environment variable not set.");
-    return cleanup();
+    return grpc::Status(grpc::StatusCode::NOT_FOUND,
+                        "STS_CREDENTIALS environment variable not set.");
   }
-  error = grpc_load_file(sts_creds_path->c_str(), 1, &json_string);
-  if (!error.ok()) {
-    status = grpc::Status(grpc::StatusCode::NOT_FOUND,
-                          grpc_core::StatusToString(error));
-    return cleanup();
+  auto json_slice =
+      grpc_core::LoadFile(*sts_creds_path, /*add_null_terminator=*/true);
+  if (!json_slice.ok()) {
+    return grpc::Status(grpc::StatusCode::NOT_FOUND,
+                        json_slice.status().ToString());
   }
-  status = StsCredentialsOptionsFromJson(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(json_string)),
-      options);
-  return cleanup();
+  return StsCredentialsOptionsFromJson(json_slice->as_string_view().data(),
+                                       options);
 }
 
 // C++ to Core STS Credentials options.

@@ -64,9 +64,9 @@ TEST(MakeSubchannelArgs,
 }
 
 TEST(MakeSubchannelArgs, ArgsFromChannelTrumpPerAddressArgs) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(
-      ChannelArgs().Set("foo", 1), ChannelArgs().Set("foo", 2), nullptr,
-      "foo.example.com");
+  ChannelArgs args = Subchannel::MakeSubchannelArgs(ChannelArgs().Set("foo", 1),
+                                                    ChannelArgs().Set("foo", 2),
+                                                    nullptr, "foo.example.com");
   EXPECT_EQ(args.GetInt("foo"), 1);
 }
 

@@ -410,8 +410,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 38.0.0
-CPP_VERSION = 1.62.0-dev
+CORE_VERSION = 39.0.0
+CPP_VERSION = 1.63.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -447,7 +447,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -38
+SHARED_VERSION_CORE = -39
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -818,8 +818,8 @@ $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.38 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libaddress_sorting.so.39 -o $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBADDRESS_SORTING_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libaddress_sorting$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -864,7 +864,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/windows/sync.cc \
     src/core/lib/gpr/windows/time.cc \
     src/core/lib/gpr/windows/tmpfile.cc \
-    src/core/lib/gpr/wrap_memcpy.cc \
     src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
@@ -943,8 +942,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.38 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.39 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -959,9 +958,7 @@ endif
 # deps: ['upb_json_lib', 'upb_textformat_lib', 're2', 'z', 'grpc_abseil', 'cares', 'gpr', 'libssl', 'address_sorting']
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib', 'libssl']
 LIBGRPC_SRC = \
-    src/core/client_channel/backend_metric.cc \
     src/core/client_channel/backup_poller.cc \
-    src/core/client_channel/channel_connectivity.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
@@ -977,7 +974,6 @@ LIBGRPC_SRC = \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
-    src/core/client_channel/service_config_channel_arg_filter.cc \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
@@ -1507,7 +1503,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -1630,8 +1625,6 @@ LIBGRPC_SRC = \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config_impl.cc \
-    src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -1645,10 +1638,9 @@ LIBGRPC_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
     src/core/lib/surface/channel_stack_type.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
@@ -1656,10 +1648,12 @@ LIBGRPC_SRC = \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_factory.cc \
@@ -1683,6 +1677,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
     src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
@@ -1731,6 +1726,9 @@ LIBGRPC_SRC = \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
     src/core/resolver/xds/xds_resolver_trace.cc \
+    src/core/service_config/service_config_channel_arg_filter.cc \
+    src/core/service_config/service_config_impl.cc \
+    src/core/service_config/service_config_parser.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1872,8 +1870,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.38 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.39 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libre2.a $(LIBDIR)/$(CONFIG)/libupb_textformat_lib.a $(LIBDIR)/$(CONFIG)/libupb_json_lib.a $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1892,9 +1890,7 @@ endif
 # deps: ['upb_message_lib', 'utf8_range_lib', 'z', 'grpc_abseil', 'cares', 'gpr', 'address_sorting']
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBGRPC_UNSECURE_SRC = \
-    src/core/client_channel/backend_metric.cc \
     src/core/client_channel/backup_poller.cc \
-    src/core/client_channel/channel_connectivity.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
@@ -1910,7 +1906,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
-    src/core/client_channel/service_config_channel_arg_filter.cc \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
@@ -2106,7 +2101,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_posix_cfstream.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
-    src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
@@ -2193,8 +2187,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/service_config/service_config_impl.cc \
-    src/core/lib/service_config/service_config_parser.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -2208,10 +2200,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
-    src/core/lib/surface/call_trace.cc \
     src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
     src/core/lib/surface/channel_stack_type.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
@@ -2219,10 +2210,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
+    src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_factory.cc \
@@ -2246,6 +2239,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
     src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
@@ -2284,6 +2278,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/resolver/resolver.cc \
     src/core/resolver/resolver_registry.cc \
     src/core/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/service_config/service_config_channel_arg_filter.cc \
+    src/core/service_config/service_config_impl.cc \
+    src/core/service_config/service_config_parser.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
@@ -2402,8 +2399,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.38 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.39 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libgpr.a $(GRPC_ABSEIL_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libcares.a $(ZLIB_MERGE_LIBS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2469,8 +2466,8 @@ $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBRE2_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libre2.so.38 -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libre2.so.39 -o $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBRE2_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)re2$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libre2$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2515,8 +2512,8 @@ $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_BASE_LIB_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_base_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_BASE_LIB_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_base_lib.so.39 -o $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_BASE_LIB_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)upb_base_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_base_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2595,8 +2592,8 @@ $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_json_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_json_lib.so.39 -o $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_JSON_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)upb_json_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_json_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2642,8 +2639,8 @@ $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(L
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MEM_LIB_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_mem_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MEM_LIB_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_mem_lib.so.39 -o $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MEM_LIB_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)upb_mem_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_mem_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2695,8 +2692,8 @@ $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE):
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_message_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_message_lib.so.39 -o $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_MESSAGE_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)upb_message_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_message_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2774,8 +2771,8 @@ $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_COR
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_textformat_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libupb_textformat_lib.so.39 -o $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUPB_TEXTFORMAT_LIB_OBJS) $(LIBDIR)/$(CONFIG)/libutf8_range_lib.a $(LIBDIR)/$(CONFIG)/libupb_message_lib.a $(LIBDIR)/$(CONFIG)/libupb_mem_lib.a $(LIBDIR)/$(CONFIG)/libupb_base_lib.a $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)upb_textformat_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libupb_textformat_lib$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2822,8 +2819,8 @@ $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): 
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUTF8_RANGE_LIB_OBJS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libutf8_range_lib.so.38 -o $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUTF8_RANGE_LIB_OBJS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).so.38
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libutf8_range_lib.so.39 -o $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBUTF8_RANGE_LIB_OBJS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).so.39
 	$(Q) ln -sf $(SHARED_PREFIX)utf8_range_lib$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libutf8_range_lib$(SHARED_VERSION_CORE).so
 endif
 endif

@@ -57,6 +57,8 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
+#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
+inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -89,6 +91,7 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
+inline bool IsChaoticGoodEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -118,6 +121,8 @@ inline bool IsWriteSizeCapEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #elif defined(GPR_WINDOWS)
+#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
+inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -151,6 +156,7 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
+inline bool IsChaoticGoodEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -180,6 +186,8 @@ inline bool IsWriteSizeCapEnabled() { return true; }
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #else
+#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
+inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -213,6 +221,7 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
+inline bool IsChaoticGoodEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -244,6 +253,7 @@ inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
 
 #else
 enum ExperimentIds {
+  kExperimentIdAbslBase64,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCanaryClientPrivacy,
   kExperimentIdClientIdleness,
@@ -262,6 +272,7 @@ enum ExperimentIds {
   kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdPromiseBasedServerCall,
+  kExperimentIdChaoticGood,
   kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRfcMaxConcurrentStreams,
@@ -285,6 +296,10 @@ enum ExperimentIds {
   kExperimentIdWrrDelegateToPickFirst,
   kNumExperiments
 };
+#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
+inline bool IsAbslBase64Enabled() {
+  return IsExperimentEnabled(kExperimentIdAbslBase64);
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
@@ -356,6 +371,10 @@ inline bool IsPromiseBasedClientCallEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
 inline bool IsPromiseBasedServerCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
+inline bool IsChaoticGoodEnabled() {
+  return IsExperimentEnabled(kExperimentIdChaoticGood);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
 inline bool IsRegisteredMethodLookupInTransportEnabled() {
