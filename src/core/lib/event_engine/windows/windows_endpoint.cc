@@ -79,8 +79,8 @@ WindowsEndpoint::~WindowsEndpoint() {
 void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", endpoint);
   if (socket->IsShutdown()) {
-    socket->read_info()->SetErrorStatus(
-        TcpAnnotateError(absl::InternalError("Socket is shutting down.")));
+    socket->read_info()->SetErrorStatus(endpoint->TcpAnnotateError(
+        absl::InternalError("Socket is shutting down.")));
     thread_pool->Run(&handle_read_event);
     return;
   }
@@ -129,10 +129,10 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* /* args */) {
   if (io_state_->socket->IsShutdown()) {
-    io_state_->thread_pool->Run([on_read = std::move(on_read)]() mutable {
-      on_read(
-          TcpAnnotateError(absl::InternalError("Socket is shutting down.")));
-    });
+    io_state_->thread_pool->Run(
+        [on_read = std::move(on_read),
+         error = TcpAnnotateError(absl::InternalError(
+             "Socket is shutting down."))]() mutable { on_read(error); });
     return false;
   }
   buffer->Clear();
@@ -152,11 +152,10 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
   if (io_state_->socket->IsShutdown()) {
-    io_state_->thread_pool->Run([on_writable =
-                                     std::move(on_writable)]() mutable {
-      on_writable(
-          TcpAnnotateError(absl::InternalError("Socket is shutting down.")));
-    });
+    io_state_->thread_pool->Run(
+        [on_writable = std::move(on_writable),
+         error = TcpAnnotateError(absl::InternalError(
+             "Socket is shutting down."))]() mutable { on_writable(error); });
     return false;
   }
   if (grpc_event_engine_endpoint_data_trace.enabled()) {
@@ -301,7 +300,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
       DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
                                                io_state->endpoint));
     }
-    status = TcpAnnotateError(absl::InternalError("End of TCP stream"));
+    status = io_state->endpoint->TcpAnnotateError(
+        absl::InternalError("End of TCP stream"));
     buffer_->Swap(last_read_buffer_);
     return ResetAndReturnCallback()(status);
   }
@@ -357,12 +357,13 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   return ResetAndReturnCallback()(status);
 }
 
-absl::Status WindowsEndpoint::TcpAnnotateError(absl::Status& src_error) {
+absl::Status WindowsEndpoint::TcpAnnotateError(absl::Status src_error) {
   grpc_core::StatusSetStr(&src_error,
                           grpc_core::StatusStrProperty::kTargetAddress,
                           peer_address_string_);
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
+  return src_error;
 }
 
 // ---- AsyncIOState ----
