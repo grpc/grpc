@@ -80,10 +80,10 @@ MATCHER_P6(EqGenericXdsConfig, type_url, name, version_info, xds_config,
   ok &= ::testing::ExplainMatchResult(xds_config, arg.xds_config(),
                                       result_listener);
   ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
-                                        result_listener);
-    ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
-                                        result_listener);
-    return ok;
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
+                                      result_listener);
+  return ok;
 }
 
 MATCHER_P2(EqListener, name, api_listener, "equals Listener") {
