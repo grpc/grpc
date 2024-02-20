@@ -66,10 +66,35 @@ Create a pull request.
 Once the pull request is ready, you must wait for a reviewer to be
 assigned to your pull request.
 
+If you see *Not Covered* in the EasyCLA screen, as shown in the following image,
+click on the mentioned link to start the authorization process.
+
 ![Screenshot of waiting for safe review](doc/images/img/grpc-tests.png)
 
-After a few hours, you will notice a new "assignee" assigned to the pull
-request. After a reviewer is assigned to you, they will help with the next
+You will see a series of screens:
+
+1.  Select *Authorize LF-Engineering:
+
+![Screenshot of EasyCLA Step 1](doc/images/img/grpc-easycla-authorize.png)
+
+1.  Select your contributor type:
+
+![Screenshot of EasyCLA Step 2](doc/images/img/grpc-contributor-type.png)
+
+1.  Select *SIGN CLA*:
+
+![Screenshot of EasyCLA Step 3](doc/images/img/grpc-sign-cla.png)
+
+Some time after you've digitally signed the document, the EasyCLA will appear as
+*Covered*.
+
+![Screenshot of EasyCLA Step 5](doc/images/img/grpc-easycla-covered.png)
+
+    After a few hours, you will notice a new "assignee" assigned to the pull request. 
+
+![Screenshot after an assignee is added](doc/images/img/grpc-assignee.png)
+
+After a reviewer is assigned to you, they will help with the next
 steps, which are as follows:
 
 1.  You complete the code review and address the comments.
@@ -92,16 +117,21 @@ You can read more about the process and requirements
 After you fix the code review, you will finally get an approval. After getting
 approval, you can submit the pull request.
 
+![Pull request approved and labelled](doc/images/img/grpc-review-complete.png)
+
 ### Submission
 
 You **cannot** do submission or merge of a pull request through Github.
+
+![Pull request approved and labelled](doc/images/img/grpc-wait-for-merge.png)
 
 After you have approval from a reviewer, a Google employee will trigger
 the submission process. When the submission happens:
 
 1.  A commit with your changes, along with a few additional formatting changes, will
     be committed to the `grpc/master` branch.
-1.  The pull request you originally created will be closed.
+![Copybara commit](doc/images/img/grpc-copybara-commit.png)
 
-<!-- TODO add screenshot of PR that is closed -->
-<!-- TODO add screenshot of commit made by copybara -->
+1.  The pull request you originally created will be closed.
+![Pull request closed by copybara](doc/images/img/grpc-pr-closed-by-copybara.png)
+

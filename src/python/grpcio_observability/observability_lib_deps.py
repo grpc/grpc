@@ -46,7 +46,6 @@ CC_FILES=[
     'grpc_root/src/core/lib/gpr/windows/sync.cc',
     'grpc_root/src/core/lib/gpr/windows/time.cc',
     'grpc_root/src/core/lib/gpr/windows/tmpfile.cc',
-    'grpc_root/src/core/lib/gpr/wrap_memcpy.cc',
     'grpc_root/src/core/lib/gprpp/crash.cc',
     'grpc_root/src/core/lib/gprpp/examine_stack.cc',
     'grpc_root/src/core/lib/gprpp/fork.cc',

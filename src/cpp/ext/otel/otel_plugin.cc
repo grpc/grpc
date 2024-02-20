@@ -32,7 +32,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -113,13 +113,6 @@ OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::DisableMetric(
 OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::DisableAllMetrics() {
   metrics_.clear();
-  return *this;
-}
-
-OpenTelemetryPluginBuilderImpl&
-OpenTelemetryPluginBuilderImpl::SetLabelsInjector(
-    std::unique_ptr<LabelsInjector> labels_injector) {
-  labels_injector_ = std::move(labels_injector);
   return *this;
 }
 
@@ -243,7 +236,6 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                     kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per server call", "By");
   }
-  g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
   g_otel_plugin_state_->server_selector = std::move(server_selector_);

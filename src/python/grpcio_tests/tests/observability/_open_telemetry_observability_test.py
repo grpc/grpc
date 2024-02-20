@@ -21,6 +21,7 @@ import time
 from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
 
+import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_plugin import GRPC_METHOD_LABEL
@@ -100,6 +101,19 @@ class BaseTestOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
         return self.provider
 
 
+class _ClientUnaryUnaryInterceptor(grpc.UnaryUnaryClientInterceptor):
+    def intercept_unary_unary(
+        self, continuation, client_call_details, request_or_iterator
+    ):
+        response = continuation(client_call_details, request_or_iterator)
+        return response
+
+
+class _ServerInterceptor(grpc.ServerInterceptor):
+    def intercept_service(self, continuation, handler_call_details):
+        return continuation(handler_call_details)
+
+
 @unittest.skipIf(
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
@@ -132,6 +146,42 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics)
 
+    def testRecordUnaryUnaryWithClientInterceptor(self):
+        interceptor = _ClientUnaryUnaryInterceptor()
+        otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
+        with grpc_observability.OpenTelemetryObservability(
+            plugins=[otel_plugin]
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.intercepted_unary_unary_call(
+                port=port, interceptors=interceptor
+            )
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+
+    def testRecordUnaryUnaryWithServerInterceptor(self):
+        interceptor = _ServerInterceptor()
+        otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
+        with grpc_observability.OpenTelemetryObservability(
+            plugins=[otel_plugin]
+        ):
+            server, port = _test_server.start_server(interceptors=[interceptor])
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+
+    def testThrowErrorWhenCallingMultipleInit(self):
+        otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
+        with self.assertRaises(ValueError):
+            with grpc_observability.OpenTelemetryObservability(
+                plugins=[otel_plugin]
+            ) as o11y:
+                grpc._observability.observability_init(o11y)
+
     def testRecordUnaryUnaryClientOnly(self):
         server, port = _test_server.start_server()
         self._server = server
@@ -144,6 +194,41 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self._validate_metrics_exist(self.all_metrics)
         self._validate_client_metrics_names(self.all_metrics)
+
+    def testNoRecordBeforeInit(self):
+        server, port = _test_server.start_server()
+        _test_server.unary_unary_call(port=port)
+        self.assertEqual(len(self.all_metrics), 0)
+        server.stop(0)
+
+        otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
+        with grpc_observability.OpenTelemetryObservability(
+            plugins=[otel_plugin]
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+
+    def testNoRecordAfterExit(self):
+        otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)
+        with grpc_observability.OpenTelemetryObservability(
+            plugins=[otel_plugin]
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            self._port = port
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+
+        self.all_metrics = defaultdict(list)
+        _test_server.unary_unary_call(port=self._port)
+        with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
+            self._validate_metrics_exist(self.all_metrics)
 
     def testRecordUnaryStream(self):
         otel_plugin = BaseTestOpenTelemetryPlugin(self._provider)

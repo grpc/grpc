@@ -32,7 +32,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 
 namespace grpc_core {
 

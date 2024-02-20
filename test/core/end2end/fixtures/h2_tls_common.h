@@ -36,7 +36,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -84,19 +83,12 @@ class TlsFixture : public SecureFixture {
     }
     switch (provider_type) {
       case SecurityPrimitives::ProviderType::STATIC_PROVIDER: {
-        grpc_slice root_slice, cert_slice, key_slice;
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(CA_CERT_PATH, 1, &root_slice)));
         std::string root_cert =
-            std::string(grpc_core::StringViewFromSlice(root_slice));
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
+            grpc_core::testing::GetFileContents(CA_CERT_PATH);
         std::string identity_cert =
-            std::string(grpc_core::StringViewFromSlice(cert_slice));
-        GPR_ASSERT(GRPC_LOG_IF_ERROR(
-            "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
+            grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
         std::string private_key =
-            std::string(grpc_core::StringViewFromSlice(key_slice));
+            grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
         grpc_tls_identity_pairs* client_pairs =
             grpc_tls_identity_pairs_create();
         grpc_tls_identity_pairs_add_pair(client_pairs, private_key.c_str(),
@@ -109,9 +101,6 @@ class TlsFixture : public SecureFixture {
                                          identity_cert.c_str());
         server_provider_ = grpc_tls_certificate_provider_static_data_create(
             root_cert.c_str(), server_pairs);
-        grpc_slice_unref(root_slice);
-        grpc_slice_unref(cert_slice);
-        grpc_slice_unref(key_slice);
         break;
       }
       case SecurityPrimitives::ProviderType::FILE_PROVIDER: {

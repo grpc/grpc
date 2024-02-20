@@ -18,7 +18,11 @@ import os
 import sys
 
 from grpc_tools import _protoc_compiler
-import pkg_resources
+
+if sys.version_info >= (3, 9, 0):
+    from importlib import resources
+else:
+    import pkg_resources
 
 _PROTO_MODULE_SUFFIX = "_pb2"
 _SERVICE_MODULE_SUFFIX = "_pb2_grpc"
@@ -35,6 +39,22 @@ def main(command_arguments):
     """
     command_arguments = [argument.encode() for argument in command_arguments]
     return _protoc_compiler.run_main(command_arguments)
+
+
+def _get_resource_file_name(
+    package_or_requirement: str, resource_name: str
+) -> str:
+    """Obtain the filename for a resource on the file system."""
+    file_name = None
+    if sys.version_info >= (3, 9, 0):
+        file_name = (
+            resources.files(package_or_requirement) / resource_name
+        ).resolve()
+    else:
+        file_name = pkg_resources.resource_filename(
+            package_or_requirement, resource_name
+        )
+    return str(file_name)
 
 
 # NOTE(rbellevi): importlib.abc is not supported on 3.4.
@@ -63,9 +83,10 @@ if sys.version_info >= (3, 5, 0):
                         ),
                     ]
                 )
-                sys.path.append(
-                    pkg_resources.resource_filename("grpc_tools", "_proto")
-                )
+
+                proto_include = _get_resource_file_name("grpc_tools", "_proto")
+                sys.path.append(proto_include)
+
                 _FINDERS_INSTALLED = True
 
     def _module_name_to_proto_file(suffix, module_name):
@@ -185,5 +206,5 @@ if sys.version_info >= (3, 5, 0):
         _maybe_install_proto_finders()
 
 if __name__ == "__main__":
-    proto_include = pkg_resources.resource_filename("grpc_tools", "_proto")
+    proto_include = _get_resource_file_name("grpc_tools", "_proto")
     sys.exit(main(sys.argv + ["-I{}".format(proto_include)]))

@@ -45,12 +45,12 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
@@ -537,13 +537,14 @@ void MaybeAddToBody(const char* field_name, const char* field,
 }
 
 grpc_error_handle LoadTokenFile(const char* path, grpc_slice* token) {
-  grpc_error_handle err = grpc_load_file(path, 1, token);
-  if (!err.ok()) return err;
-  if (GRPC_SLICE_LENGTH(*token) == 0) {
+  auto slice = LoadFile(path, /*add_null_terminator=*/true);
+  if (!slice.ok()) return slice.status();
+  if (slice->length() == 0) {
     gpr_log(GPR_ERROR, "Token file %s is empty", path);
-    err = GRPC_ERROR_CREATE("Token file is empty.");
+    return GRPC_ERROR_CREATE("Token file is empty.");
   }
-  return err;
+  *token = slice->TakeCSlice();
+  return absl::OkStatus();
 }
 
 class StsTokenFetcherCredentials

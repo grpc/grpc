@@ -26,7 +26,7 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"

@@ -107,7 +107,10 @@ class AbortTest(unittest.TestCase):
 
     def test_abort(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_ABORT)(_REQUEST)
+            self._channel.unary_unary(
+                _ABORT,
+                _registered_method=True,
+            )(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
@@ -124,7 +127,10 @@ class AbortTest(unittest.TestCase):
 
         # Servicer will abort() after creating a local ref to do_not_leak_me.
         with self.assertRaises(grpc.RpcError):
-            self._channel.unary_unary(_ABORT)(_REQUEST)
+            self._channel.unary_unary(
+                _ABORT,
+                _registered_method=True,
+            )(_REQUEST)
 
         # Server may still have a stack frame reference to the exception even
         # after client sees error, so ensure server has shutdown.
@@ -134,7 +140,10 @@ class AbortTest(unittest.TestCase):
 
     def test_abort_with_status(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_ABORT_WITH_STATUS)(_REQUEST)
+            self._channel.unary_unary(
+                _ABORT_WITH_STATUS,
+                _registered_method=True,
+            )(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
@@ -143,7 +152,10 @@ class AbortTest(unittest.TestCase):
 
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
-            self._channel.unary_unary(_INVALID_CODE)(_REQUEST)
+            self._channel.unary_unary(
+                _INVALID_CODE,
+                _registered_method=True,
+            )(_REQUEST)
         rpc_error = exception_context.exception
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.UNKNOWN)

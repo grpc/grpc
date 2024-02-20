@@ -95,15 +95,18 @@ RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
 RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
-# Install Ruby 2.7
+# Install Ruby 3.0
 RUN apt-get update && apt-get install -y procps && apt-get clean
-# "--disable-binary" is a workaround for https://github.com/rvm/rvm/issues/4975
-RUN /bin/bash -l -c "rvm install ruby-2.7 --disable-binary"
-RUN /bin/bash -l -c "rvm use --default ruby-2.7"
+RUN /bin/bash -l -c "rvm install ruby-3.0.5"
+RUN /bin/bash -l -c "rvm use --default ruby-3.0.5"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.7' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.0.5' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
+
+# Workaround for rvm unable to find mkdir properly
+# https://stackoverflow.com/questions/64653051
+RUN ln -s /bin/mkdir /usr/bin/mkdir
 
 #=================
 # Install cmake

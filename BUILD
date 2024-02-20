@@ -211,11 +211,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guardian"  # @unused
+g_stands_for = "giggle"  # @unused
 
-core_version = "38.0.0"  # @unused
+core_version = "39.0.0"  # @unused
 
-version = "1.62.0-dev"  # @unused
+version = "1.63.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -706,7 +706,6 @@ grpc_cc_library(
         "//src/core:lib/gpr/windows/sync.cc",
         "//src/core:lib/gpr/windows/time.cc",
         "//src/core:lib/gpr/windows/tmpfile.cc",
-        "//src/core:lib/gpr/wrap_memcpy.cc",
         "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -969,6 +968,7 @@ grpc_cc_library(
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
         "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:slice",
         "//src/core:slice_refcount",
         "//src/core:status_helper",
@@ -1321,7 +1321,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/iomgr_posix.cc",
         "//src/core:lib/iomgr/iomgr_posix_cfstream.cc",
         "//src/core:lib/iomgr/iomgr_windows.cc",
-        "//src/core:lib/iomgr/load_file.cc",
         "//src/core:lib/iomgr/lockfree_event.cc",
         "//src/core:lib/iomgr/polling_entity.cc",
         "//src/core:lib/iomgr/pollset.cc",
@@ -1375,6 +1374,7 @@ grpc_cc_library(
         "//src/core:lib/surface/server.cc",
         "//src/core:lib/surface/validate_metadata.cc",
         "//src/core:lib/surface/version.cc",
+        "//src/core:lib/surface/wait_for_cq_end_op.cc",
         "//src/core:lib/transport/batch_builder.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
@@ -1414,7 +1414,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/gethostname.h",
         "//src/core:lib/iomgr/iocp_windows.h",
         "//src/core:lib/iomgr/iomgr.h",
-        "//src/core:lib/iomgr/load_file.h",
         "//src/core:lib/iomgr/lockfree_event.h",
         "//src/core:lib/iomgr/nameser.h",
         "//src/core:lib/iomgr/polling_entity.h",
@@ -1531,9 +1530,9 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:call_factory",
         "//src/core:call_filters",
         "//src/core:call_final_info",
-        "//src/core:call_size_estimator",
         "//src/core:call_spine",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
@@ -1575,6 +1574,7 @@ grpc_cc_library(
         "//src/core:latch",
         "//src/core:loop",
         "//src/core:map",
+        "//src/core:match",
         "//src/core:memory_quota",
         "//src/core:message",
         "//src/core:metadata",
@@ -1587,6 +1587,7 @@ grpc_cc_library(
         "//src/core:posix_event_engine_base_hdrs",
         "//src/core:posix_event_engine_endpoint",
         "//src/core:promise_status",
+        "//src/core:promise_trace",
         "//src/core:race",
         "//src/core:random_early_detection",
         "//src/core:ref_counted",
@@ -1984,6 +1985,7 @@ grpc_cc_library(
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
         "//src/core:json_reader",
+        "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -2896,10 +2898,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_service_config_impl",
     srcs = [
-        "//src/core:lib/service_config/service_config_impl.cc",
+        "//src/core:service_config/service_config_impl.cc",
     ],
     hdrs = [
-        "//src/core:lib/service_config/service_config_impl.h",
+        "//src/core:service_config/service_config_impl.h",
     ],
     external_deps = [
         "absl/status",
@@ -2930,10 +2932,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "endpoint_addresses",
     srcs = [
-        "//src/core:lib/resolver/endpoint_addresses.cc",
+        "//src/core:resolver/endpoint_addresses.cc",
     ],
     hdrs = [
-        "//src/core:lib/resolver/endpoint_addresses.h",
+        "//src/core:resolver/endpoint_addresses.h",
     ],
     external_deps = [
         "absl/functional:function_ref",
@@ -2956,7 +2958,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "server_address",
     hdrs = [
-        "//src/core:lib/resolver/server_address.h",
+        "//src/core:resolver/server_address.h",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -2969,13 +2971,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver",
     srcs = [
-        "//src/core:lib/resolver/resolver.cc",
-        "//src/core:lib/resolver/resolver_registry.cc",
+        "//src/core:resolver/resolver.cc",
+        "//src/core:resolver/resolver_registry.cc",
     ],
     hdrs = [
-        "//src/core:lib/resolver/resolver.h",
-        "//src/core:lib/resolver/resolver_factory.h",
-        "//src/core:lib/resolver/resolver_registry.h",
+        "//src/core:resolver/resolver.h",
+        "//src/core:resolver/resolver_factory.h",
+        "//src/core:resolver/resolver_registry.h",
     ],
     external_deps = [
         "absl/status",
@@ -3002,55 +3004,55 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
-        "//src/core:ext/filters/client_channel/backend_metric.cc",
-        "//src/core:ext/filters/client_channel/backup_poller.cc",
-        "//src/core:ext/filters/client_channel/channel_connectivity.cc",
-        "//src/core:ext/filters/client_channel/client_channel.cc",
-        "//src/core:ext/filters/client_channel/client_channel_channelz.cc",
-        "//src/core:ext/filters/client_channel/client_channel_factory.cc",
-        "//src/core:ext/filters/client_channel/client_channel_plugin.cc",
-        "//src/core:ext/filters/client_channel/client_channel_service_config.cc",
-        "//src/core:ext/filters/client_channel/config_selector.cc",
-        "//src/core:ext/filters/client_channel/dynamic_filters.cc",
-        "//src/core:ext/filters/client_channel/global_subchannel_pool.cc",
-        "//src/core:ext/filters/client_channel/http_proxy_mapper.cc",
-        "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.cc",
-        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.cc",
-        "//src/core:ext/filters/client_channel/local_subchannel_pool.cc",
-        "//src/core:ext/filters/client_channel/retry_filter.cc",
-        "//src/core:ext/filters/client_channel/retry_filter_legacy_call_data.cc",
-        "//src/core:ext/filters/client_channel/retry_service_config.cc",
-        "//src/core:ext/filters/client_channel/retry_throttle.cc",
-        "//src/core:ext/filters/client_channel/service_config_channel_arg_filter.cc",
-        "//src/core:ext/filters/client_channel/subchannel.cc",
-        "//src/core:ext/filters/client_channel/subchannel_pool_interface.cc",
-        "//src/core:ext/filters/client_channel/subchannel_stream_client.cc",
+        "//src/core:client_channel/backend_metric.cc",
+        "//src/core:client_channel/backup_poller.cc",
+        "//src/core:client_channel/channel_connectivity.cc",
+        "//src/core:client_channel/client_channel_channelz.cc",
+        "//src/core:client_channel/client_channel_factory.cc",
+        "//src/core:client_channel/client_channel_filter.cc",
+        "//src/core:client_channel/client_channel_plugin.cc",
+        "//src/core:client_channel/client_channel_service_config.cc",
+        "//src/core:client_channel/config_selector.cc",
+        "//src/core:client_channel/dynamic_filters.cc",
+        "//src/core:client_channel/global_subchannel_pool.cc",
+        "//src/core:client_channel/http_proxy_mapper.cc",
+        "//src/core:client_channel/local_subchannel_pool.cc",
+        "//src/core:client_channel/retry_filter.cc",
+        "//src/core:client_channel/retry_filter_legacy_call_data.cc",
+        "//src/core:client_channel/retry_service_config.cc",
+        "//src/core:client_channel/retry_throttle.cc",
+        "//src/core:client_channel/service_config_channel_arg_filter.cc",
+        "//src/core:client_channel/subchannel.cc",
+        "//src/core:client_channel/subchannel_pool_interface.cc",
+        "//src/core:client_channel/subchannel_stream_client.cc",
+        "//src/core:load_balancing/child_policy_handler.cc",
+        "//src/core:load_balancing/oob_backend_metric.cc",
     ],
     hdrs = [
-        "//src/core:ext/filters/client_channel/backend_metric.h",
-        "//src/core:ext/filters/client_channel/backup_poller.h",
-        "//src/core:ext/filters/client_channel/client_channel.h",
-        "//src/core:ext/filters/client_channel/client_channel_channelz.h",
-        "//src/core:ext/filters/client_channel/client_channel_factory.h",
-        "//src/core:ext/filters/client_channel/client_channel_internal.h",
-        "//src/core:ext/filters/client_channel/client_channel_service_config.h",
-        "//src/core:ext/filters/client_channel/config_selector.h",
-        "//src/core:ext/filters/client_channel/connector.h",
-        "//src/core:ext/filters/client_channel/dynamic_filters.h",
-        "//src/core:ext/filters/client_channel/global_subchannel_pool.h",
-        "//src/core:ext/filters/client_channel/http_proxy_mapper.h",
-        "//src/core:ext/filters/client_channel/lb_policy/child_policy_handler.h",
-        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric.h",
-        "//src/core:ext/filters/client_channel/lb_policy/oob_backend_metric_internal.h",
-        "//src/core:ext/filters/client_channel/local_subchannel_pool.h",
-        "//src/core:ext/filters/client_channel/retry_filter.h",
-        "//src/core:ext/filters/client_channel/retry_filter_legacy_call_data.h",
-        "//src/core:ext/filters/client_channel/retry_service_config.h",
-        "//src/core:ext/filters/client_channel/retry_throttle.h",
-        "//src/core:ext/filters/client_channel/subchannel.h",
-        "//src/core:ext/filters/client_channel/subchannel_interface_internal.h",
-        "//src/core:ext/filters/client_channel/subchannel_pool_interface.h",
-        "//src/core:ext/filters/client_channel/subchannel_stream_client.h",
+        "//src/core:client_channel/backend_metric.h",
+        "//src/core:client_channel/backup_poller.h",
+        "//src/core:client_channel/client_channel_channelz.h",
+        "//src/core:client_channel/client_channel_factory.h",
+        "//src/core:client_channel/client_channel_filter.h",
+        "//src/core:client_channel/client_channel_internal.h",
+        "//src/core:client_channel/client_channel_service_config.h",
+        "//src/core:client_channel/config_selector.h",
+        "//src/core:client_channel/connector.h",
+        "//src/core:client_channel/dynamic_filters.h",
+        "//src/core:client_channel/global_subchannel_pool.h",
+        "//src/core:client_channel/http_proxy_mapper.h",
+        "//src/core:client_channel/local_subchannel_pool.h",
+        "//src/core:client_channel/retry_filter.h",
+        "//src/core:client_channel/retry_filter_legacy_call_data.h",
+        "//src/core:client_channel/retry_service_config.h",
+        "//src/core:client_channel/retry_throttle.h",
+        "//src/core:client_channel/subchannel.h",
+        "//src/core:client_channel/subchannel_interface_internal.h",
+        "//src/core:client_channel/subchannel_pool_interface.h",
+        "//src/core:client_channel/subchannel_stream_client.h",
+        "//src/core:load_balancing/child_policy_handler.h",
+        "//src/core:load_balancing/oob_backend_metric.h",
+        "//src/core:load_balancing/oob_backend_metric_internal.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3162,17 +3164,17 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
+        "//src/core:resolver/dns/c_ares/dns_resolver_ares.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper_posix.cc",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper_windows.cc",
     ],
     hdrs = [
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.h",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h",
-        "//src/core:ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h",
+        "//src/core:resolver/dns/c_ares/dns_resolver_ares.h",
+        "//src/core:resolver/dns/c_ares/grpc_ares_ev_driver.h",
+        "//src/core:resolver/dns/c_ares/grpc_ares_wrapper.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3381,6 +3383,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
@@ -3421,6 +3424,7 @@ grpc_cc_library(
         "grpc_security_base",
         "//src/core:error",
         "//src/core:json",
+        "//src/core:load_file",
         "//src/core:useful",
     ],
 )
@@ -3557,6 +3561,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
         "libcrypto",
         "libssl",
@@ -3578,6 +3583,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
+        "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:tsi_ssl_types",
@@ -3646,10 +3652,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_grpclb_balancer_addresses",
     srcs = [
-        "//src/core:ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.cc",
+        "//src/core:load_balancing/grpclb/grpclb_balancer_addresses.cc",
     ],
     hdrs = [
-        "//src/core:ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h",
+        "//src/core:load_balancing/grpclb/grpclb_balancer_addresses.h",
     ],
     language = "c++",
     visibility = ["@grpc:grpclb"],
@@ -3761,8 +3767,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_resolver_fake",
-    srcs = ["//src/core:ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
-    hdrs = ["//src/core:ext/filters/client_channel/resolver/fake/fake_resolver.h"],
+    srcs = ["//src/core:resolver/fake/fake_resolver.cc"],
+    hdrs = ["//src/core:resolver/fake/fake_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
         "absl/strings",
@@ -4132,6 +4138,24 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_chaotic_good",
+    srcs = [
+        "src/cpp/ext/chaotic_good.cc",
+    ],
+    hdrs = [
+        "src/cpp/ext/chaotic_good.h",
+    ],
+    visibility = ["@grpc:chaotic_good"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
     ],
 )
 

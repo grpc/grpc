@@ -66,11 +66,7 @@ GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("include", "grpc_root/include"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
-    ("src/core/lib", "grpc_root/src/core/lib"),
-    (
-        "src/core/ext/filters/client_channel/lb_policy",
-        "grpc_root/src/core/ext/filters/client_channel/lb_policy",
-    ),
+    ("src/core", "grpc_root/src/core"),
 ]
 
 # grpc repo root

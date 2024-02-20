@@ -925,7 +925,7 @@ grpc_error_handle Server::SetupTransport(
   }
   if (cq_idx == cqs_.size()) {
     // Completion queue not found.  Pick a random one to publish new calls to.
-    cq_idx = static_cast<size_t>(rand()) % cqs_.size();
+    cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
   }
   // Set up channelz node.
   intptr_t channelz_socket_uuid = 0;
@@ -1485,6 +1485,7 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           rc->Complete(std::move(std::get<0>(r)), *md);
           auto* call_context = GetContext<CallContext>();
           *rc->call = call_context->c_call();
+          grpc_call_ref(*rc->call);
           grpc_call_set_completion_queue(call_context->c_call(),
                                          rc->cq_bound_to_call);
           call_context->server_call_context()->PublishInitialMetadata(

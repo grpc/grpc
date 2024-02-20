@@ -23,6 +23,8 @@
 
 #include <openssl/x509.h>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security_constants.h>
@@ -141,6 +143,22 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
                                  size_t* protected_frames_bytes_size,
                                  unsigned char* unprotected_bytes,
                                  size_t* unprotected_bytes_size);
+
+// Verifies that `crl` was signed by `issuer.
+// return: true if valid, false otherwise.
+bool VerifyCrlSignature(X509_CRL* crl, X509* issuer);
+
+// Verifies the CRL issuer and certificate issuer name match.
+// return: true if equal, false if not.
+bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert);
+
+// Verifies the certificate in question has the cRLSign bit present.
+// return: true if cRLSign bit is present, false otherwise.
+bool HasCrlSignBit(X509* cert);
+
+// Gets a stable representation of the issuer name from an X509 certificate.
+// return: a std::string of the DER encoding of the X509_NAME issuer name.
+absl::StatusOr<std::string> IssuerFromCert(X509* cert);
 
 }  // namespace grpc_core
 

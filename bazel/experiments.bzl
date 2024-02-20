@@ -17,7 +17,9 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
+    "absl_base64": "absl_base64",
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
+    "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
     "client_idleness": "client_idleness",
     "client_privacy": "client_privacy",
@@ -35,9 +37,9 @@ EXPERIMENT_ENABLES = {
     "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
     "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
+    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
-    "promise_based_inproc_transport": "promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
-    "registered_methods_map": "registered_methods_map",
+    "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
     "rfc_max_concurrent_streams": "rfc_max_concurrent_streams",
     "round_robin_delegate_to_pick_first": "round_robin_delegate_to_pick_first",
     "rstpit": "rstpit",
@@ -52,7 +54,7 @@ EXPERIMENT_ENABLES = {
     "v3_compression_filter": "v3_compression_filter",
     "v3_server_auth_filter": "v3_server_auth_filter",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
-    "work_serializer_dispatch": "work_serializer_dispatch",
+    "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
     "write_size_policy": "write_size_policy",
     "write_size_cap": "write_size_cap,write_size_policy",
     "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
@@ -121,6 +123,9 @@ EXPERIMENTS = {
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
+            ],
+            "credential_token_tests": [
+                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -198,6 +203,9 @@ EXPERIMENTS = {
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
+            "credential_token_tests": [
+                "absl_base64",
+            ],
             "flow_control_test": [
                 "write_size_cap",
                 "write_size_policy",
@@ -231,6 +239,8 @@ EXPERIMENTS = {
                 "v3_compression_filter",
             ],
             "core_end2end_test": [
+                "chaotic_good",
+                "event_engine_client",
                 "promise_based_client_call",
                 "promise_based_server_call",
                 "work_serializer_dispatch",
@@ -242,6 +252,9 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -273,7 +286,6 @@ EXPERIMENTS = {
         },
         "on": {
             "core_end2end_test": [
-                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
@@ -281,8 +293,8 @@ EXPERIMENTS = {
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
-            "event_engine_client_test": [
-                "event_engine_client",
+            "credential_token_tests": [
+                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
