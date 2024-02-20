@@ -33,35 +33,42 @@ namespace grpc_core {
 absl::StatusOr<OrphanablePtr<Channel>> Channel::Create(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport) {
-  global_stats().IncrementClientChannelsCreated();
-  // Set default authority if needed.
-  if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
-    auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-    if (ssl_override.has_value()) {
-      args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY,
-                      std::string(ssl_override.value()));
+  // TODO(roth): When we finish migrating to the v3 stack, we can remove
+  // this check, since the server code should no longer use this code-path.
+  if (grpc_channel_stack_type_is_client(channel_stack_type)) {
+    global_stats().IncrementClientChannelsCreated();
+    // Set default authority if needed.
+    if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
+      auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+      if (ssl_override.has_value()) {
+        args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY,
+                        std::string(ssl_override.value()));
+      }
     }
-  }
-  // Check whether channelz is enabled.
-  if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    // Get parameters needed to create the channelz node.
-    const size_t channel_tracer_max_memory = std::max(
-        0, args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
-               .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
-    const bool is_internal_channel =
-        args.GetBool(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL).value_or(false);
-    // Create the channelz node.
-    std::string channelz_node_target{target.empty() ? "unknown" : target};
-    auto channelz_node = MakeRefCounted<channelz::ChannelNode>(
-        channelz_node_target, channel_tracer_max_memory, is_internal_channel);
-    channelz_node->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string("Channel created"));
-    // Add channelz node to channel args.
-    // We remove the is_internal_channel arg, since we no longer need it.
-    args = args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)
-               .SetObject(std::move(channelz_node));
+    // Check whether channelz is enabled.
+    if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+            .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+      // Get parameters needed to create the channelz node.
+      const size_t channel_tracer_max_memory = std::max(
+          0,
+          args.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
+              .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
+      const bool is_internal_channel =
+          args.GetBool(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL).value_or(false);
+      // Create the channelz node.
+      std::string channelz_node_target{target.empty() ? "unknown" : target};
+      auto channelz_node = MakeRefCounted<channelz::ChannelNode>(
+          channelz_node_target, channel_tracer_max_memory, is_internal_channel);
+      channelz_node->AddTraceEvent(
+          channelz::ChannelTrace::Severity::Info,
+          grpc_slice_from_static_string("Channel created"));
+      // Add channelz node to channel args.
+      // We remove the is_internal_channel arg, since we no longer need it.
+      args = args.Remove(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL)
+                 .SetObject(std::move(channelz_node));
+    }
+  } else {  // server channel
+    global_stats().IncrementServerChannelsCreated();
   }
   // Set compression options.
   grpc_compression_options compression_options;
