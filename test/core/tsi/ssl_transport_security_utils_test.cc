@@ -653,6 +653,16 @@ TEST_F(CrlUtils, CrlNoAkid) {
   auto akid = AkidFromCrl(root_crl_);
   EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
 }
+
+TEST_F(CrlUtils, CertAkidNullptr) {
+  auto akid = AkidFromCertificate(nullptr);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
+
+TEST_F(CrlUtils, CrlAkidNullptr) {
+  auto akid = AkidFromCrl(nullptr);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
 }  // namespace testing
 }  // namespace grpc_core
 
