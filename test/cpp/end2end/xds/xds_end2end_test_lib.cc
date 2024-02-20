@@ -548,7 +548,14 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &xds_channel_args_, &kChannelArgsArgVtable);
   }
-  std::string uri = absl::StrCat("xds://", xds_authority, "/", server_name);
+  std::vector<absl::string_view> parts = {"xds:"};
+  if (xds_authority != nullptr && xds_authority[0] != '\0') {
+    parts.emplace_back("//");
+    parts.emplace_back(xds_authority);
+    parts.emplace_back("/");
+  }
+  parts.emplace_back(server_name);
+  std::string uri = absl::StrJoin(parts, "");
   std::shared_ptr<ChannelCredentials> channel_creds =
       GetParam().use_xds_credentials()
           ? XdsCredentials(CreateTlsFallbackCredentials())

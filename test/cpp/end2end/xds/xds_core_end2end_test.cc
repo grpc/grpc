@@ -263,46 +263,33 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
   listener.set_name(GetServerListenerName(backends_[1]->port()));
   balancer_->ads_service()->SetLdsResource(listener);
   backends_[1]->Start();
-  // Sort as the message will output resources in sorted order
-  int error_count = 0;
+  constexpr absl::string_view kMessageFormat =
+      "xDS response validation errors: ["
+      "resource index 0: "
+      "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
+      "INVALID_ARGUMENT: Listener has neither address nor "
+      "ApiListener; "
+      "resource index 1: "
+      "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
+      "INVALID_ARGUMENT: Listener has neither address nor "
+      "ApiListener"
+      "]";
+  const std::string expected_message1 = absl::StrFormat(
+      kMessageFormat, backends_[0]->port(), backends_[1]->port());
+  const std::string expected_message2 = absl::StrFormat(
+      kMessageFormat, backends_[1]->port(), backends_[0]->port());
   response_state = WaitForNack(
       DEBUG_LOCATION, [&]() -> absl::optional<AdsServiceImpl::ResponseState> {
         auto response = balancer_->ads_service()->lds_response_state();
-        if (!response.has_value() ||
-            response->state != AdsServiceImpl::ResponseState::NACKED ||
-            ++error_count < 2) {
-          return absl::nullopt;
+        if (response.has_value() &&
+            response->state == AdsServiceImpl::ResponseState::NACKED &&
+            (response->error_message == expected_message1 ||
+             response->error_message == expected_message2)) {
+          return response;
         }
-        return response;
+        return absl::nullopt;
       });
-  ASSERT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
-  // Order is not guaranteed
-  std::array<std::string, 2> ports = {
-      absl::StrFormat(
-          "xDS response validation errors: ["
-          "resource index 0: "
-          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
-          "INVALID_ARGUMENT: Listener has neither address nor "
-          "ApiListener; "
-          "resource index 1: "
-          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
-          "INVALID_ARGUMENT: Listener has neither address nor "
-          "ApiListener"
-          "]",
-          backends_[0]->port(), backends_[1]->port()),
-      absl::StrFormat(
-          "xDS response validation errors: ["
-          "resource index 0: "
-          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
-          "INVALID_ARGUMENT: Listener has neither address nor "
-          "ApiListener; "
-          "resource index 1: "
-          "grpc/server?xds.resource.listening_address=127.0.0.1:%d: "
-          "INVALID_ARGUMENT: Listener has neither address nor "
-          "ApiListener"
-          "]",
-          backends_[1]->port(), backends_[0]->port())};
-  EXPECT_THAT(ports, ::testing::Contains(response_state->error_message));
+  EXPECT_TRUE(response_state.has_value()) << "timed out waiting for NACK";
 }
 
 // Tests that we don't trigger does-not-exist callbacks for a resource

@@ -80,10 +80,10 @@ MATCHER_P6(EqGenericXdsConfig, type_url, name, version_info, xds_config,
   ok &= ::testing::ExplainMatchResult(xds_config, arg.xds_config(),
                                       result_listener);
   ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
-                                      result_listener);
-  return ok;
+                                        result_listener);
+    ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
+                                        result_listener);
+    return ok;
 }
 
 MATCHER_P2(EqListener, name, api_listener, "equals Listener") {
@@ -283,51 +283,6 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
       EXPECT_TRUE(stream_->Read(&response));
     }
     return response;
-  }
-
-  std::vector<::testing::Matcher<
-      envoy::service::status::v3::ClientConfig_GenericXdsConfig>>
-  PrepareClientConfigMatchers(bool enable_rds_testing,
-                              absl::string_view server_name, size_t port,
-                              absl::string_view listener_ver,
-                              absl::string_view route_ver) {
-    // Listener matcher depends on whether RDS is enabled.
-    ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
-    if (enable_rds_testing) {
-      api_listener_matcher = IsRdsEnabledHCM();
-    } else {
-      api_listener_matcher =
-          EqNoRdsHCM(kDefaultRouteConfigurationName, kDefaultClusterName);
-    }
-    // Construct list of all matchers.
-    std::vector<::testing::Matcher<
-        envoy::service::status::v3::ClientConfig_GenericXdsConfig>>
-        matchers = {
-            // Listener
-            EqGenericXdsConfig(
-                kLdsTypeUrl, server_name, listener_ver,
-                UnpackListener(EqListener(server_name, api_listener_matcher)),
-                ClientResourceStatus::ACKED, ::testing::_),
-            // Cluster
-            EqGenericXdsConfig(kCdsTypeUrl, kDefaultClusterName, "1",
-                               UnpackCluster(EqCluster(kDefaultClusterName)),
-                               ClientResourceStatus::ACKED, ::testing::_),
-            // ClusterLoadAssignment
-            EqGenericXdsConfig(
-                kEdsTypeUrl, kDefaultEdsServiceName, "1",
-                UnpackClusterLoadAssignment(EqClusterLoadAssignment(
-                    kDefaultEdsServiceName, port, kDefaultLocalityWeight)),
-                ClientResourceStatus::ACKED, ::testing::_),
-        };
-    // If RDS is enabled, add matcher for RDS resource.
-    if (enable_rds_testing) {
-      matchers.push_back(EqGenericXdsConfig(
-          kRdsTypeUrl, kDefaultRouteConfigurationName, route_ver,
-          UnpackRouteConfiguration(EqRouteConfiguration(
-              kDefaultRouteConfigurationName, kDefaultClusterName)),
-          ClientResourceStatus::ACKED, ::testing::_));
-    }
-    return matchers;
   }
 
  private:
@@ -692,16 +647,52 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpMultiClient) {
     scopes.emplace_back(client_config.client_scope());
     absl::string_view server = client_config.client_scope();
     absl::ConsumePrefix(&server, "xds:/");
+
+    // Listener matcher depends on whether RDS is enabled.
+    ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
+    if (GetParam().enable_rds_testing()) {
+      api_listener_matcher = IsRdsEnabledHCM();
+    } else {
+      api_listener_matcher =
+          EqNoRdsHCM(kDefaultRouteConfigurationName, kDefaultClusterName);
+    }
+    // Construct list of all matchers.
+    std::vector<::testing::Matcher<
+        envoy::service::status::v3::ClientConfig_GenericXdsConfig>>
+        matchers = {
+            // Listener
+            EqGenericXdsConfig(
+                kLdsTypeUrl, absl::StripPrefix(server, "xds:"), "3",
+                UnpackListener(EqListener(absl::StripPrefix(server, "xds:"),
+                                          api_listener_matcher)),
+                ClientResourceStatus::ACKED, ::testing::_),
+            // Cluster
+            EqGenericXdsConfig(kCdsTypeUrl, kDefaultClusterName, "1",
+                               UnpackCluster(EqCluster(kDefaultClusterName)),
+                               ClientResourceStatus::ACKED, ::testing::_),
+            // ClusterLoadAssignment
+            EqGenericXdsConfig(
+                kEdsTypeUrl, kDefaultEdsServiceName, "1",
+                UnpackClusterLoadAssignment(EqClusterLoadAssignment(
+                    kDefaultEdsServiceName, backends_[0]->port(),
+                    kDefaultLocalityWeight)),
+                ClientResourceStatus::ACKED, ::testing::_),
+        };
+    // If RDS is enabled, add matcher for RDS resource.
+    if (GetParam().enable_rds_testing()) {
+      matchers.push_back(EqGenericXdsConfig(
+          kRdsTypeUrl, kDefaultRouteConfigurationName, "2",
+          UnpackRouteConfiguration(EqRouteConfiguration(
+              kDefaultRouteConfigurationName, kDefaultClusterName)),
+          ClientResourceStatus::ACKED, ::testing::_));
+    }
+
     // Validate the dumped xDS configs
-    EXPECT_THAT(
-        client_config.generic_xds_configs(),
-        ::testing::UnorderedElementsAreArray(
-            PrepareClientConfigMatchers(GetParam().enable_rds_testing(), server,
-                                        backends_[0]->port(), "3", "2")));
+    EXPECT_THAT(client_config.generic_xds_configs(),
+                ::testing::UnorderedElementsAreArray(matchers));
   }
-  EXPECT_THAT(scopes,
-              ::testing::UnorderedElementsAre("xds:/server.example.com",
-                                              "xds:/server2.example.com"));
+  EXPECT_THAT(scopes, ::testing::UnorderedElementsAre(
+                          "xds:server.example.com", "xds:server2.example.com"));
 }
 
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
