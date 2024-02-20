@@ -37,15 +37,17 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
   auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
-  instruments.push_back({.value_type = ValueType::kUInt64,
-                         .instrument_type = InstrumentType::kCounter,
-                         .index = index,
-                         .name = name,
-                         .description = description,
-                         .unit = unit,
-                         .label_keys = {label_keys.begin(), label_keys.end()},
-                         .optional_label_keys = {optional_label_keys.begin(),
-                                                 optional_label_keys.end()}});
+  GlobalInstrumentDescriptor descriptor;
+  descriptor.value_type = ValueType::kUInt64;
+  descriptor.instrument_type = InstrumentType::kCounter;
+  descriptor.index = index;
+  descriptor.name = name;
+  descriptor.description = description;
+  descriptor.unit = unit;
+  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
+  descriptor.optional_label_keys = {optional_label_keys.begin(),
+                                    optional_label_keys.end()};
+  instruments.push_back(descriptor);
   GlobalUInt64CounterHandle handle;
   handle.index = index;
   return handle;
@@ -59,15 +61,17 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
   auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
-  instruments.push_back({.value_type = ValueType::kDouble,
-                         .instrument_type = InstrumentType::kCounter,
-                         .index = index,
-                         .name = name,
-                         .description = description,
-                         .unit = unit,
-                         .label_keys = {label_keys.begin(), label_keys.end()},
-                         .optional_label_keys = {optional_label_keys.begin(),
-                                                 optional_label_keys.end()}});
+  GlobalInstrumentDescriptor descriptor;
+  descriptor.value_type = ValueType::kDouble;
+  descriptor.instrument_type = InstrumentType::kCounter;
+  descriptor.index = index;
+  descriptor.name = name;
+  descriptor.description = description;
+  descriptor.unit = unit;
+  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
+  descriptor.optional_label_keys = {optional_label_keys.begin(),
+                                    optional_label_keys.end()};
+  instruments.push_back(descriptor);
   GlobalDoubleCounterHandle handle;
   handle.index = index;
   return handle;
@@ -81,15 +85,17 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
   auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
-  instruments.push_back({.value_type = ValueType::kUInt64,
-                         .instrument_type = InstrumentType::kHistogram,
-                         .index = index,
-                         .name = name,
-                         .description = description,
-                         .unit = unit,
-                         .label_keys = {label_keys.begin(), label_keys.end()},
-                         .optional_label_keys = {optional_label_keys.begin(),
-                                                 optional_label_keys.end()}});
+  GlobalInstrumentDescriptor descriptor;
+  descriptor.value_type = ValueType::kUInt64;
+  descriptor.instrument_type = InstrumentType::kHistogram;
+  descriptor.index = index;
+  descriptor.name = name;
+  descriptor.description = description;
+  descriptor.unit = unit;
+  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
+  descriptor.optional_label_keys = {optional_label_keys.begin(),
+                                    optional_label_keys.end()};
+  instruments.push_back(descriptor);
   GlobalUInt64HistogramHandle handle;
   handle.index = index;
   return handle;
@@ -103,15 +109,17 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
   auto& instruments = GetInstrumentList();
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
-  instruments.push_back({.value_type = ValueType::kDouble,
-                         .instrument_type = InstrumentType::kHistogram,
-                         .index = index,
-                         .name = name,
-                         .description = description,
-                         .unit = unit,
-                         .label_keys = {label_keys.begin(), label_keys.end()},
-                         .optional_label_keys = {optional_label_keys.begin(),
-                                                 optional_label_keys.end()}});
+  GlobalInstrumentDescriptor descriptor;
+  descriptor.value_type = ValueType::kDouble;
+  descriptor.instrument_type = InstrumentType::kHistogram;
+  descriptor.index = index;
+  descriptor.name = name;
+  descriptor.description = description;
+  descriptor.unit = unit;
+  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
+  descriptor.optional_label_keys = {optional_label_keys.begin(),
+                                    optional_label_keys.end()};
+  instruments.push_back(descriptor);
   GlobalDoubleHistogramHandle handle;
   handle.index = index;
   return handle;
