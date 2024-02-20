@@ -176,7 +176,6 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 grpc_observability.start_open_telemetry_observability(
                     plugins=[]
                 )
-                pass
             except RuntimeError as exp:
                 self.assertIn("observability was already initiated", str(exp))
 
