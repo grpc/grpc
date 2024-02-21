@@ -2188,6 +2188,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_transport_chttp2",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
