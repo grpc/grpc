@@ -28,6 +28,7 @@ RUN apk add glibc-2.30-r0.apk
 ENV SKIP_NET45_DISTRIBTEST=1
 # we have a separate distribtest for netcoreapp3.1
 ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
+# we have a separate distribtest for netcoreapp6.0
+ENV SKIP_NETCOREAPP6_DISTRIBTEST=1
 # we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1
-

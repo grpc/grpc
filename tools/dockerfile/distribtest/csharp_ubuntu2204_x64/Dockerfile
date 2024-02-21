@@ -24,7 +24,9 @@ RUN rm packages-microsoft-prod.deb
 
 RUN apt-get update && apt-get install -y dotnet-sdk-6.0
 
-# we have a separate distribtest for netcoreapp3.1
+# we only want to test dotnet core 6.0 runtime. This also allows us to keep
+# this docker image minimal by not installing the other runtimes.
+ENV SKIP_NET45_DISTRIBTEST=1
+ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
 ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
-# we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1
