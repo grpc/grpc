@@ -311,6 +311,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc_client_channel",
+        "//:oob_backend_metric",
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",

@@ -15,7 +15,6 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
-    'src/core/client_channel/backend_metric.cc',
     'src/core/client_channel/backup_poller.cc',
     'src/core/client_channel/channel_connectivity.cc',
     'src/core/client_channel/client_channel_channelz.cc',
@@ -32,7 +31,6 @@ CORE_SOURCE_FILES = [
     'src/core/client_channel/retry_filter_legacy_call_data.cc',
     'src/core/client_channel/retry_service_config.cc',
     'src/core/client_channel/retry_throttle.cc',
-    'src/core/client_channel/service_config_channel_arg_filter.cc',
     'src/core/client_channel/subchannel.cc',
     'src/core/client_channel/subchannel_pool_interface.cc',
     'src/core/client_channel/subchannel_stream_client.cc',
@@ -780,6 +778,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/transport/transport_op_string.cc',
     'src/core/lib/uri/uri_parser.cc',
     'src/core/load_balancing/address_filtering.cc',
+    'src/core/load_balancing/backend_metric_parser.cc',
     'src/core/load_balancing/child_policy_handler.cc',
     'src/core/load_balancing/endpoint_list.cc',
     'src/core/load_balancing/grpclb/client_load_reporting_filter.cc',
@@ -828,6 +827,7 @@ CORE_SOURCE_FILES = [
     'src/core/resolver/xds/xds_dependency_manager.cc',
     'src/core/resolver/xds/xds_resolver.cc',
     'src/core/resolver/xds/xds_resolver_trace.cc',
+    'src/core/service_config/service_config_channel_arg_filter.cc',
     'src/core/service_config/service_config_impl.cc',
     'src/core/service_config/service_config_parser.cc',
     'src/core/tsi/alts/crypt/aes_gcm.cc',

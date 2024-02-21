@@ -958,7 +958,6 @@ endif
 # deps: ['upb_json_lib', 'upb_textformat_lib', 're2', 'z', 'grpc_abseil', 'cares', 'gpr', 'libssl', 'address_sorting']
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib', 'libssl']
 LIBGRPC_SRC = \
-    src/core/client_channel/backend_metric.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/channel_connectivity.cc \
     src/core/client_channel/client_channel_channelz.cc \
@@ -975,7 +974,6 @@ LIBGRPC_SRC = \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
-    src/core/client_channel/service_config_channel_arg_filter.cc \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
@@ -1678,6 +1676,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
     src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
@@ -1726,6 +1725,7 @@ LIBGRPC_SRC = \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
     src/core/resolver/xds/xds_resolver_trace.cc \
+    src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
@@ -1889,7 +1889,6 @@ endif
 # deps: ['upb_message_lib', 'utf8_range_lib', 'z', 'grpc_abseil', 'cares', 'gpr', 'address_sorting']
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBGRPC_UNSECURE_SRC = \
-    src/core/client_channel/backend_metric.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/channel_connectivity.cc \
     src/core/client_channel/client_channel_channelz.cc \
@@ -1906,7 +1905,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
-    src/core/client_channel/service_config_channel_arg_filter.cc \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
@@ -2239,6 +2237,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
     src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
@@ -2277,6 +2276,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/resolver/resolver.cc \
     src/core/resolver/resolver_registry.cc \
     src/core/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
