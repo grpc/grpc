@@ -147,6 +147,13 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
+if [ "$GRPC_BUILD_MAC" == "" ]; then
+  "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py sdist
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
+fi
+
+
 # run twine check before auditwheel, because auditwheel puts the repaired wheels into
 # the artifacts output dir.
 if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
@@ -157,7 +164,7 @@ then
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
   venv/bin/python -m pip install "twine<=2.0" "readme_renderer<40.0"
-  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/* src/python/grpcio_observability/dist/*
   rm -rf venv/
 fi
 
@@ -204,15 +211,22 @@ then
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
+  for wheel in src/python/grpcio_observability/*.whl; do
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
+    "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
+    rm "$wheel"
+  done
 else
   cp -r dist/*.whl "$ARTIFACT_DIR"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
+  cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
 fi
 
-# grpcio and grpcio-tools wheels have already been copied to artifact_dir
+# grpcio, grpcio-tools and grpcio-observability have already been copied to artifact_dir
 # by "auditwheel repair", now copy the .tar.gz source archives as well.
 cp -r dist/*.tar.gz "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
+cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
 
 # We need to use the built grpcio-tools/grpcio to compile the health proto
 # Wheels are not supported by setup_requires/dependency_links, so we
@@ -281,14 +295,5 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
-
-  # Build grpcio_observability source distribution
-  # Skips MacOS since grpcio_observability does not support MacOS.
-  if [ "$GRPC_BUILD_MAC" == "" ]; then
-    "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
-    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py \
-        sdist bdist_wheel
-    cp -r src/python/grpcio_observability/dist/* "$ARTIFACT_DIR"
-  fi
 
 fi
