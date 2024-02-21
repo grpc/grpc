@@ -83,7 +83,7 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
   if (fd_ == nullptr || session_keys_info.empty()) return;
   // Append to key log file under lock
   bool err =
-      fwrite((session_keys_info + "\r\n").c_str(), sizeof(char),
+      fwrite((session_keys_info + "\n").c_str(), sizeof(char),
              session_keys_info.length() + 1, fd_) < session_keys_info.length();
 
   if (err) {
