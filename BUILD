@@ -1427,6 +1427,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "byte_buffer",
+    srcs = [
+        "//src/core:lib/surface/byte_buffer.cc",
+        "//src/core:lib/surface/byte_buffer_reader.cc",
+    ],
+    language = "c++",
+    deps = [
+        "exec_ctx",
+        "gpr_public_hdrs",
+        "grpc_public_hdrs",
+        "//src/core:slice",
+    ],
+)
+
+grpc_cc_library(
     name = "iomgr",
     srcs = [
         "//src/core:lib/iomgr/cfstream_handle.cc",
@@ -1576,6 +1591,7 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
+        "byte_buffer",
         "channel_arg_names",
         "config_vars",
         "debug_location",
@@ -1777,8 +1793,6 @@ grpc_cc_library(
         "//src/core:lib/compression/message_compress.cc",
         "//src/core:lib/slice/b64.cc",
         "//src/core:lib/surface/builtins.cc",
-        "//src/core:lib/surface/byte_buffer.cc",
-        "//src/core:lib/surface/byte_buffer_reader.cc",
         "//src/core:lib/surface/call.cc",
         "//src/core:lib/surface/call_details.cc",
         "//src/core:lib/surface/call_log_batch.cc",
@@ -1852,6 +1866,7 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "api_trace",
+        "byte_buffer",
         "call_combiner",
         "call_trace",
         "channel",
@@ -4004,7 +4019,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/status",
-        "absl/status:statusor",
         "absl/strings",
         "libcrypto",
         "libssl",
