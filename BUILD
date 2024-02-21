@@ -1706,6 +1706,7 @@ grpc_cc_library(
     deps = [
         "api_trace",
         "channel",
+        "channelz",
         "config",
         "exec_ctx",
         "gpr",

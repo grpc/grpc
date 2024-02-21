@@ -72,8 +72,6 @@ class Channel : public RefCounted<Channel>,
       grpc_channel_stack_type channel_stack_type,
       Transport* optional_transport);
 
-  ~Channel() override;
-
   virtual void Orphan() = 0;
 
   virtual Arena* CreateArena() = 0;

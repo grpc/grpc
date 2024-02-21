@@ -66,14 +66,6 @@ Channel::Channel(std::string target, const ChannelArgs& channel_args,
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       compression_options_(compression_options) {}
 
-Channel::~Channel() {
-  if (channelz_node_ != nullptr) {
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string("Channel destroyed"));
-  }
-}
-
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {
   MutexLock lock(&mu_);
