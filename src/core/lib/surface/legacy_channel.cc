@@ -55,7 +55,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -117,8 +116,7 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
     : Channel(std::move(target), channel_args, compression_options),
       is_client_(is_client),
       is_promising_(is_promising),
-      channel_stack_(std::move(channel_stack)),
-      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
+      channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,

@@ -527,107 +527,6 @@ class ClientChannel::ClientChannelControlHelper
 };
 
 //
-// ClientChannel::ClientChannelCallFactory
-//
-
-class ClientChannel::ClientChannelCallFactory : public CallFactory {
- public:
-  explicit ClientChannelCallFactory(RefCountedPtr<ClientChannel> client_channel)
-      : CallFactory(client_channel->channel_args_),
-        client_channel_(std::move(client_channel)) {}
-
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
-                           Arena* arena) override {
-    // Increment call count.
-    if (client_channel_->idle_timeout_ != Duration::Zero()) {
-      client_channel_->idle_state_.IncreaseCallCount();
-    }
-    // Exit IDLE if needed.
-    client_channel_->CheckConnectivityState(/*try_to_connect=*/true);
-    // Create an initiator/handler pair.
-    auto call = MakeCall(GetContext<EventEngine>(), arena);
-    // Spawn a promise to wait for the resolver result.
-    // This will eventually start using the handler, which will allow the
-    // initiator to make progress.
-    call.initiator.SpawnGuarded(
-        "wait-for-name-resolution",
-        [self = RefAsSubclass<ClientChannelCallFactory>(),
-         client_initial_metadata = std::move(client_initial_metadata),
-         initiator = call.initiator,
-         handler = std::move(call.handler), was_queued = false]() mutable {
-          const bool wait_for_ready =
-              client_initial_metadata->GetOrCreatePointer(WaitForReady())
-              ->value;
-          return Map(
-              // Wait for the resolver result.
-              self->client_channel_->resolver_data_for_calls_.NextWhen(
-                  [wait_for_ready, &was_queued](
-                      const absl::StatusOr<ResolverDataForCalls> result) {
-                    bool got_result = false;
-                    // If the resolver reports an error but the call is
-                    // wait_for_ready, keep waiting for the next result
-                    // instead of failing the call.
-                    if (!result.ok()) {
-                      got_result = !wait_for_ready;
-                    } else {
-                      // Not an error.  Make sure we actually have a result.
-                      got_result = result->config_selector != nullptr;
-                    }
-                    if (!got_result) was_queued = true;
-                    return got_result;
-                  }),
-                  // Handle resolver result.
-                  [self, &was_queued, &initiator, &handler,
-                   client_initial_metadata =
-                       std::move(client_initial_metadata)](
-                      absl::StatusOr<ResolverDataForCalls> resolver_data)
-                      mutable {
-                    if (!resolver_data.ok()) return resolver_data.status();
-                    // Apply service config to call.
-                    absl::Status status =
-                        self->client_channel_->ApplyServiceConfigToCall(
-                            *resolver_data->config_selector,
-                            client_initial_metadata);
-                    if (!status.ok()) return status;
-                    // If the call was queued, add trace annotation.
-                    if (was_queued) {
-                      auto* legacy_context =
-                          GetContext<grpc_call_context_element>();
-                      auto* call_tracer =
-                          static_cast<CallTracerAnnotationInterface*>(
-                              legacy_context[
-                                  GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-                              .value);
-                      if (call_tracer != nullptr) {
-                        call_tracer->RecordAnnotation(
-                            "Delayed name resolution complete.");
-                      }
-                    }
-                    // Now inject initial metadata into the call.
-                    initiator.SpawnGuarded(
-                        "send_initial_metadata",
-                        [initiator, client_initial_metadata =
-                             std::move(client_initial_metadata)]() mutable {
-                          return initiator.PushClientInitialMetadata(
-                              std::move(client_initial_metadata));
-                        });
-                    // Finish constructing the call with the right filter
-                    // stack and destination.
-                    handler.SetStack(std::move(resolver_data->filter_stack));
-                    self->client_channel_->call_destination_->StartCall(
-                        std::move(handler));
-                    return absl::OkStatus();
-                  });
-        });
-    // Return the initiator.
-    return call.initiator;
-  }
-
- private:
-  RefCountedPtr<ClientChannel> client_channel_;
-};
-
-//
 // NoRetryCallDestination
 //
 
@@ -773,9 +672,6 @@ ClientChannel::ClientChannel(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: creating client_channel", this);
   }
-  // Create call factory.
-  call_factory_ =
-      MakeRefCounted<ClientChannelCallFactory>(RefAsSubclass<ClientChannel>());
   // Create call destination.
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
@@ -983,7 +879,90 @@ grpc_call* ClientChannel::CreateCall(
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
     bool registered_method) {
 // FIXME: code to convert from C-core batch API to v3 call, then invoke
-// call_factory_->CreateCall()
+// CreateCall(client_initial_metadata, arena)
+}
+
+CallInitiator ClientChannel::CreateCall(
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  // Increment call count.
+  if (idle_timeout_ != Duration::Zero()) idle_state_.IncreaseCallCount();
+  // Exit IDLE if needed.
+  CheckConnectivityState(/*try_to_connect=*/true);
+  // Create an initiator/handler pair.
+  auto call = MakeCall(GetContext<EventEngine>(), arena);
+  // Spawn a promise to wait for the resolver result.
+  // This will eventually start using the handler, which will allow the
+  // initiator to make progress.
+  call.initiator.SpawnGuarded(
+      "wait-for-name-resolution",
+      [self = RefAsSubclass<ClientChannel>(),
+       client_initial_metadata = std::move(client_initial_metadata),
+       initiator = call.initiator,
+       handler = std::move(call.handler), was_queued = false]() mutable {
+        const bool wait_for_ready =
+            client_initial_metadata->GetOrCreatePointer(WaitForReady())
+            ->value;
+        return Map(
+            // Wait for the resolver result.
+            self->resolver_data_for_calls_.NextWhen(
+                [wait_for_ready, &was_queued](
+                    const absl::StatusOr<ResolverDataForCalls> result) {
+                  bool got_result = false;
+                  // If the resolver reports an error but the call is
+                  // wait_for_ready, keep waiting for the next result
+                  // instead of failing the call.
+                  if (!result.ok()) {
+                    got_result = !wait_for_ready;
+                  } else {
+                    // Not an error.  Make sure we actually have a result.
+                    got_result = result->config_selector != nullptr;
+                  }
+                  if (!got_result) was_queued = true;
+                  return got_result;
+                }),
+                // Handle resolver result.
+                [self, &was_queued, &initiator, &handler,
+                 client_initial_metadata =
+                     std::move(client_initial_metadata)](
+                    absl::StatusOr<ResolverDataForCalls> resolver_data)
+                    mutable {
+                  if (!resolver_data.ok()) return resolver_data.status();
+                  // Apply service config to call.
+                  absl::Status status = self->ApplyServiceConfigToCall(
+                      *resolver_data->config_selector,
+                      client_initial_metadata);
+                  if (!status.ok()) return status;
+                  // If the call was queued, add trace annotation.
+                  if (was_queued) {
+                    auto* legacy_context =
+                        GetContext<grpc_call_context_element>();
+                    auto* call_tracer =
+                        static_cast<CallTracerAnnotationInterface*>(
+                            legacy_context[
+                                GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
+                            .value);
+                    if (call_tracer != nullptr) {
+                      call_tracer->RecordAnnotation(
+                          "Delayed name resolution complete.");
+                    }
+                  }
+                  // Now inject initial metadata into the call.
+                  initiator.SpawnGuarded(
+                      "send_initial_metadata",
+                      [initiator, client_initial_metadata =
+                           std::move(client_initial_metadata)]() mutable {
+                        return initiator.PushClientInitialMetadata(
+                            std::move(client_initial_metadata));
+                      });
+                  // Finish constructing the call with the right filter
+                  // stack and destination.
+                  handler.SetStack(std::move(resolver_data->filter_stack));
+                  self->call_destination_->StartCall(std::move(handler));
+                  return absl::OkStatus();
+                });
+      });
+  // Return the initiator.
+  return call.initiator;
 }
 
 namespace {

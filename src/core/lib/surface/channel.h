@@ -74,8 +74,8 @@ class Channel : public RefCounted<Channel>,
 
   virtual void Orphan() = 0;
 
-  virtual Arena* CreateArena() = 0;
-  virtual void DestroyArena(Arena* arena) = 0;
+  Arena* CreateArena();
+  void DestroyArena(Arena* arena);
 
   virtual bool IsLame() const = 0;
 
@@ -143,6 +143,9 @@ class Channel : public RefCounted<Channel>,
   const std::string target_;
   const RefCountedPtr<channelz::ChannelNode> channelz_node_;
   const grpc_compression_options compression_options_;
+
+  CallSizeEstimator call_size_estimator_;
+  MemoryAllocator allocator_;
 
   Mutex mu_;
   // The map key needs to be owned strings rather than unowned char*'s to

@@ -32,7 +32,6 @@
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/call_destination.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -58,11 +57,6 @@ class ClientChannel : public Channel {
   ~ClientChannel() override;
 
   void Orphan() override;
-
-  Arena* CreateArena() override { return call_factory_->CreateArena(); }
-  void DestroyArena(Arena* arena) override {
-    return call_factory_->DestroyArena(arena);
-  }
 
   bool IsLame() const override;
 
@@ -119,7 +113,6 @@ class ClientChannel : public Channel {
   class ResolverResultHandler;
   class ClientChannelControlHelper;
   class SubchannelWrapper;
-  class ClientChannelCallFactory;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
@@ -159,6 +152,9 @@ class ClientChannel : public Channel {
 
   void StartIdleTimer();
 
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
+                           Arena* arena);
+
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
   absl::Status ApplyServiceConfigToCall(
@@ -187,7 +183,6 @@ class ClientChannel : public Channel {
   ClientChannelFactory* client_channel_factory_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
-  RefCountedPtr<CallFactory> call_factory_;
   OrphanablePtr<CallDestination> call_destination_;
 
   //
