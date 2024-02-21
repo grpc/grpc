@@ -19,6 +19,4 @@ exports_files([
     "b9322cac.r0",
     "current.crl",
     "intermediate.crl",
-    "invalid_signature.crl",
-    "invalid_content.crl",
 ])

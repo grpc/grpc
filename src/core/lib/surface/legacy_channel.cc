@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -135,7 +136,17 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
   InitInternally();
-  *channel_stack_->on_destroy = []() { ShutdownInternally(); };
+  RefCountedPtr<channelz::ChannelNode> node;
+  if (channelz_node() != nullptr) {
+    node = channelz_node()->RefAsSubclass<channelz::ChannelNode>();
+  }
+  *channel_stack_->on_destroy = [node = std::move(node)]() {
+    if (node != nullptr) {
+      node->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
+                          grpc_slice_from_static_string("Channel destroyed"));
+    }
+    ShutdownInternally();
+  };
 }
 
 void LegacyChannel::Orphan() {
