@@ -22,7 +22,7 @@ RUN dpkg -i packages-microsoft-prod.deb
 
 RUN rm packages-microsoft-prod.deb
 
-RUN sudo apt-get update && sudo apt-get install -y dotnet-sdk-6.0
+RUN apt-get update && apt-get install -y dotnet-sdk-6.0
 
 # we have a separate distribtest for netcoreapp3.1
 ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
