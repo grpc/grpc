@@ -23,6 +23,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -38,6 +39,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -48,9 +50,7 @@ namespace experimental {
 
 // EventEngine implementation to be used by fuzzers.
 // It's only allowed to have one FuzzingEventEngine instantiated at a time.
-class FuzzingEventEngine
-    : public EventEngine,
-      public std::enable_shared_from_this<FuzzingEventEngine> {
+class FuzzingEventEngine : public EventEngine {
  public:
   struct Options {
     Duration max_delay_run_after = std::chrono::seconds(30);
@@ -117,6 +117,10 @@ class FuzzingEventEngine
   // destruction to ensure no overlap between tests if constructing/destructing
   // each test.
   void UnsetGlobalHooks() ABSL_LOCKS_EXCLUDED(mu_);
+
+  Duration max_delay_write() const {
+    return max_delay_[static_cast<int>(RunType::kWrite)];
+  }
 
  private:
   enum class RunType {
@@ -298,6 +302,32 @@ class FuzzingEventEngine
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_
       ABSL_GUARDED_BY(run_after_duration_callback_mu_);
+};
+
+class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
+ public:
+  ThreadedFuzzingEventEngine()
+      : ThreadedFuzzingEventEngine(std::chrono::milliseconds(10)) {}
+
+  explicit ThreadedFuzzingEventEngine(Duration max_time)
+      : FuzzingEventEngine(FuzzingEventEngine::Options(),
+                           fuzzing_event_engine::Actions()),
+        main_([this, max_time]() {
+          while (!done_.load()) {
+            absl::SleepFor(absl::Milliseconds(
+                grpc_event_engine::experimental::Milliseconds(max_time)));
+            Tick();
+          }
+        }) {}
+
+  ~ThreadedFuzzingEventEngine() override {
+    done_.store(true);
+    main_.join();
+  }
+
+ private:
+  std::atomic<bool> done_{false};
+  std::thread main_;
 };
 
 }  // namespace experimental

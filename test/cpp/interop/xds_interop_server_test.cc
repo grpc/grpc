@@ -37,8 +37,9 @@ namespace {
 
 void ServerLoop(int port, grpc_core::Mutex* mutex,
                 grpc_core::CondVar* condition, Server** server) {
-  RunServer(false, port, /* should not be used */ -1, "127.0.0.1",
-            "test_server", [&](Server* s) {
+  RunServer(false, /*enable_csm_observability=*/false, port,
+            /* should not be used */ -1, "127.0.0.1", "test_server",
+            [&](Server* s) {
               grpc_core::MutexLock lock(mutex);
               *server = s;
               condition->Signal();

@@ -26,9 +26,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
-#include "upb/base/status.h"
+#include "upb/base/status.hpp"
 #include "upb/json/encode.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
@@ -99,7 +99,10 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
             {"routeLookupConfig", std::move(*json)},
             {"childPolicy",
              Json::FromArray({
-                 Json::FromObject({{"cds_experimental", Json::FromObject({})}}),
+                 Json::FromObject({{"cds_experimental",
+                                    Json::FromObject({
+                                        {"isDynamic", Json::FromBool(true)},
+                                    })}}),
              })},
             {"childPolicyConfigTargetFieldName", Json::FromString("cluster")},
         })}})});

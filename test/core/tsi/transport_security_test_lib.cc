@@ -762,3 +762,27 @@ std::string GenerateSelfSignedCertificate(
   BN_free(n);
   return pem;
 }
+
+X509* ReadPemCert(absl::string_view pem_cert) {
+  BIO* cert_bio =
+      BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
+  // Errors on BIO
+  if (cert_bio == nullptr) {
+    return nullptr;
+  }
+  X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  BIO_free(cert_bio);
+  return cert;
+}
+
+X509_CRL* ReadCrl(absl::string_view crl_pem) {
+  BIO* crl_bio =
+      BIO_new_mem_buf(crl_pem.data(), static_cast<int>(crl_pem.size()));
+  // Errors on BIO
+  if (crl_bio == nullptr) {
+    return nullptr;
+  }
+  X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
+  BIO_free(crl_bio);
+  return crl;
+}

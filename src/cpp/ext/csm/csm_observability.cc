@@ -42,54 +42,20 @@
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
-namespace experimental {
-
-//
-// CsmObservabilityBuilder
-//
-
-CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
-    std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-        meter_provider) {
-  builder_.SetMeterProvider(meter_provider);
-  return *this;
-}
-
-CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
-    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        target_attribute_filter) {
-  builder_.SetTargetAttributeFilter(std::move(target_attribute_filter));
-  return *this;
-}
-
-CsmObservabilityBuilder&
-CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
-    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
-        generic_method_attribute_filter) {
-  builder_.SetGenericMethodAttributeFilter(
-      std::move(generic_method_attribute_filter));
-  return *this;
-}
-
-absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
-  builder_.SetServerSelector([](const grpc_core::ChannelArgs& args) {
-    return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
-  });
-  builder_.SetTargetSelector(internal::CsmChannelTargetSelector);
-  builder_.SetLabelsInjector(
-      std::make_unique<internal::ServiceMeshLabelsInjector>(
-          google::cloud::otel::MakeResourceDetector()
-              ->Detect()
-              .GetAttributes()));
-  builder_.BuildAndRegisterGlobal();
-  return CsmObservability();
-}
-
-}  // namespace experimental
 
 namespace internal {
 
+namespace {
+std::atomic<bool> g_csm_plugin_enabled(false);
+}
+
+bool CsmServerSelector(const grpc_core::ChannelArgs& args) {
+  return g_csm_plugin_enabled &&
+         args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
+}
+
 bool CsmChannelTargetSelector(absl::string_view target) {
+  if (!g_csm_plugin_enabled) return false;
   auto uri = grpc_core::URI::Parse(target);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
@@ -107,5 +73,93 @@ bool CsmChannelTargetSelector(absl::string_view target) {
   return true;
 }
 
+class CsmOpenTelemetryPluginOption
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
+ public:
+  CsmOpenTelemetryPluginOption()
+      : labels_injector_(std::make_unique<internal::ServiceMeshLabelsInjector>(
+            google::cloud::otel::MakeResourceDetector()
+                ->Detect()
+                .GetAttributes())) {}
+
+  bool IsActiveOnClientChannel(absl::string_view target) const override {
+    return CsmChannelTargetSelector(target);
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& args) const override {
+    return CsmServerSelector(args);
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return labels_injector_.get();
+  }
+
+ private:
+  std::unique_ptr<internal::ServiceMeshLabelsInjector> labels_injector_;
+};
+
 }  // namespace internal
+
+//
+// CsmObservability
+//
+
+CsmObservability::~CsmObservability() {
+  if (valid_) {
+    internal::g_csm_plugin_enabled = false;
+  }
+}
+
+CsmObservability::CsmObservability(CsmObservability&& other) noexcept {
+  other.valid_ = false;
+}
+CsmObservability& CsmObservability::operator=(
+    CsmObservability&& other) noexcept {
+  other.valid_ = false;
+  return *this;
+}
+
+//
+// CsmObservabilityBuilder
+//
+
+CsmObservabilityBuilder::CsmObservabilityBuilder()
+    : builder_(
+          std::make_unique<grpc::internal::OpenTelemetryPluginBuilderImpl>()) {}
+
+CsmObservabilityBuilder::~CsmObservabilityBuilder() = default;
+
+CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
+    std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
+  builder_->SetMeterProvider(meter_provider);
+  return *this;
+}
+
+CsmObservabilityBuilder& CsmObservabilityBuilder::SetTargetAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter) {
+  builder_->SetTargetAttributeFilter(std::move(target_attribute_filter));
+  return *this;
+}
+
+CsmObservabilityBuilder&
+CsmObservabilityBuilder::SetGenericMethodAttributeFilter(
+    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+        generic_method_attribute_filter) {
+  builder_->SetGenericMethodAttributeFilter(
+      std::move(generic_method_attribute_filter));
+  return *this;
+}
+
+absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
+  builder_->AddPluginOption(
+      std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>());
+  auto status = builder_->BuildAndRegisterGlobal();
+  internal::g_csm_plugin_enabled = true;
+  if (!status.ok()) {
+    return status;
+  }
+  return CsmObservability();
+}
+
 }  // namespace grpc

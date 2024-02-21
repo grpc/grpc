@@ -45,7 +45,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
-#include "src/core/lib/event_engine/posix_engine/native_dns_resolver.h"
+#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -255,11 +255,11 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
     MemoryAllocator&& allocator, const PosixTcpOptions& options,
     Duration timeout) {
   int err;
-  int saved_errno;
+  int connect_errno;
   do {
     err = connect(sock.Fd(), addr.address(), addr.size());
   } while (err < 0 && errno == EINTR);
-  saved_errno = errno;
+  connect_errno = (err < 0) ? errno : 0;
 
   auto addr_uri = ResolvedAddressToURI(addr);
   if (!addr_uri.ok()) {
@@ -274,13 +274,8 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   PosixEventPoller* poller = poller_manager_->Poller();
   EventHandle* handle =
       poller->CreateHandle(sock.Fd(), name, poller->CanTrackErrors());
-  int64_t connection_id = 0;
-  if (saved_errno == EWOULDBLOCK || saved_errno == EINPROGRESS) {
-    // Connection is still in progress.
-    connection_id = last_connection_id_.fetch_add(1, std::memory_order_acq_rel);
-  }
 
-  if (err >= 0) {
+  if (connect_errno == 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
@@ -290,18 +285,21 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
     });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  if (saved_errno != EWOULDBLOCK && saved_errno != EINPROGRESS) {
+  if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     handle->OrphanHandle(nullptr, nullptr, "tcp_client_connect_error");
     Run([on_connect = std::move(on_connect),
-         ep = absl::FailedPreconditionError(
-             absl::StrCat("connect failed: ", "addr: ", addr_uri.value(),
-                          " error: ", std::strerror(saved_errno)))]() mutable {
+         ep = absl::FailedPreconditionError(absl::StrCat(
+             "connect failed: ", "addr: ", addr_uri.value(),
+             " error: ", std::strerror(connect_errno)))]() mutable {
       on_connect(std::move(ep));
     });
     return EventEngine::ConnectionHandle::kInvalid;
   }
+  // Connection is still in progress.
+  int64_t connection_id =
+      last_connection_id_.fetch_add(1, std::memory_order_acq_rel);
   AsyncConnect* ac = new AsyncConnect(
       std::move(on_connect), shared_from_this(), executor_.get(), handle,
       std::move(allocator), options, addr_uri.value(), connection_id);
@@ -573,10 +571,9 @@ PosixEventEngine::GetDNSResolver(
         std::move(*ares_resolver));
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   }
-  GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating NativeDNSResolver",
-                              this);
-  return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-      grpc_core::MakeOrphanable<NativeDNSResolver>(shared_from_this()));
+  GRPC_EVENT_ENGINE_DNS_TRACE(
+      "PosixEventEngine:%p creating NativePosixDNSResolver", this);
+  return std::make_unique<NativePosixDNSResolver>(shared_from_this());
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 }
 
@@ -660,7 +657,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
-std::unique_ptr<PosixEndpointWithFdSupport>
+std::unique_ptr<EventEngine::Endpoint>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
@@ -704,7 +701,7 @@ PosixEventEngine::CreateListener(
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
-absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
+absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreatePosixListener(
     PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
     absl::AnyInvocable<void(absl::Status)> on_shutdown,

@@ -40,13 +40,13 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
@@ -164,8 +164,8 @@ ServerMetadataHandle CheckPayload(const Message& msg,
   if (!max_length.has_value()) return nullptr;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
     gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
-            Activity::current()->DebugTag().c_str(), is_send ? "send" : "recv",
-            msg.payload()->Length(), *max_length);
+            GetContext<Activity>()->DebugTag().c_str(),
+            is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
   auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
@@ -240,12 +240,10 @@ bool HasMessageSizeLimits(const ChannelArgs& channel_args) {
 void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
   MessageSizeParser::Register(builder);
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                       &ClientMessageSizeFilter::kFilter)
+      ->RegisterFilter<ClientMessageSizeFilter>(GRPC_CLIENT_SUBCHANNEL)
       .ExcludeFromMinimalStack();
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &ClientMessageSizeFilter::kFilter)
+      ->RegisterFilter<ClientMessageSizeFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If(HasMessageSizeLimits)
       // TODO(ctiller): ordering constraint is here to match the ordering that
@@ -253,7 +251,7 @@ void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
       // filters from first principles.
       .Before({&grpc_client_deadline_filter});
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &ServerMessageSizeFilter::kFilter)
+      ->RegisterFilter<ServerMessageSizeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
       .If(HasMessageSizeLimits)
       // TODO(ctiller): ordering constraint is here to match the ordering that

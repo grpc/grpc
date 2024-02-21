@@ -91,10 +91,10 @@ void NativeObservabilityInit() {
   g_census_data_buffer = new std::queue<CensusData>;
 }
 
-void* CreateClientCallTracer(const char* method, const char* trace_id,
-                             const char* parent_span_id) {
+void* CreateClientCallTracer(const char* method, const char* target,
+                             const char* trace_id, const char* parent_span_id) {
   void* client_call_tracer = new PythonOpenCensusCallTracer(
-      method, trace_id, parent_span_id, PythonCensusTracingEnabled());
+      method, target, trace_id, parent_span_id, PythonCensusTracingEnabled());
   return client_call_tracer;
 }
 

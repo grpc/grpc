@@ -27,6 +27,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -67,11 +68,39 @@ void WindowsEventEngineListener::SinglePortSocketListener::
 
 // ---- SinglePortSocketListener ----
 
+// TODO(hork): This may be refactored to share with posix engine.
+void UnlinkIfUnixDomainSocket(
+    const EventEngine::ResolvedAddress& resolved_addr) {
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  if (resolved_addr.address()->sa_family != AF_UNIX) {
+    return;
+  }
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
+      const_cast<sockaddr*>(resolved_addr.address()));
+  // There is nothing to unlink for an abstract unix socket.
+  if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
+    return;
+  }
+  // For windows we need to remove the file instead of unlink.
+  DWORD attr = ::GetFileAttributesA(un->sun_path);
+  if (attr == INVALID_FILE_ATTRIBUTES) {
+    return;
+  }
+  if (attr & FILE_ATTRIBUTE_DIRECTORY || attr & FILE_ATTRIBUTE_READONLY) {
+    return;
+  }
+  ::DeleteFileA(un->sun_path);
+#else
+  (void)resolved_addr;
+#endif
+}
+
 WindowsEventEngineListener::SinglePortSocketListener::
     ~SinglePortSocketListener() {
   grpc_core::MutexLock lock(&io_state_->mu);
   io_state_->listener_socket->Shutdown(DEBUG_LOCATION,
                                        "~SinglePortSocketListener");
+  UnlinkIfUnixDomainSocket(listener_sockname());
   GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
 }
 
@@ -109,7 +138,11 @@ absl::Status WindowsEventEngineListener::SinglePortSocketListener::Start() {
 
 absl::Status
 WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
-  SOCKET accept_socket = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+  const EventEngine::ResolvedAddress addr = listener_sockname();
+  const int addr_family =
+      (addr.address()->sa_family == AF_UNIX) ? AF_UNIX : AF_INET6;
+  const int protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+  SOCKET accept_socket = WSASocket(addr_family, SOCK_STREAM, protocol, NULL, 0,
                                    IOCP::GetDefaultSocketFlags());
   if (accept_socket == INVALID_SOCKET) {
     return GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
@@ -118,11 +151,17 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
     if (accept_socket != INVALID_SOCKET) closesocket(accept_socket);
     return error;
   };
-  auto error = PrepareSocket(accept_socket);
+  absl::Status error;
+  if (addr_family == AF_UNIX) {
+    error = SetSocketNonBlock(accept_socket);
+  } else {
+    error = PrepareSocket(accept_socket);
+  }
   if (!error.ok()) return fail(error);
   // Start the "accept" asynchronously.
   io_state_->listener_socket->NotifyOnRead(&io_state_->on_accept_cb);
-  DWORD addrlen = sizeof(sockaddr_in6) + 16;
+  DWORD addrlen =
+      sizeof(addresses_) / 2;  // half of the buffer is for remote addr.
   DWORD bytes_received = 0;
   int success =
       AcceptEx(io_state_->listener_socket->raw_socket(), accept_socket,
@@ -238,8 +277,14 @@ WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     if (sock != INVALID_SOCKET) closesocket(sock);
     return error;
   };
-  auto error = PrepareSocket(sock);
+  absl::Status error;
+  if (addr.address()->sa_family == AF_UNIX) {
+    error = SetSocketNonBlock(sock);
+  } else {
+    error = PrepareSocket(sock);
+  }
   if (!error.ok()) return fail(error);
+  UnlinkIfUnixDomainSocket(addr);
   if (bind(sock, addr.address(), addr.size()) == SOCKET_ERROR) {
     return fail(GRPC_WSA_ERROR(WSAGetLastError(), "bind"));
   }
@@ -313,7 +358,10 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
     out_addr = ResolvedAddressMakeWild6(out_port);
   }
   // open the socket
-  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, nullptr, 0,
+  const int addr_family =
+      (out_addr.address()->sa_family == AF_UNIX) ? AF_UNIX : AF_INET6;
+  const int protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+  SOCKET sock = WSASocket(addr_family, SOCK_STREAM, protocol, nullptr, 0,
                           IOCP::GetDefaultSocketFlags());
   if (sock == INVALID_SOCKET) {
     auto error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");

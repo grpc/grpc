@@ -16,8 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-
 #include <memory>
 
 #include "absl/types/optional.h"
@@ -25,9 +23,10 @@
 
 #include <grpc/impl/channel_arg_names.h>
 
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -35,20 +34,20 @@ namespace testing {
 namespace {
 
 TEST(MakeSubchannelArgs, UsesChannelDefaultAuthorityByDefault) {
-  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+  ChannelArgs args = ClientChannelFilter::MakeSubchannelArgs(
       ChannelArgs(), ChannelArgs(), nullptr, "foo.example.com");
   EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "foo.example.com");
 }
 
 TEST(MakeSubchannelArgs, DefaultAuthorityFromChannelArgs) {
-  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+  ChannelArgs args = ClientChannelFilter::MakeSubchannelArgs(
       ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "bar.example.com"),
       ChannelArgs(), nullptr, "foo.example.com");
   EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "bar.example.com");
 }
 
 TEST(MakeSubchannelArgs, DefaultAuthorityFromResolver) {
-  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+  ChannelArgs args = ClientChannelFilter::MakeSubchannelArgs(
       ChannelArgs(),
       ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "bar.example.com"), nullptr,
       "foo.example.com");
@@ -57,7 +56,7 @@ TEST(MakeSubchannelArgs, DefaultAuthorityFromResolver) {
 
 TEST(MakeSubchannelArgs,
      DefaultAuthorityFromChannelArgsOverridesValueFromResolver) {
-  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+  ChannelArgs args = ClientChannelFilter::MakeSubchannelArgs(
       ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "bar.example.com"),
       ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "baz.example.com"), nullptr,
       "foo.example.com");
@@ -65,14 +64,14 @@ TEST(MakeSubchannelArgs,
 }
 
 TEST(MakeSubchannelArgs, ArgsFromChannelTrumpPerAddressArgs) {
-  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+  ChannelArgs args = ClientChannelFilter::MakeSubchannelArgs(
       ChannelArgs().Set("foo", 1), ChannelArgs().Set("foo", 2), nullptr,
       "foo.example.com");
   EXPECT_EQ(args.GetInt("foo"), 1);
 }
 
 TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
-  ChannelArgs args = ClientChannel::MakeSubchannelArgs(
+  ChannelArgs args = ClientChannelFilter::MakeSubchannelArgs(
       ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo", 1),
       ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar", 1), nullptr,
       "foo.example.com");

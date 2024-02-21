@@ -32,7 +32,8 @@ namespace grpc_core {
 
 // Loads the content of a file into a slice. add_null_terminator will add a NULL
 // terminator if true.
-absl::StatusOr<Slice> LoadFile(std::string filename, bool add_null_terminator) {
+absl::StatusOr<Slice> LoadFile(const std::string& filename,
+                               bool add_null_terminator) {
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
   FILE* file;

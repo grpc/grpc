@@ -41,6 +41,7 @@ grpc_cc_library(
         "otel_client_filter.h",
         "otel_plugin.h",
         "otel_server_call_tracer.h",
+        "//:include/grpcpp/ext/otel_plugin.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -74,6 +75,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],

@@ -111,7 +111,6 @@ if apple_toolchain && !cross_compiling
   end
 end
 
-env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 
 require_relative '../../lib/grpc/version'
@@ -193,7 +192,6 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy' if linux
 # Do not statically link standard libraries on TruffleRuby as this does not work when compiling to bitcode
 if linux && RUBY_ENGINE != 'truffleruby'
   $LDFLAGS << ' -static-libgcc -static-libstdc++'

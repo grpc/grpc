@@ -148,6 +148,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:load_file",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -489,5 +490,15 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_stats_plugin",
+    srcs = ["fake_stats_plugin.cc"],
+    hdrs = ["fake_stats_plugin.h"],
+    deps = [
+        "//:grpc",
+        "//src/core:examine_stack",
     ],
 )

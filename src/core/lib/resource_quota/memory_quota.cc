@@ -232,10 +232,10 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
   if (!empty) {
     // If we don't, but the queue is probably not empty, schedule an immediate
     // repoll.
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
   } else {
     // Otherwise, schedule a wakeup for whenever something is pushed.
-    state_->waker = Activity::current()->MakeNonOwningWaker();
+    state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
   }
   return Pending{};
 }
@@ -256,7 +256,7 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
-  memory_quota_->Return(taken_bytes_);
+  memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
@@ -465,7 +465,7 @@ void BasicMemoryQuota::Start() {
             self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
             1;
         reclaimer->Run(ReclamationSweep(
-            self, token, Activity::current()->MakeNonOwningWaker()));
+            self, token, GetContext<Activity>()->MakeNonOwningWaker()));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
         // destroyed, we'll be able to proceed.
@@ -658,14 +658,9 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (IsMemoryPressureControllerEnabled()) {
-    pressure_info.pressure_control_value =
-        pressure_tracker_.AddSampleAndGetControlValue(
-            pressure_info.instantaneous_pressure);
-  } else {
-    pressure_info.pressure_control_value =
-        std::min(pressure_info.instantaneous_pressure, 1.0);
-  }
+  pressure_info.pressure_control_value =
+      pressure_tracker_.AddSampleAndGetControlValue(
+          pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
 }

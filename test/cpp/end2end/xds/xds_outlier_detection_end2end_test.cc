@@ -20,7 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
@@ -80,7 +80,7 @@ TEST_P(OutlierDetectionTest, SuccessRateEjectionAndUnejection) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -140,7 +140,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -243,7 +243,7 @@ TEST_P(OutlierDetectionTest, SuccessRateStdevFactor) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -303,7 +303,7 @@ TEST_P(OutlierDetectionTest, SuccessRateEnforcementPercentage) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -363,7 +363,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMinimumHosts) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -424,7 +424,7 @@ TEST_P(OutlierDetectionTest, SuccessRateRequestVolume) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -487,7 +487,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageEjectionAndUnejection) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -554,7 +554,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -653,7 +653,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageThreshold) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -714,7 +714,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageEnforcementPercentage) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -779,7 +779,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMinimumHosts) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -842,7 +842,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageRequestVolume) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -907,7 +907,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -1014,7 +1014,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentageBothDisabled) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -1070,7 +1070,7 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
                                    new_route_config);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Note each type of RPC will contains a header value that will always be
+  // Note each type of RPC will contain a header value that will always be
   // hashed to a specific backend as the header value matches the value used
   // to create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
@@ -1113,6 +1113,58 @@ TEST_P(OutlierDetectionTest, DisableOutlierDetectionWhileAddressesAreEjected) {
       RpcOptions()
           .set_metadata(std::move(metadata))
           .set_server_expected_error(StatusCode::CANCELLED));
+}
+
+TEST_P(OutlierDetectionTest, EjectionRetainedAcrossPriorities) {
+  CreateAndStartBackends(3);
+  auto cluster = default_cluster_;
+  // Setup outlier failure percentage parameters.
+  // Any failure will cause an potential ejection with the probability of 100%
+  // (to eliminate flakiness of the test).
+  auto* outlier_detection = cluster.mutable_outlier_detection();
+  SetProtoDuration(grpc_core::Duration::Seconds(1),
+                   outlier_detection->mutable_interval());
+  SetProtoDuration(grpc_core::Duration::Minutes(10),
+                   outlier_detection->mutable_base_ejection_time());
+  outlier_detection->mutable_failure_percentage_threshold()->set_value(0);
+  outlier_detection->mutable_enforcing_failure_percentage()->set_value(100);
+  outlier_detection->mutable_failure_percentage_minimum_hosts()->set_value(1);
+  outlier_detection->mutable_failure_percentage_request_volume()->set_value(1);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Priority 0: backend 0 and a non-existent backend.
+  // Priority 1: backend 1.
+  EdsResourceArgs args({
+      {"locality0", {CreateEndpoint(0), MakeNonExistantEndpoint()}},
+      {"locality1", {CreateEndpoint(1)}, kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Trigger an error to backend 0.
+  // The success rate enforcement_percentage is 100%, so this will cause
+  // the backend to be ejected when the ejection timer fires.
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::CANCELLED, "",
+      RpcOptions().set_server_expected_error(StatusCode::CANCELLED));
+  // Wait for traffic aimed at backend 0 to start going to backend 1.
+  // This tells us that backend 0 has been ejected.
+  // It should take no more than one ejection timer interval.
+  WaitForBackend(DEBUG_LOCATION, 1, /*check_status=*/nullptr,
+                 WaitForBackendOptions().set_timeout_ms(
+                     3000 * grpc_test_slowdown_factor()));
+  // Now send an EDS update that moves backend 0 to priority 1.
+  // We also add backend 2, so that we know when the client sees the update.
+  args = EdsResourceArgs({
+      {"locality0", {MakeNonExistantEndpoint()}},
+      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
+  });
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForBackend(DEBUG_LOCATION, 2);
+  // Now send 100 RPCs and make sure they all go to backends 1 and 2,
+  // because backend 0 should still be ejected.
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(50, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(50, backends_[2]->backend_service()->request_count());
 }
 
 }  // namespace

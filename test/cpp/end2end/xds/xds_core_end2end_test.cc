@@ -22,7 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
@@ -429,7 +429,7 @@ TEST_P(TimeoutTest, CdsServerIgnoresRequest) {
   balancer_->ads_service()->IgnoreResourceType(kCdsTypeUrl);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -437,7 +437,7 @@ TEST_P(TimeoutTest, CdsResourceNotPresentInRequest) {
   balancer_->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("CDS resource \"", kDefaultClusterName, "\" does not exist"),
+      absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
       RpcOptions().set_timeout_ms(4000));
 }
 
@@ -461,9 +461,9 @@ TEST_P(TimeoutTest, CdsSecondResourceNotPresentInRequest) {
       [&](const RpcResult& result) {
         if (result.status.ok()) return true;  // Keep going.
         EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-        EXPECT_EQ(absl::StrCat("CDS resource \"", kNewClusterName,
-                               "\" does not exist"),
-                  result.status.error_message());
+        EXPECT_EQ(
+            absl::StrCat("CDS resource ", kNewClusterName, " does not exist"),
+            result.status.error_message());
         return false;
       },
       /*timeout_ms=*/30000, RpcOptions().set_timeout_ms(4000));
@@ -912,10 +912,9 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   grpc::Status status = stub2->Echo(&context, request, &response);
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(status.error_message(),
-            absl::StrCat(
-                kNewClusterName,
-                ": UNAVAILABLE: authority \"xds.unknown.com\" not present in "
-                "bootstrap config"));
+            absl::StrCat(kNewClusterName,
+                         ": authority \"xds.unknown.com\" not present in "
+                         "bootstrap config"));
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 
@@ -972,10 +971,10 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   EXPECT_EQ(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_EQ(
       status.error_message(),
-      "no children in weighted_target policy: EDS watcher error for resource "
+      "no children in weighted_target policy: EDS resource "
       "xdstp://xds.unknown.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name (UNAVAILABLE: authority \"xds.unknown.com\" not "
-      "present in bootstrap config)");
+      "edsservice_name: UNAVAILABLE: authority \"xds.unknown.com\" not "
+      "present in bootstrap config");
   ASSERT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel2->GetState(false));
 }
 

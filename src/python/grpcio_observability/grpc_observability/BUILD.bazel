@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("//bazel:cython_library.bzl", "pyx_library")
 
 package(default_visibility = ["//visibility:private"])
@@ -52,17 +53,27 @@ pyx_library(
     ],
 )
 
-# Since `opencensus` and `opencensus-ext-stackdriver` are non-hermetic,
+# Since `opentelemetry-sdk` and `opentelemetry-api` are non-hermetic,
 # pyobservability is for internal use only.
+py_library(
+    name = "_opentelemetry_observability",
+    srcs = [
+        "_open_telemetry_exporter.py",
+        "_open_telemetry_measures.py",
+        "_open_telemetry_observability.py",
+        "_open_telemetry_plugin.py",
+    ],
+    deps = [
+        requirement("opentelemetry-sdk"),
+        requirement("opentelemetry-api"),
+    ],
+)
+
 py_library(
     name = "pyobservability",
     srcs = [
         "__init__.py",
-        "_gcp_observability.py",
-        "_measures.py",
         "_observability.py",
-        "_observability_config.py",
-        "_views.py",
     ],
     imports = [
         ".",
@@ -73,6 +84,7 @@ py_library(
         "//:__subpackages__",
     ],
     deps = [
+        ":_opentelemetry_observability",
         ":cyobservability",
     ],
 )

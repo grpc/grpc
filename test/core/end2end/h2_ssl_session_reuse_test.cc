@@ -40,10 +40,10 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
@@ -58,22 +58,14 @@ namespace {
 gpr_timespec five_seconds_time() { return grpc_timeout_seconds_to_deadline(5); }
 
 grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* server_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* server_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {server_key, server_cert};
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string server_cert =
+      grpc_core::testing::GetFileContents(SERVER_CERT_PATH);
+  std::string server_key = grpc_core::testing::GetFileContents(SERVER_KEY_PATH);
+  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {server_key.c_str(),
+                                                  server_cert.c_str()};
   grpc_server_credentials* server_creds = grpc_ssl_server_credentials_create_ex(
-      ca_cert, &pem_cert_key_pair, 1,
+      ca_cert.c_str(), &pem_cert_key_pair, 1,
       GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, nullptr);
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
@@ -81,32 +73,19 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
   GPR_ASSERT(grpc_server_add_http2_port(server, server_addr, server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
-
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
   return server;
 }
 
 grpc_channel* client_create(const char* server_addr,
                             grpc_ssl_session_cache* cache) {
-  grpc_slice ca_slice, cert_slice, key_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CA_CERT_PATH, 1, &ca_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &cert_slice)));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(CLIENT_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-  const char* client_cert =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  const char* client_key =
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-  grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {client_key,
-                                                            client_cert};
+  std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(CLIENT_CERT_PATH);
+  std::string client_key = grpc_core::testing::GetFileContents(CLIENT_KEY_PATH);
+  grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {
+      client_key.c_str(), client_cert.c_str()};
   grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(
-      ca_cert, &signed_client_key_cert_pair, nullptr, nullptr);
+      ca_cert.c_str(), &signed_client_key_cert_pair, nullptr, nullptr);
 
   grpc_arg args[] = {
       grpc_channel_arg_string_create(
@@ -128,9 +107,6 @@ grpc_channel* client_create(const char* server_addr,
     grpc_channel_args_destroy(client_args);
   }
 
-  grpc_slice_unref(cert_slice);
-  grpc_slice_unref(key_slice);
-  grpc_slice_unref(ca_slice);
   return client;
 }
 

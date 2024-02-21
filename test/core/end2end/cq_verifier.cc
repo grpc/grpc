@@ -358,13 +358,16 @@ grpc_event CqVerifier::Step(gpr_timespec deadline) {
 
 void CqVerifier::Verify(Duration timeout, SourceLocation location) {
   if (expectations_.empty()) return;
-  if (log_verifications_) {
-    gpr_log(GPR_ERROR, "Verify %s for %s", ToShortString().c_str(),
-            timeout.ToString().c_str());
-  }
+  bool must_log = true;
   const gpr_timespec deadline =
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
   while (!expectations_.empty()) {
+    must_log = std::exchange(added_expectations_, false) || must_log;
+    if (log_verifications_ && must_log) {
+      gpr_log(GPR_ERROR, "Verify %s for %s", ToShortString().c_str(),
+              timeout.ToString().c_str());
+    }
+    must_log = false;
     grpc_event ev = Step(deadline);
     if (ev.type == GRPC_QUEUE_TIMEOUT) break;
     if (ev.type != GRPC_OP_COMPLETE) {
@@ -433,6 +436,7 @@ void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
 
 void CqVerifier::Expect(void* tag, ExpectedResult result,
                         SourceLocation location) {
+  added_expectations_ = true;
   expectations_.push_back(Expectation{location, tag, std::move(result)});
 }
 

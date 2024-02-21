@@ -27,7 +27,7 @@ namespace grpc_core {
 void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   RegisterServerCallTracerFilter(builder);
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_LAME_CHANNEL, &LameClientFilter::kFilter)
+      ->RegisterFilter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)

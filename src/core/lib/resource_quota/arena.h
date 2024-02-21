@@ -180,7 +180,7 @@ class Arena {
   template <typename T, typename... Args>
   T* New(Args&&... args) {
     T* t = static_cast<T*>(Alloc(sizeof(T)));
-    Construct(t, std::forward<Args>(args)...);
+    new (t) T(std::forward<Args>(args)...);
     return t;
   }
 
@@ -333,7 +333,7 @@ class Arena {
   //          value in Arena::PoolSizes, and so this may pessimize total
   //          arena size.
   template <typename T, typename... Args>
-  PoolPtr<T> MakePooled(Args&&... args) {
+  static PoolPtr<T> MakePooled(Args&&... args) {
     return PoolPtr<T>(new T(std::forward<Args>(args)...), PooledDeleter());
   }
 

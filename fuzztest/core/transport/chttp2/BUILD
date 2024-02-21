@@ -41,6 +41,7 @@ grpc_fuzz_test(
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:resource_quota",
         "//src/core:slice_buffer",
         "//src/core:time",

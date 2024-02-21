@@ -113,7 +113,7 @@ class Latch {
 
  private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " LATCH[0x",
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " LATCH[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
@@ -185,9 +185,11 @@ class Latch<void> {
     waiter_.Wake();
   }
 
+  bool is_set() const { return is_set_; }
+
  private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " LATCH(void)[0x",
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " LATCH(void)[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 
@@ -257,7 +259,7 @@ class ExternallyObservableLatch<void> {
 
  private:
   std::string DebugTag() {
-    return absl::StrCat(Activity::current()->DebugTag(), " LATCH(void)[0x",
+    return absl::StrCat(GetContext<Activity>()->DebugTag(), " LATCH(void)[0x",
                         reinterpret_cast<uintptr_t>(this), "]: ");
   }
 

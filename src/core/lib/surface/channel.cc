@@ -58,11 +58,24 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 // IWYU pragma: no_include <type_traits>
 
 namespace grpc_core {
+
+namespace {
+
+class NotReallyACallFactory final : public CallFactory {
+ public:
+  using CallFactory::CallFactory;
+  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
+    Crash("NotReallyACallFactory::CreateCall should never be called");
+  }
+};
+
+}  // namespace
 
 Channel::Channel(bool is_client, bool is_promising, std::string target,
                  const ChannelArgs& channel_args,
@@ -71,14 +84,10 @@ Channel::Channel(bool is_client, bool is_promising, std::string target,
     : is_client_(is_client),
       is_promising_(is_promising),
       compression_options_(compression_options),
-      call_size_estimate_(channel_stack->call_stack_size +
-                          grpc_call_get_initial_size_estimate()),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      allocator_(channel_args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryOwner()),
       target_(std::move(target)),
-      channel_stack_(std::move(channel_stack)) {
+      channel_stack_(std::move(channel_stack)),
+      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -230,24 +239,6 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::Create(
   return CreateWithBuilder(&builder);
 }
 
-void Channel::UpdateCallSizeEstimate(size_t size) {
-  size_t cur = call_size_estimate_.load(std::memory_order_relaxed);
-  if (cur < size) {
-    // size grew: update estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, size, std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  } else if (cur == size) {
-    // no change: holding pattern
-  } else if (cur > 0) {
-    // size shrank: decrease estimate
-    call_size_estimate_.compare_exchange_weak(
-        cur, std::min(cur - 1, (255 * cur + size) / 256),
-        std::memory_order_relaxed, std::memory_order_relaxed);
-    // if we lose: never mind, something else will likely update soon enough
-  }
-}
-
 }  // namespace grpc_core
 
 char* grpc_channel_get_target(grpc_channel* channel) {
@@ -376,7 +367,6 @@ namespace grpc_core {
 
 RegisteredCall* Channel::RegisterCall(const char* method, const char* host) {
   MutexLock lock(&registration_table_.mu);
-  registration_table_.method_registration_attempts++;
   auto key = std::make_pair(std::string(host != nullptr ? host : ""),
                             std::string(method != nullptr ? method : ""));
   auto rc_posn = registration_table_.map.find(key);

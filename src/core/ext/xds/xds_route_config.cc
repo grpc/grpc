@@ -52,7 +52,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 #include "upb/text/encode.h"
 
 #include <grpc/status.h>
@@ -74,8 +74,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 
@@ -289,32 +289,43 @@ std::string XdsRouteConfigResource::Route::ToString() const {
 }
 
 //
+// XdsRouteConfigResource::Route
+//
+
+std::string XdsRouteConfigResource::VirtualHost::ToString() const {
+  std::vector<std::string> parts;
+  parts.push_back(
+      absl::StrCat("vhost={\n"
+                   "  domains=[",
+                   absl::StrJoin(domains, ", "),
+                   "]\n"
+                   "  routes=[\n"));
+  for (const XdsRouteConfigResource::Route& route : routes) {
+    parts.push_back("    {\n");
+    parts.push_back(route.ToString());
+    parts.push_back("\n    }\n");
+  }
+  parts.push_back("  ]\n");
+  parts.push_back("  typed_per_filter_config={\n");
+  for (const auto& p : typed_per_filter_config) {
+    const std::string& name = p.first;
+    const auto& config = p.second;
+    parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
+  }
+  parts.push_back("  }\n");
+  parts.push_back("}\n");
+  return absl::StrJoin(parts, "");
+}
+
+//
 // XdsRouteConfigResource
 //
 
 std::string XdsRouteConfigResource::ToString() const {
   std::vector<std::string> parts;
+  parts.reserve(virtual_hosts.size());
   for (const VirtualHost& vhost : virtual_hosts) {
-    parts.push_back(
-        absl::StrCat("vhost={\n"
-                     "  domains=[",
-                     absl::StrJoin(vhost.domains, ", "),
-                     "]\n"
-                     "  routes=[\n"));
-    for (const XdsRouteConfigResource::Route& route : vhost.routes) {
-      parts.push_back("    {\n");
-      parts.push_back(route.ToString());
-      parts.push_back("\n    }\n");
-    }
-    parts.push_back("  ]\n");
-    parts.push_back("  typed_per_filter_config={\n");
-    for (const auto& p : vhost.typed_per_filter_config) {
-      const std::string& name = p.first;
-      const auto& config = p.second;
-      parts.push_back(absl::StrCat("    ", name, "=", config.ToString(), "\n"));
-    }
-    parts.push_back("  }\n");
-    parts.push_back("]\n");
+    parts.push_back(vhost.ToString());
   }
   parts.push_back("cluster_specifier_plugins={\n");
   for (const auto& it : cluster_specifier_plugin_map) {
