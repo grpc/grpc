@@ -69,7 +69,7 @@ class FakeStatsPlugin : public StatsPlugin {
     return channel_filter_(ChannelScope(scope.target, scope.authority));
   }
 
-  bool IsEnabledForServer(const ChannelArgs& args) const override {
+  bool IsEnabledForServer(const ChannelArgs& /*args*/) const override {
     return false;
   }
 
