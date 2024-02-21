@@ -368,9 +368,7 @@ class WriteContext {
 
  private:
   grpc_chttp2_transport* const t_;
-  size_t target_write_size_ = grpc_core::IsWriteSizePolicyEnabled()
-                                  ? t_->write_size_policy.WriteTargetSize()
-                                  : 1024 * 1024;
+  size_t target_write_size_ = t_->write_size_policy.WriteTargetSize();
 
   // stats histogram counters: we increment these throughout this function,
   // and at the end publish to the central stats histograms
@@ -402,9 +400,7 @@ class DataSendContext {
         std::min<int64_t>(
             {t_->settings.peer().max_frame_size(), stream_remote_window(),
              t_->flow_control.remote_window(),
-             grpc_core::IsWriteSizeCapEnabled()
-                 ? static_cast<int64_t>(write_context_->target_write_size())
-                 : std::numeric_limits<uint32_t>::max()}),
+             static_cast<int64_t>(write_context_->target_write_size())}),
         0, std::numeric_limits<uint32_t>::max());
   }
 

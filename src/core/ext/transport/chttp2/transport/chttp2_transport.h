@@ -144,6 +144,7 @@ class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
   absl::optional<chttp2::StreamFlowControl::Stats> stream_stats() const {
     return stream_stats_;
   }
+  absl::optional<WriteStats> write_stats() const { return write_stats_; }
 
  private:
   const Type type_;

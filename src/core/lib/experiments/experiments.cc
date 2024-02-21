@@ -114,11 +114,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_rfc_max_concurrent_streams =
-    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2. See "
-    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
-const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -179,14 +174,6 @@ const uint8_t required_experiments_call_v3[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
-const char* const description_write_size_policy =
-    "Try to size writes such that they don't create too large of a backlog";
-const char* const additional_constraints_write_size_policy = "{}";
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -253,9 +240,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
-     additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
-     true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
@@ -295,11 +279,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_work_serializer_dispatch, 1, false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3,
      required_experiments_call_v3, 3, false, true},
-    {"write_size_policy", description_write_size_policy,
-     additional_constraints_write_size_policy, nullptr, 0, true, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
@@ -398,11 +377,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_rfc_max_concurrent_streams =
-    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2. See "
-    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
-const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -463,14 +437,6 @@ const uint8_t required_experiments_call_v3[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
-const char* const description_write_size_policy =
-    "Try to size writes such that they don't create too large of a backlog";
-const char* const additional_constraints_write_size_policy = "{}";
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -537,9 +503,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
-     additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
-     true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
@@ -579,11 +542,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_work_serializer_dispatch, 1, false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3,
      required_experiments_call_v3, 3, false, true},
-    {"write_size_policy", description_write_size_policy,
-     additional_constraints_write_size_policy, nullptr, 0, true, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
@@ -682,11 +640,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_rfc_max_concurrent_streams =
-    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2. See "
-    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
-const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
 const char* const description_round_robin_delegate_to_pick_first =
     "Change round_robin code to delegate to pick_first as per dualstack "
     "backend design.";
@@ -747,14 +700,6 @@ const uint8_t required_experiments_call_v3[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
-const char* const description_write_size_policy =
-    "Try to size writes such that they don't create too large of a backlog";
-const char* const additional_constraints_write_size_policy = "{}";
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
 const char* const description_wrr_delegate_to_pick_first =
     "Change WRR code to delegate to pick_first as per dualstack backend "
     "design.";
@@ -821,9 +766,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
-     additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
-     true},
     {"round_robin_delegate_to_pick_first",
      description_round_robin_delegate_to_pick_first,
      additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
@@ -863,11 +805,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_work_serializer_dispatch, 1, false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3,
      required_experiments_call_v3, 3, false, true},
-    {"write_size_policy", description_write_size_policy,
-     additional_constraints_write_size_policy, nullptr, 0, true, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
