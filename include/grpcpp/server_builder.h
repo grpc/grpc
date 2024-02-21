@@ -92,6 +92,15 @@ class PassiveListener {
   virtual void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) = 0;
+
+  /// -- EXPERIMENTAL API --
+  ///
+  /// Takes a connected file descriptor, and treats it as if the server had
+  /// accepted the connection itself.
+  ///
+  /// Returns a failure status if the server's active EventEngine does not
+  /// support Endpoint creation from fds.
+  virtual absl::Status AcceptConnectedFd(int fd) = 0;
 };
 
 }  // namespace experimental

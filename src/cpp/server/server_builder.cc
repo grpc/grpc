@@ -15,6 +15,7 @@
 // limitations under the License.
 //
 //
+#include <grpc/support/port_platform.h>
 
 #include <limits.h>
 #include <string.h>
@@ -54,6 +55,9 @@
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+#include <grpcpp/server_posix.h>
+#endif
 namespace grpc {
 namespace experimental {
 // An implementation of the passive listener.
@@ -91,6 +95,19 @@ class ServerBuilderPassiveListener : public PassiveListener {
     }
   }
 
+  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override {
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+    auto creds = grpc::InsecureServerCredentials();
+    // TODO(hork): this can fail silently, the iomgr code does not return any
+    // indication of success.
+    AddInsecureChannelFromFd(server_, fd);
+    return absl::OkStatus();
+#else
+    return absl::UnimplementedError(
+        "This platform does not support file descriptors");
+#endif
+  }
+
   void Initialize(Server* server, ChannelArguments& arguments) {
     GPR_DEBUG_ASSERT(server_ == nullptr);
     server_ = server;
@@ -116,6 +133,10 @@ class PassiveListenerWrapper : public PassiveListener {
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override {
     listener_->AcceptConnectedEndpoint(std::move(endpoint));
+  }
+
+  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override {
+    return listener_->AcceptConnectedFd(fd);
   }
 
  private:

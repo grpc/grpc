@@ -18,6 +18,8 @@
 
 #include <gtest/gtest.h>
 
+#include "gtest/gtest.h"
+
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
@@ -89,8 +91,23 @@ TEST_F(ServerBuilderTest, CreatePassiveListener) {
   ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
 }
 
+TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
+#ifndef GPR_SUPPORT_CHANNELS_FROM_FD
+  GTEST_SKIP_("fds not supported on this platform");
+#endif
+  // DO NOT SUBMIT(hork): implement fd connection
+  int fd = -1;
+  std::unique_ptr<experimental::PassiveListener> passive_listener;
+  auto server =
+      ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
+  auto accept_status = passive_listener->AcceptConnectedFd(fd);
+  ASSERT_FALSE(accept_status.ok())
+      << "Connection should have failed for fd::" << fd;
+  server->Shutdown();
+}
+
 // DO NOT SUBMIT(hork): hangs. Likely a kept ref.
-TEST_F(ServerBuilderTest, DISABLED_InjectEndpointIntoPassiveListener) {
+TEST_F(ServerBuilderTest, DISABLED_PassiveListenerAcceptConnectedEndpoint) {
   class NoopEndpoint
       : public grpc_event_engine::experimental::EventEngine::Endpoint {
     bool Read(absl::AnyInvocable<void(absl::Status)> /* on_read */,
@@ -116,7 +133,6 @@ TEST_F(ServerBuilderTest, DISABLED_InjectEndpointIntoPassiveListener) {
     grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_;
     grpc_event_engine::experimental::EventEngine::ResolvedAddress local_;
   };
-  ServerBuilder builder;
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
       ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
