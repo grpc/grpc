@@ -34,7 +34,7 @@ ARG MAKEFLAGS=-j8
 
 RUN git clone https://github.com/php/php-src .
 
-RUN git checkout php-7.4.33 && \
+RUN git checkout php-8.1.27 && \
   ./buildconf --force && \
   ./configure --build=x86_64-linux-gnu --enable-option-checking=fatal \
     --enable-debug --enable-pcntl \

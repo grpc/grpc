@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM i386/php:7.4
+FROM i386/php:8.1
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
