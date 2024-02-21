@@ -563,8 +563,6 @@ struct grpc_chttp2_stream {
 
   grpc_core::Timestamp deadline = grpc_core::Timestamp::InfFuture();
 
-  /// saw some stream level error
-  grpc_error_handle forced_close_error;
   /// how many header frames have we received?
   uint8_t header_frames_received = 0;
   /// number of bytes received - reset at end of parse thread execution

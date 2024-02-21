@@ -8835,19 +8835,6 @@ targets:
   - test/core/surface/lame_client_test.cc
   deps:
   - grpc_test_util
-- name: large_metadata_bad_client_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/bad_client/bad_client.h
-  - test/core/end2end/cq_verifier.h
-  src:
-  - test/core/bad_client/bad_client.cc
-  - test/core/bad_client/tests/large_metadata.cc
-  - test/core/end2end/cq_verifier.cc
-  deps:
-  - grpc_test_util
 - name: latch_test
   gtest: true
   build: test

@@ -1224,13 +1224,19 @@ class HPackParser::Parser {
         absl::StrCat("; adding ", md.key(), " (length ", md.transport_size(),
                      "B)", summary.empty() ? "" : " to ", summary);
     if (metadata_buffer_ != nullptr) metadata_buffer_->Clear();
+    // StreamId is used as a signal to skip this stream but keep the connection
+    // alive
     return input_->MaybeSetErrorAndReturn(
         [this, summary = std::move(summary)] {
           return grpc_error_set_int(
-              GRPC_ERROR_CREATE(absl::StrCat(
-                  "received initial metadata size exceeds limit (",
-                  *frame_length_, " vs. ", metadata_size_limit_, ")", summary)),
-              StatusIntProperty::kRpcStatus, GRPC_STATUS_RESOURCE_EXHAUSTED);
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE(absl::StrCat(
+                      "received initial metadata size exceeds limit (",
+                      *frame_length_, " vs. ", metadata_size_limit_, ")",
+                      summary)),
+                  StatusIntProperty::kRpcStatus,
+                  GRPC_STATUS_RESOURCE_EXHAUSTED),
+              StatusIntProperty::kStreamId, 0);
         },
         false);
   }
