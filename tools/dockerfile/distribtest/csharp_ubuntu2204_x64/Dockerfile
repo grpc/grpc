@@ -14,7 +14,7 @@
 
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y apt-transport-https gnupg wget && apt-get clean
+RUN apt-get update && apt-get install -y apt-transport-https gnupg wget unzip && apt-get clean
 
 RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 
