@@ -27,6 +27,7 @@
 #include <vector>
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
@@ -59,6 +60,7 @@ class ExternalConnectionAcceptorImpl;
 class CallbackGenericService;
 
 namespace experimental {
+class ServerBuilderPassiveListener;
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -74,6 +76,22 @@ class ExternalConnectionAcceptor {
   // If called before grpc::Server is started or after it is shut down, the new
   // connection will be closed.
   virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
+};
+
+/// -- EXPERIMENTAL API --
+/// Interface for used for Server Endpoint injection.
+class PassiveListener {
+ public:
+  virtual ~PassiveListener() = default;
+  /// -- EXPERIMENTAL API --
+  ///
+  /// Takes an Endpoint for an established connection, and treats it as if the
+  /// connection had been accepted by the server.
+  ///
+  /// The server must be started before endpoints can be accepted.
+  virtual void AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint) = 0;
 };
 
 }  // namespace experimental
@@ -313,6 +331,14 @@ class ServerBuilder {
   /// at any time.
   experimental_type experimental() { return experimental_type(this); }
 
+  /// -- EXPERIMENTAL API --
+  // Creates a passive listener for Server Endpoint injection.
+  ///
+  /// \a PasiveListener lets applications provide pre-established connections to
+  /// gRPC Servers. The server will behave as if it accepted the onnection
+  /// itself on its own listening addresses.
+  std::unique_ptr<experimental::PassiveListener> CreatePassiveListener();
+
  protected:
   /// Experimental, to be deprecated
   struct Port {
@@ -389,6 +415,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+  std::weak_ptr<experimental::ServerBuilderPassiveListener> passive_listener_;
 
   SyncServerSettings sync_server_settings_;
 

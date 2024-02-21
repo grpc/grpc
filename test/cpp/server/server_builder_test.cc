@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -81,6 +82,46 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
                 .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
                 .BuildAndStart(),
             nullptr);
+}
+
+TEST_F(ServerBuilderTest, CreatePassiveListener) {
+  ServerBuilder builder;
+  auto passive_listener = builder.CreatePassiveListener();
+  builder.BuildAndStart();
+}
+
+// DO NOT SUBMIT(hork): hangs. Likely a kept ref.
+TEST_F(ServerBuilderTest, DISABLED_InjectEndpointIntoPassiveListener) {
+  class NoopEndpoint
+      : public grpc_event_engine::experimental::EventEngine::Endpoint {
+    bool Read(absl::AnyInvocable<void(absl::Status)> /* on_read */,
+              grpc_event_engine::experimental::SliceBuffer* /* buffer */,
+              const ReadArgs* /* args */) override {
+      return false;
+    }
+    bool Write(absl::AnyInvocable<void(absl::Status)> /* on_writable */,
+               grpc_event_engine::experimental::SliceBuffer* /* data */,
+               const WriteArgs* /* args */) override {
+      return false;
+    }
+    const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+    GetPeerAddress() const override {
+      return peer_;
+    }
+    const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
+    GetLocalAddress() const override {
+      return local_;
+    }
+
+   private:
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_;
+    grpc_event_engine::experimental::EventEngine::ResolvedAddress local_;
+  };
+  ServerBuilder builder;
+  auto passive_listener = builder.CreatePassiveListener();
+  auto server = builder.BuildAndStart();
+  passive_listener->AcceptConnectedEndpoint(std::make_unique<NoopEndpoint>());
+  server->Shutdown();
 }
 
 }  // namespace
