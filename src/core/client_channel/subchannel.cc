@@ -50,6 +50,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -96,18 +97,18 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 //
 
 ConnectedSubchannel::ConnectedSubchannel(
-    grpc_channel_stack* channel_stack, const ChannelArgs& args,
+    RefCountedPtr<grpc_channel_stack> channel_stack, const ChannelArgs& args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
     : RefCounted<ConnectedSubchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
               ? "ConnectedSubchannel"
               : nullptr),
-      channel_stack_(channel_stack),
+      channel_stack_(std::move(channel_stack)),
       args_(args),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
-  GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
+  channel_stack_.reset(DEBUG_LOCATION, "ConnectedSubchannel");
 }
 
 void ConnectedSubchannel::StartWatch(
@@ -769,37 +770,39 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 }
 
 bool Subchannel::PublishTransportLocked() {
-  // Construct channel stack.
-  // Builder takes ownership of transport.
-  ChannelStackBuilderImpl builder(
-      "subchannel", GRPC_CLIENT_SUBCHANNEL,
-      connecting_result_.channel_args.SetObject(
-          std::exchange(connecting_result_.transport, nullptr)));
-  if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
-    return false;
+  auto socket_node = std::move(connecting_result_.socket_node);
+  if (!IsCallV3Enabled()) {
+    // Construct channel stack.
+    // Builder takes ownership of transport.
+    ChannelStackBuilderImpl builder(
+        "subchannel", GRPC_CLIENT_SUBCHANNEL,
+        connecting_result_.channel_args.SetObject(
+            std::exchange(connecting_result_.transport, nullptr)));
+    if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
+      return false;
+    }
+    absl::StatusOr<RefCountedPtr<grpc_channel_stack>> stack = builder.Build();
+    if (!stack.ok()) {
+      connecting_result_.Reset();
+      gpr_log(GPR_ERROR,
+              "subchannel %p %s: error initializing subchannel stack: %s", this,
+              key_.ToString().c_str(), stack.status().ToString().c_str());
+      return false;
+    }
+    connected_subchannel_ = MakeRefCounted<ConnectedSubchannel>(
+        std::move(stack), args_, channelz_node_);
+  } else {
+    // Call v3 stack.
+// FIXME
   }
-  absl::StatusOr<RefCountedPtr<grpc_channel_stack>> stk = builder.Build();
-  if (!stk.ok()) {
-    auto error = absl_status_to_grpc_error(stk.status());
-    connecting_result_.Reset();
-    gpr_log(GPR_ERROR,
-            "subchannel %p %s: error initializing subchannel stack: %s", this,
-            key_.ToString().c_str(), StatusToString(error).c_str());
-    return false;
-  }
-  RefCountedPtr<channelz::SocketNode> socket =
-      std::move(connecting_result_.socket_node);
   connecting_result_.Reset();
-  if (shutdown_) return false;
   // Publish.
-  connected_subchannel_.reset(
-      new ConnectedSubchannel(stk->release(), args_, channelz_node_));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
     gpr_log(GPR_INFO, "subchannel %p %s: new connected subchannel at %p", this,
             key_.ToString().c_str(), connected_subchannel_.get());
   }
   if (channelz_node_ != nullptr) {
-    channelz_node_->SetChildSocket(std::move(socket));
+    channelz_node_->SetChildSocket(std::move(socket_node));
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(

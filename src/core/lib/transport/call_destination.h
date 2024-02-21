@@ -17,7 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/transport/call_spine.h"
 
 namespace grpc_core {
@@ -25,7 +25,7 @@ namespace grpc_core {
 // CallDestination is responsible for the processing of a CallHandler.
 // It might be a transport, the server API, or a subchannel on the client (for
 // instance).
-class CallDestination : public Orphanable {
+class CallDestination : public DualRefCounted<CallDestination> {
  public:
   virtual void StartCall(CallHandler call_handler) = 0;
 };

@@ -57,6 +57,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -65,30 +66,42 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public CallDestination {
  public:
+  // Ctor for legacy stack.
   ConnectedSubchannel(
-      grpc_channel_stack* channel_stack, const ChannelArgs& args,
+      RefCountedPtr<grpc_channel_stack> channel_stack, const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
+  // Ctor for call v3 stack.
+  ConnectedSubchannel(
+      Transport* transport, const ChannelArgs& args,
+      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
+
   ~ConnectedSubchannel() override;
 
-  void StartWatch(grpc_pollset_set* interested_parties,
-                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+  void Orphan() override {}
 
-  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-
-  grpc_channel_stack* channel_stack() const { return channel_stack_; }
   const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
 
-  size_t GetInitialCallSizeEstimate() const;
+  void StartWatch(grpc_pollset_set* interested_parties,
+                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
+  // Methods for v3 stack.
+  RefCountedPtr<CallFilters::Stack> GetStack();
+  void StartCall(CallHandler call_handler) override;
+  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack);
+
+  // Methods for legacy stack.
+  grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
+  size_t GetInitialCallSizeEstimate() const;
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
+  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
 
  private:
-  grpc_channel_stack* channel_stack_;
+  RefCountedPtr<grpc_channel_stack> channel_stack_;
   ChannelArgs args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.

@@ -7155,8 +7155,8 @@ grpc_cc_library(
     ],
     deps = [
         "call_spine",
+        "dual_ref_counted",
         "//:gpr_platform",
-        "//:orphanable",
     ],
 )
 

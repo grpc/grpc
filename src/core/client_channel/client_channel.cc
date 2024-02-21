@@ -831,7 +831,7 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
       ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (state == GRPC_CHANNEL_IDLE && try_to_connect) {
     work_serializer_->Run(
-        [self = WeakRefAsSubclass<ClientChannel>()]()
+        [self = RefAsSubclass<ClientChannel>()]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
           self->TryToConnectLocked();
         },
@@ -844,7 +844,7 @@ void ClientChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
   work_serializer_->Run(
-      [self = WeakRefAsSubclass<ClientChannel>(), initial_state,
+      [self = RefAsSubclass<ClientChannel>(), initial_state,
        watcher = std::move(watcher)]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
         self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
@@ -855,7 +855,7 @@ void ClientChannel::AddConnectivityWatcher(
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
   work_serializer_->Run(
-      [self = WeakRefAsSubclass<ClientChannel>(), watcher]()
+      [self = RefAsSubclass<ClientChannel>(), watcher]()
             ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
         self->state_tracker_.RemoveWatcher(watcher);
       },
