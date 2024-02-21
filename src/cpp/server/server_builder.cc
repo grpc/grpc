@@ -92,7 +92,6 @@ class ServerBuilderPassiveListener : public PassiveListener {
   }
 
   void Initialize(Server* server, ChannelArguments& arguments) {
-    gpr_log(GPR_ERROR, "DO NOT SUBMIT: initializing");
     GPR_DEBUG_ASSERT(server_ == nullptr);
     server_ = server;
     grpc_channel_args tmp_args;
@@ -297,15 +296,14 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
   return *this;
 }
 
-std::unique_ptr<experimental::PassiveListener>
-ServerBuilder::CreatePassiveListener() {
+ServerBuilder& ServerBuilder::CreatePassiveListener(
+    std::unique_ptr<experimental::PassiveListener>& passive_listener) {
   auto chttp2_listener =
       std::make_shared<experimental::ServerBuilderPassiveListener>();
   passive_listener_ = chttp2_listener;
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: passive_listener_::%p",
-          passive_listener_.lock().get());
-  return std::make_unique<experimental::PassiveListenerWrapper>(
+  passive_listener = std::make_unique<experimental::PassiveListenerWrapper>(
       std::move(chttp2_listener));
+  return *this;
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(
@@ -531,10 +529,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     }
   }
 
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: build & start, checking passive_listener");
   auto passive_listener = passive_listener_.lock();
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: passive_listener valid? %s",
-          passive_listener ? "true" : "false");
   if (passive_listener != nullptr) {
     // DO NOT SUBMIT(hork): implement setting server on listener
     passive_listener->Initialize(server.get(), args);

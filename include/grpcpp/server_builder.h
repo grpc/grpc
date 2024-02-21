@@ -337,7 +337,8 @@ class ServerBuilder {
   /// \a PasiveListener lets applications provide pre-established connections to
   /// gRPC Servers. The server will behave as if it accepted the onnection
   /// itself on its own listening addresses.
-  std::unique_ptr<experimental::PassiveListener> CreatePassiveListener();
+  ServerBuilder& CreatePassiveListener(
+      std::unique_ptr<experimental::PassiveListener>& passive_listener);
 
  protected:
   /// Experimental, to be deprecated

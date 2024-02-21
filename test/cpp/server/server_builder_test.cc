@@ -85,9 +85,8 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
 }
 
 TEST_F(ServerBuilderTest, CreatePassiveListener) {
-  ServerBuilder builder;
-  auto passive_listener = builder.CreatePassiveListener();
-  builder.BuildAndStart();
+  std::unique_ptr<experimental::PassiveListener> passive_listener;
+  ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
 }
 
 // DO NOT SUBMIT(hork): hangs. Likely a kept ref.
@@ -118,8 +117,9 @@ TEST_F(ServerBuilderTest, DISABLED_InjectEndpointIntoPassiveListener) {
     grpc_event_engine::experimental::EventEngine::ResolvedAddress local_;
   };
   ServerBuilder builder;
-  auto passive_listener = builder.CreatePassiveListener();
-  auto server = builder.BuildAndStart();
+  std::unique_ptr<experimental::PassiveListener> passive_listener;
+  auto server =
+      ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
   passive_listener->AcceptConnectedEndpoint(std::make_unique<NoopEndpoint>());
   server->Shutdown();
 }
