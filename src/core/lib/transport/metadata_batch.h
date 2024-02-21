@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_METADATA_BATCH_H
 
+#include <grpc/impl/compression_types.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include <stdlib.h>
@@ -27,17 +30,6 @@
 #include <string>
 #include <type_traits>
 #include <utility>
-
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/meta/type_traits.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/compression_types.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -53,6 +45,12 @@
 #include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/simple_slice_based_metadata.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -538,14 +536,17 @@ namespace metadata_detail {
 // The string is expected to be readable, but not necessarily parsable.
 class DebugStringBuilder {
  public:
-  // Add one key/value pair to the output.
-  void Add(absl::string_view key, absl::string_view value);
+  // Add one key/value pair to the output if it is allow listed.
+  // Redact only the value if it is not allow listed.
+  void AddAfterRedaction(absl::string_view key, absl::string_view value);
 
   // Finalize the output and return the string.
   // Subsequent Add calls are UB.
   std::string TakeOutput() { return std::move(out_); }
 
  private:
+  bool IsAllowListed(absl::string_view key) const;
+  void Add(absl::string_view key, absl::string_view value);
   std::string out_;
 };
 
@@ -1281,7 +1282,7 @@ class MetadataMap {
   std::string DebugString() const {
     metadata_detail::DebugStringBuilder builder;
     Log([&builder](absl::string_view key, absl::string_view value) {
-      builder.Add(key, value);
+      builder.AddAfterRedaction(key, value);
     });
     return builder.TakeOutput();
   }

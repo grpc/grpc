@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/metadata_batch.h"
 
 #include <string.h>
 
 #include <algorithm>
+#include <string>
 
+#include "src/core/lib/transport/timeout_encoding.h"
+#include "absl/base/no_destructor.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
 namespace metadata_detail {
@@ -33,6 +33,59 @@ namespace metadata_detail {
 void DebugStringBuilder::Add(absl::string_view key, absl::string_view value) {
   if (!out_.empty()) out_.append(", ");
   absl::StrAppend(&out_, absl::CEscape(key), ": ", absl::CEscape(value));
+}
+
+void DebugStringBuilder::AddAfterRedaction(absl::string_view key,
+                                          absl::string_view value) {
+  if (IsAllowListed(key)) {
+    Add(key, value);
+  } else {
+    Add(key, absl::StrCat(value.size(), " bytes redacted by allow listing."));
+  }
+}
+
+bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
+  static const absl::NoDestructor<absl::flat_hash_set<std::string>> allow_list({
+      // go/keep-sorted start
+      std::string(ContentTypeMetadata::key()),
+      std::string(EndpointLoadMetricsBinMetadata::key()),
+      std::string(GrpcAcceptEncodingMetadata::key()),
+      std::string(GrpcEncodingMetadata::key()),
+      std::string(GrpcInternalEncodingRequest::key()),
+      std::string(GrpcLbClientStatsMetadata::key()),
+      std::string(GrpcMessageMetadata::key()),
+      std::string(GrpcPreviousRpcAttemptsMetadata::key()),
+      std::string(GrpcRetryPushbackMsMetadata::key()),
+      std::string(GrpcServerStatsBinMetadata::key()),
+      std::string(GrpcStatusMetadata::key()),
+      std::string(GrpcTagsBinMetadata::key()),
+      std::string(GrpcTimeoutMetadata::key()),
+      std::string(GrpcTraceBinMetadata::key()),
+      std::string(HostMetadata::key()),
+      std::string(HttpAuthorityMetadata::key()),
+      std::string(HttpMethodMetadata::key()),
+      std::string(HttpPathMetadata::key()),
+      std::string(HttpSchemeMetadata::key()),
+      std::string(HttpStatusMetadata::key()),
+      std::string(LbCostBinMetadata::key()),
+      std::string(LbTokenMetadata::key()),  // LB token is not sensitive.
+      std::string(TeMetadata::key()),
+      std::string(UserAgentMetadata::key()),
+      std::string(XEnvoyPeerMetadata::key()),
+      // go/keep-sorted end
+      // go/keep-sorted start
+      std::string(GrpcCallWasCancelled::DebugKey()),
+      std::string(GrpcRegisteredMethod::DebugKey()),
+      std::string(GrpcStatusContext::DebugKey()),
+      std::string(GrpcStatusFromWire::DebugKey()),
+      std::string(GrpcStreamNetworkState::DebugKey()),
+      std::string(GrpcTarPit::DebugKey()),
+      std::string(GrpcTrailersOnly::DebugKey()),
+      std::string(PeerString::DebugKey()),
+      std::string(WaitForReady::DebugKey()),
+      // go/keep-sorted end
+  });
+  return allow_list->contains(key);
 }
 
 void UnknownMap::Append(absl::string_view key, Slice value) {
