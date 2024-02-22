@@ -51,8 +51,10 @@
 #include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_list.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -85,6 +87,41 @@ TraceFlag grpc_lb_wrr_trace(false, "weighted_round_robin_lb");
 namespace {
 
 constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
+
+constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+constexpr absl::string_view kMetricLabelLocality = "grpc.locality";
+
+const auto kMetricRrFallback =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.wrr.rr_fallback",
+        "Number of scheduler updates in which there were not enough "
+        "endpoints with valid weight, which caused the WRR policy to fall "
+        "back to RR behavior.",
+        "{updates}", {kMetricLabelTarget}, {kMetricLabelLocality});
+
+const auto kMetricEndpointWeightNotYetUsable =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.wrr.endpoint_weight_not_yet_usable",
+        "Number of endpoints from each scheduler update that don't yet "
+        "have usable weight information (i.e., either the load report has "
+        "not yet been received, or it is within the blackout period).",
+        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality});
+
+const auto kMetricEndpointWeightStale =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.wrr.endpoint_weight_stale",
+        "Number of endpoints from each scheduler update whose latest "
+        "weight is older than the expiration period.",
+        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality});
+
+const auto kMetricEndpointWeights =
+    GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+        "grpc.lb.wrr.endpoint_weights",
+        "The histogram buckets will be endpoint weight ranges. Each "
+        "bucket will be a counter that is incremented once for every "
+        "endpoint whose weight is within that range. Note that endpoints "
+        "without usable weights will have weight 0.",
+        "{weights}", {kMetricLabelTarget}, {kMetricLabelLocality});
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
@@ -1021,7 +1058,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
                            float error_utilization_penalty);
 
     float GetWeight(Timestamp now, Duration weight_expiration_period,
-                    Duration blackout_period);
+                    Duration blackout_period, uint64_t* num_not_yet_usable,
+                    uint64_t* num_stale);
 
     void ResetNonEmptySince();
 
@@ -1215,6 +1253,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
   std::map<EndpointAddressSet, EndpointWeight*> endpoint_weight_map_
       ABSL_GUARDED_BY(&endpoint_weight_map_mu_);
 
+  const absl::string_view locality_name_;
+
   bool shutdown_ = false;
 
   absl::BitGen bit_gen_;
@@ -1276,8 +1316,8 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
 }
 
 float WeightedRoundRobin::EndpointWeight::GetWeight(
-    Timestamp now, Duration weight_expiration_period,
-    Duration blackout_period) {
+    Timestamp now, Duration weight_expiration_period, Duration blackout_period,
+    uint64_t* num_not_yet_usable, uint64_t* num_stale) {
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
@@ -1294,12 +1334,14 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
   // period, reset non_empty_since_ so that we apply the blackout period
   // again if we start getting data again in the future, and return 0.
   if (now - last_update_time_ >= weight_expiration_period) {
+    ++*num_stale;
     non_empty_since_ = Timestamp::InfFuture();
     return 0;
   }
   // If we don't have at least blackout_period worth of data, return 0.
   if (blackout_period > Duration::Zero() &&
       now - non_empty_since_ < blackout_period) {
+    ++*num_not_yet_usable;
     return 0;
   }
   // Otherwise, return the weight.
@@ -1418,14 +1460,28 @@ size_t WeightedRoundRobin::Picker::PickIndex() {
 }
 
 void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
-  // Build scheduler.
+  auto& stats_plugins = wrr_->channel_control_helper()->GetStatsPluginGroup();
+  // Build scheduler, reporting metrics on endpoint weights.
   const Timestamp now = Timestamp::Now();
   std::vector<float> weights;
   weights.reserve(endpoints_.size());
+  uint64_t num_not_yet_usable = 0;
+  uint64_t num_stale = 0;
   for (const auto& endpoint : endpoints_) {
-    weights.push_back(endpoint.weight->GetWeight(
-        now, config_->weight_expiration_period(), config_->blackout_period()));
+    float weight = endpoint.weight->GetWeight(
+        now, config_->weight_expiration_period(), config_->blackout_period(),
+        &num_not_yet_usable, &num_stale);
+    weights.push_back(weight);
+    stats_plugins.RecordHistogram(
+        kMetricEndpointWeights, weight,
+        {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
   }
+  stats_plugins.AddCounter(
+      kMetricEndpointWeightNotYetUsable, num_not_yet_usable,
+      {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+  stats_plugins.AddCounter(
+      kMetricEndpointWeightStale, num_stale,
+      {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
             absl::StrJoin(weights, " ").c_str());
@@ -1440,9 +1496,14 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       gpr_log(GPR_INFO, "[WRR %p picker %p] new scheduler: %p", wrr_.get(),
               this, scheduler.get());
     }
-  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-    gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
-            wrr_.get(), this);
+  } else {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
+      gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
+              wrr_.get(), this);
+    }
+    stats_plugins.AddCounter(
+        kMetricRrFallback, 1, {wrr_->channel_control_helper()->GetTarget()},
+        {wrr_->locality_name_});
   }
   {
     MutexLock lock(&scheduler_mu_);
@@ -1483,9 +1544,13 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
 //
 
 WeightedRoundRobin::WeightedRoundRobin(Args args)
-    : LoadBalancingPolicy(std::move(args)) {
+    : LoadBalancingPolicy(std::move(args)),
+      locality_name_(channel_args()
+                         .GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD)
+                         .value_or("")) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
-    gpr_log(GPR_INFO, "[WRR %p] Created", this);
+    gpr_log(GPR_INFO, "[WRR %p] Created -- locality_name=\"%s\"", this,
+            std::string(locality_name_).c_str());
   }
 }
 

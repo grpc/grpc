@@ -823,6 +823,7 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
@@ -1666,6 +1667,7 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -2320,6 +2322,7 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
@@ -2786,6 +2789,7 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -4399,6 +4403,7 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
@@ -4747,6 +4752,7 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -12803,10 +12809,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/channel/metrics.h
+  headers: []
   src:
-  - src/core/lib/channel/metrics.cc
   - test/core/channel/metrics_test.cc
   deps:
   - gtest

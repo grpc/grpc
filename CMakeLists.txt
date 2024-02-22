@@ -2210,6 +2210,7 @@ add_library(grpc
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
@@ -2977,6 +2978,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
@@ -5105,6 +5107,7 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
@@ -19607,7 +19610,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(metrics_test
-  src/core/lib/channel/metrics.cc
   test/core/channel/metrics_test.cc
 )
 if(WIN32 AND MSVC)

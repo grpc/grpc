@@ -1155,6 +1155,8 @@ let package = Package(
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
+        "src/core/lib/channel/metrics.cc",
+        "src/core/lib/channel/metrics.h",
         "src/core/lib/channel/promise_based_filter.cc",
         "src/core/lib/channel/promise_based_filter.h",
         "src/core/lib/channel/server_call_tracer_filter.cc",

@@ -587,6 +587,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       queue_.push_back(ReresolutionRequested());
     }
 
+    absl::string_view GetTarget() override { return "dns:server.example.com"; }
+
     absl::string_view GetAuthority() override { return "server.example.com"; }
 
     RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
@@ -600,6 +602,13 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
       return test_->fuzzing_ee_.get();
+    }
+
+    GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
+        override {
+// FIXME
+      static GlobalStatsPluginRegistry::StatsPluginGroup group;
+      return group;
     }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
