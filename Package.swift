@@ -1829,6 +1829,8 @@ let package = Package(
         "src/core/lib/transport/metadata_batch.cc",
         "src/core/lib/transport/metadata_batch.h",
         "src/core/lib/transport/metadata_compression_traits.h",
+        "src/core/lib/transport/metadata_info.cc",
+        "src/core/lib/transport/metadata_info.h",
         "src/core/lib/transport/parsed_metadata.cc",
         "src/core/lib/transport/parsed_metadata.h",
         "src/core/lib/transport/simple_slice_based_metadata.h",

@@ -106,6 +106,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -116,8 +117,6 @@
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
-#define DEFAULT_MAX_HEADER_LIST_SIZE (16 * 1024)
-#define DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT (8 * 1024)
 
 #define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
@@ -525,21 +524,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .GetDurationFromIntMillis(GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS)
           .value_or(grpc_core::Duration::Seconds(1))
           .millis();
-
-  const int soft_limit =
-      channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
-  if (soft_limit < 0) {
-    // Set soft limit to 0.8 * hard limit if this is larger than
-    // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
-    // `GRPC_ARG_MAX_METADATA_SIZE` is not set.
-    t->max_header_list_size_soft_limit = std::max(
-        DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT,
-        static_cast<int>(
-            0.8 * channel_args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE)
-                      .value_or(-1)));
-  } else {
-    t->max_header_list_size_soft_limit = soft_limit;
-  }
+  t->max_header_list_size_soft_limit =
+      grpc_core::GetSoftLimitFromChannelArgs(channel_args);
 
   int value;
   if (!is_client) {
@@ -557,22 +543,8 @@ static void read_channel_args(grpc_chttp2_transport* t,
   if (value >= 0) {
     t->settings.mutable_local().SetHeaderTableSize(value);
   }
-  value = channel_args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE).value_or(-1);
-  if (value >= 0) {
-    t->settings.mutable_local().SetMaxHeaderListSize(value);
-  } else {
-    // Set value to 1.25 * soft limit if this is larger than
-    // `DEFAULT_MAX_HEADER_LIST_SIZE` and
-    // `GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE` is not set.
-    const int soft_limit =
-        channel_args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
-    const int value = (soft_limit >= 0 && soft_limit < (INT_MAX / 1.25))
-                          ? static_cast<int>(soft_limit * 1.25)
-                          : soft_limit;
-    if (value > DEFAULT_MAX_HEADER_LIST_SIZE) {
-      t->settings.mutable_local().SetMaxHeaderListSize(value);
-    }
-  }
+  t->settings.mutable_local().SetMaxHeaderListSize(
+      grpc_core::GetHardLimitFromChannelArgs(channel_args));
   value = channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1);
   if (value >= 0) {
     t->settings.mutable_local().SetMaxFrameSize(value);

@@ -123,8 +123,6 @@ class HPackParser {
   // Helper classes: see implementation
   class Parser;
   class Input;
-  class MetadataSizeEncoder;
-  class MetadataSizesAnnotation;
 
   // Helper to parse a string and turn it into a slice with appropriate memory
   // management characteristics

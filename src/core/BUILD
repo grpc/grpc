@@ -129,6 +129,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "metadata_info",
+    srcs = ["lib/transport/metadata_info.cc"],
+    hdrs = ["lib/transport/metadata_info.h"],
+    deps = [
+        "channel_args",
+        "hpack_constants",
+        "metadata_batch",
+        "slice",
+        "//:gpr_platform",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "experiments",
     srcs = [
         "lib/experiments/config.cc",

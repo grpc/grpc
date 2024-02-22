@@ -1831,6 +1831,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/metadata_batch.cc )
   s.files += %w( src/core/lib/transport/metadata_batch.h )
   s.files += %w( src/core/lib/transport/metadata_compression_traits.h )
+  s.files += %w( src/core/lib/transport/metadata_info.cc )
+  s.files += %w( src/core/lib/transport/metadata_info.h )
   s.files += %w( src/core/lib/transport/parsed_metadata.cc )
   s.files += %w( src/core/lib/transport/parsed_metadata.h )
   s.files += %w( src/core/lib/transport/simple_slice_based_metadata.h )
