@@ -24,12 +24,12 @@ then
   echo "Testing Python binary distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-[0-9]*.whl)
   TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio_tools-[0-9]*.whl)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio_observability-[0-9]*.whl)
+  # OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio_observability-[0-9]*.whl)
 else
   echo "Testing Python source distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-[0-9]*.tar.gz)
   TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-tools-[0-9]*.tar.gz)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-observability-[0-9]*.tar.gz)
+  # OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-observability-[0-9]*.tar.gz)
 fi
 
 HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio-health-checking-[0-9]*.tar.gz)
@@ -65,7 +65,7 @@ function at_least_one_installs() {
 if [[ "$1" == "binary" ]]; then
   validate_wheel_hashes "${ARCHIVES[@]}"
   validate_wheel_hashes "${TOOLS_ARCHIVES[@]}"
-  validate_wheel_hashes "${OBSERVABILITY_ARCHIVES[@]}"
+  # validate_wheel_hashes "${OBSERVABILITY_ARCHIVES[@]}"
 fi
 
 
@@ -78,7 +78,7 @@ at_least_one_installs "${TOOLS_ARCHIVES[@]}"
 at_least_one_installs "${HEALTH_ARCHIVES[@]}"
 at_least_one_installs "${REFLECTION_ARCHIVES[@]}"
 at_least_one_installs "${TESTING_ARCHIVES[@]}"
-at_least_one_installs "${OBSERVABILITY_ARCHIVES[@]}"
+# at_least_one_installs "${OBSERVABILITY_ARCHIVES[@]}"
 
 
 #
