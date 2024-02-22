@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -64,6 +65,8 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
+  InitClient(ChannelArgs());
+  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -83,6 +86,8 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus4) {
+  InitClient(ChannelArgs());
+  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
