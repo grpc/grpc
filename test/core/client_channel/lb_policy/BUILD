@@ -32,8 +32,11 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
+        "//:oob_backend_metric",
+        "//src/core:client_channel_internal_header",
         "//src/core:lb_policy",
         "//src/core:subchannel_interface",
+        "//src/core:subchannel_pool_interface",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
     ],
@@ -127,6 +130,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//src/core:client_channel_service_config",
         "//test/core/util:grpc_test_util",
     ],
 )

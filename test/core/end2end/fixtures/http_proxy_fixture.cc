@@ -602,6 +602,11 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
                       grpc_pollset* /*accepting_pollset*/,
                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
+  if (proxy_destroyed.load()) {
+    grpc_endpoint_shutdown(endpoint, absl::UnknownError("proxy shutdown"));
+    grpc_endpoint_destroy(endpoint);
+    return;
+  }
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   proxy_ref(proxy);
   if (proxy->is_shutdown.load()) {

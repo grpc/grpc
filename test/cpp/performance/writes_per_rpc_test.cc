@@ -16,6 +16,8 @@
 //
 //
 
+#include <chrono>
+
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
@@ -30,63 +32,103 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/debug/stats.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/passthru_endpoint.h"
+#include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
 namespace testing {
 
-static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
+namespace {
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::ThreadedFuzzingEventEngine;
+using grpc_event_engine::experimental::URIToResolvedAddress;
 
-static void ApplyCommonServerBuilderConfig(ServerBuilder* b) {
-  b->SetMaxReceiveMessageSize(INT_MAX);
-  b->SetMaxSendMessageSize(INT_MAX);
-}
+void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-static void ApplyCommonChannelArguments(grpc_core::ChannelArgs* c) {
-  *c = c->Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
-           .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
-}
+constexpr int kIterations = 10000;
+constexpr int kSnapshotEvery = kIterations / 10;
+}  // namespace
 
-class EndpointPairFixture {
+class InProcessCHTTP2 {
  public:
-  EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints) {
+  InProcessCHTTP2(Service* service, std::string& addr,
+                  ThreadedFuzzingEventEngine* fuzzing_engine) {
+    // TODO(hork): move to a endpoint pair helper
+    // Creating the listener
+    grpc_core::Notification listener_started;
+    std::unique_ptr<EventEngine::Endpoint> listener_endpoint;
+    grpc_core::ChannelArgs args;
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig config(args);
+    auto listener = fuzzing_engine->CreateListener(
+        [&](std::unique_ptr<EventEngine::Endpoint> ep,
+            grpc_core::MemoryAllocator) {
+          listener_endpoint = std::move(ep);
+          listener_started.Notify();
+        },
+        [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
+        std::make_unique<grpc_core::MemoryQuota>("foo"));
+    if (!listener.ok()) {
+      grpc_core::Crash(absl::StrCat("failed to start listener: ",
+                                    listener.status().ToString()));
+    }
+    auto target_addr = URIToResolvedAddress(addr);
+    GPR_ASSERT(target_addr.ok());
+    GPR_ASSERT((*listener)->Bind(*target_addr).ok());
+    GPR_ASSERT((*listener)->Start().ok());
+    // Creating the client
+    std::unique_ptr<EventEngine::Endpoint> client_endpoint;
+    grpc_core::Notification client_connected;
+    auto client_memory_quota =
+        std::make_unique<grpc_core::MemoryQuota>("client");
+    std::ignore = fuzzing_engine->Connect(
+        [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
+          GPR_ASSERT(endpoint.ok());
+          client_endpoint = std::move(*endpoint);
+          client_connected.Notify();
+        },
+        *target_addr, config,
+        client_memory_quota->CreateMemoryAllocator("conn-1"),
+        grpc_core::Duration::Infinity());
+    client_connected.WaitForNotification();
+    listener_started.WaitForNotification();
     ServerBuilder b;
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
-    ApplyCommonServerBuilderConfig(&b);
+    b.SetMaxReceiveMessageSize(INT_MAX);
+    b.SetMaxSendMessageSize(INT_MAX);
     server_ = b.BuildAndStart();
-
     grpc_core::ExecCtx exec_ctx;
-
     // add server endpoint to server_
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
+      grpc_endpoint* iomgr_server_endpoint =
+          grpc_event_engine_endpoint_create(std::move(listener_endpoint));
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
-          core_server->channel_args(), endpoints.server, false /* is_client */);
+          core_server->channel_args(), iomgr_server_endpoint,
+          /*is_client=*/false);
       for (grpc_pollset* pollset : core_server->pollsets()) {
-        grpc_endpoint_add_to_pollset(endpoints.server, pollset);
+        grpc_endpoint_add_to_pollset(iomgr_server_endpoint, pollset);
       }
-
       GPR_ASSERT(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
                                       core_server->channel_args(), nullptr)));
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     }
-
     // create channel
     {
       grpc_core::ChannelArgs args =
@@ -94,10 +136,12 @@ class EndpointPairFixture {
               .channel_args_preconditioning()
               .PreconditionChannelArgs(nullptr)
               .Set(GRPC_ARG_DEFAULT_AUTHORITY, "test.authority");
-      ApplyCommonChannelArguments(&args);
-
-      grpc_core::Transport* transport =
-          grpc_create_chttp2_transport(args, endpoints.client, true);
+      args = args.Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
+                 .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX)
+                 .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+      grpc_core::Transport* transport = grpc_create_chttp2_transport(
+          args, grpc_event_engine_endpoint_create(std::move(client_endpoint)),
+          /*is_client=*/true);
       GPR_ASSERT(transport);
       grpc_channel* channel =
           grpc_core::Channel::Create("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
@@ -105,7 +149,6 @@ class EndpointPairFixture {
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
-
       channel_ = grpc::CreateChannelInternal(
           "", channel,
           std::vector<std::unique_ptr<
@@ -113,7 +156,7 @@ class EndpointPairFixture {
     }
   }
 
-  virtual ~EndpointPairFixture() {
+  virtual ~InProcessCHTTP2() {
     server_->Shutdown();
     cq_->Shutdown();
     void* tag;
@@ -131,35 +174,13 @@ class EndpointPairFixture {
   std::shared_ptr<Channel> channel_;
 };
 
-class InProcessCHTTP2 : public EndpointPairFixture {
- public:
-  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
-      : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
-
-  ~InProcessCHTTP2() override {
-    if (stats_ != nullptr) {
-      grpc_passthru_endpoint_stats_destroy(stats_);
-    }
-  }
-
-  int writes_performed() const { return gpr_atm_acq_load(&stats_->num_writes); }
-
- private:
-  grpc_passthru_endpoint_stats* stats_;
-
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
-    grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
-    return p;
-  }
-};
-
-static double UnaryPingPong(int request_size, int response_size) {
-  const int kIterations = 10000;
-
+static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
+                            int request_size, int response_size) {
   EchoTestService::AsyncService service;
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   std::unique_ptr<InProcessCHTTP2> fixture(
-      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create()));
+      new InProcessCHTTP2(&service, target_addr, fuzzing_engine));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
@@ -190,7 +211,21 @@ static double UnaryPingPong(int request_size, int response_size) {
                       fixture->cq(), tag(1));
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
+  auto baseline = grpc_core::global_stats().Collect();
+  auto snapshot = grpc_core::global_stats().Collect();
   for (int iteration = 0; iteration < kIterations; iteration++) {
+    if (iteration % kSnapshotEvery == 0) {
+      auto new_snapshot = grpc_core::global_stats().Collect();
+      auto diff = new_snapshot->Diff(*snapshot);
+      gpr_log(GPR_DEBUG,
+              "  SNAPSHOT: UnaryPingPong(%d, %d): writes_per_iteration=%0.3f "
+              "(total=%lu, i=%d) pings=%lu",
+              request_size, response_size,
+              static_cast<double>(diff->syscall_write) /
+                  static_cast<double>(kSnapshotEvery),
+              diff->syscall_write, iteration, diff->http2_pings_sent);
+      snapshot = std::move(new_snapshot);
+    }
     recv_response.Clear();
     ClientContext cli_ctx;
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
@@ -218,10 +253,13 @@ static double UnaryPingPong(int request_size, int response_size) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
-
+  auto end_stats = grpc_core::global_stats().Collect()->Diff(*baseline);
   double writes_per_iteration =
-      static_cast<double>(fixture->writes_performed()) /
-      static_cast<double>(kIterations);
+      end_stats->syscall_write / static_cast<double>(kIterations);
+  gpr_log(GPR_DEBUG,
+          "UnaryPingPong(%d, %d): writes_per_iteration=%0.3f (total=%lu)",
+          request_size, response_size, writes_per_iteration,
+          end_stats->syscall_write);
 
   fixture.reset();
   server_env[0]->~ServerEnv();
@@ -231,17 +269,28 @@ static double UnaryPingPong(int request_size, int response_size) {
 }
 
 TEST(WritesPerRpcTest, UnaryPingPong) {
-  EXPECT_LT(UnaryPingPong(0, 0), 2.05);
-  EXPECT_LT(UnaryPingPong(1, 0), 2.05);
-  EXPECT_LT(UnaryPingPong(0, 1), 2.05);
-  EXPECT_LT(UnaryPingPong(4096, 0), 2.5);
-  EXPECT_LT(UnaryPingPong(0, 4096), 2.5);
+  auto fuzzing_engine = std::dynamic_pointer_cast<
+      grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 0), 2.2);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 1, 0), 2.2);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 1), 2.2);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 4096, 0), 2.5);
+  EXPECT_LT(UnaryPingPong(fuzzing_engine.get(), 0, 4096), 2.5);
 }
 
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_event_engine::experimental::SetEventEngineFactory(
+      []() -> std::unique_ptr<grpc_event_engine::experimental::EventEngine> {
+        return std::make_unique<
+            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
+            std::chrono::milliseconds(1));
+      });
+  // avoids a race around gpr_now_impl
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
