@@ -1177,6 +1177,7 @@ libs:
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
@@ -2636,6 +2637,7 @@ libs:
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/resolver/dns/c_ares/grpc_ares_wrapper.h

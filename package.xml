@@ -1874,6 +1874,7 @@
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/weighted_target/weighted_target.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/cds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_cluster_impl.cc" role="src" />

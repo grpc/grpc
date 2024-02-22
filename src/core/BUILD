@@ -5826,6 +5826,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/weighted_target/weighted_target.cc",
     ],
+    hdrs = [
+        "load_balancing/weighted_target/weighted_target.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/meta:type_traits",
