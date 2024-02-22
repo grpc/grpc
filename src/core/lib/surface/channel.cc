@@ -161,7 +161,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
         *enabled_algorithms_bitset | 1 /* always support no compression */;
   }
 
-// FIXME: Populate authority after merging https://github.com/grpc/grpc/pull/35924.
+  // TODO(roth): Populate authority after merging
+  // https://github.com/grpc/grpc/pull/35924.
   ChannelScope scope(builder->target(), "");
   (*r)->stats_plugin_group =
       GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);

@@ -1065,19 +1065,19 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   const auto kRrFallback =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.rr_fallback")
-      .value();
+          .value();
   const auto kEndpointWeightNotYetUsable =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.endpoint_weight_not_yet_usable")
-      .value();
+          .value();
   const auto kEndpointWeightStale =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.endpoint_weight_stale")
-      .value();
+          .value();
   const auto kEndpointWeights =
       GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
           "grpc.lb.wrr.endpoint_weights")
-      .value();
+          .value();
   const absl::string_view kLabelValues[] = {target_};
   const absl::string_view kOptionalLabelValues[] = {kLocalityName};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>();
@@ -1134,7 +1134,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   // there are less than two endpoints with valid weights.
   EXPECT_THAT(stats_plugin->GetCounterValue(kRrFallback, kLabelValues,
                                             kOptionalLabelValues),
-            ::testing::Optional(5));
+              ::testing::Optional(5));
   // Endpoint-not-yet-usable will be incremented once for every endpoint
   // with weight 0 above.
   EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightNotYetUsable,
