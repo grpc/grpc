@@ -26,6 +26,8 @@
 #include <memory>
 #include <vector>
 
+#include "security/server_credentials.h"
+
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/cpu.h>
@@ -346,8 +348,12 @@ class ServerBuilder {
   /// \a PasiveListener lets applications provide pre-established connections to
   /// gRPC Servers. The server will behave as if it accepted the onnection
   /// itself on its own listening addresses.
+  ///
+  /// This can be called multiple times to create passive listeners with
+  /// different server credentials.
   ServerBuilder& CreatePassiveListener(
-      std::unique_ptr<experimental::PassiveListener>& passive_listener);
+      std::unique_ptr<experimental::PassiveListener>& passive_listener,
+      std::shared_ptr<grpc::ServerCredentials> creds);
 
  protected:
   /// Experimental, to be deprecated

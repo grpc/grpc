@@ -65,15 +65,15 @@ namespace experimental {
 // instance.
 class ServerBuilderPassiveListener : public PassiveListener {
  public:
-  ServerBuilderPassiveListener() = default;
+  explicit ServerBuilderPassiveListener(
+      std::shared_ptr<grpc::ServerCredentials> creds)
+      : creds_(std::move(creds)) {}
 
   void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override {
-    // DO NOT SUBMIT(hork): should we have an override with custom credentials?
-    // For now, we only support insecure server credentials
-    auto creds = grpc::InsecureServerCredentials();
     grpc_core::ExecCtx exec_ctx;
+    // DO NOT SUBMIT(hork): server credentials?
     auto memory_quota =
         server_args_.GetObject<grpc_core::ResourceQuota>()->memory_quota();
     grpc_endpoint* server_endpoint =
@@ -97,11 +97,7 @@ class ServerBuilderPassiveListener : public PassiveListener {
 
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override {
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-    auto creds = grpc::InsecureServerCredentials();
-    // TODO(hork): this can fail silently, the iomgr code does not return any
-    // indication of success.
-    AddInsecureChannelFromFd(server_, fd);
-    return absl::OkStatus();
+    // DO NOT SUBMIT(hork): implement with creds
 #else
     return absl::UnimplementedError(
         "This platform does not support file descriptors");
@@ -121,6 +117,7 @@ class ServerBuilderPassiveListener : public PassiveListener {
  private:
   grpc::Server* server_ = nullptr;
   grpc_core::ChannelArgs server_args_;
+  std::shared_ptr<grpc::ServerCredentials> creds_;
 };
 
 // A PIMPL wrapper class that owns the passive listener implementation.
@@ -318,9 +315,11 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 }
 
 ServerBuilder& ServerBuilder::CreatePassiveListener(
-    std::unique_ptr<experimental::PassiveListener>& passive_listener) {
+    std::unique_ptr<experimental::PassiveListener>& passive_listener,
+    std::shared_ptr<grpc::ServerCredentials> creds) {
   auto chttp2_listener =
-      std::make_shared<experimental::ServerBuilderPassiveListener>();
+      std::make_shared<experimental::ServerBuilderPassiveListener>(
+          std::move(creds));
   passive_listener_ = chttp2_listener;
   passive_listener = std::make_unique<experimental::PassiveListenerWrapper>(
       std::move(chttp2_listener));
