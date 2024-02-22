@@ -66,6 +66,9 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
   InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
@@ -87,6 +90,9 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus4) {
   InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
