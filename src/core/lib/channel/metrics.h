@@ -97,16 +97,25 @@ class GlobalInstrumentsRegistry {
   GlobalInstrumentsRegistry() = delete;
 };
 
+class ChannelScope {
+ public:
+  ChannelScope(absl::string_view target, absl::string_view authority)
+      : target_(target), authority_(authority) {}
+
+  absl::string_view target() const { return target_; }
+  absl::string_view authority() const { return authority_; }
+
+ private:
+  absl::string_view target_;
+  absl::string_view authority_;
+};
+
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
   virtual ~StatsPlugin() = default;
 
-  struct Scope {
-    absl::string_view target;
-    absl::string_view authority;
-  };
-  virtual bool IsEnabledForChannel(const Scope& scope) const = 0;
+  virtual bool IsEnabledForChannel(const ChannelScope& scope) const = 0;
   virtual bool IsEnabledForServer(const ChannelArgs& args) const = 0;
 
   virtual void AddCounter(
@@ -194,8 +203,7 @@ class GlobalStatsPluginRegistry {
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
   // The following two functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetStatsPluginsForChannel(
-      const StatsPlugin::Scope& scope);
+  static StatsPluginGroup GetStatsPluginsForChannel(const ChannelScope& scope);
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 

@@ -149,7 +149,7 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
 
 GlobalStatsPluginRegistry::StatsPluginGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-    const StatsPlugin::Scope& scope) {
+    const ChannelScope& scope) {
   MutexLock lock(&*mutex_);
   StatsPluginGroup group;
   for (const auto& plugin : *plugins_) {
