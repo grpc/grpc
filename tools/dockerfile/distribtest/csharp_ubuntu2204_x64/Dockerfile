@@ -14,7 +14,7 @@
 
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y apt-transport-https gnupg wget unzip && apt-get clean
+RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg wget unzip && apt-get clean
 
 RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 
@@ -22,7 +22,7 @@ RUN dpkg -i packages-microsoft-prod.deb
 
 RUN rm packages-microsoft-prod.deb
 
-RUN apt-get update && apt-get install -y dotnet-sdk-6.0
+RUN apt-get update && apt-get install -y dotnet-sdk-7.0
 
 # we only want to test dotnet core 6.0 runtime. This also allows us to keep
 # this docker image minimal by not installing the other runtimes.
