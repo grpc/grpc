@@ -31,6 +31,9 @@ namespace {
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
 CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 4000));
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

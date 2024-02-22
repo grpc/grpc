@@ -38,6 +38,9 @@ void CancelAfterInvoke6(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
   test.InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -61,6 +64,9 @@ void CancelAfterInvoke5(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
   test.InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -82,6 +88,9 @@ void CancelAfterInvoke4(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
   test.InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
@@ -102,6 +111,9 @@ void CancelAfterInvoke3(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
   test.InitClient(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
   test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
