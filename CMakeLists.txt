@@ -19611,6 +19611,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(metrics_test
   test/core/channel/metrics_test.cc
+  test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

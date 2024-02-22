@@ -498,8 +498,18 @@ grpc_cc_library(
     name = "fake_stats_plugin",
     srcs = ["fake_stats_plugin.cc"],
     hdrs = ["fake_stats_plugin.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+        "gtest",
+    ],
     deps = [
         "//:grpc",
         "//src/core:examine_stack",
+        "//src/core:metrics",
     ],
 )

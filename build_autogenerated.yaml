@@ -12809,9 +12809,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/fake_stats_plugin.h
   src:
   - test/core/channel/metrics_test.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - grpc_test_util

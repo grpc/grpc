@@ -606,9 +606,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
         override {
-// FIXME
-      static GlobalStatsPluginRegistry::StatsPluginGroup group;
-      return group;
+      return test_->stats_plugin_group_;
     }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
@@ -1503,6 +1501,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   const absl::string_view lb_policy_name_;
   const ChannelArgs channel_args_;
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 };
 
 }  // namespace testing

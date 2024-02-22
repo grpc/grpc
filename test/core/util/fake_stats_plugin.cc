@@ -79,4 +79,28 @@ void RegisterFakeStatsPlugin() {
       });
 }
 
+namespace {
+
+void AddKeyValuePairs(absl::Span<const absl::string_view> keys,
+                      absl::Span<const absl::string_view> values,
+                      std::vector<std::string>* key_value_pairs) {
+  GPR_ASSERT(keys.size() == values.size());
+  for (size_t i = 0; i < keys.size(); ++i) {
+    key_value_pairs->push_back(absl::StrCat(keys[i], "=", values[i]));
+  }
+}
+
+}  // namespace
+
+std::string MakeLabelString(
+    absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_label_keys,
+    absl::Span<const absl::string_view> optional_values) {
+  std::vector<std::string> key_value_pairs;
+  AddKeyValuePairs(label_keys, label_values, &key_value_pairs);
+  AddKeyValuePairs(optional_label_keys, optional_values, &key_value_pairs);
+  return absl::StrJoin(key_value_pairs, ",");
+}
+
 }  // namespace grpc_core
