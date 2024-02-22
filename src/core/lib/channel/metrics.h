@@ -54,6 +54,7 @@ class GlobalInstrumentsRegistry {
     ValueType value_type;
     InstrumentType instrument_type;
     uint32_t index;
+    bool enable_by_default;
     absl::string_view name;
     absl::string_view description;
     absl::string_view unit;
@@ -76,19 +77,23 @@ class GlobalInstrumentsRegistry {
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> optional_label_keys);
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
   static GlobalDoubleCounterHandle RegisterDoubleCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> optional_label_keys);
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
   static GlobalUInt64HistogramHandle RegisterUInt64Histogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> optional_label_keys);
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
   static GlobalDoubleHistogramHandle RegisterDoubleHistogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> optional_label_keys);
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
 
@@ -97,22 +102,22 @@ class GlobalInstrumentsRegistry {
   GlobalInstrumentsRegistry() = delete;
 };
 
-class ChannelScope {
- public:
-  ChannelScope(absl::string_view target, absl::string_view authority)
-      : target_(target), authority_(authority) {}
-
-  absl::string_view target() const { return target_; }
-  absl::string_view authority() const { return authority_; }
-
- private:
-  absl::string_view target_;
-  absl::string_view authority_;
-};
-
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
+  class ChannelScope {
+   public:
+    ChannelScope(absl::string_view target, absl::string_view authority)
+        : target_(target), authority_(authority) {}
+
+    absl::string_view target() const { return target_; }
+    absl::string_view authority() const { return authority_; }
+
+   private:
+    absl::string_view target_;
+    absl::string_view authority_;
+  };
+
   virtual ~StatsPlugin() = default;
 
   virtual bool IsEnabledForChannel(const ChannelScope& scope) const = 0;
@@ -203,7 +208,8 @@ class GlobalStatsPluginRegistry {
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
   // The following two functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetStatsPluginsForChannel(const ChannelScope& scope);
+  static StatsPluginGroup GetStatsPluginsForChannel(
+      const StatsPlugin::ChannelScope& scope);
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
