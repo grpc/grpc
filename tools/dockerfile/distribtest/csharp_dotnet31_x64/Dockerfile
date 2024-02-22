@@ -21,5 +21,5 @@ RUN apt-get update && apt-get install -y unzip && apt-get clean
 # this docker image minimal by not installing the other runtimes.
 ENV SKIP_NET45_DISTRIBTEST=1
 ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
-ENV SKIP_NET7_DISTRIBTEST=1
 ENV SKIP_NET50_DISTRIBTEST=1
+ENV SKIP_NET70_DISTRIBTEST=1
