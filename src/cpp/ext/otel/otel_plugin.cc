@@ -32,7 +32,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -117,13 +117,6 @@ OpenTelemetryPluginBuilderImpl::DisableAllMetrics() {
 }
 
 OpenTelemetryPluginBuilderImpl&
-OpenTelemetryPluginBuilderImpl::SetLabelsInjector(
-    std::unique_ptr<LabelsInjector> labels_injector) {
-  labels_injector_ = std::move(labels_injector);
-  return *this;
-}
-
-OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::SetTargetSelector(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_selector) {
@@ -163,13 +156,13 @@ OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
   return *this;
 }
 
-void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
+absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider = meter_provider_;
   delete g_otel_plugin_state_;
   g_otel_plugin_state_ = new struct OpenTelemetryPluginState;
   if (meter_provider == nullptr) {
-    return;
+    return absl::OkStatus();
   }
   auto meter = meter_provider->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
   if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
@@ -243,7 +236,6 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                     kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per server call", "By");
   }
-  g_otel_plugin_state_->labels_injector = std::move(labels_injector_);
   g_otel_plugin_state_->target_attribute_filter =
       std::move(target_attribute_filter_);
   g_otel_plugin_state_->server_selector = std::move(server_selector_);
@@ -269,6 +261,7 @@ void OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
                          args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
             });
       });
+  return absl::OkStatus();
 }
 
 }  // namespace internal
@@ -331,8 +324,8 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddPluginOption(
   return *this;
 }
 
-void OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
-  impl_->BuildAndRegisterGlobal();
+absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
+  return impl_->BuildAndRegisterGlobal();
 }
 
 }  // namespace grpc

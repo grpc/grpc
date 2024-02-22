@@ -32,7 +32,6 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
@@ -61,36 +60,14 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   TlsSecurityConnectorTest() {}
 
   void SetUp() override {
-    grpc_slice ca_slice_1, ca_slice_0, cert_slice_1, key_slice_1, cert_slice_0,
-        key_slice_0;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                 grpc_load_file(CA_CERT_PATH, 1, &ca_slice_1)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(CLIENT_CERT_PATH, 1, &ca_slice_0)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH_1, 1, &cert_slice_1)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH_1, 1, &key_slice_1)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH_0, 1, &cert_slice_0)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH_0, 1, &key_slice_0)));
-    root_cert_1_ = std::string(StringViewFromSlice(ca_slice_1));
-    root_cert_0_ = std::string(StringViewFromSlice(ca_slice_0));
-    std::string identity_key_1 = std::string(StringViewFromSlice(key_slice_1));
-    std::string identity_key_0 = std::string(StringViewFromSlice(key_slice_0));
-    std::string identity_cert_1 =
-        std::string(StringViewFromSlice(cert_slice_1));
-    std::string identity_cert_0 =
-        std::string(StringViewFromSlice(cert_slice_0));
-    identity_pairs_1_.emplace_back(identity_key_1, identity_cert_1);
-    identity_pairs_0_.emplace_back(identity_key_0, identity_cert_0);
-    grpc_slice_unref(ca_slice_1);
-    grpc_slice_unref(ca_slice_0);
-    grpc_slice_unref(cert_slice_1);
-    grpc_slice_unref(key_slice_1);
-    grpc_slice_unref(cert_slice_0);
-    grpc_slice_unref(key_slice_0);
+    root_cert_1_ = testing::GetFileContents(CA_CERT_PATH);
+    root_cert_0_ = testing::GetFileContents(CLIENT_CERT_PATH);
+    identity_pairs_1_.emplace_back(
+        testing::GetFileContents(SERVER_KEY_PATH_1),
+        testing::GetFileContents(SERVER_CERT_PATH_1));
+    identity_pairs_0_.emplace_back(
+        testing::GetFileContents(SERVER_KEY_PATH_0),
+        testing::GetFileContents(SERVER_CERT_PATH_0));
   }
 
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {

@@ -42,7 +42,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -53,10 +52,11 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
-#include "src/core/lib/resolver/resolver.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/resolver/resolver.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"

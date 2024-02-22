@@ -99,6 +99,7 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:grpc",
         "//src/core:decode_huff",
         "//src/core:huffsyms",
     ],

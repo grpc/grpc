@@ -40,10 +40,19 @@
 #
 # Supported platforms: ios, windows, posix
 
+- name: absl_base64
+  default: true
 - name: call_status_override_on_cancellation
   default: debug
+- name: call_v3
+  default: false
 - name: canary_client_privacy
   default: false
+- name: chaotic_good
+  default:
+    ios: broken
+    posix: false
+    windows: broken
 - name: client_idleness
   default: true
 - name: client_privacy
@@ -87,15 +96,14 @@
 - name: pick_first_happy_eyeballs
   default: true
 - name: promise_based_client_call
-  default: false
+  default:
+    ios: broken
+    windows: broken
+    posix: false
 - name: promise_based_server_call
   default: false
 - name: registered_method_lookup_in_transport
   default: true
-- name: registered_methods_map
-  default: false
-- name: rfc_max_concurrent_streams
-  default: false
 - name: round_robin_delegate_to_pick_first
   default: true
 - name: rstpit
@@ -116,9 +124,5 @@
   default: true
 - name: work_serializer_dispatch
   default: false
-- name: write_size_cap
-  default: true
-- name: write_size_policy
-  default: true
 - name: wrr_delegate_to_pick_first
   default: true

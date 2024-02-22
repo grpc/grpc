@@ -68,12 +68,6 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
-    Options& set_labels_injector(
-        std::unique_ptr<grpc::internal::LabelsInjector> injector) {
-      labels_injector = std::move(injector);
-      return *this;
-    }
-
     Options& set_use_meter_provider(bool flag) {
       use_meter_provider = flag;
       return *this;
@@ -111,11 +105,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
-    Options& set_plugin_options(
-        std::vector<
-            std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-            options) {
-      plugin_options = std::move(options);
+    Options& add_plugin_option(
+        std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>
+            option) {
+      plugin_options.push_back(std::move(option));
       return *this;
     }
 

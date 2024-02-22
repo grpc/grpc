@@ -145,7 +145,10 @@ grpc_proto_fuzzer(
     corpus = "server_fuzzer_chttp2_corpus",
     language = "C++",
     proto = None,
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -160,7 +163,10 @@ grpc_proto_fuzzer(
     corpus = "server_fuzzer_chaotic_good_corpus",
     language = "C++",
     proto = None,
-    tags = ["no_windows"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

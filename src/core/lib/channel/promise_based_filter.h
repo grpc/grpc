@@ -74,6 +74,12 @@
 
 namespace grpc_core {
 
+// HACK: If a filter has this type as a base class it will be skipped in
+// v3 filter stacks. This is a temporary measure to allow the v3 filter stack
+// to be bought up whilst some tests inadvertently rely on hard to convert
+// filters.
+class HackyHackyHackySkipInV3FilterStacks {};
+
 class ChannelFilter {
  public:
   class Args {
@@ -1906,9 +1912,11 @@ struct ChannelFilterWithFlagsMethods {
 //       ChannelArgs channel_args, ChannelFilter::Args filter_args);
 // };
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
-                      !std::is_base_of<ImplementChannelFilter<F>, F>::value,
-                  grpc_channel_filter>
+absl::enable_if_t<
+    std::is_base_of<ChannelFilter, F>::value &&
+        !std::is_base_of<ImplementChannelFilter<F>, F>::value &&
+        !std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
+    grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
@@ -1918,6 +1926,52 @@ MakePromiseBasedFilter(const char* name) {
       // make_call_promise
       promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
       nullptr,
+      // start_transport_op
+      promise_filter_detail::ChannelFilterMethods::StartTransportOp,
+      // sizeof_call_data
+      sizeof(CallData),
+      // init_call_elem
+      promise_filter_detail::CallDataFilterWithFlagsMethods<
+          CallData, kFlags>::InitCallElem,
+      // set_pollset_or_pollset_set
+      promise_filter_detail::BaseCallDataMethods::SetPollsetOrPollsetSet,
+      // destroy_call_elem
+      promise_filter_detail::CallDataFilterWithFlagsMethods<
+          CallData, kFlags>::DestroyCallElem,
+      // sizeof_channel_data
+      sizeof(F),
+      // init_channel_elem
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::InitChannelElem,
+      // post_init_channel_elem
+      promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
+      // destroy_channel_elem
+      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      // get_channel_info
+      promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
+      // name
+      name,
+  };
+}
+
+template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
+absl::enable_if_t<
+    std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
+    grpc_channel_filter>
+MakePromiseBasedFilter(const char* name) {
+  using CallData = promise_filter_detail::CallData<kEndpoint>;
+
+  return grpc_channel_filter{
+      // start_transport_stream_op_batch
+      promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
+      // make_call_promise
+      promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
+      [](grpc_channel_element* elem, CallSpineInterface*) {
+        GRPC_LOG_EVERY_N_SEC(
+            1, GPR_ERROR,
+            "gRPC V3 call stack in use, with a filter ('%s') that is not V3.",
+            elem->filter->name);
+      },
       // start_transport_op
       promise_filter_detail::ChannelFilterMethods::StartTransportOp,
       // sizeof_call_data

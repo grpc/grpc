@@ -43,8 +43,8 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
@@ -132,13 +132,9 @@ std::string GetXdsBootstrapContents() {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   auto path = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
-    grpc_slice contents;
-    grpc_error_handle error =
-        grpc_load_file(path->c_str(), /*add_null_terminator=*/true, &contents);
-    if (!error.ok()) return "";
-    std::string contents_str(grpc_core::StringViewFromSlice(contents));
-    grpc_core::CSliceUnref(contents);
-    return contents_str;
+    auto contents = grpc_core::LoadFile(*path, /*add_null_terminator=*/true);
+    if (!contents.ok()) return "";
+    return std::string(contents->as_string_view());
   }
   // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
   auto env_config = grpc_core::GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");

@@ -23,6 +23,7 @@
 
 #include <grpc/status.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
@@ -36,6 +37,8 @@ const Duration kDeadlineTimeout = Duration::Seconds(2);
 void CancelAfterInvoke6(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
+  test.InitClient(ChannelArgs());
+  test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;
@@ -57,6 +60,8 @@ void CancelAfterInvoke6(CoreEnd2endTest& test,
 void CancelAfterInvoke5(CoreEnd2endTest& test,
                         std::unique_ptr<CancellationMode> mode,
                         Duration timeout) {
+  test.InitClient(ChannelArgs());
+  test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = test.NewClientCall("/service/method").Timeout(timeout).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;
   CoreEnd2endTest::IncomingMetadata server_initial_metadata;

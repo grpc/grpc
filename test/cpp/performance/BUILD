@@ -31,6 +31,8 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:channel_args",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],

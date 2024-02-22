@@ -29,7 +29,7 @@ _DATA_DIR = os.path.join("tests", "unit", "data")
 @contextlib.contextmanager
 def _grpc_tools_unimportable():
     original_sys_path = sys.path
-    sys.path = [path for path in sys.path if "grpcio_tools" not in path]
+    sys.path = [path for path in sys.path if "grpcio_tools" not in str(path)]
     try:
         import grpc_tools
     except ImportError:
