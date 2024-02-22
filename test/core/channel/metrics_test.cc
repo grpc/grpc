@@ -74,7 +74,9 @@ class FakeStatsPlugin : public StatsPlugin {
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
     auto iter = uint64_counters_.find(handle.index);
-    ASSERT_TRUE(iter != uint64_counters_.end());
+    if (iter == uint64_counters_.end()) {
+      return;
+    }
     iter->second.Add(value, label_values, optional_values);
   }
   void AddCounter(
@@ -82,7 +84,9 @@ class FakeStatsPlugin : public StatsPlugin {
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     auto iter = double_counters_.find(handle.index);
-    ASSERT_TRUE(iter != double_counters_.end());
+    if (iter == double_counters_.end()) {
+      return;
+    }
     iter->second.Add(value, label_values, optional_values);
   }
   void RecordHistogram(
@@ -90,7 +94,9 @@ class FakeStatsPlugin : public StatsPlugin {
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     auto iter = uint64_histograms_.find(handle.index);
-    ASSERT_TRUE(iter != uint64_histograms_.end());
+    if (iter == uint64_histograms_.end()) {
+      return;
+    }
     iter->second.Record(value, label_values, optional_values);
   }
   void RecordHistogram(
@@ -98,7 +104,9 @@ class FakeStatsPlugin : public StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     auto iter = double_histograms_.find(handle.index);
-    ASSERT_TRUE(iter != double_histograms_.end());
+    if (iter == double_histograms_.end()) {
+      return;
+    }
     iter->second.Record(value, label_values, optional_values);
   }
 
@@ -469,6 +477,29 @@ TEST_F(MetricsTest, DoubleHistogram) {
       plugin3->GetHistogramValue(double_histogram_handle, kLabelValues,
                                  kOptionalLabelValues),
       ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34, 3.45)));
+}
+
+TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
+  const absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  const absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                  "optional_label_key_2"};
+  auto double_histogram_handle =
+      GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          "double_histogram", "A simple double histogram.", "unit", kLabelKeys,
+          kOptionalLabelKeys, /*enable_by_default=*/false);
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
+  auto plugin = MakeStatsPluginForTarget(kDomain1To4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
+                       kOptionalLabelValues);
+  EXPECT_EQ(plugin->GetHistogramValue(double_histogram_handle, kLabelValues,
+                                      kOptionalLabelValues),
+            absl::nullopt);
 }
 
 using MetricsDeathTest = MetricsTest;
