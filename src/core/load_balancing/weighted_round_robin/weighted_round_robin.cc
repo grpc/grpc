@@ -94,34 +94,35 @@ constexpr absl::string_view kMetricLabelLocality = "grpc.locality";
 const auto kMetricRrFallback =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.rr_fallback",
-        "Number of scheduler updates in which there were not enough "
-        "endpoints with valid weight, which caused the WRR policy to fall "
-        "back to RR behavior.",
-        "{updates}", {kMetricLabelTarget}, {kMetricLabelLocality});
+        "EXPERIMENTAL.  Number of scheduler updates in which there were not "
+        "enough endpoints with valid weight, which caused the WRR policy to "
+        "fall back to RR behavior.",
+        "{updates}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_not_yet_usable",
-        "Number of endpoints from each scheduler update that don't yet "
-        "have usable weight information (i.e., either the load report has "
-        "not yet been received, or it is within the blackout period).",
-        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality});
+        "EXPERIMENTAL.  Number of endpoints from each scheduler update that "
+        "don't yet have usable weight information (i.e., either the load "
+        "report has not yet been received, or it is within the blackout "
+        "period).",
+        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeightStale =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_stale",
-        "Number of endpoints from each scheduler update whose latest "
-        "weight is older than the expiration period.",
-        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality});
+        "EXPERIMENTAL.  Number of endpoints from each scheduler update whose "
+        "latest weight is older than the expiration period.",
+        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeights =
     GlobalInstrumentsRegistry::RegisterDoubleHistogram(
         "grpc.lb.wrr.endpoint_weights",
-        "The histogram buckets will be endpoint weight ranges. Each "
-        "bucket will be a counter that is incremented once for every "
+        "EXPERIMENTAL.  The histogram buckets will be endpoint weight ranges.  "
+        "Each bucket will be a counter that is incremented once for every "
         "endpoint whose weight is within that range. Note that endpoints "
         "without usable weights will have weight 0.",
-        "{weights}", {kMetricLabelTarget}, {kMetricLabelLocality});
+        "{weights}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {

@@ -7452,6 +7452,7 @@ grpc_cc_library(
         "lib/channel/metrics.h",
     ],
     external_deps = [
+        "absl/container:flat_hash_map",
         "absl/functional:function_ref",
         "absl/strings",
         "absl/types:span",

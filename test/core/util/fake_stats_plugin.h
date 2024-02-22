@@ -206,11 +206,16 @@ class FakeStatsPlugin : public StatsPlugin {
  public:
   explicit FakeStatsPlugin(
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
-          channel_filter = nullptr)
+          channel_filter = nullptr,
+      bool use_disabled_by_default_metrics = false)
       : channel_filter_(std::move(channel_filter)) {
     GlobalInstrumentsRegistry::ForEach(
-        [this](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
-                   descriptor) {
+        [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
+                descriptor) {
+          if (!use_disabled_by_default_metrics &&
+              !descriptor.enable_by_default) {
+            return;
+          }
           if (descriptor.instrument_type ==
               GlobalInstrumentsRegistry::InstrumentType::kCounter) {
             if (descriptor.value_type ==
@@ -421,7 +426,7 @@ class FakeStatsPlugin : public StatsPlugin {
 class FakeStatsPluginBuilder {
  public:
   FakeStatsPluginBuilder& SetChannelFilter(
-      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+      absl::AnyInvocable<bool(const StatsPlugin::ChannelScope& /*scope*/) const>
           channel_filter) {
     channel_filter_ = std::move(channel_filter);
     return *this;
@@ -434,15 +439,17 @@ class FakeStatsPluginBuilder {
   }
 
  private:
-  absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
+  absl::AnyInvocable<bool(const StatsPlugin::ChannelScope& /*scope*/) const>
+      channel_filter_;
 };
 
 std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
     absl::string_view target_suffix) {
   return FakeStatsPluginBuilder()
-      .SetChannelFilter([target_suffix](const ChannelScope& scope) {
-        return absl::EndsWith(scope.target(), target_suffix);
-      })
+      .SetChannelFilter(
+          [target_suffix](const StatsPlugin::ChannelScope& scope) {
+            return absl::EndsWith(scope.target(), target_suffix);
+          })
       .BuildAndRegister();
 }
 

@@ -1080,7 +1080,8 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
           .value();
   const absl::string_view kLabelValues[] = {target_};
   const absl::string_view kOptionalLabelValues[] = {kLocalityName};
-  auto stats_plugin = std::make_shared<FakeStatsPlugin>();
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
   stats_plugin_group_.push_back(stats_plugin);
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
