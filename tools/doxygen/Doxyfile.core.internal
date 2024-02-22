@@ -885,8 +885,6 @@ include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
 src/core/client_channel/README.md \
-src/core/client_channel/backend_metric.cc \
-src/core/client_channel/backend_metric.h \
 src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
 src/core/client_channel/channel_connectivity.cc \
@@ -919,7 +917,6 @@ src/core/client_channel/retry_service_config.cc \
 src/core/client_channel/retry_service_config.h \
 src/core/client_channel/retry_throttle.cc \
 src/core/client_channel/retry_throttle.h \
-src/core/client_channel/service_config_channel_arg_filter.cc \
 src/core/client_channel/subchannel.cc \
 src/core/client_channel/subchannel.h \
 src/core/client_channel/subchannel_interface_internal.h \
@@ -2499,6 +2496,7 @@ src/core/lib/security/security_connector/load_system_roots.h \
 src/core/lib/security/security_connector/load_system_roots_fallback.cc \
 src/core/lib/security/security_connector/load_system_roots_supported.cc \
 src/core/lib/security/security_connector/load_system_roots_supported.h \
+src/core/lib/security/security_connector/load_system_roots_windows.cc \
 src/core/lib/security/security_connector/local/local_security_connector.cc \
 src/core/lib/security/security_connector/local/local_security_connector.h \
 src/core/lib/security/security_connector/security_connector.cc \
@@ -2627,6 +2625,8 @@ src/core/lib/uri/uri_parser.h \
 src/core/load_balancing/address_filtering.cc \
 src/core/load_balancing/address_filtering.h \
 src/core/load_balancing/backend_metric_data.h \
+src/core/load_balancing/backend_metric_parser.cc \
+src/core/load_balancing/backend_metric_parser.h \
 src/core/load_balancing/child_policy_handler.cc \
 src/core/load_balancing/child_policy_handler.h \
 src/core/load_balancing/delegating_helper.h \
@@ -2721,6 +2721,7 @@ src/core/resolver/xds/xds_resolver_trace.cc \
 src/core/resolver/xds/xds_resolver_trace.h \
 src/core/service_config/service_config.h \
 src/core/service_config/service_config_call_data.h \
+src/core/service_config/service_config_channel_arg_filter.cc \
 src/core/service_config/service_config_impl.cc \
 src/core/service_config/service_config_impl.h \
 src/core/service_config/service_config_parser.cc \

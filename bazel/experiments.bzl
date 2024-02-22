@@ -40,7 +40,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
     "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
-    "rfc_max_concurrent_streams": "rfc_max_concurrent_streams",
     "round_robin_delegate_to_pick_first": "round_robin_delegate_to_pick_first",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
@@ -55,8 +54,6 @@ EXPERIMENT_ENABLES = {
     "v3_server_auth_filter": "v3_server_auth_filter",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
-    "write_size_policy": "write_size_policy",
-    "write_size_cap": "write_size_cap,write_size_policy",
     "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
@@ -71,9 +68,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "rfc_max_concurrent_streams",
-            ],
             "compression_test": [
                 "v3_compression_filter",
             ],
@@ -126,10 +120,6 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "flow_control_test": [
-                "write_size_cap",
-                "write_size_policy",
-            ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
@@ -149,9 +139,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "rfc_max_concurrent_streams",
-            ],
             "compression_test": [
                 "v3_compression_filter",
             ],
@@ -198,10 +185,6 @@ EXPERIMENTS = {
             "credential_token_tests": [
                 "absl_base64",
             ],
-            "flow_control_test": [
-                "write_size_cap",
-                "write_size_policy",
-            ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
@@ -221,9 +204,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "bad_client_test": [
-                "rfc_max_concurrent_streams",
-            ],
             "compression_test": [
                 "v3_compression_filter",
             ],
@@ -287,10 +267,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "flow_control_test": [
-                "write_size_cap",
-                "write_size_policy",
             ],
             "lb_unit_test": [
                 "pick_first_happy_eyeballs",

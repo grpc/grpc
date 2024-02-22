@@ -1776,7 +1776,6 @@ endif()
 
 
 add_library(grpc
-  src/core/client_channel/backend_metric.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/channel_connectivity.cc
   src/core/client_channel/client_channel_channelz.cc
@@ -1793,7 +1792,6 @@ add_library(grpc
   src/core/client_channel/retry_filter_legacy_call_data.cc
   src/core/client_channel/retry_service_config.cc
   src/core/client_channel/retry_throttle.cc
-  src/core/client_channel/service_config_channel_arg_filter.cc
   src/core/client_channel/subchannel.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
@@ -2433,6 +2431,7 @@ add_library(grpc
   src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/local/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
@@ -2496,6 +2495,7 @@ add_library(grpc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
   src/core/load_balancing/grpclb/client_load_reporting_filter.cc
@@ -2544,6 +2544,7 @@ add_library(grpc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
   src/core/resolver/xds/xds_resolver_trace.cc
+  src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
@@ -2873,7 +2874,6 @@ endif()
 
 
 add_library(grpc_unsecure
-  src/core/client_channel/backend_metric.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/channel_connectivity.cc
   src/core/client_channel/client_channel_channelz.cc
@@ -2890,7 +2890,6 @@ add_library(grpc_unsecure
   src/core/client_channel/retry_filter_legacy_call_data.cc
   src/core/client_channel/retry_service_config.cc
   src/core/client_channel/retry_throttle.cc
-  src/core/client_channel/service_config_channel_arg_filter.cc
   src/core/client_channel/subchannel.cc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
@@ -3164,6 +3163,7 @@ add_library(grpc_unsecure
   src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/legacy_server_auth_filter.cc
@@ -3223,6 +3223,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/load_balancing/address_filtering.cc
+  src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
   src/core/load_balancing/endpoint_list.cc
   src/core/load_balancing/grpclb/client_load_reporting_filter.cc
@@ -3261,6 +3262,7 @@ add_library(grpc_unsecure
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
@@ -5288,6 +5290,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/credentials/tls/tls_utils.cc
   src/core/lib/security/security_connector/load_system_roots_fallback.cc
   src/core/lib/security/security_connector/load_system_roots_supported.cc
+  src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/legacy_server_auth_filter.cc
@@ -15927,7 +15930,6 @@ add_executable(grpc_tls_crl_provider_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/security/grpc_tls_crl_provider_test.cc
-  test/core/tsi/transport_security_test_lib.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28085,7 +28087,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_utils_test
     test/core/tsi/ssl_transport_security_utils_test.cc
-    test/core/tsi/transport_security_test_lib.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
