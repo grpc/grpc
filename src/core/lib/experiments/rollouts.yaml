@@ -69,7 +69,7 @@
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
+    posix: true
     # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is
     # implemented
     windows: broken
