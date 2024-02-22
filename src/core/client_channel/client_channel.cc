@@ -1058,6 +1058,8 @@ struct ContextType<LoadBalancingPolicy::SubchannelCallTracker*> {};
 
 // A filter to handle updating with the call tracer and LB subchannel
 // call tracker inside the LB call.
+// FIXME: move this to its own file, register only when call v3
+// experiment is enabled
 class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
  public:
   static absl::StatusOr<LbCallTracingFilter> Create(const ChannelArgs&,
@@ -1085,6 +1087,7 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
     static const NoInterceptor OnClientToServerMessage;
     static const NoInterceptor OnServerToClientMessage;
 
+    // FIXME(ctiller): Add this hook to the L1 filter API
     void OnClientToServerMessagesClosed() {
       auto* tracer = GetCallAttemptTracerFromContext();
       if (tracer == nullptr) return;
