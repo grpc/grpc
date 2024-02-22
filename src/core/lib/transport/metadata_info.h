@@ -29,7 +29,6 @@ namespace grpc_core {
 
 inline uint32_t GetSoftLimitFromChannelArgs(const ChannelArgs& args) {
   const int soft_limit = args.GetInt(GRPC_ARG_MAX_METADATA_SIZE).value_or(-1);
-  gpr_log(GPR_ERROR, "soft_limit: %d", soft_limit);
   if (soft_limit < 0) {
     // Set soft limit to 0.8 * hard limit if this is larger than
     // `DEFAULT_MAX_HEADER_LIST_SIZE_SOFT_LIMIT` and
@@ -47,7 +46,6 @@ inline uint32_t GetSoftLimitFromChannelArgs(const ChannelArgs& args) {
 inline uint32_t GetHardLimitFromChannelArgs(const ChannelArgs& args) {
   int hard_limit =
       args.GetInt(GRPC_ARG_ABSOLUTE_MAX_METADATA_SIZE).value_or(-1);
-  gpr_log(GPR_ERROR, "hard_limit: %d", hard_limit);
   if (hard_limit >= 0) {
     return hard_limit;
   } else {
