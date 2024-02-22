@@ -92,9 +92,13 @@ class GlobalInstrumentsRegistry {
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
 
-  static void TestOnlyResetGlobalInstrumentsRegistry();
+ private:
+  friend class GlobalInstrumentsRegistryTestPeer;
 
   GlobalInstrumentsRegistry() = delete;
+
+  static std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+  GetInstrumentList();
 };
 
 class ChannelScope {
@@ -207,12 +211,9 @@ class GlobalStatsPluginRegistry {
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
-  static void TestOnlyResetGlobalStatsPluginRegistry() {
-    MutexLock lock(&*mutex_);
-    plugins_->clear();
-  }
-
  private:
+  friend class GlobalStatsPluginRegistryTestPeer;
+
   GlobalStatsPluginRegistry() = default;
 
   static NoDestruct<Mutex> mutex_;

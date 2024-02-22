@@ -204,7 +204,36 @@ std::string MakeLabelString(
 
 class FakeStatsPlugin : public StatsPlugin {
  public:
+  explicit FakeStatsPlugin(
+      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+          channel_filter = nullptr)
+      : channel_filter_(std::move(channel_filter)) {
+    GlobalInstrumentsRegistry::ForEach(
+        [this](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
+                   descriptor) {
+          if (descriptor.instrument_type ==
+              GlobalInstrumentsRegistry::InstrumentType::kCounter) {
+            if (descriptor.value_type ==
+                GlobalInstrumentsRegistry::ValueType::kUInt64) {
+              uint64_counters_.emplace(descriptor.index, descriptor);
+            } else {
+              double_counters_.emplace(descriptor.index, descriptor);
+            }
+          } else {
+            EXPECT_EQ(descriptor.instrument_type,
+                      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+            if (descriptor.value_type ==
+                GlobalInstrumentsRegistry::ValueType::kUInt64) {
+              uint64_histograms_.emplace(descriptor.index, descriptor);
+            } else {
+              double_histograms_.emplace(descriptor.index, descriptor);
+            }
+          }
+        });
+  }
+
   bool IsEnabledForChannel(const ChannelScope& scope) const override {
+    if (channel_filter_ == nullptr) return true;
     return channel_filter_(scope);
   }
 
@@ -296,36 +325,6 @@ class FakeStatsPlugin : public StatsPlugin {
   }
 
  private:
-  friend class FakeStatsPluginBuilder;
-
-  explicit FakeStatsPlugin(
-      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
-          channel_filter)
-      : channel_filter_(std::move(channel_filter)) {
-    GlobalInstrumentsRegistry::ForEach(
-        [this](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
-                   descriptor) {
-          if (descriptor.instrument_type ==
-              GlobalInstrumentsRegistry::InstrumentType::kCounter) {
-            if (descriptor.value_type ==
-                GlobalInstrumentsRegistry::ValueType::kUInt64) {
-              uint64_counters_.emplace(descriptor.index, descriptor);
-            } else {
-              double_counters_.emplace(descriptor.index, descriptor);
-            }
-          } else {
-            EXPECT_EQ(descriptor.instrument_type,
-                      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
-            if (descriptor.value_type ==
-                GlobalInstrumentsRegistry::ValueType::kUInt64) {
-              uint64_histograms_.emplace(descriptor.index, descriptor);
-            } else {
-              double_histograms_.emplace(descriptor.index, descriptor);
-            }
-          }
-        });
-  }
-
   template <class T>
   class Counter {
    public:
@@ -429,8 +428,7 @@ class FakeStatsPluginBuilder {
   }
 
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
-    auto f = std::shared_ptr<FakeStatsPlugin>(
-        new FakeStatsPlugin(std::move(channel_filter_)));
+    auto f = std::make_shared<FakeStatsPlugin>(std::move(channel_filter_));
     GlobalStatsPluginRegistry::RegisterStatsPlugin(f);
     return f;
   }
@@ -447,6 +445,31 @@ std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
       })
       .BuildAndRegister();
 }
+
+class GlobalInstrumentsRegistryTestPeer {
+ public:
+  static void ResetGlobalInstrumentsRegistry();
+
+  static absl::optional<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>
+  FindUInt64CounterHandleByName(absl::string_view name);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>
+  FindDoubleCounterHandleByName(absl::string_view name);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>
+  FindUInt64HistogramHandleByName(absl::string_view name);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
+  FindDoubleHistogramHandleByName(absl::string_view name);
+
+  static GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
+  FindMetricDescriptorByName(absl::string_view name);
+};
+
+class GlobalStatsPluginRegistryTestPeer {
+ public:
+  static void ResetGlobalStatsPluginRegistry() {
+    MutexLock lock(&*GlobalStatsPluginRegistry::mutex_);
+    GlobalStatsPluginRegistry::plugins_->clear();
+  }
+};
 
 }  // namespace grpc_core
 

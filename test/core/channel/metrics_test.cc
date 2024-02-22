@@ -31,8 +31,8 @@ namespace {
 class MetricsTest : public ::testing::Test {
  public:
   void TearDown() override {
-    GlobalInstrumentsRegistry::TestOnlyResetGlobalInstrumentsRegistry();
-    GlobalStatsPluginRegistry::TestOnlyResetGlobalStatsPluginRegistry();
+    GlobalInstrumentsRegistryTestPeer::ResetGlobalInstrumentsRegistry();
+    GlobalStatsPluginRegistryTestPeer::ResetGlobalStatsPluginRegistry();
   }
 };
 

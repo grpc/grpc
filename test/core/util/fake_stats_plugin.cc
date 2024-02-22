@@ -103,4 +103,92 @@ std::string MakeLabelString(
   return absl::StrJoin(key_value_pairs, ",");
 }
 
+void GlobalInstrumentsRegistryTestPeer::ResetGlobalInstrumentsRegistry() {
+  auto& instruments = GlobalInstrumentsRegistry::GetInstrumentList();
+  instruments.clear();
+}
+
+namespace {
+
+static absl::optional<uint32_t> FindInstrument(
+    absl::Span<const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>
+        instruments,
+    absl::string_view name, GlobalInstrumentsRegistry::ValueType value_type,
+    GlobalInstrumentsRegistry::InstrumentType instrument_type) {
+  for (uint32_t i = 0; i < instruments.size(); ++i) {
+    if (instruments[i].name == name) {
+      if (instruments[i].value_type == value_type &&
+          instruments[i].instrument_type == instrument_type) {
+        return i;
+      }
+      break;
+    }
+  }
+  return absl::nullopt;
+}
+
+}  // namespace
+
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>
+GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+    absl::string_view name) {
+  auto index = FindInstrument(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  if (!index.has_value()) return absl::nullopt;
+  GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle;
+  handle.index = *index;
+  return handle;
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleCounterHandleByName(
+    absl::string_view name) {
+  auto index = FindInstrument(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  if (!index.has_value()) return absl::nullopt;
+  GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle;
+  handle.index = *index;
+  return handle;
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>
+GlobalInstrumentsRegistryTestPeer::FindUInt64HistogramHandleByName(
+    absl::string_view name) {
+  auto index = FindInstrument(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+  if (!index.has_value()) return absl::nullopt;
+  GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle;
+  handle.index = *index;
+  return handle;
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
+    absl::string_view name) {
+  auto index = FindInstrument(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+  if (!index.has_value()) return absl::nullopt;
+  GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle;
+  handle.index = *index;
+  return handle;
+}
+
+GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
+GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+    absl::string_view name) {
+  auto& instruments = GlobalInstrumentsRegistry::GetInstrumentList();
+  for (size_t i = 0; i < instruments.size(); ++i) {
+    if (instruments[i].name == name) return &instruments[i];
+  }
+  return nullptr;
+}
+
 }  // namespace grpc_core

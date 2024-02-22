@@ -587,9 +587,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       queue_.push_back(ReresolutionRequested());
     }
 
-    absl::string_view GetTarget() override { return "dns:server.example.com"; }
+    absl::string_view GetTarget() override { return test_->target_; }
 
-    absl::string_view GetAuthority() override { return "server.example.com"; }
+    absl::string_view GetAuthority() override { return test_->authority_; }
 
     RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
       return nullptr;
@@ -1502,6 +1502,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   const absl::string_view lb_policy_name_;
   const ChannelArgs channel_args_;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  std::string target_ = "dns:server.example.com";
+  std::string authority_ = "server.example.com";
 };
 
 }  // namespace testing

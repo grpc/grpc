@@ -17,17 +17,16 @@
 #include "src/core/lib/channel/metrics.h"
 
 namespace grpc_core {
-namespace {
+
 // Uses the Construct-on-First-Use idiom to avoid the static initialization
 // order fiasco.
 std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
-GetInstrumentList() {
+GlobalInstrumentsRegistry::GetInstrumentList() {
   static NoDestruct<
       std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>>
       instruments;
   return *instruments;
 }
-}  // namespace
 
 GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
 GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -130,11 +129,6 @@ void GlobalInstrumentsRegistry::ForEach(
   for (const auto& instrument : GetInstrumentList()) {
     f(instrument);
   }
-}
-
-void GlobalInstrumentsRegistry::TestOnlyResetGlobalInstrumentsRegistry() {
-  auto& instruments = GetInstrumentList();
-  instruments.clear();
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;
