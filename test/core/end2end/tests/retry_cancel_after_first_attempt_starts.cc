@@ -20,6 +20,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -30,7 +31,7 @@ namespace {
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
 CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
-  InitServer(ChannelArgs());
+  InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 4000));
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -48,7 +49,7 @@ CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
       "  } ]\n"
       "}"));
   absl::optional<Call> c =
-      NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
+      NewClientCall("/service/method").Timeout(Duration::Seconds(6)).Create();
   // Client starts send ops.
   c->NewBatch(1)
       .SendInitialMetadata({})
