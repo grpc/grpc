@@ -509,6 +509,7 @@ def grpc_deps():
         http_archive(
             name = "com_github_jupp0r_prometheus_cpp",
             strip_prefix = "prometheus-cpp-b1234816facfdda29845c46696a02998a4af115a",
+            sha256 = "cdf03ee63fcb1d9e113f7bd525e043c254729dddf19d80396489f5b92c83c18d",
             urls = [
                 "https://github.com/jupp0r/prometheus-cpp/archive/b123481.zip",
             ],

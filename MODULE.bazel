@@ -1,0 +1,64 @@
+module(
+    name = "grpc",
+    version = "",
+    repo_name = "com_github_grpc_grpc",
+)
+
+bazel_dep(name = "abseil-cpp", version = "20230802.0.bcr.1", repo_name = "com_google_absl")
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "boringssl", version = "0.0.0-20230215-5c22014")
+bazel_dep(name = "c-ares", version = "1.15.0", repo_name = "com_github_cares_cares")
+bazel_dep(name = "google_benchmark", version = "1.8.2", repo_name = "com_github_google_benchmark")
+bazel_dep(name = "googletest", version = "1.14.0.bcr.1", repo_name = "com_google_googletest")
+bazel_dep(name = "platforms", version = "0.0.8")
+bazel_dep(name = "protobuf", version = "23.1", repo_name = "com_google_protobuf")
+bazel_dep(name = "re2", version = "2023-09-01", repo_name = "com_googlesource_code_re2")
+bazel_dep(name = "rules_android", version = "0.1.1")
+bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "rules_go", version = "0.39.1", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "rules_java", version = "5.5.1")
+bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
+bazel_dep(name = "rules_python", version = "0.29.0")
+bazel_dep(name = "rules_swift", version = "1.7.1", repo_name = "build_bazel_rules_swift")
+bazel_dep(name = "upb", version = "0.0.0-20230516-61a97ef")
+bazel_dep(name = "zlib", version = "1.2.13")
+# -- bazel_dep definitions -- #
+
+PYTHON_VERSIONS = [
+    "3.8",
+    "3.9",
+    "3.10",
+    "3.11",
+    "3.12",
+]
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+
+[
+    python.toolchain(
+        is_default = python_version == PYTHON_VERSIONS[-1],
+        python_version = python_version,
+    )
+    for python_version in PYTHON_VERSIONS
+]
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+
+[
+    pip.parse(
+        hub_name = "grpc_python_dependencies",
+        python_version = python_version,
+        requirements_lock = "//:requirements.bazel.txt",
+    )
+    for python_version in PYTHON_VERSIONS
+]
+
+use_repo(pip, "grpc_python_dependencies")
+
+go_sdk = use_extension("//go:extensions.bzl", "go_sdk")
+go_sdk.download(
+    name = "go_default_sdk",
+    version = "1.18",
+)
+use_repo(go_sdk, "go_toolchains")
+register_toolchains("@go_toolchains//:all")

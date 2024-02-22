@@ -59,13 +59,13 @@ cc_test(
         ":internal",
         ":mini_descriptor",
         "//:protobuf",
-        "@com_google_googletest//:gtest_main",
         "//upb:base",
         "//upb:mem",
         "//upb:message_accessors_internal",
         "//upb:mini_table",
         "//upb:wire",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -79,8 +79,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//upb/cmake:__pkg__",
         "//python/dist:__pkg__",
-    ]
+        "//upb/cmake:__pkg__",
+    ],
 )
 # end:github_only

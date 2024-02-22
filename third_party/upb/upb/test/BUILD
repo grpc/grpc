@@ -161,8 +161,8 @@ cc_test(
     deps = [
         ":proto3_test_upb_proto",
         ":proto3_test_upb_proto_reflection",
-        "@com_google_googletest//:gtest_main",
         "//upb:reflection",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -175,10 +175,10 @@ cc_test(
         ":test_cpp_upb_proto_reflection",
         ":timestamp_upb_proto",
         ":timestamp_upb_proto_reflection",
-        "@com_google_googletest//:gtest_main",
         "//upb:json",
         "//upb:port",
         "//upb:reflection",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -192,11 +192,11 @@ cc_test(
         ":test_messages_proto2_upb_proto",
         ":test_messages_proto3_upb_proto",
         ":test_upb_proto",
-        "@com_google_googletest//:gtest_main",
         "//upb:base",
         "//upb:mem",
         "//upb:message",
         "//upb:port",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -209,9 +209,9 @@ cc_test(
         ":empty_upb_proto_reflection",
         ":test_messages_proto2_upb_minitable",
         ":test_upb_proto",
-        "@com_google_googletest//:gtest_main",
         "//upb:mini_table",
         "//upb:port",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 

@@ -181,6 +181,3 @@ iwyu_build/
 # fuzzer logs
 fuzz-*.log
 
-# bazel module files (MODULE.bazel will need to be removed here)
-MODULE.bazel
-MODULE.bazel.lock

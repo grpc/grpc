@@ -491,8 +491,8 @@ cc_test(
         ":port",
         ":reflection",
         ":reflection_internal",
-        "@com_google_googletest//:gtest_main",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -684,16 +684,16 @@ filegroup(
             "**/*.c",
             "**/*.h",
             "**/*.hpp",
-       ],
+        ],
         exclude = [
             "**/conformance_upb.c",
             "reflection/stage0/**/*",
         ],
     ),
     visibility = [
-        "//upb/cmake:__pkg__",
         "//python/dist:__pkg__",
-    ]
+        "//upb/cmake:__pkg__",
+    ],
 )
 # end:github_only
 

@@ -32,10 +32,10 @@ cc_test(
     srcs = ["test.cc"],
     deps = [
         ":hash",
-        "@com_google_googletest//:gtest_main",
         "//upb:mem",
         "//upb:port",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -49,8 +49,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//upb/cmake:__pkg__",
         "//python/dist:__pkg__",
-    ]
+        "//upb/cmake:__pkg__",
+    ],
 )
 # end:github_only

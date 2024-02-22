@@ -17,7 +17,6 @@
 
 package(default_visibility = ["//visibility:public"])
 
-
 toolchain(
     name = "cc-toolchain",
     exec_compatible_with = [
@@ -35,7 +34,6 @@ toolchain(
 
 platform(
     name = "platform",
-    parents = ["@local_config_platform//:host"],
     constraint_values = [
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
@@ -45,4 +43,5 @@ platform(
         "container-image": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/rbe_ubuntu2004@sha256:d3951aeadf43e3bee6adc5b86d26cdaf0b9d1b5baf790d7b2530d1c197adc9f8",
         "OSFamily": "Linux",
     },
+    parents = ["@local_config_platform//:host"],
 )

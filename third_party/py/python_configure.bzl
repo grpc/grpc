@@ -290,11 +290,13 @@ def _create_single_version_package(
 
     python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path, allow_absent)
     if (python_bin == None or
-        _check_python_bin(repository_ctx,
-                          python_bin,
-                          bin_path_key,
-                          allow_absent) == None) and allow_absent:
-            python_include_rule = empty_include_rule
+        _check_python_bin(
+            repository_ctx,
+            python_bin,
+            bin_path_key,
+            allow_absent,
+        ) == None) and allow_absent:
+        python_include_rule = empty_include_rule
     else:
         python_lib = _get_python_lib(repository_ctx, python_bin, lib_path_key)
         _check_python_lib(repository_ctx, python_lib)
@@ -347,7 +349,7 @@ def _python_autoconf_impl(repository_ctx):
         _PYTHON3_BIN_PATH,
         "python3" if not _is_windows(repository_ctx) else "python.exe",
         _PYTHON3_LIB_PATH,
-        False
+        False,
     )
     _tpl(repository_ctx, "BUILD")
 

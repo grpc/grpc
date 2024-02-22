@@ -44,7 +44,6 @@ cc_test(
     name = "arena_test",
     srcs = ["arena_test.cc"],
     deps = [
-        "@com_google_googletest//:gtest_main",
         "//upb:mem",
         "//upb:mem_internal",
         "//upb:port",
@@ -52,6 +51,7 @@ cc_test(
         "@com_google_absl//absl/random:distributions",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
@@ -66,8 +66,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//upb/cmake:__pkg__",
         "//python/dist:__pkg__",
-    ]
+        "//upb/cmake:__pkg__",
+    ],
 )
 # end:github_only
