@@ -1817,6 +1817,7 @@ grpc_cc_library(
         "//src/core:message",
         "//src/core:metadata",
         "//src/core:metadata_batch",
+        "//src/core:metrics",
         "//src/core:no_destruct",
         "//src/core:per_cpu",
         "//src/core:pipe",

@@ -42,6 +42,7 @@
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -159,6 +160,11 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
     compression_options.enabled_algorithms_bitset =
         *enabled_algorithms_bitset | 1 /* always support no compression */;
   }
+
+// FIXME: Populate authority after merging https://github.com/grpc/grpc/pull/35924.
+  ChannelScope scope(builder->target(), "");
+  (*r)->stats_plugin_group =
+      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),

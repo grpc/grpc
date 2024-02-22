@@ -1169,9 +1169,7 @@ class ClientChannelFilter::ClientChannelControlHelper
   }
 
   GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
-// FIXME
-    static GlobalStatsPluginRegistry::StatsPluginGroup group;
-    return group;
+    return chand_->owning_stack_->stats_plugin_group;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
