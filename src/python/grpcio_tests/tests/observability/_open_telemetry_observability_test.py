@@ -162,8 +162,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         grpc_observability.end_open_telemetry_observability()
 
     def testCallGlobalInitThrowErrorWhenGlobalCalled(self):
+        grpc_observability.start_open_telemetry_observability(plugins=[])
         try:
-            grpc_observability.start_open_telemetry_observability(plugins=[])
             grpc_observability.start_open_telemetry_observability(plugins=[])
         except RuntimeError as exp:
             self.assertIn("observability was already initiated", str(exp))
@@ -195,6 +195,19 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     pass
             except RuntimeError as exp:
                 self.assertIn("observability was already initiated", str(exp))
+
+    def testNoErrorCallGlobalInitThenContextManager(self):
+        grpc_observability.start_open_telemetry_observability(plugins=[])
+        grpc_observability.end_open_telemetry_observability()
+
+        with grpc_observability.OpenTelemetryObservability(plugins=[]):
+            pass
+
+    def testNoErrorCallContextManagerThenGlobalInit(self):
+        with grpc_observability.OpenTelemetryObservability(plugins=[]):
+            pass
+        grpc_observability.start_open_telemetry_observability(plugins=[])
+        grpc_observability.end_open_telemetry_observability()
 
     def testRecordUnaryUnaryWithClientInterceptor(self):
         interceptor = _ClientUnaryUnaryInterceptor()
