@@ -1208,9 +1208,9 @@ TEST_F(PickFirstTest, MetricValues) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
-  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionsSucceeded,
-                                            kLabelValues, {}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin->GetCounterValue(kConnectionsSucceeded, kLabelValues, {}),
+      ::testing::Optional(1));
   // The LB policy will report CONNECTING some number of times (doesn't
   // matter how many) and then report READY.
   auto picker = WaitForConnected();
