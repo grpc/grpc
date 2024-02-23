@@ -150,6 +150,7 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_whee
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py sdist
+  # shellcheck disable=SC2086
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_observability/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 fi
 
