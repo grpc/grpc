@@ -3940,7 +3940,6 @@ add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -4713,7 +4712,6 @@ add_library(grpc++_test_util
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -5689,7 +5687,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -5851,7 +5848,6 @@ add_executable(test_core_iomgr_timer_list_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -5993,7 +5989,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -6116,7 +6111,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -6661,7 +6655,6 @@ add_executable(alts_security_connector_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -7037,7 +7030,6 @@ add_executable(auth_context_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -7132,7 +7124,6 @@ add_executable(authorization_matchers_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -7272,7 +7263,6 @@ add_executable(aws_request_signer_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -7576,7 +7566,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -7633,7 +7622,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -8247,7 +8235,6 @@ add_executable(buffer_list_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -9304,7 +9291,6 @@ add_executable(cel_authorization_engine_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -9679,7 +9665,6 @@ add_executable(channel_creds_registry_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -10012,7 +9997,6 @@ add_executable(check_gcp_environment_linux_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -10064,7 +10048,6 @@ add_executable(check_gcp_environment_windows_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -10864,7 +10847,6 @@ add_executable(cmdline_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -11005,7 +10987,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -11375,7 +11356,6 @@ add_executable(connectivity_state_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -12770,7 +12750,6 @@ add_executable(endpoint_pair_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -12921,7 +12900,6 @@ add_executable(error_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -12973,7 +12951,6 @@ add_executable(error_utils_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -13025,7 +13002,6 @@ add_executable(evaluate_args_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -13667,7 +13643,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -14387,7 +14362,6 @@ add_executable(format_request_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -14890,7 +14864,6 @@ add_executable(grpc_alts_credentials_options_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -14985,7 +14958,6 @@ add_executable(grpc_authorization_engine_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15037,7 +15009,6 @@ add_executable(grpc_authorization_policy_provider_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15425,7 +15396,6 @@ add_executable(grpc_ipv6_loopback_available_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15667,7 +15637,6 @@ add_executable(grpc_tls_certificate_distributor_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15719,7 +15688,6 @@ add_executable(grpc_tls_certificate_provider_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15771,7 +15739,6 @@ add_executable(grpc_tls_certificate_verifier_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15823,7 +15790,6 @@ add_executable(grpc_tls_credentials_options_comparator_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -15875,7 +15841,6 @@ add_executable(grpc_tls_credentials_options_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -16610,7 +16575,6 @@ add_executable(histogram_test
   test/core/util/histogram_test.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -16704,7 +16668,6 @@ add_executable(hpack_encoder_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -16756,7 +16719,6 @@ add_executable(hpack_parser_table_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -16808,7 +16770,6 @@ add_executable(hpack_parser_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -17528,7 +17489,6 @@ add_executable(insecure_security_connector_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -18193,7 +18153,6 @@ add_executable(json_token_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -18245,7 +18204,6 @@ add_executable(jwt_verifier_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -18980,7 +18938,6 @@ add_executable(matchers_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -19468,7 +19425,6 @@ add_executable(message_compress_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -19562,7 +19518,6 @@ add_executable(metadata_map_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -20867,7 +20822,6 @@ add_executable(parser_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -21190,7 +21144,6 @@ add_executable(ping_abuse_policy_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -21284,7 +21237,6 @@ add_executable(ping_configuration_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -21398,7 +21350,6 @@ add_executable(ping_rate_policy_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -22882,7 +22833,6 @@ add_executable(rbac_translator_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -23250,7 +23200,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -23304,7 +23253,6 @@ add_executable(resolve_address_using_ares_resolver_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -23358,7 +23306,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -23412,7 +23359,6 @@ add_executable(resolve_address_using_native_resolver_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -26117,7 +26063,6 @@ add_executable(secure_endpoint_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -26169,7 +26114,6 @@ add_executable(security_connector_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -26388,7 +26332,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -26460,7 +26403,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -26927,7 +26869,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -27238,7 +27179,6 @@ add_executable(settings_timeout_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -27964,7 +27904,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -28351,7 +28290,6 @@ add_executable(status_conversion_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -28699,7 +28637,6 @@ add_executable(streams_not_seen_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -28922,7 +28859,6 @@ add_executable(system_roots_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -29009,7 +28945,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -29108,7 +29043,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -29162,7 +29096,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -29599,7 +29532,6 @@ add_executable(test_core_iomgr_timer_heap_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -29651,7 +29583,6 @@ add_executable(test_core_security_credentials_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -29703,7 +29634,6 @@ add_executable(test_core_security_ssl_credentials_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -30630,7 +30560,6 @@ add_executable(timeout_encoding_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -30932,7 +30861,6 @@ add_executable(tls_security_connector_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
@@ -32497,7 +32425,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/util/histogram.cc
     test/core/util/mock_endpoint.cc
     test/core/util/parse_hexstring.cc
-    test/core/util/passthru_endpoint.cc
     test/core/util/resolve_localhost_ip46.cc
     test/core/util/slice_splitter.cc
     test/core/util/tracer_util.cc
@@ -33595,7 +33522,6 @@ add_executable(xds_credentials_test
   test/core/util/histogram.cc
   test/core/util/mock_endpoint.cc
   test/core/util/parse_hexstring.cc
-  test/core/util/passthru_endpoint.cc
   test/core/util/resolve_localhost_ip46.cc
   test/core/util/slice_splitter.cc
   test/core/util/tracer_util.cc
