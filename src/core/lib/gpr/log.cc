@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/base/log_severity.h"
+// #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
@@ -137,4 +139,26 @@ void gpr_log_verbosity_init() {
 
 void gpr_set_log_function(gpr_log_func f) {
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
+}
+
+void gpr_default_log(gpr_log_func_args* args) {
+  base_logging::LogSeverity glog_severity = 0;
+  switch (args->severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  TODO(tjagtap) : Make it debug
+      LOG(INFO).AtLocation(args->file, args->line) << args->message;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      glog_severity = base_logging::INFO;
+      break;
+    case GPR_LOG_SEVERITY_ERROR:
+      glog_severity = base_logging::ERROR;
+      break;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << args->severity
+                 << "), using ERROR";
+      glog_severity = base_logging::ERROR;
+  }
+
+  LOG(LEVEL(glog_severity)).AtLocation(args->file, args->line) << args->message;
 }
