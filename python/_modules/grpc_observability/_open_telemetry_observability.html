@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>grpc_observability._open_telemetry_observability &#8212; gRPC Python 1.62.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=4f649999" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=8090fdca" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=faf92259"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  <div class="document">
+    
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">gRPC Python</a></h1>
+
+
+
+<p class="blurb">1.62.0</p>
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc.html">gRPC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_admin.html">gRPC Admin</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_channelz.html">gRPC Channelz</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_csds.html">gRPC CSDS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_health_checking.html">gRPC Health Checking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_reflection.html">gRPC Reflection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_status.html">gRPC Status</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../grpc_observability.html">gRPC Python Observability</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for grpc_observability._open_telemetry_observability</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2023 gRPC authors.</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">import</span> <span class="nn">grpc</span>
+
+<span class="c1"># pytype: disable=pyi-error</span>
+<span class="kn">from</span> <span class="nn">grpc_observability</span> <span class="kn">import</span> <span class="n">_cyobservability</span>
+<span class="kn">from</span> <span class="nn">grpc_observability._open_telemetry_exporter</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">_OpenTelemetryExporterDelegator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">grpc_observability._open_telemetry_plugin</span> <span class="kn">import</span> <span class="n">OpenTelemetryPlugin</span>
+<span class="kn">from</span> <span class="nn">grpc_observability._open_telemetry_plugin</span> <span class="kn">import</span> <span class="n">_OpenTelemetryPlugin</span>
+
+<span class="n">_LOGGER</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="n">ClientCallTracerCapsule</span> <span class="o">=</span> <span class="n">Any</span>  <span class="c1"># it appears only once in the function signature</span>
+<span class="n">ServerCallTracerFactoryCapsule</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">Any</span>  <span class="c1"># it appears only once in the function signature</span>
+<span class="p">)</span>
+<span class="n">grpc_observability</span> <span class="o">=</span> <span class="n">Any</span>  <span class="c1"># grpc_observability.py imports this module.</span>
+
+<span class="n">GRPC_STATUS_CODE_TO_STRING</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">OK</span><span class="p">:</span> <span class="s2">&quot;OK&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">CANCELLED</span><span class="p">:</span> <span class="s2">&quot;CANCELLED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">UNKNOWN</span><span class="p">:</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INVALID_ARGUMENT</span><span class="p">:</span> <span class="s2">&quot;INVALID_ARGUMENT&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">DEADLINE_EXCEEDED</span><span class="p">:</span> <span class="s2">&quot;DEADLINE_EXCEEDED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">:</span> <span class="s2">&quot;NOT_FOUND&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">ALREADY_EXISTS</span><span class="p">:</span> <span class="s2">&quot;ALREADY_EXISTS&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">PERMISSION_DENIED</span><span class="p">:</span> <span class="s2">&quot;PERMISSION_DENIED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">UNAUTHENTICATED</span><span class="p">:</span> <span class="s2">&quot;UNAUTHENTICATED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">RESOURCE_EXHAUSTED</span><span class="p">:</span> <span class="s2">&quot;RESOURCE_EXHAUSTED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">FAILED_PRECONDITION</span><span class="p">:</span> <span class="s2">&quot;FAILED_PRECONDITION&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">ABORTED</span><span class="p">:</span> <span class="s2">&quot;ABORTED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">OUT_OF_RANGE</span><span class="p">:</span> <span class="s2">&quot;OUT_OF_RANGE&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">UNIMPLEMENTED</span><span class="p">:</span> <span class="s2">&quot;UNIMPLEMENTED&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">INTERNAL</span><span class="p">:</span> <span class="s2">&quot;INTERNAL&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">UNAVAILABLE</span><span class="p">:</span> <span class="s2">&quot;UNAVAILABLE&quot;</span><span class="p">,</span>
+    <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">DATA_LOSS</span><span class="p">:</span> <span class="s2">&quot;DATA_LOSS&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="c1"># pylint: disable=no-self-use</span>
+<div class="viewcode-block" id="OpenTelemetryObservability"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryObservability">[docs]</a><span class="k">class</span> <span class="nc">OpenTelemetryObservability</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">_observability</span><span class="o">.</span><span class="n">ObservabilityPlugin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;OpenTelemetry based plugin implementation.</span>
+
+<span class="sd">    This is class is part of an EXPERIMENTAL API.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      plugin: OpenTelemetryPlugin to enable.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">exporter</span><span class="p">:</span> <span class="s2">&quot;grpc_observability.Exporter&quot;</span>
+    <span class="n">plugins</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPlugin</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">plugins</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPlugin</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">_plugins</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">plugins</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+                <span class="n">_plugins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_OpenTelemetryPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">exporter</span> <span class="o">=</span> <span class="n">_OpenTelemetryExporterDelegator</span><span class="p">(</span><span class="n">_plugins</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_cyobservability</span><span class="o">.</span><span class="n">activate_stats</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_stats</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># pylint: disable=broad-except</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Activate observability metrics failed with: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_cyobservability</span><span class="o">.</span><span class="n">cyobservability_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">exporter</span><span class="p">)</span>
+        <span class="c1"># TODO(xuanwn): Use specific exceptons</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># pylint: disable=broad-except</span>
+            <span class="n">_LOGGER</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Initiate observability failed with: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+        <span class="n">grpc</span><span class="o">.</span><span class="n">_observability</span><span class="o">.</span><span class="n">observability_init</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">exit</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Sleep so we don&#39;t loss any data. If we shutdown export thread</span>
+        <span class="c1"># immediately after exit, it&#39;s possible that core didn&#39;t call RecordEnd</span>
+        <span class="c1"># in callTracer, and all data recorded by calling RecordEnd will be</span>
+        <span class="c1"># lost.</span>
+        <span class="c1"># CENSUS_EXPORT_BATCH_INTERVAL_SECS: The time equals to the time in</span>
+        <span class="c1"># AwaitNextBatchLocked.</span>
+        <span class="c1"># TODO(xuanwn): explicit synchronization</span>
+        <span class="c1"># https://github.com/grpc/grpc/issues/33262</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">_cyobservability</span><span class="o">.</span><span class="n">CENSUS_EXPORT_BATCH_INTERVAL_SECS</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_tracing</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_stats</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">_cyobservability</span><span class="o">.</span><span class="n">observability_deinit</span><span class="p">()</span>
+        <span class="n">grpc</span><span class="o">.</span><span class="n">_observability</span><span class="o">.</span><span class="n">observability_deinit</span><span class="p">()</span>
+
+<div class="viewcode-block" id="OpenTelemetryObservability.create_client_call_tracer"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryObservability.create_client_call_tracer">[docs]</a>    <span class="k">def</span> <span class="nf">create_client_call_tracer</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ClientCallTracerCapsule</span><span class="p">:</span>
+        <span class="n">trace_id</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;TRACE_ID&quot;</span>
+        <span class="n">capsule</span> <span class="o">=</span> <span class="n">_cyobservability</span><span class="o">.</span><span class="n">create_client_call_tracer</span><span class="p">(</span>
+            <span class="n">method_name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">trace_id</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">capsule</span></div>
+
+<div class="viewcode-block" id="OpenTelemetryObservability.create_server_call_tracer_factory"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryObservability.create_server_call_tracer_factory">[docs]</a>    <span class="k">def</span> <span class="nf">create_server_call_tracer_factory</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ServerCallTracerFactoryCapsule</span><span class="p">:</span>
+        <span class="n">capsule</span> <span class="o">=</span> <span class="n">_cyobservability</span><span class="o">.</span><span class="n">create_server_call_tracer_factory_capsule</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">capsule</span></div>
+
+<div class="viewcode-block" id="OpenTelemetryObservability.delete_client_call_tracer"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryObservability.delete_client_call_tracer">[docs]</a>    <span class="k">def</span> <span class="nf">delete_client_call_tracer</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">client_call_tracer</span><span class="p">:</span> <span class="n">ClientCallTracerCapsule</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_cyobservability</span><span class="o">.</span><span class="n">delete_client_call_tracer</span><span class="p">(</span><span class="n">client_call_tracer</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="OpenTelemetryObservability.save_trace_context"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryObservability.save_trace_context">[docs]</a>    <span class="k">def</span> <span class="nf">save_trace_context</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">trace_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">span_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">is_sampled</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="OpenTelemetryObservability.record_rpc_latency"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryObservability.record_rpc_latency">[docs]</a>    <span class="k">def</span> <span class="nf">record_rpc_latency</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">rpc_latency</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">status_code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">status_code</span> <span class="o">=</span> <span class="n">GRPC_STATUS_CODE_TO_STRING</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">status_code</span><span class="p">,</span> <span class="s2">&quot;UNKNOWN&quot;</span><span class="p">)</span>
+        <span class="n">_cyobservability</span><span class="o">.</span><span class="n">_record_rpc_latency</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exporter</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">rpc_latency</span><span class="p">,</span> <span class="n">status_code</span>
+        <span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+    <div class="clearer"></div>
+  </div>
+    <div class="footer">
+      &copy;2020, The gRPC Authors.
+      
+    </div>
+
+    
+
+    
+    <script type="text/javascript">
+
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-60127042-1']);
+      _gaq.push(['_setDomainName', 'none']);
+      _gaq.push(['_setAllowLinker', true]);
+      _gaq.push(['_trackPageview']);
+
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+
+    </script>
+    
+  </body>
+</html>

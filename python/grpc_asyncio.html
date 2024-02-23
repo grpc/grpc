@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.61.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.62.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=6886fcb2"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=faf92259"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.61.0</p>
+<p class="blurb">1.62.0</p>
 
 
 
@@ -243,6 +243,7 @@
 <li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_status.html">gRPC Status</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_observability.html">gRPC Python Observability</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
 
@@ -1181,6 +1182,8 @@ failure.</p>
 <dd><p>Reads one message from the stream.</p>
 <p>Read operations must be serialized when called from multiple
 coroutines.</p>
+<p>Note that the iterator and read/write APIs may not be mixed on
+a single RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A response message, or an <cite>grpc.aio.EOF</cite> to indicate the end of the
@@ -1228,6 +1231,8 @@ function will fail. This function is idempotent.</p>
 <dt class="sig sig-object py" id="grpc.aio.StreamUnaryCall.write">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#StreamUnaryCall.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamUnaryCall.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes one message to the stream.</p>
+<p>Note that the iterator and read/write APIs may not be mixed on
+a single RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
@@ -1280,6 +1285,8 @@ function will fail. This function is idempotent.</p>
 <dd><p>Reads one message from the stream.</p>
 <p>Read operations must be serialized when called from multiple
 coroutines.</p>
+<p>Note that the iterator and read/write APIs may not be mixed on
+a single RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A response message, or an <cite>grpc.aio.EOF</cite> to indicate the end of the
@@ -1295,6 +1302,8 @@ stream.</p>
 <dt class="sig sig-object py" id="grpc.aio.StreamStreamCall.write">
 <em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">async</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_call.html#StreamStreamCall.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.StreamStreamCall.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes one message to the stream.</p>
+<p>Note that the iterator and read/write APIs may not be mixed on
+a single RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>An RpcError exception if the write failed.</strong> – </p>
