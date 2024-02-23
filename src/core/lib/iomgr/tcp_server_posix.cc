@@ -117,6 +117,9 @@ static grpc_error_handle CreateEventEngineListener(
             SliceBuffer* pending_data) {
           grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
+          if (s->shutdown) {
+            return;
+          }
           grpc_tcp_server_acceptor* acceptor =
               static_cast<grpc_tcp_server_acceptor*>(
                   gpr_malloc(sizeof(*acceptor)));
