@@ -444,14 +444,7 @@ class FakeStatsPluginBuilder {
 };
 
 std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
-    absl::string_view target_suffix) {
-  return FakeStatsPluginBuilder()
-      .SetChannelFilter(
-          [target_suffix](const StatsPlugin::ChannelScope& scope) {
-            return absl::EndsWith(scope.target(), target_suffix);
-          })
-      .BuildAndRegister();
-}
+    absl::string_view target_suffix);
 
 class GlobalInstrumentsRegistryTestPeer {
  public:

@@ -103,6 +103,16 @@ std::string MakeLabelString(
   return absl::StrJoin(key_value_pairs, ",");
 }
 
+std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
+    absl::string_view target_suffix) {
+  return FakeStatsPluginBuilder()
+      .SetChannelFilter(
+          [target_suffix](const StatsPlugin::ChannelScope& scope) {
+            return absl::EndsWith(scope.target(), target_suffix);
+          })
+      .BuildAndRegister();
+}
+
 void GlobalInstrumentsRegistryTestPeer::ResetGlobalInstrumentsRegistry() {
   auto& instruments = GlobalInstrumentsRegistry::GetInstrumentList();
   instruments.clear();
