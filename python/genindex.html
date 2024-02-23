@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; gRPC Python 1.61.0 documentation</title>
+    <title>Index &#8212; gRPC Python 1.62.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=6886fcb2"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=faf92259"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="#" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.61.0</p>
+<p class="blurb">1.62.0</p>
 
 
 
@@ -46,6 +46,7 @@
 <li class="toctree-l1"><a class="reference internal" href="grpc_reflection.html">gRPC Reflection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_status.html">gRPC Status</a></li>
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="grpc_observability.html">gRPC Python Observability</a></li>
 <li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
 </ul>
 
@@ -305,10 +306,10 @@
       </ul></li>
       <li><a href="grpc_testing.html#grpc_testing.channel">channel() (in module grpc_testing)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="glossary.html#term-channel_arguments"><strong>channel_arguments</strong></a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc_asyncio.html#grpc.aio.Channel.channel_ready">channel_ready() (grpc.aio.Channel method)</a>
 </li>
       <li><a href="grpc.html#grpc.channel_ready_future">channel_ready_future() (in module grpc)</a>
@@ -361,6 +362,10 @@
 </li>
       <li><a href="grpc.html#grpc.ChannelConnectivity.CONNECTING">CONNECTING (grpc.ChannelConnectivity attribute)</a>
 </li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryObservability.create_client_call_tracer">create_client_call_tracer() (grpc_observability.OpenTelemetryObservability method)</a>
+</li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryObservability.create_server_call_tracer_factory">create_server_call_tracer_factory() (grpc_observability.OpenTelemetryObservability method)</a>
+</li>
       <li><a href="grpc.html#grpc.ClientCallDetails.credentials">credentials (grpc.ClientCallDetails attribute)</a>
 </li>
   </ul></td>
@@ -378,6 +383,8 @@
       <li><a href="grpc.html#grpc.Compression.Deflate">Deflate (grpc.Compression attribute)</a>
 </li>
       <li><a href="grpc_asyncio.html#grpc.aio.Metadata.delete_all">delete_all() (grpc.aio.Metadata method)</a>
+</li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryObservability.delete_client_call_tracer">delete_client_call_tracer() (grpc_observability.OpenTelemetryObservability method)</a>
 </li>
       <li><a href="glossary.html#term-deserializer"><strong>deserializer</strong></a>
 </li>
@@ -469,9 +476,15 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryPlugin.generic_method_attribute_filter">generic_method_attribute_filter() (grpc_observability.OpenTelemetryPlugin method)</a>
+</li>
       <li><a href="grpc.html#grpc.GenericRpcHandler">GenericRpcHandler (class in grpc)</a>
 </li>
       <li><a href="grpc_asyncio.html#grpc.aio.Metadata.get_all">get_all() (grpc.aio.Metadata method)</a>
+</li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryPlugin.get_meter_provider">get_meter_provider() (grpc_observability.OpenTelemetryPlugin method)</a>
+</li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryPlugin.get_plugin_options">get_plugin_options() (grpc_observability.OpenTelemetryPlugin method)</a>
 </li>
       <li><a href="grpc_reflection.html#grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase.get_services">get_services() (grpc_reflection.v1alpha.proto_reflection_descriptor_database.ProtoReflectionDescriptorDatabase method)</a>
 </li>
@@ -526,6 +539,13 @@
 
       <ul>
         <li><a href="grpc_csds.html#module-grpc_csds">module</a>
+</li>
+      </ul></li>
+      <li>
+    grpc_observability
+
+      <ul>
+        <li><a href="grpc_observability.html#module-grpc_observability">module</a>
 </li>
       </ul></li>
       <li>
@@ -702,8 +722,6 @@
 </li>
       <li><a href="grpc.html#grpc.AuthMetadataContext.method_name">method_name (grpc.AuthMetadataContext attribute)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     module
 
@@ -717,6 +735,8 @@
         <li><a href="grpc_channelz.html#module-grpc_channelz.v1.channelz">grpc_channelz.v1.channelz</a>
 </li>
         <li><a href="grpc_csds.html#module-grpc_csds">grpc_csds</a>
+</li>
+        <li><a href="grpc_observability.html#module-grpc_observability">grpc_observability</a>
 </li>
         <li><a href="grpc_reflection.html#module-grpc_reflection.v1alpha.proto_reflection_descriptor_database">grpc_reflection.v1alpha.proto_reflection_descriptor_database</a>
 </li>
@@ -746,6 +766,12 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="grpc.html#grpc.StatusCode.OK">OK (grpc.StatusCode attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryObservability">OpenTelemetryObservability (class in grpc_observability)</a>
+</li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryPlugin">OpenTelemetryPlugin (class in grpc_observability)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -797,6 +823,8 @@
       </ul></li>
       <li><a href="grpc.html#grpc.ChannelConnectivity.READY">READY (grpc.ChannelConnectivity attribute)</a>
 </li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryObservability.record_rpc_latency">record_rpc_latency() (grpc_observability.OpenTelemetryObservability method)</a>
+</li>
       <li><a href="grpc_reflection.html#grpc_reflection.v1alpha.reflection.ReflectionServicer">ReflectionServicer (class in grpc_reflection.v1alpha.reflection)</a>
 </li>
       <li><a href="grpc.html#grpc.RpcMethodHandler.request_deserializer">request_deserializer (grpc.RpcMethodHandler attribute)</a>
@@ -841,6 +869,8 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryObservability.save_trace_context">save_trace_context() (grpc_observability.OpenTelemetryObservability method)</a>
+</li>
       <li><a href="grpc.html#grpc.secure_channel">secure_channel() (in module grpc)</a>
 
       <ul>
@@ -1060,6 +1090,8 @@
       <li><a href="grpc_testing.html#grpc_testing.Channel.take_unary_stream">take_unary_stream() (grpc_testing.Channel method)</a>
 </li>
       <li><a href="grpc_testing.html#grpc_testing.Channel.take_unary_unary">take_unary_unary() (grpc_testing.Channel method)</a>
+</li>
+      <li><a href="grpc_observability.html#grpc_observability.OpenTelemetryPlugin.target_attribute_filter">target_attribute_filter() (grpc_observability.OpenTelemetryPlugin method)</a>
 </li>
       <li><a href="grpc_testing.html#grpc_testing.StreamStreamChannelRpc.terminate">terminate() (grpc_testing.StreamStreamChannelRpc method)</a>
 

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.61.0</span>
+   &#160;<span id="projectnumber">1.62.0</span>
    </div>
   </td>
  </tr>
@@ -69,7 +69,9 @@ $(function() {
 <div class="textblock"><h1><a class="anchor" id="autotoc_md45"></a>
 Overview</h1>
 <p>This document describes the command line tool that comes with gRPC repository. It is desirable to have command line tools written in other languages roughly follow the same syntax and flags.</p>
-<p>At this point, the tool needs to be built from source, and it should be moved out to grpc-tools repository as a stand alone application once it is mature enough.</p>
+<blockquote class="doxtable">
+<p>[!NOTE] At present, the tool needs to be built from source, and it should be moved out to grpc-tools repository as a stand alone application once it is mature enough. This tool in its current state though is not up to par in its user-friendliness. Other tools in the ecosystem, for example, <a href="https://github.com/fullstorydev/grpcurl">grpcurl</a> are better maintained. </p>
+</blockquote>
 <h1><a class="anchor" id="autotoc_md46"></a>
 Core functionality</h1>
 <p>The command line tool can do the following things:</p>
@@ -92,8 +94,7 @@ Core functionality</h1>
 </ul>
 <h1><a class="anchor" id="autotoc_md47"></a>
 Code location</h1>
-<p>To use the tool, you need to get the grpc repository and make sure your system has the prerequisites for building grpc from source, given in the ../BUILDING.md "installation
-instructions".</p>
+<p>To use the tool, you need to get the grpc repository and make sure your system has the prerequisites for building grpc from source, given in the ../BUILDING.md "installation instructions".</p>
 <p>In order to build the grpc command line tool from a fresh clone of the grpc repository, you need to run the following command to update submodules:</p>
 <div class="fragment"><div class="line">git submodule update --init</div>
 </div><!-- fragment --><p>Once the prerequisites are satisfied, you can build with cmake:</p>
@@ -174,7 +175,7 @@ Call a remote method</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Feb 7 2024 18:50:39 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 23 2024 23:03:57 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['queryextension_1787',['QueryExtension',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#afab4c0bbead3173305575c996c32c784',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]]
+  ['queryextension_1792',['QueryExtension',['../classgrpc__event__engine_1_1experimental_1_1_extensible.html#a9ef86c254e301ff8239d2f78c06be3c5',1,'grpc_event_engine::experimental::Extensible']]]
 ];
