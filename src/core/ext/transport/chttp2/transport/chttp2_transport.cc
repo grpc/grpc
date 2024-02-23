@@ -1326,9 +1326,10 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
   }
 
   if (s->call_tracer) {
-    s->call_tracer->RecordAnnotation(
+    s->call_tracer->RecordAnnotation(grpc_core::StringAnnotation(
+        GPR_LOG_SEVERITY_DEBUG,
         absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
-                        grpc_core::StatusToString(error).c_str()));
+                        grpc_core::StatusToString(error).c_str())));
   }
 
   if (!error.ok()) {
@@ -1406,10 +1407,12 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (s->call_tracer) {
-    s->call_tracer->RecordAnnotation(absl::StrFormat(
+    s->call_tracer->RecordAnnotation(
+        grpc_core::StringAnnotation(GPR_LOG_SEVERITY_DEBUG,
+        absl::StrFormat(
         "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
         grpc_transport_stream_op_batch_string(op, true).c_str(),
-        op->on_complete));
+        op->on_complete)));
   }
 
   grpc_closure* on_complete = op->on_complete;

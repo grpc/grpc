@@ -38,6 +38,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "third_party/grpc/include/grpc/support/log.h"
 
 namespace grpc_core {
 
@@ -55,6 +56,7 @@ class CallTracerAnnotationInterface {
   enum class AnnotationType {
     kMetadataSizes,
     kHttpTransport,
+    kString,
     kDoNotUse_MustBeLast,
   };
 
@@ -204,6 +206,23 @@ class ServerCallTracerFactory {
   static void TestOnlyReset();
 
   static absl::string_view ChannelArgName();
+};
+
+// Simple string annotation with severity.
+class StringAnnotation : public CallTracerAnnotationInterface::Annotation {
+ public:
+  StringAnnotation(gpr_log_severity severity, std::string&& msg)
+      : Annotation(CallTracerAnnotationInterface::AnnotationType::kString),
+        msg_(std::move(msg)),
+        severity_(severity) {}
+  std::string ToString() const override { return msg_; }
+
+  absl::string_view msg() const { return msg_; }
+  gpr_log_severity severity() const { return severity_; }
+
+ private:
+  const std::string msg_;
+  const gpr_log_severity severity_;
 };
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);

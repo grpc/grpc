@@ -670,7 +670,8 @@ class FilterStackCall final : public Call {
           gpr_log(GPR_DEBUG, "%s", trace_string.c_str());
         }
         if (is_call_ops_annotate_enabled) {
-          call_tracer->RecordAnnotation(trace_string);
+          call_tracer->RecordAnnotation(grpc_core::StringAnnotation(
+              GPR_LOG_SEVERITY_DEBUG, std::move(trace_string)));
           call->InternalUnref("Call ops annotate");
         }
       }
@@ -1902,11 +1903,13 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   call_tracer = static_cast<CallTracerAnnotationInterface*>(
       ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
   if ((IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
-    call_tracer->RecordAnnotation(absl::StrFormat(
-        "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
-        PendingOpString(pending_ops).c_str(),
-        grpc_transport_stream_op_batch_string(stream_op, true).c_str(),
-        bctl->completion_data_.notify_tag.tag));
+    call_tracer->RecordAnnotation(grpc_core::StringAnnotation(
+        GPR_LOG_SEVERITY_DEBUG,
+        absl::StrFormat(
+            "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
+            PendingOpString(pending_ops).c_str(),
+            grpc_transport_stream_op_batch_string(stream_op, true).c_str(),
+            bctl->completion_data_.notify_tag.tag)));
   }
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,

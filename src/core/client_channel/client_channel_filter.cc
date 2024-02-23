@@ -2164,7 +2164,8 @@ absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
     auto* call_tracer = static_cast<CallTracerAnnotationInterface*>(
         call_context()[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
     if (call_tracer != nullptr) {
-      call_tracer->RecordAnnotation("Delayed name resolution complete.");
+      call_tracer->RecordAnnotation(grpc_core::StringAnnotation(
+          GPR_LOG_SEVERITY_INFO, "Delayed name resolution complete."));
     }
   }
   return absl::OkStatus();
@@ -2929,7 +2930,8 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     // Pick is complete.
     // If it was queued, add a trace annotation.
     if (was_queued && call_attempt_tracer() != nullptr) {
-      call_attempt_tracer()->RecordAnnotation("Delayed LB pick complete.");
+      call_attempt_tracer()->RecordAnnotation(grpc_core::StringAnnotation(
+          GPR_LOG_SEVERITY_INFO, "Delayed LB pick complete."));
     }
     // If the pick failed, fail the call.
     if (!error.ok()) {
