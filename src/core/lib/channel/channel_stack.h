@@ -220,7 +220,9 @@ struct grpc_channel_stack {
     return event_engine->get();
   }
 
-  grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group;
+  grpc_core::ManualConstructor<
+      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group;
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.

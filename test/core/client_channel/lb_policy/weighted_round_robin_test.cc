@@ -1011,7 +1011,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
   EXPECT_EQ(descriptor->unit, "{updates}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.locality"));
+              ::testing::ElementsAre("grpc.lb.locality"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
@@ -1028,7 +1028,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
   EXPECT_EQ(descriptor->unit, "{endpoints}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.locality"));
+              ::testing::ElementsAre("grpc.lb.locality"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
@@ -1045,7 +1045,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
   EXPECT_EQ(descriptor->unit, "{endpoints}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.locality"));
+              ::testing::ElementsAre("grpc.lb.locality"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
@@ -1062,7 +1062,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
   EXPECT_EQ(descriptor->unit, "{weights}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
-              ::testing::ElementsAre("grpc.locality"));
+              ::testing::ElementsAre("grpc.lb.locality"));
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {

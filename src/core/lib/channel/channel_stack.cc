@@ -188,6 +188,7 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   (*stack->on_destroy)();
   stack->on_destroy.Destroy();
   stack->event_engine.Destroy();
+  stack->stats_plugin_group.Destroy();
 }
 
 grpc_error_handle grpc_call_stack_init(

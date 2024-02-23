@@ -164,8 +164,8 @@ absl::StatusOr<RefCountedPtr<Channel>> Channel::CreateWithBuilder(
   // TODO(roth): Populate authority after merging
   // https://github.com/grpc/grpc/pull/35924.
   StatsPlugin::ChannelScope scope(builder->target(), "");
-  (*r)->stats_plugin_group =
-      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+  (*r)->stats_plugin_group.Init(
+      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope));
 
   return RefCountedPtr<Channel>(new Channel(
       grpc_channel_stack_type_is_client(builder->channel_stack_type()),
