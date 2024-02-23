@@ -214,6 +214,9 @@ class FakeStatsPlugin : public StatsPlugin {
                 descriptor) {
           if (!use_disabled_by_default_metrics &&
               !descriptor.enable_by_default) {
+            gpr_log(GPR_INFO,
+                    "FakeStatsPlugin[%p]: skipping disabled metric: %s", this,
+                    std::string(descriptor.name).c_str());
             return;
           }
           if (descriptor.instrument_type ==
@@ -259,6 +262,12 @@ class FakeStatsPlugin : public StatsPlugin {
     // just ignore it here. This would also prevent us from having to lock the
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::AddCounter(index=%u, value=(uint64)%lu, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     auto iter = uint64_counters_.find(handle.index);
     if (iter == uint64_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
@@ -267,6 +276,12 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::AddCounter(index=%u, value(double)=%f, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     auto iter = double_counters_.find(handle.index);
     if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
@@ -275,6 +290,12 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::RecordHistogram(index=%u, value=(uint64)%lu, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     auto iter = uint64_histograms_.find(handle.index);
     if (iter == uint64_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
@@ -283,6 +304,12 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::RecordHistogram(index=%u, value=(double)%f, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
     auto iter = double_histograms_.find(handle.index);
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
@@ -432,8 +459,14 @@ class FakeStatsPluginBuilder {
     return *this;
   }
 
+  FakeStatsPluginBuilder& UseDisabledByDefaultMetrics(bool value) {
+    use_disabled_by_default_metrics_ = value;
+    return *this;
+  }
+
   std::shared_ptr<FakeStatsPlugin> BuildAndRegister() {
-    auto f = std::make_shared<FakeStatsPlugin>(std::move(channel_filter_));
+    auto f = std::make_shared<FakeStatsPlugin>(
+        std::move(channel_filter_), use_disabled_by_default_metrics_);
     GlobalStatsPluginRegistry::RegisterStatsPlugin(f);
     return f;
   }
@@ -441,6 +474,7 @@ class FakeStatsPluginBuilder {
  private:
   absl::AnyInvocable<bool(const StatsPlugin::ChannelScope& /*scope*/) const>
       channel_filter_;
+  bool use_disabled_by_default_metrics_ = false;
 };
 
 std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
