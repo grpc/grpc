@@ -797,7 +797,6 @@ static void tcp_server_start(grpc_tcp_server* s,
                           grpc_schedule_on_exec_ctx);
         grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
         s->active_ports++;
-        sp = sp->next;
       }
     } else {
       for (i = 0; i < pollsets->size(); i++) {
@@ -807,8 +806,8 @@ static void tcp_server_start(grpc_tcp_server* s,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
       s->active_ports++;
-      sp = sp->next;
     }
+    sp = sp->next;
   }
   gpr_mu_unlock(&s->mu);
 }
