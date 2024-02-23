@@ -1006,6 +1006,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
             GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.rr_fallback");
   EXPECT_EQ(descriptor->unit, "{updates}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
@@ -1022,6 +1023,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
             GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_not_yet_usable");
   EXPECT_EQ(descriptor->unit, "{endpoints}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
@@ -1038,6 +1040,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
             GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_stale");
   EXPECT_EQ(descriptor->unit, "{endpoints}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
@@ -1054,6 +1057,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
             GlobalInstrumentsRegistry::ValueType::kDouble);
   EXPECT_EQ(descriptor->instrument_type,
             GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+  EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weights");
   EXPECT_EQ(descriptor->unit, "{weights}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
