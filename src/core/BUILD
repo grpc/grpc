@@ -7437,6 +7437,28 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "metrics",
+    srcs = [
+        "lib/channel/metrics.cc",
+    ],
+    hdrs = [
+        "lib/channel/metrics.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:function_ref",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "no_destruct",
+        "//:gpr",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
