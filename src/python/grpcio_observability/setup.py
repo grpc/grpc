@@ -153,7 +153,7 @@ if EXTRA_ENV_LINK_ARGS is None:
 # remove some unused symbols from .so file.
 # Note that it does not work for MSCV on windows.
 if "win32" not in sys.platform:
-    EXTRA_ENV_COMPILE_ARGS += " -flto"
+    EXTRA_ENV_COMPILE_ARGS += " -flto -U_FORTIFY_SOURCE"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
