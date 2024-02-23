@@ -211,7 +211,7 @@ then
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
-  for wheel in src/python/grpcio_observability/*.whl; do
+  for wheel in src/python/grpcio_observability/dist/*.whl; do
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
