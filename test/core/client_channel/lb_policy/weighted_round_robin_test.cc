@@ -997,7 +997,7 @@ TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
   EXPECT_FALSE(subchannel3_1->ConnectionRequested());
 }
 
-TEST_F(WeightedRoundRobinTest, MetricDefinition_RrFallback) {
+TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.rr_fallback");
@@ -1013,7 +1013,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinition_RrFallback) {
               ::testing::ElementsAre("grpc.locality"));
 }
 
-TEST_F(WeightedRoundRobinTest, MetricDefinition_EndpointWeightNotYetUsable) {
+TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weight_not_yet_usable");
@@ -1029,7 +1029,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinition_EndpointWeightNotYetUsable) {
               ::testing::ElementsAre("grpc.locality"));
 }
 
-TEST_F(WeightedRoundRobinTest, MetricDefinition_EndpointWeightStale) {
+TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weight_stale");
@@ -1045,7 +1045,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinition_EndpointWeightStale) {
               ::testing::ElementsAre("grpc.locality"));
 }
 
-TEST_F(WeightedRoundRobinTest, MetricDefinition_EndpointWeights) {
+TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
           "grpc.lb.wrr.endpoint_weights");
