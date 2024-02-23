@@ -27,6 +27,7 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
 #include "test/core/util/fake_stats_plugin.h"
@@ -107,6 +108,7 @@ TEST_P(WrrTest, Basic) {
 }
 
 TEST_P(WrrTest, MetricsHaveLocalityLabel) {
+  if (!grpc_core::IsWrrDelegateToPickFirstEnabled()) return;
   const auto kRrFallback =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindUInt64CounterHandleByName("grpc.lb.wrr.rr_fallback")
