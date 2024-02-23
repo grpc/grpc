@@ -13559,12 +13559,14 @@ targets:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/pick_first_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - protobuf
