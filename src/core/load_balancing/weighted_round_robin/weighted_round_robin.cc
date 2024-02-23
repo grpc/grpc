@@ -88,8 +88,7 @@ namespace {
 
 constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
-constexpr absl::string_view kMetricLabelTarget = "grpc.target";
-constexpr absl::string_view kMetricLabelLocality = "grpc.locality";
+constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
 const auto kMetricRrFallback =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(

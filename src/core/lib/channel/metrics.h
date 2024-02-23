@@ -34,6 +34,8 @@
 
 namespace grpc_core {
 
+constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+
 // A global registry of instruments(metrics). This API is designed to be used to
 // register instruments (Counter and Histogram) as part of program startup,
 // before the execution of the main function (during dynamic initialization
