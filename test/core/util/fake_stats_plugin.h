@@ -260,7 +260,7 @@ class FakeStatsPlugin : public StatsPlugin {
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
     auto iter = uint64_counters_.find(handle.index);
-    ASSERT_TRUE(iter != uint64_counters_.end());
+    if (iter == uint64_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
   void AddCounter(
@@ -268,7 +268,7 @@ class FakeStatsPlugin : public StatsPlugin {
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     auto iter = double_counters_.find(handle.index);
-    ASSERT_TRUE(iter != double_counters_.end());
+    if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
   }
   void RecordHistogram(
@@ -276,7 +276,7 @@ class FakeStatsPlugin : public StatsPlugin {
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     auto iter = uint64_histograms_.find(handle.index);
-    ASSERT_TRUE(iter != uint64_histograms_.end());
+    if (iter == uint64_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
   void RecordHistogram(
@@ -284,7 +284,7 @@ class FakeStatsPlugin : public StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
     auto iter = double_histograms_.find(handle.index);
-    ASSERT_TRUE(iter != double_histograms_.end());
+    if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
 

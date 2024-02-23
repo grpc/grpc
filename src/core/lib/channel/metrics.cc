@@ -41,8 +41,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   if (instruments.find(name) != instruments.end()) {
-    grpc_core::Crash(
-        absl::StrFormat("Metric name %s has already been registered.", name));
+    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -71,8 +70,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   if (instruments.find(name) != instruments.end()) {
-    grpc_core::Crash(
-        absl::StrFormat("Metric name %s has already been registered.", name));
+    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -101,8 +99,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   if (instruments.find(name) != instruments.end()) {
-    grpc_core::Crash(
-        absl::StrFormat("Metric name %s has already been registered.", name));
+    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -131,8 +128,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   if (instruments.find(name) != instruments.end()) {
-    grpc_core::Crash(
-        absl::StrFormat("Metric name %s has already been registered.", name));
+    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
