@@ -78,6 +78,7 @@ def serve():
     server.stop(0)
     grpc_observability.end_open_telemetry_observability()
 
+
 if __name__ == "__main__":
     logging.basicConfig()
     serve()
