@@ -14,8 +14,15 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_TARGET_WEIGHTED_TARGET_H
+#define GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_TARGET_WEIGHTED_TARGET_H
+
+#include <grpc/support/port_platform.h>
+
 #include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg key indicating the weighted_target child name.
 #define GRPC_ARG_LB_WEIGHTED_TARGET_CHILD \
    GRPC_ARG_NO_SUBCHANNEL_PREFIX "lb_weighted_target_child"
+
+#endif  // GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_TARGET_WEIGHTED_TARGET_H
