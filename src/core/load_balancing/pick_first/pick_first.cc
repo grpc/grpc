@@ -79,8 +79,6 @@ namespace {
 
 constexpr absl::string_view kPickFirst = "pick_first";
 
-constexpr absl::string_view kMetricLabelTarget = "grpc.target";
-
 const auto kMetricDisconnections =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.disconnections",
@@ -88,9 +86,9 @@ const auto kMetricDisconnections =
         "disconnected.",
         "{disconnections}", {kMetricLabelTarget}, {}, false);
 
-const auto kMetricConnectionsSucceeded =
+const auto kMetricConnectionAttemptsSucceeded =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.lb.pick_first.connections_succeeded",
+        "grpc.lb.pick_first.connection_attempts_succeeded",
         "EXPERIMENTAL.  Number of times a subchannel is successfully "
         "connected.",
         "{connections}", {kMetricLabelTarget}, {}, false);
@@ -784,7 +782,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // existing connection already in state READY.
     if (old_state == GRPC_CHANNEL_CONNECTING) {
       stats_plugins.AddCounter(
-          kMetricConnectionsSucceeded, 1,
+          kMetricConnectionAttemptsSucceeded, 1,
           {subchannel_list_->policy_->channel_control_helper()->GetTarget()},
           {});
     }

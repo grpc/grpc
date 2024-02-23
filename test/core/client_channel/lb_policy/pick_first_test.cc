@@ -1125,17 +1125,18 @@ TEST_F(PickFirstTest, MetricDefinitionDisconnections) {
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
-TEST_F(PickFirstTest, MetricDefinitionConnectionsSucceeded) {
+TEST_F(PickFirstTest, MetricDefinitionConnectionAttemptsSucceeded) {
   const auto* descriptor =
       GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.lb.pick_first.connections_succeeded");
+          "grpc.lb.pick_first.connection_attempts_succeeded");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
             GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
-  EXPECT_EQ(descriptor->name, "grpc.lb.pick_first.connections_succeeded");
+  EXPECT_EQ(descriptor->name,
+            "grpc.lb.pick_first.connection_attempts_succeeded");
   EXPECT_EQ(descriptor->unit, "{connections}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
@@ -1162,9 +1163,9 @@ TEST_F(PickFirstTest, MetricValues) {
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.pick_first.disconnections")
           .value();
-  const auto kConnectionsSucceeded =
+  const auto kConnectionAttemptsSucceeded =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
-          "grpc.lb.pick_first.connections_succeeded")
+          "grpc.lb.pick_first.connection_attempts_succeeded")
           .value();
   const auto kConnectionAttemptsFailed =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
@@ -1208,9 +1209,9 @@ TEST_F(PickFirstTest, MetricValues) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
-  EXPECT_THAT(
-      stats_plugin->GetCounterValue(kConnectionsSucceeded, kLabelValues, {}),
-      ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsSucceeded,
+                                            kLabelValues, {}),
+              ::testing::Optional(1));
   // The LB policy will report CONNECTING some number of times (doesn't
   // matter how many) and then report READY.
   auto picker = WaitForConnected();
