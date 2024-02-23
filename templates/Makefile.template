@@ -403,7 +403,7 @@
   endif
 
   ifeq ($(SYSTEM),MINGW32)
-  LIBS = m pthread ws2_32 iphlpapi dbghelp bcrypt
+  LIBS = m pthread ws2_32 crypt32 iphlpapi dbghelp bcrypt
   LDFLAGS += -pthread
   endif
 

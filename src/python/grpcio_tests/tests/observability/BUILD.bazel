@@ -24,20 +24,6 @@ py_library(
 )
 
 py_test(
-    name = "_observability_test",
-    size = "small",
-    srcs = ["_observability_test.py"],
-    imports = ["../../"],
-    main = "_observability_test.py",
-    deps = [
-        ":test_server",
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
-        "//src/python/grpcio_tests/tests/testing",
-    ],
-)
-
-py_test(
     name = "_open_telemetry_observability_test",
     size = "small",
     srcs = ["_open_telemetry_observability_test.py"],

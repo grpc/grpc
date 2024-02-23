@@ -216,6 +216,8 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
         "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_fake_credentials",

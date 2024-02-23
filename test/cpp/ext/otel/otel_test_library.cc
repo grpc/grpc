@@ -105,7 +105,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
     meter_provider->AddMetricReader(reader_);
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
-  ot_builder.SetLabelsInjector(std::move(config.labels_injector));
   ot_builder.SetTargetSelector(std::move(config.target_selector));
   ot_builder.SetServerSelector(std::move(config.server_selector));
   ot_builder.SetTargetAttributeFilter(
@@ -115,7 +114,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   for (auto& option : config.plugin_options) {
     ot_builder.AddPluginOption(std::move(option));
   }
-  ot_builder.BuildAndRegisterGlobal();
+  ASSERT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = config.labels_to_inject;

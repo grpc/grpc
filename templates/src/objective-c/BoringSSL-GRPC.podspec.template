@@ -17,13 +17,14 @@
     # bytes from this file, then delete the intermediate file.
     #
     # TODO(mxyan): move to python3 style gzip compression when possible
-    def compress_boringssl_prefix_header():
+    def compress_and_encode_file(filepath):
+      gzip_filepath = filepath + '.gz'
       import gzip, shutil, os, base64
-      with open('src/boringssl/boringssl_prefix_symbols.h', 'rb') as f_in, gzip.GzipFile('src/boringssl/boringssl_prefix_symbols.h.gz', 'w', mtime=0.0) as f_out:
+      with open(filepath, 'rb') as f_in, gzip.GzipFile(gzip_filepath, 'w', mtime=0.0) as f_out:
         shutil.copyfileobj(f_in, f_out)
-      with open('src/boringssl/boringssl_prefix_symbols.h.gz', 'rb') as f_in:
+      with open(gzip_filepath, 'rb') as f_in:
         prefix_gz = f_in.read()
-      os.remove('src/boringssl/boringssl_prefix_symbols.h.gz')
+      os.remove(gzip_filepath)
       prefix_gz_b64 = base64.b64encode(prefix_gz)
       WRAP_LENGTH=80
       prefix_gz_b64_wrapped = [prefix_gz_b64[i:i+WRAP_LENGTH] for i in range(0, len(prefix_gz_b64), WRAP_LENGTH)]
@@ -69,7 +70,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.31'
+    version = '0.0.32'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -154,7 +155,7 @@
       ss.header_mappings_dir = 'src'
 
       ss.resource_bundles = {
-        s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+        s.module_name => 'src/PrivacyInfo.xcprivacy'
       }
 
       ss.source_files = 'src/ssl/*.{h,c,cc}',
@@ -205,7 +206,14 @@
              *) opts="--ignore-garbage" ;;
       esac
       base64 --decode $opts <<EOF | gunzip > src/include/openssl/boringssl_prefix_symbols.h
-        % for line in compress_boringssl_prefix_header():
+        % for line in compress_and_encode_file('src/boringssl/boringssl_prefix_symbols.h'):
+        ${line.decode('utf-8')}
+        % endfor
+      EOF
+
+      # PrivacyInfo.xcprivacy is not part of BoringSSL repo, inject it during pod installation
+      base64 --decode $opts <<EOF | gunzip > src/PrivacyInfo.xcprivacy
+        % for line in compress_and_encode_file('src/objective-c/PrivacyInfo.xcprivacy'):
         ${line.decode('utf-8')}
         % endfor
       EOF

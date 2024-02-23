@@ -27,6 +27,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -48,7 +49,10 @@ namespace {
 // Tests cancellation with multiple send op batches.
 void TestRetryCancelWithMultipleSendBatches(
     CoreEnd2endTest& test, std::unique_ptr<CancellationMode> mode) {
-  test.InitServer(ChannelArgs());
+  // This is a workaround for the flakiness that if the server ever enters
+  // GracefulShutdown for whatever reason while the client has already been
+  // shutdown, the test would not timeout and fail.
+  test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   test.InitClient(
       ChannelArgs()
           .Set(

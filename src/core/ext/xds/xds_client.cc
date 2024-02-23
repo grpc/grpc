@@ -34,11 +34,17 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/service/status/v3/csds.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/timestamp.upb.h"
+#include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -2032,25 +2038,86 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
   return snapshot_map;
 }
 
-std::string XdsClient::DumpClientConfigBinary() {
-  MutexLock lock(&mu_);
-  XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
+namespace {
+
+google_protobuf_Timestamp* EncodeTimestamp(Timestamp value, upb_Arena* arena) {
+  google_protobuf_Timestamp* timestamp = google_protobuf_Timestamp_new(arena);
+  gpr_timespec timespec = value.as_timespec(GPR_CLOCK_REALTIME);
+  google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
+  google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
+  return timestamp;
+}
+
+void FillGenericXdsConfig(
+    const XdsApi::ResourceMetadata& metadata, upb_StringView type_url,
+    upb_StringView resource_name, upb_Arena* arena,
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig* entry) {
+  envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(entry,
+                                                                     type_url);
+  envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(entry,
+                                                                 resource_name);
+  envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(
+      entry, metadata.client_status);
+  if (!metadata.serialized_proto.empty()) {
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(
+        entry, StdStringToUpbString(metadata.version));
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(
+        entry, EncodeTimestamp(metadata.update_time, arena));
+    auto* any_field =
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
+            entry, arena);
+    google_protobuf_Any_set_type_url(any_field, type_url);
+    google_protobuf_Any_set_value(
+        any_field, StdStringToUpbString(metadata.serialized_proto));
+  }
+  if (metadata.client_status == XdsApi::ResourceMetadata::NACKED) {
+    auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
+    envoy_admin_v3_UpdateFailureState_set_details(
+        update_failure_state, StdStringToUpbString(metadata.failed_details));
+    envoy_admin_v3_UpdateFailureState_set_version_info(
+        update_failure_state, StdStringToUpbString(metadata.failed_version));
+    envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
+        update_failure_state,
+        EncodeTimestamp(metadata.failed_update_time, arena));
+    envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
+        entry, update_failure_state);
+  }
+}
+
+}  // namespace
+
+void XdsClient::DumpClientConfig(
+    std::set<std::string>* string_pool, upb_Arena* arena,
+    envoy_service_status_v3_ClientConfig* client_config) {
+  // Assemble config dump messages
+  // Fill-in the node information
+  auto* node =
+      envoy_service_status_v3_ClientConfig_mutable_node(client_config, arena);
+  api_.PopulateNode(node, arena);
+  // Dump each resource.
   for (const auto& a : authority_state_map_) {  // authority
     const std::string& authority = a.first;
     for (const auto& t : a.second.resource_map) {  // type
       const XdsResourceType* type = t.first;
-      auto& resource_metadata_map =
-          resource_type_metadata_map[type->type_url()];
+      auto it =
+          string_pool
+              ->emplace(absl::StrCat("type.googleapis.com/", type->type_url()))
+              .first;
+      upb_StringView type_url = StdStringToUpbString(*it);
       for (const auto& r : t.second) {  // resource id
-        const XdsResourceKey& resource_key = r.first;
-        const ResourceState& resource_state = r.second;
-        resource_metadata_map[ConstructFullXdsResourceName(
-            authority, type->type_url(), resource_key)] = &resource_state.meta;
+        auto it2 = string_pool
+                       ->emplace(ConstructFullXdsResourceName(
+                           authority, type->type_url(), r.first))
+                       .first;
+        upb_StringView resource_name = StdStringToUpbString(*it2);
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig* entry =
+            envoy_service_status_v3_ClientConfig_add_generic_xds_configs(
+                client_config, arena);
+        FillGenericXdsConfig(r.second.meta, type_url, resource_name, arena,
+                             entry);
       }
     }
   }
-  // Assemble config dump messages
-  return api_.AssembleClientConfig(resource_type_metadata_map);
 }
 
 }  // namespace grpc_core

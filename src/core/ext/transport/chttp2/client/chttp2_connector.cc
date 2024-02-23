@@ -39,10 +39,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
-#include "src/core/ext/filters/client_channel/connector.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/client_channel/client_channel_factory.h"
+#include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/client_channel/connector.h"
+#include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,7 +59,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
@@ -71,6 +70,7 @@
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/resolver/resolver_registry.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 

@@ -78,7 +78,10 @@ class AuthContextTest(unittest.TestCase):
         server.start()
 
         with grpc.insecure_channel("localhost:%d" % port) as channel:
-            response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+            response = channel.unary_unary(
+                _UNARY_UNARY,
+                _registered_method=True,
+            )(_REQUEST)
         server.stop(None)
 
         auth_data = pickle.loads(response)
@@ -115,7 +118,10 @@ class AuthContextTest(unittest.TestCase):
             channel_creds,
             options=_PROPERTY_OPTIONS,
         )
-        response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        response = channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )(_REQUEST)
         channel.close()
         server.stop(None)
 
@@ -161,7 +167,10 @@ class AuthContextTest(unittest.TestCase):
             options=_PROPERTY_OPTIONS,
         )
 
-        response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        response = channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )(_REQUEST)
         channel.close()
         server.stop(None)
 
@@ -180,7 +189,10 @@ class AuthContextTest(unittest.TestCase):
         channel = grpc.secure_channel(
             "localhost:{}".format(port), channel_creds, options=channel_options
         )
-        response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        response = channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )(_REQUEST)
         auth_data = pickle.loads(response)
         self.assertEqual(
             expect_ssl_session_reused,

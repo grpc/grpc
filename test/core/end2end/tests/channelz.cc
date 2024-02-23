@@ -65,6 +65,7 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
+  SKIP_IF_CHAOTIC_GOOD();
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
@@ -118,6 +119,7 @@ CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
+  SKIP_IF_CHAOTIC_GOOD();
   auto args =
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024 * 1024)
@@ -147,6 +149,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ChannelzDisabled) {
+  SKIP_IF_CHAOTIC_GOOD();
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, false);
