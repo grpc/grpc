@@ -1062,6 +1062,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {
+  if (!IsWrrDelegateToPickFirstEnabled()) return;
   const auto kRrFallback =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.rr_fallback")
