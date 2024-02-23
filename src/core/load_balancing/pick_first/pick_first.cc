@@ -44,6 +44,7 @@
 #include "src/core/load_balancing/health_check_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -77,6 +78,28 @@ namespace {
 //
 
 constexpr absl::string_view kPickFirst = "pick_first";
+
+constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+
+const auto kMetricDisconnections =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.pick_first.disconnections",
+        "EXPERIMENTAL.  Number of times the selected subchannel becomes "
+        "disconnected.",
+        "{disconnections}", {kMetricLabelTarget}, {}, false);
+
+const auto kMetricConnectionsSucceeded =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.pick_first.connections_succeeded",
+        "EXPERIMENTAL.  Number of times a subchannel is successfully "
+        "connected.",
+        "{connections}", {kMetricLabelTarget}, {}, false);
+
+const auto kMetricConnectionAttemptsFailed =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.pick_first.connection_attempts_failed",
+        "EXPERIMENTAL.  Number of failed connection attempts.",
+        "{attempts}", {kMetricLabelTarget}, {}, false);
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
