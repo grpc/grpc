@@ -665,6 +665,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       // Add this stream to the list of the contexts to be traced at TCP
       num_stream_bytes = t->outbuf.c_slice_buffer()->length - orig_len;
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
+      ++s->write_counter;
       if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
         grpc_core::CopyContextFn copy_context_fn =
             grpc_core::GrpcHttp2GetCopyContextFn();
@@ -672,7 +673,8 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
           t->cl->emplace_back(copy_context_fn(s->context),
                               outbuf_relative_start_pos, num_stream_bytes,
-                              s->byte_counter, s->tcp_tracer);
+                              s->byte_counter, s->write_counter - 1,
+                              s->tcp_tracer);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
