@@ -640,6 +640,9 @@ struct grpc_chttp2_stream {
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
 
+  /// Number of times written
+  int64_t write_counter = 0;
+
   /// Only set when enabled.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
 
