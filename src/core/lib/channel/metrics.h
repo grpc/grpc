@@ -36,11 +36,11 @@ namespace grpc_core {
 
 constexpr absl::string_view kMetricLabelTarget = "grpc.target";
 
-// A global registry of instruments(metrics). This API is designed to be used to
-// register instruments (Counter and Histogram) as part of program startup,
-// before the execution of the main function (during dynamic initialization
-// time). Using this API after the main function begins may result into missing
-// instruments. This API is thread-unsafe.
+// A global registry of instruments(metrics). This API is designed to be used
+// to register instruments (Counter, Histogram, and Gauge) as part of program
+// startup, before the execution of the main function (during dynamic
+// initialization time). Using this API after the main function begins may
+// result into missing instruments. This API is thread-unsafe.
 class GlobalInstrumentsRegistry {
  public:
   enum class ValueType {
@@ -52,6 +52,7 @@ class GlobalInstrumentsRegistry {
     kUndefined,
     kCounter,
     kHistogram,
+    kGauge,
   };
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
@@ -75,6 +76,8 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleCounterHandle : public GlobalHandle {};
   struct GlobalUInt64HistogramHandle : public GlobalHandle {};
   struct GlobalDoubleHistogramHandle : public GlobalHandle {};
+  struct GlobalUInt64GaugeHandle : public GlobalHandle {};
+  struct GlobalDoubleGaugeHandle : public GlobalHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -97,6 +100,17 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
+  static GlobalUInt64GaugeHandle RegisterUInt64Gauge(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
+  static GlobalDoubleGaugeHandle RegisterDoubleGauge(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
+
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
 
@@ -145,6 +159,14 @@ class StatsPlugin {
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
+      double value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
+  virtual void SetGauge(
+      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
+  virtual void SetGauge(
+      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   // TODO(yijiem): Details pending.
@@ -206,6 +228,22 @@ class GlobalStatsPluginRegistry {
         absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
+      }
+    }
+    void SetGauge(
+        GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+        uint64_t value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) {
+      for (auto& plugin : plugins_) {
+        plugin->SetGauge(handle, value, label_values, optional_values);
+      }
+    }
+    void SetGauge(
+        GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+        double value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) {
+      for (auto& plugin : plugins_) {
+        plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
 

@@ -197,6 +197,83 @@ TEST_F(MetricsTest, DoubleHistogram) {
       ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34, 3.45)));
 }
 
+TEST_F(MetricsTest, UInt64Gauge) {
+  const absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  const absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                  "optional_label_key_2"};
+  auto uint64_gauge_handle = GlobalInstrumentsRegistry::RegisterUInt64Gauge(
+      "uint64_gauge", "A simple uint64 gauge.", "unit", kLabelKeys,
+      kOptionalLabelKeys, true);
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
+  constexpr absl::string_view kDomain2To4 = "domain2.domain3.domain4";
+  constexpr absl::string_view kDomain3To4 = "domain3.domain4";
+  auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
+  auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
+  auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      .SetGauge(uint64_gauge_handle, 1, kLabelValues, kOptionalLabelValues);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain2To4, ""))
+      .SetGauge(uint64_gauge_handle, 2, kLabelValues, kOptionalLabelValues);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain3To4, ""))
+      .SetGauge(uint64_gauge_handle, 3, kLabelValues, kOptionalLabelValues);
+  EXPECT_THAT(plugin1->GetGaugeValue(uint64_gauge_handle, kLabelValues,
+                                     kOptionalLabelValues),
+              ::testing::Optional(1));
+  EXPECT_THAT(plugin2->GetGaugeValue(uint64_gauge_handle, kLabelValues,
+                                     kOptionalLabelValues),
+              ::testing::Optional(2));
+  EXPECT_THAT(plugin3->GetGaugeValue(uint64_gauge_handle, kLabelValues,
+                                     kOptionalLabelValues),
+              ::testing::Optional(3));
+}
+
+TEST_F(MetricsTest, DoubleGauge) {
+  const absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  const absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                  "optional_label_key_2"};
+  auto double_gauge_handle = GlobalInstrumentsRegistry::RegisterDoubleGauge(
+      "double_gauge", "A simple double gauge.", "unit", kLabelKeys,
+      kOptionalLabelKeys, true);
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
+  constexpr absl::string_view kDomain2To4 = "domain2.domain3.domain4";
+  constexpr absl::string_view kDomain3To4 = "domain3.domain4";
+  auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
+  auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
+  auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      .SetGauge(double_gauge_handle, 1.23, kLabelValues,
+                  kOptionalLabelValues);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain2To4, ""))
+      .SetGauge(double_gauge_handle, 2.34, kLabelValues,
+                  kOptionalLabelValues);
+  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+      StatsPlugin::ChannelScope(kDomain3To4, ""))
+      .SetGauge(double_gauge_handle, 3.45, kLabelValues,
+                  kOptionalLabelValues);
+  EXPECT_THAT(plugin1->GetGaugeValue(double_gauge_handle, kLabelValues,
+                                       kOptionalLabelValues),
+              ::testing::Optional(1.23));
+  EXPECT_THAT(plugin2->GetGaugeValue(double_gauge_handle, kLabelValues,
+                                       kOptionalLabelValues),
+              ::testing::Optional(2.34));
+  EXPECT_THAT(plugin3->GetGaugeValue(double_gauge_handle, kLabelValues,
+                                       kOptionalLabelValues),
+              ::testing::Optional(3.45));
+}
+
 TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
   const absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   const absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",

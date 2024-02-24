@@ -219,23 +219,33 @@ class FakeStatsPlugin : public StatsPlugin {
                     std::string(descriptor.name).c_str());
             return;
           }
-          if (descriptor.instrument_type ==
-              GlobalInstrumentsRegistry::InstrumentType::kCounter) {
-            if (descriptor.value_type ==
-                GlobalInstrumentsRegistry::ValueType::kUInt64) {
-              uint64_counters_.emplace(descriptor.index, descriptor);
-            } else {
-              double_counters_.emplace(descriptor.index, descriptor);
-            }
-          } else {
-            EXPECT_EQ(descriptor.instrument_type,
-                      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
-            if (descriptor.value_type ==
-                GlobalInstrumentsRegistry::ValueType::kUInt64) {
-              uint64_histograms_.emplace(descriptor.index, descriptor);
-            } else {
-              double_histograms_.emplace(descriptor.index, descriptor);
-            }
+          switch (descriptor.instrument_type) {
+            case GlobalInstrumentsRegistry::InstrumentType::kCounter:
+              if (descriptor.value_type ==
+                  GlobalInstrumentsRegistry::ValueType::kUInt64) {
+                uint64_counters_.emplace(descriptor.index, descriptor);
+              } else {
+                double_counters_.emplace(descriptor.index, descriptor);
+              }
+              break;
+            case GlobalInstrumentsRegistry::InstrumentType::kHistogram:
+              if (descriptor.value_type ==
+                  GlobalInstrumentsRegistry::ValueType::kUInt64) {
+                uint64_histograms_.emplace(descriptor.index, descriptor);
+              } else {
+                double_histograms_.emplace(descriptor.index, descriptor);
+              }
+              break;
+            case GlobalInstrumentsRegistry::InstrumentType::kGauge:
+              if (descriptor.value_type ==
+                  GlobalInstrumentsRegistry::ValueType::kUInt64) {
+                uint64_gauges_.emplace(descriptor.index, descriptor);
+              } else {
+                double_gauges_.emplace(descriptor.index, descriptor);
+              }
+              break;
+            default:
+              Crash("unknown instrument type");
           }
         });
   }
@@ -314,6 +324,34 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
+  void SetGauge(
+      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::RecordGauge(index=%u, value=(uint64)%lu, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
+    auto iter = uint64_gauges_.find(handle.index);
+    if (iter == uint64_gauges_.end()) return;
+    iter->second.Set(value, label_values, optional_values);
+  }
+  void SetGauge(
+      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+      double value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {
+    gpr_log(GPR_INFO,
+            "FakeStatsPlugin[%p]::RecordGauge(index=%u, value=(double)%f, "
+            "label_values={%s}, optional_label_values={%s}",
+            this, handle.index, value,
+            absl::StrJoin(label_values, ", ").c_str(),
+            absl::StrJoin(optional_values, ", ").c_str());
+    auto iter = double_gauges_.find(handle.index);
+    if (iter == double_gauges_.end()) return;
+    iter->second.Set(value, label_values, optional_values);
+  }
 
   absl::optional<uint64_t> GetCounterValue(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -354,6 +392,26 @@ class FakeStatsPlugin : public StatsPlugin {
       return absl::nullopt;
     }
     return iter->second.GetValues(label_values, optional_values);
+  }
+  absl::optional<uint64_t> GetGaugeValue(
+      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) {
+    auto iter = uint64_gauges_.find(handle.index);
+    if (iter == uint64_gauges_.end()) {
+      return absl::nullopt;
+    }
+    return iter->second.GetValue(label_values, optional_values);
+  }
+  absl::optional<double> GetGaugeValue(
+      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) {
+    auto iter = double_gauges_.find(handle.index);
+    if (iter == double_gauges_.end()) {
+      return absl::nullopt;
+    }
+    return iter->second.GetValue(label_values, optional_values);
   }
 
  private:
@@ -442,12 +500,50 @@ class FakeStatsPlugin : public StatsPlugin {
     absl::flat_hash_map<std::string, std::vector<T>> storage_;
   };
 
+  template <class T>
+  class Gauge {
+   public:
+    explicit Gauge(GlobalInstrumentsRegistry::GlobalInstrumentDescriptor u)
+        : name_(u.name),
+          description_(u.description),
+          unit_(u.unit),
+          label_keys_(std::move(u.label_keys)),
+          optional_label_keys_(std::move(u.optional_label_keys)) {}
+
+    void Set(T t, absl::Span<const absl::string_view> label_values,
+             absl::Span<const absl::string_view> optional_values) {
+      storage_[MakeLabelString(label_keys_, label_values,
+                               optional_label_keys_, optional_values)] = t;
+    }
+
+    absl::optional<T> GetValue(
+        absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) {
+      auto iter = storage_.find(MakeLabelString(
+          label_keys_, label_values, optional_label_keys_, optional_values));
+      if (iter == storage_.end()) {
+        return absl::nullopt;
+      }
+      return iter->second;
+    }
+
+   private:
+    absl::string_view name_;
+    absl::string_view description_;
+    absl::string_view unit_;
+    std::vector<absl::string_view> label_keys_;
+    std::vector<absl::string_view> optional_label_keys_;
+    absl::flat_hash_map<std::string, T> storage_;
+  };
+
   absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
   // Instruments.
   absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_;
   absl::flat_hash_map<uint32_t, Counter<double>> double_counters_;
   absl::flat_hash_map<uint32_t, Histogram<uint64_t>> uint64_histograms_;
   absl::flat_hash_map<uint32_t, Histogram<double>> double_histograms_;
+  absl::flat_hash_map<uint32_t, Gauge<uint64_t>> uint64_gauges_;
+  absl::flat_hash_map<uint32_t, Gauge<double>> double_gauges_;
 };
 
 class FakeStatsPluginBuilder {
