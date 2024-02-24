@@ -68,6 +68,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -103,13 +104,52 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
+using ::grpc_event_engine::experimental::EventEngine;
+
 namespace grpc_core {
 
 TraceFlag grpc_lb_rls_trace(false, "rls_lb");
 
 namespace {
 
-using ::grpc_event_engine::experimental::EventEngine;
+constexpr absl::string_view kMetricLabelRlsTarget = "grpc.lb.rls_target";
+constexpr absl::string_view kMetricLabelRlsInstanceId =
+    "grpc.lb.rls_instance_id";
+
+const auto kMetricDefaultTargetRpcs =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.rls.default_target_rpcs",
+        "EXPERIMENTAL.  Number of RPCs sent to the default target.",
+        "{RPCs}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
+
+const auto kMetricTargetRpcs =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.rls.target_rpcs",
+        "EXPERIMENTAL.  Number of RPCs sent to each RLS target.  Note that "
+        "if the default target is also returned by the RLS server, RPCs sent "
+        "to that target from the cache will be counted in this metric, not "
+        "in grpc.rls.default_target_rpcs.",
+        "{RPCs}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
+
+const auto kMetricFailedRpcs =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.rls.failed_rpcs",
+        "EXPERIMENTAL.  Number of RPCs failed due to either a failed RLS "
+        "request or the RLS channel being throttled.",
+        "{RPCs}", {kMetricLabelTarget}, {}, false);
+
+const auto kMetricCacheEntries =
+    GlobalInstrumentsRegistry::RegisterUInt64Gauge(
+        "grpc.lb.rls.cache_entries",
+        "EXPERIMENTAL.  Number of entries in the RLS cache.",
+        "{entries}", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {},
+        false);
+
+const auto kMetricCacheSize =
+    GlobalInstrumentsRegistry::RegisterUInt64Gauge(
+        "grpc.lb.rls.cache_size",
+        "EXPERIMENTAL.  Size of the RLS cache.",
+        "By", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
 
 constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
@@ -365,6 +405,10 @@ class RlsLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
+    PickResult PickFromDefaultTarget(PickArgs args)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+    PickResult Fail(absl::Status status);
+
     RefCountedPtr<RlsLb> lb_policy_;
     RefCountedPtr<RlsLbConfig> config_;
     RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -530,6 +574,8 @@ class RlsLb : public LoadBalancingPolicy {
     void MaybeShrinkSize(size_t bytes)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
+    void ExportSize() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+
     RlsLb* lb_policy_;
 
     size_t size_limit_ ABSL_GUARDED_BY(&RlsLb::mu_) = 0;
@@ -689,6 +735,8 @@ class RlsLb : public LoadBalancingPolicy {
   static void UpdatePickerCallback(void* arg, grpc_error_handle error);
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
+
+  const std::string instance_id_ = absl::StrFormat("%p", this);
 
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
@@ -999,15 +1047,14 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
                     "using default target",
                     lb_policy_.get(), this);
           }
-          return default_child_policy_->Pick(args);
+          return PickFromDefaultTarget(args);
         }
         if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
           gpr_log(GPR_INFO,
                   "[rlslb %p] picker=%p: RLS call throttled; failing pick",
                   lb_policy_.get(), this);
         }
-        return PickResult::Fail(
-            absl::UnavailableError("RLS request throttled"));
+        return Fail(absl::UnavailableError("RLS request throttled"));
       }
     }
     // Start the RLS call.
@@ -1035,14 +1082,14 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
               "[rlslb %p] picker=%p: RLS call in backoff; using default target",
               lb_policy_.get(), this);
         }
-        return default_child_policy_->Pick(args);
+        return PickFromDefaultTarget(args);
       }
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
         gpr_log(GPR_INFO,
                 "[rlslb %p] picker=%p: RLS call in backoff; failing pick",
                 lb_policy_.get(), this);
       }
-      return PickResult::Fail(absl::UnavailableError(
+      return Fail(absl::UnavailableError(
           absl::StrCat("RLS request failed: ", entry->status().ToString())));
     }
   }
@@ -1052,6 +1099,29 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
             lb_policy_.get(), this);
   }
   return PickResult::Queue();
+}
+
+LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTarget(
+    PickArgs args) {
+  auto pick_result = default_child_policy_->Pick(args);
+  if (absl::holds_alternative<PickResult::Complete>(pick_result.result)) {
+    auto& stats_plugins =
+        lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+    stats_plugins.AddCounter(
+        kMetricDefaultTargetRpcs, 1,
+        {lb_policy_->channel_control_helper()->GetTarget(),
+         config_->default_target()}, {});
+  }
+  return pick_result;
+}
+
+LoadBalancingPolicy::PickResult RlsLb::Picker::Fail(absl::Status status) {
+  auto& stats_plugins =
+      lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+  stats_plugins.AddCounter(
+      kMetricFailedRpcs, 1,
+      {lb_policy_->channel_control_helper()->GetTarget()}, {});
+  return PickResult::Fail(std::move(status));
 }
 
 //
@@ -1185,6 +1255,12 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
             child_policy_wrappers_.size(),
             ConnectivityStateName(child_policy_wrapper->connectivity_state()));
   }
+  auto& stats_plugins =
+      lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+  stats_plugins.AddCounter(kMetricTargetRpcs, 1,
+                           {lb_policy_->channel_control_helper()->GetTarget(),
+                            child_policy_wrapper->target()},
+                           {});
   // Add header data.
   // Note that even if the target we're using is in TRANSIENT_FAILURE,
   // the pick might still succeed (e.g., if the child is ring_hash), so
@@ -1330,6 +1406,7 @@ RlsLb::Cache::Entry* RlsLb::Cache::FindOrInsert(const RequestKey& key) {
         lb_policy_->RefAsSubclass<RlsLb>(DEBUG_LOCATION, "CacheEntry"), key);
     map_.emplace(key, OrphanablePtr<Entry>(entry));
     size_ += entry_size;
+    ExportSize();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] key=%s: cache entry added, entry=%p",
               lb_policy_, key.ToString().c_str(), entry);
@@ -1352,6 +1429,20 @@ void RlsLb::Cache::Resize(size_t bytes) {
   }
   size_limit_ = bytes;
   MaybeShrinkSize(size_limit_);
+  ExportSize();
+}
+
+void RlsLb::Cache::ExportSize() const {
+  auto& stats_plugins =
+      lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+  stats_plugins.SetGauge(kMetricCacheEntries, map_.size(),
+                         {lb_policy_->channel_control_helper()->GetTarget(),
+                          lb_policy_->instance_id_},
+                         {});
+  stats_plugins.SetGauge(kMetricCacheSize, size_,
+                         {lb_policy_->channel_control_helper()->GetTarget(),
+                          lb_policy_->instance_id_},
+                         {});
 }
 
 void RlsLb::Cache::ResetAllBackoff() {
