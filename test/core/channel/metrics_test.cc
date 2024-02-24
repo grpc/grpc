@@ -253,24 +253,21 @@ TEST_F(MetricsTest, DoubleGauge) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPlugin::ChannelScope(kDomain1To4, ""))
-      .SetGauge(double_gauge_handle, 1.23, kLabelValues,
-                  kOptionalLabelValues);
+      .SetGauge(double_gauge_handle, 1.23, kLabelValues, kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPlugin::ChannelScope(kDomain2To4, ""))
-      .SetGauge(double_gauge_handle, 2.34, kLabelValues,
-                  kOptionalLabelValues);
+      .SetGauge(double_gauge_handle, 2.34, kLabelValues, kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPlugin::ChannelScope(kDomain3To4, ""))
-      .SetGauge(double_gauge_handle, 3.45, kLabelValues,
-                  kOptionalLabelValues);
+      .SetGauge(double_gauge_handle, 3.45, kLabelValues, kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetGaugeValue(double_gauge_handle, kLabelValues,
-                                       kOptionalLabelValues),
+                                     kOptionalLabelValues),
               ::testing::Optional(1.23));
   EXPECT_THAT(plugin2->GetGaugeValue(double_gauge_handle, kLabelValues,
-                                       kOptionalLabelValues),
+                                     kOptionalLabelValues),
               ::testing::Optional(2.34));
   EXPECT_THAT(plugin3->GetGaugeValue(double_gauge_handle, kLabelValues,
-                                       kOptionalLabelValues),
+                                     kOptionalLabelValues),
               ::testing::Optional(3.45));
 }
 

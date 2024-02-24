@@ -324,10 +324,10 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
-  void SetGauge(
-      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {
+  void SetGauge(GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+                uint64_t value,
+                absl::Span<const absl::string_view> label_values,
+                absl::Span<const absl::string_view> optional_values) override {
     gpr_log(GPR_INFO,
             "FakeStatsPlugin[%p]::RecordGauge(index=%u, value=(uint64)%lu, "
             "label_values={%s}, optional_label_values={%s}",
@@ -338,10 +338,9 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == uint64_gauges_.end()) return;
     iter->second.Set(value, label_values, optional_values);
   }
-  void SetGauge(
-      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {
+  void SetGauge(GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+                double value, absl::Span<const absl::string_view> label_values,
+                absl::Span<const absl::string_view> optional_values) override {
     gpr_log(GPR_INFO,
             "FakeStatsPlugin[%p]::RecordGauge(index=%u, value=(double)%f, "
             "label_values={%s}, optional_label_values={%s}",
@@ -512,8 +511,8 @@ class FakeStatsPlugin : public StatsPlugin {
 
     void Set(T t, absl::Span<const absl::string_view> label_values,
              absl::Span<const absl::string_view> optional_values) {
-      storage_[MakeLabelString(label_keys_, label_values,
-                               optional_label_keys_, optional_values)] = t;
+      storage_[MakeLabelString(label_keys_, label_values, optional_label_keys_,
+                               optional_values)] = t;
     }
 
     absl::optional<T> GetValue(

@@ -162,12 +162,12 @@ class StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void SetGauge(
-      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle, uint64_t value,
+      absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void SetGauge(
-      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle, double value,
+      absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   // TODO(yijiem): Details pending.
   // std::unique_ptr<AsyncInstrument> GetObservableGauge(
@@ -230,18 +230,18 @@ class GlobalStatsPluginRegistry {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
     }
-    void SetGauge(
-        GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
-        uint64_t value, absl::Span<const absl::string_view> label_values,
-        absl::Span<const absl::string_view> optional_values) {
+    void SetGauge(GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+                  uint64_t value,
+                  absl::Span<const absl::string_view> label_values,
+                  absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
-    void SetGauge(
-        GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-        double value, absl::Span<const absl::string_view> label_values,
-        absl::Span<const absl::string_view> optional_values) {
+    void SetGauge(GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+                  double value,
+                  absl::Span<const absl::string_view> label_values,
+                  absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->SetGauge(handle, value, label_values, optional_values);
       }
