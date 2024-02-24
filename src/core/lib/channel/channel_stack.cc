@@ -129,6 +129,7 @@ grpc_error_handle grpc_channel_stack_init(
 
   stack->on_destroy.Init([]() {});
   stack->event_engine.Init(channel_args.GetObjectRef<EventEngine>());
+  stack->stats_plugin_group.Init();
 
   size_t call_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
