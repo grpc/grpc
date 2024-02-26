@@ -164,10 +164,6 @@ class XdsTestType {
     return info.param.AsString();
   }
 
-  friend void PrintTo(const XdsTestType& test_type, std::ostream* os) {
-    *os << test_type.AsString();
-  }
-
  private:
   bool enable_load_reporting_ = false;
   bool enable_rds_testing_ = false;

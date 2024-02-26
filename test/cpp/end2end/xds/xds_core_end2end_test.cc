@@ -282,10 +282,13 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
       DEBUG_LOCATION, [&]() -> absl::optional<AdsServiceImpl::ResponseState> {
         auto response = balancer_->ads_service()->lds_response_state();
         if (response.has_value() &&
-            response->state == AdsServiceImpl::ResponseState::NACKED &&
-            (response->error_message == expected_message1 ||
-             response->error_message == expected_message2)) {
-          return response;
+            response->state == AdsServiceImpl::ResponseState::NACKED) {
+          if (response->error_message == expected_message1 ||
+              response->error_message == expected_message2) {
+            return response;
+          }
+          gpr_log(GPR_INFO, "non-matching NACK message: %s",
+                  response->error_message.c_str());
         }
         return absl::nullopt;
       });

@@ -646,8 +646,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpMultiClient) {
                            "envoy.lb.does_not_support_overprovisioning")));
     scopes.emplace_back(client_config.client_scope());
     absl::string_view server = client_config.client_scope();
-    absl::ConsumePrefix(&server, "xds:/");
-
     // Listener matcher depends on whether RDS is enabled.
     ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
     if (GetParam().enable_rds_testing()) {
@@ -686,7 +684,6 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpMultiClient) {
               kDefaultRouteConfigurationName, kDefaultClusterName)),
           ClientResourceStatus::ACKED, ::testing::_));
     }
-
     // Validate the dumped xDS configs
     EXPECT_THAT(client_config.generic_xds_configs(),
                 ::testing::UnorderedElementsAreArray(matchers));

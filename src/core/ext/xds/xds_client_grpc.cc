@@ -259,6 +259,7 @@ void GrpcXdsClient::Orphan() {
   if (it != g_xds_client_map->end() && it->second == this) {
     g_xds_client_map->erase(it);
   }
+  XdsClient::Orphan();
 }
 
 grpc_pollset_set* GrpcXdsClient::interested_parties() const {
