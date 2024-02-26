@@ -46,4 +46,4 @@ COPY --from=0 /artifacts ./
 # tini serves as PID 1 and enables the server to properly respond to signals.
 COPY --from=0 /tini /tini
 
-ENTRYPOINT ["/tini", "--",  "/xds_interop_server"]
+ENTRYPOINT ["/tini", "-g", "-vv",  "--",  "/xds_interop_server"]
