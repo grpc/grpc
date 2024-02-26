@@ -587,6 +587,10 @@ class GlobalInstrumentsRegistryTestPeer {
   FindUInt64HistogramHandleByName(absl::string_view name);
   static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
   FindDoubleHistogramHandleByName(absl::string_view name);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle>
+  FindUInt64GaugeHandleByName(absl::string_view name);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>
+  FindDoubleGaugeHandleByName(absl::string_view name);
 
   static GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
   FindMetricDescriptorByName(absl::string_view name);

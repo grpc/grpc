@@ -175,6 +175,24 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
       GlobalInstrumentsRegistry::InstrumentType::kHistogram);
 }
 
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindUInt64GaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleGaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kGauge);
+}
+
 GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
 GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
     absl::string_view name) {

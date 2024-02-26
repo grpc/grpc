@@ -405,9 +405,9 @@ class RlsLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    PickResult PickFromDefaultTarget(PickArgs args)
+    PickResult PickFromDefaultTargetOrFail(const char* reason, PickArgs args,
+                                           absl::Status status)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    PickResult Fail(absl::Status status);
 
     RefCountedPtr<RlsLb> lb_policy_;
     RefCountedPtr<RlsLbConfig> config_;
@@ -1040,21 +1040,9 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
       // If there is no non-expired data in the cache, then we use the
       // default target if set, or else we fail the pick.
       if (entry == nullptr || entry->data_expiration_time() < now) {
-        if (default_child_policy_ != nullptr) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-            gpr_log(GPR_INFO,
-                    "[rlslb %p] picker=%p: RLS call throttled; "
-                    "using default target",
-                    lb_policy_.get(), this);
-          }
-          return PickFromDefaultTarget(args);
-        }
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(GPR_INFO,
-                  "[rlslb %p] picker=%p: RLS call throttled; failing pick",
-                  lb_policy_.get(), this);
-        }
-        return Fail(absl::UnavailableError("RLS request throttled"));
+        return PickFromDefaultTargetOrFail(
+            "RLS call throttled", args,
+            absl::UnavailableError("RLS request throttled"));
       }
     }
     // Start the RLS call.
@@ -1075,22 +1063,10 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
     // If the entry is in backoff, then use the default target if set,
     // or else fail the pick.
     if (entry->backoff_time() >= now) {
-      if (default_child_policy_ != nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-          gpr_log(
-              GPR_INFO,
-              "[rlslb %p] picker=%p: RLS call in backoff; using default target",
-              lb_policy_.get(), this);
-        }
-        return PickFromDefaultTarget(args);
-      }
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
-        gpr_log(GPR_INFO,
-                "[rlslb %p] picker=%p: RLS call in backoff; failing pick",
-                lb_policy_.get(), this);
-      }
-      return Fail(absl::UnavailableError(
-          absl::StrCat("RLS request failed: ", entry->status().ToString())));
+      return PickFromDefaultTargetOrFail(
+          "RLS call in backoff", args,
+          absl::UnavailableError(absl::StrCat(
+              "RLS request failed: ", entry->status().ToString())));
     }
   }
   // RLS call pending.  Queue the pick.
@@ -1101,21 +1077,29 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
   return PickResult::Queue();
 }
 
-LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTarget(
-    PickArgs args) {
-  auto pick_result = default_child_policy_->Pick(args);
-  if (absl::holds_alternative<PickResult::Complete>(pick_result.result)) {
-    auto& stats_plugins =
-        lb_policy_->channel_control_helper()->GetStatsPluginGroup();
-    stats_plugins.AddCounter(
-        kMetricDefaultTargetRpcs, 1,
-        {lb_policy_->channel_control_helper()->GetTarget(),
-         config_->default_target()}, {});
+LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
+    const char* reason, PickArgs args, absl::Status status) {
+  if (default_child_policy_ != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+      gpr_log(GPR_INFO, "[rlslb %p] picker=%p: %s; using default target",
+              lb_policy_.get(), this, reason);
+    }
+    auto pick_result = default_child_policy_->Pick(args);
+// FIXME: is this the right logic?
+    if (!absl::holds_alternative<PickResult::Queue>(pick_result.result)) {
+      auto& stats_plugins =
+          lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+      stats_plugins.AddCounter(
+          kMetricDefaultTargetRpcs, 1,
+          {lb_policy_->channel_control_helper()->GetTarget(),
+           config_->default_target()}, {});
+    }
+    return pick_result;
   }
-  return pick_result;
-}
-
-LoadBalancingPolicy::PickResult RlsLb::Picker::Fail(absl::Status status) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
+    gpr_log(GPR_INFO, "[rlslb %p] picker=%p: %s; failing pick",
+            lb_policy_.get(), this, reason);
+  }
   auto& stats_plugins =
       lb_policy_->channel_control_helper()->GetStatsPluginGroup();
   stats_plugins.AddCounter(
@@ -1255,12 +1239,6 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
             child_policy_wrappers_.size(),
             ConnectivityStateName(child_policy_wrapper->connectivity_state()));
   }
-  auto& stats_plugins =
-      lb_policy_->channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(kMetricTargetRpcs, 1,
-                           {lb_policy_->channel_control_helper()->GetTarget(),
-                            child_policy_wrapper->target()},
-                           {});
   // Add header data.
   // Note that even if the target we're using is in TRANSIENT_FAILURE,
   // the pick might still succeed (e.g., if the child is ring_hash), so
@@ -1271,7 +1249,18 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
     strcpy(copied_header_data, header_data_.c_str());
     args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
   }
-  return child_policy_wrapper->Pick(args);
+  auto pick_result = child_policy_wrapper->Pick(args);
+// FIXME: the stats will be skewed for wait_for_ready RPCs...
+  if (!absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
+          pick_result.result)) {
+    auto& stats_plugins =
+        lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+    stats_plugins.AddCounter(kMetricTargetRpcs, 1,
+                             {lb_policy_->channel_control_helper()->GetTarget(),
+                              child_policy_wrapper->target()},
+                             {});
+  }
+  return pick_result;
 }
 
 void RlsLb::Cache::Entry::ResetBackoff() {

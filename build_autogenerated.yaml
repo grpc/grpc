@@ -16965,6 +16965,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
@@ -16976,6 +16977,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/rls_server.cc
