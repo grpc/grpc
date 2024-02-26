@@ -169,6 +169,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
       !ResolvedAddressIsVSock(socket.addr)) {
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
+    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketDscp(options.dscp));
     socket.sock.TrySetSocketTcpUserTimeout(options, false);
   }
   GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNoSigpipeIfPossible());

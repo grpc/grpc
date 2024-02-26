@@ -67,7 +67,7 @@ namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 namespace {
 const int32_t kDataAlignmentBytes = 64;
-const int32_t kTimeoutSecs = 5;
+const int32_t kTimeoutSecs = 120;
 }  // namespace
 
 ChaoticGoodConnector::ChaoticGoodConnector(
@@ -139,7 +139,7 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
           self->args_.channel_args),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
-      EventEngine::Duration(kTimeoutSecs));
+      std::chrono::seconds(kTimeoutSecs));
 
   return TrySeq(Race(
       TrySeq(self->data_endpoint_ready_.Wait(),
@@ -251,7 +251,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
           args_.channel_args),
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "data_endpoint_connection"),
-      EventEngine::Duration(kTimeoutSecs));
+      std::chrono::seconds(kTimeoutSecs));
 }
 
 void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {

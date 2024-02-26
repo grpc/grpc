@@ -289,10 +289,14 @@ bool HasCrlSignBit(X509* cert) {
   // X509_get_key_usage was introduced in 1.1.1
   // A missing key usage extension means all key usages are valid.
 #if OPENSSL_VERSION_NUMBER < 0x10100000
-  if (!cert->ex_flags & EXFLAG_KUSAGE) {
+  // X509_check_ca sets cert->ex_flags. We dont use the return value, but those
+  // flags being set is important.
+  // https://github.com/openssl/openssl/blob/e818b74be2170fbe957a07b0da4401c2b694b3b8/crypto/x509v3/v3_purp.c#L585
+  X509_check_ca(cert);
+  if (!(cert->ex_flags & EXFLAG_KUSAGE)) {
     return true;
   }
-  return cert->ex_kusage & KU_CRL_SIGN;
+  return (cert->ex_kusage & KU_CRL_SIGN) != 0;
 #else
   return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
 #endif  // OPENSSL_VERSION_NUMBER < 0x10100000

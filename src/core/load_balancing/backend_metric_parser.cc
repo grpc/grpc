@@ -16,7 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/client_channel/backend_metric.h"
+#include "src/core/load_balancing/backend_metric_parser.h"
 
 #include <string.h>
 

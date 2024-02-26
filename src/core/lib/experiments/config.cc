@@ -201,7 +201,7 @@ void PrintExperimentsList() {
   for (auto name_index : visitation_order) {
     const size_t i = name_index.second;
     gpr_log(
-        GPR_DEBUG, "%s",
+        GPR_INFO, "%s",
         absl::StrCat(
             "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
             std::string(max_experiment_length -

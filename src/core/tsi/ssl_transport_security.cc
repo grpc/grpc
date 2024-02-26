@@ -1006,7 +1006,7 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
 
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
-    gpr_log(GPR_ERROR, "Could not get certificate issuer name");
+    gpr_log(GPR_INFO, "Could not get certificate issuer name");
     return 0;
   }
   absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
@@ -2090,7 +2090,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
 #endif
   if (ssl_context == nullptr) {
@@ -2193,7 +2193,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                                      nullptr);
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
@@ -2310,7 +2310,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
       SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
@@ -2397,7 +2397,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           break;
       }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
       if (options->crl_provider != nullptr) {
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,

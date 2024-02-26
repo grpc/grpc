@@ -532,6 +532,7 @@ grpc_cc_test(
         "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
         "//src/core:channel_args",
+        "//src/core:config_selector",
         "//src/proto/grpc/health/v1:health_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",

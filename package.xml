@@ -103,8 +103,6 @@
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/backend_metric.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/channel_connectivity.cc" role="src" />
@@ -137,7 +135,6 @@
     <file baseinstalldir="/" name="src/core/client_channel/retry_service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_throttle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_throttle.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/service_config_channel_arg_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/subchannel_interface_internal.h" role="src" />
@@ -1707,6 +1704,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_fallback.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_supported.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_supported.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/load_system_roots_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local/local_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/local/local_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
@@ -1753,7 +1751,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/call_details.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/call_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
@@ -1834,6 +1831,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/address_filtering.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/address_filtering.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/backend_metric_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/child_policy_handler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/child_policy_handler.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/delegating_helper.h" role="src" />
@@ -1924,6 +1923,7 @@
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config_call_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/service_config/service_config_channel_arg_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config_impl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/service_config/service_config_parser.cc" role="src" />
