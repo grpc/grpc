@@ -1006,7 +1006,7 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
 
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
-    gpr_log(GPR_ERROR, "Could not get certificate issuer name");
+    gpr_log(GPR_INFO, "Could not get certificate issuer name");
     return 0;
   }
   grpc_core::experimental::CertificateInfoImpl cert_impl(*issuer_name);
