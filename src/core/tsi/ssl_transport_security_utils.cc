@@ -23,6 +23,10 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -245,6 +249,72 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
     *unprotected_bytes_size += output_bytes_offset;
   }
   return result;
+}
+
+bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
+  if (issuer == nullptr || crl == nullptr) {
+    return false;
+  }
+  EVP_PKEY* ikey = X509_get_pubkey(issuer);
+  if (ikey == nullptr) {
+    // Can't verify signature because we couldn't get the pubkey, fail the
+    // check.
+    EVP_PKEY_free(ikey);
+    return false;
+  }
+  bool ret = X509_CRL_verify(crl, ikey) == 1;
+  EVP_PKEY_free(ikey);
+  return ret;
+}
+
+bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
+  if (cert == nullptr || crl == nullptr) {
+    return false;
+  }
+  X509_NAME* cert_issuer_name = X509_get_issuer_name(cert);
+  if (cert == nullptr) {
+    return false;
+  }
+  X509_NAME* crl_issuer_name = X509_CRL_get_issuer(crl);
+  if (crl_issuer_name == nullptr) {
+    return false;
+  }
+  return X509_NAME_cmp(cert_issuer_name, crl_issuer_name) == 0;
+}
+
+bool HasCrlSignBit(X509* cert) {
+  if (cert == nullptr) {
+    return false;
+  }
+  // X509_get_key_usage was introduced in 1.1.1
+  // A missing key usage extension means all key usages are valid.
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+  // X509_check_ca sets cert->ex_flags. We dont use the return value, but those
+  // flags being set is important.
+  // https://github.com/openssl/openssl/blob/e818b74be2170fbe957a07b0da4401c2b694b3b8/crypto/x509v3/v3_purp.c#L585
+  X509_check_ca(cert);
+  if (!(cert->ex_flags & EXFLAG_KUSAGE)) {
+    return true;
+  }
+  return (cert->ex_kusage & KU_CRL_SIGN) != 0;
+#else
+  return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
+#endif  // OPENSSL_VERSION_NUMBER < 0x10100000
+}
+
+absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError("cert cannot be null");
+  }
+  X509_NAME* issuer = X509_get_issuer_name(cert);
+  unsigned char* buf = nullptr;
+  int len = i2d_X509_NAME(issuer, &buf);
+  if (len < 0 || buf == nullptr) {
+    return absl::InvalidArgumentError("could not read issuer name from cert");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
 }
 
 }  // namespace grpc_core

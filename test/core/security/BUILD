@@ -569,6 +569,7 @@ grpc_cc_test(
     srcs = ["grpc_tls_crl_provider_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
         "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
         "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
@@ -585,6 +586,7 @@ grpc_cc_test(
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/tsi:transport_security_test_lib",
         "//test/core/util:fuzz_config_vars_proto",
         "//test/core/util:grpc_test_util",
     ],
