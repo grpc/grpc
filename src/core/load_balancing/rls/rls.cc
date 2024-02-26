@@ -122,7 +122,7 @@ const auto kMetricDefaultTargetRpcs =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.default_target_rpcs",
         "EXPERIMENTAL.  Number of RPCs sent to the default target.",
-        "{RPCs}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
+        "{RPC}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
 
 const auto kMetricTargetRpcs =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -131,20 +131,20 @@ const auto kMetricTargetRpcs =
         "if the default target is also returned by the RLS server, RPCs sent "
         "to that target from the cache will be counted in this metric, not "
         "in grpc.rls.default_target_rpcs.",
-        "{RPCs}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
+        "{RPC}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
 
 const auto kMetricFailedRpcs =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.failed_rpcs",
         "EXPERIMENTAL.  Number of RPCs failed due to either a failed RLS "
         "request or the RLS channel being throttled.",
-        "{RPCs}", {kMetricLabelTarget}, {}, false);
+        "{RPC}", {kMetricLabelTarget}, {}, false);
 
 const auto kMetricCacheEntries =
     GlobalInstrumentsRegistry::RegisterUInt64Gauge(
         "grpc.lb.rls.cache_entries",
         "EXPERIMENTAL.  Number of entries in the RLS cache.",
-        "{entries}", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {},
+        "{entry}", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {},
         false);
 
 const auto kMetricCacheSize =

@@ -1399,7 +1399,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionDefaultTargetRpcs) {
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.default_target_rpcs");
-  EXPECT_EQ(descriptor->unit, "{RPCs}");
+  EXPECT_EQ(descriptor->unit, "{RPC}");
   EXPECT_THAT(descriptor->label_keys,
               ::testing::ElementsAre("grpc.target", "grpc.lb.rls_target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
@@ -1416,7 +1416,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionTargetRpcs) {
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.target_rpcs");
-  EXPECT_EQ(descriptor->unit, "{RPCs}");
+  EXPECT_EQ(descriptor->unit, "{RPC}");
   EXPECT_THAT(descriptor->label_keys,
               ::testing::ElementsAre("grpc.target", "grpc.lb.rls_target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
@@ -1433,7 +1433,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionFailedRpcs) {
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.failed_rpcs");
-  EXPECT_EQ(descriptor->unit, "{RPCs}");
+  EXPECT_EQ(descriptor->unit, "{RPC}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
@@ -1449,7 +1449,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheEntries) {
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.cache_entries");
-  EXPECT_EQ(descriptor->unit, "{entries}");
+  EXPECT_EQ(descriptor->unit, "{entry}");
   EXPECT_THAT(descriptor->label_keys,
               ::testing::ElementsAre("grpc.target", "grpc.lb.rls_instance_id"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
