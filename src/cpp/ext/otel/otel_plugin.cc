@@ -43,15 +43,6 @@
 namespace grpc {
 namespace internal {
 
-// TODO(yashykt): Extend this to allow multiple OpenTelemetry plugins to be
-// registered in the same binary.
-struct OpenTelemetryPluginState* g_otel_plugin_state_;
-
-const struct OpenTelemetryPluginState& OpenTelemetryPluginState() {
-  GPR_DEBUG_ASSERT(g_otel_plugin_state_ != nullptr);
-  return *g_otel_plugin_state_;
-}
-
 absl::string_view OpenTelemetryMethodKey() { return "grpc.method"; }
 
 absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
@@ -157,111 +148,152 @@ OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
 }
 
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
-  opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
-      meter_provider = meter_provider_;
-  delete g_otel_plugin_state_;
-  g_otel_plugin_state_ = new struct OpenTelemetryPluginState;
-  if (meter_provider == nullptr) {
+  if (meter_provider_ == nullptr) {
     return absl::OkStatus();
   }
-  auto meter = meter_provider->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
-  if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
-                            kClientAttemptStartedInstrumentName)) {
-    g_otel_plugin_state_->client.attempt.started = meter->CreateUInt64Counter(
+  grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
+      std::make_shared<OpenTelemetryPlugin>(
+          metrics_, meter_provider_, std::move(target_attribute_filter_),
+          std::move(generic_method_attribute_filter_),
+          std::move(server_selector_), std::move(plugin_options_)));
+  grpc_core::ServerCallTracerFactory::RegisterGlobal(
+      new grpc::internal::OpenTelemetryServerCallTracerFactory());
+  return absl::OkStatus();
+}
+
+OpenTelemetryPlugin::OpenTelemetryPlugin(
+    const absl::flat_hash_set<std::string>& metrics,
+    opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
+        meter_provider,
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_attribute_filter,
+    absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+        generic_method_attribute_filter,
+    absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+        server_selector,
+    std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
+        plugin_options)
+    : meter_provider_(std::move(meter_provider)),
+      target_attribute_filter_(std::move(target_attribute_filter)),
+      generic_method_attribute_filter_(
+          std::move(generic_method_attribute_filter)),
+      server_selector_(std::move(server_selector)),
+      plugin_options_(std::move(plugin_options)) {
+  auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
+  // Per-call metrics.
+  if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                           kClientAttemptStartedInstrumentName)) {
+    client_.attempt.started = meter->CreateUInt64Counter(
         std::string(grpc::OpenTelemetryPluginBuilder::
                         kClientAttemptStartedInstrumentName),
         "Number of client call attempts started", "{attempt}");
   }
-  if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
-                            kClientAttemptDurationInstrumentName)) {
-    g_otel_plugin_state_->client.attempt.duration =
-        meter->CreateDoubleHistogram(
-            std::string(grpc::OpenTelemetryPluginBuilder::
-                            kClientAttemptDurationInstrumentName),
-            "End-to-end time taken to complete a client call attempt", "s");
+  if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                           kClientAttemptDurationInstrumentName)) {
+    client_.attempt.duration = meter->CreateDoubleHistogram(
+        std::string(grpc::OpenTelemetryPluginBuilder::
+                        kClientAttemptDurationInstrumentName),
+        "End-to-end time taken to complete a client call attempt", "s");
   }
-  if (metrics_.contains(
+  if (metrics.contains(
           grpc::OpenTelemetryPluginBuilder::
               kClientAttemptSentTotalCompressedMessageSizeInstrumentName)) {
-    g_otel_plugin_state_->client.attempt.sent_total_compressed_message_size =
+    client_.attempt.sent_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
                 grpc::OpenTelemetryPluginBuilder::
                     kClientAttemptSentTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes sent per client call attempt", "By");
   }
-  if (metrics_.contains(
+  if (metrics.contains(
           grpc::OpenTelemetryPluginBuilder::
               kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName)) {
-    g_otel_plugin_state_->client.attempt.rcvd_total_compressed_message_size =
+    client_.attempt.rcvd_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
                 grpc::OpenTelemetryPluginBuilder::
                     kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per call attempt", "By");
   }
-  if (metrics_.contains(
+  if (metrics.contains(
           grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName)) {
-    g_otel_plugin_state_->server.call.started = meter->CreateUInt64Counter(
+    server_.call.started = meter->CreateUInt64Counter(
         std::string(
             grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName),
         "Number of server calls started", "{call}");
   }
-  if (metrics_.contains(grpc::OpenTelemetryPluginBuilder::
-                            kServerCallDurationInstrumentName)) {
-    g_otel_plugin_state_->server.call.duration = meter->CreateDoubleHistogram(
+  if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                           kServerCallDurationInstrumentName)) {
+    server_.call.duration = meter->CreateDoubleHistogram(
         std::string(grpc::OpenTelemetryPluginBuilder::
                         kServerCallDurationInstrumentName),
         "End-to-end time taken to complete a call from server transport's "
         "perspective",
         "s");
   }
-  if (metrics_.contains(
+  if (metrics.contains(
           grpc::OpenTelemetryPluginBuilder::
               kServerCallSentTotalCompressedMessageSizeInstrumentName)) {
-    g_otel_plugin_state_->server.call.sent_total_compressed_message_size =
+    server_.call.sent_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
                 grpc::OpenTelemetryPluginBuilder::
                     kServerCallSentTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes sent per server call", "By");
   }
-  if (metrics_.contains(
+  if (metrics.contains(
           grpc::OpenTelemetryPluginBuilder::
               kServerCallRcvdTotalCompressedMessageSizeInstrumentName)) {
-    g_otel_plugin_state_->server.call.rcvd_total_compressed_message_size =
+    server_.call.rcvd_total_compressed_message_size =
         meter->CreateUInt64Histogram(
             std::string(
                 grpc::OpenTelemetryPluginBuilder::
                     kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per server call", "By");
   }
-  g_otel_plugin_state_->target_attribute_filter =
-      std::move(target_attribute_filter_);
-  g_otel_plugin_state_->server_selector = std::move(server_selector_);
-  g_otel_plugin_state_->generic_method_attribute_filter =
-      std::move(generic_method_attribute_filter_);
-  g_otel_plugin_state_->meter_provider = std::move(meter_provider);
-  g_otel_plugin_state_->plugin_options = std::move(plugin_options_);
-  grpc_core::ServerCallTracerFactory::RegisterGlobal(
-      new grpc::internal::OpenTelemetryServerCallTracerFactory());
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [target_selector = std::move(target_selector_)](
-          grpc_core::CoreConfiguration::Builder* builder) mutable {
-        builder->channel_init()
-            ->RegisterFilter(
-                GRPC_CLIENT_CHANNEL,
-                &grpc::internal::OpenTelemetryClientFilter::kFilter)
-            .If([target_selector = std::move(target_selector)](
-                    const grpc_core::ChannelArgs& args) {
-              // Only register the filter if no channel selector has been set or
-              // the target selector returns true for the target.
-              return target_selector == nullptr ||
-                     target_selector(
-                         args.GetString(GRPC_ARG_SERVER_URI).value_or(""));
-            });
+  // Non-per-call metrics.
+  grpc_core::GlobalInstrumentsRegistry::ForEach(
+      [&, this](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
+                    descriptor) {
+        if (!metrics.contains(descriptor.name)) {
+          return;
+        }
+        if (descriptor.instrument_type ==
+            GlobalInstrumentsRegistry::InstrumentType::kCounter) {
+          if (descriptor.value_type ==
+              GlobalInstrumentsRegistry::ValueType::kUInt64) {
+            uint64_counters_.emplace(
+                descriptor.index,
+                meter->CreateUInt64Counter(std::string(descriptor.name),
+                                           std::string(descriptor.description),
+                                           std::string(descriptor.unit)));
+          } else {
+            double_counters_.emplace(
+                descriptor.index,
+                meter->CreateDoubleCounter(std::string(descriptor.name),
+                                           std::string(descriptor.description),
+                                           std::string(descriptor.unit)));
+          }
+        } else {
+          GPR_ASSERT(
+              descriptor.instrument_type ==
+              grpc_core::GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+          if (descriptor.value_type ==
+              GlobalInstrumentsRegistry::ValueType::kUInt64) {
+            uint64_histograms_.emplace(descriptor.index,
+                                       meter->CreateUInt64Histogram(
+                                           std::string(descriptor.name),
+                                           std::string(descriptor.description),
+                                           std::string(descriptor.unit)));
+          } else {
+            double_histograms_.emplace(descriptor.index,
+                                       meter->CreateDoubleHistogram(
+                                           std::string(descriptor.name),
+                                           std::string(descriptor.description),
+                                           std::string(descriptor.unit)));
+          }
+        }
       });
-  return absl::OkStatus();
 }
 
 }  // namespace internal

@@ -50,10 +50,11 @@ class GlobalInstrumentsRegistry {
     kCounter,
     kHistogram,
   };
+  using UID = uint32_t;
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
     InstrumentType instrument_type;
-    uint32_t index;
+    UID index;
     bool enable_by_default;
     absl::string_view name;
     absl::string_view description;
@@ -61,17 +62,17 @@ class GlobalInstrumentsRegistry {
     std::vector<absl::string_view> label_keys;
     std::vector<absl::string_view> optional_label_keys;
   };
-  struct GlobalHandle {
+  struct GlobalInstrumentHandle {
     // This is the index for the corresponding registered instrument that
     // StatsPlugins can use to uniquely identify an instrument in the current
     // process. Though this is not guaranteed to be stable between different
     // runs or between different versions.
-    uint32_t index;
+    UID index;
   };
-  struct GlobalUInt64CounterHandle : public GlobalHandle {};
-  struct GlobalDoubleCounterHandle : public GlobalHandle {};
-  struct GlobalUInt64HistogramHandle : public GlobalHandle {};
-  struct GlobalDoubleHistogramHandle : public GlobalHandle {};
+  struct GlobalUInt64CounterHandle : public GlobalInstrumentHandle {};
+  struct GlobalDoubleCounterHandle : public GlobalInstrumentHandle {};
+  struct GlobalUInt64HistogramHandle : public GlobalInstrumentHandle {};
+  struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -122,6 +123,8 @@ class StatsPlugin {
 
   virtual bool IsEnabledForChannel(const ChannelScope& scope) const = 0;
   virtual bool IsEnabledForServer(const ChannelArgs& args) const = 0;
+  virtual bool EnableMetric(absl::string_view metric_name) = 0;
+  virtual bool DisableMetric(absl::string_view metric_name) = 0;
 
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -168,34 +171,18 @@ class GlobalStatsPluginRegistry {
       plugins_.push_back(std::move(plugin));
     }
 
-    void AddCounter(GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-                    uint64_t value,
+    template <class T, class U>
+    void AddCounter(T handle, U value,
                     absl::Span<const absl::string_view> label_values,
                     absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
-    void AddCounter(GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
-                    double value,
-                    absl::Span<const absl::string_view> label_values,
-                    absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
-        plugin->AddCounter(handle, value, label_values, optional_values);
-      }
-    }
-    void RecordHistogram(
-        GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
-        uint64_t value, absl::Span<const absl::string_view> label_values,
-        absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
-        plugin->RecordHistogram(handle, value, label_values, optional_values);
-      }
-    }
-    void RecordHistogram(
-        GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
-        double value, absl::Span<const absl::string_view> label_values,
-        absl::Span<const absl::string_view> optional_values) {
+    template <class T, class U>
+    void RecordHistogram(T handle, U value,
+                         absl::Span<const absl::string_view> label_values,
+                         absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
