@@ -96,7 +96,7 @@ const auto kMetricRrFallback =
         "EXPERIMENTAL.  Number of scheduler updates in which there were not "
         "enough endpoints with valid weight, which caused the WRR policy to "
         "fall back to RR behavior.",
-        "{updates}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -105,14 +105,14 @@ const auto kMetricEndpointWeightNotYetUsable =
         "don't yet have usable weight information (i.e., either the load "
         "report has not yet been received, or it is within the blackout "
         "period).",
-        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeightStale =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_stale",
         "EXPERIMENTAL.  Number of endpoints from each scheduler update whose "
         "latest weight is older than the expiration period.",
-        "{endpoints}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeights =
     GlobalInstrumentsRegistry::RegisterDoubleHistogram(
@@ -121,7 +121,7 @@ const auto kMetricEndpointWeights =
         "Each bucket will be a counter that is incremented once for every "
         "endpoint whose weight is within that range. Note that endpoints "
         "without usable weights will have weight 0.",
-        "{weights}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
