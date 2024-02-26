@@ -1120,7 +1120,7 @@ TEST_F(PickFirstTest, MetricDefinitionDisconnections) {
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.pick_first.disconnections");
-  EXPECT_EQ(descriptor->unit, "{disconnections}");
+  EXPECT_EQ(descriptor->unit, "{disconnection}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
@@ -1137,7 +1137,7 @@ TEST_F(PickFirstTest, MetricDefinitionConnectionAttemptsSucceeded) {
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name,
             "grpc.lb.pick_first.connection_attempts_succeeded");
-  EXPECT_EQ(descriptor->unit, "{connections}");
+  EXPECT_EQ(descriptor->unit, "{attempt}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
@@ -1153,7 +1153,7 @@ TEST_F(PickFirstTest, MetricDefinitionConnectionAttemptsFailed) {
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.pick_first.connection_attempts_failed");
-  EXPECT_EQ(descriptor->unit, "{attempts}");
+  EXPECT_EQ(descriptor->unit, "{attempt}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }

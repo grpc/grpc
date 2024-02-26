@@ -84,20 +84,19 @@ const auto kMetricDisconnections =
         "grpc.lb.pick_first.disconnections",
         "EXPERIMENTAL.  Number of times the selected subchannel becomes "
         "disconnected.",
-        "{disconnections}", {kMetricLabelTarget}, {}, false);
+        "{disconnection}", {kMetricLabelTarget}, {}, false);
 
 const auto kMetricConnectionAttemptsSucceeded =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_succeeded",
-        "EXPERIMENTAL.  Number of times a subchannel is successfully "
-        "connected.",
-        "{connections}", {kMetricLabelTarget}, {}, false);
+        "EXPERIMENTAL.  Number of successful connection attempts.",
+        "{attempt}", {kMetricLabelTarget}, {}, false);
 
 const auto kMetricConnectionAttemptsFailed =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_failed",
         "EXPERIMENTAL.  Number of failed connection attempts.",
-        "{attempts}", {kMetricLabelTarget}, {}, false);
+        "{attempt}", {kMetricLabelTarget}, {}, false);
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
