@@ -1008,7 +1008,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionRrFallback) {
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.rr_fallback");
-  EXPECT_EQ(descriptor->unit, "{updates}");
+  EXPECT_EQ(descriptor->unit, "{update}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
               ::testing::ElementsAre("grpc.lb.locality"));
@@ -1025,7 +1025,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightNotYetUsable) {
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_not_yet_usable");
-  EXPECT_EQ(descriptor->unit, "{endpoints}");
+  EXPECT_EQ(descriptor->unit, "{endpoint}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
               ::testing::ElementsAre("grpc.lb.locality"));
@@ -1042,7 +1042,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeightStale) {
             GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weight_stale");
-  EXPECT_EQ(descriptor->unit, "{endpoints}");
+  EXPECT_EQ(descriptor->unit, "{endpoint}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
               ::testing::ElementsAre("grpc.lb.locality"));
@@ -1059,7 +1059,7 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
             GlobalInstrumentsRegistry::InstrumentType::kHistogram);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.wrr.endpoint_weights");
-  EXPECT_EQ(descriptor->unit, "{weights}");
+  EXPECT_EQ(descriptor->unit, "{weight}");
   EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
   EXPECT_THAT(descriptor->optional_label_keys,
               ::testing::ElementsAre("grpc.lb.locality"));
