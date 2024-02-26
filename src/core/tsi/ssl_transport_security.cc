@@ -902,6 +902,34 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   return ok;
 }
 
+// Idea - builder that takes list of funcs to call for verifiction
+// Have the base that just calls X509_cerify_cert
+// Then optionall also have RootCertExtractCallback
+// Then optionally custom Crl handling
+// I think we don't want any captures
+/* <fn matching verify callback reqs> VerificationBuilder(<list of fn>) {
+  return fn(X509_STORE_CTX xx, void* yy) {
+    for fn in list:
+      fn(xx, yy)
+  }
+}*/
+
+std::function<int(X509_STORE_CTX*, void*)> BuildVerifyCallback(
+    std::vector<std::function<int(X509_STORE_CTX*, void*)>> callbacks) {
+  std::function<int(X509_STORE_CTX*, void*)> fn =
+      ([=](X509_STORE_CTX* ctx, void* arg) {
+        int ret = 1;
+        for (const auto& callback : callbacks) {
+          ret = callback(ctx, arg);
+          if (ret != 1) {
+            return ret;
+          }
+        }
+        return ret;
+      });
+  return fn;
+}
+
 // The verification callback is used for clients that don't really care about
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
@@ -2198,9 +2226,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
     X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
-    X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-    X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-    X509_STORE_set_verify_cb(cert_store, verify_cb);
+    // X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+    // X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
+    // X509_STORE_set_verify_cb(cert_store, verify_cb);
     X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
     X509_VERIFY_PARAM_set_flags(
         param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
