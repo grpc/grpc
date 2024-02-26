@@ -496,6 +496,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fake_stats_plugin",
+    testonly = True,
     srcs = ["fake_stats_plugin.cc"],
     hdrs = ["fake_stats_plugin.h"],
     external_deps = [
