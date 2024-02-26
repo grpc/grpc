@@ -325,6 +325,8 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
       return absl::InvalidArgumentError("Could not get AKID from certificate.");
     }
     akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
+  } else {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
   }
   unsigned char* buf = nullptr;
   int len = i2d_ASN1_OCTET_STRING(akid, &buf);
@@ -348,6 +350,8 @@ absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
       return absl::InvalidArgumentError("Could not get AKID from crl.");
     }
     akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
+  } else {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
   }
   unsigned char* buf = nullptr;
   int len = i2d_ASN1_OCTET_STRING(akid, &buf);
