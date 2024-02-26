@@ -1474,13 +1474,13 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheSize) {
 
 TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   auto kMetricTargetRpcs =
-      grpc_core::GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
-          "grpc.lb.rls.target_rpcs")
-          .value();
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.lb.rls.target_rpcs")
+              .value();
   auto kMetricFailedRpcs =
-      grpc_core::GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
-          "grpc.lb.rls.failed_rpcs")
-          .value();
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.lb.rls.failed_rpcs")
+              .value();
   auto kMetricCacheEntries =
       grpc_core::GlobalInstrumentsRegistryTestPeer::FindUInt64GaugeHandleByName(
           "grpc.lb.rls.cache_entries")
@@ -1602,12 +1602,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
 
 TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
   auto kMetricDefaultTargetRpcs =
-      grpc_core::GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
-          "grpc.lb.rls.default_target_rpcs")
-          .value();
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.lb.rls.default_target_rpcs")
+              .value();
   StartBackends(1);
-  const std::string default_target =
-      grpc_core::LocalIpUri(backends_[0]->port_);
+  const std::string default_target = grpc_core::LocalIpUri(backends_[0]->port_);
   SetNextResolution(
       MakeServiceConfigBuilder()
           .AddKeyBuilder(absl::StrFormat("\"names\":[{"
