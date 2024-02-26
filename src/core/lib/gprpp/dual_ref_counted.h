@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
@@ -68,7 +69,8 @@ class DualRefCounted : public Orphanable {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
-    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        down_cast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -76,7 +78,8 @@ class DualRefCounted : public Orphanable {
   RefCountedPtr<Subclass> RefAsSubclass(const DebugLocation& location,
                                         const char* reason) {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        down_cast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void Unref() {
