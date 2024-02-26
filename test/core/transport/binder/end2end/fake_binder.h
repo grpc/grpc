@@ -173,7 +173,7 @@ class FakeTransactionReceiver : public TransactionReceiver {
 
 // A "persistent" version of the FakeTransactionReceiver. That is, its lifetime
 // is managed by the processor and it outlives the wire reader and
-// grpc_binder_transport, so we can safely dereference a pointer to it in
+// BinderTransport, so we can safely dereference a pointer to it in
 // ProcessLoop().
 class PersistentFakeTransactionReceiver {
  public:
