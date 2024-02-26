@@ -15,6 +15,7 @@
 
 import collections
 from concurrent import futures
+from contextvars import ContextVar
 import itertools
 import logging
 import os
@@ -39,6 +40,8 @@ _UNARY_UNARY = "/test/UnaryUnary"
 _UNARY_STREAM = "/test/UnaryStream"
 _STREAM_UNARY = "/test/StreamUnary"
 _STREAM_STREAM = "/test/StreamStream"
+
+_TEST_CONTEXT_VAR: ContextVar[str] = ContextVar("")
 
 
 class _ApplicationErrorStandin(Exception):
@@ -65,10 +68,18 @@ class _Callback(object):
 
 
 class _Handler(object):
-    def __init__(self, control):
+    def __init__(self, control, record):
         self._control = control
+        self._record = record
+
+    def _append_to_log(self, message: str) -> None:
+        context_var_value = _TEST_CONTEXT_VAR.get("")
+        if context_var_value:
+            context_var_value = "[{}]".format(context_var_value)
+        self._record.append("handler:" + message + context_var_value)
 
     def handle_unary_unary(self, request, servicer_context):
+        self._append_to_log("handle_unary_unary")
         self._control.control()
         if servicer_context is not None:
             servicer_context.set_trailing_metadata(
@@ -84,6 +95,7 @@ class _Handler(object):
         return request
 
     def handle_unary_stream(self, request, servicer_context):
+        self._append_to_log("handle_unary_stream")
         if request == _EXCEPTION_REQUEST:
             raise _ApplicationErrorStandin()
         for _ in range(test_constants.STREAM_LENGTH):
@@ -101,6 +113,7 @@ class _Handler(object):
             )
 
     def handle_stream_unary(self, request_iterator, servicer_context):
+        self._append_to_log("handle_stream_unary")
         if servicer_context is not None:
             servicer_context.invocation_metadata()
         self._control.control()
@@ -123,6 +136,7 @@ class _Handler(object):
         return b"".join(response_elements)
 
     def handle_stream_stream(self, request_iterator, servicer_context):
+        self._append_to_log("handle_stream_stream")
         self._control.control()
         if servicer_context is not None:
             servicer_context.set_trailing_metadata(
@@ -217,7 +231,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY)
+    return channel.unary_unary(_UNARY_UNARY, _registered_method=True)
 
 
 def _unary_stream_multi_callable(channel):
@@ -225,6 +239,7 @@ def _unary_stream_multi_callable(channel):
         _UNARY_STREAM,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
+        _registered_method=True,
     )
 
 
@@ -233,11 +248,12 @@ def _stream_unary_multi_callable(channel):
         _STREAM_UNARY,
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
+        _registered_method=True,
     )
 
 
 def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(_STREAM_STREAM)
+    return channel.stream_stream(_STREAM_STREAM, _registered_method=True)
 
 
 class _ClientCallDetails(
@@ -293,6 +309,21 @@ class _GenericClientInterceptor(
         return postprocess(response_it) if postprocess else response_it
 
 
+class _ContextVarSettingInterceptor(grpc.ServerInterceptor):
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    def intercept_service(self, continuation, handler_call_details):
+        old_value = _TEST_CONTEXT_VAR.get("")
+        assert (
+            not old_value
+        ), "expected context var to have no value but was '{}'".format(
+            old_value
+        )
+        _TEST_CONTEXT_VAR.set(self.value)
+        return continuation(handler_call_details)
+
+
 class _LoggingInterceptor(
     grpc.ServerInterceptor,
     grpc.UnaryUnaryClientInterceptor,
@@ -304,12 +335,18 @@ class _LoggingInterceptor(
         self.tag = tag
         self.record = record
 
+    def _append_to_log(self, message: str) -> None:
+        context_var_value = _TEST_CONTEXT_VAR.get("")
+        if context_var_value:
+            context_var_value = "[{}]".format(context_var_value)
+        self.record.append(self.tag + message + context_var_value)
+
     def intercept_service(self, continuation, handler_call_details):
-        self.record.append(self.tag + ":intercept_service")
+        self._append_to_log(":intercept_service")
         return continuation(handler_call_details)
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
-        self.record.append(self.tag + ":intercept_unary_unary")
+        self._append_to_log(":intercept_unary_unary")
         result = continuation(client_call_details, request)
         assert isinstance(
             result, grpc.Call
@@ -326,13 +363,13 @@ class _LoggingInterceptor(
     def intercept_unary_stream(
         self, continuation, client_call_details, request
     ):
-        self.record.append(self.tag + ":intercept_unary_stream")
+        self._append_to_log(":intercept_unary_stream")
         return continuation(client_call_details, request)
 
     def intercept_stream_unary(
         self, continuation, client_call_details, request_iterator
     ):
-        self.record.append(self.tag + ":intercept_stream_unary")
+        self._append_to_log(":intercept_stream_unary")
         result = continuation(client_call_details, request_iterator)
         assert isinstance(
             result, grpc.Call
@@ -345,7 +382,7 @@ class _LoggingInterceptor(
     def intercept_stream_stream(
         self, continuation, client_call_details, request_iterator
     ):
-        self.record.append(self.tag + ":intercept_stream_stream")
+        self._append_to_log(":intercept_stream_stream")
         return continuation(client_call_details, request_iterator)
 
 
@@ -420,10 +457,10 @@ def _filter_server_interceptor(condition, interceptor):
 class InterceptorTest(unittest.TestCase):
     def setUp(self):
         self._control = test_control.PauseFailControl()
-        self._handler = _Handler(self._control)
+        self._record = []
+        self._handler = _Handler(self._control, self._record)
         self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-        self._record = []
         conditional_interceptor = _filter_server_interceptor(
             lambda x: ("secret", "42") in x.invocation_metadata,
             _LoggingInterceptor("s3", self._record),
@@ -435,6 +472,7 @@ class InterceptorTest(unittest.TestCase):
             interceptors=(
                 _LoggingInterceptor("s1", self._record),
                 conditional_interceptor,
+                _ContextVarSettingInterceptor("context-var-value"),
                 _LoggingInterceptor("s2", self._record),
             ),
         )
@@ -526,7 +564,7 @@ class InterceptorTest(unittest.TestCase):
         self._record[:] = []
 
         multi_callable = _unary_unary_multi_callable(channel)
-        multi_callable.with_call(
+        response, call = multi_callable.with_call(
             request,
             metadata=(
                 (
@@ -543,7 +581,8 @@ class InterceptorTest(unittest.TestCase):
                 "c2:intercept_unary_unary",
                 "s1:intercept_service",
                 "s3:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_unary[context-var-value]",
             ],
         )
 
@@ -572,7 +611,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_unary_unary",
                 "c2:intercept_unary_unary",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_unary[context-var-value]",
             ],
         )
 
@@ -631,7 +671,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_unary_unary",
                 "c2:intercept_unary_unary",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_unary[context-var-value]",
             ],
         )
 
@@ -658,7 +699,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_unary_unary",
                 "c2:intercept_unary_unary",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_unary[context-var-value]",
             ],
         )
 
@@ -685,7 +727,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_unary_stream",
                 "c2:intercept_unary_stream",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_stream[context-var-value]",
             ],
         )
 
@@ -741,7 +784,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_stream_unary",
                 "c2:intercept_stream_unary",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_stream_unary[context-var-value]",
             ],
         )
 
@@ -775,7 +819,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_stream_unary",
                 "c2:intercept_stream_unary",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_stream_unary[context-var-value]",
             ],
         )
 
@@ -805,7 +850,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_stream_unary",
                 "c2:intercept_stream_unary",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_stream_unary[context-var-value]",
             ],
         )
 
@@ -863,7 +909,8 @@ class InterceptorTest(unittest.TestCase):
                 "c1:intercept_stream_stream",
                 "c2:intercept_stream_stream",
                 "s1:intercept_service",
-                "s2:intercept_service",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_stream_stream[context-var-value]",
             ],
         )
 

@@ -16,7 +16,6 @@
 
 #include <stddef.h>
 
-#include <algorithm>
 #include <memory>
 #include <thread>
 #include <vector>

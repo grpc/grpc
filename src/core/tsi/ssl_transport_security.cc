@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #endif
 
+#include <memory>
 #include <string>
 
 #include <openssl/bio.h>
@@ -48,6 +49,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -57,6 +59,7 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
@@ -144,6 +147,7 @@ struct tsi_ssl_frame_protector {
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
+static int g_ssl_ctx_ex_crl_provider_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
@@ -172,6 +176,12 @@ static unsigned long openssl_thread_id_cb(void) {
 }
 #endif
 
+static void verified_root_cert_free(void* /*parent*/, void* ptr,
+                                    CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                                    long /*argl*/, void* /*argp*/) {
+  X509_free(static_cast<X509*>(ptr));
+}
+
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
@@ -199,8 +209,12 @@ static void init_openssl(void) {
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_factory_index != -1);
 
-  g_ssl_ex_verified_root_cert_index =
-      SSL_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  g_ssl_ctx_ex_crl_provider_index =
+      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  GPR_ASSERT(g_ssl_ctx_ex_crl_provider_index != -1);
+
+  g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
+      0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GPR_ASSERT(g_ssl_ex_verified_root_cert_index != -1);
 }
 
@@ -261,13 +275,14 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
+    gpr_log(GPR_DEBUG, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
+    gpr_log(GPR_DEBUG,
+            "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
@@ -876,9 +891,9 @@ static tsi_result build_alpn_protocol_name_list(
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
   if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
-    gpr_log(
-        GPR_INFO,
-        "Certificate verification failed to get CRL files. Ignoring error.");
+    gpr_log(GPR_INFO,
+            "Certificate verification failed to find relevant CRL file. "
+            "Ignoring error.");
     return 1;
   }
   if (cert_error != 0) {
@@ -891,66 +906,137 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
 // we don't really care.
-static int NullVerifyCallback(int /*preverify_ok*/, X509_STORE_CTX* /*ctx*/) {
+static int NullVerifyCallback(X509_STORE_CTX* /*ctx*/, void* /*arg*/) {
   return 1;
 }
 
-static int RootCertExtractCallback(int preverify_ok, X509_STORE_CTX* ctx) {
-  if (ctx == nullptr) {
-    return preverify_ok;
+static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
+  int ret = X509_verify_cert(ctx);
+  if (ret <= 0) {
+    // Verification failed. We shouldn't expect to have a verified chain, so
+    // there is no need to attempt to extract the root cert from it.
+    return ret;
   }
 
-  // There's a case where this function is set in SSL_CTX_set_verify and a CRL
-  // related callback is set with X509_STORE_set_verify_cb. They overlap and
-  // this will take precedence, thus we need to ensure the CRL related callback
-  // is still called
-  X509_VERIFY_PARAM* param = X509_STORE_CTX_get0_param(ctx);
-  auto flags = X509_VERIFY_PARAM_get_flags(param);
-  if (flags & X509_V_FLAG_CRL_CHECK) {
-    preverify_ok = verify_cb(preverify_ok, ctx);
-  }
-
-  // If preverify_ok == 0, verification failed. We shouldn't expect to have a
-  // verified chain, so there is no need to attempt to extract the root cert
-  // from it
-  if (preverify_ok == 0) {
-    return preverify_ok;
-  }
-
-  // If we're here, verification was successful
-  // Get the verified chain from the X509_STORE_CTX and put it on the SSL object
-  // so that we have access to it when populating the tsi_peer
+  // Verification was successful. Get the verified chain from the X509_STORE_CTX
+  // and put the root on the SSL object so that we have access to it when
+  // populating the tsi_peer. On error extracting the root, we return success
+  // anyway and proceed with the connection, to preserve the behavior of an
+  // older version of this code.
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
 #else
   STACK_OF(X509)* chain = X509_STORE_CTX_get_chain(ctx);
 #endif
-
   if (chain == nullptr) {
-    return preverify_ok;
+    return ret;
   }
 
   // The root cert is the last in the chain
   size_t chain_length = sk_X509_num(chain);
   if (chain_length == 0) {
-    return preverify_ok;
+    return ret;
   }
   X509* root_cert = sk_X509_value(chain, chain_length - 1);
   if (root_cert == nullptr) {
-    return preverify_ok;
+    return ret;
   }
 
-  SSL* ssl = static_cast<SSL*>(
-      X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  if (ssl == nullptr) {
-    return preverify_ok;
+  ERR_clear_error();
+  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
+  if (ssl_index < 0) {
+    char err_str[256];
+    ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+    gpr_log(GPR_ERROR,
+            "error getting the SSL index from the X509_STORE_CTX: %s", err_str);
+    return ret;
   }
+  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
+  if (ssl == nullptr) {
+    return ret;
+  }
+
+  // Free the old root and save the new one. There should not be an old root,
+  // but if renegotiation is not disabled (required by RFC 9113, Section
+  // 9.2.1), it is possible that this callback run multiple times for a single
+  // connection. gRPC does not always disable renegotiation. See
+  // https://github.com/grpc/grpc/issues/35368
+  X509_free(static_cast<X509*>(
+      SSL_get_ex_data(ssl, g_ssl_ex_verified_root_cert_index)));
   int success =
       SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, root_cert);
   if (success == 0) {
     gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
+  } else {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    X509_up_ref(root_cert);
+#else
+    CRYPTO_add(&root_cert->references, 1, CRYPTO_LOCK_X509);
+#endif
   }
-  return preverify_ok;
+  return ret;
+}
+
+// X509_STORE_set_get_crl() sets the function to get the crl for a given
+// certificate x. When found, the crl must be assigned to *crl. This function
+// must return 0 on failure and 1 on success. If no function to get the issuer
+// is provided, the internal default function will be used instead.
+static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
+                              X509* cert) {
+  ERR_clear_error();
+  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
+  if (ssl_index < 0) {
+    char err_str[256];
+    ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+    gpr_log(GPR_ERROR,
+            "error getting the SSL index from the X509_STORE_CTX while looking "
+            "up Crl: %s",
+            err_str);
+    return 0;
+  }
+  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
+  if (ssl == nullptr) {
+    gpr_log(GPR_ERROR,
+            "error while fetching from CrlProvider. SSL object is null");
+    return 0;
+  }
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  auto* provider = static_cast<grpc_core::experimental::CrlProvider*>(
+      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
+
+  absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
+  if (!issuer_name.ok()) {
+    gpr_log(GPR_INFO, "Could not get certificate issuer name");
+    return 0;
+  }
+  grpc_core::experimental::CertificateInfoImpl cert_impl(*issuer_name);
+  std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
+      provider->GetCrl(cert_impl);
+  // There wasn't a CRL found in the provider. Returning 0 will end up causing
+  // OpenSSL to return X509_V_ERR_UNABLE_TO_GET_CRL. We then catch that error
+  // and behave how we want for a missing CRL.
+  // It is important to treat missing CRLs and empty CRLs differently.
+  if (internal_crl == nullptr) {
+    return 0;
+  }
+  X509_CRL* crl =
+      std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
+          ->crl();
+
+  X509_CRL* copy = X509_CRL_dup(crl);
+  *crl_out = copy;
+  return 1;
+}
+
+// When using CRL Providers, this function used to override the default
+// `check_crl` function in OpenSSL using `X509_STORE_set_check_crl`.
+// CrlProviders put the onus on the users to provide the CRLs that they want to
+// provide, and because we override default CRL fetching behavior, we can expect
+// some of these verification checks to fails for custom CRL providers as well.
+// Thus, we need a passthrough to indicate to OpenSSL that we've provided a CRL
+// and we are good with it.
+static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
+  return 1;
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
@@ -1673,7 +1759,10 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   if (is_client) {
     int ssl_result;
     SSL_set_connect_state(ssl);
-    if (server_name_indication != nullptr) {
+    // Skip if the SNI looks like an IP address because IP addressed are not
+    // allowed as host names.
+    if (server_name_indication != nullptr &&
+        !looks_like_ip_address(server_name_indication)) {
       if (!SSL_set_tlsext_host_name(ssl, server_name_indication)) {
         gpr_log(GPR_ERROR, "Invalid server name indication %s.",
                 server_name_indication);
@@ -1982,7 +2071,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
+  if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
+      !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -1990,6 +2080,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   ssl_context = SSL_CTX_new(TLS_method());
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
+#endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+  SSL_CTX_set_options(ssl_context, SSL_OP_NO_RENEGOTIATION);
 #endif
   if (ssl_context == nullptr) {
     grpc_core::LogSslErrorStack();
@@ -2044,7 +2137,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
     }
 #endif
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
+    if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
+        (options->root_store == nullptr &&
+         options->pem_root_certs != nullptr)) {
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);
@@ -2081,17 +2176,27 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
+  SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   if (options->skip_server_certificate_verification) {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NullVerifyCallback);
+    SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
   } else {
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, RootCertExtractCallback);
+    SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
+                                     nullptr);
   }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-  if (options->crl_directory != nullptr &&
-      strcmp(options->crl_directory, "") != 0) {
-    gpr_log(GPR_INFO, "enabling client CRL checking with path: %s",
-            options->crl_directory);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+  if (options->crl_provider != nullptr) {
+    SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
+                        options->crl_provider.get());
+    X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
+    X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+    X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
+    X509_STORE_set_verify_cb(cert_store, verify_cb);
+    X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+    X509_VERIFY_PARAM_set_flags(
+        param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+  } else if (options->crl_directory != nullptr &&
+             strcmp(options->crl_directory, "") != 0) {
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
     X509_STORE_set_verify_cb(cert_store, verify_cb);
     if (!X509_STORE_load_locations(cert_store, nullptr,
@@ -2101,7 +2206,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
       X509_VERIFY_PARAM_set_flags(
           param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-      gpr_log(GPR_INFO, "enabled client side CRL checking.");
     }
   }
 #endif
@@ -2197,6 +2301,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
+#if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
+      SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
+#endif
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();
         gpr_log(GPR_ERROR, "Could not create ssl context.");
@@ -2256,30 +2363,45 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
-                             NullVerifyCallback);
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           NullVerifyCallback, nullptr);
           break;
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
-          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER,
-                             RootCertExtractCallback);
+          SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           RootCertExtractCallback, nullptr);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             NullVerifyCallback);
+                             nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           NullVerifyCallback, nullptr);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                             RootCertExtractCallback);
+                             nullptr);
+          SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
+                                           RootCertExtractCallback, nullptr);
           break;
       }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-      if (options->crl_directory != nullptr &&
-          strcmp(options->crl_directory, "") != 0) {
-        gpr_log(GPR_INFO, "enabling server CRL checking with path %s",
-                options->crl_directory);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
+      if (options->crl_provider != nullptr) {
+        SSL_CTX_set_ex_data(impl->ssl_contexts[i],
+                            g_ssl_ctx_ex_crl_provider_index,
+                            options->crl_provider.get());
+        X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+        X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+        X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
+        X509_STORE_set_verify_cb(cert_store, verify_cb);
+        X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+        X509_VERIFY_PARAM_set_flags(
+            param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+      } else if (options->crl_directory != nullptr &&
+                 strcmp(options->crl_directory, "") != 0) {
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
         X509_STORE_set_verify_cb(cert_store, verify_cb);
         if (!X509_STORE_load_locations(cert_store, nullptr,
@@ -2289,7 +2411,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
           X509_VERIFY_PARAM_set_flags(
               param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
-          gpr_log(GPR_INFO, "enabled server CRL checking.");
         }
       }
 #endif

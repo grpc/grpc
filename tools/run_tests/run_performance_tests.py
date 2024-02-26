@@ -21,8 +21,8 @@ import collections
 import itertools
 import json
 import os
-import pipes
 import re
+import shlex
 import sys
 import time
 
@@ -121,7 +121,7 @@ def create_scenario_jobspec(
     if bq_result_table:
         cmd += 'BQ_RESULT_TABLE="%s" ' % bq_result_table
     cmd += "tools/run_tests/performance/run_qps_driver.sh "
-    cmd += "--scenarios_json=%s " % pipes.quote(
+    cmd += "--scenarios_json=%s " % shlex.quote(
         json.dumps({"scenarios": [scenario_json]})
     )
     cmd += "--scenario_result_file=scenario_result.json "
@@ -135,7 +135,7 @@ def create_scenario_jobspec(
         user_at_host = "%s@%s" % (_REMOTE_HOST_USERNAME, remote_host)
         cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (
             user_at_host,
-            pipes.quote(cmd),
+            shlex.quote(cmd),
         )
 
     return jobset.JobSpec(
@@ -157,7 +157,7 @@ def create_quit_jobspec(workers, remote_host=None):
         user_at_host = "%s@%s" % (_REMOTE_HOST_USERNAME, remote_host)
         cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (
             user_at_host,
-            pipes.quote(cmd),
+            shlex.quote(cmd),
         )
 
     return jobset.JobSpec(
@@ -192,7 +192,7 @@ def create_netperf_jobspec(
         user_at_host = "%s@%s" % (_REMOTE_HOST_USERNAME, client_host)
         cmd = 'ssh %s "cd ~/performance_workspace/grpc/ && "%s' % (
             user_at_host,
-            pipes.quote(cmd),
+            shlex.quote(cmd),
         )
 
     return jobset.JobSpec(

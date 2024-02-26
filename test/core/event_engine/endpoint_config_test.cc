@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 

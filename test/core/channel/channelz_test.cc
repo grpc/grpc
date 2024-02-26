@@ -24,7 +24,6 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <vector>
 
 #include "absl/status/status.h"

@@ -16,8 +16,6 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
-#include <algorithm>
-#include <initializer_list>
 #include <utility>
 
 #include "absl/strings/str_format.h"

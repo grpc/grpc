@@ -69,6 +69,13 @@ class ServerInterceptor(metaclass=ABCMeta):
     ) -> grpc.RpcMethodHandler:
         """Intercepts incoming RPCs before handing them over to a handler.
 
+        State can be passed from an interceptor to downstream interceptors
+        via contextvars. The first interceptor is called from an empty
+        contextvars.Context, and the same Context is used for downstream
+        interceptors and for the final handler call. Note that there are no
+        guarantees that interceptors and handlers will be called from the
+        same thread.
+
         Args:
             continuation: A function that takes a HandlerCallDetails and
                 proceeds to invoke the next interceptor in the chain, if any,
@@ -469,7 +476,7 @@ class _InterceptedStreamResponseMixin:
     _response_aiter: Optional[AsyncIterable[ResponseType]]
 
     def _init_stream_response_mixin(self) -> None:
-        # Is initalized later, otherwise if the iterator is not finnally
+        # Is initalized later, otherwise if the iterator is not finally
         # consumed a logging warning is emmited by Asyncio.
         self._response_aiter = None
 

@@ -17,10 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <type_traits>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
+
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/down_cast.h"
 
 namespace grpc_core {
 
@@ -29,17 +32,35 @@ namespace grpc_core {
 // not contain any members, only exist.
 // The reason for avoiding this is that context types each use a thread local.
 template <typename T>
-struct ContextType;  // IWYU pragma: keep
+struct ContextType;
+
+// Some contexts can be subclassed. If the subclass is set as that context
+// then GetContext<Base>() will return the base, and GetContext<Derived>() will
+// down_cast to the derived type.
+// Specializations of this type should be created for each derived type, and
+// should have a single using statement Base pointing to the derived base class.
+// Example:
+//  class SomeContext {};
+//  class SomeDerivedContext : public SomeContext {};
+//  template <> struct ContextType<SomeContext> {};
+//  template <> struct ContextSubclass<SomeDerivedContext> {
+//    using Base = SomeContext;
+//  };
+template <typename Derived>
+struct ContextSubclass;
 
 namespace promise_detail {
 
+template <typename T, typename = void>
+class Context;
+
 template <typename T>
-class Context : public ContextType<T> {
+class ThreadLocalContext : public ContextType<T> {
  public:
-  explicit Context(T* p) : old_(current_) { current_ = p; }
-  ~Context() { current_ = old_; }
-  Context(const Context&) = delete;
-  Context& operator=(const Context&) = delete;
+  explicit ThreadLocalContext(T* p) : old_(current_) { current_ = p; }
+  ~ThreadLocalContext() { current_ = old_; }
+  ThreadLocalContext(const ThreadLocalContext&) = delete;
+  ThreadLocalContext& operator=(const ThreadLocalContext&) = delete;
 
   static T* get() { return current_; }
 
@@ -49,7 +70,23 @@ class Context : public ContextType<T> {
 };
 
 template <typename T>
-thread_local T* Context<T>::current_;
+thread_local T* ThreadLocalContext<T>::current_;
+
+template <typename T>
+class Context<T, absl::void_t<decltype(ContextType<T>())>>
+    : public ThreadLocalContext<T> {
+  using ThreadLocalContext<T>::ThreadLocalContext;
+};
+
+template <typename T>
+class Context<T, absl::void_t<typename ContextSubclass<T>::Base>>
+    : public Context<typename ContextSubclass<T>::Base> {
+ public:
+  using Context<typename ContextSubclass<T>::Base>::Context;
+  static T* get() {
+    return down_cast<T*>(Context<typename ContextSubclass<T>::Base>::get());
+  }
+};
 
 template <typename T, typename F>
 class WithContext {

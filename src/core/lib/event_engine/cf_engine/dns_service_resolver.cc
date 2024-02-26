@@ -18,6 +18,7 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -49,7 +50,14 @@ void DNSServiceResolverImpl::LookupHostname(
     });
     return;
   }
-  GPR_ASSERT(!host.empty());
+  if (host.empty()) {
+    engine_->Run([on_resolve = std::move(on_resolve),
+                  status = absl::InvalidArgumentError(absl::StrCat(
+                      "host must not be empty in name: ", name))]() mutable {
+      on_resolve(status);
+    });
+    return;
+  }
   if (port_string.empty()) {
     if (default_port.empty()) {
       engine_->Run([on_resolve = std::move(on_resolve),

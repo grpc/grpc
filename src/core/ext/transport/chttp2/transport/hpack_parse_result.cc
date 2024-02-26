@@ -18,8 +18,6 @@
 
 #include <stddef.h>
 
-#include <initializer_list>
-
 #include "absl/strings/str_format.h"
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
@@ -61,13 +59,21 @@ absl::Status MakeStreamError(absl::Status error) {
 }  // namespace
 
 absl::Status HpackParseResult::Materialize() const {
-  if (materialized_status_.has_value()) return *materialized_status_;
-  materialized_status_ = BuildMaterialized();
-  return *materialized_status_;
+  if (state_ != nullptr && state_->materialized_status.has_value()) {
+    return *state_->materialized_status;
+  }
+  absl::Status materialized_status = BuildMaterialized();
+  if (!materialized_status.ok()) {
+    // We can safely assume state_ is not null here, since BuildMaterialized
+    // returns ok if it is.
+    state_->materialized_status = materialized_status;
+  }
+  return materialized_status;
 }
 
 absl::Status HpackParseResult::BuildMaterialized() const {
-  switch (status_.get()) {
+  if (state_ == nullptr) return absl::OkStatus();
+  switch (state_->status.get()) {
     case HpackParseStatus::kOk:
       return absl::OkStatus();
     case HpackParseStatus::kEof:
@@ -77,17 +83,17 @@ absl::Status HpackParseResult::BuildMaterialized() const {
       Crash("Materialize() called on moved-from object");
       break;
     case HpackParseStatus::kInvalidMetadata:
-      if (key_.empty()) {
+      if (state_->key.empty()) {
         return MakeStreamError(absl::InternalError(
-            ValidateMetadataResultToString(validate_metadata_result_)));
+            ValidateMetadataResultToString(state_->validate_metadata_result)));
       } else {
         return MakeStreamError(absl::InternalError(absl::StrCat(
-            ValidateMetadataResultToString(validate_metadata_result_), ": ",
-            key_)));
+            ValidateMetadataResultToString(state_->validate_metadata_result),
+            ": ", state_->key)));
       }
     case HpackParseStatus::kSoftMetadataLimitExceeded:
     case HpackParseStatus::kHardMetadataLimitExceeded: {
-      const auto& e = metadata_limit_exceeded_;
+      const auto& e = state_->metadata_limit_exceeded;
       // Collect a summary of sizes so far for debugging
       // Do not collect contents, for fear of exposing PII.
       std::string summary;
@@ -97,35 +103,36 @@ absl::Status HpackParseResult::BuildMaterialized() const {
       }
       return MakeStreamError(absl::ResourceExhaustedError(absl::StrCat(
           "received metadata size exceeds ",
-          status_.get() == HpackParseStatus::kSoftMetadataLimitExceeded
+          state_->status.get() == HpackParseStatus::kSoftMetadataLimitExceeded
               ? "soft"
               : "hard",
           " limit (", e.frame_length, " vs. ", e.limit, ")",
           summary.empty() ? "" : "; ", summary)));
     }
     case HpackParseStatus::kHardMetadataLimitExceededByKey: {
-      const auto& e = metadata_limit_exceeded_by_atom_;
+      const auto& e = state_->metadata_limit_exceeded_by_atom;
       return MakeStreamError(absl::ResourceExhaustedError(
           absl::StrCat("received metadata size exceeds hard limit (key length ",
                        e.atom_length, " vs. ", e.limit, ")")));
     }
     case HpackParseStatus::kHardMetadataLimitExceededByValue: {
-      const auto& e = metadata_limit_exceeded_by_atom_;
+      const auto& e = state_->metadata_limit_exceeded_by_atom;
       return MakeStreamError(absl::ResourceExhaustedError(absl::StrCat(
           "received metadata size exceeds hard limit (value length ",
           e.atom_length, " vs. ", e.limit, ")")));
     }
     case HpackParseStatus::kMetadataParseError:
-      if (!key_.empty()) {
+      if (!state_->key.empty()) {
         return MakeStreamError(absl::InternalError(
-            absl::StrCat("Error parsing '", key_, "' metadata")));
+            absl::StrCat("Error parsing '", state_->key, "' metadata")));
       } else {
         return MakeStreamError(absl::InternalError("Error parsing metadata"));
       }
     case HpackParseStatus::kUnbase64Failed:
-      if (!key_.empty()) {
-        return MakeStreamError(absl::InternalError(absl::StrCat(
-            "Error parsing '", key_, "' metadata: illegal base64 encoding")));
+      if (!state_->key.empty()) {
+        return MakeStreamError(absl::InternalError(
+            absl::StrCat("Error parsing '", state_->key,
+                         "' metadata: illegal base64 encoding")));
       } else {
         return MakeStreamError(absl::InternalError(
             absl::StrCat("Failed base64 decoding metadata")));
@@ -137,22 +144,23 @@ absl::Status HpackParseResult::BuildMaterialized() const {
       return absl::InternalError(absl::StrFormat(
           "integer overflow in hpack integer decoding: have 0x%08x, "
           "got byte 0x%02x",
-          varint_out_of_range_.value, varint_out_of_range_.last_byte));
+          state_->varint_out_of_range.value,
+          state_->varint_out_of_range.last_byte));
     case HpackParseStatus::kIllegalTableSizeChange:
       return absl::InternalError(absl::StrCat(
-          "Attempt to make hpack table ", illegal_table_size_change_.new_size,
-          " bytes when max is ", illegal_table_size_change_.max_size,
-          " bytes"));
+          "Attempt to make hpack table ",
+          state_->illegal_table_size_change.new_size, " bytes when max is ",
+          state_->illegal_table_size_change.max_size, " bytes"));
     case HpackParseStatus::kAddBeforeTableSizeUpdated:
       return absl::InternalError(
           absl::StrCat("HPACK max table size reduced to ",
-                       illegal_table_size_change_.new_size,
+                       state_->illegal_table_size_change.new_size,
                        " but not reflected by hpack stream (still at ",
-                       illegal_table_size_change_.max_size, ")"));
+                       state_->illegal_table_size_change.max_size, ")"));
     case HpackParseStatus::kParseHuffFailed:
-      if (!key_.empty()) {
-        return absl::InternalError(
-            absl::StrCat("Failed huffman decoding '", key_, "' metadata"));
+      if (!state_->key.empty()) {
+        return absl::InternalError(absl::StrCat("Failed huffman decoding '",
+                                                state_->key, "' metadata"));
       } else {
         return absl::InternalError(
             absl::StrCat("Failed huffman decoding metadata"));
@@ -166,7 +174,7 @@ absl::Status HpackParseResult::BuildMaterialized() const {
           "Malicious varint encoding detected in HPACK stream");
     case HpackParseStatus::kInvalidHpackIndex:
       return absl::InternalError(absl::StrFormat(
-          "Invalid HPACK index received (%d)", invalid_hpack_index_));
+          "Invalid HPACK index received (%d)", state_->invalid_hpack_index));
     case HpackParseStatus::kIllegalHpackOpCode:
       return absl::InternalError("Illegal hpack op code");
   }

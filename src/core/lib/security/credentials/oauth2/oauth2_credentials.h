@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <atomic>
-#include <initializer_list>
 #include <string>
 #include <utility>
 

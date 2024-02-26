@@ -16,6 +16,8 @@
 //
 //
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -78,5 +80,6 @@ CORE_END2END_TEST(WriteBufferingTest, WriteBufferingAtEnd) {
   EXPECT_EQ(request_payload_recv1.payload(), "hello world");
   EXPECT_TRUE(request_payload_recv2.is_end_of_stream());
 }
+
 }  // namespace
 }  // namespace grpc_core

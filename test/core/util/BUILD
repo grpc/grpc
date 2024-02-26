@@ -48,6 +48,13 @@ TEST_UTILS_THAT_USE_GRPC_H_HEADERS = [
 ]
 
 grpc_cc_library(
+    name = "proto_bit_gen",
+    language = "c++",
+    public_hdrs = ["proto_bit_gen.h"],
+    deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
@@ -56,7 +63,6 @@ grpc_cc_library(
         "histogram.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
-        "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
         "tracer_util.cc",
@@ -70,7 +76,6 @@ grpc_cc_library(
         "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
-        "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
         "tracer_util.h",
@@ -141,6 +146,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:load_file",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -299,13 +305,14 @@ grpc_cc_library(
     ],
     deps = [
         "//:config",
+        "//:endpoint_addresses",
         "//:gpr",
         "//:grpc",
         "//:grpc_client_channel",
+        "//:oob_backend_metric",
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
-        "//:server_address",
         "//:uri_parser",
         "//src/core:channel_args",
         "//src/core:delegating_helper",
@@ -482,5 +489,15 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_stats_plugin",
+    srcs = ["fake_stats_plugin.cc"],
+    hdrs = ["fake_stats_plugin.h"],
+    deps = [
+        "//:grpc",
+        "//src/core:examine_stack",
     ],
 )

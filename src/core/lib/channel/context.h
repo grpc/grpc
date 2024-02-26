@@ -56,6 +56,9 @@ typedef enum {
   /// the server.
   GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
 
+  /// Special Google context
+  GRPC_CONTEXT_GOOGLE,
+
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 

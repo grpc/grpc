@@ -15,6 +15,8 @@
 
 #include "test/core/event_engine/test_init.h"
 
+#include <string>
+
 #include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine {

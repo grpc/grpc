@@ -38,7 +38,7 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.3.2
+ENV BAZEL_VERSION 6.4.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
@@ -64,6 +64,17 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 
 RUN git config --global --add safe.directory '*'
 RUN git config --global protocol.file.allow always
+
+#=================
+# Setup git to access working directory across docker boundary.
+# This avoids the "fatal: detected dubious ownership in repository XYZ"
+# git error. Using "--system" makes the setting work
+# for all users or even current user is not properly defined
+# (which can happen e.g. inside execution environment
+# of a bazel action)
+
+RUN git config --system --add safe.directory '*'
+RUN git config --system protocol.file.allow always
 
 
 RUN apt-get install -y gdb

@@ -95,8 +95,9 @@ class CoreTestFixture {
  public:
   virtual ~CoreTestFixture() = default;
 
-  virtual grpc_server* MakeServer(const ChannelArgs& args,
-                                  grpc_completion_queue* cq) = 0;
+  virtual grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) = 0;
   virtual grpc_channel* MakeClient(const ChannelArgs& args,
                                    grpc_completion_queue* cq) = 0;
 };
@@ -242,6 +243,8 @@ class CoreEnd2endTest : public ::testing::Test {
             grpc_metadata_array{0, 0, nullptr});
   };
 
+  class IncomingCall;
+
   // Receiving container for one incoming message.
   class IncomingMessage final : public CqVerifier::SuccessfulStateString {
    public:
@@ -270,6 +273,7 @@ class CoreEnd2endTest : public ::testing::Test {
     grpc_op MakeOp();
 
    private:
+    friend class IncomingCall;
     grpc_byte_buffer* payload_ = nullptr;
   };
 
@@ -504,6 +508,8 @@ class CoreEnd2endTest : public ::testing::Test {
   class IncomingCall {
    public:
     IncomingCall(CoreEnd2endTest& test, int tag);
+    IncomingCall(CoreEnd2endTest& test, void* method, IncomingMessage* message,
+                 int tag);
     IncomingCall(const IncomingCall&) = delete;
     IncomingCall& operator=(const IncomingCall&) = delete;
     IncomingCall(IncomingCall&&) noexcept = default;
@@ -561,6 +567,24 @@ class CoreEnd2endTest : public ::testing::Test {
     std::unique_ptr<Impl> impl_;
   };
 
+  class ServerRegisteredMethod {
+   public:
+    ServerRegisteredMethod(
+        CoreEnd2endTest* test, absl::string_view name,
+        grpc_server_register_method_payload_handling payload_handling);
+
+    void* handle() { return *handle_; }
+
+   private:
+    std::shared_ptr<void*> handle_ = std::make_shared<void*>(nullptr);
+  };
+
+  ServerRegisteredMethod RegisterServerMethod(
+      absl::string_view name,
+      grpc_server_register_method_payload_handling payload_handling) {
+    return ServerRegisteredMethod(this, name, payload_handling);
+  }
+
   // Begin construction of a client call.
   ClientCallBuilder NewClientCall(std::string method) {
     return ClientCallBuilder(*this, std::move(method));
@@ -570,6 +594,14 @@ class CoreEnd2endTest : public ::testing::Test {
   }
   // Request a call on the server - notifies `tag` when complete.
   IncomingCall RequestCall(int tag) { return IncomingCall(*this, tag); }
+  // Request a call on the server - notifies `tag` when complete.
+  IncomingCall RequestRegisteredCall(ServerRegisteredMethod method, int tag) {
+    return IncomingCall(*this, method.handle(), nullptr, tag);
+  }
+  IncomingCall RequestRegisteredCall(ServerRegisteredMethod method,
+                                     IncomingMessage* message, int tag) {
+    return IncomingCall(*this, method.handle(), message, tag);
+  }
 
   // Pull in CqVerifier types for ergonomics
   // TODO(ctiller): evaluate just dropping CqVerifier and folding it in here.
@@ -616,7 +648,7 @@ class CoreEnd2endTest : public ::testing::Test {
     initialized_ = true;
     if (server_ != nullptr) ShutdownAndDestroyServer();
     auto& f = fixture();
-    server_ = f.MakeServer(args, cq_);
+    server_ = f.MakeServer(args, cq_, pre_server_start_);
     GPR_ASSERT(server_ != nullptr);
   }
   // Remove the client.
@@ -730,6 +762,8 @@ class CoreEnd2endTest : public ::testing::Test {
   grpc_server* server_ = nullptr;
   grpc_channel* client_ = nullptr;
   std::unique_ptr<CqVerifier> cq_verifier_;
+  absl::AnyInvocable<void(grpc_server*)> pre_server_start_ = [](grpc_server*) {
+  };
   int expectations_ = 0;
   bool initialized_ = false;
   absl::AnyInvocable<void()> post_grpc_init_func_ = []() {};
@@ -755,8 +789,12 @@ class CoreLargeSendTest : public CoreEnd2endTest {};
 class CoreClientChannelTest : public CoreEnd2endTest {};
 // Test suite for tests that require deadline handling
 class CoreDeadlineTest : public CoreEnd2endTest {};
+// Test suite for tests that require deadline handling
+class CoreDeadlineSingleHopTest : public CoreEnd2endTest {};
 // Test suite for http2 tests that only work over a single hop (unproxyable)
 class Http2SingleHopTest : public CoreEnd2endTest {};
+// Test suite for fullstack single hop http2 tests (require client channel)
+class Http2FullstackSingleHopTest : public CoreEnd2endTest {};
 // Test suite for tests that require retry features
 class RetryTest : public CoreEnd2endTest {};
 // Test suite for write buffering
@@ -832,18 +870,13 @@ class CoreEnd2endTestRegistry {
   if (GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) \
   GTEST_SKIP() << "Skipping test for minstack"
 
-#define SKIP_IF_USES_EVENT_ENGINE_CLIENT()                                     \
-  if (!g_is_fuzzing_core_e2e_tests && grpc_core::IsEventEngineClientEnabled()) \
-  GTEST_SKIP() << "Skipping test to prevent it from using EventEngine client"
-
-#define SKIP_IF_USES_EVENT_ENGINE_LISTENER()                            \
-  if (!g_is_fuzzing_core_e2e_tests &&                                   \
-      grpc_core::IsEventEngineListenerEnabled())                        \
-  GTEST_SKIP() << "Skipping test to prevent it from using EventEngine " \
-                  "listener"
-
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
+
+#define SKIP_IF_CHAOTIC_GOOD()                                   \
+  if (IsChaoticGoodEnabled()) {                                  \
+    GTEST_SKIP() << "Disabled for initial chaotic good testing"; \
+  }
 
 #define CORE_END2END_TEST(suite, name)                                       \
   class CoreEnd2endTest_##suite##_##name : public grpc_core::suite {         \

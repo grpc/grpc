@@ -26,7 +26,7 @@
 namespace grpc_binder {
 namespace end2end_testing {
 
-std::pair<grpc_transport*, grpc_transport*>
+std::pair<grpc_core::Transport*, grpc_core::Transport*>
 CreateClientServerBindersPairForTesting();
 
 std::shared_ptr<grpc::Channel> BinderChannelForTesting(

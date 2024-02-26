@@ -18,7 +18,6 @@
 
 #include <string.h>
 
-#include <algorithm>
 #include <string>
 
 #include "absl/status/status.h"

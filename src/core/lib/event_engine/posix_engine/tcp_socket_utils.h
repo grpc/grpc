@@ -26,6 +26,7 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -75,6 +76,8 @@ struct PosixTcpOptions {
   int dscp = kDscpNotSet;
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   struct grpc_socket_mutator* socket_mutator = nullptr;
+  grpc_event_engine::experimental::MemoryAllocatorFactory*
+      memory_allocator_factory = nullptr;
   PosixTcpOptions() = default;
   // Move ctor
   PosixTcpOptions(PosixTcpOptions&& other) noexcept {
@@ -89,6 +92,8 @@ struct PosixTcpOptions {
     }
     socket_mutator = std::exchange(other.socket_mutator, nullptr);
     resource_quota = std::move(other.resource_quota);
+    memory_allocator_factory =
+        std::exchange(other.memory_allocator_factory, nullptr);
     CopyIntegerOptions(other);
     return *this;
   }
@@ -98,6 +103,7 @@ struct PosixTcpOptions {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
+    memory_allocator_factory = other.memory_allocator_factory;
     CopyIntegerOptions(other);
   }
   // Copy assignment
@@ -113,6 +119,7 @@ struct PosixTcpOptions {
       socket_mutator = grpc_socket_mutator_ref(other.socket_mutator);
     }
     resource_quota = other.resource_quota;
+    memory_allocator_factory = other.memory_allocator_factory;
     CopyIntegerOptions(other);
     return *this;
   }

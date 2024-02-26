@@ -13,10 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
 #include "test/core/util/tls_utils.h"
 
 #include <stdio.h>
+
+#include "absl/strings/str_cat.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -25,8 +26,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
@@ -77,12 +78,13 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
   return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
 }
 
-std::string GetFileContents(const char* path) {
-  grpc_slice slice = grpc_empty_slice();
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(path, 0, &slice)));
-  std::string data = std::string(StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return data;
+std::string GetFileContents(const std::string& path) {
+  auto slice = LoadFile(path, /*add_null_terminator=*/false);
+  if (!slice.ok()) {
+    Crash(absl::StrCat("error loading file ", path, ": ",
+                       slice.status().ToString()));
+  }
+  return std::string(slice->as_string_view());
 }
 
 int SyncExternalVerifier::Verify(void* user_data,
@@ -138,8 +140,8 @@ void DestroyExternalVerifier(void* arg) {
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
-  // Spawn a detached thread to destroy the verifier, to make sure that we don't
-  // try to join the worker thread from within the worker thread.
+  // Spawn a detached thread to destroy the verifier, to make sure that we
+  // don't try to join the worker thread from within the worker thread.
   Thread destroy_thread("DestroyExternalVerifier", DestroyExternalVerifier,
                         self, nullptr, Thread::Options().set_joinable(false));
   destroy_thread.Start();

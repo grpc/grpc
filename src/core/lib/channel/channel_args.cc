@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <string>
@@ -281,25 +280,35 @@ absl::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
   }
 }
 
-std::string ChannelArgs::Value::ToString() const {
-  if (rep_.c_vtable() == &int_vtable_) {
-    return std::to_string(reinterpret_cast<intptr_t>(rep_.c_pointer()));
-  }
+absl::string_view ChannelArgs::Value::ToString(
+    std::list<std::string>& backing_strings) const {
   if (rep_.c_vtable() == &string_vtable_) {
-    return std::string(
-        static_cast<RefCountedString*>(rep_.c_pointer())->as_string_view());
+    return static_cast<RefCountedString*>(rep_.c_pointer())->as_string_view();
   }
-  return absl::StrFormat("%p", rep_.c_pointer());
+  if (rep_.c_vtable() == &int_vtable_) {
+    backing_strings.emplace_back(
+        std::to_string(reinterpret_cast<intptr_t>(rep_.c_pointer())));
+    return backing_strings.back();
+  }
+  backing_strings.emplace_back(absl::StrFormat("%p", rep_.c_pointer()));
+  return backing_strings.back();
 }
 
 std::string ChannelArgs::ToString() const {
-  std::vector<std::string> arg_strings;
-  args_.ForEach(
-      [&arg_strings](const RefCountedStringValue& key, const Value& value) {
-        arg_strings.push_back(
-            absl::StrCat(key.as_string_view(), "=", value.ToString()));
-      });
-  return absl::StrCat("{", absl::StrJoin(arg_strings, ", "), "}");
+  std::vector<absl::string_view> strings;
+  std::list<std::string> backing_strings;
+  strings.push_back("{");
+  bool first = true;
+  args_.ForEach([&strings, &first, &backing_strings](
+                    const RefCountedStringValue& key, const Value& value) {
+    if (!first) strings.push_back(", ");
+    first = false;
+    strings.push_back(key.as_string_view());
+    strings.push_back("=");
+    strings.push_back(value.ToString(backing_strings));
+  });
+  strings.push_back("}");
+  return absl::StrJoin(strings, "");
 }
 
 ChannelArgs ChannelArgs::UnionWith(ChannelArgs other) const {

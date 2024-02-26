@@ -30,7 +30,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -38,9 +37,10 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_factory.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
@@ -71,7 +71,8 @@ absl::Status ErrorToAbslStatus(
 }
 
 class FuzzingResolverEventEngine
-    : public grpc_event_engine::experimental::AbortingEventEngine {
+    : public grpc_event_engine::experimental::AbortingEventEngine,
+      public std::enable_shared_from_this<FuzzingResolverEventEngine> {
  public:
   explicit FuzzingResolverEventEngine(
       const event_engine_client_channel_resolver::Msg& msg,

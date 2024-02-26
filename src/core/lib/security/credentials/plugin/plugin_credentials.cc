@@ -27,7 +27,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -153,7 +152,8 @@ grpc_plugin_credentials::GetRequestMetadata(
 
   // Create pending_request object.
   auto request = grpc_core::MakeRefCounted<PendingRequest>(
-      Ref(), std::move(initial_metadata), args);
+      RefAsSubclass<grpc_plugin_credentials>(), std::move(initial_metadata),
+      args);
   // Invoke the plugin.  The callback holds a ref to us.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",

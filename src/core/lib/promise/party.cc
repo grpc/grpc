@@ -17,14 +17,12 @@
 #include "src/core/lib/promise/party.h"
 
 #include <atomic>
-#include <initializer_list>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -34,6 +32,8 @@
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
+
+grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");
 
 namespace grpc_core {
 
@@ -52,12 +52,15 @@ GRPC_MUST_USE_RESULT bool PartySyncUsingAtomics::RefIfNonZero() {
   } while (!state_.compare_exchange_weak(count, count + kOneRef,
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed));
+  LogStateChange("RefIfNonZero", count, count + kOneRef);
   return true;
 }
 
 bool PartySyncUsingAtomics::UnreffedLast() {
   uint64_t prev_state =
       state_.fetch_or(kDestroying | kLocked, std::memory_order_acq_rel);
+  LogStateChange("UnreffedLast", prev_state,
+                 prev_state | kDestroying | kLocked);
   return (prev_state & kLocked) == 0;
 }
 
@@ -65,6 +68,8 @@ bool PartySyncUsingAtomics::ScheduleWakeup(WakeupMask mask) {
   // Or in the wakeup bit for the participant, AND the locked bit.
   uint64_t prev_state = state_.fetch_or((mask & kWakeupMask) | kLocked,
                                         std::memory_order_acq_rel);
+  LogStateChange("ScheduleWakeup", prev_state,
+                 prev_state | (mask & kWakeupMask) | kLocked);
   // If the lock was not held now we hold it, so we need to run.
   return ((prev_state & kLocked) == 0);
 }
@@ -229,46 +234,53 @@ void Party::RunLocked() {
 bool Party::RunParty() {
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_);
-  return sync_.RunParty([this](int i) {
-    // If the participant is null, skip.
-    // This allows participants to complete whilst wakers still exist
-    // somewhere.
-    auto* participant = participants_[i].load(std::memory_order_acquire);
-    if (participant == nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
-                DebugTag().c_str(), i);
-      }
-      return false;
-    }
-    absl::string_view name;
+  return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
+}
+
+bool Party::RunOneParticipant(int i) {
+  // If the participant is null, skip.
+  // This allows participants to complete whilst wakers still exist
+  // somewhere.
+  auto* participant = participants_[i].load(std::memory_order_acquire);
+  if (participant == nullptr) {
     if (grpc_trace_promise_primitives.enabled()) {
-      name = participant->name();
-      gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
-              std::string(name).c_str(), i);
+      gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
+              DebugTag().c_str(), i);
     }
-    // Poll the participant.
-    currently_polling_ = i;
-    bool done = participant->Poll();
-    currently_polling_ = kNotPolling;
-    if (done) {
-      if (!name.empty()) {
-        gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
-                DebugTag().c_str(), std::string(name).c_str(), i);
-      }
-      participants_[i].store(nullptr, std::memory_order_relaxed);
-    } else if (!name.empty()) {
-      gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
-              std::string(name).c_str());
+    return false;
+  }
+  absl::string_view name;
+  if (grpc_trace_promise_primitives.enabled()) {
+    name = participant->name();
+    gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
+            std::string(name).c_str(), i);
+  }
+  // Poll the participant.
+  currently_polling_ = i;
+  bool done = participant->PollParticipantPromise();
+  currently_polling_ = kNotPolling;
+  if (done) {
+    if (!name.empty()) {
+      gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
+              DebugTag().c_str(), std::string(name).c_str(), i);
     }
-    return done;
-  });
+    participants_[i].store(nullptr, std::memory_order_relaxed);
+  } else if (!name.empty()) {
+    gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
+            std::string(name).c_str());
+  }
+  return done;
 }
 
 void Party::AddParticipants(Participant** participants, size_t count) {
   bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
+      if (grpc_trace_party_state.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "Party %p                 AddParticipant: %s @ %" PRIdPTR,
+                &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
+      }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }
   });

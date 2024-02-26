@@ -60,7 +60,7 @@ package named :code:`python-dev`).
   $ git submodule update --init
 
   # For the next two commands do `sudo pip install` if you get permission-denied errors
-  $ pip install -rrequirements.txt
+  $ pip install -r requirements.txt
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
 You cannot currently install Python from source on Windows. Things might work
@@ -71,32 +71,6 @@ Troubleshooting
 ~~~~~~~~~~~~~~~
 
 Help, I ...
-
-* **... see a** :code:`pkg_resources.VersionConflict` **when I try to install
-  grpc**
-
-  This is likely because :code:`pip` doesn't own the offending dependency,
-  which in turn is likely because your operating system's package manager owns
-  it. You'll need to force the installation of the dependency:
-
-  :code:`pip install --ignore-installed $OFFENDING_DEPENDENCY`
-
-  For example, if you get an error like the following:
-
-  ::
-
-    Traceback (most recent call last):
-    File "<string>", line 17, in <module>
-     ...
-    File "/usr/lib/python2.7/dist-packages/pkg_resources.py", line 509, in find
-      raise VersionConflict(dist, req)
-    pkg_resources.VersionConflict: (six 1.8.0 (/usr/lib/python2.7/dist-packages), Requirement.parse('six>=1.10'))
-
-  You can fix it by doing:
-
-  ::
-
-    sudo pip install --ignore-installed six
 
 * **... see the following error on some platforms**
 

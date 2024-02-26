@@ -36,7 +36,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -326,7 +326,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     // deleted
     std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
         new ServerBuilderSyncPluginDisabler());
-    builder.SetOption(move(sync_plugin_disabler));
+    builder.SetOption(std::move(sync_plugin_disabler));
     server_ = builder.BuildAndStart();
   }
 

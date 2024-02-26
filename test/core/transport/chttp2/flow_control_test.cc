@@ -83,7 +83,7 @@ class TransportTargetWindowEstimatesMocker
 class FlowControlTest : public ::testing::Test {
  protected:
   MemoryOwner memory_owner_ = MemoryOwner(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryOwner("test"));
+      ResourceQuota::Default()->memory_quota()->CreateMemoryOwner());
 };
 
 TEST_F(FlowControlTest, NoOp) {

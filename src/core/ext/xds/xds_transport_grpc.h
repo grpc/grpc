@@ -100,7 +100,10 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
   void SendMessage(std::string payload) override;
 
+  void StartRecvMessage() override;
+
  private:
+  static void OnRecvInitialMetadata(void* arg, grpc_error_handle /*error*/);
   static void OnRequestSent(void* arg, grpc_error_handle error);
   static void OnResponseReceived(void* arg, grpc_error_handle /*error*/);
   static void OnStatusReceived(void* arg, grpc_error_handle /*error*/);
@@ -114,6 +117,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
 
   // recv_initial_metadata
   grpc_metadata_array initial_metadata_recv_;
+  grpc_closure on_recv_initial_metadata_;
 
   // send_message
   grpc_byte_buffer* send_message_payload_ = nullptr;

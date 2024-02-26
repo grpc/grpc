@@ -18,7 +18,6 @@
 
 #include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
 
-#include <initializer_list>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -52,7 +51,7 @@ ParseConfig(absl::string_view json_string) {
     return errors.status(absl::StatusCode::kInvalidArgument,
                          "validation errors");
   }
-  return std::move(config);
+  return config.TakeAsSubclass<FileWatcherCertificateProviderFactory::Config>();
 }
 
 TEST(FileWatcherConfigTest, Basic) {

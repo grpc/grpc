@@ -32,7 +32,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -283,6 +282,12 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
   std::unique_ptr<Context, Deleter> value_;
 };
 
+template <>
+class Context<Activity> {
+ public:
+  static Activity* get() { return Activity::current(); }
+};
+
 template <typename HeldContext>
 using ContextTypeFromHeld = typename ContextHolder<HeldContext>::ContextType;
 
@@ -502,7 +507,7 @@ class PromiseActivity final
   // the activity to an external threadpool to run. If the activity is already
   // running on this thread, a note is taken of such and the activity is
   // repolled if it doesn't complete.
-  void Wakeup(WakeupMask) final {
+  void Wakeup(WakeupMask m) final {
     // If there is an active activity, but hey it's us, flag that and we'll loop
     // in RunLoop (that's calling from above here!).
     if (Activity::is_current()) {
@@ -511,6 +516,10 @@ class PromiseActivity final
       WakeupComplete();
       return;
     }
+    WakeupAsync(m);
+  }
+
+  void WakeupAsync(WakeupMask) final {
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       this->ScheduleWakeup();
@@ -519,8 +528,6 @@ class PromiseActivity final
       WakeupComplete();
     }
   }
-
-  void WakeupAsync(WakeupMask) final { Crash("not implemented"); }
 
   // Drop a wakeup
   void Drop(WakeupMask) final { this->WakeupComplete(); }
@@ -631,13 +638,13 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 inline Pending IntraActivityWaiter::pending() {
-  wakeups_ |= Activity::current()->CurrentParticipant();
+  wakeups_ |= GetContext<Activity>()->CurrentParticipant();
   return Pending();
 }
 
 inline void IntraActivityWaiter::Wake() {
   if (wakeups_ == 0) return;
-  Activity::current()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
+  GetContext<Activity>()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
 }
 
 }  // namespace grpc_core

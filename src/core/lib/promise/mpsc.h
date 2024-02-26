@@ -62,7 +62,7 @@ class Center : public RefCounted<Center<T>> {
   bool PollReceiveBatch(std::vector<T>& dest) {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty()) {
-      receive_waker_ = Activity::current()->MakeNonOwningWaker();
+      receive_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       return false;
     }
     dest.swap(queue_);
@@ -87,7 +87,7 @@ class Center : public RefCounted<Center<T>> {
       receive_waker.Wakeup();
       return Poll<bool>(true);
     }
-    send_wakers_.AddPending(Activity::current()->MakeNonOwningWaker());
+    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
     return Pending{};
   }
 
@@ -103,8 +103,12 @@ class Center : public RefCounted<Center<T>> {
 
   // Mark that the receiver is closed.
   void ReceiverClosed() {
-    MutexLock lock(&mu_);
+    ReleasableMutexLock lock(&mu_);
+    if (receiver_closed_) return;
     receiver_closed_ = true;
+    auto wakeups = send_wakers_.TakeWakeupSet();
+    lock.Release();
+    wakeups.Wakeup();
   }
 
  private:
@@ -125,8 +129,8 @@ class MpscReceiver;
 template <typename T>
 class MpscSender {
  public:
-  MpscSender(const MpscSender&) = delete;
-  MpscSender& operator=(const MpscSender&) = delete;
+  MpscSender(const MpscSender&) = default;
+  MpscSender& operator=(const MpscSender&) = default;
   MpscSender(MpscSender&&) noexcept = default;
   MpscSender& operator=(MpscSender&&) noexcept = default;
 
@@ -134,7 +138,10 @@ class MpscSender {
   // Resolves to true if sent, false if the receiver was closed (and the value
   // will never be successfully sent).
   auto Send(T t) {
-    return [this, t = std::move(t)]() mutable { return center_->PollSend(t); };
+    return [center = center_, t = std::move(t)]() mutable -> Poll<bool> {
+      if (center == nullptr) return false;
+      return center->PollSend(t);
+    };
   }
 
   bool UnbufferedImmediateSend(T t) {
@@ -162,6 +169,9 @@ class MpscReceiver {
       : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
             std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
   ~MpscReceiver() {
+    if (center_ != nullptr) center_->ReceiverClosed();
+  }
+  void MarkClosed() {
     if (center_ != nullptr) center_->ReceiverClosed();
   }
   MpscReceiver(const MpscReceiver&) = delete;

@@ -18,7 +18,6 @@
 #include <chrono>
 #include <list>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -222,10 +221,10 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
 
   std::shared_ptr<EventEngine> GetOracleEE() { return oracle_ee_; }
 
-  PosixEventPoller* PosixPoller() { return poller_; }
+  PosixEventPoller* PosixPoller() { return poller_.get(); }
 
  private:
-  PosixEventPoller* poller_;
+  std::shared_ptr<PosixEventPoller> poller_;
   std::unique_ptr<TestScheduler> scheduler_;
   std::shared_ptr<EventEngine> posix_ee_;
   std::shared_ptr<EventEngine> oracle_ee_;

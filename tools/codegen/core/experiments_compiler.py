@@ -70,6 +70,9 @@ def _EXPERIMENTS_TEST_SKELETON(defs, test_body):
 #include <grpc/support/port_platform.h>
 
 #include "test/core/experiments/fixtures/experiments.h"
+
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/experiments/config.h"
@@ -152,6 +155,18 @@ def PutCopyright(file, prefix):
         PutBanner([file], [line[2:].rstrip() for line in copyright], prefix)
 
 
+def AreExperimentsOrdered(experiments):
+    # Check that the experiments are ordered by name
+    for i in range(1, len(experiments)):
+        if experiments[i - 1]["name"] >= experiments[i]["name"]:
+            print(
+                "Experiments are unordered: %s should be after %s"
+                % (experiments[i - 1]["name"], experiments[i]["name"])
+            )
+            return False
+    return True
+
+
 class ExperimentDefinition(object):
     def __init__(self, attributes):
         self._error = False
@@ -177,12 +192,17 @@ class ExperimentDefinition(object):
             print("Failed to create experiment definition")
             return
         self._allow_in_fuzzing_config = True
+        self._uses_polling = False
         self._name = attributes["name"]
         self._description = attributes["description"]
         self._expiry = attributes["expiry"]
         self._default = {}
         self._additional_constraints = {}
         self._test_tags = []
+        self._requires = set()
+
+        if "uses_polling" in attributes:
+            self._uses_polling = attributes["uses_polling"]
 
         if "allow_in_fuzzing_config" in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -191,6 +211,9 @@ class ExperimentDefinition(object):
 
         if "test_tags" in attributes:
             self._test_tags = attributes["test_tags"]
+
+        for requirement in attributes.get("requires", []):
+            self._requires.add(requirement)
 
     def IsValid(self, check_expiry=False):
         if self._error:
@@ -229,6 +252,8 @@ class ExperimentDefinition(object):
                 " experiment: %s" % self._name
             )
             return False
+        for requirement in rollout_attributes.get("requires", []):
+            self._requires.add(requirement)
         if "default" not in rollout_attributes:
             print(
                 "ERROR: no default for experiment %s"
@@ -295,7 +320,7 @@ class ExperimentsCompiler(object):
         self._final_define = final_define
         self._platforms_define = platforms_define
         self._bzl_list_for_defaults = bzl_list_for_defaults
-        self._experiment_definitions = {}
+        self._experiment_definitions = collections.OrderedDict()
         self._experiment_rollouts = {}
 
     def AddExperimentDefinition(self, experiment_definition):
@@ -329,6 +354,27 @@ class ExperimentsCompiler(object):
             self._defaults, self._platforms_define, rollout_attributes
         )
 
+    def _FinalizeExperiments(self):
+        queue = collections.OrderedDict()
+        for name, exp in self._experiment_definitions.items():
+            queue[name] = exp._requires
+        done = set()
+        final = collections.OrderedDict()
+        while queue:
+            take = None
+            for name, requires in queue.items():
+                if requires.issubset(done):
+                    take = name
+                    break
+            if take is None:
+                print("ERROR: circular dependency in experiments")
+                return False
+            done.add(take)
+            final[take] = self._experiment_definitions[take]
+            del queue[take]
+        self._experiment_definitions = final
+        return True
+
     def _GenerateExperimentsHdrForPlatform(self, platform, file_desc):
         for _, exp in self._experiment_definitions.items():
             define_fmt = self._final_define[exp.default(platform)]
@@ -348,6 +394,7 @@ class ExperimentsCompiler(object):
             )
 
     def GenerateExperimentsHdr(self, output_file, mode):
+        assert self._FinalizeExperiments()
         with open(output_file, "w") as H:
             PutCopyright(H, "//")
             PutBanner(
@@ -360,8 +407,9 @@ class ExperimentsCompiler(object):
             if mode != "test":
                 include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H"
             else:
-                file_path_list = output_file.split("/")[0:-1]
-                file_name = output_file.split("/")[-1].split(".")[0]
+                real_output_file = output_file.replace(".github", "")
+                file_path_list = real_output_file.split("/")[0:-1]
+                file_name = real_output_file.split("/")[-1].split(".")[0]
 
                 include_guard = f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
 
@@ -448,6 +496,18 @@ class ExperimentsCompiler(object):
                 file=file_desc,
             )
             have_defaults.add(self._defaults[exp.default(platform)])
+            if exp._requires:
+                print(
+                    "const uint8_t required_experiments_%s[] = {%s};"
+                    % (
+                        exp.name,
+                        ",".join(
+                            f"static_cast<uint8_t>(grpc_core::kExperimentId{SnakeToPascal(name)})"
+                            for name in sorted(exp._requires)
+                        ),
+                    ),
+                    file=file_desc,
+                )
         if "kDefaultForDebugOnly" in have_defaults:
             print("#ifdef NDEBUG", file=file_desc)
             if "kDefaultForDebugOnly" in have_defaults:
@@ -472,11 +532,15 @@ class ExperimentsCompiler(object):
         )
         for _, exp in self._experiment_definitions.items():
             print(
-                "  {%s, description_%s, additional_constraints_%s, %s, %s},"
+                "  {%s, description_%s, additional_constraints_%s, %s, %d, %s, %s},"
                 % (
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
+                    f"required_experiments_{exp.name}"
+                    if exp._requires
+                    else "nullptr",
+                    len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",
                 ),
@@ -487,6 +551,7 @@ class ExperimentsCompiler(object):
         print("}  // namespace grpc_core", file=file_desc)
 
     def GenerateExperimentsSrc(self, output_file, header_file_path, mode):
+        assert self._FinalizeExperiments()
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -495,8 +560,20 @@ class ExperimentsCompiler(object):
                 "//",
             )
 
+            any_requires = False
+            for _, exp in self._experiment_definitions.items():
+                if exp._requires:
+                    any_requires = True
+                    break
+
             print("#include <grpc/support/port_platform.h>", file=C)
-            print(f'#include "{header_file_path}"', file=C)
+            print(file=C)
+            if any_requires:
+                print("#include <stdint.h>", file=C)
+                print(file=C)
+            print(
+                f'#include "{header_file_path.replace(".github", "")}"', file=C
+            )
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
             idx = 0
@@ -525,6 +602,7 @@ class ExperimentsCompiler(object):
         return defs
 
     def GenTest(self, output_file):
+        assert self._FinalizeExperiments()
         with open(output_file, "w") as C:
             PutCopyright(C, "//")
             PutBanner(
@@ -551,7 +629,16 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
+    def _ExperimentEnableSet(self, name):
+        s = set()
+        s.add(name)
+        for exp in self._experiment_definitions[name]._requires:
+            for req in self._ExperimentEnableSet(exp):
+                s.add(req)
+        return s
+
     def GenExperimentsBzl(self, mode, output_file):
+        assert self._FinalizeExperiments()
         if self._bzl_list_for_defaults is None:
             return
 
@@ -594,6 +681,29 @@ class ExperimentsCompiler(object):
                 ),
                 file=B,
             )
+
+            print(file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENT_ENABLES = {", file=B)
+            else:
+                print("EXPERIMENT_ENABLES = {", file=B)
+            for name, exp in self._experiment_definitions.items():
+                print(
+                    f"    \"{name}\": \"{','.join(sorted(self._ExperimentEnableSet(name)))}\",",
+                    file=B,
+                )
+            print("}", file=B)
+
+            # Generate a list of experiments that use polling.
+            print(file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENT_POLLERS = [", file=B)
+            else:
+                print("EXPERIMENT_POLLERS = [", file=B)
+            for name, exp in self._experiment_definitions.items():
+                if exp._uses_polling:
+                    print(f'    "{name}",', file=B)
+            print("]", file=B)
 
             print(file=B)
             if mode == "test":

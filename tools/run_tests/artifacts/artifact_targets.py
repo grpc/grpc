@@ -142,7 +142,7 @@ class PythonArtifact:
 
         if self.platform == "macos":
             environ["ARCHFLAGS"] = "-arch arm64 -arch x86_64"
-            environ["GRPC_UNIVERSAL2_REPAIR"] = "true"
+            environ["GRPC_BUILD_MAC"] = "true"
 
         if self.platform == "linux_extra":
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
@@ -152,6 +152,7 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip3".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            environ["LDFLAGS"] = "-s"
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_linux_{}".format(
@@ -223,7 +224,7 @@ class PythonArtifact:
                     "32" if self.arch == "x86" else "64",
                 ],
                 environ=environ,
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60 * 2,
                 use_workspace=True,
             )
         else:
@@ -462,16 +463,16 @@ def targets():
             PythonArtifact("macos", "x64", "python3.8"),
             PythonArtifact("macos", "x64", "python3.9"),
             PythonArtifact("macos", "x64", "python3.10"),
-            PythonArtifact("macos", "x64", "python3.11", presubmit=True),
+            PythonArtifact("macos", "x64", "python3.11"),
             PythonArtifact("macos", "x64", "python3.12", presubmit=True),
             PythonArtifact("windows", "x86", "Python37_32bit", presubmit=True),
-            PythonArtifact("windows", "x86", "Python38_32bit", presubmit=True),
+            PythonArtifact("windows", "x86", "Python38_32bit"),
             PythonArtifact("windows", "x86", "Python39_32bit"),
             PythonArtifact("windows", "x86", "Python310_32bit"),
             PythonArtifact("windows", "x86", "Python311_32bit"),
             PythonArtifact("windows", "x86", "Python312_32bit", presubmit=True),
             PythonArtifact("windows", "x64", "Python37", presubmit=True),
-            PythonArtifact("windows", "x64", "Python38", presubmit=True),
+            PythonArtifact("windows", "x64", "Python38"),
             PythonArtifact("windows", "x64", "Python39"),
             PythonArtifact("windows", "x64", "Python310"),
             PythonArtifact("windows", "x64", "Python311"),

@@ -41,7 +41,7 @@
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/test/channel_test_peer.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
@@ -862,12 +862,10 @@ TEST_P(End2endTest, ManyStubs) {
   ResetStub();
   ChannelTestPeer peer(channel_.get());
   int registered_calls_pre = peer.registered_calls();
-  int registration_attempts_pre = peer.registration_attempts();
   for (int i = 0; i < 1000; ++i) {
     grpc::testing::EchoTestService::NewStub(channel_);
   }
   EXPECT_EQ(peer.registered_calls(), registered_calls_pre);
-  EXPECT_GT(peer.registration_attempts(), registration_attempts_pre);
 }
 
 TEST_P(End2endTest, EmptyBinaryMetadata) {

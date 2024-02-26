@@ -17,6 +17,11 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
+#include <grpc/event_engine/event_engine.h>
+
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
@@ -42,7 +47,6 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -80,8 +84,9 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
            bytes_available > 0;
   }
 
-  void ShutdownLocked(grpc_error_handle error) override {
+  bool ShutdownLocked(absl::Status error) override {
     handle_->ShutdownHandle(error);
+    return true;
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override { return as_; }
@@ -105,9 +110,12 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
     }
   }
 
-  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as) override {
+  void Initialize(grpc_core::Mutex*, EventEngine*) override {}
+
+  std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
+      ares_socket_t as) override {
     owned_fds_.insert(as);
-    return new GrpcPolledFdPosix(
+    return std::make_unique<GrpcPolledFdPosix>(
         as,
         poller_->CreateHandle(as, "c-ares socket", poller_->CanTrackErrors()));
   }

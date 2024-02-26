@@ -41,6 +41,7 @@ from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
+from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
@@ -115,13 +116,15 @@ class _BaseMultiCallable:
 
     @staticmethod
     def _init_metadata(
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> Metadata:
         """Based on the provided values for <metadata> or <compression> initialise the final
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
+        if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
+            metadata = Metadata.from_tuple(metadata)
         if compression:
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)
@@ -137,7 +140,7 @@ class UnaryUnaryMultiCallable(
         request: RequestType,
         *,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -182,7 +185,7 @@ class UnaryStreamMultiCallable(
         request: RequestType,
         *,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -227,7 +230,7 @@ class StreamUnaryMultiCallable(
         self,
         request_iterator: Optional[RequestIterableType] = None,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -272,7 +275,7 @@ class StreamStreamMultiCallable(
         self,
         request_iterator: Optional[RequestIterableType] = None,
         timeout: Optional[float] = None,
-        metadata: Optional[Metadata] = None,
+        metadata: Optional[MetadataType] = None,
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
@@ -475,11 +478,20 @@ class Channel(_base_channel.Channel):
             await self.wait_for_state_change(state)
             state = self.get_state(try_to_connect=True)
 
+    # TODO(xuanwn): Implement this method after we have
+    # observability for Asyncio.
+    def _get_registered_call_handle(self, method: str) -> int:
+        pass
+
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
+    # pylint: disable=arguments-differ,unused-argument
     def unary_unary(
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable:
         return UnaryUnaryMultiCallable(
             self._channel,
@@ -491,11 +503,15 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
+    # pylint: disable=arguments-differ,unused-argument
     def unary_stream(
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(
             self._channel,
@@ -507,11 +523,15 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
+    # pylint: disable=arguments-differ,unused-argument
     def stream_unary(
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable:
         return StreamUnaryMultiCallable(
             self._channel,
@@ -523,11 +543,15 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
+    # TODO(xuanwn): Implement _registered_method after we have
+    # observability for Asyncio.
+    # pylint: disable=arguments-differ,unused-argument
     def stream_stream(
         self,
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(
             self._channel,

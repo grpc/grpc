@@ -27,9 +27,9 @@
 
 #include <functional>
 #include <string>
-#include <type_traits>
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -42,7 +42,6 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -53,12 +52,15 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/message.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -70,82 +72,7 @@
 
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
 
-/// Internal bit flag for grpc_begin_message's \a flags signaling the use of
-/// compression for the message. (Does not apply for stream compression.)
-#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
-/// Internal bit flag for determining whether the message was compressed and had
-/// to be decompressed by the message_decompress filter. (Does not apply for
-/// stream compression.)
-#define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
-/// Mask of all valid internal flags.
-#define GRPC_WRITE_INTERNAL_USED_MASK \
-  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
-
 namespace grpc_core {
-
-// Server metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadata = grpc_metadata_batch;
-using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
-
-// Client initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientMetadata = grpc_metadata_batch;
-using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
-
-class Message {
- public:
-  Message() = default;
-  ~Message() = default;
-  Message(SliceBuffer payload, uint32_t flags)
-      : payload_(std::move(payload)), flags_(flags) {}
-  Message(const Message&) = delete;
-  Message& operator=(const Message&) = delete;
-
-  uint32_t flags() const { return flags_; }
-  uint32_t& mutable_flags() { return flags_; }
-  SliceBuffer* payload() { return &payload_; }
-  const SliceBuffer* payload() const { return &payload_; }
-
-  std::string DebugString() const;
-
- private:
-  SliceBuffer payload_;
-  uint32_t flags_ = 0;
-};
-
-using MessageHandle = Arena::PoolPtr<Message>;
-
-// Ok/not-ok check for trailing metadata, so that it can be used as result types
-// for TrySeq.
-inline bool IsStatusOk(const ServerMetadataHandle& m) {
-  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
-         GRPC_STATUS_OK;
-}
-
-ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
 
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
@@ -303,24 +230,6 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
 // the same refcount
 grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
                                                void* buffer, size_t length);
-
-struct grpc_transport_one_way_stats {
-  uint64_t framing_bytes = 0;
-  uint64_t data_bytes = 0;
-  uint64_t header_bytes = 0;
-};
-
-struct grpc_transport_stream_stats {
-  grpc_transport_one_way_stats incoming;
-  grpc_transport_one_way_stats outgoing;
-  gpr_timespec latency = gpr_inf_future(GPR_TIMESPAN);
-};
-
-void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
-                                       grpc_transport_one_way_stats* to);
-
-void grpc_transport_move_stats(grpc_transport_stream_stats* from,
-                               grpc_transport_stream_stats* to);
 
 // This struct (which is present in both grpc_transport_stream_op_batch
 // and grpc_transport_op_batch) is a convenience to allow filters or
@@ -495,6 +404,12 @@ struct grpc_transport_stream_op_batch_payload {
     // Error contract: the transport that gets this op must cause cancel_error
     //                 to be unref'ed after processing it
     grpc_error_handle cancel_error;
+    // If true the transport should endeavor to delay sending the cancellation
+    // notification for some small amount of time, in order to foil certain
+    // exploits.
+    // This should be set for cancellations that result from malformed client
+    // initial metadata.
+    bool tarpit = false;
   } cancel_stream;
 
   // Indexes correspond to grpc_context_index enum values
@@ -508,7 +423,6 @@ typedef struct grpc_transport_op {
   /// connectivity monitoring - set connectivity_state to NULL to unsubscribe
   grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>
       start_connectivity_watch;
-  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
       nullptr;
   /// should the transport be disconnected
@@ -519,28 +433,12 @@ typedef struct grpc_transport_op {
   /// Error contract: the transport that gets this op must cause
   ///                goaway_error to be unref'ed after processing it
   grpc_error_handle goaway_error;
-  /// set the callback for accepting new streams;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_accept_stream_fn, with its
-  /// user_data argument set to set_accept_stream_user_data.
-  /// `set_registered_method_matcher_fn` is also set with its user_data argument
-  /// set to set_accept_stream_user_data. The transport should invoke
-  /// `set_registered_method_matcher_fn` after initial metadata is received but
-  /// before recv_initial_metadata_ready callback is invoked. If the transport
-  /// detects an error in the stream, invoking
-  /// `set_registered_method_matcher_fn` can be skipped.
-  bool set_accept_stream = false;
-  void (*set_accept_stream_fn)(void* user_data, grpc_transport* transport,
+  void (*set_accept_stream_fn)(void* user_data, grpc_core::Transport* transport,
                                const void* server_data) = nullptr;
   void (*set_registered_method_matcher_fn)(
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* set_accept_stream_user_data = nullptr;
-  /// set the callback for accepting new streams based upon promises;
-  /// this is a permanent callback, unlike the other one-shot closures.
-  /// If true, the callback is set to set_make_promise_fn, with its
-  /// user_data argument set to set_make_promise_data
-  bool set_make_promise = false;
-  void (*set_make_promise_fn)(void* user_data, grpc_transport* transport,
+  void (*set_make_promise_fn)(void* user_data, grpc_core::Transport* transport,
                               const void* server_data) = nullptr;
   void* set_make_promise_user_data = nullptr;
   /// add this transport to a pollset
@@ -555,8 +453,27 @@ typedef struct grpc_transport_op {
     /// Called when the ping ack is received
     grpc_closure* on_ack = nullptr;
   } send_ping;
+  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   // If true, will reset the channel's connection backoff.
   bool reset_connect_backoff = false;
+
+  /// set the callback for accepting new streams;
+  /// this is a permanent callback, unlike the other one-shot closures.
+  /// If true, the callback is set to set_accept_stream_fn, with its
+  /// user_data argument set to set_accept_stream_user_data.
+  /// `set_registered_method_matcher_fn` is also set with its user_data argument
+  /// set to set_accept_stream_user_data. The transport should invoke
+  /// `set_registered_method_matcher_fn` after initial metadata is received but
+  /// before recv_initial_metadata_ready callback is invoked. If the transport
+  /// detects an error in the stream, invoking
+  /// `set_registered_method_matcher_fn` can be skipped.
+  bool set_accept_stream = false;
+
+  /// set the callback for accepting new streams based upon promises;
+  /// this is a permanent callback, unlike the other one-shot closures.
+  /// If true, the callback is set to set_make_promise_fn, with its
+  /// user_data argument set to set_make_promise_data
+  bool set_make_promise = false;
 
   //**************************************************************************
   // remaining fields are initialized and used at the discretion of the
@@ -564,42 +481,6 @@ typedef struct grpc_transport_op {
 
   grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
-
-// Returns the amount of memory required to store a grpc_stream for this
-// transport
-size_t grpc_transport_stream_size(grpc_transport* transport);
-
-// Initialize transport data for a stream.
-
-// Returns 0 on success, any other (transport-defined) value for failure.
-// May assume that stream contains all-zeros.
-
-// Arguments:
-//   transport   - the transport on which to create this stream
-//   stream      - a pointer to uninitialized memory to initialize
-//   server_data - either NULL for a client initiated stream, or a pointer
-//                 supplied from the accept_stream callback function
-int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data,
-                               grpc_core::Arena* arena);
-
-void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
-                             grpc_polling_entity* pollent);
-
-// Destroy transport data for a stream.
-
-// Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been
-// received by the up-layer. Must not be called in the same call stack as
-// recv_frame.
-
-// Arguments:
-//   transport - the transport on which to create this stream
-//   stream    - the grpc_stream to destroy (memory is still owned by the
-//               caller, but any child memory must be cleaned up)
-void grpc_transport_destroy_stream(grpc_transport* transport,
-                                   grpc_stream* stream,
-                                   grpc_closure* then_schedule_closure);
 
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
@@ -616,37 +497,112 @@ std::string grpc_transport_stream_op_batch_string(
     grpc_transport_stream_op_batch* op, bool truncate);
 std::string grpc_transport_op_string(grpc_transport_op* op);
 
-// Send a batch of operations on a transport
+namespace grpc_core {
 
-// Takes ownership of any objects contained in ops.
+class FilterStackTransport {
+ public:
+  // Memory required for a single stream element - this is allocated by upper
+  // layers and initialized by the transport
+  virtual size_t SizeOfStream() const = 0;
 
-// Arguments:
-//   transport - the transport on which to initiate the stream
-//   stream    - the stream on which to send the operations. This must be
-//               non-NULL and previously initialized by the same transport.
-//   op        - a grpc_transport_stream_op_batch specifying the op to perform
-//
-void grpc_transport_perform_stream_op(grpc_transport* transport,
-                                      grpc_stream* stream,
-                                      grpc_transport_stream_op_batch* op);
+  // Initialize transport data for a stream.
+  // Returns 0 on success, any other (transport-defined) value for failure.
+  // May assume that stream contains all-zeros.
+  // Arguments:
+  //   stream      - a pointer to uninitialized memory to initialize
+  //   server_data - either NULL for a client initiated stream, or a pointer
+  //                 supplied from the accept_stream callback function
+  virtual void InitStream(grpc_stream* stream, grpc_stream_refcount* refcount,
+                          const void* server_data, Arena* arena) = 0;
 
-void grpc_transport_perform_op(grpc_transport* transport,
-                               grpc_transport_op* op);
+  // HACK: inproc does not handle stream op batch callbacks correctly (receive
+  // ops are required to complete prior to on_complete triggering).
+  // This flag is used to disable coalescing of batches in connected_channel for
+  // that specific transport.
+  // TODO(ctiller): This ought not be necessary once we have promises complete.
+  virtual bool HackyDisableStreamOpBatchCoalescingInConnectedChannel()
+      const = 0;
 
-// Send a ping on a transport
+  virtual void PerformStreamOp(grpc_stream* stream,
+                               grpc_transport_stream_op_batch* op) = 0;
 
-// Calls cb with user data when a response is received.
-void grpc_transport_ping(grpc_transport* transport, grpc_closure* cb);
+  // Destroy transport data for a stream.
+  // Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been
+  // received by the up-layer. Must not be called in the same call stack as
+  // recv_frame.
+  // Arguments:
+  //   stream    - the grpc_stream to destroy (memory is still owned by the
+  //               caller, but any child memory must be cleaned up)
+  virtual void DestroyStream(grpc_stream* stream,
+                             grpc_closure* then_schedule_closure) = 0;
 
-// Advise peer of pending connection termination.
-void grpc_transport_goaway(grpc_transport* transport, grpc_status_code status,
-                           grpc_slice debug_data);
+ protected:
+  ~FilterStackTransport() = default;
+};
 
-// Destroy the transport
-void grpc_transport_destroy(grpc_transport* transport);
+class ClientTransport {
+ public:
+  virtual void StartCall(CallHandler call_handler) = 0;
 
-// Get the endpoint used by \a transport
-grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport);
+ protected:
+  ~ClientTransport() = default;
+};
+
+class ServerTransport {
+ public:
+  // Acceptor helps transports create calls.
+  class Acceptor {
+   public:
+    // Returns an arena that can be used to allocate memory for initial metadata
+    // parsing, and later passed to CreateCall() as the underlying arena for
+    // that call.
+    virtual Arena* CreateArena() = 0;
+    // Create a call at the server (or fail)
+    // arena must have been previously allocated by CreateArena()
+    virtual absl::StatusOr<CallInitiator> CreateCall(
+        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
+
+   protected:
+    ~Acceptor() = default;
+  };
+
+  // Called once slightly after transport setup to register the accept function.
+  virtual void SetAcceptor(Acceptor* acceptor) = 0;
+
+ protected:
+  ~ServerTransport() = default;
+};
+
+class Transport : public Orphanable {
+ public:
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
+
+  virtual FilterStackTransport* filter_stack_transport() = 0;
+  virtual ClientTransport* client_transport() = 0;
+  virtual ServerTransport* server_transport() = 0;
+
+  // name of this transport implementation
+  virtual absl::string_view GetTransportName() const = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollsetSet(grpc_stream* stream,
+                             grpc_pollset_set* pollset_set) = 0;
+
+  void SetPollingEntity(grpc_stream* stream,
+                        grpc_polling_entity* pollset_or_pollset_set);
+
+  // implementation of grpc_transport_perform_op
+  virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  // implementation of grpc_transport_get_endpoint
+  virtual grpc_endpoint* GetEndpoint() = 0;
+};
+
+}  // namespace grpc_core
 
 // Allocate a grpc_transport_op, and preconfigure the on_complete closure to
 // \a on_complete and then delete the returned transport op

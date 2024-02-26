@@ -15,14 +15,4 @@
 
 set -ex
 
-tools/bazel \
-  build \
-  --define=use_strict_warning=true \
-  -- \
-  :all \
-  //src/core/... \
-  //src/compiler/... \
-  //test/... \
-  //examples/... \
-  -//examples/android/binder/...
-
+tools/bazel build --define=use_strict_warning=true -- "$@"

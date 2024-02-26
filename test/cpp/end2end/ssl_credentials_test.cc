@@ -29,9 +29,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
@@ -45,21 +45,13 @@ constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 constexpr char kMessage[] = "Hello";
 
-std::string ReadFile(const std::string& file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(file_path.c_str(), 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
-
 class SslCredentialsTest : public ::testing::Test {
  protected:
   void RunServer(absl::Notification* notification) {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-        ReadFile(kServerKeyPath), ReadFile(kServerCertPath)};
+        grpc_core::testing::GetFileContents(kServerKeyPath),
+        grpc_core::testing::GetFileContents(kServerCertPath)};
     // TODO(gtcooke94) Parametrize this test for TLS and mTLS as well
     grpc::SslServerCredentialsOptions ssl_options;
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
@@ -125,6 +117,32 @@ void DoRpc(const std::string& server_addr,
   }
 }
 
+TEST_F(SslCredentialsTest, SequentialResumption) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
+
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+  for (int i = 0; i < 10; i++) {
+    DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/true);
+  }
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
 TEST_F(SslCredentialsTest, ConcurrentResumption) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
@@ -132,9 +150,10 @@ TEST_F(SslCredentialsTest, ConcurrentResumption) {
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -153,6 +172,30 @@ TEST_F(SslCredentialsTest, ConcurrentResumption) {
   for (auto& t : threads) {
     t.join();
   }
+
+  grpc_ssl_session_cache_destroy(cache);
+}
+
+TEST_F(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(kClientCertPath);
+  grpc::SslCredentialsOptions ssl_options;
+  ssl_options.pem_root_certs = root_cert;
+  ssl_options.pem_private_key = client_key;
+  ssl_options.pem_cert_chain = client_cert;
+
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(0);
+
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
+  DoRpc(server_addr_, ssl_options, cache, /*expect_session_reuse=*/false);
 
   grpc_ssl_session_cache_destroy(cache);
 }

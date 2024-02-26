@@ -23,7 +23,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <initializer_list>
 #include <string>
 #include <utility>
 
@@ -295,7 +294,6 @@ class grpc_ssl_server_security_connector
     grpc_ssl_certificate_config_reload_status cb_result =
         server_creds->FetchCertConfig(&certificate_config);
     if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
-      gpr_log(GPR_DEBUG, "No change in SSL server credentials.");
       status = false;
     } else if (cb_result == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW) {
       status = try_replace_server_handshaker_factory(certificate_config);

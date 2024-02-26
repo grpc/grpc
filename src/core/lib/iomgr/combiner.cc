@@ -51,19 +51,11 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error);
 
-// TODO(ctiller): delete this when the combiner_offload_to_event_engine
-// experiment is removed.
-static void offload(void* arg, grpc_error_handle error);
-
 grpc_core::Combiner* grpc_combiner_create(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>
         event_engine) {
   grpc_core::Combiner* lock = new grpc_core::Combiner();
-  if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
-    lock->event_engine = event_engine;
-  } else {
-    GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
-  }
+  lock->event_engine = event_engine;
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
@@ -173,24 +165,18 @@ static void move_next() {
   }
 }
 
-static void offload(void* arg, grpc_error_handle /*error*/) {
-  grpc_core::Combiner* lock = static_cast<grpc_core::Combiner*>(arg);
-  push_last_on_exec_ctx(lock);
-}
-
 static void queue_offload(grpc_core::Combiner* lock) {
   move_next();
+  // Make the combiner look uncontended by storing a non-null value here, so
+  // that we don't immediately offload again.
+  gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 1);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
-    lock->event_engine->Run([lock] {
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
-      grpc_core::ExecCtx exec_ctx(0);
-      push_last_on_exec_ctx(lock);
-      exec_ctx.Flush();
-    });
-  } else {
-    grpc_core::Executor::Run(&lock->offload, absl::OkStatus());
-  }
+  lock->event_engine->Run([lock] {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+    grpc_core::ExecCtx exec_ctx(0);
+    push_last_on_exec_ctx(lock);
+    exec_ctx.Flush();
+  });
 }
 
 bool grpc_combiner_continue_exec_ctx() {
@@ -212,33 +198,14 @@ bool grpc_combiner_continue_exec_ctx() {
                               grpc_core::ExecCtx::Get()->IsReadyToFinish(),
                               lock->time_to_execute_final_list));
 
-  if (grpc_core::IsCombinerOffloadToEventEngineEnabled()) {
-    // offload only if both (1) the combiner is contended and has more than one
-    // closure to execute, and (2) the current execution context needs to finish
-    // as soon as possible
-    if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
-      // this execution context wants to move on: schedule remaining work to be
-      // picked up on the executor
-      queue_offload(lock);
-      return true;
-    }
-  } else {
-    // TODO(ctiller): delete this when the combiner_offload_to_event_engine
-    // experiment is removed.
-
-    // offload only if all the following conditions are true:
-    // 1. the combiner is contended and has more than one closure to execute
-    // 2. the current execution context needs to finish as soon as possible
-    // 3. the current thread is not a worker for any background poller
-    // 4. the DEFAULT executor is threaded
-    if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-        !grpc_iomgr_platform_is_any_background_poller_thread() &&
-        grpc_core::Executor::IsThreadedDefault()) {
-      // this execution context wants to move on: schedule remaining work to be
-      // picked up on the executor
-      queue_offload(lock);
-      return true;
-    }
+  // offload only if both (1) the combiner is contended and has more than one
+  // closure to execute, and (2) the current execution context needs to finish
+  // as soon as possible
+  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish()) {
+    // this execution context wants to move on: schedule remaining work to be
+    // picked up on the executor
+    queue_offload(lock);
+    return true;
   }
 
   if (!lock->time_to_execute_final_list ||
@@ -291,7 +258,7 @@ bool grpc_combiner_continue_exec_ctx() {
 // Define a macro to ease readability of the following switch statement.
 #define OLD_STATE_WAS(orphaned, elem_count) \
   (((orphaned) ? 0 : STATE_UNORPHANED) |    \
-   ((elem_count)*STATE_ELEM_COUNT_LOW_BIT))
+   ((elem_count) * STATE_ELEM_COUNT_LOW_BIT))
   // Depending on what the previous state was, we need to perform different
   // actions.
   switch (old_state) {

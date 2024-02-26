@@ -134,7 +134,9 @@ class MemoryAllocator {
   /// bytes. For a variable length request, check the returned slice length to
   /// verify how much memory was allocated. Takes care of reserving memory for
   /// any relevant control structures also.
-  grpc_slice MakeSlice(MemoryRequest request);
+  grpc_slice MakeSlice(MemoryRequest request) {
+    return allocator_->MakeSlice(request);
+  }
 
   /// A C++ allocator for containers of T.
   template <typename T>

@@ -85,8 +85,8 @@ TEST(HandshakeServerWithReadaheadHandshakerTest, MainTest) {
       });
 
   grpc_init();
-  const char* full_alpn_list[] = {"grpc-exp", "h2"};
-  ASSERT_TRUE(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
+  const char* full_alpn_list[] = {"h2"};
+  ASSERT_TRUE(server_ssl_test(full_alpn_list, 1, "h2"));
   CleanupSslLibrary();
   grpc_shutdown();
 }

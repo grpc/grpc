@@ -19,9 +19,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstring>
-#include <initializer_list>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
@@ -73,8 +71,8 @@
 #include "test/core/util/port.h"
 
 static gpr_mu g_mu;
-static grpc_event_engine::experimental::PosixEventPoller* g_event_poller =
-    nullptr;
+static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+    g_event_poller;
 
 // buffer size used to send and receive data.
 // 1024 is the minimal value to set TCP send and receive buffer.
@@ -697,7 +695,7 @@ TEST_F(EventPollerTest, TestMultipleHandles) {
   if (g_event_poller == nullptr) {
     return;
   }
-  Worker* worker = new Worker(Scheduler(), g_event_poller, kNumHandles,
+  Worker* worker = new Worker(Scheduler(), g_event_poller.get(), kNumHandles,
                               kNumWakeupsPerHandle);
   worker->Start();
   worker->Wait();

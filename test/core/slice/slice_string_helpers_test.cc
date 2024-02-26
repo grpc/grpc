@@ -18,6 +18,8 @@
 
 #include "src/core/lib/slice/slice_string_helpers.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>

@@ -268,6 +268,8 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     deps = [
         ":rpc_behavior_lb_policy",
@@ -275,6 +277,7 @@ grpc_cc_binary(
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
+        "//:grpcpp_csm_observability",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -313,10 +316,13 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "otel/exporters/prometheus:prometheus_exporter",
+        "otel/sdk/src/metrics",
     ],
     deps = [
         ":xds_interop_server_lib",
         "//:grpc++",
+        "//:grpcpp_csm_observability",
         "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_health_check_service_impl",
         "//test/cpp/util:test_config",
@@ -523,6 +529,22 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:messages_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "backend_metrics_lb_policy_test",
+    srcs = [
+        "backend_metrics_lb_policy_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":backend_metrics_lb_policy",
+        "//:grpc++",
+        "//:grpcpp_orca_service",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 

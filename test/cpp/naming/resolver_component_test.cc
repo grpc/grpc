@@ -40,9 +40,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_balancer_addresses.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,9 +57,11 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_registry.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
 #include "test/core/util/socket_use_after_close_detector.h"
@@ -336,7 +336,7 @@ class CheckingResultHandler : public ResultHandler {
     std::vector<GrpcLBAddress> found_lb_addrs;
     AddActualAddresses(*result.addresses, /*is_balancer=*/false,
                        &found_lb_addrs);
-    const grpc_core::ServerAddressList* balancer_addresses =
+    const grpc_core::EndpointAddressesList* balancer_addresses =
         grpc_core::FindGrpclbBalancerAddressesInChannelArgs(result.args);
     if (balancer_addresses != nullptr) {
       AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
@@ -381,11 +381,11 @@ class CheckingResultHandler : public ResultHandler {
   }
 
  private:
-  static void AddActualAddresses(const grpc_core::ServerAddressList& addresses,
-                                 bool is_balancer,
-                                 std::vector<GrpcLBAddress>* out) {
+  static void AddActualAddresses(
+      const grpc_core::EndpointAddressesList& addresses, bool is_balancer,
+      std::vector<GrpcLBAddress>* out) {
     for (size_t i = 0; i < addresses.size(); i++) {
-      const grpc_core::ServerAddress& addr = addresses[i];
+      const grpc_core::EndpointAddresses& addr = addresses[i];
       std::string str =
           grpc_sockaddr_to_string(&addr.address(), true /* normalize */)
               .value();

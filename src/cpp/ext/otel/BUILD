@@ -41,6 +41,7 @@ grpc_cc_library(
         "otel_client_filter.h",
         "otel_plugin.h",
         "otel_server_call_tracer.h",
+        "//:include/grpcpp/ext/otel_plugin.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -58,7 +59,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//:channel_stack_builder",
         "//:config",
         "//:gpr",
         "//:gpr_platform",
@@ -67,6 +67,7 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:legacy_context",
+        "//:tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -74,6 +75,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],

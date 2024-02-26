@@ -25,12 +25,15 @@
 #include "src/core/lib/gpr/useful.h"
 
 // in order of preference
-static const char* const supported_versions[] = {"grpc-exp", "h2"};
+static const char* const supported_versions[] = {"h2"};
 
 int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size) {
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
-    if (!strncmp(version, supported_versions[i], size)) return 1;
+    if (size == strlen(supported_versions[i]) &&
+        !strncmp(version, supported_versions[i], size)) {
+      return 1;
+    }
   }
   return 0;
 }

@@ -39,7 +39,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
-#include "src/proto/grpc/lb/v1/load_reporter.pb.h"
 
 namespace grpc {
 namespace load_reporter {

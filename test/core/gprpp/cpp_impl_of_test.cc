@@ -14,6 +14,8 @@
 
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 
+#include <memory>
+
 #include <gtest/gtest.h>
 
 typedef struct grpc_foo grpc_foo;

@@ -20,10 +20,18 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <memory>
 #include <tuple>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
@@ -34,6 +42,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
+#include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {
 
@@ -90,6 +99,39 @@ class MemoryQuotaTracker {
   Mutex mu_;
   std::vector<std::weak_ptr<BasicMemoryQuota>> quotas_ ABSL_GUARDED_BY(mu_);
 };
+
+// Reference count for a slice allocated by MemoryAllocator::MakeSlice.
+// Takes care of releasing memory back when the slice is destroyed.
+class SliceRefCount : public grpc_slice_refcount {
+ public:
+  SliceRefCount(
+      std::shared_ptr<
+          grpc_event_engine::experimental::internal::MemoryAllocatorImpl>
+          allocator,
+      size_t size)
+      : grpc_slice_refcount(Destroy),
+        allocator_(std::move(allocator)),
+        size_(size) {
+    // Nothing to do here.
+  }
+  ~SliceRefCount() {
+    allocator_->Release(size_);
+    allocator_.reset();
+  }
+
+ private:
+  static void Destroy(grpc_slice_refcount* p) {
+    auto* rc = static_cast<SliceRefCount*>(p);
+    rc->~SliceRefCount();
+    free(rc);
+  }
+
+  std::shared_ptr<
+      grpc_event_engine::experimental::internal::MemoryAllocatorImpl>
+      allocator_;
+  size_t size_;
+};
+
 }  // namespace
 
 //
@@ -190,10 +232,10 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
   if (!empty) {
     // If we don't, but the queue is probably not empty, schedule an immediate
     // repoll.
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
   } else {
     // Otherwise, schedule a wakeup for whenever something is pushed.
-    state_->waker = Activity::current()->MakeNonOwningWaker();
+    state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
   }
   return Pending{};
 }
@@ -203,8 +245,8 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
 //
 
 GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
-    std::shared_ptr<BasicMemoryQuota> memory_quota, std::string name)
-    : memory_quota_(memory_quota), name_(std::move(name)) {
+    std::shared_ptr<BasicMemoryQuota> memory_quota)
+    : memory_quota_(memory_quota) {
   memory_quota_->Take(
       /*allocator=*/this, taken_bytes_);
   memory_quota_->AddNewAllocator(this);
@@ -214,7 +256,7 @@ GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
-  memory_quota_->Return(taken_bytes_);
+  memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
@@ -314,8 +356,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-        gpr_log(GPR_INFO, "[%p|%s] Early return %" PRIdPTR " bytes", this,
-                name_.c_str(), ret);
+        gpr_log(GPR_INFO, "[%p] Early return %" PRIdPTR " bytes", this, ret);
       }
       GPR_ASSERT(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
@@ -336,6 +377,18 @@ void GrpcMemoryAllocatorImpl::Replenish() {
   taken_bytes_.fetch_add(amount, std::memory_order_relaxed);
   // Add the taken amount to the free pool.
   free_bytes_.fetch_add(amount, std::memory_order_acq_rel);
+}
+
+grpc_slice GrpcMemoryAllocatorImpl::MakeSlice(MemoryRequest request) {
+  auto size = Reserve(request.Increase(sizeof(SliceRefCount)));
+  void* p = malloc(size);
+  new (p) SliceRefCount(shared_from_this(), size);
+  grpc_slice slice;
+  slice.refcount = static_cast<SliceRefCount*>(p);
+  slice.data.refcounted.bytes =
+      static_cast<uint8_t*>(p) + sizeof(SliceRefCount);
+  slice.data.refcounted.length = size - sizeof(SliceRefCount);
+  return slice;
 }
 
 //
@@ -412,7 +465,7 @@ void BasicMemoryQuota::Start() {
             self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
             1;
         reclaimer->Run(ReclamationSweep(
-            self, token, Activity::current()->MakeNonOwningWaker()));
+            self, token, GetContext<Activity>()->MakeNonOwningWaker()));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
         // destroyed, we'll be able to proceed.
@@ -605,14 +658,9 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (IsMemoryPressureControllerEnabled()) {
-    pressure_info.pressure_control_value =
-        pressure_tracker_.AddSampleAndGetControlValue(
-            pressure_info.instantaneous_pressure);
-  } else {
-    pressure_info.pressure_control_value =
-        std::min(pressure_info.instantaneous_pressure, 1.0);
-  }
+  pressure_info.pressure_control_value =
+      pressure_tracker_.AddSampleAndGetControlValue(
+          pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
 }
@@ -735,15 +783,19 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
 // MemoryQuota
 //
 
-MemoryAllocator MemoryQuota::CreateMemoryAllocator(absl::string_view name) {
-  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
-      memory_quota_, absl::StrCat(memory_quota_->name(), "/allocator/", name));
+MemoryAllocator MemoryQuota::CreateMemoryAllocator(
+    GRPC_UNUSED absl::string_view name) {
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryAllocator(std::move(impl));
 }
 
-MemoryOwner MemoryQuota::CreateMemoryOwner(absl::string_view name) {
-  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(
-      memory_quota_, absl::StrCat(memory_quota_->name(), "/owner/", name));
+MemoryOwner MemoryQuota::CreateMemoryOwner() {
+  // Note: we will likely want to add a name or some way to distinguish
+  // between memory owners once resource quota is fully rolled out and we need
+  // full metrics. One thing to note, however, is that manipulating the name
+  // here (e.g. concatenation) can add significant memory increase when many
+  // owners are created.
+  auto impl = std::make_shared<GrpcMemoryAllocatorImpl>(memory_quota_);
   return MemoryOwner(std::move(impl));
 }
 

@@ -23,6 +23,11 @@
 
 #include <limits>
 
+#if __APPLE__
+// Provides TARGET_OS_IPHONE
+#include <TargetConditionals.h>
+#endif
+
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -180,13 +185,26 @@ class GRPC_DLL ExecCtx {
   void SetReadyToFinishFlag() { flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED; }
 
   Timestamp Now() { return Timestamp::Now(); }
-  void InvalidateNow() { time_cache_.InvalidateCache(); }
+
+  void InvalidateNow() {
+#if !TARGET_OS_IPHONE
+    time_cache_.InvalidateCache();
+#endif
+  }
+
   void SetNowIomgrShutdown() {
+#if !TARGET_OS_IPHONE
     // We get to do a test only set now on this path just because iomgr
     // is getting removed and no point adding more interfaces for it.
     time_cache_.TestOnlySetNow(Timestamp::InfFuture());
+#endif
   }
-  void TestOnlySetNow(Timestamp now) { time_cache_.TestOnlySetNow(now); }
+
+  void TestOnlySetNow(Timestamp now) {
+#if !TARGET_OS_IPHONE
+    time_cache_.TestOnlySetNow(now);
+#endif
+  }
 
   /// Gets pointer to current exec_ctx.
   static ExecCtx* Get() { return EXEC_CTX; }
@@ -211,7 +229,9 @@ class GRPC_DLL ExecCtx {
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
 
+#if !TARGET_OS_IPHONE
   ScopedTimeCache time_cache_;
+#endif
 
 #if !defined(_WIN32) || !defined(_DLL)
   static thread_local ExecCtx* exec_ctx_;

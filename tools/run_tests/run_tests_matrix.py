@@ -226,7 +226,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     test_jobs = []
     # sanity tests
     test_jobs += _generate_jobs(
-        languages=["sanity", "clang-tidy", "iwyu"],
+        languages=["sanity", "clang-tidy"],
         configs=["dbg"],
         platforms=["linux"],
         labels=["basictests"],
@@ -354,13 +354,15 @@ def _create_portability_test_jobs(
 
     # portability C and C++ on x64
     for compiler in [
-        "gcc7",
-        # 'gcc10.2_openssl102', // TODO(b/283304471): Enable this later
+        "gcc8",
+        # TODO(b/283304471): Tests using OpenSSL's engine APIs were broken and removed
+        "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang15",
+        "clang17",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -368,7 +370,8 @@ def _create_portability_test_jobs(
             platforms=["linux"],
             arch="x64",
             compiler=compiler,
-            labels=["portability", "corelang"],
+            labels=["portability", "corelang"]
+            + (["openssl"] if "openssl" in compiler else []),
             extra_args=extra_args,
             inner_jobs=inner_jobs,
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,

@@ -14,13 +14,13 @@
 // limitations under the License.
 //
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/duration.pb.h>
+#include <google/protobuf/struct.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
@@ -30,12 +30,11 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -50,6 +49,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -58,6 +58,7 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
+#include "src/proto/grpc/testing/xds/v3/http_protocol_options.pb.h"
 #include "src/proto/grpc/testing/xds/v3/outlier_detection.pb.h"
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
@@ -70,6 +71,7 @@ using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
 using envoy::extensions::load_balancing_policies::round_robin::v3::RoundRobin;
 using envoy::extensions::load_balancing_policies::wrr_locality::v3::WrrLocality;
 using envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
+using envoy::extensions::upstreams::http::v3::HttpProtocolOptions;
 using xds::type::v3::TypedStruct;
 
 namespace grpc_core {
@@ -1129,6 +1131,208 @@ TEST_F(LrsTest, NotSelfConfigSource) {
 }
 
 //
+// upstream config tests
+//
+
+using UpstreamConfigTest = XdsClusterTest;
+
+TEST_F(UpstreamConfigTest, DefaultWithNoUpstreamConfig) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.connection_idle_timeout, Duration::Hours(1));
+}
+
+TEST_F(UpstreamConfigTest, DefaultWithNoCommonHttpProtocolOptions) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  HttpProtocolOptions http_protocol_options;
+  cluster.mutable_upstream_config()->mutable_typed_config()->PackFrom(
+      http_protocol_options);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.connection_idle_timeout, Duration::Hours(1));
+}
+
+TEST_F(UpstreamConfigTest, DefaultWithFieldUnset) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  HttpProtocolOptions http_protocol_options;
+  http_protocol_options.mutable_common_http_protocol_options();
+  cluster.mutable_upstream_config()->mutable_typed_config()->PackFrom(
+      http_protocol_options);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.connection_idle_timeout, Duration::Hours(1));
+}
+
+TEST_F(UpstreamConfigTest, ExplicitlySet) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  HttpProtocolOptions http_protocol_options;
+  http_protocol_options.mutable_common_http_protocol_options()
+      ->mutable_idle_timeout()
+      ->set_seconds(1);
+  cluster.mutable_upstream_config()->mutable_typed_config()->PackFrom(
+      http_protocol_options);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.connection_idle_timeout, Duration::Seconds(1));
+}
+
+TEST_F(UpstreamConfigTest, UnknownUpstreamConfigType) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_upstream_config()->mutable_typed_config()->PackFrom(
+      Cluster());
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:upstream_config.typed_config.value["
+            "envoy.config.cluster.v3.Cluster].type_url "
+            "error:unsupported upstream config type]")
+      << decode_result.resource.status();
+}
+
+TEST_F(UpstreamConfigTest, UnparseableHttpProtocolOptions) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* typed_config =
+      cluster.mutable_upstream_config()->mutable_typed_config();
+  typed_config->PackFrom(HttpProtocolOptions());
+  typed_config->set_value(std::string("\0", 1));
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:upstream_config.typed_config.value["
+            "envoy.extensions.upstreams.http.v3.HttpProtocolOptions] "
+            "error:can't decode HttpProtocolOptions]")
+      << decode_result.resource.status();
+}
+
+TEST_F(UpstreamConfigTest, HttpProtocolOptionsInTypedStruct) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  xds::type::v3::TypedStruct typed_struct;
+  typed_struct.set_type_url(
+      "types.googleapis.com/"
+      "envoy.extensions.upstreams.http.v3.HttpProtocolOptions");
+  cluster.mutable_upstream_config()->mutable_typed_config()->PackFrom(
+      typed_struct);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:upstream_config.typed_config.value["
+            "xds.type.v3.TypedStruct].value["
+            "envoy.extensions.upstreams.http.v3.HttpProtocolOptions] "
+            "error:can't decode HttpProtocolOptions]")
+      << decode_result.resource.status();
+}
+
+// This is just one example of where ParseDuration() will generate an error,
+// to show that we're propagating any such errors correctly.  An exhaustive
+// set of tests for ParseDuration() is in xds_common_types_test.cc.
+TEST_F(UpstreamConfigTest, ErrorsParsingDurations) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  HttpProtocolOptions http_protocol_options;
+  http_protocol_options.mutable_common_http_protocol_options()
+      ->mutable_idle_timeout()
+      ->set_seconds(-1);
+  cluster.mutable_upstream_config()->mutable_typed_config()->PackFrom(
+      http_protocol_options);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  EXPECT_EQ(decode_result.resource.status().code(),
+            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(decode_result.resource.status().message(),
+            "errors validating Cluster resource: ["
+            "field:upstream_config.typed_config.value["
+            "envoy.extensions.upstreams.http.v3.HttpProtocolOptions]"
+            ".common_http_protocol_options.idle_timeout.seconds "
+            "error:value must be in the range [0, 315576000000]]")
+      << decode_result.resource.status();
+}
+
+//
 // circuit breaker tests
 //
 
@@ -1348,11 +1552,155 @@ TEST_F(HostOverrideStatusTest, PassesOnRelevantHealthStatuses) {
   EXPECT_EQ(*decode_result.name, "foo");
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.override_host_statuses,
+  EXPECT_EQ(resource.override_host_statuses.ToString(),
+            "{UNKNOWN, HEALTHY, DRAINING}");
+}
+
+TEST_F(HostOverrideStatusTest,
+       DefaultsToUnknownAndHealthyWithoutCommonLbConfig) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.override_host_statuses.ToString(), "{UNKNOWN, HEALTHY}");
+}
+
+TEST_F(HostOverrideStatusTest,
+       DefaultsToUnknownAndHealthyWithoutOverrideHostStatus) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_common_lb_config();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.override_host_statuses.ToString(), "{UNKNOWN, HEALTHY}");
+}
+
+TEST_F(HostOverrideStatusTest, CanExplicitlySetToEmpty) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  cluster.mutable_common_lb_config()->mutable_override_host_status();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.override_host_statuses.ToString(), "{}");
+}
+
+using TelemetryLabelTest = XdsClusterTest;
+
+TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  *label_map["service_name"].mutable_string_value() = "abc";
+  *label_map["service_namespace"].mutable_string_value() = "xyz";
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(*resource.telemetry_labels,
               ::testing::UnorderedElementsAre(
-                  XdsHealthStatus(XdsHealthStatus::kUnknown),
-                  XdsHealthStatus(XdsHealthStatus::kHealthy),
-                  XdsHealthStatus(XdsHealthStatus::kDraining)));
+                  ::testing::Pair("service_name", "abc"),
+                  ::testing::Pair("service_namespace", "xyz")));
+}
+
+TEST_F(TelemetryLabelTest, MissingMetadataField) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.telemetry_labels, nullptr);
+}
+
+TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map = *filter_map["some_key"].mutable_fields();
+  *label_map["some_value"].mutable_string_value() = "abc";
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_EQ(resource.telemetry_labels, nullptr);
+}
+
+TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
+  Cluster cluster;
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  label_map["bool_value"].set_bool_value(true);
+  label_map["number_value"].set_number_value(3.14);
+  *label_map["string_value"].mutable_string_value() = "abc";
+  label_map["null_value"].set_null_value(::google::protobuf::NULL_VALUE);
+  auto& list_value_values =
+      *label_map["list_value"].mutable_list_value()->mutable_values();
+  *list_value_values.Add()->mutable_string_value() = "efg";
+  list_value_values.Add()->set_number_value(3.14);
+  auto& struct_value_fields =
+      *label_map["struct_value"].mutable_struct_value()->mutable_fields();
+  struct_value_fields["bool_value"].set_bool_value(false);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  EXPECT_THAT(
+      *resource.telemetry_labels,
+      ::testing::UnorderedElementsAre(::testing::Pair("string_value", "abc")));
 }
 
 }  // namespace

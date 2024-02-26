@@ -35,15 +35,13 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -55,7 +53,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json.h"
@@ -71,6 +68,8 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/load_balancing/grpclb/grpclb.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
 
 using grpc_core::Json;
 
@@ -261,18 +260,20 @@ static grpc_error_handle create_default_creds_from_path(
   grpc_auth_json_key key;
   grpc_auth_refresh_token token;
   grpc_core::RefCountedPtr<grpc_call_credentials> result;
-  grpc_slice creds_data = grpc_empty_slice();
+  absl::StatusOr<grpc_core::Slice> creds_data;
   grpc_error_handle error;
   Json json;
   if (creds_path.empty()) {
     error = GRPC_ERROR_CREATE("creds_path unset");
     goto end;
   }
-  error = grpc_load_file(creds_path.c_str(), 0, &creds_data);
-  if (!error.ok()) goto end;
+  creds_data = grpc_core::LoadFile(creds_path, /*add_null_terminator=*/false);
+  if (!creds_data.ok()) {
+    error = absl_status_to_grpc_error(creds_data.status());
+    goto end;
+  }
   {
-    auto json_or =
-        grpc_core::JsonParse(grpc_core::StringViewFromSlice(creds_data));
+    auto json_or = grpc_core::JsonParse(creds_data->as_string_view());
     if (!json_or.ok()) {
       error = absl_status_to_grpc_error(json_or.status());
       goto end;
@@ -282,7 +283,7 @@ static grpc_error_handle create_default_creds_from_path(
   if (json.type() != Json::Type::kObject) {
     error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
                                grpc_core::StatusStrProperty::kRawBytes,
-                               grpc_core::StringViewFromSlice(creds_data));
+                               creds_data->as_string_view());
     goto end;
   }
 
@@ -317,7 +318,6 @@ static grpc_error_handle create_default_creds_from_path(
 
 end:
   GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
-  grpc_core::CSliceUnref(creds_data);
   *creds = result;
   return error;
 }

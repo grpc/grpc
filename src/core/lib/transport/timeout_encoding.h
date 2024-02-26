@@ -61,8 +61,8 @@ class Timeout {
   static Timeout FromMinutes(int64_t minutes);
   static Timeout FromHours(int64_t hours);
 
-  uint16_t value_;
-  Unit unit_;
+  uint16_t value_ = 0;
+  Unit unit_ = Unit::kNanoseconds;
 };
 
 absl::optional<Duration> ParseTimeout(const Slice& text);

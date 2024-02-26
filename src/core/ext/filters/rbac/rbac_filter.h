@@ -34,7 +34,7 @@ namespace grpc_core {
 
 // Filter used when xDS server config fetcher provides a configuration with an
 // HTTP RBAC filter. Also serves as the type for channel data for the filter.
-class RbacFilter : public ChannelFilter {
+class RbacFilter : public ImplementChannelFilter<RbacFilter> {
  public:
   // This channel filter is intended to be used by connections on xDS enabled
   // servers configured with RBAC. The RBAC filter fetches the RBAC policy from
@@ -45,9 +45,16 @@ class RbacFilter : public ChannelFilter {
   static absl::StatusOr<RbacFilter> Create(const ChannelArgs& args,
                                            ChannelFilter::Args filter_args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    absl::Status OnClientInitialMetadata(ClientMetadata& md,
+                                         RbacFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
   RbacFilter(size_t index,

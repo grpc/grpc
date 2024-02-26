@@ -14,6 +14,8 @@
 
 #include "src/core/lib/promise/prioritized_race.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"

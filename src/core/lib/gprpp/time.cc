@@ -18,7 +18,6 @@
 
 #include <atomic>
 #include <chrono>
-#include <initializer_list>
 #include <limits>
 #include <string>
 #include <utility>

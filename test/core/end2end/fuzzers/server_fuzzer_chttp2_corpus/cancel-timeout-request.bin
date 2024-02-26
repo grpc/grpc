@@ -1,0 +1,65 @@
+network_input {
+    input_segments {
+        segments {
+            client_prefix: {}
+        }
+        segments {
+            settings {}
+        }
+        segments {
+            header {
+                stream_id: 1
+                end_headers: true
+                end_stream: false
+                simple_header {
+                    method: "POST"
+                    scheme: "http"
+                    authority: "foo"
+                    path: "/req"
+                    te: "trailers"
+                    grpc_timeout: "100m"
+                }
+            }
+        }
+        segments {
+            delay_ms: 10
+            header {
+                stream_id: 3
+                end_headers: true
+                end_stream: false
+                simple_header {
+                    method: "POST"
+                    scheme: "http"
+                    authority: "foo"
+                    path: "/req"
+                    te: "trailers"
+                    grpc_timeout: "100m"
+                }
+            }
+        }
+        segments {
+            delay_ms: 1000
+            ping {
+                opaque: 1
+            }
+        }
+    }
+}
+api_actions {
+    sleep_ms: 50
+}
+api_actions {
+    request_call {}
+}
+api_actions {
+    sleep_ms: 10
+}
+api_actions {
+    poll_cq {}
+}
+api_actions {
+    sleep_ms: 10
+}
+api_actions {
+    cancel_call {}
+}
