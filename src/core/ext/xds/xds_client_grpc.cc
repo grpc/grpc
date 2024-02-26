@@ -167,7 +167,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
     auto channel_args = ChannelArgs::FromC(xds_channel_args);
     return MakeRefCounted<GrpcXdsClient>(
-        std::string(key), std::move(*bootstrap), channel_args,
+        key, std::move(*bootstrap), channel_args,
         MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   }
   // Otherwise, use the global instance.
@@ -192,7 +192,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   // Instantiate XdsClient.
   auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      std::string(key), std::move(*bootstrap), channel_args,
+      key, std::move(*bootstrap), channel_args,
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
