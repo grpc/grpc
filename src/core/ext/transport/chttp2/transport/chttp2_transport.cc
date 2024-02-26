@@ -1300,7 +1300,6 @@ static void null_then_sched_closure(grpc_closure** closure) {
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,
@@ -1323,12 +1322,6 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         desc, grpc_core::StatusToString(error).c_str(),
         write_state_name(t->write_state), whence.file(), whence.line());
-  }
-
-  if (s->call_tracer) {
-    s->call_tracer->RecordAnnotation(
-        absl::StrFormat("on_complete: s=%p %p desc=%s err=%s", s, closure, desc,
-                        grpc_core::StatusToString(error).c_str()));
   }
 
   if (!error.ok()) {
@@ -1405,13 +1398,6 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (s->call_tracer) {
-    s->call_tracer->RecordAnnotation(absl::StrFormat(
-        "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s, op,
-        grpc_transport_stream_op_batch_string(op, true).c_str(),
-        op->on_complete));
-  }
-
   grpc_closure* on_complete = op->on_complete;
   // on_complete will be null if and only if there are no send ops in the batch.
   if (on_complete != nullptr) {
@@ -1483,7 +1469,7 @@ static void perform_stream_op_locked(void* stream_op,
     } else {
       s->send_initial_metadata = nullptr;
       grpc_chttp2_complete_closure_step(
-          t, s, &s->send_initial_metadata_finished,
+          t, &s->send_initial_metadata_finished,
           GRPC_ERROR_CREATE_REFERENCING(
               "Attempt to send initial metadata after stream was closed",
               &s->write_closed_error, 1),
@@ -1503,7 +1489,7 @@ static void perform_stream_op_locked(void* stream_op,
       // We should NOT return an error here, so as to avoid a cancel OP being
       // started. The surface layer will notice that the stream has been closed
       // for writes and fail the send message op.
-      grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished,
+      grpc_chttp2_complete_closure_step(t, &s->send_message_finished,
                                         absl::OkStatus(),
                                         "fetching_send_message_finished");
     } else {
@@ -1543,7 +1529,7 @@ static void perform_stream_op_locked(void* stream_op,
 
       int64_t notify_offset = s->next_message_end_offset;
       if (notify_offset <= s->flow_controlled_bytes_written) {
-        grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished,
+        grpc_chttp2_complete_closure_step(t, &s->send_message_finished,
                                           absl::OkStatus(),
                                           "fetching_send_message_finished");
       } else {
@@ -1587,7 +1573,7 @@ static void perform_stream_op_locked(void* stream_op,
       s->send_trailing_metadata = nullptr;
       s->sent_trailing_metadata_op = nullptr;
       grpc_chttp2_complete_closure_step(
-          t, s, &s->send_trailing_metadata_finished,
+          t, &s->send_trailing_metadata_finished,
           op->payload->send_trailing_metadata.send_trailing_metadata->empty()
               ? absl::OkStatus()
               : GRPC_ERROR_CREATE("Attempt to send trailing metadata after "
@@ -1640,7 +1626,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (on_complete != nullptr) {
-    grpc_chttp2_complete_closure_step(t, s, &on_complete, absl::OkStatus(),
+    grpc_chttp2_complete_closure_step(t, &on_complete, absl::OkStatus(),
                                       "op->on_complete");
   }
 
@@ -2307,13 +2293,13 @@ static grpc_error_handle removal_error(grpc_error_handle extra_error,
   return error;
 }
 
-static void flush_write_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+static void flush_write_list(grpc_chttp2_transport* t,
                              grpc_chttp2_write_cb** list,
                              grpc_error_handle error) {
   while (*list) {
     grpc_chttp2_write_cb* cb = *list;
     *list = cb->next;
-    grpc_chttp2_complete_closure_step(t, s, &cb->closure, error,
+    grpc_chttp2_complete_closure_step(t, &cb->closure, error,
                                       "on_write_finished_cb");
     cb->next = t->write_cb_pool;
     t->write_cb_pool = cb;
@@ -2326,18 +2312,18 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
   error =
       removal_error(error, s, "Pending writes failed due to stream closure");
   s->send_initial_metadata = nullptr;
-  grpc_chttp2_complete_closure_step(t, s, &s->send_initial_metadata_finished,
+  grpc_chttp2_complete_closure_step(t, &s->send_initial_metadata_finished,
                                     error, "send_initial_metadata_finished");
 
   s->send_trailing_metadata = nullptr;
   s->sent_trailing_metadata_op = nullptr;
-  grpc_chttp2_complete_closure_step(t, s, &s->send_trailing_metadata_finished,
+  grpc_chttp2_complete_closure_step(t, &s->send_trailing_metadata_finished,
                                     error, "send_trailing_metadata_finished");
 
-  grpc_chttp2_complete_closure_step(t, s, &s->send_message_finished, error,
+  grpc_chttp2_complete_closure_step(t, &s->send_message_finished, error,
                                     "fetching_send_message_finished");
-  flush_write_list(t, s, &s->on_write_finished_cbs, error);
-  flush_write_list(t, s, &s->on_flow_controlled_cbs, error);
+  flush_write_list(t, &s->on_write_finished_cbs, error);
+  flush_write_list(t, &s->on_flow_controlled_cbs, error);
 }
 
 grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
