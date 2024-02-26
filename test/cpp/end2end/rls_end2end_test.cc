@@ -49,6 +49,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/load_balancing/rls/rls.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -74,6 +75,7 @@ namespace {
 
 const char* kServerName = "test.google.fr";
 const char* kRequestMessage = "Live long and prosper.";
+const char* kRlsInstanceId = "rls_instance_id";
 
 const char* kCallCredsMdKey = "call_cred_name";
 const char* kCallCredsMdValue = "call_cred_value";
@@ -190,6 +192,7 @@ class RlsEnd2endTest : public ::testing::Test {
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     resolver_response_generator_->Get());
     args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, kServerName);
+    args.SetString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID, kRlsInstanceId);
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
@@ -1524,13 +1527,12 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(
       stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
       absl::nullopt);
-// FIXME
-#if 0
-  EXPECT_EQ(
-      stats_plugin_->GetGaugeValue(kMetricCacheEntries,
-                                   {target_uri_, /*FIXME*/instance_id}, {}),
-      absl::nullopt);
-#endif
+  EXPECT_THAT(stats_plugin_->GetGaugeValue(kMetricCacheEntries,
+                                           {target_uri_, kRlsInstanceId}, {}),
+              ::testing::Optional(1));
+  auto cache_size = stats_plugin_->GetGaugeValue(
+      kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
+  EXPECT_THAT(cache_size, ::testing::Optional(::testing::Ge(1)));
   // Send an RPC to the target for backend 1.
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target1}}),
                                     BuildRlsResponse({rls_target1}));
@@ -1550,6 +1552,15 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(
       stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
       absl::nullopt);
+  EXPECT_THAT(stats_plugin_->GetGaugeValue(kMetricCacheEntries,
+                                           {target_uri_, kRlsInstanceId}, {}),
+              ::testing::Optional(2));
+  auto cache_size2 = stats_plugin_->GetGaugeValue(
+      kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
+  EXPECT_THAT(cache_size2, ::testing::Optional(::testing::Ge(2)));
+  if (cache_size.has_value() && cache_size2.has_value()) {
+    EXPECT_GT(*cache_size2, *cache_size);
+  }
   // Send an RPC for which the RLS server has no response, which means
   // that the RLS request will fail.  There is no default target, so the
   // data plane RPC will fail.
@@ -1578,6 +1589,15 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_THAT(
       stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
       ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetGaugeValue(kMetricCacheEntries,
+                                           {target_uri_, kRlsInstanceId}, {}),
+              ::testing::Optional(3));
+  auto cache_size3 = stats_plugin_->GetGaugeValue(
+      kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
+  EXPECT_THAT(cache_size3, ::testing::Optional(::testing::Ge(3)));
+  if (cache_size.has_value() && cache_size3.has_value()) {
+    EXPECT_GT(*cache_size3, *cache_size);
+  }
 }
 
 TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {

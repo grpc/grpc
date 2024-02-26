@@ -1869,6 +1869,7 @@
     <file baseinstalldir="/" name="src/core/load_balancing/ring_hash/ring_hash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/ring_hash/ring_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/rls/rls.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/load_balancing/rls/rls.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/subchannel_list.h" role="src" />

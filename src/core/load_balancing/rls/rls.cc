@@ -22,6 +22,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/load_balancing/rls/rls.h"
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -736,7 +738,7 @@ class RlsLb : public LoadBalancingPolicy {
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
-  const std::string instance_id_ = absl::StrFormat("%p", this);
+  const std::string instance_id_;
 
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
@@ -1375,6 +1377,16 @@ RlsLb::Cache::Entry::OnRlsResponseLocked(
 //
 
 RlsLb::Cache::Cache(RlsLb* lb_policy) : lb_policy_(lb_policy) {
+  auto& stats_plugins =
+      lb_policy_->channel_control_helper()->GetStatsPluginGroup();
+  stats_plugins.SetGauge(kMetricCacheEntries, 0,
+                         {lb_policy_->channel_control_helper()->GetTarget(),
+                          lb_policy_->instance_id_},
+                         {});
+  stats_plugins.SetGauge(kMetricCacheSize, 0,
+                         {lb_policy_->channel_control_helper()->GetTarget(),
+                          lb_policy_->instance_id_},
+                         {});
   StartCleanupTimer();
 }
 
@@ -1932,7 +1944,12 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
-RlsLb::RlsLb(Args args) : LoadBalancingPolicy(std::move(args)), cache_(this) {
+RlsLb::RlsLb(Args args)
+    : LoadBalancingPolicy(std::move(args)),
+      instance_id_(
+          channel_args().GetOwnedString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID)
+              .value_or(absl::StrFormat("%p", this))),
+      cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }

@@ -1885,6 +1885,7 @@ let package = Package(
         "src/core/load_balancing/ring_hash/ring_hash.cc",
         "src/core/load_balancing/ring_hash/ring_hash.h",
         "src/core/load_balancing/rls/rls.cc",
+        "src/core/load_balancing/rls/rls.h",
         "src/core/load_balancing/round_robin/round_robin.cc",
         "src/core/load_balancing/subchannel_interface.h",
         "src/core/load_balancing/subchannel_list.h",
