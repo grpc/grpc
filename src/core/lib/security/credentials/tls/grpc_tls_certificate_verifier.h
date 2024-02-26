@@ -50,9 +50,8 @@ struct grpc_tls_certificate_verifier
                       absl::Status* sync_status) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
-  // TODO(roth): This needs to take an absl::Status argument so that we
-  // can pass the cancellation status through to the check_peer callback.
-  virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
+  virtual void Cancel(grpc_tls_custom_verification_check_request* request,
+                      const absl::Status& status) = 0;
 
   // Compares this grpc_tls_certificate_verifier object with \a other.
   // If this method returns 0, it means that gRPC can treat the two certificate
@@ -97,8 +96,11 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
               std::function<void(absl::Status)> callback,
               absl::Status* sync_status) override;
 
-  void Cancel(grpc_tls_custom_verification_check_request* request) override {
-    external_verifier_->cancel(external_verifier_->user_data, request);
+  void Cancel(grpc_tls_custom_verification_check_request* request,
+              const absl::Status& status) override {
+    external_verifier_->cancel(external_verifier_->user_data, request,
+                               static_cast<grpc_status_code>(status.code()),
+                               std::string(status.message()).c_str());
   }
 
   UniqueTypeName type() const override;
@@ -133,7 +135,8 @@ class NoOpCertificateVerifier : public grpc_tls_certificate_verifier {
               std::function<void(absl::Status)>, absl::Status*) override {
     return true;  // synchronous check
   };
-  void Cancel(grpc_tls_custom_verification_check_request*) override {}
+  void Cancel(grpc_tls_custom_verification_check_request*,
+              const absl::Status&) override {}
 
   UniqueTypeName type() const override;
 
@@ -152,7 +155,8 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)> callback,
               absl::Status* sync_status) override;
-  void Cancel(grpc_tls_custom_verification_check_request*) override {}
+  void Cancel(grpc_tls_custom_verification_check_request*,
+              const absl::Status&) override {}
 
   UniqueTypeName type() const override;
 

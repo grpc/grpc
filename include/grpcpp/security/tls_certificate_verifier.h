@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
+
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -116,7 +118,8 @@ class CertificateVerifier {
   // verification request is pending.
   //
   // request: the verification information associated with this request
-  void Cancel(TlsCustomVerificationCheckRequest* request);
+  void Cancel(TlsCustomVerificationCheckRequest* request,
+              const absl::Status& status);
 
   // Gets the core verifier used internally.
   grpc_tls_certificate_verifier* c_verifier() { return verifier_; }
@@ -181,7 +184,8 @@ class ExternalCertificateVerifier {
   // passed to Verify() with a status indicating the cancellation.
   //
   // request: the verification information associated with this request
-  virtual void Cancel(TlsCustomVerificationCheckRequest* request) = 0;
+  virtual void Cancel(TlsCustomVerificationCheckRequest* request,
+                      const absl::Status& status) = 0;
 
  protected:
   ExternalCertificateVerifier();
@@ -207,7 +211,8 @@ class ExternalCertificateVerifier {
       char** sync_error_details);
 
   static void CancelInCoreExternalVerifier(
-      void* user_data, grpc_tls_custom_verification_check_request* request);
+      void* user_data, grpc_tls_custom_verification_check_request* request,
+      grpc_status_code code, const char* error_details);
 
   static void DestructInCoreExternalVerifier(void* user_data);
 

@@ -39,8 +39,8 @@ class SyncCertificateVerifier
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
-  }
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              const absl::Status&) override {}
 
  private:
   bool success_ = false;
@@ -51,14 +51,18 @@ class AsyncCertificateVerifier
  public:
   explicit AsyncCertificateVerifier(bool success);
 
+  // This is used to test Cancel() and the worker thread will not start.
+  explicit AsyncCertificateVerifier(absl::Status* status_from_cancellation)
+      : status_from_cancellation_(status_from_cancellation) {}
+
   ~AsyncCertificateVerifier() override;
 
   bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest* request,
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
-  }
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              const absl::Status&) override;
 
  private:
   // A request to pass to the worker thread.
@@ -72,8 +76,11 @@ class AsyncCertificateVerifier
 
   bool success_ = false;
   grpc_core::Thread thread_;
+  bool thread_started_ = false;
   grpc::internal::Mutex mu_;
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
+  // Not owned. Stores the status given from the latest cancellation.
+  absl::Status* status_from_cancellation_;
 };
 
 class VerifiedRootCertSubjectVerifier
@@ -88,8 +95,8 @@ class VerifiedRootCertSubjectVerifier
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status) override;
 
-  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
-  }
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              const absl::Status&) override {}
 
  private:
   std::string expected_subject_;

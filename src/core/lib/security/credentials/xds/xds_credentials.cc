@@ -100,8 +100,8 @@ bool XdsCertificateVerifier::Verify(
   return true;  // synchronous check
 }
 
-void XdsCertificateVerifier::Cancel(
-    grpc_tls_custom_verification_check_request*) {}
+void XdsCertificateVerifier::Cancel(grpc_tls_custom_verification_check_request*,
+                                    const absl::Status&) {}
 
 int XdsCertificateVerifier::CompareImpl(
     const grpc_tls_certificate_verifier* other) const {

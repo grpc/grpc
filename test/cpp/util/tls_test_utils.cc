@@ -16,10 +16,7 @@
 
 #include "test/cpp/util/tls_test_utils.h"
 
-#include <memory>
-
 #include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 using ::grpc::experimental::TlsCustomVerificationCheckRequest;
@@ -43,6 +40,7 @@ AsyncCertificateVerifier::AsyncCertificateVerifier(bool success)
     : success_(success),
       thread_("AsyncCertificateVerifierWorkerThread", WorkerThread, this) {
   thread_.Start();
+  thread_started_ = true;
 }
 
 AsyncCertificateVerifier::~AsyncCertificateVerifier() {
@@ -51,8 +49,10 @@ AsyncCertificateVerifier::~AsyncCertificateVerifier() {
     internal::MutexLock lock(&mu_);
     queue_.push_back(Request{nullptr, nullptr, true});
   }
-  // Wait for thread to exit.
-  thread_.Join();
+  if (thread_started_) {
+    // Wait for thread to exit.
+    thread_.Join();
+  }
 }
 
 bool AsyncCertificateVerifier::Verify(
@@ -61,6 +61,11 @@ bool AsyncCertificateVerifier::Verify(
   internal::MutexLock lock(&mu_);
   queue_.push_back(Request{request, std::move(callback), false});
   return false;  // Asynchronous call
+}
+
+void AsyncCertificateVerifier::Cancel(TlsCustomVerificationCheckRequest*,
+                                      const absl::Status& status) {
+  *status_from_cancellation_ = status;
 }
 
 void AsyncCertificateVerifier::WorkerThread(void* arg) {

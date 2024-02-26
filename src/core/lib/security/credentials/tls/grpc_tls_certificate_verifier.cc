@@ -23,13 +23,13 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
@@ -210,9 +210,11 @@ int grpc_tls_certificate_verifier_verify(
 
 void grpc_tls_certificate_verifier_cancel(
     grpc_tls_certificate_verifier* verifier,
-    grpc_tls_custom_verification_check_request* request) {
+    grpc_tls_custom_verification_check_request* request, grpc_status_code code,
+    const char* error_details) {
   grpc_core::ExecCtx exec_ctx;
-  verifier->Cancel(request);
+  verifier->Cancel(request, absl::Status(static_cast<absl::StatusCode>(code),
+                                         error_details ? error_details : ""));
 }
 
 grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
