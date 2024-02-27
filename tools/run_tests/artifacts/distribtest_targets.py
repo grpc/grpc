@@ -429,7 +429,8 @@ def targets():
         CSharpDistribTest(
             "linux", "x64", "debian10", use_dotnet_cli=True, presubmit=True
         ),
-        CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
+        # TODO(apolcyn): unskip ubuntu2204 after fixing dotnet SDK installation.
+        # CSharpDistribTest("linux", "x64", "ubuntu2204", use_dotnet_cli=True),
         CSharpDistribTest(
             "linux", "x64", "alpine", use_dotnet_cli=True, presubmit=True
         ),
