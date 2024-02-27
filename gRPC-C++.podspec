@@ -257,8 +257,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/client_channel/backend_metric.h',
-                      'src/core/client_channel/backup_poller.h',
+    ss.source_files = 'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/client_channel_channelz.h',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.h',
@@ -1261,6 +1260,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/uri/uri_parser.h',
                       'src/core/load_balancing/address_filtering.h',
                       'src/core/load_balancing/backend_metric_data.h',
+                      'src/core/load_balancing/backend_metric_parser.h',
                       'src/core/load_balancing/child_policy_handler.h',
                       'src/core/load_balancing/delegating_helper.h',
                       'src/core/load_balancing/endpoint_list.h',
@@ -1531,8 +1531,7 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.h'
 
-    ss.private_header_files = 'src/core/client_channel/backend_metric.h',
-                              'src/core/client_channel/backup_poller.h',
+    ss.private_header_files = 'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel_channelz.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
@@ -2517,6 +2516,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/load_balancing/address_filtering.h',
                               'src/core/load_balancing/backend_metric_data.h',
+                              'src/core/load_balancing/backend_metric_parser.h',
                               'src/core/load_balancing/child_policy_handler.h',
                               'src/core/load_balancing/delegating_helper.h',
                               'src/core/load_balancing/endpoint_list.h',

@@ -321,3 +321,10 @@ grpc_channel_stack::MakeServerCallPromise(grpc_core::CallArgs call_args) {
   return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
       std::move(call_args));
 }
+
+void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
+                      grpc_call_element* elem,
+                      grpc_transport_stream_op_batch* op) {
+  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
+          grpc_transport_stream_op_batch_string(op, false).c_str());
+}

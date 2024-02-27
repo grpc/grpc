@@ -61,7 +61,6 @@ const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
 const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
-const NoInterceptor ChannelIdleFilter::Call::OnFinalize;
 
 namespace {
 
@@ -294,6 +293,7 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
+  GPR_ASSERT(MaxAgeFilter::kFilter.init_call != nullptr);
   if (!IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
       ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)

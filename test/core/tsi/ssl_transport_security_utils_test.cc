@@ -449,6 +449,16 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
 
 class CrlUtils : public ::testing::Test {
  public:
+  static void SetUpTestSuite() {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+    OPENSSL_init_ssl(/*opts=*/0, /*settings=*/nullptr);
+#else
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+#endif
+  }
+
   void SetUp() override {
     absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl, false);
     ASSERT_EQ(root_crl.status(), absl::OkStatus()) << root_crl.status();

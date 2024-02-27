@@ -57,7 +57,7 @@ GCC-like stuff, but you may end up having a bad time.
 
 
 Dependencies
--------------------------
+------------
 gRPC Python Observability Depends on the following packages:
 
 ::

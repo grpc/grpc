@@ -216,7 +216,6 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
-  - src/core/client_channel/backend_metric.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel_channelz.h
   - src/core/client_channel/client_channel_factory.h
@@ -1156,6 +1155,7 @@ libs:
   - src/core/lib/uri/uri_parser.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/backend_metric_data.h
+  - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
   - src/core/load_balancing/delegating_helper.h
   - src/core/load_balancing/endpoint_list.h
@@ -1232,7 +1232,6 @@ libs:
   - third_party/upb/upb/generated_code_support.h
   - third_party/xxhash/xxhash.h
   src:
-  - src/core/client_channel/backend_metric.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
@@ -1249,7 +1248,6 @@ libs:
   - src/core/client_channel/retry_filter_legacy_call_data.cc
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
-  - src/core/client_channel/service_config_channel_arg_filter.cc
   - src/core/client_channel/subchannel.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
@@ -1889,6 +1887,7 @@ libs:
   - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_supported.cc
+  - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/local/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
@@ -1914,7 +1913,6 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
-  - src/core/lib/surface/call_trace.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
@@ -1953,6 +1951,7 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
   - src/core/load_balancing/grpclb/client_load_reporting_filter.cc
@@ -2001,6 +2000,7 @@ libs:
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
   - src/core/resolver/xds/xds_resolver_trace.cc
+  - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
@@ -2194,7 +2194,6 @@ libs:
   - include/grpc/support/time.h
   - include/grpc/support/workaround_list.h
   headers:
-  - src/core/client_channel/backend_metric.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel_channelz.h
   - src/core/client_channel/client_channel_factory.h
@@ -2616,6 +2615,7 @@ libs:
   - src/core/lib/uri/uri_parser.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/backend_metric_data.h
+  - src/core/load_balancing/backend_metric_parser.h
   - src/core/load_balancing/child_policy_handler.h
   - src/core/load_balancing/delegating_helper.h
   - src/core/load_balancing/endpoint_list.h
@@ -2682,7 +2682,6 @@ libs:
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
-  - src/core/client_channel/backend_metric.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
@@ -2699,7 +2698,6 @@ libs:
   - src/core/client_channel/retry_filter_legacy_call_data.cc
   - src/core/client_channel/retry_service_config.cc
   - src/core/client_channel/retry_throttle.cc
-  - src/core/client_channel/service_config_channel_arg_filter.cc
   - src/core/client_channel/subchannel.cc
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
@@ -2973,6 +2971,7 @@ libs:
   - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_supported.cc
+  - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/legacy_server_auth_filter.cc
@@ -2994,7 +2993,6 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
-  - src/core/lib/surface/call_trace.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
@@ -3033,6 +3031,7 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/lib/uri/uri_parser.cc
   - src/core/load_balancing/address_filtering.cc
+  - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
   - src/core/load_balancing/endpoint_list.cc
   - src/core/load_balancing/grpclb/client_load_reporting_filter.cc
@@ -3071,6 +3070,7 @@ libs:
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
@@ -3578,7 +3578,6 @@ libs:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -3596,7 +3595,6 @@ libs:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -4001,7 +3999,6 @@ libs:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -4023,7 +4020,6 @@ libs:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -4930,6 +4926,7 @@ libs:
   - src/core/lib/security/credentials/tls/tls_utils.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_supported.cc
+  - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/legacy_server_auth_filter.cc
@@ -4951,7 +4948,6 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
-  - src/core/lib/surface/call_trace.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_ping.cc
@@ -5095,7 +5091,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5107,7 +5102,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5168,7 +5162,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5180,7 +5173,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5258,7 +5250,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5274,7 +5265,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5323,7 +5313,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5334,7 +5323,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5516,7 +5504,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5528,7 +5515,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5634,7 +5620,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5646,7 +5631,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5678,7 +5662,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5690,7 +5673,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5739,7 +5721,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5751,7 +5732,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5886,7 +5866,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5901,7 +5880,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -5927,7 +5905,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -5942,7 +5919,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -6249,7 +6225,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -6261,7 +6236,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -7257,7 +7231,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -7358,7 +7331,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -7477,7 +7449,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -7489,7 +7460,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -7586,7 +7556,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -7598,7 +7567,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -7618,7 +7586,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -7630,7 +7597,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -8032,7 +7998,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -8044,7 +8009,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -8090,7 +8054,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -8102,7 +8065,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -8257,7 +8219,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -8269,7 +8230,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -8942,7 +8902,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -8955,7 +8914,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -9001,7 +8959,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -9014,7 +8971,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -9035,7 +8991,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -9047,7 +9002,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -9067,7 +9021,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -9079,7 +9032,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -9435,7 +9387,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -9447,7 +9398,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10064,7 +10014,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10080,7 +10029,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10294,7 +10242,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10306,7 +10253,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10337,7 +10283,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10350,7 +10295,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10370,7 +10314,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10382,7 +10325,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10546,7 +10488,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10558,7 +10499,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10618,7 +10558,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10630,7 +10569,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10650,7 +10588,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10662,7 +10599,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10682,7 +10618,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10694,7 +10629,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10714,7 +10648,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10726,7 +10659,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -10746,7 +10678,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -10758,7 +10689,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11057,7 +10987,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11069,7 +10998,6 @@ targets:
   - test/core/util/histogram_test.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11101,7 +11029,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11113,7 +11040,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11134,7 +11060,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11146,7 +11071,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11167,7 +11091,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11179,7 +11102,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11503,7 +11425,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11515,7 +11436,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11901,7 +11821,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11913,7 +11832,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -11934,7 +11852,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -11946,7 +11863,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -12407,7 +12323,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -12419,7 +12334,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -12737,7 +12651,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -12749,7 +12662,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -12780,7 +12692,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -12792,13 +12703,25 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
   deps:
   - gtest
   - grpc_test_util
+- name: metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/channel/metrics.h
+  src:
+  - src/core/lib/channel/metrics.cc
+  - test/core/channel/metrics_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: minimal_stack_is_minimal_test
   gtest: true
   build: test
@@ -13330,7 +13253,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -13346,7 +13268,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -13564,7 +13485,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -13576,7 +13496,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -13609,7 +13528,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -13621,7 +13539,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -13703,7 +13620,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -13715,7 +13631,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -14357,7 +14272,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -14369,7 +14283,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -14607,7 +14520,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -14619,7 +14531,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -14646,7 +14557,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -14659,7 +14569,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -14680,7 +14589,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -14692,7 +14600,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -14719,7 +14626,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -14732,7 +14638,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17029,7 +16934,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17042,7 +16946,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17062,7 +16965,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17074,7 +16976,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17144,7 +17045,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17159,7 +17059,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17185,7 +17084,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17200,7 +17098,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17375,7 +17272,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17390,7 +17286,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17530,7 +17425,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17542,7 +17436,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -17973,7 +17866,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -17985,7 +17877,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18115,7 +18006,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18127,7 +18017,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18275,7 +18164,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18288,7 +18176,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18360,7 +18247,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18372,7 +18258,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18407,7 +18292,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18419,7 +18303,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18459,7 +18342,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18472,7 +18354,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18495,7 +18376,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18507,7 +18387,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18718,7 +18597,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18730,7 +18608,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18751,7 +18628,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18763,7 +18639,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -18783,7 +18658,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -18795,7 +18669,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -19169,7 +19042,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -19181,7 +19053,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -19268,7 +19139,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -19280,7 +19150,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -20142,6 +20011,8 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -20150,7 +20021,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -20159,13 +20029,15 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
@@ -20532,7 +20404,6 @@ targets:
   - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
-  - test/core/util/passthru_endpoint.h
   - test/core/util/resolve_localhost_ip46.h
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
@@ -20544,7 +20415,6 @@ targets:
   - test/core/util/histogram.cc
   - test/core/util/mock_endpoint.cc
   - test/core/util/parse_hexstring.cc
-  - test/core/util/passthru_endpoint.cc
   - test/core/util/resolve_localhost_ip46.cc
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
