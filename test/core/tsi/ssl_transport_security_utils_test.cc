@@ -25,6 +25,7 @@
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -32,12 +33,29 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/gprpp/load_file.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
+
+const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
+const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
+const char* kModifiedSignature =
+    "test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl";
+const char* kModifiedContent =
+    "test/core/tsi/test_creds/crl_data/crls/invalid_content.crl";
+const char* kIntermediateCrl =
+    "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
+const char* kIntermediateCrlIssuer =
+    "test/core/tsi/test_creds/crl_data/intermediate_ca.pem";
+const char* kLeafCert =
+    "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.pem";
+const char* kEvilCa = "test/core/tsi/test_creds/crl_data/evil_ca.pem";
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
@@ -316,8 +334,8 @@ TEST_P(FlowTest,
                                 &protected_output_frames_size),
             tsi_result::TSI_OK);
 
-  // If |GetParam().plaintext_size| is larger than the inner client_buffer size
-  // (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
+  // If |GetParam().plaintext_size| is larger than the inner client_buffer
+  // size (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
   // |kMaxPlaintextBytesPerTlsRecord| bytes and output the protected
   // frame. Otherwise we need to manually flush the copied data in order
   // to get the protected frame.
@@ -378,8 +396,8 @@ TEST_P(FlowTest,
                                 &protected_output_frames_size),
             tsi_result::TSI_OK);
 
-  // If |GetParam().plaintext_size| is larger than the inner server_buffer size
-  // (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
+  // If |GetParam().plaintext_size| is larger than the inner server_buffer
+  // size (kMaxPlaintextBytesPerTlsRecord), then |Protect| will copy up to
   // |kMaxPlaintextBytesPerTlsRecord| bytes and output the protected
   // frame. Otherwise we need to manually flush the copied data in order
   // to get the protected frame.
@@ -428,6 +446,188 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
                          ValuesIn(GenerateTestData()));
 
 #endif  // OPENSSL_IS_BORINGSSL
+
+class CrlUtils : public ::testing::Test {
+ public:
+  static void SetUpTestSuite() {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+    OPENSSL_init_ssl(/*opts=*/0, /*settings=*/nullptr);
+#else
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+#endif
+  }
+
+  void SetUp() override {
+    absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl, false);
+    ASSERT_EQ(root_crl.status(), absl::OkStatus()) << root_crl.status();
+    root_crl_ = ReadCrl(root_crl->as_string_view());
+    absl::StatusOr<Slice> intermediate_crl = LoadFile(kIntermediateCrl, false);
+    ASSERT_EQ(intermediate_crl.status(), absl::OkStatus())
+        << intermediate_crl.status();
+    intermediate_crl_ = ReadCrl(intermediate_crl->as_string_view());
+    absl::StatusOr<Slice> invalid_signature_crl =
+        LoadFile(kModifiedSignature, false);
+    ASSERT_EQ(invalid_signature_crl.status(), absl::OkStatus())
+        << invalid_signature_crl.status();
+    invalid_signature_crl_ = ReadCrl(invalid_signature_crl->as_string_view());
+
+    absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer, false);
+    ASSERT_EQ(root_ca.status(), absl::OkStatus());
+    root_ca_ = ReadPemCert(root_ca->as_string_view());
+    absl::StatusOr<Slice> intermediate_ca =
+        LoadFile(kIntermediateCrlIssuer, false);
+    ASSERT_EQ(intermediate_ca.status(), absl::OkStatus());
+    intermediate_ca_ = ReadPemCert(intermediate_ca->as_string_view());
+    absl::StatusOr<Slice> leaf_cert = LoadFile(kLeafCert, false);
+    ASSERT_EQ(leaf_cert.status(), absl::OkStatus());
+    leaf_cert_ = ReadPemCert(leaf_cert->as_string_view());
+    absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa, false);
+    ASSERT_EQ(evil_ca.status(), absl::OkStatus());
+    evil_ca_ = ReadPemCert(evil_ca->as_string_view());
+  }
+
+  void TearDown() override {
+    X509_CRL_free(root_crl_);
+    X509_CRL_free(intermediate_crl_);
+    X509_CRL_free(invalid_signature_crl_);
+    X509_free(root_ca_);
+    X509_free(intermediate_ca_);
+    X509_free(leaf_cert_);
+    X509_free(evil_ca_);
+  }
+
+ protected:
+  X509_CRL* root_crl_;
+  X509_CRL* intermediate_crl_;
+  X509_CRL* invalid_signature_crl_;
+  X509* root_ca_;
+  X509* intermediate_ca_;
+  X509* leaf_cert_;
+  X509* evil_ca_;
+};
+
+TEST_F(CrlUtils, VerifySignatureValid) {
+  EXPECT_TRUE(VerifyCrlSignature(root_crl_, root_ca_));
+}
+
+TEST_F(CrlUtils, VerifySignatureIntermediateValid) {
+  EXPECT_TRUE(VerifyCrlSignature(intermediate_crl_, intermediate_ca_));
+}
+
+TEST_F(CrlUtils, VerifySignatureModifiedSignature) {
+  EXPECT_FALSE(VerifyCrlSignature(invalid_signature_crl_, root_ca_));
+}
+
+TEST_F(CrlUtils, VerifySignatureModifiedContent) {
+  absl::StatusOr<Slice> crl_slice = LoadFile(kModifiedContent, false);
+  ASSERT_EQ(crl_slice.status(), absl::OkStatus()) << crl_slice.status();
+  X509_CRL* crl = ReadCrl(crl_slice->as_string_view());
+  EXPECT_EQ(crl, nullptr);
+}
+
+TEST_F(CrlUtils, VerifySignatureWrongIssuer) {
+  EXPECT_FALSE(VerifyCrlSignature(root_crl_, intermediate_ca_));
+}
+
+TEST_F(CrlUtils, VerifySignatureWrongIssuer2) {
+  EXPECT_FALSE(VerifyCrlSignature(intermediate_crl_, root_ca_));
+}
+
+TEST_F(CrlUtils, VerifySignatureNullCrl) {
+  EXPECT_FALSE(VerifyCrlSignature(nullptr, root_ca_));
+}
+
+TEST_F(CrlUtils, VerifySignatureNullCert) {
+  EXPECT_FALSE(VerifyCrlSignature(intermediate_crl_, nullptr));
+}
+
+TEST_F(CrlUtils, VerifySignatureNullCrlAndCert) {
+  EXPECT_FALSE(VerifyCrlSignature(nullptr, nullptr));
+}
+
+TEST_F(CrlUtils, VerifyIssuerNamesMatch) {
+  EXPECT_TRUE(VerifyCrlCertIssuerNamesMatch(root_crl_, root_ca_));
+}
+
+TEST_F(CrlUtils, VerifyIssuerNamesDontMatch) {
+  EXPECT_FALSE(VerifyCrlCertIssuerNamesMatch(root_crl_, leaf_cert_));
+}
+
+TEST_F(CrlUtils, DuplicatedIssuerNamePassesButSignatureCheckFails) {
+  // The issuer names will match, but it should fail a signature check
+  EXPECT_TRUE(VerifyCrlCertIssuerNamesMatch(root_crl_, evil_ca_));
+  EXPECT_FALSE(VerifyCrlSignature(root_crl_, evil_ca_));
+}
+
+TEST_F(CrlUtils, VerifyIssuerNameNullCrl) {
+  EXPECT_FALSE(VerifyCrlCertIssuerNamesMatch(nullptr, root_ca_));
+}
+
+TEST_F(CrlUtils, VerifyIssuerNameNullCert) {
+  EXPECT_FALSE(VerifyCrlCertIssuerNamesMatch(intermediate_crl_, nullptr));
+}
+
+TEST_F(CrlUtils, VerifyIssuerNameNullCrlAndCert) {
+  EXPECT_FALSE(VerifyCrlCertIssuerNamesMatch(nullptr, nullptr));
+}
+
+TEST_F(CrlUtils, HasCrlSignBitExists) { EXPECT_TRUE(HasCrlSignBit(root_ca_)); }
+
+TEST_F(CrlUtils, HasCrlSignBitMissing) {
+  EXPECT_FALSE(HasCrlSignBit(leaf_cert_));
+}
+
+TEST_F(CrlUtils, HasCrlSignBitNullCert) {
+  EXPECT_FALSE(HasCrlSignBit(nullptr));
+}
+
+TEST_F(CrlUtils, IssuerFromIntermediateCert) {
+  auto issuer = IssuerFromCert(intermediate_ca_);
+  // Build the known name for comparison
+  unsigned char* buf = nullptr;
+  X509_NAME* expected_issuer_name = X509_NAME_new();
+  ASSERT_TRUE(
+      X509_NAME_add_entry_by_txt(expected_issuer_name, "C", MBSTRING_ASC,
+                                 (const unsigned char*)"AU", -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected_issuer_name, "ST", MBSTRING_ASC,
+      (const unsigned char*)"Some-State", -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected_issuer_name, "O", MBSTRING_ASC,
+      (const unsigned char*)"Internet Widgits Pty Ltd", -1, -1, 0));
+  ASSERT_TRUE(
+      X509_NAME_add_entry_by_txt(expected_issuer_name, "CN", MBSTRING_ASC,
+                                 (const unsigned char*)"testca", -1, -1, 0));
+  int len = i2d_X509_NAME(expected_issuer_name, &buf);
+  std::string expected_issuer_name_der(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  X509_NAME_free(expected_issuer_name);
+  ASSERT_EQ(issuer.status(), absl::OkStatus());
+  EXPECT_EQ(*issuer, expected_issuer_name_der);
+}
+
+TEST_F(CrlUtils, IssuerFromLeaf) {
+  auto issuer = IssuerFromCert(leaf_cert_);
+  // Build the known name for comparison
+  unsigned char* buf = nullptr;
+  X509_NAME* expected_issuer_name = X509_NAME_new();
+  ASSERT_TRUE(X509_NAME_add_entry_by_txt(
+      expected_issuer_name, "CN", MBSTRING_ASC,
+      (const unsigned char*)"intermediatecert.example.com", -1, -1, 0));
+  int len = i2d_X509_NAME(expected_issuer_name, &buf);
+  std::string expected_issuer_name_der(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  X509_NAME_free(expected_issuer_name);
+  ASSERT_EQ(issuer.status(), absl::OkStatus());
+  EXPECT_EQ(*issuer, expected_issuer_name_der);
+}
+
+TEST_F(CrlUtils, IssuerFromCertNull) {
+  auto issuer = IssuerFromCert(nullptr);
+  EXPECT_EQ(issuer.status().code(), absl::StatusCode::kInvalidArgument);
+}
 
 }  // namespace testing
 }  // namespace grpc_core

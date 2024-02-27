@@ -1065,8 +1065,10 @@ MakeFilterCall(Derived* derived) {
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
+class ImplementChannelFilterTag {};
 template <typename Derived>
-class ImplementChannelFilter : public ChannelFilter {
+class ImplementChannelFilter : public ChannelFilter,
+                               public ImplementChannelFilterTag {
  public:
   // Natively construct a v3 call.
   void InitCall(CallSpineInterface* call_spine) {
@@ -1914,7 +1916,7 @@ struct ChannelFilterWithFlagsMethods {
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 absl::enable_if_t<
     std::is_base_of<ChannelFilter, F>::value &&
-        !std::is_base_of<ImplementChannelFilter<F>, F>::value &&
+        !std::is_base_of<ImplementChannelFilterTag, F>::value &&
         !std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
     grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
@@ -2001,7 +2003,7 @@ MakePromiseBasedFilter(const char* name) {
 }
 
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ImplementChannelFilter<F>, F>::value,
+absl::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
                   grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<kEndpoint>;

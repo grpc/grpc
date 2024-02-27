@@ -792,7 +792,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
-     required_experiments_work_serializer_dispatch, 1, false, true},
+     required_experiments_work_serializer_dispatch, 1, true, true},
     {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
      additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
