@@ -476,7 +476,7 @@ class _InterceptedStreamResponseMixin:
     _response_aiter: Optional[AsyncIterable[ResponseType]]
 
     def _init_stream_response_mixin(self) -> None:
-        # Is initalized later, otherwise if the iterator is not finnally
+        # Is initalized later, otherwise if the iterator is not finally
         # consumed a logging warning is emmited by Asyncio.
         self._response_aiter = None
 

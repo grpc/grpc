@@ -67,7 +67,7 @@ namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 namespace {
 const int32_t kDataAlignmentBytes = 64;
-const int32_t kTimeoutSecs = 5;
+const int32_t kTimeoutSecs = 120;
 }  // namespace
 
 ChaoticGoodConnector::ChaoticGoodConnector(

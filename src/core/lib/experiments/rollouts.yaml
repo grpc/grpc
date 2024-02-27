@@ -123,6 +123,11 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  default: false
+  default:
+    # TODO(ysseung): Not fully tested.
+    ios: broken
+    posix: true
+    # TODO(ysseung): Test flakes not fully resolved.
+    windows: broken
 - name: wrr_delegate_to_pick_first
   default: true
