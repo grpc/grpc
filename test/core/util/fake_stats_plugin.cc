@@ -193,6 +193,26 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleGaugeHandleByName(
       GlobalInstrumentsRegistry::InstrumentType::kGauge);
 }
 
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackUInt64GaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackDoubleGaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+}
+
 GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
 GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
     absl::string_view name) {

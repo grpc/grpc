@@ -1445,8 +1445,9 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheEntries) {
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
             grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
-  EXPECT_EQ(descriptor->instrument_type,
-            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge);
+  EXPECT_EQ(
+      descriptor->instrument_type,
+      grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.cache_entries");
   EXPECT_EQ(descriptor->unit, "{entry}");
@@ -1462,8 +1463,9 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheSize) {
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
             grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
-  EXPECT_EQ(descriptor->instrument_type,
-            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge);
+  EXPECT_EQ(
+      descriptor->instrument_type,
+      grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
   EXPECT_EQ(descriptor->enable_by_default, false);
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.cache_size");
   EXPECT_EQ(descriptor->unit, "By");
@@ -1482,13 +1484,13 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
           FindUInt64CounterHandleByName("grpc.lb.rls.failed_rpcs")
               .value();
   auto kMetricCacheEntries =
-      grpc_core::GlobalInstrumentsRegistryTestPeer::FindUInt64GaugeHandleByName(
-          "grpc.lb.rls.cache_entries")
-          .value();
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindCallbackUInt64GaugeHandleByName("grpc.lb.rls.cache_entries")
+              .value();
   auto kMetricCacheSize =
-      grpc_core::GlobalInstrumentsRegistryTestPeer::FindUInt64GaugeHandleByName(
-          "grpc.lb.rls.cache_size")
-          .value();
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindCallbackUInt64GaugeHandleByName("grpc.lb.rls.cache_size")
+              .value();
   StartBackends(2);
   SetNextResolution(
       MakeServiceConfigBuilder()
@@ -1527,10 +1529,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(
       stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
       absl::nullopt);
-  EXPECT_THAT(stats_plugin_->GetGaugeValue(kMetricCacheEntries,
-                                           {target_uri_, kRlsInstanceId}, {}),
+  stats_plugin_->TriggerCallbacks();
+  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+                  kMetricCacheEntries, {target_uri_, kRlsInstanceId}, {}),
               ::testing::Optional(1));
-  auto cache_size = stats_plugin_->GetGaugeValue(
+  auto cache_size = stats_plugin_->GetCallbackGaugeValue(
       kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
   EXPECT_THAT(cache_size, ::testing::Optional(::testing::Ge(1)));
   // Send an RPC to the target for backend 1.
@@ -1552,10 +1555,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(
       stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
       absl::nullopt);
-  EXPECT_THAT(stats_plugin_->GetGaugeValue(kMetricCacheEntries,
-                                           {target_uri_, kRlsInstanceId}, {}),
+  stats_plugin_->TriggerCallbacks();
+  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+                  kMetricCacheEntries, {target_uri_, kRlsInstanceId}, {}),
               ::testing::Optional(2));
-  auto cache_size2 = stats_plugin_->GetGaugeValue(
+  auto cache_size2 = stats_plugin_->GetCallbackGaugeValue(
       kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
   EXPECT_THAT(cache_size2, ::testing::Optional(::testing::Ge(2)));
   if (cache_size.has_value() && cache_size2.has_value()) {
@@ -1589,10 +1593,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_THAT(
       stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
       ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetGaugeValue(kMetricCacheEntries,
-                                           {target_uri_, kRlsInstanceId}, {}),
+  stats_plugin_->TriggerCallbacks();
+  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+                  kMetricCacheEntries, {target_uri_, kRlsInstanceId}, {}),
               ::testing::Optional(3));
-  auto cache_size3 = stats_plugin_->GetGaugeValue(
+  auto cache_size3 = stats_plugin_->GetCallbackGaugeValue(
       kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
   EXPECT_THAT(cache_size3, ::testing::Optional(::testing::Ge(3)));
   if (cache_size.has_value() && cache_size3.has_value()) {

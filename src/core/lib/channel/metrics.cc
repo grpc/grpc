@@ -207,11 +207,90 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
   return handle;
 }
 
+GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle
+GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> optional_label_keys,
+    bool enable_by_default) {
+  auto& instruments = GetInstrumentList();
+  if (instruments.find(name) != instruments.end()) {
+    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  }
+  uint32_t index = instruments.size();
+  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  GlobalInstrumentDescriptor descriptor;
+  descriptor.value_type = ValueType::kUInt64;
+  descriptor.instrument_type = InstrumentType::kCallbackGauge;
+  descriptor.index = index;
+  descriptor.enable_by_default = enable_by_default;
+  descriptor.name = name;
+  descriptor.description = description;
+  descriptor.unit = unit;
+  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
+  descriptor.optional_label_keys = {optional_label_keys.begin(),
+                                    optional_label_keys.end()};
+  instruments.emplace(name, std::move(descriptor));
+  GlobalCallbackUInt64GaugeHandle handle;
+  handle.index = index;
+  return handle;
+}
+
+GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle
+GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> optional_label_keys,
+    bool enable_by_default) {
+  auto& instruments = GetInstrumentList();
+  if (instruments.find(name) != instruments.end()) {
+    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  }
+  uint32_t index = instruments.size();
+  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  GlobalInstrumentDescriptor descriptor;
+  descriptor.value_type = ValueType::kDouble;
+  descriptor.instrument_type = InstrumentType::kCallbackGauge;
+  descriptor.index = index;
+  descriptor.enable_by_default = enable_by_default;
+  descriptor.name = name;
+  descriptor.description = description;
+  descriptor.unit = unit;
+  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
+  descriptor.optional_label_keys = {optional_label_keys.begin(),
+                                    optional_label_keys.end()};
+  instruments.emplace(name, std::move(descriptor));
+  GlobalCallbackDoubleGaugeHandle handle;
+  handle.index = index;
+  return handle;
+}
+
 void GlobalInstrumentsRegistry::ForEach(
     absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f) {
   for (const auto& instrument : GetInstrumentList()) {
     f(instrument.second);
   }
+}
+
+RegisteredMetricCallback::RegisteredMetricCallback(
+    GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback)
+    : stats_plugin_group_(stats_plugin_group), callback_(std::move(callback)) {
+  for (auto& plugin : stats_plugin_group_.plugins_) {
+    plugin->AddCallback(this);
+  }
+}
+
+RegisteredMetricCallback::~RegisteredMetricCallback() {
+  for (auto& plugin : stats_plugin_group_.plugins_) {
+    plugin->RemoveCallback(this);
+  }
+}
+
+std::unique_ptr<RegisteredMetricCallback>
+GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback) {
+  return std::make_unique<RegisteredMetricCallback>(*this, std::move(callback));
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;

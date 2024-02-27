@@ -140,6 +140,17 @@ const auto kMetricFailedRpcs =
         "request or the RLS channel being throttled.",
         "{RPC}", {kMetricLabelTarget}, {}, false);
 
+const auto kMetricCacheSize =
+    GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+        "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.",
+        "By", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
+
+const auto kMetricCacheEntries =
+    GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+        "grpc.lb.rls.cache_entries",
+        "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}",
+        {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
+
 constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
 const char* kRlsRequestPath = "/grpc.lookup.v1.RouteLookupService/RouteLookup";
@@ -247,16 +258,6 @@ class RlsLb : public LoadBalancingPolicy {
   absl::Status UpdateLocked(UpdateArgs args) override;
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
-
-  void ReportCacheSize(AsyncUInt64MetricReporter& reporter) {
-    MutexLock lock(&mu_);
-    cache_.ReportSizeLocked(reporter);
-  }
-
-  void ReportCacheEntries(AsyncUInt64MetricReporter& reporter) {
-    MutexLock lock(&mu_);
-    cache_.ReportEntriesLocked(reporter);
-  }
 
  private:
   // Key to access entries in the cache and the request map.
@@ -559,9 +560,7 @@ class RlsLb : public LoadBalancingPolicy {
     // Shutdown the cache; clean-up and orphan all the stored cache entries.
     void Shutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-    void ReportSizeLocked(AsyncUInt64MetricReporter& reporter)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
-    void ReportEntriesLocked(AsyncUInt64MetricReporter& reporter)
+    void ReportMetricsLocked(CallbackMetricReporter& reporter)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
    private:
@@ -739,6 +738,7 @@ class RlsLb : public LoadBalancingPolicy {
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
   const std::string instance_id_;
+  std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
 
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
@@ -763,24 +763,6 @@ class RlsLb : public LoadBalancingPolicy {
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
   std::map<std::string /*target*/, ChildPolicyWrapper*> child_policy_map_;
 };
-
-const auto kMetricCacheSize =
-    GlobalInstrumentsRegistry::RegisterAsyncUInt64Gauge(
-        "grpc.lb.rls.cache_size",
-        "EXPERIMENTAL.  Size of the RLS cache.",
-        "By", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false,
-        [](void* arg, AsyncUInt64MetricReporter& reporter) {
-          static_cast<RlsLb*>(arg)->ReportCacheSize(reporter);
-        });
-
-const auto kMetricCacheEntries =
-    GlobalInstrumentsRegistry::RegisterAsyncUInt64Gauge(
-        "grpc.lb.rls.cache_entries",
-        "EXPERIMENTAL.  Number of entries in the RLS cache.",
-        "{entry}", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false,
-        [](void* arg, AsyncUInt64MetricReporter& reporter) {
-          static_cast<RlsLb*>(arg)->ReportCacheEntries(reporter);
-        });
 
 //
 // RlsLb::ChildPolicyWrapper
@@ -1459,15 +1441,12 @@ void RlsLb::Cache::Shutdown() {
   cleanup_timer_handle_.reset();
 }
 
-void RlsLb::Cache::ReportSizeLocked(AsyncUInt64MetricReporter& reporter) {
-  reporter.Report(size_,
+void RlsLb::Cache::ReportMetricsLocked(CallbackMetricReporter& reporter) {
+  reporter.Report(kMetricCacheSize, size_,
                   {lb_policy_->channel_control_helper()->GetTarget(),
                    lb_policy_->instance_id_},
                   {});
-}
-
-void RlsLb::Cache::ReportEntriesLocked(AsyncUInt64MetricReporter& reporter) {
-  reporter.Report(map_.size(),
+  reporter.Report(kMetricCacheEntries, map_.size(),
                   {lb_policy_->channel_control_helper()->GetTarget(),
                    lb_policy_->instance_id_},
                   {});
@@ -1956,14 +1935,16 @@ RlsLb::RlsLb(Args args)
       instance_id_(
           channel_args().GetOwnedString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID)
               .value_or(absl::StrFormat("%p", this))),
+      registered_metric_callback_(
+          channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
+              [this](CallbackMetricReporter& reporter) {
+                MutexLock lock(&mu_);
+                cache_.ReportMetricsLocked(reporter);
+              })),
       cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }
-  channel_control_helper()->GetStatsPluginGroup().AddAsyncGaugeEntity(
-      kMetricCacheSize, this);
-  channel_control_helper()->GetStatsPluginGroup().AddAsyncGaugeEntity(
-      kMetricCacheEntries, this);
 }
 
 bool EndpointsEqual(
@@ -2139,6 +2120,7 @@ void RlsLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy shutdown", this);
   }
+  registered_metric_callback_.reset();
   MutexLock lock(&mu_);
   is_shutdown_ = true;
   config_.reset(DEBUG_LOCATION, "ShutdownLocked");
@@ -2147,10 +2129,6 @@ void RlsLb::ShutdownLocked() {
   request_map_.clear();
   rls_channel_.reset();
   default_child_policy_.reset();
-  channel_control_helper()->GetStatsPluginGroup().RemoveAsyncGaugeEntity(
-      kMetricCacheSize, this);
-  channel_control_helper()->GetStatsPluginGroup().RemoveAsyncGaugeEntity(
-      kMetricCacheEntries, this);
 }
 
 void RlsLb::UpdatePickerAsync() {
