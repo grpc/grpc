@@ -907,6 +907,9 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
 // Then optionall also have RootCertExtractCallback
 // Then optionally custom Crl handling
 // I think we don't want any captures
+// Capture, etc, doesn't  work because OpenSSL is using raw function pointers,
+// not std::function I think we'll just have to hard define it, could store
+// setting/state on the ex_data if needed
 /* <fn matching verify callback reqs> VerificationBuilder(<list of fn>) {
   return fn(X509_STORE_CTX xx, void* yy) {
     for fn in list:
@@ -914,21 +917,21 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   }
 }*/
 
-std::function<int(X509_STORE_CTX*, void*)> BuildVerifyCallback(
-    std::vector<std::function<int(X509_STORE_CTX*, void*)>> callbacks) {
-  std::function<int(X509_STORE_CTX*, void*)> fn =
-      ([=](X509_STORE_CTX* ctx, void* arg) {
-        int ret = 1;
-        for (const auto& callback : callbacks) {
-          ret = callback(ctx, arg);
-          if (ret != 1) {
-            return ret;
-          }
-        }
-        return ret;
-      });
-  return fn;
-}
+// int(*callback(X509_STORE_CTX*, void*)) BuildVerifyCallback(
+//     std::vector<std::function<int(X509_STORE_CTX*, void*)>> callbacks) {
+//   std::function<int(X509_STORE_CTX*, void*)> fn =
+//       ([=](X509_STORE_CTX* ctx, void* arg) {
+//         int ret = 1;
+//         for (const auto& callback : callbacks) {
+//           ret = callback(ctx, arg);
+//           if (ret != 1) {
+//             return ret;
+//           }
+//         }
+//         return ret;
+//       });
+//   return fn;
+// }
 
 // The verification callback is used for clients that don't really care about
 // the server's certificate, but we need to pull it anyway, in case a higher
@@ -939,13 +942,6 @@ static int NullVerifyCallback(X509_STORE_CTX* /*ctx*/, void* /*arg*/) {
 }
 
 static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
-  int ret = X509_verify_cert(ctx);
-  if (ret <= 0) {
-    // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it.
-    return ret;
-  }
-
   // Verification was successful. Get the verified chain from the X509_STORE_CTX
   // and put the root on the SSL object so that we have access to it when
   // populating the tsi_peer. On error extracting the root, we return success
@@ -1074,6 +1070,98 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
 // and we are good with it.
 static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
   return 1;
+}
+
+static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
+  // Use arg maybe
+  int ret = X509_verify_cert(ctx);
+  if (ret <= 0) {
+    // Verification failed. We shouldn't expect to have a verified chain, so
+    // there is no need to attempt to extract the root cert from it or check
+    // anything else.
+    return ret;
+  }
+  ret = RootCertExtractCallback(ctx, arg);
+  if (ret <= 0) {
+    // Something has failed return the failure
+    return ret;
+  }
+
+  return 0;
+}
+
+static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
+  bool valid = true;
+  // RFC5280 6.3.3
+  // 6.3.3a we do not support distribution points
+  // 6.3.3b verify issuer and scope
+  valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
+  if (!valid) {
+    return valid;
+  }
+  valid = grpc_core::HasCrlSignBit(issuer);
+  if (!valid) {
+    return valid;
+  }
+  // 6.3.3c Not supporting deltas
+  // 6.3.3d Not supporting reasons masks
+  // 6.3.3e Not supporting reasons masks
+  // 6.3.3f We only support direct CRLs so these paths are by definition the
+  // same 6.3.3g Verify CRL Signature
+  valid = grpc_core::VerifyCrlSignature(crl, issuer);
+  return valid;
+}
+
+static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
+  X509_CRL* crl = nullptr;
+  int ret = GetCrlFromProvider(ctx, &crl, cert);
+  if (ret != 1) {
+    // Couldn't get CRL
+    // TODO(gtcooke94)
+  }
+  // Validate the crl
+  // RFC5280 6.3.3(a-i)
+  if (!ValidateCrl(cert, issuer, crl)) {
+    return 0;
+  }
+
+  // RFC5280 6.3.3j Actually check revocation
+  // Look for serial number of certificate in CRL  X509_REVOKED* rev = nullptr;
+  X509_REVOKED* rev;
+  if (X509_CRL_get0_by_cert(crl, &rev, cert)) {
+    // cert is revoked
+    return 0;
+  }
+  // The certificate is not revoked
+  return 1;
+  // RFC5280j - Not supporting reasons
+  // RFC5280k - Not supporting reasons
+}
+
+static int CheckChainRevocation(X509_STORE_CTX* ctx, void* arg) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
+#else
+  STACK_OF(X509)* chain = X509_STORE_CTX_get_chain(ctx);
+#endif
+  if (chain == nullptr) {
+    return 0;
+  }
+  size_t chain_length = sk_X509_num(chain);
+  if (chain_length == 0) {
+    return 0;
+  }
+  // Loop to < chain_length - 1 because the last cert is the trust anchor/root
+  // which cannot be revoked
+  for (int i = 0; i < chain_length - 1; i++) {
+    X509* cert = sk_X509_value(chain, i);
+    X509* issuer = sk_X509_value(chain, i + 1);
+    int ret = CheckCertRevocation(ctx, cert, issuer);
+    if (ret != 1) {
+      return ret;
+    }
+  }
+  return 0;
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
@@ -2213,22 +2301,30 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
+  std::vector<std::function<int(X509_STORE_CTX*, void*)>> verify_fns = {};
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   if (options->skip_server_certificate_verification) {
-    SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
+    // verify_fns.push_back(NullVerifyCallback);
+    // SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback,
+    // nullptr);
   } else {
-    SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
-                                     nullptr);
+    // verify_fns.push_back(RootCertExtractCallback);
+    // SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
+    //                                  nullptr);
   }
+  // auto fn = BuildVerifyCallback(verify_fns);
+  SSL_CTX_set_cert_verify_callback(ssl_context,
+                                   &fn, nullptr));
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
     X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
-    // X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-    // X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-    // X509_STORE_set_verify_cb(cert_store, verify_cb);
+    // TODO(gtcooke94) change this
+    X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+    X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
+    X509_STORE_set_verify_cb(cert_store, verify_cb);
     X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
     X509_VERIFY_PARAM_set_flags(
         param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
