@@ -648,31 +648,12 @@ class FilterStackCall final : public Call {
     }
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
-      // Acquire call tracer before ops_pending_.fetch_sub to avoid races with
-      // call_ being set to nullptr in PostCompletion method. Store the
-      // call_tracer_ and call_ variables locally as well because they could be
-      // modified by another thread after the fetch_sub operation.
-      CallTracerAnnotationInterface* call_tracer = call_tracer_;
-      FilterStackCall* call = call_;
-      bool is_call_trace_enabled = grpc_call_trace.enabled();
-      bool is_call_ops_annotate_enabled =
-          (IsTraceRecordCallopsEnabled() && call_tracer != nullptr);
-      if (is_call_ops_annotate_enabled) {
-        call->InternalRef("Call ops annotate");
-      }
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
-      if (is_call_trace_enabled || is_call_ops_annotate_enabled) {
-        std::string trace_string = absl::StrFormat(
-            "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
-            PendingOpString(mask).c_str(), PendingOpString(r & ~mask).c_str(),
-            completion_data_.notify_tag.tag);
-        if (is_call_trace_enabled) {
-          gpr_log(GPR_DEBUG, "%s", trace_string.c_str());
-        }
-        if (is_call_ops_annotate_enabled) {
-          call_tracer->RecordAnnotation(trace_string);
-          call->InternalUnref("Call ops annotate");
-        }
+      if (grpc_call_trace.enabled()) {
+        gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
+                PendingOpString(mask).c_str(),
+                PendingOpString(r & ~mask).c_str(),
+                completion_data_.notify_tag.tag);
       }
       GPR_ASSERT((r & mask) != 0);
       return r == mask;
@@ -1538,7 +1519,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   grpc_transport_stream_op_batch_payload* stream_op_payload;
   uint32_t seen_ops = 0;
   intptr_t pending_ops = 0;
-  CallTracerAnnotationInterface* call_tracer = nullptr;
 
   for (i = 0; i < nops; i++) {
     if (seen_ops & (1u << ops[i].op)) {
@@ -1899,15 +1879,6 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  call_tracer = static_cast<CallTracerAnnotationInterface*>(
-      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
-  if ((IsTraceRecordCallopsEnabled() && call_tracer != nullptr)) {
-    call_tracer->RecordAnnotation(absl::StrFormat(
-        "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
-        PendingOpString(pending_ops).c_str(),
-        grpc_transport_stream_op_batch_string(stream_op, true).c_str(),
-        bctl->completion_data_.notify_tag.tag));
-  }
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
             PendingOpString(pending_ops).c_str(),

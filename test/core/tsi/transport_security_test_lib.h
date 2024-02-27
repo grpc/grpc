@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 #define GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H
 
+#include <openssl/x509v3.h>
+
 #include <grpc/support/sync.h>
 
 #include "src/core/tsi/transport_security_interface.h"
@@ -237,5 +239,11 @@ struct SelfSignedCertificateOptions {
 // Returns a PEM-encoded self-signed certificate.
 std::string GenerateSelfSignedCertificate(
     const SelfSignedCertificateOptions& options);
+
+// Returns the OpenSSL representation of a PEM cert.
+X509* ReadPemCert(absl::string_view pem_cert);
+
+// Returns the OpenSSL representation of a CRL.
+X509_CRL* ReadCrl(absl::string_view crl_pem);
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H

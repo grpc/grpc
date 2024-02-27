@@ -113,7 +113,7 @@ TEST_P(WrrTest, MetricsHaveLocalityLabel) {
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindDoubleHistogramHandleByName("grpc.lb.wrr.endpoint_weights")
               .value();
-  const std::string target = absl::StrCat("xds:///", kServerName);
+  const std::string target = absl::StrCat("xds:", kServerName);
   const absl::string_view kLabelValues[] = {/*target=*/target};
   // Register stats plugin before initializing client.
   auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
@@ -137,10 +137,7 @@ TEST_P(WrrTest, MetricsHaveLocalityLabel) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
                         {"locality1", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  CheckRpcSendOk(DEBUG_LOCATION, 10);
-  // Both backends got some requests.  The exact count doesn't matter.
-  EXPECT_GT(backends_[0]->backend_service()->request_count(), 0);
-  EXPECT_GT(backends_[1]->backend_service()->request_count(), 0);
+  WaitForAllBackends(DEBUG_LOCATION);
   // Make sure we have a metric value for each of the two localities.
   EXPECT_THAT(
       stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
