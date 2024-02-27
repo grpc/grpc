@@ -136,14 +136,11 @@ static grpc_error_handle CreateEventEngineListener(
           // Scoped for server lock, to ensure it's released before the callback
           // is called.
           {
-            gpr_log(GPR_ERROR, "DO NOT SUBMIT: locking");
             grpc_core::MutexLockForGprMu lock(&s->mu);
             if (s->shutdown) {
-              gpr_log(GPR_ERROR, "DO NOT SUBMIT: is shutdown. returning");
               return;
             }
             cb_arg = s->on_accept_cb_arg;
-            gpr_log(GPR_ERROR, "DO NOT SUBMIT: not returning");
             acceptor = static_cast<grpc_tcp_server_acceptor*>(
                 gpr_malloc(sizeof(*acceptor)));
             acceptor->from_server = s;
@@ -202,19 +199,16 @@ static grpc_error_handle CreateEventEngineListener(
             }
             acceptor->pending_data = buf;
           }
-          gpr_log(GPR_ERROR, "DO NOT SUBMIT: calling their cb");
           s->on_accept_cb(cb_arg,
                           grpc_event_engine::experimental::
                               grpc_event_engine_endpoint_create(std::move(ep)),
                           read_notifier_pollset, acceptor);
-          gpr_log(GPR_ERROR, "DO NOT SUBMIT: called their cb");
         };
     listener = event_engine_supports_fd->CreatePosixListener(
         std::move(accept_cb),
         [s, shutdown_complete](absl::Status status) {
           grpc_event_engine::experimental::RunEventEngineClosure(
               shutdown_complete, absl_status_to_grpc_error(status));
-          gpr_log(GPR_ERROR, "DO NOT SUBMIT: deleting s");
           finish_shutdown(s);
         },
         config,
@@ -348,10 +342,8 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
     gpr_mu_unlock(&s->mu);
     if (grpc_event_engine::experimental::UseEventEngineListener()) {
       // This will trigger asynchronous execution of the on_shutdown_complete
-      // callback when appropriate. That callback will delete the server
-      gpr_log(GPR_ERROR, "DO NOT SUBMIT: resetting for server::%p", s);
+      // callback when appropriate. That callback will delete the server.
       s->ee_listener.reset();
-      gpr_log(GPR_ERROR, "DO NOT SUBMIT: reset");
     } else {
       finish_shutdown(s);
     }
