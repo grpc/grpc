@@ -25,6 +25,9 @@
 
 namespace grpc_core {
 
+// TODO(matthewstevenson88): Update LoadSystemRootCerts to use Slice
+// instead of grpc_slice.
+
 // Returns a slice containing roots from the OS trust store
 grpc_slice LoadSystemRootCerts();
 

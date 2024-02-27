@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_BACKEND_METRIC_H
-#define GRPC_SRC_CORE_CLIENT_CHANNEL_BACKEND_METRIC_H
+#ifndef GRPC_SRC_CORE_LOAD_BALANCING_BACKEND_METRIC_PARSER_H
+#define GRPC_SRC_CORE_LOAD_BALANCING_BACKEND_METRIC_PARSER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -44,4 +44,4 @@ const BackendMetricData* ParseBackendMetricData(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_BACKEND_METRIC_H
+#endif  // GRPC_SRC_CORE_LOAD_BALANCING_BACKEND_METRIC_PARSER_H

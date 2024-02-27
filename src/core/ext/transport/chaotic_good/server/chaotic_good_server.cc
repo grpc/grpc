@@ -70,7 +70,7 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace {
-const Duration kConnectionDeadline = Duration::Seconds(5);
+const Duration kConnectionDeadline = Duration::Seconds(120);
 }  // namespace
 
 using grpc_event_engine::experimental::EventEngine;

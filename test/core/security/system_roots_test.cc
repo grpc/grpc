@@ -20,9 +20,12 @@
 
 #include <stdio.h>
 
-#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
+    defined(GPR_WINDOWS)
 #include <string.h>
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 #include <sys/param.h>
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
 
 #include "gtest/gtest.h"
 
@@ -48,6 +51,10 @@
 namespace grpc {
 namespace {
 
+// The GetAbsoluteFilePath and CreateRootCertsBundle helper functions are only
+// defined on some platforms. On other platforms (e.g. Windows), we rely on
+// built-in helper functions to play similar (but not exactly the same) roles.
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
@@ -80,6 +87,15 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
       << "Expected: \"" << result_slice.as_string_view() << "\"\n"
       << "Actual:   \"" << roots_bundle_str << "\"";
 }
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+
+#if defined(GPR_WINDOWS)
+TEST(LoadSystemRootCertsTest, Success) {
+  grpc_slice roots_slice = grpc_core::LoadSystemRootCerts();
+  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(roots_slice));
+  grpc_slice_unref(roots_slice);
+}
+#endif  // GPR_WINDOWS
 
 }  // namespace
 }  // namespace grpc
@@ -96,4 +112,4 @@ int main() {
       "systems ***\n");
   return 0;
 }
-#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_WINDOWS

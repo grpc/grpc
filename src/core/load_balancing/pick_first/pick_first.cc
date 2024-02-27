@@ -1022,6 +1022,7 @@ void PickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
               p, p->latest_pending_subchannel_list_.get(),
               p->subchannel_list_.get());
     }
+    p->UnsetSelectedSubchannel();
     p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
   }
   // Cases 1 and 2.
