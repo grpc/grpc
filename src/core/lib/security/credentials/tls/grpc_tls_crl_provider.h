@@ -79,9 +79,8 @@ class CrlImpl : public Crl {
 
 class CertificateInfoImpl : public CertificateInfo {
  public:
-  explicit CertificateInfoImpl(
-      absl::string_view issuer,
-      absl::string_view authority_key_identifier = nullptr)
+  explicit CertificateInfoImpl(absl::string_view issuer,
+                               absl::string_view authority_key_identifier = "")
       : issuer_(issuer), authority_key_identifier_(authority_key_identifier) {}
   absl::string_view Issuer() const override { return issuer_; }
   absl::string_view AuthorityKeyIdentifier() const override {
