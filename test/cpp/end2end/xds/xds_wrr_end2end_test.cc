@@ -109,9 +109,9 @@ TEST_P(WrrTest, Basic) {
 
 TEST_P(WrrTest, MetricsHaveLocalityLabel) {
   if (!grpc_core::IsWrrDelegateToPickFirstEnabled()) return;
-  const auto kRrFallback =
+  const auto kEndpointWeights =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindUInt64CounterHandleByName("grpc.lb.wrr.rr_fallback")
+          FindDoubleHistogramHandleByName("grpc.lb.wrr.endpoint_weights")
               .value();
   const std::string target = absl::StrCat("xds:///", kServerName);
   const absl::string_view kLabelValues[] = {/*target=*/target};
@@ -142,12 +142,14 @@ TEST_P(WrrTest, MetricsHaveLocalityLabel) {
   EXPECT_GT(backends_[0]->backend_service()->request_count(), 0);
   EXPECT_GT(backends_[1]->backend_service()->request_count(), 0);
   // Make sure we have a metric value for each of the two localities.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kRrFallback, kLabelValues,
-                                            {LocalityNameString("locality0")}),
-              ::testing::Optional(::testing::Gt(0)));
-  EXPECT_THAT(stats_plugin->GetCounterValue(kRrFallback, kLabelValues,
-                                            {LocalityNameString("locality1")}),
-              ::testing::Optional(::testing::Gt(0)));
+  EXPECT_THAT(
+      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
+                                      {LocalityNameString("locality0")}),
+      ::testing::Optional(::testing::Not(::testing::IsEmpty())));
+  EXPECT_THAT(
+      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
+                                      {LocalityNameString("locality1")}),
+      ::testing::Optional(::testing::Not(::testing::IsEmpty())));
 }
 
 }  // namespace
