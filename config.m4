@@ -474,6 +474,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \

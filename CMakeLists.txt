@@ -2210,6 +2210,7 @@ add_library(grpc
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
@@ -2977,6 +2978,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
@@ -5103,6 +5105,7 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
@@ -19563,8 +19566,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(metrics_test
-  src/core/lib/channel/metrics.cc
   test/core/channel/metrics_test.cc
+  test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31749,6 +31752,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(weighted_round_robin_config_test
   test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31797,6 +31801,7 @@ add_executable(weighted_round_robin_test
   test/core/client_channel/lb_policy/weighted_round_robin_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -36106,6 +36111,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h
+    test/core/util/fake_stats_plugin.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds/xds_end2end_test_lib.cc
     test/cpp/end2end/xds/xds_server.cc

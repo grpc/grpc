@@ -3256,6 +3256,7 @@ grpc_cc_library(
         "error",
         "grpc_backend_metric_data",
         "iomgr_fwd",
+        "metrics",
         "pollset_set",
         "ref_counted",
         "resolved_address",
@@ -5680,6 +5681,7 @@ grpc_cc_library(
         "connectivity_state",
         "experiments",
         "grpc_backend_metric_data",
+        "grpc_lb_policy_weighted_target",
         "grpc_lb_subchannel_list",
         "json",
         "json_args",
@@ -5687,6 +5689,7 @@ grpc_cc_library(
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "metrics",
         "ref_counted",
         "resolved_address",
         "static_stride_scheduler",
@@ -5825,6 +5828,9 @@ grpc_cc_library(
     name = "grpc_lb_policy_weighted_target",
     srcs = [
         "load_balancing/weighted_target/weighted_target.cc",
+    ],
+    hdrs = [
+        "load_balancing/weighted_target/weighted_target.h",
     ],
     external_deps = [
         "absl/base:core_headers",
