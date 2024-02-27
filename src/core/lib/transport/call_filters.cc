@@ -16,9 +16,8 @@
 
 #include "src/core/lib/transport/call_filters.h"
 
-#include "metadata.h"
-
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
