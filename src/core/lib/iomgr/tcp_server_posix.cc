@@ -88,6 +88,24 @@ using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::PosixEventEngineWithFdSupport;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
+static void finish_shutdown(grpc_tcp_server* s) {
+  gpr_mu_lock(&s->mu);
+  GPR_ASSERT(s->shutdown);
+  gpr_mu_unlock(&s->mu);
+  if (s->shutdown_complete != nullptr) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
+                            absl::OkStatus());
+  }
+  gpr_mu_destroy(&s->mu);
+  while (s->head) {
+    grpc_tcp_listener* sp = s->head;
+    s->head = sp->next;
+    gpr_free(sp);
+  }
+  delete s->fd_handler;
+  delete s;
+}
+
 static grpc_error_handle CreateEventEngineListener(
     grpc_tcp_server* s, grpc_closure* shutdown_complete,
     const EndpointConfig& config, grpc_tcp_server** server) {
@@ -197,8 +215,7 @@ static grpc_error_handle CreateEventEngineListener(
           grpc_event_engine::experimental::RunEventEngineClosure(
               shutdown_complete, absl_status_to_grpc_error(status));
           gpr_log(GPR_ERROR, "DO NOT SUBMIT: deleting s");
-          delete s->fd_handler;
-          delete s;
+          finish_shutdown(s);
         },
         config,
         std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
@@ -227,8 +244,7 @@ static grpc_error_handle CreateEventEngineListener(
           GPR_ASSERT(gpr_atm_no_barrier_load(&s->refs.count) == 0);
           grpc_event_engine::experimental::RunEventEngineClosure(
               shutdown_complete, absl_status_to_grpc_error(status));
-          delete s->fd_handler;
-          delete s;
+          finish_shutdown(s);
         },
         config,
         std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
@@ -293,26 +309,6 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   return absl::OkStatus();
 }
 
-static void finish_shutdown(grpc_tcp_server* s) {
-  gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->shutdown);
-  gpr_mu_unlock(&s->mu);
-  if (s->shutdown_complete != nullptr) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
-                            absl::OkStatus());
-  }
-  gpr_mu_destroy(&s->mu);
-  while (s->head) {
-    grpc_tcp_listener* sp = s->head;
-    s->head = sp->next;
-    gpr_free(sp);
-  }
-  if (!grpc_event_engine::experimental::UseEventEngineListener()) {
-    delete s->fd_handler;
-    delete s;
-  }
-}
-
 static void destroyed_port(void* server, grpc_error_handle /*error*/) {
   grpc_tcp_server* s = static_cast<grpc_tcp_server*>(server);
   gpr_mu_lock(&s->mu);
@@ -350,7 +346,15 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(s);
+    if (grpc_event_engine::experimental::UseEventEngineListener()) {
+      // This will trigger asynchronous execution of the on_shutdown_complete
+      // callback when appropriate. That callback will delete the server
+      gpr_log(GPR_ERROR, "DO NOT SUBMIT: resetting for server::%p", s);
+      s->ee_listener.reset();
+      gpr_log(GPR_ERROR, "DO NOT SUBMIT: reset");
+    } else {
+      finish_shutdown(s);
+    }
   }
 }
 
@@ -365,13 +369,6 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
       grpc_fd_shutdown(sp->emfd, GRPC_ERROR_CREATE("Server destroyed"));
     }
     gpr_mu_unlock(&s->mu);
-    if (grpc_event_engine::experimental::UseEventEngineListener()) {
-      // This will trigger asynchronous execution of the on_shutdown_complete
-      // callback when appropriate. That callback will delete the server
-      gpr_log(GPR_ERROR, "DO NOT SUBMIT: resetting");
-      s->ee_listener.reset();
-      gpr_log(GPR_ERROR, "DO NOT SUBMIT: reset");
-    }
   } else {
     gpr_mu_unlock(&s->mu);
     deactivated_all_ports(s);
