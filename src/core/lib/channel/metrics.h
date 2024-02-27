@@ -18,6 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -35,6 +36,28 @@
 namespace grpc_core {
 
 constexpr absl::string_view kMetricLabelTarget = "grpc.target";
+
+// An interface for implementing callback-style uint64 metrics.
+// To be implemented by stats plugins.
+class AsyncUInt64MetricReporter {
+ public:
+  virtual ~AsyncUInt64MetricReporter() = default;
+
+  virtual void Report(
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
+};
+
+// An interface for implementing callback-style double metrics.
+// To be implemented by stats plugins.
+class AsyncDoubleMetricReporter {
+ public:
+  virtual ~AsyncDoubleMetricReporter() = default;
+
+  virtual void Report(
+      double value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
+};
 
 // A global registry of instruments(metrics). This API is designed to be used
 // to register instruments (Counter, Histogram, and Gauge) as part of program
@@ -54,6 +77,10 @@ class GlobalInstrumentsRegistry {
     kHistogram,
     kGauge,
   };
+  using UInt64ReporterCallback =
+      std::function<void(void*, AsyncUInt64MetricReporter&)>;
+  using DoubleReporterCallback =
+      std::function<void(void*, AsyncDoubleMetricReporter&)>;
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
     InstrumentType instrument_type;
@@ -64,6 +91,7 @@ class GlobalInstrumentsRegistry {
     absl::string_view unit;
     std::vector<absl::string_view> label_keys;
     std::vector<absl::string_view> optional_label_keys;
+    absl::variant<UInt64ReporterCallback, DoubleReporterCallback> reporter;
   };
   struct GlobalHandle {
     // This is the index for the corresponding registered instrument that
@@ -78,6 +106,8 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleHistogramHandle : public GlobalHandle {};
   struct GlobalUInt64GaugeHandle : public GlobalHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalHandle {};
+  struct GlobalAsyncUInt64GaugeHandle : public GlobalHandle {};
+  struct GlobalAsyncDoubleGaugeHandle : public GlobalHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -110,6 +140,16 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
+  static GlobalAsyncUInt64GaugeHandle RegisterAsyncUInt64Gauge(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default, UInt64ReporterCallback callback);
+  static GlobalAsyncDoubleGaugeHandle RegisterAsyncDoubleGauge(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default, DoubleReporterCallback callback);
 
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
@@ -169,6 +209,18 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
+  virtual void AddAsyncGaugeEntity(
+      GlobalInstrumentsRegistry::GlobalAsyncUInt64GaugeHandle handle,
+      void* entity) = 0;
+  virtual void RemoveAsyncGaugeEntity(
+      GlobalInstrumentsRegistry::GlobalAsyncUInt64GaugeHandle handle,
+      void* entity) = 0;
+  virtual void AddAsyncGaugeEntity(
+      GlobalInstrumentsRegistry::GlobalAsyncDoubleGaugeHandle handle,
+      void* entity) = 0;
+  virtual void RemoveAsyncGaugeEntity(
+      GlobalInstrumentsRegistry::GlobalAsyncDoubleGaugeHandle handle,
+      void* entity) = 0;
   // TODO(yijiem): Details pending.
   // std::unique_ptr<AsyncInstrument> GetObservableGauge(
   //     absl::string_view name, absl::string_view description,
@@ -244,6 +296,34 @@ class GlobalStatsPluginRegistry {
                   absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->SetGauge(handle, value, label_values, optional_values);
+      }
+    }
+    void AddAsyncGaugeEntity(
+        GlobalInstrumentsRegistry::GlobalAsyncUInt64GaugeHandle handle,
+        void* entity) {
+      for (auto& plugin : plugins_) {
+        plugin->AddAsyncGaugeEntity(handle, entity);
+      }
+    }
+    void RemoveAsyncGaugeEntity(
+        GlobalInstrumentsRegistry::GlobalAsyncUInt64GaugeHandle handle,
+        void* entity) {
+      for (auto& plugin : plugins_) {
+        plugin->RemoveAsyncGaugeEntity(handle, entity);
+      }
+    }
+    void AddAsyncGaugeEntity(
+        GlobalInstrumentsRegistry::GlobalAsyncDoubleGaugeHandle handle,
+        void* entity) {
+      for (auto& plugin : plugins_) {
+        plugin->AddAsyncGaugeEntity(handle, entity);
+      }
+    }
+    void RemoveAsyncGaugeEntity(
+        GlobalInstrumentsRegistry::GlobalAsyncDoubleGaugeHandle handle,
+        void* entity) {
+      for (auto& plugin : plugins_) {
+        plugin->RemoveAsyncGaugeEntity(handle, entity);
       }
     }
 
