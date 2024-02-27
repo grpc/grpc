@@ -2489,6 +2489,7 @@ add_library(grpc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/metadata_info.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/tcp_connect_handshaker.cc
@@ -3218,6 +3219,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/metadata_info.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/tcp_connect_handshaker.cc
