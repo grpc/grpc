@@ -317,4 +317,54 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   return ret;
 }
 
+absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError("cert cannot be null.");
+  }
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_get_ext_by_NID(cert, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
+      return absl::InvalidArgumentError("Could not get AKID from certificate.");
+    }
+    akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
+  } else {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
+  }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
+
+absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
+  if (crl == nullptr) {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
+  }
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
+      return absl::InvalidArgumentError("Could not get AKID from crl.");
+    }
+    akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
+  } else {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
+  }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
+
 }  // namespace grpc_core
