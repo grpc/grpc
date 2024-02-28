@@ -1454,6 +1454,7 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           if (registered_method == nullptr) {
             rm = server_->unregistered_request_matcher_.get();
           } else {
+            payload_handling = registered_method->payload_handling;
             rm = registered_method->matcher.get();
           }
           auto maybe_read_first_message = If(
