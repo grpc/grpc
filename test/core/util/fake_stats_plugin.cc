@@ -175,12 +175,12 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
       GlobalInstrumentsRegistry::InstrumentType::kHistogram);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle>
-GlobalInstrumentsRegistryTestPeer::FindUInt64GaugeHandleByName(
+absl::optional<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindInt64GaugeHandleByName(
     absl::string_view name) {
-  return FindInstrument<GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle>(
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>(
       GlobalInstrumentsRegistry::GetInstrumentList(), name,
-      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
       GlobalInstrumentsRegistry::InstrumentType::kGauge);
 }
 
@@ -193,13 +193,13 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleGaugeHandleByName(
       GlobalInstrumentsRegistry::InstrumentType::kGauge);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle>
-GlobalInstrumentsRegistryTestPeer::FindCallbackUInt64GaugeHandleByName(
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackInt64GaugeHandleByName(
     absl::string_view name) {
   return FindInstrument<
-      GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>(
       GlobalInstrumentsRegistry::GetInstrumentList(), name,
-      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
       GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
 }
 

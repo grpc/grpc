@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
 
@@ -46,6 +47,7 @@ class GlobalInstrumentsRegistry {
  public:
   enum class ValueType {
     kUndefined,
+    kInt64,
     kUInt64,
     kDouble,
   };
@@ -78,10 +80,11 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleCounterHandle : public GlobalHandle {};
   struct GlobalUInt64HistogramHandle : public GlobalHandle {};
   struct GlobalDoubleHistogramHandle : public GlobalHandle {};
-  struct GlobalUInt64GaugeHandle : public GlobalHandle {};
+  struct GlobalInt64GaugeHandle : public GlobalHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalHandle {};
-  struct GlobalCallbackUInt64GaugeHandle : public GlobalHandle {};
-  struct GlobalCallbackDoubleGaugeHandle : public GlobalHandle {};
+  struct GlobalCallbackHandle : public GlobalHandle {};
+  struct GlobalCallbackInt64GaugeHandle : public GlobalCallbackHandle {};
+  struct GlobalCallbackDoubleGaugeHandle : public GlobalCallbackHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -104,7 +107,7 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
-  static GlobalUInt64GaugeHandle RegisterUInt64Gauge(
+  static GlobalInt64GaugeHandle RegisterInt64Gauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
@@ -114,7 +117,7 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
-  static GlobalCallbackUInt64GaugeHandle RegisterCallbackUInt64Gauge(
+  static GlobalCallbackInt64GaugeHandle RegisterCallbackInt64Gauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
@@ -145,8 +148,8 @@ class CallbackMetricReporter {
   virtual ~CallbackMetricReporter() = default;
 
   virtual void Report(
-      GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
+      int64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void Report(
       GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
@@ -194,7 +197,7 @@ class StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void SetGauge(
-      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle, uint64_t value,
+      GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle, int64_t value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void SetGauge(
@@ -266,8 +269,8 @@ class GlobalStatsPluginRegistry {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
     }
-    void SetGauge(GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
-                  uint64_t value,
+    void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
+                  int64_t value,
                   absl::Span<const absl::string_view> label_values,
                   absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
@@ -282,9 +285,14 @@ class GlobalStatsPluginRegistry {
         plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
+
     // Registers a callback to be used to populate callback metrics.
+    // The callback will update the specified metrics.  The callback
+    // will be invoked no more often than min_interval.
     std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
-        absl::AnyInvocable<void(CallbackMetricReporter&)> callback);
+        absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+        std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+        Duration min_interval = Duration::Seconds(5));
 
    private:
     friend class RegisteredMetricCallback;
@@ -317,15 +325,25 @@ class RegisteredMetricCallback {
  public:
   RegisteredMetricCallback(
       GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
-      absl::AnyInvocable<void(CallbackMetricReporter&)> callback);
+      absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+      std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+      Duration min_interval);
 
   ~RegisteredMetricCallback();
 
   void Run(CallbackMetricReporter& reporter) { callback_(reporter); }
 
+  const std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle>& metrics()
+      const {
+    return metrics_;
+  }
+  Duration min_interval() const { return min_interval_; }
+
  private:
   GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group_;
   absl::AnyInvocable<void(CallbackMetricReporter&)> callback_;
+  std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics_;
+  Duration min_interval_;
 };
 
 }  // namespace grpc_core

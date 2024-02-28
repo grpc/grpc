@@ -149,8 +149,8 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
   return handle;
 }
 
-GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle
-GlobalInstrumentsRegistry::RegisterUInt64Gauge(
+GlobalInstrumentsRegistry::GlobalInt64GaugeHandle
+GlobalInstrumentsRegistry::RegisterInt64Gauge(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
@@ -162,7 +162,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Gauge(
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
-  descriptor.value_type = ValueType::kUInt64;
+  descriptor.value_type = ValueType::kInt64;
   descriptor.instrument_type = InstrumentType::kGauge;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
@@ -173,7 +173,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Gauge(
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
   instruments.emplace(name, std::move(descriptor));
-  GlobalUInt64GaugeHandle handle;
+  GlobalInt64GaugeHandle handle;
   handle.index = index;
   return handle;
 }
@@ -207,8 +207,8 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
   return handle;
 }
 
-GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle
-GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle
+GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
@@ -220,7 +220,7 @@ GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
-  descriptor.value_type = ValueType::kUInt64;
+  descriptor.value_type = ValueType::kInt64;
   descriptor.instrument_type = InstrumentType::kCallbackGauge;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
@@ -231,7 +231,7 @@ GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
   instruments.emplace(name, std::move(descriptor));
-  GlobalCallbackUInt64GaugeHandle handle;
+  GlobalCallbackInt64GaugeHandle handle;
   handle.index = index;
   return handle;
 }
@@ -274,8 +274,13 @@ void GlobalInstrumentsRegistry::ForEach(
 
 RegisteredMetricCallback::RegisteredMetricCallback(
     GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
-    absl::AnyInvocable<void(CallbackMetricReporter&)> callback)
-    : stats_plugin_group_(stats_plugin_group), callback_(std::move(callback)) {
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+    Duration min_interval)
+    : stats_plugin_group_(stats_plugin_group),
+      callback_(std::move(callback)),
+      metrics_(std::move(metrics)),
+      min_interval_(min_interval) {
   for (auto& plugin : stats_plugin_group_.plugins_) {
     plugin->AddCallback(this);
   }
@@ -289,8 +294,11 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 std::unique_ptr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
-    absl::AnyInvocable<void(CallbackMetricReporter&)> callback) {
-  return std::make_unique<RegisteredMetricCallback>(*this, std::move(callback));
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+    Duration min_interval) {
+  return std::make_unique<RegisteredMetricCallback>(
+      *this, std::move(callback), std::move(metrics), min_interval);
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;

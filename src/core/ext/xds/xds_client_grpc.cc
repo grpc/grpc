@@ -108,7 +108,7 @@ const auto kMetricResourceUpdates =
         {}, false);
 
 const auto kMetricConnected =
-    GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+    GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.xds_client.connected",
         "EXPERIMENTAL.  Whether or not the xDS client currently has a "
         "working ADS stream to the xDS server. For a given server, this "
@@ -119,7 +119,7 @@ const auto kMetricConnected =
         "{bool}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
 
 const auto kMetricResources =
-    GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+    GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.xds_client.resources", "EXPERIMENTAL.  Number of xDS resources.",
         "{resource}",
         {kMetricLabelTarget, kMetricLabelXdsServer, kMetricLabelXdsAuthority,
@@ -290,7 +290,8 @@ GrpcXdsClient::GrpcXdsClient(
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
-          })) {}
+          },
+          {kMetricConnected, kMetricResources})) {}
 
 void GrpcXdsClient::Orphan() {
   registered_metric_callback_.reset();

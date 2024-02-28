@@ -1444,7 +1444,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheEntries) {
           "grpc.lb.rls.cache_entries");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
-            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64);
   EXPECT_EQ(
       descriptor->instrument_type,
       grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
@@ -1462,7 +1462,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheSize) {
           "grpc.lb.rls.cache_size");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
-            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64);
   EXPECT_EQ(
       descriptor->instrument_type,
       grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
@@ -1485,11 +1485,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
               .value();
   auto kMetricCacheEntries =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindCallbackUInt64GaugeHandleByName("grpc.lb.rls.cache_entries")
+          FindCallbackInt64GaugeHandleByName("grpc.lb.rls.cache_entries")
               .value();
   auto kMetricCacheSize =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindCallbackUInt64GaugeHandleByName("grpc.lb.rls.cache_size")
+          FindCallbackInt64GaugeHandleByName("grpc.lb.rls.cache_size")
               .value();
   StartBackends(2);
   SetNextResolution(
