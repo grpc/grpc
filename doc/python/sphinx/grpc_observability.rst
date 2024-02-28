@@ -1,5 +1,5 @@
 gRPC Python Observability
-====================
+=========================
 
 Module Contents
 ---------------

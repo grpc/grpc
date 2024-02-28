@@ -64,6 +64,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -562,6 +563,44 @@ struct backup_poller {
   grpc_closure run_poller;
 };
 
+void LogCommonIOErrors(absl::string_view prefix, int error_no) {
+  switch (error_no) {
+    case ECONNABORTED:
+      grpc_core::global_stats().IncrementEconnabortedCount();
+      return;
+    case ECONNRESET:
+      grpc_core::global_stats().IncrementEconnresetCount();
+      return;
+    case EPIPE:
+      grpc_core::global_stats().IncrementEpipeCount();
+      return;
+    case ETIMEDOUT:
+      grpc_core::global_stats().IncrementEtimedoutCount();
+      return;
+    case ECONNREFUSED:
+      grpc_core::global_stats().IncrementEconnrefusedCount();
+      return;
+    case ENETUNREACH:
+      grpc_core::global_stats().IncrementEnetunreachCount();
+      return;
+    case ENOMSG:
+      grpc_core::global_stats().IncrementEnomsgCount();
+      return;
+    case ENOTCONN:
+      grpc_core::global_stats().IncrementEnotconnCount();
+      return;
+    case ENOBUFS:
+      grpc_core::global_stats().IncrementEnobufsCount();
+      return;
+    default:
+      grpc_core::global_stats().IncrementUncommonIoErrorCount();
+      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s encountered uncommon error: %s",
+                           prefix.data(),
+                           grpc_core::StrError(error_no).c_str());
+      return;
+  }
+}
+
 }  // namespace
 
 static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* tcp);
@@ -957,6 +996,9 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     // We have read something in previous reads. We need to deliver those
     // bytes to the upper layer.
     if (read_bytes <= 0 && total_read_bytes >= 1) {
+      if (read_bytes < 0) {
+        LogCommonIOErrors("recvmsg", errno);
+      }
       tcp->inq = 1;
       break;
     }
@@ -1414,6 +1456,8 @@ static bool process_errors(grpc_tcp* tcp) {
       return processed_err;  // No more errors to process
     }
     if (r == -1) {
+      LogCommonIOErrors("recvmsg(MSG_ERRQUEUE)", saved_errno);
+      grpc_core::global_stats().IncrementMsgErrqueueErrorCount();
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
@@ -1614,6 +1658,9 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       grpc_fd_set_writable(tcp->em_fd);
     }
     if (sent_length < 0) {
+      if (saved_errno != EAGAIN) {
+        LogCommonIOErrors("sendmsg", saved_errno);
+      }
       // If this particular send failed, drop ref taken earlier in this method.
       tcp->tcp_zerocopy_send_ctx.UndoSend();
       if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {

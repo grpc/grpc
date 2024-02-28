@@ -69,7 +69,7 @@
   default:
     # not tested on iOS at all
     ios: broken
-    posix: false
+    posix: true
     # TODO(yijiem): resolve when the WindowsEventEngine DNS Resolver is
     # implemented
     windows: broken
@@ -104,8 +104,6 @@
   default: false
 - name: registered_method_lookup_in_transport
   default: true
-- name: rfc_max_concurrent_streams
-  default: false
 - name: round_robin_delegate_to_pick_first
   default: true
 - name: rstpit
@@ -125,10 +123,12 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  default: false
-- name: write_size_cap
-  default: true
-- name: write_size_policy
-  default: true
+  requires: ["event_engine_client"]
+  default:
+    # TODO(ysseung): Not fully tested.
+    ios: broken
+    posix: true
+    # TODO(ysseung): Test flakes not fully resolved.
+    windows: broken
 - name: wrr_delegate_to_pick_first
   default: true

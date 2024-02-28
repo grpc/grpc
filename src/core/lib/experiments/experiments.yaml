@@ -195,14 +195,6 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
-- name: rfc_max_concurrent_streams
-  description:
-    If set, enable rfc-compliant behavior (cancellation) in the advent that
-    max concurrent streams are exceeded in chttp2.
-    See https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [bad_client_test]
 - name: round_robin_delegate_to_pick_first
   description:
     Change round_robin code to delegate to pick_first as per dualstack
@@ -213,7 +205,7 @@
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
-  expiry: 2024/03/03
+  expiry: 2024/08/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: schedule_cancellation_over_write
@@ -290,20 +282,6 @@
   expiry: 2024/03/31
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
-  requires: ["event_engine_client"]
-- name: write_size_cap
-  description:
-    Limit outgoing writes proportional to the target write size
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
-  requires: [write_size_policy]
-- name: write_size_policy
-  description:
-    Try to size writes such that they don't create too large of a backlog
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
 - name: wrr_delegate_to_pick_first
   description:
     Change WRR code to delegate to pick_first as per dualstack

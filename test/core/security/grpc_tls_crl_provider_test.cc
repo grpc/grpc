@@ -284,6 +284,19 @@ TEST_F(DirectoryReloaderCrlProviderTest, WithBadInitialDirectoryStatus) {
   EXPECT_EQ(reload_errors.size(), 1);
 }
 
+TEST(CertificateInfoImplTest, CanFetchValues) {
+  experimental::CertificateInfoImpl cert =
+      CertificateInfoImpl("issuer", "akid");
+  EXPECT_EQ(cert.Issuer(), "issuer");
+  EXPECT_EQ(cert.AuthorityKeyIdentifier(), "akid");
+}
+
+TEST(CertificateInfoImplTest, NoAkid) {
+  experimental::CertificateInfoImpl cert = CertificateInfoImpl("issuer");
+  EXPECT_EQ(cert.Issuer(), "issuer");
+  EXPECT_EQ(cert.AuthorityKeyIdentifier(), "");
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

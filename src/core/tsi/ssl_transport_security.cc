@@ -1006,10 +1006,19 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
 
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
-    gpr_log(GPR_ERROR, "Could not get certificate issuer name");
+    gpr_log(GPR_INFO, "Could not get certificate issuer name");
     return 0;
   }
-  grpc_core::experimental::CertificateInfoImpl cert_impl(*issuer_name);
+  absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
+  std::string akid_to_use;
+  if (!akid.ok()) {
+    gpr_log(GPR_INFO, "Could not get certificate authority key identifier.");
+  } else {
+    akid_to_use = *akid;
+  }
+
+  grpc_core::experimental::CertificateInfoImpl cert_impl(*issuer_name,
+                                                         akid_to_use);
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
       provider->GetCrl(cert_impl);
   // There wasn't a CRL found in the provider. Returning 0 will end up causing

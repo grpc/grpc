@@ -56,6 +56,9 @@ const char* kIntermediateCrlIssuer =
 const char* kLeafCert =
     "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.pem";
 const char* kEvilCa = "test/core/tsi/test_creds/crl_data/evil_ca.pem";
+const char* kCaWithAkid = "test/core/tsi/test_creds/crl_data/ca_with_akid.pem";
+const char* kCrlWithAkid =
+    "test/core/tsi/test_creds/crl_data/crl_with_akid.crl";
 
 using ::testing::ContainerEq;
 using ::testing::NotNull;
@@ -449,6 +452,16 @@ INSTANTIATE_TEST_SUITE_P(FrameProtectorUtil, FlowTest,
 
 class CrlUtils : public ::testing::Test {
  public:
+  static void SetUpTestSuite() {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+    OPENSSL_init_ssl(/*opts=*/0, /*settings=*/nullptr);
+#else
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+#endif
+  }
+
   void SetUp() override {
     absl::StatusOr<Slice> root_crl = LoadFile(kValidCrl, false);
     ASSERT_EQ(root_crl.status(), absl::OkStatus()) << root_crl.status();
@@ -462,6 +475,9 @@ class CrlUtils : public ::testing::Test {
     ASSERT_EQ(invalid_signature_crl.status(), absl::OkStatus())
         << invalid_signature_crl.status();
     invalid_signature_crl_ = ReadCrl(invalid_signature_crl->as_string_view());
+    absl::StatusOr<Slice> akid_crl = LoadFile(kCrlWithAkid, false);
+    ASSERT_EQ(akid_crl.status(), absl::OkStatus()) << akid_crl.status();
+    akid_crl_ = ReadCrl(akid_crl->as_string_view());
 
     absl::StatusOr<Slice> root_ca = LoadFile(kCrlIssuer, false);
     ASSERT_EQ(root_ca.status(), absl::OkStatus());
@@ -476,26 +492,33 @@ class CrlUtils : public ::testing::Test {
     absl::StatusOr<Slice> evil_ca = LoadFile(kEvilCa, false);
     ASSERT_EQ(evil_ca.status(), absl::OkStatus());
     evil_ca_ = ReadPemCert(evil_ca->as_string_view());
+    absl::StatusOr<Slice> ca_with_akid = LoadFile(kCaWithAkid, false);
+    ASSERT_EQ(ca_with_akid.status(), absl::OkStatus());
+    ca_with_akid_ = ReadPemCert(ca_with_akid->as_string_view());
   }
 
   void TearDown() override {
     X509_CRL_free(root_crl_);
     X509_CRL_free(intermediate_crl_);
     X509_CRL_free(invalid_signature_crl_);
+    X509_CRL_free(akid_crl_);
     X509_free(root_ca_);
     X509_free(intermediate_ca_);
     X509_free(leaf_cert_);
     X509_free(evil_ca_);
+    X509_free(ca_with_akid_);
   }
 
  protected:
   X509_CRL* root_crl_;
   X509_CRL* intermediate_crl_;
   X509_CRL* invalid_signature_crl_;
+  X509_CRL* akid_crl_;
   X509* root_ca_;
   X509* intermediate_ca_;
   X509* leaf_cert_;
   X509* evil_ca_;
+  X509* ca_with_akid_;
 };
 
 TEST_F(CrlUtils, VerifySignatureValid) {
@@ -619,6 +642,37 @@ TEST_F(CrlUtils, IssuerFromCertNull) {
   EXPECT_EQ(issuer.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
+TEST_F(CrlUtils, CertCrlAkidValid) {
+  auto akid = AkidFromCertificate(ca_with_akid_);
+  EXPECT_EQ(akid.status(), absl::OkStatus());
+  auto crl_akid = AkidFromCrl(akid_crl_);
+  EXPECT_EQ(crl_akid.status(), absl::OkStatus());
+  EXPECT_NE(*akid, "");
+  // It's easiest to compare that these two pull the same value, it's very
+  // difficult to create the known AKID value as a test constant, so we just
+  // check that they are not empty and that they are the same.
+  EXPECT_EQ(*akid, *crl_akid);
+}
+
+TEST_F(CrlUtils, CertNoAkid) {
+  auto akid = AkidFromCertificate(root_ca_);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
+
+TEST_F(CrlUtils, CrlNoAkid) {
+  auto akid = AkidFromCrl(root_crl_);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
+
+TEST_F(CrlUtils, CertAkidNullptr) {
+  auto akid = AkidFromCertificate(nullptr);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
+
+TEST_F(CrlUtils, CrlAkidNullptr) {
+  auto akid = AkidFromCrl(nullptr);
+  EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
+}
 }  // namespace testing
 }  // namespace grpc_core
 
