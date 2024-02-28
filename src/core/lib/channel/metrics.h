@@ -53,6 +53,15 @@ class GlobalInstrumentsRegistry {
     kCounter,
     kHistogram,
   };
+
+  template <class T>
+  class Observer {
+    virtual ~Observer() = default;
+    virtual void Observe(
+        T value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_label_values) = 0;
+  };
+
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
     InstrumentType instrument_type;
@@ -63,6 +72,11 @@ class GlobalInstrumentsRegistry {
     absl::string_view unit;
     std::vector<absl::string_view> label_keys;
     std::vector<absl::string_view> optional_label_keys;
+    using UInt64Callback = absl::AnyInvocable<void(
+        Observer<uint64_t> /*observer*/, void* /*entity*/)>;
+    using DoubleCallback = absl::AnyInvocable<void(
+        Observer<double> /*observer*/, void* /*entity*/)>;
+    absl::variant<UInt64Callback, DoubleCallback> callback;
   };
   struct GlobalHandle {
     // This is the index for the corresponding registered instrument that
@@ -75,6 +89,7 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleCounterHandle : public GlobalHandle {};
   struct GlobalUInt64HistogramHandle : public GlobalHandle {};
   struct GlobalDoubleHistogramHandle : public GlobalHandle {};
+  struct GlobalUInt64GaugeHandle : public GlobalHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -97,6 +112,18 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
+  static GlobalUInt64HistogramHandle RegisterUInt64Gauge(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default,
+      GlobalInstrumentDescriptor::UInt64Callback callback);
+  static GlobalUInt64HistogramHandle RegisterDoubleGauge(
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default,
+      GlobalInstrumentDescriptor::DoubleCallback callback);
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
 
@@ -147,6 +174,13 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
+
+  virtual void AddEntity(
+      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+      void* entity) = 0;
+  virtual void RemoveEntity(
+      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
+      void* entity) = 0;
   // TODO(yijiem): Details pending.
   // std::unique_ptr<AsyncInstrument> GetObservableGauge(
   //     absl::string_view name, absl::string_view description,
@@ -206,6 +240,19 @@ class GlobalStatsPluginRegistry {
         absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
+      }
+    }
+
+    template <class T>
+    void AddEntity(T handle, void* entity) {
+      for (auto& plugin : plugins_) {
+        plugin->AddEntity(handle, entity);
+      }
+    }
+    template <class T>
+    void RemoveEntity(T handle, void* entity) {
+      for (auto& plugin : plugins_) {
+        plugin->RemoveEntity(handle, entity);
       }
     }
 
