@@ -201,7 +201,6 @@ class PythonArtifact:
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
-            environ["GRPC_PYTHON_BUILD_FOR_MUSL_LINUX"] = "TRUE"
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"

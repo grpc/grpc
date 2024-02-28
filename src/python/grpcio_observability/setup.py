@@ -77,10 +77,6 @@ BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     "GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX", "False"
 )
 
-BUILD_FOR_MUSL_LINUX = _env_bool_value(
-    "GRPC_PYTHON_BUILD_FOR_MUSL_LINUX", "False"
-)
-
 
 def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
@@ -158,10 +154,10 @@ if EXTRA_ENV_LINK_ARGS is None:
 # Note that it does not work for MSCV on windows.
 if "win32" not in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += " -flto"
-    # Compile with fail with error: `lto-wrapper failed` when lto flag was enabled in Alpine musl
-    # linux. So far the only work around we found is to disable fortify_source.
-    if BUILD_FOR_MUSL_LINUX:
-        EXTRA_ENV_COMPILE_ARGS += " -U_FORTIFY_SOURCE"
+    # Compile with fail with error: `lto-wrapper failed` when lto flag was enabled in musl libc.
+    # As a work around we need to disable ipa-cp.
+    if "glibc" not in platform.libc_ver():
+        EXTRA_ENV_COMPILE_ARGS += " -fno-ipa-cp"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
