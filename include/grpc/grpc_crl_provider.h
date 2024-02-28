@@ -47,6 +47,7 @@ class CertificateInfo {
  public:
   virtual ~CertificateInfo() = default;
   virtual absl::string_view Issuer() const = 0;
+  virtual absl::string_view AuthorityKeyIdentifier() const = 0;
 };
 
 // The base class for CRL Provider implementations.

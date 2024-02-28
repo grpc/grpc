@@ -375,7 +375,7 @@ LDFLAGS += -pthread
 endif
 
 ifeq ($(SYSTEM),MINGW32)
-LIBS = m pthread ws2_32 iphlpapi dbghelp bcrypt
+LIBS = m pthread ws2_32 crypt32 iphlpapi dbghelp bcrypt
 LDFLAGS += -pthread
 endif
 
@@ -1390,6 +1390,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
@@ -1612,6 +1613,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
+    src/core/lib/security/security_connector/load_system_roots_windows.cc \
     src/core/lib/security/security_connector/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
@@ -1668,6 +1670,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \
@@ -1990,6 +1993,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
@@ -2177,6 +2181,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
+    src/core/lib/security/security_connector/load_system_roots_windows.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/legacy_server_auth_filter.cc \
@@ -2229,6 +2234,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \

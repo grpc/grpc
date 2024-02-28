@@ -1147,6 +1147,8 @@ class ClientChannelFilter::ClientChannelControlHelper
     chand_->resolver_->RequestReresolutionLocked();
   }
 
+  absl::string_view GetTarget() override { return chand_->target_uri_; }
+
   absl::string_view GetAuthority() override {
     return chand_->default_authority_;
   }
@@ -1163,6 +1165,10 @@ class ClientChannelFilter::ClientChannelControlHelper
 
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
     return chand_->owning_stack_->EventEngine();
+  }
+
+  GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
+    return *chand_->owning_stack_->stats_plugin_group;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
@@ -1259,18 +1265,19 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
-  absl::optional<std::string> server_uri =
+  absl::optional<std::string> target_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
-  if (!server_uri.has_value()) {
+  if (!target_uri.has_value()) {
     *error = GRPC_ERROR_CREATE(
         "target URI channel arg missing or wrong type in client channel "
         "filter");
     return;
   }
+  target_uri_ = std::move(*target_uri);
   uri_to_resolve_ = CoreConfiguration::Get()
                         .proxy_mapper_registry()
-                        .MapName(*server_uri, &channel_args_)
-                        .value_or(*server_uri);
+                        .MapName(target_uri_, &channel_args_)
+                        .value_or(target_uri_);
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
   if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
@@ -1295,7 +1302,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   if (!default_authority.has_value()) {
     default_authority_ =
         CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
-            *server_uri);
+            target_uri_);
   } else {
     default_authority_ = std::move(*default_authority);
   }

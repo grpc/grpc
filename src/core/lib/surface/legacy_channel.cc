@@ -37,6 +37,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -90,6 +91,12 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
             status.ToString().c_str());
     return status;
   }
+  // TODO(roth): Figure out how to populate authority here.
+  // Or maybe just don't worry about this if no one needs it until after
+  // the call v3 stack lands.
+  StatsPlugin::ChannelScope scope(builder.target(), "");
+  *(*r)->stats_plugin_group =
+      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
       builder.IsPromising(), std::move(target), args, compression_options,

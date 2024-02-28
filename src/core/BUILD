@@ -129,6 +129,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "metadata_info",
+    srcs = ["lib/transport/metadata_info.cc"],
+    hdrs = ["lib/transport/metadata_info.h"],
+    deps = [
+        "channel_args",
+        "hpack_constants",
+        "metadata_batch",
+        "slice",
+        "//:gpr_platform",
+        "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "experiments",
     srcs = [
         "lib/experiments/config.cc",
@@ -3256,6 +3270,7 @@ grpc_cc_library(
         "error",
         "grpc_backend_metric_data",
         "iomgr_fwd",
+        "metrics",
         "pollset_set",
         "ref_counted",
         "resolved_address",
@@ -5692,6 +5707,7 @@ grpc_cc_library(
         "connectivity_state",
         "experiments",
         "grpc_backend_metric_data",
+        "grpc_lb_policy_weighted_target",
         "grpc_lb_subchannel_list",
         "json",
         "json_args",
@@ -5699,6 +5715,7 @@ grpc_cc_library(
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "metrics",
         "ref_counted",
         "resolved_address",
         "static_stride_scheduler",
@@ -5837,6 +5854,9 @@ grpc_cc_library(
     name = "grpc_lb_policy_weighted_target",
     srcs = [
         "load_balancing/weighted_target/weighted_target.cc",
+    ],
+    hdrs = [
+        "load_balancing/weighted_target/weighted_target.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -7454,6 +7474,28 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:iomgr",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "metrics",
+    srcs = [
+        "lib/channel/metrics.cc",
+    ],
+    hdrs = [
+        "lib/channel/metrics.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:function_ref",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "no_destruct",
+        "//:gpr",
     ],
 )
 

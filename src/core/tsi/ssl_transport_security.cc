@@ -1004,15 +1004,23 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   auto* provider = static_cast<grpc_core::experimental::CrlProvider*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
 
-  char* buf = X509_NAME_oneline(X509_get_issuer_name(cert), nullptr, 0);
-  if (buf == nullptr) {
-    gpr_log(GPR_ERROR, "Certificate has null issuer, cannot do CRL lookup");
+  absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
+  if (!issuer_name.ok()) {
+    gpr_log(GPR_INFO, "Could not get certificate issuer name");
     return 0;
   }
-  grpc_core::experimental::CertificateInfoImpl cert_impl(buf);
+  absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
+  std::string akid_to_use;
+  if (!akid.ok()) {
+    gpr_log(GPR_INFO, "Could not get certificate authority key identifier.");
+  } else {
+    akid_to_use = *akid;
+  }
+
+  grpc_core::experimental::CertificateInfoImpl cert_impl(*issuer_name,
+                                                         akid_to_use);
   std::shared_ptr<grpc_core::experimental::Crl> internal_crl =
       provider->GetCrl(cert_impl);
-  OPENSSL_free(buf);
   // There wasn't a CRL found in the provider. Returning 0 will end up causing
   // OpenSSL to return X509_V_ERR_UNABLE_TO_GET_CRL. We then catch that error
   // and behave how we want for a missing CRL.
