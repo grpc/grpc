@@ -71,7 +71,12 @@ class PromiseLike<void>;
 
 template <typename F>
 class PromiseLike<F, absl::enable_if_t<!std::is_void<
-                         typename std::result_of<F()>::type>::value>> {
+#if __cplusplus >= 201703L
+                         std::invoke_result_t<F>
+#else
+                         typename std::result_of<F()>::type
+#endif
+                         >::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
