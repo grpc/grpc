@@ -37,6 +37,7 @@
 #include "src/core/ext/xds/xds_api.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_metrics.h"
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/debug/trace.h"
@@ -87,6 +88,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
       std::unique_ptr<XdsBootstrap> bootstrap,
       OrphanablePtr<XdsTransportFactory> transport_factory,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+      std::unique_ptr<XdsMetricsReporter> metrics_reporter,
       std::string user_agent_name, std::string user_agent_version,
       Duration resource_request_timeout = Duration::Seconds(15));
   ~XdsClient() override;
@@ -156,14 +158,32 @@ class XdsClient : public DualRefCounted<XdsClient> {
   }
 
  protected:
+  Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
+
+  // Invokes func once for each combination of labels to report the
+  // resource count for those labels.
+  struct ResourceCountLabels {
+    absl::string_view xds_authority;
+    absl::string_view xds_server;
+    absl::string_view resource_type;
+    absl::string_view cache_state;
+  };
+  void ReportResourceCounts(
+      absl::FunctionRef<void(const ResourceCountLabels&, uint64_t)> func)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
+  // Invokes func once for each xDS server to report whether the
+  // connection to that server is working.
+  void ReportServerConnections(
+      absl::FunctionRef<void(absl::string_view /*xds_server*/, bool)> func)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
   // Dumps the active xDS config to the provided
   // envoy.service.status.v3.ClientConfig message including the config status
   // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
   void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
                         envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-
-  Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
  private:
   friend testing::XdsClientTestPeer;
@@ -220,6 +240,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            const XdsResourceName& name,
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+
+    absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
     void OnConnectivityFailure(absl::Status status);
@@ -327,6 +349,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   XdsApi api_;
   WorkSerializer work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  std::unique_ptr<XdsMetricsReporter> metrics_reporter_;
 
   Mutex mu_;
 

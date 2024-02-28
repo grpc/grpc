@@ -586,6 +586,15 @@ class XdsClientTest : public ::testing::Test {
     DiscoveryResponse response_;
   };
 
+  class MetricsReporter : public XdsMetricsReporter {
+   public:
+    void ReportResourceUpdates(
+        absl::string_view /*xds_server*/, absl::string_view /*resource_type*/,
+        uint64_t /*count*/) override {
+// FIXME: add tests for metrics
+    }
+  };
+
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
   void InitXdsClient(
@@ -597,8 +606,9 @@ class XdsClientTest : public ::testing::Test {
         transport_factory->Ref().TakeAsSubclass<FakeXdsTransportFactory>();
     xds_client_ = MakeRefCounted<XdsClient>(
         bootstrap_builder.Build(), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
-        "foo version", resource_request_timeout * grpc_test_slowdown_factor());
+        grpc_event_engine::experimental::GetDefaultEventEngine(),
+        std::make_unique<MetricsReporter>(), "foo agent", "foo version",
+        resource_request_timeout * grpc_test_slowdown_factor());
   }
 
   // Starts and cancels a watch for a Foo resource.

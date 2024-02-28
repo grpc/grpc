@@ -743,6 +743,10 @@ XdsClient::XdsChannel::AdsCall::AdsResponseParser::ProcessAdsResponseFields(
   result_.nonce = std::move(fields.nonce);
   result_.read_delay_handle =
       MakeRefCounted<AdsReadDelayHandle>(ads_call_->Ref());
+  // Update metrics.
+  ads_call_->xds_client()->metrics_reporter_->ReportResourceUpdates(
+      ads_call_->xds_channel()->server_.server_uri(), result_.type_url,
+      fields.num_resources);
   return absl::OkStatus();
 }
 
@@ -1488,6 +1492,7 @@ XdsClient::XdsClient(
     std::unique_ptr<XdsBootstrap> bootstrap,
     OrphanablePtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+    std::unique_ptr<XdsMetricsReporter> metrics_reporter,
     std::string user_agent_name, std::string user_agent_version,
     Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
@@ -1500,7 +1505,8 @@ XdsClient::XdsClient(
       api_(this, &grpc_xds_client_trace, bootstrap_->node(), &def_pool_,
            std::move(user_agent_name), std::move(user_agent_version)),
       work_serializer_(engine),
-      engine_(std::move(engine)) {
+      engine_(std::move(engine)),
+      metrics_reporter_(std::move(metrics_reporter)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -2117,6 +2123,55 @@ void XdsClient::DumpClientConfig(
                              entry);
       }
     }
+  }
+}
+
+namespace {
+
+absl::string_view CacheStateForEntry(
+    const XdsApi::ResourceMetadata& metadata, bool resource_cached) {
+  switch (metadata.client_status) {
+    case XdsApi::ResourceMetadata::REQUESTED:
+      return "requested";
+    case XdsApi::ResourceMetadata::DOES_NOT_EXIST:
+      return "does_not_exist";
+    case XdsApi::ResourceMetadata::ACKED:
+      return "acked";
+    case XdsApi::ResourceMetadata::NACKED:
+      return resource_cached ? "nacked_but_cached" : "nacked";
+  }
+}
+
+}  // namespace
+
+void XdsClient::ReportResourceCounts(
+    absl::FunctionRef<void(const ResourceCountLabels&, uint64_t)> func) {
+  ResourceCountLabels labels;
+  for (const auto& a : authority_state_map_) {  // authority
+    labels.xds_authority = a.first;
+    labels.xds_server = a.second.xds_channel->server_uri();
+    for (const auto& t : a.second.resource_map) {  // type
+      labels.resource_type = t.first->type_url();
+      // Count the number of entries in each state.
+      std::map<absl::string_view, uint64_t> counts;
+      for (const auto& r : t.second) {             // resource id
+        absl::string_view cache_state =
+            CacheStateForEntry(r.second.meta, r.second.resource != nullptr);
+        ++counts[cache_state];
+      }
+      // Report the count for each state.
+      for (const auto& c : counts) {
+        labels.cache_state = c.first;
+        func(labels, c.second);
+      }
+    }
+  }
+}
+
+void XdsClient::ReportServerConnections(
+    absl::FunctionRef<void(absl::string_view, bool)> func) {
+  for (const auto& p : xds_channel_map_) {
+    func(p.second->server_uri(), p.second->status().ok());
   }
 }
 
