@@ -2130,8 +2130,8 @@ void XdsClient::DumpClientConfig(
 
 namespace {
 
-absl::string_view CacheStateForEntry(
-    const XdsApi::ResourceMetadata& metadata, bool resource_cached) {
+absl::string_view CacheStateForEntry(const XdsApi::ResourceMetadata& metadata,
+                                     bool resource_cached) {
   switch (metadata.client_status) {
     case XdsApi::ResourceMetadata::REQUESTED:
       return "requested";
@@ -2156,7 +2156,7 @@ void XdsClient::ReportResourceCounts(
       labels.resource_type = t.first->type_url();
       // Count the number of entries in each state.
       std::map<absl::string_view, uint64_t> counts;
-      for (const auto& r : t.second) {             // resource id
+      for (const auto& r : t.second) {  // resource id
         absl::string_view cache_state =
             CacheStateForEntry(r.second.meta, r.second.resource != nullptr);
         ++counts[cache_state];

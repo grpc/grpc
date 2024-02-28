@@ -118,8 +118,8 @@ class XdsHttpFilterTest : public ::testing::Test {
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
                                      /*event_engine=*/nullptr,
-                                     /*metrics_reporter=*/nullptr,
-                                     "foo agent", "foo version");
+                                     /*metrics_reporter=*/nullptr, "foo agent",
+                                     "foo version");
   }
 
   XdsExtension MakeXdsExtension(const grpc::protobuf::Message& message) {

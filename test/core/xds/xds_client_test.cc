@@ -592,42 +592,45 @@ class XdsClientTest : public ::testing::Test {
     const std::map<
         std::pair<std::string /*xds_server*/, std::string /*resource_type*/>,
         uint64_t>&
-    resource_updates() const { return resource_updates_; }
+    resource_updates() const {
+      return resource_updates_;
+    }
 
    private:
-    void ReportResourceUpdates(
-        absl::string_view xds_server, absl::string_view resource_type,
-        uint64_t count) override {
+    void ReportResourceUpdates(absl::string_view xds_server,
+                               absl::string_view resource_type,
+                               uint64_t count) override {
       resource_updates_[std::make_pair(std::string(xds_server),
                                        std::string(resource_type))] += count;
     }
 
-    std::map<std::pair<std::string, std::string>, uint64_t>
-        resource_updates_;
+    std::map<std::pair<std::string, std::string>, uint64_t> resource_updates_;
   };
 
   using ResourceCounts =
       std::vector<std::pair<XdsClientTestPeer::ResourceCountLabels, uint64_t>>;
   ResourceCounts GetResourceCounts() {
     ResourceCounts resource_counts;
-    XdsClientTestPeer(xds_client_.get()).TestReportResourceCounts(
-        [&](const XdsClientTestPeer::ResourceCountLabels& labels,
-            uint64_t count) {
-          resource_counts.emplace_back(labels, count);
-        });
+    XdsClientTestPeer(xds_client_.get())
+        .TestReportResourceCounts(
+            [&](const XdsClientTestPeer::ResourceCountLabels& labels,
+                uint64_t count) {
+              resource_counts.emplace_back(labels, count);
+            });
     return resource_counts;
   }
 
   using ServerConnectionMap = std::map<std::string, bool>;
   ServerConnectionMap GetServerConnections() {
     ServerConnectionMap server_connection_map;
-    XdsClientTestPeer(xds_client_.get()).TestReportServerConnections(
-        [&](absl::string_view xds_server, bool connected) {
-          std::string server(xds_server);
-          EXPECT_EQ(server_connection_map.find(server),
-                    server_connection_map.end());
-          server_connection_map[std::move(server)] = connected;
-        });
+    XdsClientTestPeer(xds_client_.get())
+        .TestReportServerConnections(
+            [&](absl::string_view xds_server, bool connected) {
+              std::string server(xds_server);
+              EXPECT_EQ(server_connection_map.find(server),
+                        server_connection_map.end());
+              server_connection_map[std::move(server)] = connected;
+            });
     return server_connection_map;
   }
 
@@ -806,8 +809,8 @@ class XdsClientTest : public ::testing::Test {
   MetricsReporter* metrics_reporter_ = nullptr;
 };
 
-MATCHER_P4(ResourceCountLabelsEq, xds_authority, xds_server,
-           resource_type, cache_state, "equals ResourceCountLabels") {
+MATCHER_P4(ResourceCountLabelsEq, xds_authority, xds_server, resource_type,
+           cache_state, "equals ResourceCountLabels") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(xds_authority, arg.xds_authority,
                                       result_listener);
@@ -870,9 +873,8 @@ TEST_F(XdsClientTest, Metrics) {
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Server should now report that it is connected.
-  EXPECT_THAT(GetServerConnections(),
-              ::testing::ElementsAre(
-                  ::testing::Pair("default_xds_server", true)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          "default_xds_server", true)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -899,24 +901,19 @@ TEST_F(XdsClientTest, Metrics) {
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
   // Check metric data.
-  EXPECT_THAT(
-      metrics_reporter_->resource_updates(),
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ::testing::Pair("default_xds_server",
-                              XdsFooResourceType::Get()->type_url()),
-              1)));
+  EXPECT_THAT(metrics_reporter_->resource_updates(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair("default_xds_server",
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
   EXPECT_THAT(
       GetResourceCounts(),
-      ::testing::ElementsAre(
-          ::testing::Pair(
-              ResourceCountLabelsEq("old:", "default_xds_server",
-                                    XdsFooResourceType::Get()->type_url(),
-                                    "acked"),
-              1)));
-  EXPECT_THAT(GetServerConnections(),
-              ::testing::ElementsAre(
-                  ::testing::Pair("default_xds_server", true)));
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq("old:", "default_xds_server",
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          "default_xds_server", true)));
   // XdsClient should have sent an ACK message to the xDS server.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());

@@ -117,19 +117,20 @@ class Fuzzer {
         testing::XdsClientTestPeer(xds_client_.get()).TestDumpClientConfig();
         break;
       case xds_client_fuzzer::Action::kReportResourceCounts:
-        testing::XdsClientTestPeer(xds_client_.get()).TestReportResourceCounts(
-            [](const testing::XdsClientTestPeer::ResourceCountLabels& labels,
-               uint64_t count) {
-              gpr_log(GPR_INFO,
+        testing::XdsClientTestPeer(xds_client_.get())
+            .TestReportResourceCounts(
+                [](const testing::XdsClientTestPeer::ResourceCountLabels&
+                       labels,
+                   uint64_t count) {
+                  gpr_log(
+                      GPR_INFO,
                       "xds_authority=\"%s\", xds_server=\"%s\", "
-                      "resource_type=\"%s\", cache_state=\"%s\" count=%"
-                      PRIu64,
+                      "resource_type=\"%s\", cache_state=\"%s\" count=%" PRIu64,
                       std::string(labels.xds_authority).c_str(),
                       std::string(labels.xds_server).c_str(),
                       std::string(labels.resource_type).c_str(),
-                      std::string(labels.cache_state).c_str(),
-                      count);
-            });
+                      std::string(labels.cache_state).c_str(), count);
+                });
         break;
       case xds_client_fuzzer::Action::kReportServerConnections:
         testing::XdsClientTestPeer(xds_client_.get())

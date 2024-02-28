@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 // An interface for XdsClient to report metrics.
@@ -26,9 +28,9 @@ class XdsMetricsReporter {
  public:
   virtual ~XdsMetricsReporter() = default;
 
-  virtual void ReportResourceUpdates(
-      absl::string_view xds_server, absl::string_view resource_type,
-      uint64_t count) = 0;
+  virtual void ReportResourceUpdates(absl::string_view xds_server,
+                                     absl::string_view resource_type,
+                                     uint64_t count) = 0;
 };
 
 }  // namespace grpc_core

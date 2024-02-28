@@ -137,9 +137,9 @@ class GrpcXdsClient::MetricsReporter : public XdsMetricsReporter {
   explicit MetricsReporter(GrpcXdsClient& xds_client)
       : xds_client_(xds_client) {}
 
-  void ReportResourceUpdates(
-      absl::string_view xds_server, absl::string_view resource_type,
-      uint64_t count) override {
+  void ReportResourceUpdates(absl::string_view xds_server,
+                             absl::string_view resource_type,
+                             uint64_t count) override {
     xds_client_.stats_plugin_group_.AddCounter(
         kMetricResourceUpdates, count,
         {xds_client_.key_, xds_server, resource_type}, {});
@@ -287,11 +287,10 @@ GrpcXdsClient::GrpcXdsClient(
           static_cast<const GrpcXdsBootstrap&>(this->bootstrap())
               .certificate_providers())),
       stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
-      registered_metric_callback_(
-          stats_plugin_group_.RegisterCallback(
-              [this](CallbackMetricReporter& reporter) {
-                ReportCallbackMetrics(reporter);
-              })) {}
+      registered_metric_callback_(stats_plugin_group_.RegisterCallback(
+          [this](CallbackMetricReporter& reporter) {
+            ReportCallbackMetrics(reporter);
+          })) {}
 
 void GrpcXdsClient::Orphan() {
   registered_metric_callback_.reset();
@@ -357,18 +356,15 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
 
 void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
   MutexLock lock(mu());
-  ReportResourceCounts(
-      [&](const ResourceCountLabels& labels, uint64_t count) {
-        reporter.Report(
-            kMetricResources, count,
-            {key_, labels.xds_server, labels.xds_authority,
-             labels.resource_type, labels.cache_state},
-            {});
-      });
-  ReportServerConnections(
-      [&](absl::string_view xds_server, bool connected) {
-        reporter.Report(kMetricConnected, connected, {key_, xds_server}, {});
-      });
+  ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
+    reporter.Report(kMetricResources, count,
+                    {key_, labels.xds_server, labels.xds_authority,
+                     labels.resource_type, labels.cache_state},
+                    {});
+  });
+  ReportServerConnections([&](absl::string_view xds_server, bool connected) {
+    reporter.Report(kMetricConnected, connected, {key_, xds_server}, {});
+  });
 }
 
 namespace internal {
