@@ -2289,7 +2289,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     tsi_ssl_handshaker_factory_unref(&impl->base);
     return result;
   }
-  std::vector<std::function<int(X509_STORE_CTX*, void*)>> verify_fns = {};
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   if (options->skip_server_certificate_verification) {
     SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
@@ -2303,7 +2302,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
     X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
-    // TODO(gtcooke94) change this
     X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
     X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
     X509_STORE_set_verify_cb(cert_store, verify_cb);
