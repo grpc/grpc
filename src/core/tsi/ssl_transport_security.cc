@@ -2317,17 +2317,11 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   std::vector<std::function<int(X509_STORE_CTX*, void*)>> verify_fns = {};
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   if (options->skip_server_certificate_verification) {
-    // verify_fns.push_back(NullVerifyCallback);
-    // SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback,
-    // nullptr);
+    SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
   } else {
-    // verify_fns.push_back(RootCertExtractCallback);
-    // SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
-    //                                  nullptr);
+    SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
+                                     nullptr);
   }
-  // auto fn = BuildVerifyCallback(verify_fns);
-  SSL_CTX_set_cert_verify_callback(ssl_context,
-                                   &fn, nullptr));
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
