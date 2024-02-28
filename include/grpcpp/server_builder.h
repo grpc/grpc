@@ -26,8 +26,6 @@
 #include <memory>
 #include <vector>
 
-#include "security/server_credentials.h"
-
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/cpu.h>
@@ -36,6 +34,7 @@
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/security/authorization_policy_provider.h>
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/server_interceptor.h>
