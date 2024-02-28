@@ -947,6 +947,8 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   // populating the tsi_peer. On error extracting the root, we return success
   // anyway and proceed with the connection, to preserve the behavior of an
   // older version of this code.
+  // TODO(gtcooke94) ret is meaningless here
+  int ret = 1;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
 #else
@@ -1001,12 +1003,8 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   return ret;
 }
 
-// X509_STORE_set_get_crl() sets the function to get the crl for a given
-// certificate x. When found, the crl must be assigned to *crl. This function
-// must return 0 on failure and 1 on success. If no function to get the issuer
-// is provided, the internal default function will be used instead.
-static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
-                              X509* cert) {
+static grpc_core::experimental::CrlProvider* GetCrlProvider(
+    X509_STORE_CTX* ctx) {
   ERR_clear_error();
   int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
   if (ssl_index < 0) {
@@ -1016,18 +1014,30 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
             "error getting the SSL index from the X509_STORE_CTX while looking "
             "up Crl: %s",
             err_str);
-    return 0;
+    return nullptr;
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
     gpr_log(GPR_ERROR,
             "error while fetching from CrlProvider. SSL object is null");
-    return 0;
+    return nullptr;
   }
   SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
   auto* provider = static_cast<grpc_core::experimental::CrlProvider*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
+  return provider;
+}
 
+// X509_STORE_set_get_crl() sets the function to get the crl for a given
+// certificate x. When found, the crl must be assigned to *crl. This function
+// must return 0 on failure and 1 on success. If no function to get the issuer
+// is provided, the internal default function will be used instead.
+static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
+                              X509* cert) {
+  auto* provider = GetCrlProvider(ctx);
+  if (provider == nullptr) {
+    return 0;
+  }
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
     gpr_log(GPR_INFO, "Could not get certificate issuer name");
@@ -1072,24 +1082,6 @@ static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
   return 1;
 }
 
-static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
-  // Use arg maybe
-  int ret = X509_verify_cert(ctx);
-  if (ret <= 0) {
-    // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it or check
-    // anything else.
-    return ret;
-  }
-  ret = RootCertExtractCallback(ctx, arg);
-  if (ret <= 0) {
-    // Something has failed return the failure
-    return ret;
-  }
-
-  return 0;
-}
-
 static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   bool valid = true;
   // RFC5280 6.3.3
@@ -1117,7 +1109,8 @@ static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
   int ret = GetCrlFromProvider(ctx, &crl, cert);
   if (ret != 1) {
     // Couldn't get CRL
-    // TODO(gtcooke94)
+    // TODO(gtcooke94) - open fails vs. close fail
+    return 1;
   }
   // Validate the crl
   // RFC5280 6.3.3(a-i)
@@ -1138,7 +1131,7 @@ static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
   // RFC5280k - Not supporting reasons
 }
 
-static int CheckChainRevocation(X509_STORE_CTX* ctx, void* arg) {
+static int CheckChainRevocation(X509_STORE_CTX* ctx) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
 #else
@@ -1162,6 +1155,26 @@ static int CheckChainRevocation(X509_STORE_CTX* ctx, void* arg) {
     }
   }
   return 0;
+}
+
+static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
+  // Use arg maybe
+  int ret = X509_verify_cert(ctx);
+  if (ret <= 0) {
+    // Verification failed. We shouldn't expect to have a verified chain, so
+    // there is no need to attempt to extract the root cert from it or check
+    // anything else.
+    return ret;
+  }
+  ret = RootCertExtractCallback(ctx, arg);
+  if (ret <= 0) {
+    // Something has failed return the failure
+    return ret;
+  }
+  if (GetCrlProvider(ctx) != nullptr) {
+    ret = CheckChainRevocation(ctx);
+  }
+  return ret;
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
