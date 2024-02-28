@@ -47,6 +47,7 @@ class GlobalInstrumentsRegistry {
  public:
   enum class ValueType {
     kUndefined,
+    kInt64,
     kUInt64,
     kDouble,
   };
@@ -79,10 +80,10 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleCounterHandle : public GlobalHandle {};
   struct GlobalUInt64HistogramHandle : public GlobalHandle {};
   struct GlobalDoubleHistogramHandle : public GlobalHandle {};
-  struct GlobalUInt64GaugeHandle : public GlobalHandle {};
+  struct GlobalInt64GaugeHandle : public GlobalHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalHandle {};
   struct GlobalCallbackHandle : public GlobalHandle {};
-  struct GlobalCallbackUInt64GaugeHandle : public GlobalCallbackHandle {};
+  struct GlobalCallbackInt64GaugeHandle : public GlobalCallbackHandle {};
   struct GlobalCallbackDoubleGaugeHandle : public GlobalCallbackHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
@@ -106,7 +107,7 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
-  static GlobalUInt64GaugeHandle RegisterUInt64Gauge(
+  static GlobalInt64GaugeHandle RegisterInt64Gauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
@@ -116,7 +117,7 @@ class GlobalInstrumentsRegistry {
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
-  static GlobalCallbackUInt64GaugeHandle RegisterCallbackUInt64Gauge(
+  static GlobalCallbackInt64GaugeHandle RegisterCallbackInt64Gauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
@@ -147,8 +148,8 @@ class CallbackMetricReporter {
   virtual ~CallbackMetricReporter() = default;
 
   virtual void Report(
-      GlobalInstrumentsRegistry::GlobalCallbackUInt64GaugeHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
+      int64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void Report(
       GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
@@ -196,7 +197,7 @@ class StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void SetGauge(
-      GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle, uint64_t value,
+      GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle, int64_t value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
   virtual void SetGauge(
@@ -268,8 +269,8 @@ class GlobalStatsPluginRegistry {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
     }
-    void SetGauge(GlobalInstrumentsRegistry::GlobalUInt64GaugeHandle handle,
-                  uint64_t value,
+    void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
+                  int64_t value,
                   absl::Span<const absl::string_view> label_values,
                   absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {

@@ -141,12 +141,12 @@ const auto kMetricFailedRpcs =
         "{RPC}", {kMetricLabelTarget}, {}, false);
 
 const auto kMetricCacheSize =
-    GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+    GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.",
         "By", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
 
 const auto kMetricCacheEntries =
-    GlobalInstrumentsRegistry::RegisterCallbackUInt64Gauge(
+    GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_entries",
         "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}",
         {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
