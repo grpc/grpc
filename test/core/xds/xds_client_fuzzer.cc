@@ -43,29 +43,10 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
+#include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
 
 namespace grpc_core {
-
-namespace testing {
-
-class XdsClientTestPeer {
- public:
-  explicit XdsClientTestPeer(XdsClient* xds_client) : xds_client_(xds_client) {}
-
-  void TestDumpClientConfig() {
-    upb::Arena arena;
-    auto client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
-    std::set<std::string> string_pool;
-    MutexLock lock(xds_client_->mu());
-    xds_client_->DumpClientConfig(&string_pool, arena.ptr(), client_config);
-  }
-
- private:
-  XdsClient* xds_client_;
-};
-
-}  // namespace testing
 
 class Fuzzer {
  public:
@@ -134,6 +115,29 @@ class Fuzzer {
         break;
       case xds_client_fuzzer::Action::kDumpCsdsData:
         testing::XdsClientTestPeer(xds_client_.get()).TestDumpClientConfig();
+        break;
+      case xds_client_fuzzer::Action::kReportResourceCounts:
+        testing::XdsClientTestPeer(xds_client_.get()).TestReportResourceCounts(
+            [](const testing::XdsClientTestPeer::ResourceCountLabels& labels,
+               uint64_t count) {
+              gpr_log(GPR_INFO,
+                      "xds_authority=\"%s\", xds_server=\"%s\", "
+                      "resource_type=\"%s\", cache_state=\"%s\" count=%"
+                      PRIu64,
+                      std::string(labels.xds_authority).c_str(),
+                      std::string(labels.xds_server).c_str(),
+                      std::string(labels.resource_type).c_str(),
+                      std::string(labels.cache_state).c_str(),
+                      count);
+            });
+        break;
+      case xds_client_fuzzer::Action::kReportServerConnections:
+        testing::XdsClientTestPeer(xds_client_.get())
+            .TestReportServerConnections(
+                [](absl::string_view xds_server, bool connected) {
+                  gpr_log(GPR_INFO, "xds_server=\"%s\" connected=%d",
+                          std::string(xds_server).c_str(), connected);
+                });
         break;
       case xds_client_fuzzer::Action::kTriggerConnectionFailure:
         TriggerConnectionFailure(

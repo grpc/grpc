@@ -160,6 +160,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
  protected:
   Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
+  // Dumps the active xDS config to the provided
+  // envoy.service.status.v3.ClientConfig message including the config status
+  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
+                        envoy_service_status_v3_ClientConfig* client_config)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+
   // Invokes func once for each combination of labels to report the
   // resource count for those labels.
   struct ResourceCountLabels {
@@ -176,13 +183,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // connection to that server is working.
   void ReportServerConnections(
       absl::FunctionRef<void(absl::string_view /*xds_server*/, bool)> func)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
-
-  // Dumps the active xDS config to the provided
-  // envoy.service.status.v3.ClientConfig message including the config status
-  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
-  void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
-                        envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
  private:

@@ -162,6 +162,18 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "xds_client_test_peer",
+    hdrs = ["xds_client_test_peer.h"],
+    external_deps = [
+        "absl/functional:function_ref",
+    ],
+    language = "C++",
+    deps = [
+        "//:xds_client",
+    ],
+)
+
 grpc_cc_test(
     name = "xds_client_test",
     srcs = ["xds_client_test.cc"],
@@ -171,6 +183,7 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = False,
     deps = [
+        ":xds_client_test_peer",
         ":xds_transport_fake",
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
@@ -192,6 +205,7 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":xds_client_test_peer",
         ":xds_transport_fake",
         "//src/core:grpc_xds_client",
         "//test/core/util:grpc_test_util",
