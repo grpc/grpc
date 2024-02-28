@@ -872,9 +872,16 @@ TEST_F(XdsClientTest, Metrics) {
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
-  // Server should now report that it is connected.
+  // Check metrics.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", true)));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq("old:", "default_xds_server",
+                                XdsFooResourceType::Get()->type_url(),
+                                "requested"),
+          1)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
