@@ -117,8 +117,9 @@ class XdsClusterTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
-                                     "foo version");
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr,
+                                     "foo agent", "foo version");
   }
 
   RefCountedPtr<XdsClient> xds_client_;

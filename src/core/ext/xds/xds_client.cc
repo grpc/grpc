@@ -744,9 +744,11 @@ XdsClient::XdsChannel::AdsCall::AdsResponseParser::ProcessAdsResponseFields(
   result_.read_delay_handle =
       MakeRefCounted<AdsReadDelayHandle>(ads_call_->Ref());
   // Update metrics.
-  ads_call_->xds_client()->metrics_reporter_->ReportResourceUpdates(
-      ads_call_->xds_channel()->server_.server_uri(), result_.type_url,
-      fields.num_resources);
+  if (ads_call_->xds_client()->metrics_reporter_ != nullptr) {
+    ads_call_->xds_client()->metrics_reporter_->ReportResourceUpdates(
+        ads_call_->xds_channel()->server_.server_uri(), result_.type_url,
+        fields.num_resources);
+  }
   return absl::OkStatus();
 }
 
