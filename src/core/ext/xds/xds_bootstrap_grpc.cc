@@ -330,11 +330,11 @@ std::string GrpcXdsBootstrap::ToString() const {
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         entry.second.client_listener_resource_name_template()));
-    if (entry.second.server() != nullptr) {
-      parts.push_back(absl::StrFormat(
-          "    servers=[\n%s\n],\n",
-          JsonDump(static_cast<const GrpcXdsServer*>(entry.second.server())
-                       ->ToJson())));
+    const GrpcXdsServer* server =
+        static_cast<const GrpcXdsServer*>(entry.second.server(0));
+    if (server != nullptr) {
+      parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                      JsonDump(server->ToJson())));
     }
     parts.push_back("      },\n");
   }

@@ -65,7 +65,9 @@ class XdsBootstrap {
    public:
     virtual ~Authority() = default;
 
-    virtual const XdsServer* server() const = 0;
+    virtual const XdsServer* server(size_t index) const = 0;
+
+    virtual size_t server_count() const = 0;
   };
 
   virtual ~XdsBootstrap() = default;
@@ -74,7 +76,9 @@ class XdsBootstrap {
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
-  virtual const XdsServer& server() const = 0;
+  virtual const XdsServer* server(size_t index) const = 0;
+
+  virtual size_t server_count() const = 0;
 
   // Returns the node information, or null if not present in the bootstrap
   // config.

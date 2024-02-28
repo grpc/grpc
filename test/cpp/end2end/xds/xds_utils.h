@@ -43,7 +43,13 @@ class XdsBootstrapBuilder {
   // not already been set.
   XdsBootstrapBuilder& SetDefaultServer(const std::string& server,
                                         bool ignore_if_set = false) {
-    if (!ignore_if_set || top_server_.empty()) top_server_ = server;
+    if (!ignore_if_set || absl::c_find(servers_, server) == servers_.end()) {
+      servers_.insert(servers_.begin(), {server});
+    }
+    return *this;
+  }
+  XdsBootstrapBuilder& AddServer(absl::string_view server) {
+    servers_.emplace_back(server);
     return *this;
   }
   XdsBootstrapBuilder& SetXdsChannelCredentials(const std::string& type) {
@@ -87,13 +93,13 @@ class XdsBootstrapBuilder {
     std::string client_listener_resource_name_template;
   };
 
-  std::string MakeXdsServersText(absl::string_view server_uri);
+  std::string MakeXdsServersText(absl::Span<const std::string> server_uris);
   std::string MakeNodeText();
   std::string MakeCertificateProviderText();
   std::string MakeAuthorityText();
 
   bool ignore_resource_deletion_ = false;
-  std::string top_server_;
+  std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;

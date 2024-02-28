@@ -104,9 +104,14 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
   class GrpcAuthority : public Authority {
    public:
-    const XdsServer* server() const override {
-      return servers_.empty() ? nullptr : &servers_[0];
+    const XdsServer* server(size_t index) const override {
+      if (index >= servers_.size()) {
+        return nullptr;
+      }
+      return &servers_[index];
     }
+
+    size_t server_count() const override { return servers_.size(); }
 
     const std::string& client_listener_resource_name_template() const {
       return client_listener_resource_name_template_;
@@ -129,7 +134,15 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
   std::string ToString() const override;
 
-  const XdsServer& server() const override { return servers_[0]; }
+  const XdsServer* server(size_t index) const override {
+    if (index >= servers_.size()) {
+      return nullptr;
+    }
+    return &servers_[index];
+  }
+
+  size_t server_count() const override { return servers_.size(); }
+
   const Node* node() const override {
     return node_.has_value() ? &*node_ : nullptr;
   }

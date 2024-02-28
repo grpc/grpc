@@ -83,7 +83,7 @@ class XdsRouteConfigTest : public ::testing::Test {
  protected:
   XdsRouteConfigTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(), *xds_client_->bootstrap().server(0),
                         &xds_route_config_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
