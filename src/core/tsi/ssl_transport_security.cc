@@ -902,37 +902,6 @@ static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   return ok;
 }
 
-// Idea - builder that takes list of funcs to call for verifiction
-// Have the base that just calls X509_cerify_cert
-// Then optionall also have RootCertExtractCallback
-// Then optionally custom Crl handling
-// I think we don't want any captures
-// Capture, etc, doesn't  work because OpenSSL is using raw function pointers,
-// not std::function I think we'll just have to hard define it, could store
-// setting/state on the ex_data if needed
-/* <fn matching verify callback reqs> VerificationBuilder(<list of fn>) {
-  return fn(X509_STORE_CTX xx, void* yy) {
-    for fn in list:
-      fn(xx, yy)
-  }
-}*/
-
-// int(*callback(X509_STORE_CTX*, void*)) BuildVerifyCallback(
-//     std::vector<std::function<int(X509_STORE_CTX*, void*)>> callbacks) {
-//   std::function<int(X509_STORE_CTX*, void*)> fn =
-//       ([=](X509_STORE_CTX* ctx, void* arg) {
-//         int ret = 1;
-//         for (const auto& callback : callbacks) {
-//           ret = callback(ctx, arg);
-//           if (ret != 1) {
-//             return ret;
-//           }
-//         }
-//         return ret;
-//       });
-//   return fn;
-// }
-
 // The verification callback is used for clients that don't really care about
 // the server's certificate, but we need to pull it anyway, in case a higher
 // layer wants to look at it. In this case the verification may fail, but
@@ -942,13 +911,19 @@ static int NullVerifyCallback(X509_STORE_CTX* /*ctx*/, void* /*arg*/) {
 }
 
 static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
+  // TODO(gtcooke904) remove this check, done elsewhere
+  int ret = X509_verify_cert(ctx);
+  if (ret <= 0) {
+    // Verification failed. We shouldn't expect to have a verified chain, so
+    // there is no need to attempt to extract the root cert from it.
+    return ret;
+  }
+
   // Verification was successful. Get the verified chain from the X509_STORE_CTX
   // and put the root on the SSL object so that we have access to it when
   // populating the tsi_peer. On error extracting the root, we return success
   // anyway and proceed with the connection, to preserve the behavior of an
   // older version of this code.
-  // TODO(gtcooke94) ret is meaningless here
-  int ret = 1;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
 #else
