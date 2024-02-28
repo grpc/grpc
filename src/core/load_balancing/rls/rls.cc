@@ -1940,7 +1940,8 @@ RlsLb::RlsLb(Args args)
               [this](CallbackMetricReporter& reporter) {
                 MutexLock lock(&mu_);
                 cache_.ReportMetricsLocked(reporter);
-              })),
+              },
+              {kMetricCacheSize, kMetricCacheEntries})),
       cache_(this) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);

@@ -7466,6 +7466,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "no_destruct",
+        "time",
         "//:gpr",
     ],
 )

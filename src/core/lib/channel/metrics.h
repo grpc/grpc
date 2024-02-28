@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {
 
@@ -80,8 +81,9 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleHistogramHandle : public GlobalHandle {};
   struct GlobalUInt64GaugeHandle : public GlobalHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalHandle {};
-  struct GlobalCallbackUInt64GaugeHandle : public GlobalHandle {};
-  struct GlobalCallbackDoubleGaugeHandle : public GlobalHandle {};
+  struct GlobalCallbackHandle : public GlobalHandle {};
+  struct GlobalCallbackUInt64GaugeHandle : public GlobalCallbackHandle {};
+  struct GlobalCallbackDoubleGaugeHandle : public GlobalCallbackHandle {};
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -282,9 +284,14 @@ class GlobalStatsPluginRegistry {
         plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
+
     // Registers a callback to be used to populate callback metrics.
+    // The callback will update the specified metrics.  The callback
+    // will be invoked no more often than min_interval.
     std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
-        absl::AnyInvocable<void(CallbackMetricReporter&)> callback);
+        absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+        std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+        Duration min_interval = Duration::Seconds(5));
 
    private:
     friend class RegisteredMetricCallback;
@@ -315,15 +322,25 @@ class RegisteredMetricCallback {
  public:
   RegisteredMetricCallback(
       GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
-      absl::AnyInvocable<void(CallbackMetricReporter&)> callback);
+      absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+      std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+      Duration min_interval);
 
   ~RegisteredMetricCallback();
 
   void Run(CallbackMetricReporter& reporter) { callback_(reporter); }
 
+  const std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle>& metrics()
+      const {
+    return metrics_;
+  }
+  Duration min_interval() const { return min_interval_; }
+
  private:
   GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group_;
   absl::AnyInvocable<void(CallbackMetricReporter&)> callback_;
+  std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics_;
+  Duration min_interval_;
 };
 
 }  // namespace grpc_core

@@ -274,8 +274,13 @@ void GlobalInstrumentsRegistry::ForEach(
 
 RegisteredMetricCallback::RegisteredMetricCallback(
     GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
-    absl::AnyInvocable<void(CallbackMetricReporter&)> callback)
-    : stats_plugin_group_(stats_plugin_group), callback_(std::move(callback)) {
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+    Duration min_interval)
+    : stats_plugin_group_(stats_plugin_group),
+      callback_(std::move(callback)),
+      metrics_(std::move(metrics)),
+      min_interval_(min_interval) {
   for (auto& plugin : stats_plugin_group_.plugins_) {
     plugin->AddCallback(this);
   }
@@ -289,8 +294,11 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 std::unique_ptr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
-    absl::AnyInvocable<void(CallbackMetricReporter&)> callback) {
-  return std::make_unique<RegisteredMetricCallback>(*this, std::move(callback));
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+    Duration min_interval) {
+  return std::make_unique<RegisteredMetricCallback>(
+      *this, std::move(callback), std::move(metrics), min_interval);
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;
