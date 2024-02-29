@@ -4743,6 +4743,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/hash",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4775,6 +4776,7 @@ grpc_cc_library(
         "slice_refcount",
         "status_helper",
         "time",
+        "uuid_v4",
         "validation_errors",
         "//:backoff",
         "//:channel_arg_names",

@@ -75,7 +75,7 @@ namespace {
 
 const char* kServerName = "test.google.fr";
 const char* kRequestMessage = "Live long and prosper.";
-const char* kRlsInstanceId = "rls_instance_id";
+const char* kRlsInstanceUuid = "rls_instance_uuid";
 
 const char* kCallCredsMdKey = "call_cred_name";
 const char* kCallCredsMdValue = "call_cred_value";
@@ -193,7 +193,7 @@ class RlsEnd2endTest : public ::testing::Test {
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     resolver_response_generator_->Get());
     args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, kServerName);
-    args.SetString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID, kRlsInstanceId);
+    args.SetString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID, kRlsInstanceUuid);
     grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
@@ -1461,7 +1461,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheEntries) {
   EXPECT_EQ(descriptor->unit, "{entry}");
   EXPECT_THAT(descriptor->label_keys,
               ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target",
-                                     "grpc.lb.rls.instance_id"));
+                                     "grpc.lb.rls.instance_uuid"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
@@ -1480,7 +1480,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheSize) {
   EXPECT_EQ(descriptor->unit, "By");
   EXPECT_THAT(descriptor->label_keys,
               ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target",
-                                     "grpc.lb.rls.instance_id"));
+                                     "grpc.lb.rls.instance_uuid"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
@@ -1546,10 +1546,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
                   kMetricCacheEntries,
-                  {target_uri_, rls_server_target_, kRlsInstanceId}, {}),
+                  {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
               ::testing::Optional(1));
   auto cache_size = stats_plugin_->GetCallbackGaugeValue(
-      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceId}, {});
+      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
+      {});
   EXPECT_THAT(cache_size, ::testing::Optional(::testing::Ge(1)));
   // Send an RPC to the target for backend 1.
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target1}}),
@@ -1577,10 +1578,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
                   kMetricCacheEntries,
-                  {target_uri_, rls_server_target_, kRlsInstanceId}, {}),
+                  {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
               ::testing::Optional(2));
   auto cache_size2 = stats_plugin_->GetCallbackGaugeValue(
-      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceId}, {});
+      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
+      {});
   EXPECT_THAT(cache_size2, ::testing::Optional(::testing::Ge(2)));
   if (cache_size.has_value() && cache_size2.has_value()) {
     EXPECT_GT(*cache_size2, *cache_size);
@@ -1620,10 +1622,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
                   kMetricCacheEntries,
-                  {target_uri_, rls_server_target_, kRlsInstanceId}, {}),
+                  {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
               ::testing::Optional(3));
   auto cache_size3 = stats_plugin_->GetCallbackGaugeValue(
-      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceId}, {});
+      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
+      {});
   EXPECT_THAT(cache_size3, ::testing::Optional(::testing::Ge(3)));
   if (cache_size.has_value() && cache_size3.has_value()) {
     EXPECT_GT(*cache_size3, *cache_size);

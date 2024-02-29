@@ -1394,6 +1394,8 @@ let package = Package(
         "src/core/lib/gprpp/time_util.h",
         "src/core/lib/gprpp/type_list.h",
         "src/core/lib/gprpp/unique_type_name.h",
+        "src/core/lib/gprpp/uuid_v4.cc",
+        "src/core/lib/gprpp/uuid_v4.h",
         "src/core/lib/gprpp/validation_errors.cc",
         "src/core/lib/gprpp/validation_errors.h",
         "src/core/lib/gprpp/windows/directory_reader.cc",

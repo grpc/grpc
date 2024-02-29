@@ -29,7 +29,6 @@
 #include <string.h>
 
 #include <algorithm>
-#include <atomic>
 #include <deque>
 #include <list>
 #include <map>
@@ -44,6 +43,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/hash/hash.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -82,6 +82,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/uuid_v4.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -118,8 +119,8 @@ namespace {
 
 constexpr absl::string_view kMetricLabelRlsServerTarget =
     "grpc.lb.rls.server_target";
-constexpr absl::string_view kMetricLabelRlsInstanceId =
-    "grpc.lb.rls.instance_id";
+constexpr absl::string_view kMetricLabelRlsInstanceUuid =
+    "grpc.lb.rls.instance_uuid";
 constexpr absl::string_view kMetricRlsDataPlaneTarget =
     "grpc.lb.rls.data_plane_target";
 constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
@@ -129,7 +130,7 @@ const auto kMetricCacheSize =
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.",
         "By",
         {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricLabelRlsInstanceId},
+         kMetricLabelRlsInstanceUuid},
         {}, false);
 
 const auto kMetricCacheEntries =
@@ -137,7 +138,7 @@ const auto kMetricCacheEntries =
         "grpc.lb.rls.cache_entries",
         "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}",
         {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricLabelRlsInstanceId},
+         kMetricLabelRlsInstanceUuid},
         {}, false);
 
 const auto kMetricDefaultTargetPicks =
@@ -759,8 +760,7 @@ class RlsLb : public LoadBalancingPolicy {
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       absl::string_view target, const PickResult& pick_result);
 
-  const std::string instance_id_;
-  std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
+  const std::string instance_uuid_;
 
   // Mutex to guard LB policy state that is accessed by the picker.
   Mutex mu_;
@@ -784,6 +784,9 @@ class RlsLb : public LoadBalancingPolicy {
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
   std::map<std::string /*target*/, ChildPolicyWrapper*> child_policy_map_;
+
+  // Must be after mu_, so that it is destroyed before mu_.
+  std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
 };
 
 //
@@ -1453,12 +1456,12 @@ void RlsLb::Cache::ReportMetricsLocked(CallbackMetricReporter& reporter) {
   reporter.Report(kMetricCacheSize, size_,
                   {lb_policy_->channel_control_helper()->GetTarget(),
                    lb_policy_->config_->lookup_service(),
-                   lb_policy_->instance_id_},
+                   lb_policy_->instance_uuid_},
                   {});
   reporter.Report(kMetricCacheEntries, map_.size(),
                   {lb_policy_->channel_control_helper()->GetTarget(),
                    lb_policy_->config_->lookup_service(),
-                   lb_policy_->instance_id_},
+                   lb_policy_->instance_uuid_},
                   {});
 }
 
@@ -1940,22 +1943,27 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
-// Atomic counter for RLS instance ID.
-std::atomic<uint64_t> g_instance_id;
+std::string GenerateUUID() {
+  absl::uniform_int_distribution<uint64_t> distribution;
+  absl::BitGen bitgen;
+  uint64_t hi = distribution(bitgen);
+  uint64_t lo = distribution(bitgen);
+  return GenerateUUIDv4(hi, lo);
+}
 
 RlsLb::RlsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
-      instance_id_(
+      instance_uuid_(
           channel_args().GetOwnedString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID)
-              .value_or(absl::StrFormat("%u", g_instance_id.fetch_add(1)))),
+              .value_or(GenerateUUID())),
+      cache_(this),
       registered_metric_callback_(
           channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
               [this](CallbackMetricReporter& reporter) {
                 MutexLock lock(&mu_);
                 cache_.ReportMetricsLocked(reporter);
               },
-              {kMetricCacheSize, kMetricCacheEntries})),
-      cache_(this) {
+              {kMetricCacheSize, kMetricCacheEntries})) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }

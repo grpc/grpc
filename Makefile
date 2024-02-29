@@ -1460,6 +1460,7 @@ LIBGRPC_SRC = \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/uuid_v4.cc \
     src/core/lib/gprpp/validation_errors.cc \
     src/core/lib/gprpp/windows/directory_reader.cc \
     src/core/lib/gprpp/work_serializer.cc \
@@ -2061,6 +2062,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/uuid_v4.cc \
     src/core/lib/gprpp/validation_errors.cc \
     src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/handshaker/proxy_mapper_registry.cc \

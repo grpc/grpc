@@ -926,6 +926,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
@@ -1737,6 +1738,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
@@ -2425,6 +2427,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
@@ -2859,6 +2862,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
@@ -19497,10 +19501,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/gprpp/uuid_v4.h
+  headers: []
   src:
-  - src/core/lib/gprpp/uuid_v4.cc
   - test/core/gprpp/uuid_v4_test.cc
   deps:
   - gtest
