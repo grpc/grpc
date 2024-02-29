@@ -6024,6 +6024,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "call_finalization",
         "channel_args",
         "channel_fwd",
         "channel_stack_type",
