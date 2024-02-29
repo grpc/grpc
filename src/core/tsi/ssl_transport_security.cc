@@ -1032,17 +1032,6 @@ static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
   return X509_CRL_dup(crl);
 }
 
-// When using CRL Providers, this function used to override the default
-// `check_crl` function in OpenSSL using `X509_STORE_set_check_crl`.
-// CrlProviders put the onus on the users to provide the CRLs that they want
-// to provide, and because we override default CRL fetching behavior, we can
-// expect some of these verification checks to fails for custom CRL providers
-// as well. Thus, we need a passthrough to indicate to OpenSSL that we've
-// provided a CRL and we are good with it.
-static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
-  return 1;
-}
-
 // Perform the validation checks in RFC5280 6.3.3 to ensure the given CRL is
 // valid
 static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
