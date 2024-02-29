@@ -338,13 +338,17 @@ class RegisteredMetricCallback {
 
   ~RegisteredMetricCallback();
 
+  // Invokes the callback.  The callback will report metric data via reporter.
   void Run(CallbackMetricReporter& reporter) { callback_(reporter); }
 
+  // Returns the set of metrics that this callback will modify.
   const std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle>& metrics()
       const {
     return metrics_;
   }
-  // The minimum interval at which a stats plugin may invoke the callback.
+
+  // Returns the minimum interval at which a stats plugin may invoke the
+  // callback.
   Duration min_interval() const { return min_interval_; }
 
  private:
