@@ -200,6 +200,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
@@ -1268,6 +1269,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
+                      'src/core/lib/channel/metrics.cc',
+                      'src/core/lib/channel/metrics.h',
                       'src/core/lib/channel/promise_based_filter.cc',
                       'src/core/lib/channel/promise_based_filter.h',
                       'src/core/lib/channel/server_call_tracer_filter.cc',
@@ -1938,6 +1941,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata_batch.cc',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/metadata_compression_traits.h',
+                      'src/core/lib/transport/metadata_info.cc',
+                      'src/core/lib/transport/metadata_info.h',
                       'src/core/lib/transport/parsed_metadata.cc',
                       'src/core/lib/transport/parsed_metadata.h',
                       'src/core/lib/transport/simple_slice_based_metadata.h',
@@ -1999,6 +2004,7 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                       'src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc',
                       'src/core/load_balancing/weighted_target/weighted_target.cc',
+                      'src/core/load_balancing/weighted_target/weighted_target.h',
                       'src/core/load_balancing/xds/cds.cc',
                       'src/core/load_balancing/xds/xds_channel_args.h',
                       'src/core/load_balancing/xds/xds_cluster_impl.cc',
@@ -2938,6 +2944,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
+                              'src/core/lib/channel/metrics.h',
                               'src/core/lib/channel/promise_based_filter.h',
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/channel/tcp_tracer.h',
@@ -3285,6 +3292,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/metadata_compression_traits.h',
+                              'src/core/lib/transport/metadata_info.h',
                               'src/core/lib/transport/parsed_metadata.h',
                               'src/core/lib/transport/simple_slice_based_metadata.h',
                               'src/core/lib/transport/status_conversion.h',
@@ -3317,6 +3325,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/subchannel_interface.h',
                               'src/core/load_balancing/subchannel_list.h',
                               'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
+                              'src/core/load_balancing/weighted_target/weighted_target.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',
                               'src/core/load_balancing/xds/xds_override_host.h',
                               'src/core/resolver/dns/c_ares/dns_resolver_ares.h',

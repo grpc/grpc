@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -32,6 +33,8 @@
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
+
+constexpr absl::string_view kMetricLabelTarget = "grpc.target";
 
 // A global registry of instruments(metrics). This API is designed to be used to
 // register instruments (Counter and Histogram) as part of program startup,
@@ -97,9 +100,14 @@ class GlobalInstrumentsRegistry {
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
 
-  static void TestOnlyResetGlobalInstrumentsRegistry();
+ private:
+  friend class GlobalInstrumentsRegistryTestPeer;
 
   GlobalInstrumentsRegistry() = delete;
+
+  static absl::flat_hash_map<
+      absl::string_view, GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+  GetInstrumentList();
 };
 
 // The StatsPlugin interface.
@@ -213,12 +221,9 @@ class GlobalStatsPluginRegistry {
   // TODO(yijiem): Implement this.
   // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
 
-  static void TestOnlyResetGlobalStatsPluginRegistry() {
-    MutexLock lock(&*mutex_);
-    plugins_->clear();
-  }
-
  private:
+  friend class GlobalStatsPluginRegistryTestPeer;
+
   GlobalStatsPluginRegistry() = default;
 
   static NoDestruct<Mutex> mutex_;

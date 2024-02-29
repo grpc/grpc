@@ -116,6 +116,17 @@ const absl::string_view
         "wrr_updates",
         "work_serializer_items_enqueued",
         "work_serializer_items_dequeued",
+        "econnaborted_count",
+        "econnreset_count",
+        "epipe_count",
+        "etimedout_count",
+        "econnrefused_count",
+        "enetunreach_count",
+        "enomsg_count",
+        "enotconn_count",
+        "enobufs_count",
+        "uncommon_io_error_count",
+        "msg_errqueue_error_count",
 };
 const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     Counter::COUNT)] = {
@@ -146,6 +157,17 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of wrr updates that have been received",
     "Number of items enqueued onto work serializers",
     "Number of items dequeued from work serializers",
+    "Number of ECONNABORTED errors",
+    "Number of ECONNRESET errors",
+    "Number of EPIPE errors",
+    "Number of ETIMEDOUT errors",
+    "Number of ECONNREFUSED errors",
+    "Number of ENETUNREACH errors",
+    "Number of ENOMSG errors",
+    "Number of ENOTCONN errors",
+    "Number of ENOBUFS errors",
+    "Number of uncommon io errors",
+    "Number of uncommon errors returned by MSG_ERRQUEUE",
 };
 const absl::string_view
     GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
@@ -336,7 +358,18 @@ GlobalStats::GlobalStats()
       cq_callback_creates{0},
       wrr_updates{0},
       work_serializer_items_enqueued{0},
-      work_serializer_items_dequeued{0} {}
+      work_serializer_items_dequeued{0},
+      econnaborted_count{0},
+      econnreset_count{0},
+      epipe_count{0},
+      etimedout_count{0},
+      econnrefused_count{0},
+      enetunreach_count{0},
+      enomsg_count{0},
+      enotconn_count{0},
+      enobufs_count{0},
+      uncommon_io_error_count{0},
+      msg_errqueue_error_count{0} {}
 HistogramView GlobalStats::histogram(Histogram which) const {
   switch (which) {
     default:
@@ -427,6 +460,25 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.work_serializer_items_enqueued.load(std::memory_order_relaxed);
     result->work_serializer_items_dequeued +=
         data.work_serializer_items_dequeued.load(std::memory_order_relaxed);
+    result->econnaborted_count +=
+        data.econnaborted_count.load(std::memory_order_relaxed);
+    result->econnreset_count +=
+        data.econnreset_count.load(std::memory_order_relaxed);
+    result->epipe_count += data.epipe_count.load(std::memory_order_relaxed);
+    result->etimedout_count +=
+        data.etimedout_count.load(std::memory_order_relaxed);
+    result->econnrefused_count +=
+        data.econnrefused_count.load(std::memory_order_relaxed);
+    result->enetunreach_count +=
+        data.enetunreach_count.load(std::memory_order_relaxed);
+    result->enomsg_count += data.enomsg_count.load(std::memory_order_relaxed);
+    result->enotconn_count +=
+        data.enotconn_count.load(std::memory_order_relaxed);
+    result->enobufs_count += data.enobufs_count.load(std::memory_order_relaxed);
+    result->uncommon_io_error_count +=
+        data.uncommon_io_error_count.load(std::memory_order_relaxed);
+    result->msg_errqueue_error_count +=
+        data.msg_errqueue_error_count.load(std::memory_order_relaxed);
     data.call_initial_size.Collect(&result->call_initial_size);
     data.tcp_write_size.Collect(&result->tcp_write_size);
     data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
@@ -481,6 +533,19 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       work_serializer_items_enqueued - other.work_serializer_items_enqueued;
   result->work_serializer_items_dequeued =
       work_serializer_items_dequeued - other.work_serializer_items_dequeued;
+  result->econnaborted_count = econnaborted_count - other.econnaborted_count;
+  result->econnreset_count = econnreset_count - other.econnreset_count;
+  result->epipe_count = epipe_count - other.epipe_count;
+  result->etimedout_count = etimedout_count - other.etimedout_count;
+  result->econnrefused_count = econnrefused_count - other.econnrefused_count;
+  result->enetunreach_count = enetunreach_count - other.enetunreach_count;
+  result->enomsg_count = enomsg_count - other.enomsg_count;
+  result->enotconn_count = enotconn_count - other.enotconn_count;
+  result->enobufs_count = enobufs_count - other.enobufs_count;
+  result->uncommon_io_error_count =
+      uncommon_io_error_count - other.uncommon_io_error_count;
+  result->msg_errqueue_error_count =
+      msg_errqueue_error_count - other.msg_errqueue_error_count;
   result->call_initial_size = call_initial_size - other.call_initial_size;
   result->tcp_write_size = tcp_write_size - other.tcp_write_size;
   result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;

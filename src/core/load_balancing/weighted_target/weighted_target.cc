@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
+
 #include <string.h>
 
 #include <algorithm>
@@ -160,7 +162,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     absl::Status UpdateLocked(
         const WeightedTargetLbConfig::ChildConfig& config,
         absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
-        const std::string& resolution_note, const ChannelArgs& args);
+        const std::string& resolution_note, ChannelArgs args);
     void ResetBackoffLocked();
     void DeactivateLocked();
 
@@ -592,7 +594,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
     absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
-    const std::string& resolution_note, const ChannelArgs& args) {
+    const std::string& resolution_note, ChannelArgs args) {
   if (weighted_target_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.
   if (weight_ != config.weight &&
@@ -611,6 +613,7 @@ absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
     delayed_removal_timer_.reset();
   }
   // Create child policy if needed.
+  args = args.Set(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD, name_);
   if (child_policy_ == nullptr) {
     child_policy_ = CreateChildPolicyLocked(args);
   }
@@ -619,7 +622,7 @@ absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
   update_args.config = config.config;
   update_args.addresses = std::move(addresses);
   update_args.resolution_note = resolution_note;
-  update_args.args = args;
+  update_args.args = std::move(args);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_weighted_target_trace)) {
     gpr_log(GPR_INFO,

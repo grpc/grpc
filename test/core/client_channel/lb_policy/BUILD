@@ -56,6 +56,7 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],
@@ -219,6 +220,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -235,6 +237,7 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_weighted_round_robin",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
     ],
 )
