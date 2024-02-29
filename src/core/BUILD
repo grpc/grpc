@@ -6981,6 +6981,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "time",
+        "//:call_tracer",
         "//:channel_arg_names",
         "//:config",
         "//:gpr",

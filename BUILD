@@ -2836,6 +2836,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
+        "call_tracer",
         "config",
         "gpr",
         "grpc++_base",
