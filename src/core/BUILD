@@ -7342,7 +7342,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "chunked_vector",
-        "compression_internal",
+        "compression",
         "experiments",
         "if_list",
         "metadata_compression_traits",
@@ -7389,8 +7389,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "compression_internal",
+    name = "compression",
     srcs = [
+        "lib/compression/compression.cc",
         "lib/compression/compression_internal.cc",
     ],
     hdrs = [
@@ -7407,6 +7408,8 @@ grpc_cc_library(
         "channel_args",
         "ref_counted_string",
         "slice",
+        "useful",
+        "//:api_trace",
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:grpc_trace",

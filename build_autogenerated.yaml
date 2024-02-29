@@ -6401,6 +6401,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -6441,6 +6442,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -6465,6 +6467,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
