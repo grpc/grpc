@@ -911,14 +911,7 @@ static int NullVerifyCallback(X509_STORE_CTX* /*ctx*/, void* /*arg*/) {
 }
 
 static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
-  // TODO(gtcooke904) remove this check, done elsewhere
-  int ret = X509_verify_cert(ctx);
-  if (ret <= 0) {
-    // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it.
-    return ret;
-  }
-
+  int ret = 1;
   // Verification was successful. Get the verified chain from the X509_STORE_CTX
   // and put the root on the SSL object so that we have access to it when
   // populating the tsi_peer. On error extracting the root, we return success
@@ -1129,7 +1122,7 @@ static int CheckChainRevocation(X509_STORE_CTX* ctx) {
       return ret;
     }
   }
-  return 0;
+  return 1;
 }
 
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
@@ -2293,7 +2286,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->skip_server_certificate_verification) {
     SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
   } else {
-    SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
+    SSL_CTX_set_cert_verify_callback(ssl_context, CustomVerificationFunction,
                                      nullptr);
   }
 
@@ -2302,12 +2295,12 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
     X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
-    X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-    X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-    X509_STORE_set_verify_cb(cert_store, verify_cb);
-    X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-    X509_VERIFY_PARAM_set_flags(
-        param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+    // X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+    // X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
+    // X509_STORE_set_verify_cb(cert_store, verify_cb);
+    // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+    // X509_VERIFY_PARAM_set_flags(
+    //     param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
   } else if (options->crl_directory != nullptr &&
              strcmp(options->crl_directory, "") != 0) {
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
@@ -2483,7 +2476,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
           SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           RootCertExtractCallback, nullptr);
+                                           CustomVerificationFunction, nullptr);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
@@ -2497,7 +2490,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                              nullptr);
           SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           RootCertExtractCallback, nullptr);
+                                           CustomVerificationFunction, nullptr);
           break;
       }
 
@@ -2506,13 +2499,14 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,
                             options->crl_provider.get());
-        X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-        X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-        X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-        X509_STORE_set_verify_cb(cert_store, verify_cb);
-        X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-        X509_VERIFY_PARAM_set_flags(
-            param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+        // X509_STORE* cert_store =
+        // SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+        // X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
+        // X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
+        // X509_STORE_set_verify_cb(cert_store, verify_cb);
+        // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+        // X509_VERIFY_PARAM_set_flags(
+        //     param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       } else if (options->crl_directory != nullptr &&
                  strcmp(options->crl_directory, "") != 0) {
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
