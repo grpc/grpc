@@ -293,6 +293,11 @@ class GlobalStatsPluginRegistry {
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
     // will be invoked no more often than min_interval.
+    //
+    // The returned object is a handle that allows the caller to control
+    // the lifetime of the callback; when the returned object is
+    // destroyed, the callback is de-registered.  The returned object
+    // must not outlive the StatsPluginGroup object that created it.
     std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
