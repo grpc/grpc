@@ -430,7 +430,8 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
-  std::weak_ptr<experimental::ServerBuilderPassiveListener> passive_listener_;
+  std::vector<std::weak_ptr<experimental::ServerBuilderPassiveListener>>
+      passive_listeners_;
 
   SyncServerSettings sync_server_settings_;
 

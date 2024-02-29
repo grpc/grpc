@@ -50,97 +50,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
+#include "src/cpp/server/passive_listener.h"
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-#include <grpcpp/server_posix.h>
-#endif
 namespace grpc {
-namespace experimental {
-// An implementation of the passive listener.
-// The server builder holds a weak_ptr to it, and the application owns the
-// instance.
-class ServerBuilderPassiveListener : public PassiveListener {
- public:
-  explicit ServerBuilderPassiveListener(
-      std::shared_ptr<grpc::ServerCredentials> creds)
-      : creds_(std::move(creds)) {}
-
-  void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) override {
-    grpc_core::ExecCtx exec_ctx;
-    // DO NOT SUBMIT(hork): server credentials?
-    auto memory_quota =
-        server_args_.GetObject<grpc_core::ResourceQuota>()->memory_quota();
-    grpc_endpoint* server_endpoint =
-        grpc_event_engine_endpoint_create(std::move(endpoint));
-    grpc_core::Transport* transport = grpc_create_chttp2_transport(
-        server_args_, server_endpoint, /*is_client=*/false);
-    auto* core_server = grpc_core::Server::FromC(server_->c_server());
-    grpc_error_handle error =
-        core_server->SetupTransport(transport, nullptr, server_args_, nullptr);
-    if (error.ok()) {
-      for (grpc_pollset* pollset : core_server->pollsets()) {
-        grpc_endpoint_add_to_pollset(server_endpoint, pollset);
-      }
-      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
-    } else {
-      gpr_log(GPR_ERROR, "Failed to create channel: %s",
-              grpc_core::StatusToString(error).c_str());
-      transport->Orphan();
-    }
-  }
-
-  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override {
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-    // DO NOT SUBMIT(hork): implement with creds
-#else
-    return absl::UnimplementedError(
-        "This platform does not support file descriptors");
-#endif
-  }
-
-  void Initialize(Server* server, ChannelArguments& arguments) {
-    GPR_DEBUG_ASSERT(server_ == nullptr);
-    server_ = server;
-    grpc_channel_args tmp_args;
-    arguments.SetChannelArgs(&tmp_args);
-    server_args_ = grpc_core::CoreConfiguration::Get()
-                       .channel_args_preconditioning()
-                       .PreconditionChannelArgs(&tmp_args);
-  }
-
- private:
-  grpc::Server* server_ = nullptr;
-  grpc_core::ChannelArgs server_args_;
-  std::shared_ptr<grpc::ServerCredentials> creds_;
-};
-
-// A PIMPL wrapper class that owns the passive listener implementation.
-// This is returned to the application.
-class PassiveListenerWrapper : public PassiveListener {
- public:
-  explicit PassiveListenerWrapper(std::shared_ptr<PassiveListener> listener)
-      : listener_(listener) {}
-  void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) override {
-    listener_->AcceptConnectedEndpoint(std::move(endpoint));
-  }
-
-  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override {
-    return listener_->AcceptConnectedFd(fd);
-  }
-
- private:
-  std::shared_ptr<PassiveListener> listener_;
-};
-
-}  // namespace experimental
 
 static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
     g_plugin_factory_list;
@@ -320,9 +235,10 @@ ServerBuilder& ServerBuilder::CreatePassiveListener(
   auto chttp2_listener =
       std::make_shared<experimental::ServerBuilderPassiveListener>(
           std::move(creds));
-  passive_listener_ = chttp2_listener;
-  passive_listener = std::make_unique<experimental::PassiveListenerWrapper>(
-      std::move(chttp2_listener));
+  passive_listeners_.push_back(chttp2_listener);
+  passive_listener =
+      std::make_unique<grpc::experimental::PassiveListenerWrapper>(
+          std::move(chttp2_listener));
   return *this;
 }
 
@@ -431,10 +347,6 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (callback_generic_service_ != nullptr) {
-    has_frequently_polled_cqs = true;
-  }
-
-  if (passive_listener_.lock() != nullptr) {
     has_frequently_polled_cqs = true;
   }
 
@@ -549,10 +461,12 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     }
   }
 
-  auto passive_listener = passive_listener_.lock();
-  if (passive_listener != nullptr) {
-    // DO NOT SUBMIT(hork): implement setting server on listener
-    passive_listener->Initialize(server.get(), args);
+  for (auto& weak_passive_listener : passive_listeners_) {
+    auto passive_listener = weak_passive_listener.lock();
+    if (passive_listener != nullptr) {
+      // DO NOT SUBMIT(hork): implement setting server on listener
+      passive_listener->Initialize(server.get(), args);
+    }
   }
 
   auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
