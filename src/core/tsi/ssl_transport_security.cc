@@ -1078,11 +1078,13 @@ static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
   if (ret != 1) {
     // Couldn't get CRL
     // TODO(gtcooke94) - open fails vs. close fail
+    X509_CRL_free(crl);
     return 1;
   }
   // Validate the crl
   // RFC5280 6.3.3(a-i)
   if (!ValidateCrl(cert, issuer, crl)) {
+    X509_CRL_free(crl);
     return 0;
   }
 
@@ -1091,9 +1093,11 @@ static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
   X509_REVOKED* rev;
   if (X509_CRL_get0_by_cert(crl, &rev, cert)) {
     // cert is revoked
+    X509_CRL_free(crl);
     return 0;
   }
   // The certificate is not revoked
+  X509_CRL_free(crl);
   return 1;
   // RFC5280j - Not supporting reasons
   // RFC5280k - Not supporting reasons
