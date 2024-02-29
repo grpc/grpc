@@ -5479,6 +5479,7 @@ grpc_cc_library(
         "json_object_loader",
         "lb_policy",
         "lb_policy_factory",
+        "metrics",
         "resolved_address",
         "subchannel_interface",
         "time",
