@@ -996,6 +996,8 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   return provider;
 }
 
+// If a CRL is returned, the caller is the owner of the CRL and must make sure
+// it is freed.
 static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
     grpc_core::experimental::CrlProvider* provider, X509* cert) {
   if (provider == nullptr) {
