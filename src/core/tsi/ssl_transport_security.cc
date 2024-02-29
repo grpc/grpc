@@ -978,7 +978,7 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   if (ssl_index < 0) {
     char err_str[256];
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "error getting the SSL index from the X509_STORE_CTX while looking "
             "up Crl: %s",
             err_str);
@@ -986,7 +986,7 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "error while fetching from CrlProvider. SSL object is null");
     return nullptr;
   }
@@ -1068,6 +1068,7 @@ static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
 }
 
 // Check if a given certificate is revoked
+// Returns 1 if the certificate is not revoked, 0 if the certificate is revoked
 static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
                                X509* cert, X509* issuer) {
   auto crl = GetCrlFromProvider(provider, cert);
@@ -1075,6 +1076,7 @@ static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
     // TODO(gtcooke94) knob for fail open vs. close
     return 1;
   } else if (!crl.ok()) {
+    // This is an unexpected error, return false
     return 0;
   }
   // Validate the crl
@@ -2302,13 +2304,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
-    X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
-    // X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-    // X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-    // X509_STORE_set_verify_cb(cert_store, verify_cb);
-    // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-    // X509_VERIFY_PARAM_set_flags(
-    //     param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
   } else if (options->crl_directory != nullptr &&
              strcmp(options->crl_directory, "") != 0) {
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
@@ -2507,14 +2502,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,
                             options->crl_provider.get());
-        // X509_STORE* cert_store =
-        // SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-        // X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-        // X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-        // X509_STORE_set_verify_cb(cert_store, verify_cb);
-        // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-        // X509_VERIFY_PARAM_set_flags(
-        //     param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       } else if (options->crl_directory != nullptr &&
                  strcmp(options->crl_directory, "") != 0) {
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
