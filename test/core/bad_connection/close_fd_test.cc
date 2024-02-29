@@ -39,6 +39,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -108,7 +109,7 @@ static void client_setup_transport(grpc_core::Transport* transport) {
       grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
   // TODO (pjaikumar): use GRPC_CLIENT_CHANNEL instead of
   // GRPC_CLIENT_DIRECT_CHANNEL
-  g_ctx.client = (*grpc_core::Channel::Create(
+  g_ctx.client = (*grpc_core::ChannelCreate(
                       "socketpair-target", grpc_core::ChannelArgs::FromC(args),
                       GRPC_CLIENT_DIRECT_CHANNEL, transport))
                      .release()

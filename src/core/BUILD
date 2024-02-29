@@ -114,6 +114,35 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "server_call_tracer_filter",
+    srcs = [
+        "lib/channel/server_call_tracer_filter.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "arena_promise",
+        "call_finalization",
+        "cancel_callback",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "context",
+        "map",
+        "pipe",
+        "//:call_tracer",
+        "//:config",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:legacy_context",
+    ],
+)
+
+grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
     public_hdrs = ["lib/gprpp/atomic_utils.h"],
@@ -137,6 +166,7 @@ grpc_cc_library(
         "hpack_constants",
         "metadata_batch",
         "slice",
+        "//:call_tracer",
         "//:gpr_platform",
         "//:grpc_base",
     ],
@@ -2526,10 +2556,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channel_args_endpoint_config",
     srcs = [
-        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
+        "lib/event_engine/channel_args_endpoint_config.cc",
     ],
     hdrs = [
-        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
+        "lib/event_engine/channel_args_endpoint_config.h",
     ],
     external_deps = [
         "absl/strings",
@@ -2890,6 +2920,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "server_interface",
+    hdrs = [
+        "lib/surface/server_interface.h",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "//:channelz",
+    ],
+)
+
+grpc_cc_library(
     name = "single_set_ptr",
     hdrs = [
         "lib/gprpp/single_set_ptr.h",
@@ -3005,6 +3047,7 @@ grpc_cc_library(
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
+        "//:call_tracer",
         "//:gpr_public_hdrs",
         "//:grpc_base",
         "//:legacy_context",
@@ -5108,6 +5151,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:parse_address",
         "//:ref_counted_ptr",
+        "//:server",
         "//:sockaddr_utils",
         "//:uri_parser",
         "//:xds_client",
@@ -6649,6 +6693,7 @@ grpc_cc_library(
         "unique_type_name",
         "//:api_trace",
         "//:channel",
+        "//:channel_create",
         "//:channel_arg_names",
         "//:channelz",
         "//:config",
@@ -6719,6 +6764,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:server",
         "//:sockaddr_utils",
         "//:uri_parser",
     ],
@@ -6760,6 +6806,7 @@ grpc_cc_library(
         "try_seq",
         "//:api_trace",
         "//:channel",
+        "//:channel_create",
         "//:channel_arg_names",
         "//:channelz",
         "//:config",
@@ -6772,6 +6819,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:server",
     ],
 )
 
@@ -7129,6 +7177,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_finalization",
+    hdrs = [
+        "lib/channel/call_finalization.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "arena",
+        "call_final_info",
+        "context",
+    ],
+)
+
+grpc_cc_library(
     name = "call_filters",
     srcs = [
         "lib/transport/call_filters.cc",
@@ -7411,6 +7473,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:server",
     ],
 )
 

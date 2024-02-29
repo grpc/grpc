@@ -24,7 +24,6 @@
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
@@ -63,8 +62,7 @@ namespace grpc_core {
 
 absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
-    grpc_channel_stack_type channel_stack_type,
-    grpc_compression_options compression_options) {
+    grpc_channel_stack_type channel_stack_type) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
@@ -99,8 +97,7 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
       GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
-      builder.IsPromising(), std::move(target), args, compression_options,
-      std::move(*r));
+      builder.IsPromising(), std::move(target), args, std::move(*r));
 }
 
 namespace {
@@ -118,9 +115,8 @@ class NotReallyACallFactory final : public CallFactory {
 LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
                              const ChannelArgs& channel_args,
-                             grpc_compression_options compression_options,
                              RefCountedPtr<grpc_channel_stack> channel_stack)
-    : Channel(std::move(target), channel_args, compression_options),
+    : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
       channel_stack_(std::move(channel_stack)),

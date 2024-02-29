@@ -27,6 +27,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
@@ -60,11 +61,10 @@ Channel::RegisteredCall::~RegisteredCall() {}
 // Channel
 //
 
-Channel::Channel(std::string target, const ChannelArgs& channel_args,
-                 grpc_compression_options compression_options)
+Channel::Channel(std::string target, const ChannelArgs& channel_args)
     : target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      compression_options_(compression_options) {}
+      compression_options_(CompressionOptionsFromChannelArgs(channel_args)) {}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {

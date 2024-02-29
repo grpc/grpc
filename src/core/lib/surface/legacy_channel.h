@@ -28,7 +28,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/impl/compression_types.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -49,13 +48,11 @@ class LegacyChannel : public Channel {
  public:
   static absl::StatusOr<OrphanablePtr<Channel>> Create(
       std::string target, ChannelArgs args,
-      grpc_channel_stack_type channel_stack_type,
-      grpc_compression_options compression_options);
+      grpc_channel_stack_type channel_stack_type);
 
   // Do not instantiate directly -- use Create() instead.
   LegacyChannel(bool is_client, bool is_promising, std::string target,
                 const ChannelArgs& channel_args,
-                grpc_compression_options compression_options,
                 RefCountedPtr<grpc_channel_stack> channel_stack);
 
   void Orphan() override;
