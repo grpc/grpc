@@ -143,7 +143,6 @@ void gpr_set_log_function(gpr_log_func f) {
 }
 
 void gpr_default_log(gpr_log_func_args* args) {
-  base_logging::LogSeverity glog_severity = 0;
   switch (args->severity) {
     case GPR_LOG_SEVERITY_DEBUG:
       //  TODO(tjagtap) : Make it debug
