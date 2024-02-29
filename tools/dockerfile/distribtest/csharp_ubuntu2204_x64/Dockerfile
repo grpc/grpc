@@ -23,6 +23,8 @@ RUN dpkg -i packages-microsoft-prod.deb
 RUN rm packages-microsoft-prod.deb
 
 RUN apt-get update && apt-get install -y dotnet-sdk-7.0
+# Set up links so that the dotnet command can find the installed SDK
+RUN for f in /usr/share/dotnet/* ; do ln -s $f /usr/lib/dotnet ; done
 
 # we only want to test dotnet core 6.0 runtime. This also allows us to keep
 # this docker image minimal by not installing the other runtimes.
