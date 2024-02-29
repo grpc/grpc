@@ -996,15 +996,15 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   return provider;
 }
 
-static int GetCrlFromProvider(grpc_core::experimental::CrlProvider* provider,
-                              X509_CRL** crl_out, X509* cert) {
+static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
+    grpc_core::experimental::CrlProvider* provider, X509* cert) {
   if (provider == nullptr) {
-    return 0;
+    return absl::InvalidArgumentError("CrlProvider is null.");
   }
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
     gpr_log(GPR_INFO, "Could not get certificate issuer name");
-    return 0;
+    return absl::InvalidArgumentError(issuer_name.status().message());
   }
   absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
   std::string akid_to_use;
@@ -1023,24 +1023,22 @@ static int GetCrlFromProvider(grpc_core::experimental::CrlProvider* provider,
   // and behave how we want for a missing CRL.
   // It is important to treat missing CRLs and empty CRLs differently.
   if (internal_crl == nullptr) {
-    return 0;
+    return absl::NotFoundError("Could not find Crl related to certificate.");
   }
   X509_CRL* crl =
       std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
           ->crl();
 
-  X509_CRL* copy = X509_CRL_dup(crl);
-  *crl_out = copy;
-  return 1;
+  return X509_CRL_dup(crl);
 }
 
 // When using CRL Providers, this function used to override the default
 // `check_crl` function in OpenSSL using `X509_STORE_set_check_crl`.
-// CrlProviders put the onus on the users to provide the CRLs that they want to
-// provide, and because we override default CRL fetching behavior, we can expect
-// some of these verification checks to fails for custom CRL providers as well.
-// Thus, we need a passthrough to indicate to OpenSSL that we've provided a CRL
-// and we are good with it.
+// CrlProviders put the onus on the users to provide the CRLs that they want
+// to provide, and because we override default CRL fetching behavior, we can
+// expect some of these verification checks to fails for custom CRL providers
+// as well. Thus, we need a passthrough to indicate to OpenSSL that we've
+// provided a CRL and we are good with it.
 static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
   return 1;
 }
@@ -1072,31 +1070,31 @@ static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
 // Check if a given certificate is revoked
 static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
                                X509* cert, X509* issuer) {
-  X509_CRL* crl = nullptr;
-  int ret = GetCrlFromProvider(provider, &crl, cert);
-  if (ret != 1) {
-    // Couldn't get CRL
-    // TODO(gtcooke94) - open fails vs. close fail
-    X509_CRL_free(crl);
+  auto crl = GetCrlFromProvider(provider, cert);
+  if (absl::IsNotFound(crl.status())) {
+    // TODO(gtcooke94) knob for fail open vs. close
     return 1;
+  } else if (!crl.ok()) {
+    return 0;
   }
   // Validate the crl
   // RFC5280 6.3.3(a-i)
-  if (!ValidateCrl(cert, issuer, crl)) {
-    X509_CRL_free(crl);
+  if (!ValidateCrl(cert, issuer, *crl)) {
+    X509_CRL_free(*crl);
     return 0;
   }
 
   // RFC5280 6.3.3j Actually check revocation
-  // Look for serial number of certificate in CRL  X509_REVOKED* rev = nullptr;
+  // Look for serial number of certificate in CRL  X509_REVOKED* rev =
+  // nullptr;
   X509_REVOKED* rev;
-  if (X509_CRL_get0_by_cert(crl, &rev, cert)) {
+  if (X509_CRL_get0_by_cert(*crl, &rev, cert)) {
     // cert is revoked
-    X509_CRL_free(crl);
+    X509_CRL_free(*crl);
     return 0;
   }
   // The certificate is not revoked
-  X509_CRL_free(crl);
+  X509_CRL_free(*crl);
   return 1;
   // RFC5280j - Not supporting reasons
   // RFC5280k - Not supporting reasons
@@ -1176,9 +1174,9 @@ static tsi_result tsi_set_min_and_max_tls_versions(
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
 #if defined(TLS1_3_VERSION)
-    // If the library does not support TLS 1.3 and the caller requests a minimum
-    // of TLS 1.3, then return an error because the caller's request cannot be
-    // satisfied.
+    // If the library does not support TLS 1.3 and the caller requests a
+    // minimum of TLS 1.3, then return an error because the caller's request
+    // cannot be satisfied.
     case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
@@ -1693,8 +1691,8 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
   *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
   int bytes_read = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining,
                             static_cast<int>(bytes_in_ssl));
-  // If an unexpected number of bytes were read, return an error status and free
-  // all of the bytes that were read.
+  // If an unexpected number of bytes were read, return an error status and
+  // free all of the bytes that were read.
   if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
     gpr_log(GPR_ERROR,
             "Failed to read the expected number of bytes from SSL object.");
@@ -1769,16 +1767,16 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
           impl, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
           error);
       // As long as the BIO is full, drive the SSL handshake to consume bytes
-      // from the BIO. If the SSL handshake returns any bytes, write them to the
-      // peer.
+      // from the BIO. If the SSL handshake returns any bytes, write them to
+      // the peer.
       while (status == TSI_DRAIN_BUFFER) {
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
         if (status != TSI_OK) return status;
         status = ssl_handshaker_do_handshake(impl, error);
       }
-      // Move the pointer to the first byte not yet successfully written to the
-      // BIO.
+      // Move the pointer to the first byte not yet successfully written to
+      // the BIO.
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
@@ -1794,9 +1792,9 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
     *handshaker_result = nullptr;
   } else {
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
-    // complete must be extracted and set to the unused bytes of the handshaker
-    // result. This indicates to the gRPC stack that there are bytes from the
-    // peer that must be processed.
+    // complete must be extracted and set to the unused bytes of the
+    // handshaker result. This indicates to the gRPC stack that there are
+    // bytes from the peer that must be processed.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status =
@@ -1811,8 +1809,8 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
-      // Indicates that the handshake has completed and that a handshaker_result
-      // has been created.
+      // Indicates that the handshake has completed and that a
+      // handshaker_result has been created.
       self->handshaker_result_created = true;
     }
   }
