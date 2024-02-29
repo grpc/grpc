@@ -205,7 +205,11 @@ class StatsPlugin {
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
 
+  // Adds a callback to be invoked when the stats plugin wants to
+  // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
+  // Removes a callback previously added via AddCallback().  The stats
+  // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
   // TODO(yijiem): Details pending.
@@ -289,6 +293,11 @@ class GlobalStatsPluginRegistry {
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
     // will be invoked no more often than min_interval.
+    //
+    // The returned object is a handle that allows the caller to control
+    // the lifetime of the callback; when the returned object is
+    // destroyed, the callback is de-registered.  The returned object
+    // must not outlive the StatsPluginGroup object that created it.
     std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
@@ -331,12 +340,17 @@ class RegisteredMetricCallback {
 
   ~RegisteredMetricCallback();
 
+  // Invokes the callback.  The callback will report metric data via reporter.
   void Run(CallbackMetricReporter& reporter) { callback_(reporter); }
 
+  // Returns the set of metrics that this callback will modify.
   const std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle>& metrics()
       const {
     return metrics_;
   }
+
+  // Returns the minimum interval at which a stats plugin may invoke the
+  // callback.
   Duration min_interval() const { return min_interval_; }
 
  private:

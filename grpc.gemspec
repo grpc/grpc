@@ -1401,6 +1401,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/time_util.h )
   s.files += %w( src/core/lib/gprpp/type_list.h )
   s.files += %w( src/core/lib/gprpp/unique_type_name.h )
+  s.files += %w( src/core/lib/gprpp/uuid_v4.cc )
+  s.files += %w( src/core/lib/gprpp/uuid_v4.h )
   s.files += %w( src/core/lib/gprpp/validation_errors.cc )
   s.files += %w( src/core/lib/gprpp/validation_errors.h )
   s.files += %w( src/core/lib/gprpp/windows/directory_reader.cc )

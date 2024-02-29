@@ -359,9 +359,12 @@ class FakeStatsPlugin : public StatsPlugin {
     iter->second.Set(value, label_values, optional_values);
   }
   void AddCallback(RegisteredMetricCallback* callback) override {
+    gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::AddCallback(%p)", this, callback);
     callbacks_.insert(callback);
   }
   void RemoveCallback(RegisteredMetricCallback* callback) override {
+    gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::RemoveCallback(%p)", this,
+            callback);
     callbacks_.erase(callback);
   }
 
