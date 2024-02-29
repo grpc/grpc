@@ -1053,7 +1053,8 @@ static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3d Not supporting reasons masks
   // 6.3.3e Not supporting reasons masks
   // 6.3.3f We only support direct CRLs so these paths are by definition the
-  // same 6.3.3g Verify CRL Signature
+  // same.
+  // 6.3.3g Verify CRL Signature
   valid = grpc_core::VerifyCrlSignature(crl, issuer);
   return valid;
 }
