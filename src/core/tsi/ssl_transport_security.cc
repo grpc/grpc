@@ -996,13 +996,8 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   return provider;
 }
 
-// X509_STORE_set_get_crl() sets the function to get the crl for a given
-// certificate x. When found, the crl must be assigned to *crl. This function
-// must return 0 on failure and 1 on success. If no function to get the issuer
-// is provided, the internal default function will be used instead.
-static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
-                              X509* cert) {
-  auto* provider = GetCrlProvider(ctx);
+static int GetCrlFromProvider(grpc_core::experimental::CrlProvider* provider,
+                              X509_CRL** crl_out, X509* cert) {
   if (provider == nullptr) {
     return 0;
   }
@@ -1050,6 +1045,8 @@ static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
   return 1;
 }
 
+// Perform the validation checks in RFC5280 6.3.3 to ensure the given CRL is
+// valid
 static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   bool valid = true;
   // RFC5280 6.3.3
@@ -1072,9 +1069,11 @@ static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   return valid;
 }
 
-static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
+// Check if a given certificate is revoked
+static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
+                               X509* cert, X509* issuer) {
   X509_CRL* crl = nullptr;
-  int ret = GetCrlFromProvider(ctx, &crl, cert);
+  int ret = GetCrlFromProvider(provider, &crl, cert);
   if (ret != 1) {
     // Couldn't get CRL
     // TODO(gtcooke94) - open fails vs. close fail
@@ -1103,7 +1102,9 @@ static int CheckCertRevocation(X509_STORE_CTX* ctx, X509* cert, X509* issuer) {
   // RFC5280k - Not supporting reasons
 }
 
-static int CheckChainRevocation(X509_STORE_CTX* ctx) {
+// Checks each certificate in the chain for revocation
+static int CheckChainRevocation(
+    X509_STORE_CTX* ctx, grpc_core::experimental::CrlProvider* provider) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
 #else
@@ -1121,7 +1122,7 @@ static int CheckChainRevocation(X509_STORE_CTX* ctx) {
   for (int i = 0; i < chain_length - 1; i++) {
     X509* cert = sk_X509_value(chain, i);
     X509* issuer = sk_X509_value(chain, i + 1);
-    int ret = CheckCertRevocation(ctx, cert, issuer);
+    int ret = CheckCertRevocation(provider, cert, issuer);
     if (ret != 1) {
       return ret;
     }
@@ -1129,6 +1130,10 @@ static int CheckChainRevocation(X509_STORE_CTX* ctx) {
   return 1;
 }
 
+// The custom verification function to set in OpenSSL.
+// This calls the standard OpenSSL proceudre (X509_verify_cert), then also
+// extracts the root certificate in the built chain and does revocation checks
+// when a user has configured CrlProviders.
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   // Use arg maybe
   int ret = X509_verify_cert(ctx);
@@ -1143,8 +1148,9 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
     // Something has failed return the failure
     return ret;
   }
-  if (GetCrlProvider(ctx) != nullptr) {
-    ret = CheckChainRevocation(ctx);
+  grpc_core::experimental::CrlProvider* provider = GetCrlProvider(ctx);
+  if (provider != nullptr) {
+    ret = CheckChainRevocation(ctx, provider);
   }
   return ret;
 }
