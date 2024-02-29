@@ -185,6 +185,7 @@ class RlsEnd2endTest : public ::testing::Test {
           EXPECT_EQ(ctx->ExperimentalGetAuthority(), kServerName);
         });
     rls_server_->Start();
+    rls_server_target_ = absl::StrFormat("localhost:%d", rls_server_->port_);
     // Set up client.
     resolver_response_generator_ =
         std::make_unique<FakeResolverResponseGeneratorWrapper>();
@@ -299,8 +300,8 @@ class RlsEnd2endTest : public ::testing::Test {
 
   class ServiceConfigBuilder {
    public:
-    explicit ServiceConfigBuilder(int rls_server_port)
-        : rls_server_port_(rls_server_port) {}
+    explicit ServiceConfigBuilder(absl::string_view rls_server_target)
+        : rls_server_target_(rls_server_target) {}
 
     ServiceConfigBuilder& set_lookup_service_timeout(
         grpc_core::Duration timeout) {
@@ -337,7 +338,7 @@ class RlsEnd2endTest : public ::testing::Test {
       // First build parts of routeLookupConfig.
       std::vector<std::string> route_lookup_config_parts;
       route_lookup_config_parts.push_back(absl::StrFormat(
-          "        \"lookupService\":\"localhost:%d\"", rls_server_port_));
+          "        \"lookupService\":\"%s\"", rls_server_target_));
       if (lookup_service_timeout_ > grpc_core::Duration::Zero()) {
         route_lookup_config_parts.push_back(
             absl::StrFormat("        \"lookupServiceTimeout\":\"%fs\"",
@@ -386,7 +387,7 @@ class RlsEnd2endTest : public ::testing::Test {
     }
 
    private:
-    int rls_server_port_;
+    absl::string_view rls_server_target_;
     grpc_core::Duration lookup_service_timeout_;
     std::string default_target_;
     grpc_core::Duration max_age_;
@@ -396,7 +397,7 @@ class RlsEnd2endTest : public ::testing::Test {
   };
 
   ServiceConfigBuilder MakeServiceConfigBuilder() {
-    return ServiceConfigBuilder(rls_server_->port_);
+    return ServiceConfigBuilder(rls_server_target_);
   }
 
   void SetNextResolution(absl::string_view service_config_json) {
@@ -460,6 +461,7 @@ class RlsEnd2endTest : public ::testing::Test {
   };
 
   std::vector<std::unique_ptr<ServerThread<MyTestServiceImpl>>> backends_;
+  std::string rls_server_target_;
   std::unique_ptr<ServerThread<RlsServiceImpl>> rls_server_;
   std::unique_ptr<FakeResolverResponseGeneratorWrapper>
       resolver_response_generator_;
@@ -1388,53 +1390,59 @@ class RlsMetricsEnd2endTest : public RlsEnd2endTest {
   std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
 };
 
-TEST_F(RlsMetricsEnd2endTest, MetricDefinitionDefaultTargetRpcs) {
+TEST_F(RlsMetricsEnd2endTest, MetricDefinitionDefaultTargetPicks) {
   const auto* descriptor =
       grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.lb.rls.default_target_rpcs");
+          "grpc.lb.rls.default_target_picks");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
             grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
-  EXPECT_EQ(descriptor->name, "grpc.lb.rls.default_target_rpcs");
-  EXPECT_EQ(descriptor->unit, "{RPC}");
+  EXPECT_EQ(descriptor->name, "grpc.lb.rls.default_target_picks");
+  EXPECT_EQ(descriptor->unit, "{pick}");
   EXPECT_THAT(descriptor->label_keys,
-              ::testing::ElementsAre("grpc.target", "grpc.lb.rls_target"));
+              ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target",
+                                     "grpc.lb.rls.data_plane_target",
+                                     "grpc.lb.pick_result"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
-TEST_F(RlsMetricsEnd2endTest, MetricDefinitionTargetRpcs) {
+TEST_F(RlsMetricsEnd2endTest, MetricDefinitionTargetPicks) {
   const auto* descriptor =
       grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.lb.rls.target_rpcs");
+          "grpc.lb.rls.target_picks");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
             grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
-  EXPECT_EQ(descriptor->name, "grpc.lb.rls.target_rpcs");
-  EXPECT_EQ(descriptor->unit, "{RPC}");
+  EXPECT_EQ(descriptor->name, "grpc.lb.rls.target_picks");
+  EXPECT_EQ(descriptor->unit, "{pick}");
   EXPECT_THAT(descriptor->label_keys,
-              ::testing::ElementsAre("grpc.target", "grpc.lb.rls_target"));
+              ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target",
+                                     "grpc.lb.rls.data_plane_target",
+                                     "grpc.lb.pick_result"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
-TEST_F(RlsMetricsEnd2endTest, MetricDefinitionFailedRpcs) {
+TEST_F(RlsMetricsEnd2endTest, MetricDefinitionFailedPicks) {
   const auto* descriptor =
       grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
-          "grpc.lb.rls.failed_rpcs");
+          "grpc.lb.rls.failed_picks");
   ASSERT_NE(descriptor, nullptr);
   EXPECT_EQ(descriptor->value_type,
             grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
   EXPECT_EQ(descriptor->instrument_type,
             grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
   EXPECT_EQ(descriptor->enable_by_default, false);
-  EXPECT_EQ(descriptor->name, "grpc.lb.rls.failed_rpcs");
-  EXPECT_EQ(descriptor->unit, "{RPC}");
-  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
+  EXPECT_EQ(descriptor->name, "grpc.lb.rls.failed_picks");
+  EXPECT_EQ(descriptor->unit, "{pick}");
+  EXPECT_THAT(
+      descriptor->label_keys,
+      ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
@@ -1452,7 +1460,8 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheEntries) {
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.cache_entries");
   EXPECT_EQ(descriptor->unit, "{entry}");
   EXPECT_THAT(descriptor->label_keys,
-              ::testing::ElementsAre("grpc.target", "grpc.lb.rls_instance_id"));
+              ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target",
+                                     "grpc.lb.rls.instance_id"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
@@ -1470,18 +1479,19 @@ TEST_F(RlsMetricsEnd2endTest, MetricDefinitionCacheSize) {
   EXPECT_EQ(descriptor->name, "grpc.lb.rls.cache_size");
   EXPECT_EQ(descriptor->unit, "By");
   EXPECT_THAT(descriptor->label_keys,
-              ::testing::ElementsAre("grpc.target", "grpc.lb.rls_instance_id"));
+              ::testing::ElementsAre("grpc.target", "grpc.lb.rls.server_target",
+                                     "grpc.lb.rls.instance_id"));
   EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
 }
 
 TEST_F(RlsMetricsEnd2endTest, MetricValues) {
-  auto kMetricTargetRpcs =
+  auto kMetricTargetPicks =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindUInt64CounterHandleByName("grpc.lb.rls.target_rpcs")
+          FindUInt64CounterHandleByName("grpc.lb.rls.target_picks")
               .value();
-  auto kMetricFailedRpcs =
+  auto kMetricFailedPicks =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindUInt64CounterHandleByName("grpc.lb.rls.failed_rpcs")
+          FindUInt64CounterHandleByName("grpc.lb.rls.failed_picks")
               .value();
   auto kMetricCacheEntries =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
@@ -1520,21 +1530,26 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // Check exported metrics.
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricTargetRpcs,
-                                             {target_uri_, rls_target0}, {}),
-              ::testing::Optional(1));
-  EXPECT_EQ(stats_plugin_->GetCounterValue(kMetricTargetRpcs,
-                                           {target_uri_, rls_target1}, {}),
-            absl::nullopt);
-  EXPECT_EQ(
-      stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
+  EXPECT_THAT(
+      stats_plugin_->GetCounterValue(
+          kMetricTargetPicks,
+          {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
+      ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetCounterValue(
+          kMetricTargetPicks,
+          {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
       absl::nullopt);
+  EXPECT_EQ(stats_plugin_->GetCounterValue(
+                kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
+            absl::nullopt);
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
-                  kMetricCacheEntries, {target_uri_, kRlsInstanceId}, {}),
+                  kMetricCacheEntries,
+                  {target_uri_, rls_server_target_, kRlsInstanceId}, {}),
               ::testing::Optional(1));
   auto cache_size = stats_plugin_->GetCallbackGaugeValue(
-      kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
+      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceId}, {});
   EXPECT_THAT(cache_size, ::testing::Optional(::testing::Ge(1)));
   // Send an RPC to the target for backend 1.
   rls_server_->service_.SetResponse(BuildRlsRequest({{kTestKey, rls_target1}}),
@@ -1546,21 +1561,26 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Check exported metrics.
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricTargetRpcs,
-                                             {target_uri_, rls_target0}, {}),
-              ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricTargetRpcs,
-                                             {target_uri_, rls_target1}, {}),
-              ::testing::Optional(1));
-  EXPECT_EQ(
-      stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
-      absl::nullopt);
+  EXPECT_THAT(
+      stats_plugin_->GetCounterValue(
+          kMetricTargetPicks,
+          {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
+      ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetCounterValue(
+          kMetricTargetPicks,
+          {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
+      ::testing::Optional(1));
+  EXPECT_EQ(stats_plugin_->GetCounterValue(
+                kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
+            absl::nullopt);
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
-                  kMetricCacheEntries, {target_uri_, kRlsInstanceId}, {}),
+                  kMetricCacheEntries,
+                  {target_uri_, rls_server_target_, kRlsInstanceId}, {}),
               ::testing::Optional(2));
   auto cache_size2 = stats_plugin_->GetCallbackGaugeValue(
-      kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
+      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceId}, {});
   EXPECT_THAT(cache_size2, ::testing::Optional(::testing::Ge(2)));
   if (cache_size.has_value() && cache_size2.has_value()) {
     EXPECT_GT(*cache_size2, *cache_size);
@@ -1584,21 +1604,26 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Check exported metrics.
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricTargetRpcs,
-                                             {target_uri_, rls_target0}, {}),
-              ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricTargetRpcs,
-                                             {target_uri_, rls_target1}, {}),
-              ::testing::Optional(1));
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(kMetricFailedRpcs, {target_uri_}, {}),
+      stats_plugin_->GetCounterValue(
+          kMetricTargetPicks,
+          {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
       ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetCounterValue(
+          kMetricTargetPicks,
+          {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
+      ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetCounterValue(
+                  kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
+              ::testing::Optional(1));
   stats_plugin_->TriggerCallbacks();
   EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
-                  kMetricCacheEntries, {target_uri_, kRlsInstanceId}, {}),
+                  kMetricCacheEntries,
+                  {target_uri_, rls_server_target_, kRlsInstanceId}, {}),
               ::testing::Optional(3));
   auto cache_size3 = stats_plugin_->GetCallbackGaugeValue(
-      kMetricCacheSize, {target_uri_, kRlsInstanceId}, {});
+      kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceId}, {});
   EXPECT_THAT(cache_size3, ::testing::Optional(::testing::Ge(3)));
   if (cache_size.has_value() && cache_size3.has_value()) {
     EXPECT_GT(*cache_size3, *cache_size);
@@ -1606,9 +1631,9 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
 }
 
 TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
-  auto kMetricDefaultTargetRpcs =
+  auto kMetricDefaultTargetPicks =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
-          FindUInt64CounterHandleByName("grpc.lb.rls.default_target_rpcs")
+          FindUInt64CounterHandleByName("grpc.lb.rls.default_target_picks")
               .value();
   StartBackends(1);
   const std::string default_target = grpc_core::LocalIpUri(backends_[0]->port_);
@@ -1645,9 +1670,11 @@ TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
   EXPECT_EQ(rls_server_->service_.response_count(), 0);
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // Check expected metrics.
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricDefaultTargetRpcs,
-                                             {target_uri_, default_target}, {}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin_->GetCounterValue(
+          kMetricDefaultTargetPicks,
+          {target_uri_, rls_server_target_, default_target, "complete"}, {}),
+      ::testing::Optional(1));
 }
 
 }  // namespace

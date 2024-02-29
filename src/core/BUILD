@@ -4768,6 +4768,7 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
         "metrics",
         "pollset_set",
         "slice",

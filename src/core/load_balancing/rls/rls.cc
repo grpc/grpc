@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <atomic>
 #include <deque>
 #include <list>
 #include <map>
@@ -75,6 +76,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -114,42 +116,58 @@ TraceFlag grpc_lb_rls_trace(false, "rls_lb");
 
 namespace {
 
-constexpr absl::string_view kMetricLabelRlsTarget = "grpc.lb.rls_target";
+constexpr absl::string_view kMetricLabelRlsServerTarget =
+    "grpc.lb.rls.server_target";
 constexpr absl::string_view kMetricLabelRlsInstanceId =
-    "grpc.lb.rls_instance_id";
-
-const auto kMetricDefaultTargetRpcs =
-    GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.lb.rls.default_target_rpcs",
-        "EXPERIMENTAL.  Number of RPCs sent to the default target.",
-        "{RPC}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
-
-const auto kMetricTargetRpcs =
-    GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.lb.rls.target_rpcs",
-        "EXPERIMENTAL.  Number of RPCs sent to each RLS target.  Note that "
-        "if the default target is also returned by the RLS server, RPCs sent "
-        "to that target from the cache will be counted in this metric, not "
-        "in grpc.rls.default_target_rpcs.",
-        "{RPC}", {kMetricLabelTarget, kMetricLabelRlsTarget}, {}, false);
-
-const auto kMetricFailedRpcs =
-    GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.lb.rls.failed_rpcs",
-        "EXPERIMENTAL.  Number of RPCs failed due to either a failed RLS "
-        "request or the RLS channel being throttled.",
-        "{RPC}", {kMetricLabelTarget}, {}, false);
+    "grpc.lb.rls.instance_id";
+constexpr absl::string_view kMetricRlsDataPlaneTarget =
+    "grpc.lb.rls.data_plane_target";
+constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
 
 const auto kMetricCacheSize =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.",
-        "By", {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
+        "By",
+        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
+         kMetricLabelRlsInstanceId},
+        {}, false);
 
 const auto kMetricCacheEntries =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_entries",
         "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}",
-        {kMetricLabelTarget, kMetricLabelRlsInstanceId}, {}, false);
+        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
+         kMetricLabelRlsInstanceId},
+        {}, false);
+
+const auto kMetricDefaultTargetPicks =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.rls.default_target_picks",
+        "EXPERIMENTAL.  Number of LB picks sent to the default target.",
+        "{pick}",
+        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
+         kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
+        {}, false);
+
+const auto kMetricTargetPicks =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.rls.target_picks",
+        "EXPERIMENTAL.  Number of LB picks sent to each RLS target.  Note that "
+        "if the default target is also returned by the RLS server, RPCs sent "
+        "to that target from the cache will be counted in this metric, not "
+        "in grpc.rls.default_target_picks.",
+        "{pick}",
+        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
+         kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
+        {}, false);
+
+const auto kMetricFailedPicks =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.rls.failed_picks",
+        "EXPERIMENTAL.  Number of LB picks failed due to either a failed RLS "
+        "request or the RLS channel being throttled.",
+        "{pick}", {kMetricLabelTarget, kMetricLabelRlsServerTarget}, {},
+        false);
 
 constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
@@ -737,6 +755,10 @@ class RlsLb : public LoadBalancingPolicy {
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
+  void MaybeExportPickCount(
+      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+      absl::string_view target, const PickResult& pick_result);
+
   const std::string instance_id_;
   std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
 
@@ -1087,15 +1109,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
               lb_policy_.get(), this, reason);
     }
     auto pick_result = default_child_policy_->Pick(args);
-// FIXME: is this the right logic?
-    if (!absl::holds_alternative<PickResult::Queue>(pick_result.result)) {
-      auto& stats_plugins =
-          lb_policy_->channel_control_helper()->GetStatsPluginGroup();
-      stats_plugins.AddCounter(
-          kMetricDefaultTargetRpcs, 1,
-          {lb_policy_->channel_control_helper()->GetTarget(),
-           config_->default_target()}, {});
-    }
+    lb_policy_->MaybeExportPickCount(
+        kMetricDefaultTargetPicks, config_->default_target(), pick_result);
     return pick_result;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
@@ -1105,8 +1120,9 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
   auto& stats_plugins =
       lb_policy_->channel_control_helper()->GetStatsPluginGroup();
   stats_plugins.AddCounter(
-      kMetricFailedRpcs, 1,
-      {lb_policy_->channel_control_helper()->GetTarget()}, {});
+      kMetricFailedPicks, 1,
+      {lb_policy_->channel_control_helper()->GetTarget(),
+       config_->lookup_service()}, {});
   return PickResult::Fail(std::move(status));
 }
 
@@ -1252,16 +1268,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
     args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
   }
   auto pick_result = child_policy_wrapper->Pick(args);
-// FIXME: the stats will be skewed for wait_for_ready RPCs...
-  if (!absl::holds_alternative<LoadBalancingPolicy::PickResult::Queue>(
-          pick_result.result)) {
-    auto& stats_plugins =
-        lb_policy_->channel_control_helper()->GetStatsPluginGroup();
-    stats_plugins.AddCounter(kMetricTargetRpcs, 1,
-                             {lb_policy_->channel_control_helper()->GetTarget(),
-                              child_policy_wrapper->target()},
-                             {});
-  }
+  lb_policy_->MaybeExportPickCount(
+      kMetricTargetPicks, child_policy_wrapper->target(), pick_result);
   return pick_result;
 }
 
@@ -1444,10 +1452,12 @@ void RlsLb::Cache::Shutdown() {
 void RlsLb::Cache::ReportMetricsLocked(CallbackMetricReporter& reporter) {
   reporter.Report(kMetricCacheSize, size_,
                   {lb_policy_->channel_control_helper()->GetTarget(),
+                   lb_policy_->config_->lookup_service(),
                    lb_policy_->instance_id_},
                   {});
   reporter.Report(kMetricCacheEntries, map_.size(),
                   {lb_policy_->channel_control_helper()->GetTarget(),
+                   lb_policy_->config_->lookup_service(),
                    lb_policy_->instance_id_},
                   {});
 }
@@ -1930,11 +1940,14 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 // RlsLb
 //
 
+// Atomic counter for RLS instance ID.
+std::atomic<uint64_t> g_instance_id;
+
 RlsLb::RlsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
       instance_id_(
           channel_args().GetOwnedString(GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID)
-              .value_or(absl::StrFormat("%p", this))),
+              .value_or(absl::StrFormat("%u", g_instance_id.fetch_add(1)))),
       registered_metric_callback_(
           channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
               [this](CallbackMetricReporter& reporter) {
@@ -2209,6 +2222,32 @@ void RlsLb::UpdatePickerLocked() {
   channel_control_helper()->UpdateState(
       state, status,
       MakeRefCounted<Picker>(RefAsSubclass<RlsLb>(DEBUG_LOCATION, "Picker")));
+}
+
+void RlsLb::MaybeExportPickCount(
+    GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+    absl::string_view target, const PickResult& pick_result) {
+  absl::string_view pick_result_string =
+      Match(pick_result.result,
+            [](const LoadBalancingPolicy::PickResult::Complete&) {
+              return "complete";
+            },
+            [](const LoadBalancingPolicy::PickResult::Queue&) {
+              return "";
+            },
+            [](const LoadBalancingPolicy::PickResult::Fail&) {
+              return "fail";
+            },
+            [](const LoadBalancingPolicy::PickResult::Drop&) {
+              return "drop";
+            });
+  if (pick_result_string.empty()) return;  // Don't report queued picks.
+  auto& stats_plugins = channel_control_helper()->GetStatsPluginGroup();
+  stats_plugins.AddCounter(
+      handle, 1,
+      {channel_control_helper()->GetTarget(), config_->lookup_service(),
+       target, pick_result_string},
+      {});
 }
 
 //
