@@ -2044,6 +2044,7 @@ libs:
   - z
   - absl/algorithm:container
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -3105,6 +3106,7 @@ libs:
   - z
   - absl/algorithm:container
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -5020,6 +5022,7 @@ libs:
   - utf8_range_lib
   - z
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -6495,6 +6498,7 @@ targets:
   - upb_message_lib
   - utf8_range_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -13473,12 +13477,14 @@ targets:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/pick_first_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - protobuf
