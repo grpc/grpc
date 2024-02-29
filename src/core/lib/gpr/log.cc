@@ -149,16 +149,14 @@ void gpr_default_log(gpr_log_func_args* args) {
       LOG(INFO).AtLocation(args->file, args->line) << args->message;
       return;
     case GPR_LOG_SEVERITY_INFO:
-      glog_severity = base_logging::INFO;
-      break;
+      LOG(INFO).AtLocation(args->file, args->line) << args->message;
+      return;
     case GPR_LOG_SEVERITY_ERROR:
-      glog_severity = base_logging::ERROR;
-      break;
+      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
+      return;
     default:
       LOG(ERROR) << __func__ << ": unknown gpr log severity(" << args->severity
                  << "), using ERROR";
-      glog_severity = base_logging::ERROR;
+      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
   }
-
-  LOG(LEVEL(glog_severity)).AtLocation(args->file, args->line) << args->message;
 }
