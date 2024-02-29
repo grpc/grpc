@@ -205,7 +205,11 @@ class StatsPlugin {
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
 
+  // Adds a callback to be invoked when the stats plugin wants to
+  // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
+  // Removes a callback previously added via AddCallback().  The stats
+  // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
   // TODO(yijiem): Details pending.
@@ -335,6 +339,7 @@ class RegisteredMetricCallback {
       const {
     return metrics_;
   }
+  // The minimum interval at which a stats plugin may invoke the callback.
   Duration min_interval() const { return min_interval_; }
 
  private:
