@@ -61,6 +61,9 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
+  // The authority reported for old-style (non-xdstp) resource names.
+  static constexpr absl::string_view kOldStyleAuthority = "#old";
+
   class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
    public:
     static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
@@ -171,7 +174,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // resource count for those labels.
   struct ResourceCountLabels {
     absl::string_view xds_authority;
-    absl::string_view xds_server;
     absl::string_view resource_type;
     absl::string_view cache_state;
   };

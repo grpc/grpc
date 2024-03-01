@@ -122,7 +122,7 @@ const auto kMetricResources =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.xds_client.resources", "EXPERIMENTAL.  Number of xDS resources.",
         "{resource}",
-        {kMetricLabelTarget, kMetricLabelXdsServer, kMetricLabelXdsAuthority,
+        {kMetricLabelTarget, kMetricLabelXdsAuthority,
          kMetricLabelXdsResourceType, kMetricLabelXdsCacheState},
         {}, false);
 
@@ -359,8 +359,8 @@ void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
   MutexLock lock(mu());
   ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
     reporter.Report(kMetricResources, count,
-                    {key_, labels.xds_server, labels.xds_authority,
-                     labels.resource_type, labels.cache_state},
+                    {key_, labels.xds_authority, labels.resource_type,
+                     labels.cache_state},
                     {});
   });
   ReportServerConnections([&](absl::string_view xds_server, bool connected) {

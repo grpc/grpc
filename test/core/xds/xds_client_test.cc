@@ -809,12 +809,10 @@ class XdsClientTest : public ::testing::Test {
   MetricsReporter* metrics_reporter_ = nullptr;
 };
 
-MATCHER_P4(ResourceCountLabelsEq, xds_authority, xds_server, resource_type,
-           cache_state, "equals ResourceCountLabels") {
+MATCHER_P3(ResourceCountLabelsEq, xds_authority, resource_type, cache_state,
+           "equals ResourceCountLabels") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(xds_authority, arg.xds_authority,
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(xds_server, arg.xds_server,
                                       result_listener);
   ok &= ::testing::ExplainMatchResult(resource_type, arg.resource_type,
                                       result_listener);
@@ -878,7 +876,7 @@ TEST_F(XdsClientTest, Metrics) {
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq("old:", "default_xds_server",
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(),
                                 "requested"),
           1)));
@@ -916,8 +914,9 @@ TEST_F(XdsClientTest, Metrics) {
   EXPECT_THAT(
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq("old:", "default_xds_server",
-                                XdsFooResourceType::Get()->type_url(), "acked"),
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(),
+                                "acked"),
           1)));
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", true)));

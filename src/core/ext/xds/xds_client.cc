@@ -1490,6 +1490,8 @@ bool XdsClient::XdsChannel::LrsCall::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
+constexpr absl::string_view XdsClient::kOldStyleAuthority;
+
 XdsClient::XdsClient(
     std::unique_ptr<XdsBootstrap> bootstrap,
     OrphanablePtr<XdsTransportFactory> transport_factory,
@@ -1745,10 +1747,11 @@ const XdsResourceType* XdsClient::GetResourceTypeLocked(
 absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style
-  // name.
+  // authority is set to kOldStyleAuthority to indicate that it's an
+  // old-style name.
   if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
-    return XdsResourceName{"old:", {std::string(name), {}}};
+    return XdsResourceName{std::string(kOldStyleAuthority),
+                           {std::string(name), {}}};
   }
   // New style name.  Parse URI.
   auto uri = URI::Parse(name);
@@ -2151,7 +2154,6 @@ void XdsClient::ReportResourceCounts(
   ResourceCountLabels labels;
   for (const auto& a : authority_state_map_) {  // authority
     labels.xds_authority = a.first;
-    labels.xds_server = a.second.xds_channel->server_uri();
     for (const auto& t : a.second.resource_map) {  // type
       labels.resource_type = t.first->type_url();
       // Count the number of entries in each state.

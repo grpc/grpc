@@ -43,13 +43,12 @@ class XdsClientTestPeer {
 
   struct ResourceCountLabels {
     std::string xds_authority;
-    std::string xds_server;
     std::string resource_type;
     std::string cache_state;
 
     std::string ToString() const {
-      return absl::StrCat("xds_authority=\"", xds_authority, "\" xds_server=\"",
-                          xds_server, "\" resource_type=\"", resource_type,
+      return absl::StrCat("xds_authority=\"", xds_authority,
+                          "\" resource_type=\"", resource_type,
                           "\" cache_state=\"", cache_state, "\"");
     }
   };
@@ -59,7 +58,6 @@ class XdsClientTestPeer {
     xds_client_->ReportResourceCounts(
         [&](const XdsClient::ResourceCountLabels& labels, uint64_t count) {
           ResourceCountLabels labels_copy = {std::string(labels.xds_authority),
-                                             std::string(labels.xds_server),
                                              std::string(labels.resource_type),
                                              std::string(labels.cache_state)};
           func(labels_copy, count);
