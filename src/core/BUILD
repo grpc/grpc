@@ -2928,6 +2928,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "//:channelz",
+        "//:gpr_platform",
     ],
 )
 
@@ -7189,6 +7190,7 @@ grpc_cc_library(
         "arena",
         "call_final_info",
         "context",
+        "//:gpr_platform",
     ],
 )
 
