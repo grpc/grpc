@@ -114,6 +114,35 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "server_call_tracer_filter",
+    srcs = [
+        "lib/channel/server_call_tracer_filter.cc",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "arena_promise",
+        "call_finalization",
+        "cancel_callback",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "context",
+        "map",
+        "pipe",
+        "//:call_tracer",
+        "//:config",
+        "//:gpr_platform",
+        "//:grpc_base",
+        "//:legacy_context",
+    ],
+)
+
+grpc_cc_library(
     name = "atomic_utils",
     language = "c++",
     public_hdrs = ["lib/gprpp/atomic_utils.h"],
@@ -126,6 +155,21 @@ grpc_cc_library(
         "lib/transport/metadata_compression_traits.h",
     ],
     deps = ["//:gpr_platform"],
+)
+
+grpc_cc_library(
+    name = "metadata_info",
+    srcs = ["lib/transport/metadata_info.cc"],
+    hdrs = ["lib/transport/metadata_info.h"],
+    deps = [
+        "channel_args",
+        "hpack_constants",
+        "metadata_batch",
+        "slice",
+        "//:call_tracer",
+        "//:gpr_platform",
+        "//:grpc_base",
+    ],
 )
 
 grpc_cc_library(
@@ -2512,10 +2556,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channel_args_endpoint_config",
     srcs = [
-        "//src/core:lib/event_engine/channel_args_endpoint_config.cc",
+        "lib/event_engine/channel_args_endpoint_config.cc",
     ],
     hdrs = [
-        "//src/core:lib/event_engine/channel_args_endpoint_config.h",
+        "lib/event_engine/channel_args_endpoint_config.h",
     ],
     external_deps = [
         "absl/strings",
@@ -2876,6 +2920,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "server_interface",
+    hdrs = [
+        "lib/surface/server_interface.h",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "//:channelz",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "single_set_ptr",
     hdrs = [
         "lib/gprpp/single_set_ptr.h",
@@ -2991,6 +3048,7 @@ grpc_cc_library(
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
+        "//:call_tracer",
         "//:gpr_public_hdrs",
         "//:grpc_base",
         "//:legacy_context",
@@ -3256,6 +3314,7 @@ grpc_cc_library(
         "error",
         "grpc_backend_metric_data",
         "iomgr_fwd",
+        "metrics",
         "pollset_set",
         "ref_counted",
         "resolved_address",
@@ -5093,6 +5152,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:parse_address",
         "//:ref_counted_ptr",
+        "//:server",
         "//:sockaddr_utils",
         "//:uri_parser",
         "//:xds_client",
@@ -5692,6 +5752,7 @@ grpc_cc_library(
         "connectivity_state",
         "experiments",
         "grpc_backend_metric_data",
+        "grpc_lb_policy_weighted_target",
         "grpc_lb_subchannel_list",
         "json",
         "json_args",
@@ -5699,6 +5760,7 @@ grpc_cc_library(
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "metrics",
         "ref_counted",
         "resolved_address",
         "static_stride_scheduler",
@@ -5838,6 +5900,9 @@ grpc_cc_library(
     srcs = [
         "load_balancing/weighted_target/weighted_target.cc",
     ],
+    hdrs = [
+        "load_balancing/weighted_target/weighted_target.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/meta:type_traits",
@@ -5960,6 +6025,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena_promise",
+        "call_finalization",
         "channel_args",
         "channel_fwd",
         "channel_stack_type",
@@ -6630,6 +6696,7 @@ grpc_cc_library(
         "//:api_trace",
         "//:channel",
         "//:channel_arg_names",
+        "//:channel_create",
         "//:channelz",
         "//:config",
         "//:debug_location",
@@ -6699,6 +6766,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:server",
         "//:sockaddr_utils",
         "//:uri_parser",
     ],
@@ -6741,6 +6809,7 @@ grpc_cc_library(
         "//:api_trace",
         "//:channel",
         "//:channel_arg_names",
+        "//:channel_create",
         "//:channelz",
         "//:config",
         "//:debug_location",
@@ -6752,6 +6821,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:server",
     ],
 )
 
@@ -6912,6 +6982,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "time",
+        "//:call_tracer",
         "//:channel_arg_names",
         "//:config",
         "//:gpr",
@@ -7109,6 +7180,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_finalization",
+    hdrs = [
+        "lib/channel/call_finalization.h",
+    ],
+    language = "c++",
+    visibility = ["@grpc:alt_grpc_base_legacy"],
+    deps = [
+        "arena",
+        "call_final_info",
+        "context",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "call_filters",
     srcs = [
         "lib/transport/call_filters.cc",
@@ -7241,7 +7327,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "chunked_vector",
-        "compression_internal",
+        "compression",
         "experiments",
         "if_list",
         "metadata_compression_traits",
@@ -7288,8 +7374,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "compression_internal",
+    name = "compression",
     srcs = [
+        "lib/compression/compression.cc",
         "lib/compression/compression_internal.cc",
     ],
     hdrs = [
@@ -7306,6 +7393,8 @@ grpc_cc_library(
         "channel_args",
         "ref_counted_string",
         "slice",
+        "useful",
+        "//:api_trace",
         "//:gpr",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
@@ -7372,6 +7461,7 @@ grpc_cc_library(
         "//:iomgr",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//:server",
     ],
 )
 
@@ -7435,6 +7525,28 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:iomgr",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "metrics",
+    srcs = [
+        "lib/channel/metrics.cc",
+    ],
+    hdrs = [
+        "lib/channel/metrics.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:function_ref",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "no_destruct",
+        "//:gpr",
     ],
 )
 

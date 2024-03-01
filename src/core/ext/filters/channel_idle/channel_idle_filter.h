@@ -56,16 +56,20 @@ class ChannelIdleFilter : public ImplementChannelFilter<ChannelIdleFilter> {
     explicit Call(ChannelIdleFilter* filter) : filter_(filter) {
       filter_->IncreaseCallCount();
     }
-    ~Call() { filter_->DecreaseCallCount(); }
+    ~Call() { MaybeDecrement(); }
 
     static const NoInterceptor OnClientInitialMetadata;
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
     static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    void OnFinalize(const grpc_call_final_info*) { MaybeDecrement(); }
 
    private:
+    void MaybeDecrement() {
+      auto* filter = std::exchange(filter_, nullptr);
+      if (filter != nullptr) filter->DecreaseCallCount();
+    }
     ChannelIdleFilter* filter_;
   };
 

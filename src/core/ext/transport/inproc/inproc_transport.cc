@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -189,7 +190,7 @@ OrphanablePtr<Channel> MakeInprocChannel(Server* server,
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
   std::ignore = server_transport.release();  // consumed by SetupTransport
-  auto channel = Channel::Create(
+  auto channel = ChannelCreate(
       "inproc",
       client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
       GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release());

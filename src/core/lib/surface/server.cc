@@ -77,6 +77,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -910,8 +911,9 @@ grpc_error_handle Server::SetupTransport(
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
+  global_stats().IncrementServerChannelsCreated();
   absl::StatusOr<OrphanablePtr<Channel>> channel =
-      Channel::Create("", args, GRPC_SERVER_CHANNEL, transport);
+      LegacyChannel::Create("", args.SetObject(transport), GRPC_SERVER_CHANNEL);
   if (!channel.ok()) {
     return absl_status_to_grpc_error(channel.status());
   }

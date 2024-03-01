@@ -168,6 +168,17 @@ struct GlobalStats {
     kWrrUpdates,
     kWorkSerializerItemsEnqueued,
     kWorkSerializerItemsDequeued,
+    kEconnabortedCount,
+    kEconnresetCount,
+    kEpipeCount,
+    kEtimedoutCount,
+    kEconnrefusedCount,
+    kEnetunreachCount,
+    kEnomsgCount,
+    kEnotconnCount,
+    kEnobufsCount,
+    kUncommonIoErrorCount,
+    kMsgErrqueueErrorCount,
     COUNT
   };
   enum class Histogram {
@@ -217,6 +228,17 @@ struct GlobalStats {
       uint64_t wrr_updates;
       uint64_t work_serializer_items_enqueued;
       uint64_t work_serializer_items_dequeued;
+      uint64_t econnaborted_count;
+      uint64_t econnreset_count;
+      uint64_t epipe_count;
+      uint64_t etimedout_count;
+      uint64_t econnrefused_count;
+      uint64_t enetunreach_count;
+      uint64_t enomsg_count;
+      uint64_t enotconn_count;
+      uint64_t enobufs_count;
+      uint64_t uncommon_io_error_count;
+      uint64_t msg_errqueue_error_count;
     };
     uint64_t counters[static_cast<int>(Counter::COUNT)];
   };
@@ -315,6 +337,41 @@ class GlobalStatsCollector {
     data_.this_cpu().work_serializer_items_dequeued.fetch_add(
         1, std::memory_order_relaxed);
   }
+  void IncrementEconnabortedCount() {
+    data_.this_cpu().econnaborted_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEconnresetCount() {
+    data_.this_cpu().econnreset_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEpipeCount() {
+    data_.this_cpu().epipe_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEtimedoutCount() {
+    data_.this_cpu().etimedout_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEconnrefusedCount() {
+    data_.this_cpu().econnrefused_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEnetunreachCount() {
+    data_.this_cpu().enetunreach_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEnomsgCount() {
+    data_.this_cpu().enomsg_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEnotconnCount() {
+    data_.this_cpu().enotconn_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementEnobufsCount() {
+    data_.this_cpu().enobufs_count.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementUncommonIoErrorCount() {
+    data_.this_cpu().uncommon_io_error_count.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void IncrementMsgErrqueueErrorCount() {
+    data_.this_cpu().msg_errqueue_error_count.fetch_add(
+        1, std::memory_order_relaxed);
+  }
   void IncrementCallInitialSize(int value) {
     data_.this_cpu().call_initial_size.Increment(value);
   }
@@ -381,6 +438,17 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> wrr_updates{0};
     std::atomic<uint64_t> work_serializer_items_enqueued{0};
     std::atomic<uint64_t> work_serializer_items_dequeued{0};
+    std::atomic<uint64_t> econnaborted_count{0};
+    std::atomic<uint64_t> econnreset_count{0};
+    std::atomic<uint64_t> epipe_count{0};
+    std::atomic<uint64_t> etimedout_count{0};
+    std::atomic<uint64_t> econnrefused_count{0};
+    std::atomic<uint64_t> enetunreach_count{0};
+    std::atomic<uint64_t> enomsg_count{0};
+    std::atomic<uint64_t> enotconn_count{0};
+    std::atomic<uint64_t> enobufs_count{0};
+    std::atomic<uint64_t> uncommon_io_error_count{0};
+    std::atomic<uint64_t> msg_errqueue_error_count{0};
     HistogramCollector_65536_26 call_initial_size;
     HistogramCollector_16777216_20 tcp_write_size;
     HistogramCollector_80_10 tcp_write_iov_size;

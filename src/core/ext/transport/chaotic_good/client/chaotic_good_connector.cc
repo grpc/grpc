@@ -58,6 +58,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -67,7 +68,7 @@ namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 namespace {
 const int32_t kDataAlignmentBytes = 64;
-const int32_t kTimeoutSecs = 5;
+const int32_t kTimeoutSecs = 120;
 }  // namespace
 
 ChaoticGoodConnector::ChaoticGoodConnector(
@@ -355,7 +356,7 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
   std::string canonical_target = grpc_core::CoreConfiguration::Get()
                                      .resolver_registry()
                                      .AddDefaultPrefixIfNeeded(target);
-  auto r = grpc_core::Channel::Create(
+  auto r = grpc_core::ChannelCreate(
       target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()

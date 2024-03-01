@@ -44,12 +44,10 @@ class ClientChannel : public Channel {
  public:
   static absl::StatusOr<OrphanablePtr<Channel>> Create(
       std::string target, ChannelArgs channel_args,
-      grpc_channel_stack_type channel_stack_type,
-      grpc_compression_options compression_options);
+      grpc_channel_stack_type channel_stack_type);
 
   // Do not instantiate directly -- use Create() instead.
   ClientChannel(std::string target_uri, ChannelArgs args,
-                grpc_compression_options compression_options,
                 std::string uri_to_resolve,
                 RefCountedPtr<ServiceConfig> default_service_config,
                 ClientChannelFactory* client_channel_factory);

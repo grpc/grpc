@@ -283,7 +283,6 @@
   expiry: 2024/03/31
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
-  requires: ["event_engine_client"]
 - name: wrr_delegate_to_pick_first
   description:
     Change WRR code to delegate to pick_first as per dualstack

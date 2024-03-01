@@ -3,7 +3,6 @@ coverage==4.5.4
 cython==0.29.21
 protobuf>=3.5.0.post1, < 4.0dev
 wheel==0.38.1
-google-auth==1.24.0
 oauth2client==4.1.0
 requests==2.25.1
 urllib3==1.26.18
@@ -13,12 +12,11 @@ idna==2.7
 gevent==22.08.0
 zope.event==4.5.0
 setuptools==44.1.1
-xds-protos==0.0.11
 absl-py==1.4.0
 google-cloud-trace==1.11.3
 opencensus-context==0.1.3
 google-cloud-monitoring==2.16.0
-google-api-core==2.14.0
+google-api-core==1.34.1
 proto-plus==1.22.3
 google-auth==2.23.4
 googleapis-common-protos==1.61.0
@@ -30,9 +28,9 @@ greenlet==1.1.3.post0
 zope.interface==6.1
 opentelemetry-sdk==1.21.0
 opentelemetry-api==1.21.0
-importlib-metadata==7.0.1
+importlib-metadata==6.11.0
 Deprecated==1.2.14
-opentelemetry-semantic-conventions==0.43b0
+opentelemetry-semantic-conventions==0.42b0
 typing-extensions==4.9.0
 pyasn1-modules==0.3.0
 zipp==3.17.0

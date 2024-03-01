@@ -67,11 +67,6 @@ class Channel : public RefCounted<Channel>,
     ~RegisteredCall();
   };
 
-  static absl::StatusOr<OrphanablePtr<Channel>> Create(
-      std::string target, ChannelArgs args,
-      grpc_channel_stack_type channel_stack_type,
-      Transport* optional_transport);
-
   virtual void Orphan() = 0;
 
   Arena* CreateArena();
@@ -136,8 +131,7 @@ class Channel : public RefCounted<Channel>,
   virtual bool is_promising() const { return true; }
 
  protected:
-  Channel(std::string target, const ChannelArgs& channel_args,
-          grpc_compression_options compression_options);
+  Channel(std::string target, const ChannelArgs& channel_args);
 
  private:
   const std::string target_;

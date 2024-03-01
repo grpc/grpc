@@ -601,8 +601,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 
 absl::StatusOr<OrphanablePtr<Channel>> ClientChannel::Create(
     std::string target, ChannelArgs channel_args,
-    grpc_channel_stack_type channel_stack_type,
-    grpc_compression_options compression_options) {
+    grpc_channel_stack_type channel_stack_type) {
   GPR_ASSERT(channel_stack_type == GRPC_CLIENT_CHANNEL);
   // Get URI to resolve, using proxy mapper if needed.
   if (target.empty()) {
@@ -639,18 +638,15 @@ absl::StatusOr<OrphanablePtr<Channel>> ClientChannel::Create(
   }
   // Success.  Construct channel.
   return MakeOrphanable<ClientChannel>(
-      std::move(target), std::move(channel_args),
-      compression_options, std::move(uri_to_resolve),
+      std::move(target), std::move(channel_args), std::move(uri_to_resolve),
       std::move(*default_service_config), client_channel_factory);
 }
 
 ClientChannel::ClientChannel(
-    std::string target, ChannelArgs channel_args,
-    grpc_compression_options compression_options,
-    std::string uri_to_resolve,
+    std::string target, ChannelArgs channel_args, std::string uri_to_resolve,
     RefCountedPtr<ServiceConfig> default_service_config,
     ClientChannelFactory* client_channel_factory)
-    : Channel(std::move(target), channel_args, compression_options),
+    : Channel(std::move(target), channel_args),
       channel_args_(std::move(channel_args)),
       uri_to_resolve_(std::move(uri_to_resolve)),
       service_config_parser_index_(

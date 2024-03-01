@@ -58,6 +58,10 @@ class LoadBalancingPolicy::DelegatingChannelControlHelper
     parent_helper()->RequestReresolution();
   }
 
+  absl::string_view GetTarget() override {
+    return parent_helper()->GetTarget();
+  }
+
   absl::string_view GetAuthority() override {
     return parent_helper()->GetAuthority();
   }
@@ -73,6 +77,10 @@ class LoadBalancingPolicy::DelegatingChannelControlHelper
 
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
     return parent_helper()->GetEventEngine();
+  }
+
+  GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
+    return parent_helper()->GetStatsPluginGroup();
   }
 
   void AddTraceEvent(TraceSeverity severity,

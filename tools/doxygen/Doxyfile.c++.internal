@@ -2161,6 +2161,8 @@ src/core/lib/channel/channelz_registry.h \
 src/core/lib/channel/connected_channel.cc \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
+src/core/lib/channel/metrics.cc \
+src/core/lib/channel/metrics.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/server_call_tracer_filter.cc \
@@ -2723,6 +2725,7 @@ src/core/lib/security/security_connector/load_system_roots.h \
 src/core/lib/security/security_connector/load_system_roots_fallback.cc \
 src/core/lib/security/security_connector/load_system_roots_supported.cc \
 src/core/lib/security/security_connector/load_system_roots_supported.h \
+src/core/lib/security/security_connector/load_system_roots_windows.cc \
 src/core/lib/security/security_connector/local/local_security_connector.cc \
 src/core/lib/security/security_connector/local/local_security_connector.h \
 src/core/lib/security/security_connector/security_connector.cc \
@@ -2760,8 +2763,6 @@ src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
-src/core/lib/surface/builtins.cc \
-src/core/lib/surface/builtins.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
@@ -2773,6 +2774,7 @@ src/core/lib/surface/call_trace.h \
 src/core/lib/surface/channel.cc \
 src/core/lib/surface/channel.h \
 src/core/lib/surface/channel_create.cc \
+src/core/lib/surface/channel_create.h \
 src/core/lib/surface/channel_init.cc \
 src/core/lib/surface/channel_init.h \
 src/core/lib/surface/channel_stack_type.cc \
@@ -2794,6 +2796,7 @@ src/core/lib/surface/legacy_channel.h \
 src/core/lib/surface/metadata_array.cc \
 src/core/lib/surface/server.cc \
 src/core/lib/surface/server.h \
+src/core/lib/surface/server_interface.h \
 src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
@@ -2830,6 +2833,8 @@ src/core/lib/transport/metadata.h \
 src/core/lib/transport/metadata_batch.cc \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/metadata_compression_traits.h \
+src/core/lib/transport/metadata_info.cc \
+src/core/lib/transport/metadata_info.h \
 src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
 src/core/lib/transport/simple_slice_based_metadata.h \
@@ -2891,6 +2896,7 @@ src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
 src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h \
 src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
 src/core/load_balancing/weighted_target/weighted_target.cc \
+src/core/load_balancing/weighted_target/weighted_target.h \
 src/core/load_balancing/xds/cds.cc \
 src/core/load_balancing/xds/xds_channel_args.h \
 src/core/load_balancing/xds/xds_cluster_impl.cc \

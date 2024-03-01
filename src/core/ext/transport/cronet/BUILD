@@ -48,6 +48,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:channel",
+        "//:channel_create",
         "//:grpc_base",
         "//:grpc_transport_chttp2",
         "//src/core:channel_args",

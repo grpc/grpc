@@ -283,6 +283,7 @@ class ClientChannelFilter {
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   RefCountedPtr<ServiceConfig> default_service_config_;
+  std::string target_uri_;
   std::string uri_to_resolve_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;

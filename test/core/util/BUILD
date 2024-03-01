@@ -63,7 +63,6 @@ grpc_cc_library(
         "histogram.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
-        "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
         "tracer_util.cc",
@@ -77,7 +76,6 @@ grpc_cc_library(
         "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
-        "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
         "tracer_util.h",
@@ -496,10 +494,21 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "fake_stats_plugin",
+    testonly = True,
     srcs = ["fake_stats_plugin.cc"],
     hdrs = ["fake_stats_plugin.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+        "gtest",
+    ],
     deps = [
         "//:grpc",
         "//src/core:examine_stack",
+        "//src/core:metrics",
     ],
 )
