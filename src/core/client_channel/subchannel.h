@@ -68,17 +68,6 @@ class SubchannelCall;
 
 class ConnectedSubchannel : public CallDestination {
  public:
-  // Ctor for legacy stack.
-  ConnectedSubchannel(
-      RefCountedPtr<grpc_channel_stack> channel_stack, const ChannelArgs& args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
-  // Ctor for call v3 stack.
-  ConnectedSubchannel(
-      Transport* transport, const ChannelArgs& args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
-
-  ~ConnectedSubchannel() override;
-
   void Orphan() override {}
 
   const ChannelArgs& args() const { return args_; }
@@ -86,22 +75,26 @@ class ConnectedSubchannel : public CallDestination {
     return channelz_subchannel_.get();
   }
 
-  void StartWatch(grpc_pollset_set* interested_parties,
-                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+  virtual void StartWatch(
+      grpc_pollset_set* interested_parties,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Methods for v3 stack.
-  RefCountedPtr<CallFilters::Stack> GetStack();
-  void StartCall(CallHandler call_handler) override;
-  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack);
+  virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
 
   // Methods for legacy stack.
-  grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
-  size_t GetInitialCallSizeEstimate() const;
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
-  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
+  virtual grpc_channel_stack* channel_stack() const = 0;
+  virtual size_t GetInitialCallSizeEstimate() const = 0;
+  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args) = 0;
+  virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
+
+ protected:
+  ConnectedSubchannel(
+      const ChannelArgs& args,
+      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
 
  private:
-  RefCountedPtr<grpc_channel_stack> channel_stack_;
   ChannelArgs args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.

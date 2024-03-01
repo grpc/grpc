@@ -19,6 +19,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
@@ -228,6 +229,10 @@ class CallInitiator {
   explicit CallInitiator(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
+// FIXME: should this method go away, since we now want this to be
+// handled in UnstartedCallHandler instead?
+// Note: this would require changing ServerTransport::AcceptCall() to
+// act like a CallDestination
   auto PushClientInitialMetadata(ClientMetadataHandle md) {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
     return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
@@ -323,10 +328,6 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
-  void SetStack(RefCountedPtr<CallFilters::Stack> stack) {
-// FIXME: Implement.
-  }
-
   auto PullClientInitialMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
     return Map(spine_->client_initial_metadata().receiver.Next(),
@@ -407,12 +408,110 @@ class CallHandler {
   RefCountedPtr<CallSpineInterface> spine_;
 };
 
+class UnstartedCallHandler;
+
+// CallDestination is responsible for starting an UnstartedCallHandler
+// and then processing operations on the resulting CallHandler.
+//
+// Examples of CallDestinations include:
+// - a client transport
+// - the server API
+// - a load-balanced call in the client channel
+// - a hijacking filter (see DelegatingCallDestination below)
+//
+// FIXME: do we want this to be ref-counted?  that might not be
+// desirable for the hijacking filter case, where we want the filter stack
+// to own the filter rather than having every call take its own ref to every
+// hijacking filter.
+class CallDestination : public DualRefCounted<CallDestination> {
+ public:
+  virtual void StartCall(UnstartedCallHandler unstarted_call_handler) = 0;
+};
+
+// A delegating CallDestination for use as a hijacking filter.
+// Implementations may look at the unprocessed initial metadata
+// and decide to do one of two things:
+//
+// 1. It can be a no-op.  In this case, it will simply pass the
+//    unstarted_call_handler to the wrapped CallDestination.
+//
+// 2. It can hijack the call by doing the following:
+//    - Start unstarted_call_handler and take ownership of the
+//      resulting handler.
+//    - Create a new CallInitiator/UnstartedCallHandler pair, and pass
+//      that new UnstartedCallHandler down to the wrapped CallDestination.
+//    - The implementation is then responsible for forwarding between
+//      the started handler and the new initiator.  Note that in
+//      simple cases, this can be done via ForwardCall().
+class DelegatingCallDestination : public CallDestination {
+ protected:
+  explicit DelegatingCallDestination(
+      RefCountedPtr<CallDestination> wrapped_destination)
+      : wrapped_destination_(std::move(wrapped_destination)) {}
+
+  CallDestination* wrapped_destination() const {
+    return wrapped_destination_.get();
+  }
+
+ private:
+  RefCountedPtr<CallDestination> wrapped_destination_;
+};
+
+class UnstartedCallHandler {
+ public:
+  UnstartedCallHandler(RefCountedPtr<CallSpineInterface> spine,
+                       ClientMetadataHandle client_initial_metadata)
+      : spine_(std::move(spine)),
+        client_initial_metadata_(std::move(client_initial_metadata)) {}
+
+  // Returns the client initial metadata, which has not yet been
+  // processed by the stack that will ultimately be used for this call.
+  ClientMetadataHandle& UnprocessedClientInitialMetadata() {
+    return client_initial_metadata_;
+  }
+
+  // Starts the call using the specified stack.
+  // This must be called only once, and the UnstartedCallHandler object
+  // may not be used after this is called.
+  CallHandler StartCall(RefCountedPtr<CallFilters::Stack> stack);
+
+  template <typename ContextType>
+  void SetContext(ContextType context) {
+// FIXME: implement
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
+ private:
+  RefCountedPtr<CallSpineInterface> spine_;
+  ClientMetadataHandle client_initial_metadata_;
+};
+
 struct CallInitiatorAndHandler {
   CallInitiator initiator;
-  CallHandler handler;
+  UnstartedCallHandler unstarted_handler;
 };
 
 CallInitiatorAndHandler MakeCall(
+    ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena);
 
 template <typename CallHalf>

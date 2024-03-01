@@ -1805,7 +1805,6 @@ let package = Package(
         "src/core/lib/transport/batch_builder.h",
         "src/core/lib/transport/bdp_estimator.cc",
         "src/core/lib/transport/bdp_estimator.h",
-        "src/core/lib/transport/call_destination.h",
         "src/core/lib/transport/call_filters.cc",
         "src/core/lib/transport/call_filters.h",
         "src/core/lib/transport/call_final_info.cc",

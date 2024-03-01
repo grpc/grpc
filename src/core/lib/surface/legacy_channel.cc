@@ -99,19 +99,6 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
       builder.IsPromising(), std::move(target), args, std::move(*r));
 }
 
-namespace {
-
-class NotReallyACallFactory final : public CallFactory {
- public:
-  using CallFactory::CallFactory;
-  void Orphan() override { delete this; }
-  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
-    Crash("NotReallyACallFactory::CreateCall should never be called");
-  }
-};
-
-}  // namespace
-
 LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
                              const ChannelArgs& channel_args,

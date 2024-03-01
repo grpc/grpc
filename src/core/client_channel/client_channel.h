@@ -96,11 +96,6 @@ class ClientChannel : public Channel {
 
   void Ping(grpc_completion_queue* cq, void* tag) override;
 
-  // Creates a load balanced call on the channel.
-  CallInitiator CreateLoadBalancedCall(
-      ClientMetadataHandle client_initial_metadata,
-      absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
-
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() {
@@ -111,6 +106,7 @@ class ClientChannel : public Channel {
   class ResolverResultHandler;
   class ClientChannelControlHelper;
   class SubchannelWrapper;
+  class LoadBalancedCallDestination;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
@@ -168,8 +164,7 @@ class ClientChannel : public Channel {
   // context.
   LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>> PickSubchannel(
       LoadBalancingPolicy::SubchannelPicker& picker,
-      ClientMetadataHandle& client_initial_metadata,
-      CallInitiator& call_initiator);
+      UnstartedCallHandler& unstarted_handler);
 
   //
   // Fields set at construction and never modified.
@@ -181,7 +176,6 @@ class ClientChannel : public Channel {
   ClientChannelFactory* client_channel_factory_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
-  OrphanablePtr<CallDestination> call_destination_;
 
   //
   // State for LB calls.
@@ -201,7 +195,7 @@ class ClientChannel : public Channel {
   //
   struct ResolverDataForCalls {
     RefCountedPtr<ConfigSelector> config_selector;
-    RefCountedPtr<CallFilters::Stack> filter_stack;
+    RefCountedPtr<CallDestination> call_destination;
   };
   Observable<absl::StatusOr<ResolverDataForCalls>> resolver_data_for_calls_;
 

@@ -69,9 +69,6 @@ class Channel : public RefCounted<Channel>,
 
   virtual void Orphan() = 0;
 
-  Arena* CreateArena();
-  void DestroyArena(Arena* arena);
-
   virtual bool IsLame() const = 0;
 
   // TODO(roth): This should return a C++ type.
@@ -126,6 +123,8 @@ class Channel : public RefCounted<Channel>,
   virtual void Ping(grpc_completion_queue* cq, void* tag) = 0;
 
   // TODO(roth): Remove these methods when LegacyChannel goes away.
+  Arena* CreateArena();
+  void DestroyArena(Arena* arena);
   virtual grpc_channel_stack* channel_stack() const { return nullptr; }
   virtual bool is_client() const { return true; }
   virtual bool is_promising() const { return true; }
