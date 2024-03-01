@@ -520,8 +520,8 @@ def grpc_deps():
             sha256 = "7735cc56507149686e6019e06f588317099d4522480be5f38a2a09ec69af1706",
             strip_prefix = "opentelemetry-cpp-1.13.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.13.0.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/refs/tags/v1.13.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/4bd64c9a336fd438d6c4c9dad2e6b61b0585311f.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/4bd64c9a336fd438d6c4c9dad2e6b61b0585311f.tar.gz",
             ],
         )
 
