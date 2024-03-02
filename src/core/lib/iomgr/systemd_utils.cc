@@ -36,8 +36,21 @@ bool set_matching_sd_unix_fd(grpc_tcp_server* s,
                              const grpc_resolved_address* addr,
                              const int fd_start, const int n) {
   absl::StatusOr<std::string> addr_name = grpc_sockaddr_to_string(addr, true);
+  if (!addr_name.ok()) {
+    return false;
+  }
+  std::string &address = addr_name.value();
+  if (address.empty()) {
+    return false;
+  }
   for (int i = fd_start; i < fd_start + n; i++) {
-    if (sd_is_socket_unix(i, SOCK_STREAM, 1, addr_name.value().c_str(), 0)) {
+    // sd_is_socket_unix() requires length=0 for normal filesystem unix socket
+    // but requires actual length (including leading null) for `unix-abstract:xxx`
+    size_t len = 0;
+    if (address[0] == 0) {
+      len = address.length();
+    }
+    if (sd_is_socket_unix(i, SOCK_STREAM, 1, address.c_str(), len)) {
       grpc_tcp_server_set_pre_allocated_fd(s, i);
       return true;
     }
