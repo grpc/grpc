@@ -41,7 +41,7 @@ class GreeterServiceImpl final : public Greeter::Service {
 };
 
 void RunServer() {
-  std::string server_address("unix:/tmp/server");
+  std::string server_address("unix:///tmp/server");
   GreeterServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);

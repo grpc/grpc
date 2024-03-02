@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
       return 0;
     }
   } else {
-    target_str = "unix:/tmp/server";
+    target_str = "unix:///tmp/server";
   }
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
