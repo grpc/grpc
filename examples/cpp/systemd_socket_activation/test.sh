@@ -13,21 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Run this script as root
-
-clean() {
-    echo "Cleaning..."
-    systemctl stop sdsockact.socket
-    systemctl stop sdsockact.service
-    systemctl daemon-reload
-    rm /tmp/greeter_server
-    rm /tmp/greeter_client
-    rm /etc/systemd/system/sdsockact.service
-    rm /etc/systemd/system/sdsockact.socket
-}
+# Run this script as normal user
 
 fail() {
-    clean
     echo "FAIL: $@" >&2
     exit 1
 }
@@ -36,16 +24,23 @@ pass() {
     echo "SUCCESS: $1"
 }
 
-bazel build --define=use_systemd=true //examples/cpp/systemd_socket_activation:all || fail "Failed to build sd_sock_act"
-cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/server /tmp/greeter_server
-cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/client /tmp/greeter_client
+setup_before() {
+    echo "Building..."
+    bazel build --define=use_systemd=true //examples/cpp/systemd_socket_activation:all || fail "Failed to build sd_sock_act"
 
-cat << EOF > /etc/systemd/system/sdsockact.service
+    echo "Copying executables..."
+    cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/server /tmp/greeter_server
+    cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/client /tmp/greeter_client
+
+    echo "Configuring systemd..."
+    mkdir -p ~/.config/systemd/user/
+
+cat << EOF > ~/.config/systemd/user/sdsockact.service
 [Service]
 ExecStart=/tmp/greeter_server
 EOF
 
-cat << EOF > /etc/systemd/system/sdsockact.socket
+cat << EOF > ~/.config/systemd/user/sdsockact.socket
 [Socket]
 ListenStream=/tmp/server
 ReusePort=true
@@ -54,17 +49,49 @@ ReusePort=true
 WantedBy=sockets.target
 EOF
 
-systemctl daemon-reload
-systemctl enable sdsockact.socket
-systemctl start sdsockact.socket
+    # reload after adding units
+    systemctl --user daemon-reload
 
-pushd /tmp
-./greeter_client | grep "Hello"
-if [ $? -ne 0 ]; then
-    popd
+    ## starting at boot is not necessary for testing
+    # systemctl --user enable sdsockact.socket
+}
+
+teardown_after() {
+    echo "Cleaning executables..."
+    rm -f /tmp/greeter_server
+    rm -f /tmp/greeter_client
+    echo "Cleaning remaining socket..."
+    rm -f /tmp/server
+    echo "Cleaning systemd units..."
+    rm -f ~/.config/systemd/user/sdsockact.service
+    rm -f ~/.config/systemd/user/sdsockact.socket
+
+    # reload after removing units
+    systemctl --user daemon-reload
+}
+
+trap teardown_after EXIT
+
+setup() {
+    systemctl --user start sdsockact.socket
+}
+
+teardown() {
+    systemctl --user stop sdsockact.socket
+    systemctl --user stop sdsockact.service
+}
+
+setup_before
+
+setup
+echo "Testing..."
+/tmp/greeter_client | grep "Hello"
+RESULT=$?
+teardown
+
+if [ ${RESULT} -ne 0 ]; then
     fail "Response not received"
 fi
-
-popd
 pass "Response received"
-clean
+
+# teardown is called upon exit
