@@ -17,33 +17,31 @@
 
 fail() {
     echo "FAIL: $@" >&2
-    exit 1
 }
 
 pass() {
     echo "SUCCESS: $1"
 }
 
-setup_before() {
-    echo "Building..."
-    bazel build --define=use_systemd=true //examples/cpp/systemd_socket_activation:all || fail "Failed to build sd_sock_act"
+setup() {
+    local sd_socket="$1" grpc_target="$2" working_dir="$3"
 
-    echo "Copying executables..."
     cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/server /tmp/greeter_server
     cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/client /tmp/greeter_client
 
-    echo "Configuring systemd..."
     mkdir -p ~/.config/systemd/user/
 
 cat << EOF > ~/.config/systemd/user/sdsockact.service
 [Service]
-ExecStart=/tmp/greeter_server
+ExecStart=/tmp/greeter_server --listen="${grpc_target}"
+WorkingDirectory=${working_dir}
 EOF
 
 cat << EOF > ~/.config/systemd/user/sdsockact.socket
 [Socket]
-ListenStream=/tmp/server
+ListenStream=${sd_socket}
 ReusePort=true
+SocketMode=600
 
 [Install]
 WantedBy=sockets.target
@@ -52,46 +50,88 @@ EOF
     # reload after adding units
     systemctl --user daemon-reload
 
+    # starts the listening socket but not the service
+    systemctl --user restart sdsockact.socket
+
     ## starting at boot is not necessary for testing
     # systemctl --user enable sdsockact.socket
-}
-
-teardown_after() {
-    echo "Cleaning executables..."
-    rm -f /tmp/greeter_server
-    rm -f /tmp/greeter_client
-    echo "Cleaning remaining socket..."
-    rm -f /tmp/server
-    echo "Cleaning systemd units..."
-    rm -f ~/.config/systemd/user/sdsockact.service
-    rm -f ~/.config/systemd/user/sdsockact.socket
-
-    # reload after removing units
-    systemctl --user daemon-reload
-}
-
-trap teardown_after EXIT
-
-setup() {
-    systemctl --user start sdsockact.socket
 }
 
 teardown() {
     systemctl --user stop sdsockact.socket
     systemctl --user stop sdsockact.service
+    rm -f /tmp/greeter_server
+    rm -f /tmp/greeter_client
+    rm -f /tmp/server
+    rm -f ~/.config/systemd/user/sdsockact.service
+    rm -f ~/.config/systemd/user/sdsockact.socket
+    # reload after removing units
+    systemctl --user daemon-reload
 }
 
-setup_before
+TEST_COUNT=0
+FAIL_COUNT=0
 
-setup
-echo "Testing..."
-/tmp/greeter_client | grep "Hello"
-RESULT=$?
-teardown
+run_test() {
+    local sd_socket="${1}" grpc_target="${2}" working_dir="${3}"
 
-if [ ${RESULT} -ne 0 ]; then
-    fail "Response not received"
-fi
-pass "Response received"
+    setup ${sd_socket} ${grpc_target} ${working_dir}
+    cd ${working_dir}
 
-# teardown is called upon exit
+    TEST_COUNT=$((TEST_COUNT+1))
+    /tmp/greeter_client --target=${grpc_target} | grep "Hello"
+    if [ $? -ne 0 ]; then
+        FAIL_COUNT=$((FAIL_COUNT+1))
+        fail "Response not received"
+    else
+        pass "Response received"
+    fi
+
+    cd - >/dev/null
+    teardown
+}
+
+# tests
+
+test_unix_relative() {
+    echo "==== test_unix_relative ===="
+    run_test "/tmp/server" "unix:server" "/tmp"
+}
+
+test_unix_relative_dot() {
+    echo "==== test_unix_relative ===="
+    run_test "/tmp/server" "unix:./server" "/tmp"
+}
+
+test_unix_absolute() {
+    echo "==== test_unix_absolute ===="
+    run_test "/tmp/server" "unix:/tmp/server" "$(pwd)"
+}
+
+test_unix_absolute_scheme() {
+    echo "==== test_unix_absolute_scheme ===="
+    run_test "/tmp/server" "unix:///tmp/server" "$(pwd)"
+}
+
+test_unix_abstract() {
+    echo "==== test_unix_abstract ===="
+    run_test "@test_unix_abstract" "unix-abstract:test_unix_abstract" "$(pwd)"
+}
+
+# main
+
+echo "==== building ===="
+bazel build --define=use_systemd=true //examples/cpp/systemd_socket_activation:all || {
+    fail "Failed to build systemd_socket_activation"
+    exit
+}
+
+test_unix_relative
+test_unix_relative_dot
+test_unix_absolute
+test_unix_absolute_scheme
+test_unix_abstract
+
+echo "==== ${FAIL_COUNT} tests failed, ${TEST_COUNT} tests run ===="
+
+exit ${FAIL_COUNT}
