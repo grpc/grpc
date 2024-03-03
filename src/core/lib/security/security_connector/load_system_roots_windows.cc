@@ -58,7 +58,7 @@ Slice LoadSystemRootCerts() {
   // Open root certificate store.
   HANDLE root_cert_store = CertOpenSystemStoreW(NULL, L"ROOT");
   if (!root_cert_store) {
-    return EmptySlice();
+    return Slice();
   }
 
   // Load all root certificates from certificate store.
@@ -76,7 +76,7 @@ Slice LoadSystemRootCerts() {
 
   CertCloseStore(root_cert_store, 0);
   if (bundle_string.size() == 0) {
-    return EmptySlice();
+    return Slice();
   }
 
   return Slice::FromStaticString(std::move(bundle_string));

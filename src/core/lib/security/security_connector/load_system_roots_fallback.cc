@@ -29,7 +29,7 @@
 
 namespace grpc_core {
 
-Slice LoadSystemRootCerts() { return EmptySlice(); }
+Slice LoadSystemRootCerts() { return Slice(); }
 
 }  // namespace grpc_core
 
