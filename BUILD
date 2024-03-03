@@ -3727,6 +3727,7 @@ grpc_cc_library(
         "grpc_security_base",
         "//src/core:error",
         "//src/core:json",
+        "//src/core:slice",
         "//src/core:load_file",
         "//src/core:useful",
     ],

@@ -62,13 +62,13 @@ const char* kCertFiles[] = {"/etc/ssl/cert.pem"};
 const char* kCertDirectories[] = {""};
 #endif                      // GPR_APPLE
 
-grpc_slice GetSystemRootCerts() {
+Slice GetSystemRootCerts() {
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
     auto slice = LoadFile(kCertFiles[i], /*add_null_terminator=*/true);
-    if (slice.ok()) return slice->TakeCSlice();
+    if (slice.ok()) return *std::move(slice);
   }
-  return grpc_empty_slice();
+  return Slice();
 }
 
 }  // namespace
@@ -85,8 +85,8 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
   }
 }
 
-grpc_slice CreateRootCertsBundle(const char* certs_directory) {
-  grpc_slice bundle_slice = grpc_empty_slice();
+Slice CreateRootCertsBundle(const char* certs_directory) {
+  Slice bundle_slice;
   if (certs_directory == nullptr) {
     return bundle_slice;
   }
@@ -135,12 +135,11 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       }
     }
   }
-  bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);
-  return bundle_slice;
+  return Slice(grpc_slice_new(bundle_string, bytes_read, gpr_free));
 }
 
-grpc_slice LoadSystemRootCerts() {
-  grpc_slice result = grpc_empty_slice();
+Slice LoadSystemRootCerts() {
+  Slice result;
   // Prioritize user-specified custom directory if flag is set.
   auto custom_dir = ConfigVars::Get().SystemSslRootsDir();
   if (!custom_dir.empty()) {
@@ -148,13 +147,13 @@ grpc_slice LoadSystemRootCerts() {
   }
   // If the custom directory is empty/invalid/not specified, fallback to
   // distribution-specific directory.
-  if (GRPC_SLICE_IS_EMPTY(result)) {
+  if (result.empty()) {
     result = GetSystemRootCerts();
   }
-  if (GRPC_SLICE_IS_EMPTY(result)) {
+  if (result.empty()) {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(kCertDirectories); i++) {
       result = CreateRootCertsBundle(kCertDirectories[i]);
-      if (!GRPC_SLICE_IS_EMPTY(result)) {
+      if (!result.empty()) {
         break;
       }
     }

@@ -66,12 +66,10 @@ TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
 TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
   // Test that CreateRootCertsBundle returns an empty slice for null or
   // nonexistent cert directories.
-  grpc_slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
-  EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
-  grpc_slice_unref(result_slice);
+  grpc_core::Slice result_slice = grpc_core::CreateRootCertsBundle(nullptr);
+  EXPECT_TRUE(result_slice.empty());
   result_slice = grpc_core::CreateRootCertsBundle("does/not/exist");
-  EXPECT_TRUE(GRPC_SLICE_IS_EMPTY(result_slice));
-  grpc_slice_unref(result_slice);
+  EXPECT_TRUE(result_slice.empty());
 }
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
@@ -91,9 +89,8 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 
 #if defined(GPR_WINDOWS)
 TEST(LoadSystemRootCertsTest, Success) {
-  grpc_slice roots_slice = grpc_core::LoadSystemRootCerts();
-  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(roots_slice));
-  grpc_slice_unref(roots_slice);
+  grpc_core::Slice roots_slice = grpc_core::LoadSystemRootCerts();
+  EXPECT_FALSE(roots_slice.empty());
 }
 #endif  // GPR_WINDOWS
 
@@ -108,7 +105,8 @@ int main(int argc, char** argv) {
 #else
 int main() {
   printf(
-      "*** WARNING: this test is only supported on Linux, FreeBSD, and MacOS"
+      "*** WARNING: this test is only supported on Linux, FreeBSD, MacOS, and "
+      "Windows"
       "systems ***\n");
   return 0;
 }

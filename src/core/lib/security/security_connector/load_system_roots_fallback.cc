@@ -25,10 +25,11 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
-grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
+Slice LoadSystemRootCerts() { return EmptySlice(); }
 
 }  // namespace grpc_core
 
