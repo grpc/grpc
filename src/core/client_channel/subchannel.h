@@ -57,7 +57,6 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -66,10 +65,8 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public CallDestination {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
-  void Orphan() override {}
-
   const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
@@ -80,6 +77,7 @@ class ConnectedSubchannel : public CallDestination {
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Methods for v3 stack.
+  virtual void StartCall(UnstartedCallHandler unstarted_handler) = 0;
   virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
 
   // Methods for legacy stack.

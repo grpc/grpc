@@ -328,6 +328,11 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
+  template <typename ContextType>
+  void SetContext(ContextType context) {
+// FIXME: implement
+  }
+
   auto PullClientInitialMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
     return Map(spine_->client_initial_metadata().receiver.Next(),
@@ -461,14 +466,21 @@ class UnstartedCallHandler {
  public:
   UnstartedCallHandler(RefCountedPtr<CallSpineInterface> spine,
                        ClientMetadataHandle client_initial_metadata)
-      : spine_(std::move(spine)),
-        client_initial_metadata_(std::move(client_initial_metadata)) {}
+      : spine_(std::move(spine)) {
+   spine_->SpawnGuarded(
+       "send_initial_metadata",
+       [client_initial_metadata = std::move(client_initial_metadata),
+        spine = spine_]() mutable {
+         GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine->party());
+         return Map(spine->client_initial_metadata().sender.Push(
+                        std::move(client_initial_metadata)),
+                    [](bool ok) { return StatusFlag(ok); });
+       });
+  }
 
   // Returns the client initial metadata, which has not yet been
   // processed by the stack that will ultimately be used for this call.
-  ClientMetadataHandle& UnprocessedClientInitialMetadata() {
-    return client_initial_metadata_;
-  }
+  ClientMetadataHandle& UnprocessedClientInitialMetadata();
 
   // Starts the call using the specified stack.
   // This must be called only once, and the UnstartedCallHandler object
@@ -502,7 +514,6 @@ class UnstartedCallHandler {
 
  private:
   RefCountedPtr<CallSpineInterface> spine_;
-  ClientMetadataHandle client_initial_metadata_;
 };
 
 struct CallInitiatorAndHandler {

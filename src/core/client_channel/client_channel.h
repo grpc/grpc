@@ -31,7 +31,6 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -56,8 +55,6 @@ class ClientChannel : public Channel {
 
   void Orphan() override;
 
-  bool IsLame() const override;
-
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
                         grpc_pollset_set* /*pollset_set_alternative*/,
@@ -65,9 +62,14 @@ class ClientChannel : public Channel {
                         Timestamp deadline, bool registered_method) override;
 
   grpc_event_engine::experimental::EventEngine* event_engine()
-      const override;
+      const override {
+    return event_engine_.get();
+  }
 
-  bool SupportsConnectivityWatcher() const override;
+// FIXME: should we support lame channels somehow?
+  bool IsLame() const override { return false; }
+
+  bool SupportsConnectivityWatcher() const override { return true; }
 
   // Returns the current connectivity state.  If try_to_connect is true,
   // triggers a connection attempt if not already connected.
@@ -170,12 +172,15 @@ class ClientChannel : public Channel {
   // Fields set at construction and never modified.
   //
   ChannelArgs channel_args_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   std::string uri_to_resolve_;
   const size_t service_config_parser_index_;
   RefCountedPtr<ServiceConfig> default_service_config_;
   ClientChannelFactory* client_channel_factory_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  grpc_pollset_set* interested_parties_;
 
   //
   // State for LB calls.

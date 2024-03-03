@@ -129,7 +129,8 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     op->start_connectivity_watch = std::move(watcher);
     op->start_connectivity_watch_state = GRPC_CHANNEL_READY;
     op->bind_pollset_set = interested_parties;
-    grpc_channel_element* elem = grpc_channel_stack_element(channel_stack_, 0);
+    grpc_channel_element* elem =
+        grpc_channel_stack_element(channel_stack_.get(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -182,10 +183,10 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    grpc_channel_element* elem;
     op->send_ping.on_initiate = on_initiate;
     op->send_ping.on_ack = on_ack;
-    elem = grpc_channel_stack_element(channel_stack_, 0);
+    grpc_channel_element* elem =
+        grpc_channel_stack_element(channel_stack_.get(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -219,7 +220,7 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
 
   void StartCall(UnstartedCallHandler unstarted_handler) override {
     auto handler = unstarted_handler.StartCall(filter_stack_);
-    transport_->StartCall(std::move(handler));
+    transport_->client_transport()->StartCall(std::move(handler));
   }
 
   grpc_channel_stack* channel_stack() const override { return nullptr; }
@@ -863,7 +864,7 @@ bool Subchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel_ = MakeRefCounted<LegacyConnectedSubchannel>(
-        std::move(stack), args_, channelz_node_);
+        std::move(*stack), args_, channelz_node_);
   } else {
     // Call v3 stack.
     CallFilters::StackBuilder builder;

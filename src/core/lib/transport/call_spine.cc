@@ -89,19 +89,16 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   });
 }
 
+ClientMetadataHandle& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
+// FIXME: implement a way to peek at the unprocessed client initial metadata
+// (the code here now is just a placeholder to get this to build)
+  static ClientMetadataHandle md;
+  return md;
+}
+
 CallHandler UnstartedCallHandler::StartCall(
-    RefCountedPtr<CallFilters::Stack> stack,
-    RefCountedPtr<CallDestination> call_destination) {
-   call_initiator->SpawnGuarded(
-       "send_initial_metadata",
-       [client_initial_metadata = std::move(client_initial_metadata_),
-        spine = spine_]() mutable {
-         GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine->party());
-         return Map(spine_->client_initial_metadata().sender.Push(
-                        std::move(client_initial_metadata)),
-                    [](bool ok) { return StatusFlag(ok); });
-       });
-// FIXME: attach stack and destination to CallHandler
+    RefCountedPtr<CallFilters::Stack> stack) {
+// FIXME: attach stack to CallHandler
   return CallHandler(std::move(spine_));
 }
 
@@ -110,7 +107,7 @@ CallInitiatorAndHandler MakeCall(
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
   auto spine = CallSpine::Create(event_engine, arena);
   return {CallInitiator(spine),
-          UnstartedCallHandler(std::move(client_initial_metadata), spine)};
+          UnstartedCallHandler(spine, std::move(client_initial_metadata))};
 }
 
 }  // namespace grpc_core

@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
@@ -510,17 +509,6 @@ struct IsTransparentRetry {
   static constexpr bool kRepeatable = false;
   using ValueType = bool;
   static std::string DisplayValue(ValueType x) { return x ? "true" : "false"; }
-};
-
-// Annotation added by retry or no-retry filters to pass the on-commit
-// callback to the load balanced call.
-struct LoadBalancingOnCommit {
-  static absl::string_view DebugKey() { return "LoadBalancingOnCommit"; }
-  static constexpr bool kRepeatable = false;
-  using ValueType = absl::AnyInvocable<void()>;
-  static std::string DisplayValue(const ValueType& x) {
-    return x == nullptr ? "unset" : "set";
-  }
 };
 
 // Annotation added by a transport to note that server trailing metadata
@@ -1531,8 +1519,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::IsTransparentRetry, grpc_core::LoadBalancingOnCommit,
-    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
+    grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly,
+    grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 

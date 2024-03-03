@@ -64,6 +64,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -83,11 +84,13 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -96,12 +99,14 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
+#include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -128,7 +133,7 @@ extern TraceFlag grpc_client_channel_lb_call_trace;
 class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
  public:
   explicit ResolverResultHandler(
-      WeakRefCountedPtr<ClientChannel> client_channel)
+      RefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ResolverResultHandler() override {
@@ -144,7 +149,7 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
   }
 
  private:
-  WeakRefCountedPtr<ClientChannel> client_channel_;
+  RefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
@@ -161,7 +166,7 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
 // control plane work_serializer.
 class ClientChannel::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
+  SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
                     RefCountedPtr<Subchannel> subchannel)
       : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
                                 ? "SubchannelWrapper"
@@ -206,28 +211,28 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   void Orphan() override {
     // Make sure we clean up the channel's subchannel maps inside the
     // WorkSerializer.
-    auto self = WeakRefAsSubclass<SubchannelWrapper>(
-        DEBUG_LOCATION, "subchannel map cleanup");
+    WeakRefAsSubclass<SubchannelWrapper>(
+        DEBUG_LOCATION, "subchannel map cleanup")
+        .release();
     client_channel_->work_serializer_->Run(
-        [self = std::move(self)]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                *self->client_channel_->work_serializer_) {
-          self->client_channel_->subchannel_wrappers_.erase(self.get());
-          if (self->client_channel_->channelz_node_ != nullptr) {
-            auto* subchannel_node = self->subchannel_->channelz_node();
+        [this]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
+          client_channel_->subchannel_wrappers_.erase(this);
+          if (client_channel_->channelz_node_ != nullptr) {
+            auto* subchannel_node = subchannel_->channelz_node();
             if (subchannel_node != nullptr) {
-              auto it = self->client_channel_->subchannel_refcount_map_.find(
-                  self->subchannel_.get());
-              GPR_ASSERT(
-                  it != self->client_channel_->subchannel_refcount_map_.end());
+              auto it = client_channel_->subchannel_refcount_map_.find(
+                  subchannel_.get());
+              GPR_ASSERT(it != client_channel_->subchannel_refcount_map_.end());
               --it->second;
               if (it->second == 0) {
-                self->client_channel_->channelz_node_->RemoveChildSubchannel(
+                client_channel_->channelz_node_->RemoveChildSubchannel(
                     subchannel_node->uuid());
-                self->client_channel_->subchannel_refcount_map_.erase(it);
+                client_channel_->subchannel_refcount_map_.erase(it);
               }
             }
           }
+          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
         },
         DEBUG_LOCATION);
   }
@@ -316,11 +321,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
                 subchannel_wrapper_.get(),
                 subchannel_wrapper_->subchannel_.get());
       }
+      self.release();  // Held by callback.
       subchannel_wrapper_->client_channel_->work_serializer_->Run(
-          [self = self.TakeAsSubclass<WatcherWrapper>(), state, status]()
+          [this, state, status]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               *subchannel_wrapper_->client_channel_->work_serializer_) {
-            self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
+            ApplyUpdateInControlPlaneWorkSerializer(state, status);
+            Unref();
           },
           DEBUG_LOCATION);
     }
@@ -407,7 +414,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
   };
 
-  WeakRefCountedPtr<ClientChannel> client_channel_;
+  RefCountedPtr<ClientChannel> client_channel_;
   RefCountedPtr<Subchannel> subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
@@ -428,7 +435,7 @@ class ClientChannel::ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   explicit ClientChannelControlHelper(
-      WeakRefCountedPtr<ClientChannel> client_channel)
+      RefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ClientChannelControlHelper() override {
@@ -487,6 +494,8 @@ class ClientChannel::ClientChannelControlHelper
     client_channel_->resolver_->RequestReresolutionLocked();
   }
 
+  absl::string_view GetTarget() override { return client_channel_->target(); }
+
   absl::string_view GetAuthority() override {
     return client_channel_->default_authority_;
   }
@@ -504,6 +513,10 @@ class ClientChannel::ClientChannelControlHelper
 
   EventEngine* GetEventEngine() override {
     return client_channel_->event_engine();
+  }
+
+  GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
+    return client_channel_->stats_plugin_group_;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
@@ -524,12 +537,21 @@ class ClientChannel::ClientChannelControlHelper
     return channelz::ChannelTrace::Error;
   }
 
-  WeakRefCountedPtr<ClientChannel> client_channel_;
+  RefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
 // ClientChannel::LoadBalancedCallDestination
 //
+
+// Context type for subchannel call tracker.
+template <>
+struct ContextType<LoadBalancingPolicy::SubchannelCallTrackerInterface*> {};
+
+// Context type for LB on_commit callback.
+using LbOnCommit = absl::AnyInvocable<void()>;
+template <>
+struct ContextType<LbOnCommit> {};
 
 namespace {
 
@@ -613,6 +635,7 @@ void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
   auto* call_tracer = GetCallTracerFromContext();
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
+  auto* legacy_context = GetContext<grpc_call_context_element>();
   legacy_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
 }
 
@@ -621,10 +644,6 @@ ClientCallTracer::CallAttemptTracer* GetCallAttemptTracerFromContext() {
   return static_cast<ClientCallTracer::CallAttemptTracer*>(
       legacy_context[GRPC_CONTEXT_CALL_TRACER].value);
 }
-
-// Context type for subchannel call tracker.
-template <>
-struct ContextType<LoadBalancingPolicy::SubchannelCallTracker*> {};
 
 // A filter to handle updating with the call tracer and LB subchannel
 // call tracker inside the LB call.
@@ -642,15 +661,15 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
     void OnClientInitialMetadata(ClientMetadata& metadata) {
       auto* tracer = GetCallAttemptTracerFromContext();
       if (tracer == nullptr) return;
-      tracer->RecordSendInitialMetadata(metadata.get());
+      tracer->RecordSendInitialMetadata(&metadata);
     }
 
     void OnServerInitialMetadata(ServerMetadata& metadata) {
       auto* tracer = GetCallAttemptTracerFromContext();
       if (tracer == nullptr) return;
-      tracer->RecordReceivedInitialMetadata(metadata.get());
+      tracer->RecordReceivedInitialMetadata(&metadata);
       // Save peer string for later use.
-      Slice* peer_string = metadata->get_pointer(PeerString());
+      Slice* peer_string = metadata.get_pointer(PeerString());
       if (peer_string != nullptr) peer_string_ = peer_string->Ref();
     }
 
@@ -670,15 +689,16 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
     void OnServerTrailingMetadata(ServerMetadata& metadata) {
       auto* tracer = GetCallAttemptTracerFromContext();
       auto* call_tracker =
-          GetContext<LoadBalancingPolicy::SubchannelCallTracker*>();
+          GetContext<LoadBalancingPolicy::SubchannelCallTrackerInterface*>();
       absl::Status status;
-      if (tracer != nullptr || call_tracker != nullptr) {
-        grpc_status_code code = metadata->get(GrpcStatusMetadata())
+      if (tracer != nullptr ||
+          (call_tracker != nullptr && *call_tracker != nullptr)) {
+        grpc_status_code code = metadata.get(GrpcStatusMetadata())
                                     .value_or(GRPC_STATUS_UNKNOWN);
         if (code != GRPC_STATUS_OK) {
           absl::string_view message;
           if (const auto* grpc_message =
-                  metadata->get_pointer(GrpcMessageMetadata())) {
+                  metadata.get_pointer(GrpcMessageMetadata())) {
             message = grpc_message->as_string_view();
           }
           status =
@@ -687,18 +707,17 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
       }
       if (tracer != nullptr) {
         tracer->RecordReceivedTrailingMetadata(
-            status, metadata.get(),
-            &GetContext<CallContext>()->call_stats()->transport_stream_stats,
-            peer_string_.as_string_view());
+            status, &metadata,
+            &GetContext<CallContext>()->call_stats()->transport_stream_stats);
       }
-      if (call_tracker != nullptr) {
-        LbMetadata metadata(metadata.get());
-        BackendMetricAccessor backend_metric_accessor(metadata.get());
+      if (call_tracker != nullptr && *call_tracker != nullptr) {
+        LbMetadata lb_metadata(&metadata);
+        BackendMetricAccessor backend_metric_accessor(&metadata);
         LoadBalancingPolicy::SubchannelCallTrackerInterface::FinishArgs args = {
-            peer_string_.as_string_view(), status, metadata.get(),
+            peer_string_.as_string_view(), status, &lb_metadata,
             &backend_metric_accessor};
-        call_tracker->Finish(args);
-        delete call_tracker;
+        (*call_tracker)->Finish(args);
+        delete *call_tracker;
       }
     }
 
@@ -727,7 +746,7 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
 
       const BackendMetricData* GetBackendMetricData() override {
         if (backend_metric_data_ == nullptr) {
-          if (const auto* md = recv_trailing_metadata_->get_pointer(
+          if (const auto* md = server_trailing_metadata_->get_pointer(
                   EndpointLoadMetricsBinMetadata())) {
             BackendMetricAllocator allocator;
             backend_metric_data_ =
@@ -749,13 +768,19 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
         }
       };
 
-      grpc_metadata_batch* send_trailing_metadata_;
+      grpc_metadata_batch* server_trailing_metadata_;
       const BackendMetricData* backend_metric_data_ = nullptr;
     };
 
+// FIXME: this isn't the right place to measure this from -- should be
+// doing it from before we do the LB pick
+    gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
     Slice peer_string_;
   };
 };
+
+const NoInterceptor LbCallTracingFilter::Call::OnClientToServerMessage;
+const NoInterceptor LbCallTracingFilter::Call::OnServerToClientMessage;
 
 }  // namespace
 
@@ -770,7 +795,7 @@ class ClientChannel::LoadBalancedCallDestination : public CallDestination {
   void StartCall(UnstartedCallHandler unstarted_handler) override {
     // If there is a call tracer, create a call attempt tracer.
     bool* is_transparent_retry_metadata =
-        unstarted_call_handler.UnprocessedClientInitialMetadata->get_pointer(
+        unstarted_handler.UnprocessedClientInitialMetadata()->get_pointer(
             IsTransparentRetry());
     bool is_transparent_retry =
         is_transparent_retry_metadata != nullptr
@@ -802,7 +827,9 @@ class ClientChannel::LoadBalancedCallDestination : public CallDestination {
                       // - a connected subchannel to complete the pick
                       auto result = client_channel->PickSubchannel(
                           *last_picker, unstarted_handler);
-                      if (result == Continue{}) was_queued = true;
+                      if (absl::holds_alternative<Continue>(result)) {
+                        was_queued = true;
+                      }
                       return result;
                     });
               }),
@@ -815,8 +842,7 @@ class ClientChannel::LoadBalancedCallDestination : public CallDestination {
                   return connected_subchannel.status();
                 }
                 // LB pick is done, so indicate that we've committed.
-                absl::AnyInvocable<void()>* on_commit =
-                    metadata->get_pointer(LoadBalancingOnCommit());
+                auto* on_commit = GetContext<LbOnCommit>();
                 if (on_commit != nullptr && *on_commit != nullptr) {
                   (*on_commit)();
                 }
@@ -829,7 +855,8 @@ class ClientChannel::LoadBalancedCallDestination : public CallDestination {
                 }
                 // Delegate to connected subchannel.
 // FIXME: need to insert LbCallTracingFilter at the top of the stack
-                connected_subchannel->StartCall(std::move(unstarted_handler));
+                (*connected_subchannel)->StartCall(
+                    std::move(unstarted_handler));
                 return absl::OkStatus();
               });
         });
@@ -845,14 +872,25 @@ class ClientChannel::LoadBalancedCallDestination : public CallDestination {
 
 namespace {
 
+ClientChannelServiceConfigCallData* GetServiceConfigCallDataFromContext() {
+  auto* legacy_context = GetContext<grpc_call_context_element>();
+  return static_cast<ClientChannelServiceConfigCallData*>(
+      legacy_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+}
+
 // A call destination that does not support retries.
 // To be used as an L2 filter.
 class NoRetryCallDestination : public DelegatingCallDestination {
  public:
   NoRetryCallDestination(RefCountedPtr<CallDestination> next,
-                         RefCountedPtr<CallFilters::Stack> filter_stack)
+                         RefCountedPtr<CallFilters::Stack> filter_stack,
+                         const ChannelArgs& channel_args)
       : DelegatingCallDestination(std::move(next)),
-        filter_stack_(std::move(filter_stack)) {}
+        filter_stack_(std::move(filter_stack)),
+        call_size_estimator_(1024),
+        allocator_(channel_args.GetObject<ResourceQuota>()
+                       ->memory_quota()
+                       ->CreateMemoryOwner()) {}
 
   void Orphan() override {}
 
@@ -870,13 +908,19 @@ class NoRetryCallDestination : public DelegatingCallDestination {
                   ValueOrFailure<ClientMetadataHandle> client_initial_metadata)
                   mutable -> StatusFlag {
                 if (!client_initial_metadata.ok()) return Failure{};
+                // Indicate that this is not a transparent retry.
+                *(*client_initial_metadata)->GetOrCreatePointer(
+                    IsTransparentRetry()) =
+                    false;
+                // Set on_commit callback in context.
+                handler.SetContext<LbOnCommit>(
+                    []() { GetServiceConfigCallDataFromContext()->Commit(); });
                 // Create an arena for the child call.
                 const size_t initial_size =
                     self->call_size_estimator_.CallSizeEstimate();
 // FIXME: do we want to do this for LB calls, or do we want a separate stat for this?
                 //global_stats().IncrementCallInitialSize(initial_size);
-                Arena* arena =
-                    Arena::Create(initial_size, &self->call_allocator_);
+                Arena* arena = Arena::Create(initial_size, &self->allocator_);
                 // Create an initiator/unstarted-handler pair using the arena.
 // FIXME: pass in a callback that the CallSpine will use to destroy the arena:
 // [](Arena* arena) {
@@ -887,10 +931,11 @@ class NoRetryCallDestination : public DelegatingCallDestination {
                                            GetContext<EventEngine>(), arena);
                 // Pass the child call's unstarted handler to the next
                 // destination.
-                wrapped_destination()->StartCall(
+                self->wrapped_destination()->StartCall(
                     std::move(child_call.unstarted_handler));
                 // Forward everything from the parent call to the child call.
-                ForwardCall(std::move(handler), std::move(call.initiator));
+                ForwardCall(std::move(handler),
+                            std::move(child_call.initiator));
                 return Success{};
               });
         });
@@ -899,7 +944,7 @@ class NoRetryCallDestination : public DelegatingCallDestination {
  private:
   RefCountedPtr<CallFilters::Stack> filter_stack_;
   CallSizeEstimator call_size_estimator_;
-  MemoryAllocator call_allocator_;
+  MemoryAllocator allocator_;
 };
 
 }  // namespace
@@ -969,12 +1014,14 @@ ClientChannel::ClientChannel(
     ClientChannelFactory* client_channel_factory)
     : Channel(std::move(target), channel_args),
       channel_args_(std::move(channel_args)),
+      event_engine_(channel_args.GetObjectRef<EventEngine>()),
       uri_to_resolve_(std::move(uri_to_resolve)),
       service_config_parser_index_(
           internal::ClientChannelServiceConfigParser::ParserIndex()),
       default_service_config_(std::move(default_service_config)),
       client_channel_factory_(client_channel_factory),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
+      interested_parties_(grpc_pollset_set_create()),
       lb_call_size_estimator_(1024),
       lb_call_allocator_(channel_args_.GetObject<ResourceQuota>()
                              ->memory_quota()
@@ -982,8 +1029,7 @@ ClientChannel::ClientChannel(
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
       resolver_data_for_calls_(ResolverDataForCalls{}),
       picker_(nullptr),
-      work_serializer_(
-          std::make_shared<WorkSerializer>(GetContext<EventEngine>())),
+      work_serializer_(std::make_shared<WorkSerializer>(event_engine_)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
@@ -1006,19 +1052,30 @@ ClientChannel::ClientChannel(
   } else {
     default_authority_ = std::move(*default_authority);
   }
+  // Get stats plugins for channel.
+  StatsPlugin::ChannelScope scope(this->target(), default_authority_);
+  stats_plugin_group_ =
+      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 
 ClientChannel::~ClientChannel() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: destroying", this);
   }
+  grpc_pollset_set_destroy(interested_parties_);
 }
 
 void ClientChannel::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: shutting down", this);
   }
-  DestroyResolverAndLbPolicyLocked();
+  Ref().release();
+  work_serializer_->Run(
+      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+        DestroyResolverAndLbPolicyLocked();
+        Unref();
+      },
+      DEBUG_LOCATION);
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
@@ -1034,34 +1091,44 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
   grpc_connectivity_state state =
       ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (state == GRPC_CHANNEL_IDLE && try_to_connect) {
+    RefAsSubclass<ClientChannel>().release();  // Held by callback.
     work_serializer_->Run(
-        [self = RefAsSubclass<ClientChannel>()]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-          self->TryToConnectLocked();
+        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+          TryToConnectLocked();
+          Unref();
         },
         DEBUG_LOCATION);
   }
   return state;
 }
 
+void ClientChannel::WatchConnectivityState(
+      grpc_connectivity_state last_observed_state, Timestamp deadline,
+      grpc_completion_queue* cq, void* tag) {
+// FIXME: implement
+}
+
 void ClientChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
-  work_serializer_->Run(
-      [self = RefAsSubclass<ClientChannel>(), initial_state,
-       watcher = std::move(watcher)]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
-      },
-      DEBUG_LOCATION);
+// FIXME: to make this work, need to change WorkSerializer to use
+// absl::AnyInvocable<> instead of std::function<>
+//  work_serializer_->Run(
+//      [self = RefAsSubclass<ClientChannel>(), initial_state,
+//       watcher = std::move(watcher)]()
+//            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+//        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
+//      },
+//      DEBUG_LOCATION);
 }
 
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
+  RefAsSubclass<ClientChannel>().release();  // Held by callback.
   work_serializer_->Run(
-      [self = RefAsSubclass<ClientChannel>(), watcher]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        self->state_tracker_.RemoveWatcher(watcher);
+      [this, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+        state_tracker_.RemoveWatcher(watcher);
+        Unref();
       },
       DEBUG_LOCATION);
 }
@@ -1077,7 +1144,13 @@ void ClientChannel::GetInfo(const grpc_channel_info* info) {
 }
 
 void ClientChannel::ResetConnectionBackoff() {
-  if (lb_policy_ != nullptr) lb_policy_->ResetBackoffLocked();
+  RefAsSubclass<ClientChannel>().release();  // Held by callback.
+  work_serializer_->Run(
+      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+        if (lb_policy_ != nullptr) lb_policy_->ResetBackoffLocked();
+        Unref();
+      },
+      DEBUG_LOCATION);
 }
 
 namespace {
@@ -1143,14 +1216,14 @@ void ClientChannel::Ping(grpc_completion_queue* cq, void* tag) {
       [](const RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>& picker) {
         return true;
       }));
-  if (picker == nullptr) {
+  if (!picker.has_value() || *picker == nullptr) {
     request->Complete(absl::UnavailableError("channel not connected"));
     return;
   }
   // Do pick.
   LoadBalancingPolicy::PickResult result =
-      picker->Pick(LoadBalancingPolicy::PickArgs());
-  HandlePickResult<grpc_error_handle>(
+      (*picker)->Pick(LoadBalancingPolicy::PickArgs());
+  HandlePickResult<void>(
       &result,
       // Complete pick.
       [&](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
@@ -1168,15 +1241,15 @@ void ClientChannel::Ping(grpc_completion_queue* cq, void* tag) {
         });
       },
       // Queue pick.
-      [](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
+      [&](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
         request->Complete(absl::UnavailableError("LB picker queued call"));
       },
       // Fail pick.
-      [](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
+      [&](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
         request->Complete(fail_pick->status);
       },
       // Drop pick.
-      [](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
+      [&](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
         request->Complete(drop_pick->status);
       });
 }
@@ -1189,6 +1262,7 @@ grpc_call* ClientChannel::CreateCall(
 // FIXME: code to convert from C-core batch API to v3 call, then invoke
 // CreateCall(client_initial_metadata, arena)
 // FIXME: make sure call holds a ref to ClientChannel for its entire lifetime
+  return nullptr;
 }
 
 CallInitiator ClientChannel::CreateCall(
@@ -1208,8 +1282,9 @@ CallInitiator ClientChannel::CreateCall(
        unstarted_handler = std::move(call.unstarted_handler),
        was_queued = false]() mutable {
         const bool wait_for_ready =
-            client_initial_metadata->GetOrCreatePointer(WaitForReady())
-            ->value;
+            unstarted_handler.UnprocessedClientInitialMetadata()
+                ->GetOrCreatePointer(WaitForReady())
+                ->value;
         return Map(
             // Wait for the resolver result.
             self->resolver_data_for_calls_.NextWhen(
@@ -1267,7 +1342,7 @@ void ClientChannel::CreateResolverLocked() {
       interested_parties_, // FIXME: remove somehow
       work_serializer_,
       std::make_unique<ResolverResultHandler>(
-          WeakRefAsSubclass<ClientChannel>()));
+          RefAsSubclass<ClientChannel>()));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
@@ -1579,7 +1654,7 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =
       std::make_unique<ClientChannelControlHelper>(
-          WeakRefAsSubclass<ClientChannel>());
+          RefAsSubclass<ClientChannel>());
   lb_policy_args.args = args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
@@ -1630,7 +1705,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   CallFilters::StackBuilder builder;
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata(
-        [this](ServerMetadataHandle&) {
+        [this](ServerMetadata&) {
           if (idle_state_.DecreaseCallCount()) StartIdleTimer();
         });
   }
@@ -1647,7 +1722,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
 #endif
   auto filter_stack = builder.Build();
   // Create call destination.
-  std::unique_ptr<CallDestination> call_destination;
+  RefCountedPtr<CallDestination> call_destination;
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
@@ -1657,7 +1732,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     call_destination = MakeRefCounted<NoRetryCallDestination>(
         MakeRefCounted<LoadBalancedCallDestination>(
             RefAsSubclass<ClientChannel>()),
-        std::move(filter_stack));
+        std::move(filter_stack), channel_args_);
   }
   // Send result to data plane.
   resolver_data_for_calls_.Set(
@@ -1695,7 +1770,7 @@ void ClientChannel::StartIdleTimer() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: idle timer started", this);
   }
-  auto self = WeakRefAsSubclass<ClientChannel>();
+  auto self = RefAsSubclass<ClientChannel>();
   auto promise = Loop([self]() {
     return TrySeq(Sleep(Timestamp::Now() + self->idle_timeout_),
                   [&self]() -> Poll<LoopCtl<absl::Status>> {
@@ -1708,13 +1783,13 @@ void ClientChannel::StartIdleTimer() {
   });
   idle_activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
-      [self = std::move(self)](absl::Status status) mutable {
+      [this, self = std::move(self)](absl::Status status) mutable {
         if (status.ok()) {
-          auto* self_ptr = self.get();
-          self_ptr->work_serializer_->Run(
-              [self = std::move(self)]() {
-                self->DestroyResolverAndLbPolicyLocked();
-                self->UpdateStateAndPickerLocked(
+          work_serializer_->Run(
+              [this, self = std::move(self)]()
+                  ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+                DestroyResolverAndLbPolicyLocked();
+                UpdateStateAndPickerLocked(
                     GRPC_CHANNEL_IDLE, absl::OkStatus(),
                     "channel entering IDLE", nullptr);
                 // TODO(roth): In case there's a race condition, we
@@ -1777,12 +1852,6 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
 
 namespace {
 
-ClientChannelServiceConfigCallData* GetServiceConfigCallDataFromContext() {
-  auto* legacy_context = GetContext<grpc_call_context_element>();
-  return static_cast<ClientChannelServiceConfigCallData*>(
-      legacy_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-}
-
 class LbCallState : public ClientChannelLbCallState {
  public:
   void* Alloc(size_t size) override { return GetContext<Arena>()->Alloc(size); }
@@ -1797,7 +1866,7 @@ class LbCallState : public ClientChannelLbCallState {
 
   ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
     auto* legacy_context = GetContext<grpc_call_context_element>();
-    return static_cast<ClientCallAttemptTracer*>(
+    return static_cast<ClientCallTracer::CallAttemptTracer*>(
         legacy_context[GRPC_CONTEXT_CALL_TRACER].value);
   }
 };
@@ -1820,10 +1889,12 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker.Pick(pick_args);
   // Handle result.
-  return HandlePickResult<bool>(
+  return HandlePickResult<
+      LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>>>(
       &result,
       // CompletePick
-      [&](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
+      [&](LoadBalancingPolicy::PickResult::Complete* complete_pick)
+          -> LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>> {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO,
                   "client_channel=%p: %sLB pick succeeded: subchannel=%p",
@@ -1854,14 +1925,14 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         // it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
           complete_pick->subchannel_call_tracker->Start();
-          unstarted_call_handler.SetContext(
+          unstarted_handler.SetContext(
               complete_pick->subchannel_call_tracker.release());
         }
         // Return the connected subchannel.
         return connected_subchannel;
       },
       // QueuePick
-      [this](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
+      [&](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO, "client_channel=%p: %sLB pick queued",
                   this, GetContext<Activity>()->DebugTag().c_str());
@@ -1869,7 +1940,8 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         return Continue{};
       },
       // FailPick
-      [this, &error](LoadBalancingPolicy::PickResult::Fail* fail_pick) {
+      [&](LoadBalancingPolicy::PickResult::Fail* fail_pick)
+          -> LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>> {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO, "client_channel=%p: %sLB pick failed: %s",
                   this, GetContext<Activity>()->DebugTag().c_str(),
@@ -1877,7 +1949,7 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         }
         // If wait_for_ready is false, then the error indicates the RPC
         // attempt's final status.
-        if (!send_initial_metadata()
+        if (!unstarted_handler.UnprocessedClientInitialMetadata()
                  ->GetOrCreatePointer(WaitForReady())
                  ->value) {
           return MaybeRewriteIllegalStatusCode(std::move(fail_pick->status),
@@ -1888,7 +1960,8 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         return Continue{};
       },
       // DropPick
-      [this, &error](LoadBalancingPolicy::PickResult::Drop* drop_pick) {
+      [&](LoadBalancingPolicy::PickResult::Drop* drop_pick)
+          -> LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>> {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
           gpr_log(GPR_INFO, "client_channel=%p: %sLB pick dropped: %s",
                   this, GetContext<Activity>()->DebugTag().c_str(),
