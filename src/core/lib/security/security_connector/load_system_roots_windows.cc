@@ -79,7 +79,7 @@ Slice LoadSystemRootCerts() {
     return Slice();
   }
 
-  return Slice::FromStaticString(std::move(bundle_string));
+  return Slice::FromCopiedString(std::move(bundle_string));
 }
 
 }  // namespace grpc_core
