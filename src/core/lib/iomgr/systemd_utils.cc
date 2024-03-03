@@ -43,13 +43,13 @@ bool set_matching_sd_unix_fd(grpc_tcp_server* s,
   if (address.empty()) {
     return false;
   }
+  // sd_is_socket_unix() requires length=0 for normal filesystem unix socket
+  // but requires actual length (including leading null) for `unix-abstract:xxx`
+  size_t len = 0;
+  if (address[0] == 0) {
+    len = address.length();
+  }
   for (int i = fd_start; i < fd_start + n; i++) {
-    // sd_is_socket_unix() requires length=0 for normal filesystem unix socket
-    // but requires actual length (including leading null) for `unix-abstract:xxx`
-    size_t len = 0;
-    if (address[0] == 0) {
-      len = address.length();
-    }
     if (sd_is_socket_unix(i, SOCK_STREAM, 1, address.c_str(), len)) {
       grpc_tcp_server_set_pre_allocated_fd(s, i);
       return true;
