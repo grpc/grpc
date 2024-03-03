@@ -20,6 +20,7 @@ grpc_package(name = "test/cpp/performance")
 
 grpc_cc_test(
     name = "writes_per_rpc_test",
+    timeout = "long",
     srcs = ["writes_per_rpc_test.cc"],
     external_deps = [
         "gtest",
