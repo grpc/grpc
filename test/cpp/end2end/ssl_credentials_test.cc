@@ -36,7 +36,6 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gprpp/cpp_impl_of.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
@@ -64,6 +63,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using ::grpc_core::testing::GetFileContents;
 using ::testing::HasSubstr;
 using ::testing::IsEmpty;
 using ::testing::UnorderedElementsAre;
@@ -80,15 +80,6 @@ struct ToStringJoinFormatter {
     out->append(s.data(), s.size());
   }
 };
-
-std::string ReadFile(const std::string& file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                               grpc_load_file(file_path.c_str(), 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
 
 std::size_t GetSessionCacheSize(grpc_ssl_session_cache* cache) {
   tsi_ssl_session_cache* tsi_cache =
@@ -117,7 +108,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
   void RunServer(absl::Notification* notification,
                  absl::string_view pem_root_certs) {
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-        ReadFile(kServerKeyPath), ReadFile(kServerCertPath)};
+        GetFileContents(kServerKeyPath), GetFileContents(kServerCertPath)};
     grpc::SslServerCredentialsOptions ssl_options(GetParam().request_type);
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
     ssl_options.pem_root_certs = std::string(pem_root_certs);
@@ -200,15 +191,14 @@ TEST_P(SslCredentialsTest, FullHandshake) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
-  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
-  std::string client_cert =
-      grpc_core::testing::GetFileContents(kClientCertPath);
+  std::string root_cert = GetFileContents(kCaCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -240,10 +230,10 @@ TEST_P(SslCredentialsTest, FullHandshake) {
                            "*.test.youtube.com", "192.168.1.3"));
   EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
                                    GRPC_X509_PEM_CERT_PROPERTY_NAME),
-            ReadFile(kServerCertPath));
+            GetFileContents(kServerCertPath));
   EXPECT_EQ(GetAuthContextProperty(**full_handshake_context,
                                    GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME),
-            ReadFile(kServerCertPath));
+            GetFileContents(kServerCertPath));
   EXPECT_THAT(
       GetAuthContextPropertyAsList(**full_handshake_context,
                                    GRPC_PEER_DNS_PROPERTY_NAME),
@@ -276,15 +266,14 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
-  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
-  std::string client_cert =
-      grpc_core::testing::GetFileContents(kClientCertPath);
+  std::string root_cert = GetFileContents(kCaCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -322,10 +311,10 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
                            "*.test.youtube.com", "192.168.1.3"));
   EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
                                    GRPC_X509_PEM_CERT_PROPERTY_NAME),
-            ReadFile(kServerCertPath));
+            GetFileContents(kServerCertPath));
   EXPECT_EQ(GetAuthContextProperty(**resumed_handshake_context,
                                    GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME),
-            ReadFile(kServerCertPath));
+            GetFileContents(kServerCertPath));
   EXPECT_THAT(
       GetAuthContextPropertyAsList(**resumed_handshake_context,
                                    GRPC_PEER_DNS_PROPERTY_NAME),
@@ -356,14 +345,14 @@ TEST_P(SslCredentialsTest, SequentialResumption) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = GetFileContents(kCaCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -395,14 +384,14 @@ TEST_P(SslCredentialsTest, ConcurrentResumption) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = GetFileContents(kCaCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -438,15 +427,14 @@ TEST_P(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
-  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
-  std::string client_cert =
-      grpc_core::testing::GetFileContents(kClientCertPath);
+  std::string root_cert = GetFileContents(kCaCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -470,14 +458,14 @@ TEST_P(SslCredentialsTest, ServerCertificateIsUntrusted) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kClientCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = GetFileContents(kClientCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -505,14 +493,14 @@ TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kServerCertPath);
+    std::string root_cert = GetFileContents(kServerCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kClientCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = GetFileContents(kClientCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -544,14 +532,14 @@ TEST_P(SslCredentialsTest, ServerHostnameVerificationFails) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
-    std::string root_cert = ReadFile(kCaCertPath);
+    std::string root_cert = GetFileContents(kCaCertPath);
     RunServer(&notification, root_cert);
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = GetFileContents(kCaCertPath);
+  std::string client_key = GetFileContents(kClientKeyPath);
+  std::string client_cert = GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
