@@ -43,11 +43,20 @@ bool set_matching_sd_unix_fd(grpc_tcp_server* s,
   if (address.empty()) {
     return false;
   }
-  // sd_is_socket_unix() requires length=0 for normal filesystem unix socket
-  // but requires actual length (including leading null) for `unix-abstract:xxx`
   size_t len = 0;
   if (address[0] == 0) {
+    // abstract unix sockets :
+    // sd_is_socket_unix() requires actual length (including leading null)
+    // for `unix-abstract:xxx`, instead of length=0 for normal filesystem sockets
     len = address.length();
+  } else if (address[0] != '/') {
+    // relative unix sockets :
+    // sd_is_socket_unix() does not seem to handle relative path well,
+    // so if the path is not absolute, rebuild an absolute version
+    char buffer[PATH_MAX];
+    if (realpath(address.c_str(), buffer) != nullptr) {
+      address = buffer;
+    }
   }
   for (int i = fd_start; i < fd_start + n; i++) {
     if (sd_is_socket_unix(i, SOCK_STREAM, 1, address.c_str(), len)) {
