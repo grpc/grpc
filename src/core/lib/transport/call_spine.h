@@ -86,6 +86,7 @@ class CallSpineInterface {
     server_initial_metadata().sender.CloseWithError();
     client_to_server_messages().sender.CloseWithError();
     server_to_client_messages().sender.CloseWithError();
+    server_trailing_metadata().sender.CloseWithError();
     return absl::nullopt;
   }
 
@@ -248,13 +249,23 @@ class CallInitiator {
   auto PullServerTrailingMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
     return PrioritizedRace(
-        Map(spine_->server_trailing_metadata().receiver.Next(),
-            [spine = spine_](
-                NextResult<ServerMetadataHandle> md) -> ServerMetadataHandle {
-              GPR_ASSERT(md.has_value());
-              return std::move(*md);
+        Seq(spine_->server_trailing_metadata().receiver.Next(),
+            [spine = spine_](NextResult<ServerMetadataHandle> md) mutable {
+              return [md = std::move(md),
+                      spine]() mutable -> Poll<ServerMetadataHandle> {
+                // If the pipe was closed at cancellation time, we'll see no
+                // value here. Return pending and allow the cancellation to win
+                // the race.
+                if (!md.has_value()) return Pending{};
+                spine->server_trailing_metadata().sender.Close();
+                return std::move(*md);
+              };
             }),
-        spine_->WaitForCancel());
+        Map(spine_->WaitForCancel(),
+            [spine = spine_](ServerMetadataHandle md) -> ServerMetadataHandle {
+              spine->server_trailing_metadata().sender.CloseWithError();
+              return md;
+            }));
   }
 
   auto PullMessage() {

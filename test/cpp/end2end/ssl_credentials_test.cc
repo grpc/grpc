@@ -41,6 +41,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 // TODO(matthewstevenson88): More test cases to add:
@@ -204,9 +205,10 @@ TEST_P(SslCredentialsTest, FullHandshake) {
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -279,9 +281,10 @@ TEST_P(SslCredentialsTest, ResumedHandshake) {
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;
@@ -440,9 +443,10 @@ TEST_P(SslCredentialsTest, ResumptionFailsDueToNoCapacityInCache) {
   });
   notification.WaitForNotification();
 
-  std::string root_cert = ReadFile(kCaCertPath);
-  std::string client_key = ReadFile(kClientKeyPath);
-  std::string client_cert = ReadFile(kClientCertPath);
+  std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+  std::string client_key = grpc_core::testing::GetFileContents(kClientKeyPath);
+  std::string client_cert =
+      grpc_core::testing::GetFileContents(kClientCertPath);
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = root_cert;
   ssl_options.pem_private_key = client_key;

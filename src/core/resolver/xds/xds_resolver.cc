@@ -83,8 +83,8 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -880,7 +880,8 @@ void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
 //
 
 void XdsResolver::StartLocked() {
-  auto xds_client = GrpcXdsClient::GetOrCreate(args_, "xds resolver");
+  auto xds_client =
+      GrpcXdsClient::GetOrCreate(uri_.ToString(), args_, "xds resolver");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "

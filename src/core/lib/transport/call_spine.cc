@@ -43,15 +43,19 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
                              });
                        }),
                [call_initiator](StatusFlag result) mutable {
-                 call_initiator.SpawnInfallible(
-                     "finish-downstream", [call_initiator, result]() mutable {
-                       if (result.ok()) {
+                 if (result.ok()) {
+                   call_initiator.SpawnInfallible(
+                       "finish-downstream-ok", [call_initiator]() mutable {
                          call_initiator.FinishSends();
-                       } else {
-                         call_initiator.Cancel();
-                       }
-                       return Empty{};
-                     });
+                         return Empty{};
+                       });
+                 } else {
+                   call_initiator.SpawnInfallible("finish-downstream-fail",
+                                                  [call_initiator]() mutable {
+                                                    call_initiator.Cancel();
+                                                    return Empty{};
+                                                  });
+                 }
                  return result;
                });
   });

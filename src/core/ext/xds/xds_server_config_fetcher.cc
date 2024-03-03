@@ -82,17 +82,19 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 namespace grpc_core {
 namespace {
 
 using ReadDelayHandle = XdsClient::ReadDelayHandle;
+
+constexpr absl::string_view kServerXdsClientKey = "#server";
 
 TraceFlag grpc_xds_server_config_fetcher_trace(false,
                                                "xds_server_config_fetcher");
@@ -1372,7 +1374,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       "update=%p, user_data=%p}, args=%p)",
       3, (notifier.on_serving_status_update, notifier.user_data, args));
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      channel_args, "XdsServerConfigFetcher");
+      grpc_core::kServerXdsClientKey, channel_args, "XdsServerConfigFetcher");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             xds_client.status().ToString().c_str());

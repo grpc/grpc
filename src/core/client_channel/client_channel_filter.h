@@ -63,7 +63,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config.h"
+#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -147,11 +147,6 @@ class ClientChannelFilter {
   void CancelExternalConnectivityWatcher(grpc_closure* on_complete) {
     ExternalConnectivityWatcher::RemoveWatcherFromExternalWatchersMap(
         this, on_complete, /*cancel=*/true);
-  }
-
-  int NumExternalConnectivityWatchers() const {
-    MutexLock lock(&external_watchers_mu_);
-    return static_cast<int>(external_watchers_.size());
   }
 
   // Starts and stops a connectivity watch.  The watcher will be initially
@@ -300,6 +295,7 @@ class ClientChannelFilter {
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   RefCountedPtr<ServiceConfig> default_service_config_;
+  std::string target_uri_;
   std::string uri_to_resolve_;
   std::string default_authority_;
   channelz::ChannelNode* channelz_node_;

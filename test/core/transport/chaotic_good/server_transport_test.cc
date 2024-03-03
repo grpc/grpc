@@ -102,7 +102,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr),
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   // Once we set the acceptor, expect to read some frames.
   // We'll return a new request with a payload of "12345678".
   control_endpoint.ExpectRead(

@@ -44,8 +44,8 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -566,40 +566,49 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 }
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
-  grpc_slice result = grpc_empty_slice();
+  Slice result;
   // First try to load the roots from the configuration.
-  auto default_root_certs_path = ConfigVars::Get().DefaultSslRootsFilePath();
+  std::string default_root_certs_path =
+      ConfigVars::Get().DefaultSslRootsFilePath();
   if (!default_root_certs_path.empty()) {
-    GRPC_LOG_IF_ERROR(
-        "load_file",
-        grpc_load_file(std::string(default_root_certs_path).c_str(), 1,
-                       &result));
+    auto slice =
+        LoadFile(default_root_certs_path, /*add_null_terminator=*/true);
+    if (!slice.ok()) {
+      gpr_log(GPR_ERROR, "error loading file %s: %s",
+              default_root_certs_path.c_str(),
+              slice.status().ToString().c_str());
+    } else {
+      result = std::move(*slice);
+    }
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
-  if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
+  if (result.empty() && ssl_roots_override_cb != nullptr) {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
       GPR_ASSERT(pem_root_certs != nullptr);
-      result = grpc_slice_from_copied_buffer(
+      result = Slice::FromCopiedBuffer(
           pem_root_certs,
           strlen(pem_root_certs) + 1);  // nullptr terminator.
     }
     gpr_free(pem_root_certs);
   }
   // Try loading roots from OS trust store if flag is enabled.
-  if (GRPC_SLICE_IS_EMPTY(result) &&
-      !ConfigVars::Get().NotUseSystemSslRoots()) {
-    result = LoadSystemRootCerts();
+  if (result.empty() && !ConfigVars::Get().NotUseSystemSslRoots()) {
+    result = Slice(LoadSystemRootCerts());
   }
   // Fallback to roots manually shipped with gRPC.
-  if (GRPC_SLICE_IS_EMPTY(result) &&
-      ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
-    GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(installed_roots_path, 1, &result));
+  if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
+    auto slice = LoadFile(installed_roots_path, /*add_null_terminator=*/true);
+    if (!slice.ok()) {
+      gpr_log(GPR_ERROR, "error loading file %s: %s", installed_roots_path,
+              slice.status().ToString().c_str());
+    } else {
+      result = std::move(*slice);
+    }
   }
-  return result;
+  return result.TakeCSlice();
 }
 
 void DefaultSslRootStore::InitRootStore() {

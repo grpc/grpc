@@ -30,9 +30,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
@@ -65,16 +65,12 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 namespace {
 
 absl::StatusOr<std::string> ReadPolicyFromFile(absl::string_view policy_path) {
-  grpc_slice policy_slice = grpc_empty_slice();
-  grpc_error_handle error =
-      grpc_load_file(std::string(policy_path).c_str(), 0, &policy_slice);
-  if (!error.ok()) {
-    absl::Status status = absl::InvalidArgumentError(StatusToString(error));
-    return status;
+  auto policy_slice =
+      LoadFile(std::string(policy_path), /*add_null_terminator=*/false);
+  if (!policy_slice.ok()) {
+    return absl::InvalidArgumentError(policy_slice.status().ToString());
   }
-  std::string policy_contents(StringViewFromSlice(policy_slice));
-  CSliceUnref(policy_slice);
-  return policy_contents;
+  return std::string(policy_slice->as_string_view());
 }
 
 gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {

@@ -27,8 +27,10 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -40,12 +42,25 @@ using ::envoy::extensions::load_balancing_policies::
     client_side_weighted_round_robin::v3::ClientSideWeightedRoundRobin;
 using ::envoy::extensions::load_balancing_policies::wrr_locality::v3::
     WrrLocality;
-using WrrTest = XdsEnd2endTest;
+
+class WrrTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {
+    // No-op -- tests must explicitly call InitClient().
+  }
+
+  static std::string LocalityNameString(absl::string_view sub_zone) {
+    return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                           kDefaultLocalityRegion, kDefaultLocalityZone,
+                           sub_zone);
+  }
+};
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, WrrTest, ::testing::Values(XdsTestType()),
                          &XdsTestType::Name);
 
 TEST_P(WrrTest, Basic) {
+  InitClient();
   CreateAndStartBackends(3);
   // Expected weights = qps / (util + (eps/qps)) =
   //   1/(0.2+0.2) : 1/(0.3+0.3) : 2/(1.5+0.1) = 6:4:3
@@ -90,6 +105,48 @@ TEST_P(WrrTest, Basic) {
     }
     return true;
   });
+}
+
+TEST_P(WrrTest, MetricsHaveLocalityLabel) {
+  if (!grpc_core::IsWrrDelegateToPickFirstEnabled()) return;
+  const auto kEndpointWeights =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindDoubleHistogramHandleByName("grpc.lb.wrr.endpoint_weights")
+              .value();
+  const std::string target = absl::StrCat("xds:", kServerName);
+  const absl::string_view kLabelValues[] = {/*target=*/target};
+  // Register stats plugin before initializing client.
+  auto stats_plugin = grpc_core::FakeStatsPluginBuilder()
+                          .UseDisabledByDefaultMetrics(true)
+                          .BuildAndRegister();
+  InitClient();
+  CreateAndStartBackends(2);
+  auto cluster = default_cluster_;
+  WrrLocality wrr_locality;
+  wrr_locality.mutable_endpoint_picking_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(ClientSideWeightedRoundRobin());
+  cluster.mutable_load_balancing_policy()
+      ->add_policies()
+      ->mutable_typed_extension_config()
+      ->mutable_typed_config()
+      ->PackFrom(wrr_locality);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Make sure we have a metric value for each of the two localities.
+  EXPECT_THAT(
+      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
+                                      {LocalityNameString("locality0")}),
+      ::testing::Optional(::testing::Not(::testing::IsEmpty())));
+  EXPECT_THAT(
+      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
+                                      {LocalityNameString("locality1")}),
+      ::testing::Optional(::testing::Not(::testing::IsEmpty())));
 }
 
 }  // namespace
