@@ -285,8 +285,7 @@ TEST_F(PartyTest, CanSpawnAndRun) {
       "TestSpawn",
       [i = 10]() mutable -> Poll<int> {
         EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
-        gpr_log(GPR_DEBUG, "i=%d", i);
-        GPR_ASSERT(i > 0);
+        EXPECT_GT(i, 0);
         GetContext<Activity>()->ForceImmediateRepoll();
         --i;
         if (i == 0) return 42;
@@ -784,6 +783,39 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST_F(PartyTest, NestedWakeup) {
+  auto party1 = MakeRefCounted<TestParty>();
+  auto party2 = MakeRefCounted<TestParty>();
+  int whats_going_on = 0;
+  Notification n;
+  party1->Spawn(
+      "p1",
+      [&]() {
+        EXPECT_EQ(whats_going_on, 0);
+        whats_going_on = 1;
+        party2->Spawn(
+            "p2",
+            [&]() {
+              EXPECT_EQ(whats_going_on, 3);
+              whats_going_on = 4;
+              return Empty{};
+            },
+            [&](Empty) {
+              EXPECT_EQ(whats_going_on, 4);
+              whats_going_on = 5;
+              n.Notify();
+            });
+        EXPECT_EQ(whats_going_on, 1);
+        whats_going_on = 2;
+        return Empty{};
+      },
+      [&](Empty) {
+        EXPECT_EQ(whats_going_on, 2);
+        whats_going_on = 3;
+      });
+  n.WaitForNotification();
 }
 
 }  // namespace grpc_core

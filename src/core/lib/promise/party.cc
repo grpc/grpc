@@ -37,6 +37,11 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");
 
 namespace grpc_core {
 
+namespace {
+// TODO(ctiller): Once all activities are parties we can remove this.
+thread_local Party* g_current_party_ = nullptr;
+}  // namespace
+
 ///////////////////////////////////////////////////////////////////////////////
 // PartySyncUsingAtomics
 
@@ -210,10 +215,31 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 }
 
 void Party::RunLocked() {
+  // If there is a party running, then we don't run it immediately
+  // but instead add it to the end of the list of parties to run.
+  // This enables a fairly straightforward batching of work from a
+  // call to a transport (or back again).
+  if (g_current_party_ != nullptr) {
+    Party* after = g_current_party_;
+    while (after->run_next_ != nullptr) {
+      after = after->run_next_;
+    }
+    after->run_next_ = this;
+    return;
+  }
   auto body = [this]() {
-    if (RunParty()) {
+    GPR_DEBUG_ASSERT(g_current_party_ == nullptr);
+    g_current_party_ = this;
+    const bool done = RunParty();
+    GPR_DEBUG_ASSERT(g_current_party_ == this);
+    Party* run_next = std::exchange(run_next_, nullptr);
+    g_current_party_ = nullptr;
+    if (done) {
       ScopedActivity activity(this);
       PartyOver();
+    }
+    if (run_next != nullptr) {
+      run_next->RunLocked();
     }
   };
 #ifdef GRPC_MAXIMIZE_THREADYNESS
