@@ -788,8 +788,12 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
 TEST_F(PartyTest, NestedWakeup) {
   auto party1 = MakeRefCounted<TestParty>();
   auto party2 = MakeRefCounted<TestParty>();
+  auto party3 = MakeRefCounted<TestParty>();
   int whats_going_on = 0;
-  Notification n;
+  Notification started2;
+  Notification done2;
+  Notification started3;
+  Notification notify_done;
   party1->Spawn(
       "p1",
       [&]() {
@@ -798,6 +802,8 @@ TEST_F(PartyTest, NestedWakeup) {
         party2->Spawn(
             "p2",
             [&]() {
+              started2.Notify();
+              started3.WaitForNotification();
               EXPECT_EQ(whats_going_on, 3);
               whats_going_on = 4;
               return Empty{};
@@ -805,7 +811,22 @@ TEST_F(PartyTest, NestedWakeup) {
             [&](Empty) {
               EXPECT_EQ(whats_going_on, 4);
               whats_going_on = 5;
-              n.Notify();
+              done2.Notify();
+            });
+        party3->Spawn(
+            "p3",
+            [&]() {
+              started2.WaitForNotification();
+              started3.Notify();
+              done2.WaitForNotification();
+              EXPECT_EQ(whats_going_on, 5);
+              whats_going_on = 6;
+              return Empty{};
+            },
+            [&](Empty) {
+              EXPECT_EQ(whats_going_on, 6);
+              whats_going_on = 7;
+              notify_done.Notify();
             });
         EXPECT_EQ(whats_going_on, 1);
         whats_going_on = 2;
@@ -815,7 +836,7 @@ TEST_F(PartyTest, NestedWakeup) {
         EXPECT_EQ(whats_going_on, 2);
         whats_going_on = 3;
       });
-  n.WaitForNotification();
+  notify_done.WaitForNotification();
 }
 
 }  // namespace grpc_core

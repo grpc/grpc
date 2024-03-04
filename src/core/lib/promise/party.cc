@@ -39,7 +39,7 @@ namespace grpc_core {
 
 namespace {
 // TODO(ctiller): Once all activities are parties we can remove this.
-thread_local Party* g_current_party_ = nullptr;
+thread_local Party** g_current_party_run_next = nullptr;
 }  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -219,21 +219,27 @@ void Party::RunLocked() {
   // but instead add it to the end of the list of parties to run.
   // This enables a fairly straightforward batching of work from a
   // call to a transport (or back again).
-  if (g_current_party_ != nullptr) {
-    Party* after = g_current_party_;
-    while (after->run_next_ != nullptr) {
-      after = after->run_next_;
+  if (g_current_party_run_next != nullptr) {
+    if (*g_current_party_run_next == nullptr) {
+      *g_current_party_run_next = this;
+    } else {
+      // But if there's already a party queued, we're better off asking event
+      // engine to run it so we can spread load.
+      event_engine()->Run([this]() {
+        ApplicationCallbackExecCtx app_exec_ctx;
+        ExecCtx exec_ctx;
+        RunLocked();
+      });
     }
-    after->run_next_ = this;
     return;
   }
   auto body = [this]() {
-    GPR_DEBUG_ASSERT(g_current_party_ == nullptr);
-    g_current_party_ = this;
+    GPR_DEBUG_ASSERT(g_current_party_run_next == nullptr);
+    Party* run_next = nullptr;
+    g_current_party_run_next = &run_next;
     const bool done = RunParty();
-    GPR_DEBUG_ASSERT(g_current_party_ == this);
-    Party* run_next = std::exchange(run_next_, nullptr);
-    g_current_party_ = nullptr;
+    GPR_DEBUG_ASSERT(g_current_party_run_next == &run_next);
+    g_current_party_run_next = nullptr;
     if (done) {
       ScopedActivity activity(this);
       PartyOver();

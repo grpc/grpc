@@ -628,7 +628,6 @@ class Party : public Activity, private Wakeable {
 
   Arena* const arena_;
   uint8_t currently_polling_ = kNotPolling;
-  Party* run_next_ = nullptr;
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
   // If the lower bit is set, then this is a ParticipantFactory*.
