@@ -334,7 +334,10 @@ grpc_cc_test(
         "no_mac",  # to emulate "excluded_poll_engines: poll"
         "no_windows",
     ],
-    deps = [":fullstack_unary_ping_pong_h", "//:grpcpp_chaotic_good"],
+    deps = [
+        ":fullstack_unary_ping_pong_h",
+        "//:grpcpp_chaotic_good",
+    ],
 )
 
 grpc_cc_test(
