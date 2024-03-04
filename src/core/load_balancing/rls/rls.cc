@@ -568,7 +568,7 @@ class RlsLb : public LoadBalancingPolicy {
     // Resets the channel's backoff.
     void ResetBackoff();
 
-    grpc_channel* channel() const { return channel_; }
+    Channel* channel() const { return channel_.get(); }
 
    private:
     // Watches the state of the RLS channel. Notifies the LB policy when
@@ -620,7 +620,7 @@ class RlsLb : public LoadBalancingPolicy {
     RefCountedPtr<RlsLb> lb_policy_;
     bool is_shutdown_ = false;
 
-    grpc_channel* channel_ = nullptr;
+    OrphanablePtr<Channel> channel_;
     RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
     StateWatcher* watcher_ = nullptr;
     Throttle throttle_ ABSL_GUARDED_BY(&RlsLb::mu_);
@@ -1539,17 +1539,18 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     args = args.Set(GRPC_ARG_SERVICE_CONFIG, service_config)
                .Set(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 1);
   }
-  channel_ = grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
-                                 creds.get(), args.ToC().get());
+  channel_.reset(
+      Channel::FromC(
+          grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
+                              creds.get(), args.ToC().get())));
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p: created channel %p for %s",
-            lb_policy_.get(), this, channel_,
+            lb_policy_.get(), this, channel_.get(),
             lb_policy_->config_->lookup_service().c_str());
   }
   if (channel_ != nullptr) {
     // Set up channelz linkage.
-    channelz::ChannelNode* child_channelz_node =
-        grpc_channel_get_channelz_node(channel_);
+    channelz::ChannelNode* child_channelz_node = channel_->channelz_node();
     auto parent_channelz_node =
         lb_policy_->channel_args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
@@ -1557,11 +1558,8 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       parent_channelz_node_ = std::move(parent_channelz_node);
     }
     // Start connectivity watch.
-    ClientChannelFilter* client_channel =
-        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
-    GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "StateWatcher"));
-    client_channel->AddConnectivityWatcher(
+    channel_->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
   }
@@ -1570,26 +1568,22 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
 void RlsLb::RlsChannel::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] RlsChannel=%p, channel=%p: shutdown",
-            lb_policy_.get(), this, channel_);
+            lb_policy_.get(), this, channel_.get());
   }
   is_shutdown_ = true;
   if (channel_ != nullptr) {
     // Remove channelz linkage.
     if (parent_channelz_node_ != nullptr) {
-      channelz::ChannelNode* child_channelz_node =
-          grpc_channel_get_channelz_node(channel_);
+      channelz::ChannelNode* child_channelz_node = channel_->channelz_node();
       GPR_ASSERT(child_channelz_node != nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
     // Stop connectivity watch.
     if (watcher_ != nullptr) {
-      ClientChannelFilter* client_channel =
-          ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
-      GPR_ASSERT(client_channel != nullptr);
-      client_channel->RemoveConnectivityWatcher(watcher_);
+      channel_->RemoveConnectivityWatcher(watcher_);
       watcher_ = nullptr;
     }
-    grpc_channel_destroy_internal(channel_);
+    channel_.reset();
   }
   Unref(DEBUG_LOCATION, "Orphan");
 }
@@ -1618,7 +1612,7 @@ void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
 
 void RlsLb::RlsChannel::ResetBackoff() {
   GPR_DEBUG_ASSERT(channel_ != nullptr);
-  grpc_channel_reset_connect_backoff(channel_);
+  channel_->ResetConnectionBackoff();
 }
 
 //
@@ -1683,11 +1677,11 @@ void RlsLb::RlsRequest::StartCallLocked() {
   deadline_ = now + lb_policy_->config_->lookup_service_timeout();
   grpc_metadata_array_init(&recv_initial_metadata_);
   grpc_metadata_array_init(&recv_trailing_metadata_);
-  call_ = grpc_channel_create_pollset_set_call(
-      rls_channel_->channel(), nullptr, GRPC_PROPAGATE_DEFAULTS,
+  call_ = rls_channel_->channel()->CreateCall(
+      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
       lb_policy_->interested_parties(),
-      grpc_slice_from_static_string(kRlsRequestPath), nullptr, deadline_,
-      nullptr);
+      Slice::FromStaticString(kRlsRequestPath), /*authority=*/absl::nullopt,
+      deadline_, /*registered_method=*/true);
   grpc_op ops[6];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;

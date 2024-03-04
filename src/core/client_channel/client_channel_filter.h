@@ -65,7 +65,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
@@ -114,10 +113,6 @@ class ClientChannelFilter {
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_CLIENT_CHANNEL; }
-
-  // Returns the ClientChannelFilter object from channel, or null if channel
-  // is not a client channel.
-  static ClientChannelFilter* GetFromChannel(Channel* channel);
 
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,
