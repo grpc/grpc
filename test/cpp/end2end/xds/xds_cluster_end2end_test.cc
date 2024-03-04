@@ -332,40 +332,37 @@ TEST_P(CdsTest, MetricLabels) {
   // Send an RPC to backend 0.
   WaitForBackend(DEBUG_LOCATION, 0);
   // Verify that the optional labels are recorded in the call tracer.
-  EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
-                  ->GetLastCallAttemptTracer()
-                  ->GetOptionalLabels(),
-              ::testing::ElementsAre(
-                  ::testing::Pair(
-                      OptionalLabelComponent::kXdsServiceLabels,
-                      ::testing::Pointee(::testing::ElementsAre(
-                          ::testing::Pair("service_name", "myservice"),
-                          ::testing::Pair("service_namespace",
-                                          "mynamespace")))),
-                  ::testing::Pair(
-                      OptionalLabelComponent::kXdsLocalityLabels,
-                      ::testing::Pointee(::testing::ElementsAre(
-                          ::testing::Pair("grpc.lb.locality",
-                                          LocalityNameString("locality0")))))));
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsServiceLabels,
+              ::testing::Pointee(::testing::ElementsAre(
+                  ::testing::Pair("service_name", "myservice"),
+                  ::testing::Pair("service_namespace", "mynamespace")))),
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsLocalityLabels,
+              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
+                  "grpc.lb.locality", LocalityNameString("locality0")))))));
   // Send an RPC to backend 1.
   WaitForBackend(DEBUG_LOCATION, 1);
   // Verify that the optional labels are recorded in the call tracer.
-  EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
-                  ->GetLastCallAttemptTracer()
-                  ->GetOptionalLabels(),
-              ::testing::ElementsAre(
-                  ::testing::Pair(
-                      OptionalLabelComponent::kXdsServiceLabels,
-                      ::testing::Pointee(::testing::ElementsAre(
-                          ::testing::Pair("service_name", "myservice"),
-                          ::testing::Pair("service_namespace",
-                                          "mynamespace")))),
-                  ::testing::Pair(
-                      OptionalLabelComponent::kXdsLocalityLabels,
-                      ::testing::Pointee(::testing::ElementsAre(
-                          ::testing::Pair("grpc.lb.locality",
-                                          LocalityNameString("locality1")))))));
-
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsServiceLabels,
+              ::testing::Pointee(::testing::ElementsAre(
+                  ::testing::Pair("service_name", "myservice"),
+                  ::testing::Pair("service_namespace", "mynamespace")))),
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsLocalityLabels,
+              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
+                  "grpc.lb.locality", LocalityNameString("locality1")))))));
 }
 
 //
