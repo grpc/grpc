@@ -788,8 +788,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     locality_stats = parent()->xds_client_->AddClusterLocalityStats(
         parent()->cluster_resource_->lrs_load_reporting_server.value(),
         parent()->config_->cluster_name(),
-        GetEdsResourceName(*parent()->cluster_resource_),
-        std::move(locality_name));
+        GetEdsResourceName(*parent()->cluster_resource_), locality_name);
     if (locality_stats == nullptr) {
       gpr_log(GPR_ERROR,
               "[xds_cluster_impl_lb %p] Failed to get locality stats object "
