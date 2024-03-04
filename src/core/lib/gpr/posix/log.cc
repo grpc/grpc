@@ -38,8 +38,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
-static intptr_t sys_gettid(void) { return (intptr_t)pthread_self(); }
-
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
   // Avoid message construction if gpr_log_message won't log
