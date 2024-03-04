@@ -230,6 +230,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
@@ -1218,11 +1219,11 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_refcount.h',
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.h',
-                      'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/call.h',
                       'src/core/lib/surface/call_test_only.h',
                       'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.h',
+                      'src/core/lib/surface/channel_create.h',
                       'src/core/lib/surface/channel_init.h',
                       'src/core/lib/surface/channel_stack_type.h',
                       'src/core/lib/surface/completion_queue.h',
@@ -1231,7 +1232,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/init.h',
                       'src/core/lib/surface/init_internally.h',
                       'src/core/lib/surface/lame_client.h',
+                      'src/core/lib/surface/legacy_channel.h',
                       'src/core/lib/surface/server.h',
+                      'src/core/lib/surface/server_interface.h',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/batch_builder.h',
@@ -1253,6 +1256,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/metadata.h',
                       'src/core/lib/transport/metadata_batch.h',
                       'src/core/lib/transport/metadata_compression_traits.h',
+                      'src/core/lib/transport/metadata_info.h',
                       'src/core/lib/transport/parsed_metadata.h',
                       'src/core/lib/transport/simple_slice_based_metadata.h',
                       'src/core/lib/transport/status_conversion.h',
@@ -2479,11 +2483,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
-                              'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
                               'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
+                              'src/core/lib/surface/channel_create.h',
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
                               'src/core/lib/surface/completion_queue.h',
@@ -2492,7 +2496,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/init_internally.h',
                               'src/core/lib/surface/lame_client.h',
+                              'src/core/lib/surface/legacy_channel.h',
                               'src/core/lib/surface/server.h',
+                              'src/core/lib/surface/server_interface.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
@@ -2514,6 +2520,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/metadata.h',
                               'src/core/lib/transport/metadata_batch.h',
                               'src/core/lib/transport/metadata_compression_traits.h',
+                              'src/core/lib/transport/metadata_info.h',
                               'src/core/lib/transport/parsed_metadata.h',
                               'src/core/lib/transport/simple_slice_based_metadata.h',
                               'src/core/lib/transport/status_conversion.h',

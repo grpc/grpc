@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -155,7 +156,7 @@ bool UsePromiseBasedTransport() {
   return true;
 }
 
-RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
+OrphanablePtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
           std::string(error.message()).c_str());
@@ -164,11 +165,11 @@ RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
     status = static_cast<grpc_status_code>(integer);
   }
-  return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
+  return OrphanablePtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }
 
-RefCountedPtr<Channel> MakeInprocChannel(Server* server,
+OrphanablePtr<Channel> MakeInprocChannel(Server* server,
                                          ChannelArgs client_channel_args) {
   auto transports = MakeInProcessTransportPair();
   auto client_transport = std::move(transports.first);
@@ -183,7 +184,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
   std::ignore = server_transport.release();  // consumed by SetupTransport
-  auto channel = Channel::Create(
+  auto channel = ChannelCreate(
       "inproc",
       client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
       GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release());

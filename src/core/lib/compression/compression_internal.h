@@ -88,6 +88,9 @@ class CompressionAlgorithmSet {
   BitSet<GRPC_COMPRESS_ALGORITHMS_COUNT> set_;
 };
 
+grpc_compression_options CompressionOptionsFromChannelArgs(
+    const ChannelArgs& args);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H

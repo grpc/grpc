@@ -105,7 +105,6 @@
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/channel_connectivity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_channelz.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.cc" role="src" />
@@ -1747,8 +1746,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/builtins.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/builtins.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.cc" role="src" />
@@ -1759,9 +1756,10 @@
     <file baseinstalldir="/" name="src/core/lib/surface/call_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_create.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/channel_create.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/channel_ping.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.cc" role="src" />
@@ -1776,9 +1774,12 @@
     <file baseinstalldir="/" name="src/core/lib/surface/init_internally.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/lame_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/server_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
@@ -1818,6 +1819,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_batch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata_compression_traits.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata_info.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/metadata_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/parsed_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/simple_slice_based_metadata.h" role="src" />

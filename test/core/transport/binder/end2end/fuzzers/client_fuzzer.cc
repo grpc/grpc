@@ -24,6 +24,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
@@ -59,8 +60,8 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(args);
     auto channel =
-        grpc_core::Channel::Create("test-target", channel_args,
-                                   GRPC_CLIENT_DIRECT_CHANNEL, client_transport)
+        grpc_core::ChannelCreate("test-target", channel_args,
+                                 GRPC_CLIENT_DIRECT_CHANNEL, client_transport)
             ->release()
             ->c_ptr();
     grpc_channel_args_destroy(args);
