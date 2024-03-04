@@ -48,8 +48,6 @@ def run():
     otel_plugin = BaseOpenTelemetryPlugin(provider)
 
     grpc_observability.start_open_telemetry_observability(plugins=[otel_plugin])
-    # You can also use context manager to start observability:
-    # with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
 
     with grpc.insecure_channel(target="localhost:50051") as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)

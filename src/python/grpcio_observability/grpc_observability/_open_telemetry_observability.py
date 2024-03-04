@@ -63,29 +63,13 @@ def start_open_telemetry_observability(
     *,
     plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
 ) -> None:
-    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
-    with _observability_lock:
-        if _OPEN_TELEMETRY_OBSERVABILITY is None:
-            _OPEN_TELEMETRY_OBSERVABILITY = OpenTelemetryObservability(
-                plugins=plugins
-            )
-            _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
-        else:
-            raise RuntimeError(
-                "gPRC Python observability was already initiated!"
-            )
+    _start_open_telemetry_observability(
+        OpenTelemetryObservability(plugins=plugins)
+    )
 
 
 def end_open_telemetry_observability() -> None:
-    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
-    with _observability_lock:
-        if not _OPEN_TELEMETRY_OBSERVABILITY:
-            raise RuntimeError(
-                "end_open_telemetry_observability() was called without initiate observability!"
-            )
-        else:
-            _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
-            _OPEN_TELEMETRY_OBSERVABILITY = None
+    _end_open_telemetry_observability()
 
 
 # pylint: disable=no-self-use
@@ -113,21 +97,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self.exporter = _OpenTelemetryExporterDelegator(_plugins)
 
     def __enter__(self):
-        global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
-        with _observability_lock:
-            if _OPEN_TELEMETRY_OBSERVABILITY:
-                raise RuntimeError(
-                    "gPRC Python observability was already initiated!"
-                )
-            self.observability_init()
-            _OPEN_TELEMETRY_OBSERVABILITY = self
+        _start_open_telemetry_observability(self)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
-        with _observability_lock:
-            self.observability_deinit()
-            _OPEN_TELEMETRY_OBSERVABILITY = None
+        _end_open_telemetry_observability()
 
     def observability_init(self):
         try:
@@ -195,3 +169,29 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         _cyobservability._record_rpc_latency(
             self.exporter, method, target, rpc_latency, status_code
         )
+
+
+def _start_open_telemetry_observability(
+    otel_o11y: OpenTelemetryObservability,
+) -> None:
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    with _observability_lock:
+        if _OPEN_TELEMETRY_OBSERVABILITY is None:
+            _OPEN_TELEMETRY_OBSERVABILITY = otel_o11y
+            _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
+        else:
+            raise RuntimeError(
+                "gPRC Python observability was already initialized!"
+            )
+
+
+def _end_open_telemetry_observability() -> None:
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    with _observability_lock:
+        if not _OPEN_TELEMETRY_OBSERVABILITY:
+            raise RuntimeError(
+                "Trying to end gPRC Python observability without initialize first!"
+            )
+        else:
+            _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
+            _OPEN_TELEMETRY_OBSERVABILITY = None

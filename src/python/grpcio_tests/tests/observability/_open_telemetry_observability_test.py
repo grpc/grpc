@@ -166,7 +166,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         try:
             grpc_observability.start_open_telemetry_observability(plugins=[])
         except RuntimeError as exp:
-            self.assertIn("observability was already initiated", str(exp))
+            self.assertIn(
+                "gPRC Python observability was already initialized", str(exp)
+            )
 
         grpc_observability.end_open_telemetry_observability()
 
@@ -177,7 +179,10 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     plugins=[]
                 )
             except RuntimeError as exp:
-                self.assertIn("observability was already initiated", str(exp))
+                self.assertIn(
+                    "gPRC Python observability was already initialized",
+                    str(exp),
+                )
 
     def testCallContextManagerThrowErrorWhenGlobalInitCalled(self):
         grpc_observability.start_open_telemetry_observability(plugins=[])
@@ -185,7 +190,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             with grpc_observability.OpenTelemetryObservability(plugins=[]):
                 pass
         except RuntimeError as exp:
-            self.assertIn("observability was already initiated", str(exp))
+            self.assertIn(
+                "gPRC Python observability was already initialized", str(exp)
+            )
         grpc_observability.end_open_telemetry_observability()
 
     def testContextManagerThrowErrorWhenContextManagerCalled(self):
@@ -194,7 +201,10 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                 with grpc_observability.OpenTelemetryObservability(plugins=[]):
                     pass
             except RuntimeError as exp:
-                self.assertIn("observability was already initiated", str(exp))
+                self.assertIn(
+                    "gPRC Python observability was already initialized",
+                    str(exp),
+                )
 
     def testNoErrorCallGlobalInitThenContextManager(self):
         grpc_observability.start_open_telemetry_observability(plugins=[])

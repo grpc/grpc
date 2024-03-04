@@ -58,8 +58,6 @@ def serve():
     otel_plugin = BaseOpenTelemetryPlugin(provider)
 
     grpc_observability.start_open_telemetry_observability(plugins=[otel_plugin])
-    # You can also use context manager to start observability:
-    # with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
 
     server = grpc.server(
         thread_pool=futures.ThreadPoolExecutor(max_workers=10),
