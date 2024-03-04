@@ -14,6 +14,7 @@ third_party/envoy-api
 third_party/googleapis
 third_party/googletest
 third_party/opencensus-proto
+third_party/opentelemetry-cpp
 third_party/protobuf
 third_party/protoc-gen-validate
 third_party/re2
