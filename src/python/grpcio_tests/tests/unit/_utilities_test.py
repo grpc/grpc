@@ -21,15 +21,15 @@ from grpc._utilities import first_version_is_lower
 
 class UtilityTest(unittest.TestCase):
     def testVersionCheck(self):
+        self.assertTrue(first_version_is_lower("1.2.3", "1.2.4"))
+        self.assertTrue(first_version_is_lower("1.2.4", "10.2.3"))
+        self.assertTrue(first_version_is_lower("1.2.3", "1.2.3.dev0"))
         self.assertFalse(first_version_is_lower("NOT_A_VERSION", "1.2.4"))
         self.assertFalse(first_version_is_lower("1.2.3", "NOT_A_VERSION"))
-        self.assertTrue(first_version_is_lower("1.2.3", "1.2.4"))
         self.assertFalse(first_version_is_lower("1.2.4", "1.2.3"))
         self.assertFalse(first_version_is_lower("10.2.3", "1.2.4"))
-        self.assertTrue(first_version_is_lower("1.2.4", "10.2.3"))
         self.assertFalse(first_version_is_lower("1.2.3dev0", "1.2.3"))
         self.assertFalse(first_version_is_lower("1.2.3", "1.2.3dev0"))
-        self.assertTrue(first_version_is_lower("1.2.3", "1.2.3.dev0"))
         self.assertFalse(first_version_is_lower("1.2.3.dev0", "1.2.3"))
 
 

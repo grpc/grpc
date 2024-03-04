@@ -218,6 +218,5 @@ def first_version_is_lower(version1: str, version2: str) -> bool:
         # Return false in case we can't convert version to int.
         return False
 
-    # If we reach here, the versions are equal up to the compared elements.
     # The version without dev0 will be considered lower.
     return len(version1_list) < len(version2_list)
