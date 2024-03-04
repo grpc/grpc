@@ -584,6 +584,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/time_util.cc \
+    src/core/lib/gprpp/uuid_v4.cc \
     src/core/lib/gprpp/validation_errors.cc \
     src/core/lib/gprpp/windows/directory_reader.cc \
     src/core/lib/gprpp/windows/env.cc \

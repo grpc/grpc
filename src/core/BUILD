@@ -4802,9 +4802,13 @@ grpc_cc_library(
     srcs = [
         "load_balancing/rls/rls.cc",
     ],
+    hdrs = [
+        "load_balancing/rls/rls.h",
+    ],
     external_deps = [
         "absl/base:core_headers",
         "absl/hash",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4830,11 +4834,14 @@ grpc_cc_library(
         "lb_policy",
         "lb_policy_factory",
         "lb_policy_registry",
+        "match",
+        "metrics",
         "pollset_set",
         "slice",
         "slice_refcount",
         "status_helper",
         "time",
+        "uuid_v4",
         "validation_errors",
         "//:backoff",
         "//:channel",
@@ -7560,6 +7567,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
         "absl/functional:function_ref",
         "absl/strings",
         "absl/types:span",
@@ -7568,6 +7576,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "no_destruct",
+        "time",
         "//:gpr",
     ],
 )
