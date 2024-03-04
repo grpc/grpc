@@ -231,6 +231,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   void AddCallFinished(const std::map<absl::string_view, double>* named_metrics,
                        bool fail = false);
 
+  XdsLocalityName* locality_name() const { return name_.get(); }
+
  private:
   struct Stats {
     std::atomic<uint64_t> total_successful_requests{0};

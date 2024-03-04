@@ -128,9 +128,9 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   class CallAttemptTracer : public CallTracerInterface {
    public:
     enum class OptionalLabelComponent : std::uint8_t {
-      kXdsServiceLabels = 0,
-      kXdsLocalityLabels = 0,
-      kSize = 1,  // keep last
+      kXdsServiceLabels,
+      kXdsLocalityLabels,
+      kSize,  // keep last
     };
 
     ~CallAttemptTracer() override {}

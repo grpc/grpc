@@ -51,6 +51,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -191,33 +192,46 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
  private:
   class StatsSubchannelWrapper : public DelegatingSubchannel {
    public:
+    // If load reporting is enabled and we have an XdsClusterLocalityStats
+    // object, that object already contains the locality labels.  We
+    // need to store the locality labels directly only in the case where
+    // load reporting is disabled.
+    using LocalityData = absl::variant<
+        std::shared_ptr<std::map<std::string, std::string>> /*locality_labels*/,
+        RefCountedPtr<XdsClusterLocalityStats> /*locality_stats*/>;
+
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        std::shared_ptr<std::map<std::string, std::string>> locality_labels,
-        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
+        LocalityData locality_data)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
-          locality_labels_(std::move(locality_labels)),
-          locality_stats_(std::move(locality_stats)) {}
+          locality_data_(std::move(locality_data)) {}
 
     std::shared_ptr<std::map<std::string, std::string>> locality_labels()
         const {
-      return locality_labels_;
+      return Match(
+          locality_data_,
+          [](const std::shared_ptr<std::map<std::string, std::string>>&
+                 locality_labels) {
+            return locality_labels;
+          },
+          [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
+            return locality_stats->locality_name()->locality_labels();
+          });
     }
 
     XdsClusterLocalityStats* locality_stats() const {
-      return locality_stats_.get();
+      return Match(
+          locality_data_,
+          [](const std::shared_ptr<std::map<std::string, std::string>>&) {
+            return static_cast<XdsClusterLocalityStats*>(nullptr);
+          },
+          [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
+            return locality_stats.get();
+          });
     }
 
    private:
-    // TODO(roth): This is a little wasteful of memory in the case where
-    // locality_stats_ is not null, because that object will already
-    // contain a reference to the labels map, so we wind up storing it
-    // twice.  This duplication is the easiest approach for now, since
-    // we need to support the case where locality_stats_ is null, but
-    // when we start looking more closely at reducing per-channel
-    // memory, we should try to find a less wasteful representation here.
-    std::shared_ptr<std::map<std::string, std::string>> locality_labels_;
-    RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
+    LocalityData locality_data_;
   };
 
   // A picker that wraps the picker from the child to perform drops.
@@ -769,7 +783,6 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   // (if load reporting is enabled) the locality stats object, which
   // will be used by the picker.
   auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
-  auto locality_labels = locality_name->locality_labels();
   RefCountedPtr<XdsClusterLocalityStats> locality_stats;
   if (parent()->cluster_resource_->lrs_load_reporting_server.has_value()) {
     locality_stats = parent()->xds_client_->AddClusterLocalityStats(
@@ -790,10 +803,16 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
               GetEdsResourceName(*parent()->cluster_resource_).c_str());
     }
   }
+  StatsSubchannelWrapper::LocalityData locality_data;
+  if (locality_stats != nullptr) {
+    locality_data = std::move(locality_stats);
+  } else {
+    locality_data = locality_name->locality_labels();
+  }
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
-      std::move(locality_labels), std::move(locality_stats));
+      std::move(locality_data));
 }
 
 void XdsClusterImplLb::Helper::UpdateState(
