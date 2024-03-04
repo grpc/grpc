@@ -33,8 +33,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
-int gpr_should_log_stacktrace(gpr_log_severity severity);
-
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
   // Avoid message construction if gpr_log_message won't log

@@ -47,8 +47,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
 
-int gpr_should_log_stacktrace(gpr_log_severity severity);
-
 static long sys_gettid(void) { return syscall(__NR_gettid); }
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,

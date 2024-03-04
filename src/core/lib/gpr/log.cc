@@ -76,13 +76,6 @@ int gpr_should_log(gpr_log_severity severity) {
              : 0;
 }
 
-int gpr_should_log_stacktrace(gpr_log_severity severity) {
-  return static_cast<gpr_atm>(severity) >=
-                 gpr_atm_no_barrier_load(&g_min_severity_to_print_stacktrace)
-             ? 1
-             : 0;
-}
-
 void gpr_log_message(const char* file, int line, gpr_log_severity severity,
                      const char* message) {
   if (gpr_should_log(severity) == 0) {
