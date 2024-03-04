@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -53,6 +54,7 @@ class FixtureConfiguration {
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+    c->SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
     c->SetResourceQuota(ResourceQuota());
   }
 
