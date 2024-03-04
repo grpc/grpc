@@ -358,10 +358,10 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
 void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
   MutexLock lock(mu());
   ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
-    reporter.Report(kMetricResources, count,
-                    {key_, labels.xds_authority, labels.resource_type,
-                     labels.cache_state},
-                    {});
+    reporter.Report(
+        kMetricResources, count,
+        {key_, labels.xds_authority, labels.resource_type, labels.cache_state},
+        {});
   });
   ReportServerConnections([&](absl::string_view xds_server, bool connected) {
     reporter.Report(kMetricConnected, connected, {key_, xds_server}, {});

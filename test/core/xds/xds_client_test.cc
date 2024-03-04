@@ -873,13 +873,12 @@ TEST_F(XdsClientTest, Metrics) {
   // Check metrics.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", true)));
-  EXPECT_THAT(
-      GetResourceCounts(),
-      ::testing::ElementsAre(::testing::Pair(
-          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "requested"),
-          1)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -915,8 +914,7 @@ TEST_F(XdsClientTest, Metrics) {
       GetResourceCounts(),
       ::testing::ElementsAre(::testing::Pair(
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
-                                XdsFooResourceType::Get()->type_url(),
-                                "acked"),
+                                XdsFooResourceType::Get()->type_url(), "acked"),
           1)));
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", true)));
