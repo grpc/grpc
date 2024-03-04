@@ -63,7 +63,11 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
-        sub_zone_(std::move(sub_zone)) {}
+        sub_zone_(std::move(sub_zone)),
+        locality_labels_(
+            std::make_shared<std::map<std::string, std::string>>()) {
+    locality_labels_->emplace("grpc.lb.locality", AsHumanReadableString());
+  }
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
@@ -85,6 +89,9 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const std::string& region() const { return region_; }
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
+  std::shared_ptr<std::map<std::string, std::string>> locality_labels() const {
+    return locality_labels_;
+  }
 
   std::string AsHumanReadableString() const {
     return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
@@ -104,6 +111,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
+  std::shared_ptr<std::map<std::string, std::string>> locality_labels_;
 };
 
 // Drop stats for an xds cluster.

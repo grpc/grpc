@@ -129,6 +129,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
    public:
     enum class OptionalLabelComponent : std::uint8_t {
       kXdsServiceLabels = 0,
+      kXdsLocalityLabels = 0,
       kSize = 1,  // keep last
     };
 
