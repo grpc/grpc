@@ -1036,7 +1036,8 @@ static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
 
 // Perform the validation checks in RFC5280 6.3.3 to ensure the given CRL is
 // valid
-static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
+// returns true if the Crl is valid, false otherwise
+static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   bool valid = true;
   // RFC5280 6.3.3
   // 6.3.3a we do not support distribution points
@@ -1064,8 +1065,15 @@ static int ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
 static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
                                X509* cert, X509* issuer) {
   auto crl = GetCrlFromProvider(provider, cert);
+  // Not finding a CRL is a specific behavior. Per RFC5280, not having a CRL to
+  // check for a given certificate means that we cannot know for certain if the
+  // status is Revoked or Unrevoked and instead if Undetermined. How a user
+  // handles an Undetermined CRL is up to them. We use absl::IsNotFound as an
+  // analogue for not finding the Crl from the provider, thus the certificate in
+  // question is undetermined.
   if (absl::IsNotFound(crl.status())) {
-    // TODO(gtcooke94) knob for fail open vs. close
+    // TODO(gtcooke94) knob for undetermined being revoked or unrevoked. By
+    // default, unrevoked.
     return 1;
   } else if (!crl.ok()) {
     // This is an unexpected error, return false
@@ -1095,6 +1103,7 @@ static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
 }
 
 // Checks each certificate in the chain for revocation
+// returns 0 if any cert in the chain is revoked, 1 otherwise.
 static int CheckChainRevocation(
     X509_STORE_CTX* ctx, grpc_core::experimental::CrlProvider* provider) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -1122,29 +1131,29 @@ static int CheckChainRevocation(
   return 1;
 }
 
-// The custom verification function to set in OpenSSL.
-// This calls the standard OpenSSL proceudre (X509_verify_cert), then also
-// extracts the root certificate in the built chain and does revocation checks
-// when a user has configured CrlProviders.
+// The custom verification function to set in OpenSSL using
+// X509_set_cert_verify_callback. This calls the standard OpenSSL procedure
+// (X509_verify_cert), then also extracts the root certificate in the built
+// chain and does revocation checks when a user has configured CrlProviders.
+// returns 1 on success, indicating a trusted chain to a root of trust was
+// found, 0 if a trusted chain could not be built.
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
-  // Use arg maybe
   int ret = X509_verify_cert(ctx);
   if (ret <= 0) {
     // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it or check
-    // anything else.
-    return ret;
-  }
-  ret = RootCertExtractCallback(ctx, arg);
-  if (ret <= 0) {
-    // Something has failed return the failure
+    // there is no need to attempt to extract the root cert from it, check for
+    // revocation, or check anything else.
     return ret;
   }
   grpc_core::experimental::CrlProvider* provider = GetCrlProvider(ctx);
   if (provider != nullptr) {
     ret = CheckChainRevocation(ctx, provider);
   }
-  return ret;
+  if (ret <= 0) {
+    // Something has failed return the failure
+    return ret;
+  }
+  return RootCertExtractCallback(ctx, arg);
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
