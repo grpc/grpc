@@ -79,10 +79,6 @@ std::string XdsBootstrapBuilder::Build() {
 
 std::string XdsBootstrapBuilder::MakeXdsServersText(
     absl::Span<const std::string> server_uris) {
-  std::vector<std::string> server_features;
-  if (ignore_resource_deletion_) {
-    server_features.push_back("\"ignore_resource_deletion\"");
-  }
   constexpr char kXdsServerTemplate[] =
       "        {\n"
       "          \"server_uri\": \"<SERVER_URI>\",\n"
@@ -93,6 +89,10 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
       "        }";
+  std::vector<std::string> server_features;
+  if (ignore_resource_deletion_) {
+    server_features.push_back("\"ignore_resource_deletion\"");
+  }
   std::vector<std::string> servers;
   for (absl::string_view server_uri : server_uris) {
     servers.emplace_back(absl::StrReplaceAll(

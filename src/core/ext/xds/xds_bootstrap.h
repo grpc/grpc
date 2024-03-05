@@ -20,6 +20,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <string>
+#include <vector>
+
+#include "absl/types/span.h"
 
 #include "src/core/lib/json/json.h"
 
@@ -65,20 +68,14 @@ class XdsBootstrap {
    public:
     virtual ~Authority() = default;
 
-    virtual const XdsServer* server(size_t index) const = 0;
-
-    virtual size_t server_count() const = 0;
+    virtual std::vector<const XdsServer*> servers() const = 0;
   };
 
   virtual ~XdsBootstrap() = default;
 
   virtual std::string ToString() const = 0;
 
-  // TODO(roth): We currently support only one server. Fix this when we
-  // add support for fallback for the xds channel.
-  virtual const XdsServer* server(size_t index) const = 0;
-
-  virtual size_t server_count() const = 0;
+  virtual std::vector<const XdsServer*> servers() const = 0;
 
   // Returns the node information, or null if not present in the bootstrap
   // config.

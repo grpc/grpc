@@ -27,6 +27,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <google/protobuf/any.pb.h>
 #include <google/protobuf/struct.pb.h>
@@ -149,11 +150,13 @@ class XdsClientTest : public ::testing::Test {
 
     class FakeAuthority : public Authority {
      public:
-      const XdsServer* server(size_t /* index */) const override {
-        return server_.has_value() ? &*server_ : nullptr;
+      std::vector<const XdsServer*> servers() const override {
+        if (server_.has_value()) {
+          return {&*server_};
+        } else {
+          return {};
+        };
       }
-
-      size_t server_count() const override { return 1; }
 
       void set_server(absl::optional<FakeXdsServer> server) {
         server_ = std::move(server);
@@ -196,11 +199,10 @@ class XdsClientTest : public ::testing::Test {
 
     std::string ToString() const override { return "<fake>"; }
 
-    const XdsServer* server(size_t index) const override {
-      return index == 0 ? &server_ : nullptr;
+    std::vector<const XdsServer*> servers() const override {
+      return {&server_};
     }
 
-    size_t server_count() const override { return 1; }
     const Node* node() const override {
       return node_.has_value() ? &*node_ : nullptr;
     }
@@ -665,7 +667,8 @@ class XdsClientTest : public ::testing::Test {
 
   RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall> WaitForAdsStream(
       absl::Duration timeout = absl::Seconds(5)) {
-    return WaitForAdsStream(*xds_client_->bootstrap().server(0), timeout);
+    return WaitForAdsStream(*xds_client_->bootstrap().servers().front(),
+                            timeout);
   }
 
   // Gets the latest request sent to the fake xDS server.
@@ -1815,7 +1818,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
                /*resource_names=*/{"foo1"});
   CheckRequestNode(*request);  // Should be present on the first request.
   // Transport reports connection failure.
-  TriggerConnectionFailure(*xds_client_->bootstrap().server(0),
+  TriggerConnectionFailure(*xds_client_->bootstrap().servers().front(),
                            absl::UnavailableError("connection failed"));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
@@ -2370,7 +2373,7 @@ TEST_F(XdsClientTest, Federation) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream to the top-level xDS server.
-  auto stream = WaitForAdsStream(*xds_client_->bootstrap().server(0));
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
@@ -2456,7 +2459,7 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream to the top-level xDS server.
-  auto stream = WaitForAdsStream(*xds_client_->bootstrap().server(0));
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
@@ -2626,7 +2629,7 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream to the top-level xDS server.
-  auto stream = WaitForAdsStream(*xds_client_->bootstrap().server(0));
+  auto stream = WaitForAdsStream(*xds_client_->bootstrap().servers().front());
   ASSERT_TRUE(stream != nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
   auto request = WaitForRequest(stream.get());
@@ -2795,47 +2798,6 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo2"});
   CancelFooWatch(watcher2.get(), "foo2");
-  EXPECT_TRUE(stream->Orphaned());
-}
-
-TEST_F(XdsClientTest, Fallback) {
-  InitXdsClient();
-  // Start a watch for "foo1".
-  auto watcher = StartFooWatch("foo1");
-  // Watcher should initially not see any resource reported.
-  EXPECT_FALSE(watcher->HasEvent());
-  // XdsClient should have created an ADS stream.
-  auto stream = WaitForAdsStream();
-  ASSERT_TRUE(stream != nullptr);
-  // XdsClient should have sent a subscription request on the ADS stream.
-  auto request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"", /*response_nonce=*/"",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
-  CheckRequestNode(*request);  // Should be present on the first request.
-  // Send a response.
-  stream->SendMessageToClient(
-      ResponseBuilder(XdsFooResourceType::Get()->type_url())
-          .set_version_info("1")
-          .set_nonce("A")
-          .AddFooResource(XdsFooResource("foo1", 6))
-          .Serialize());
-  // XdsClient should have delivered the response to the watcher.
-  auto resource = watcher->WaitForNextResource();
-  ASSERT_NE(resource, nullptr);
-  EXPECT_EQ(resource->name, "foo1");
-  EXPECT_EQ(resource->value, 6);
-  // XdsClient should have sent an ACK message to the xDS server.
-  request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
-  // Cancel watch.
-  CancelFooWatch(watcher.get(), "foo1");
   EXPECT_TRUE(stream->Orphaned());
 }
 

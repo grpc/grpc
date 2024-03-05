@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -330,11 +331,14 @@ std::string GrpcXdsBootstrap::ToString() const {
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         entry.second.client_listener_resource_name_template()));
-    const GrpcXdsServer* server =
-        static_cast<const GrpcXdsServer*>(entry.second.server(0));
-    if (server != nullptr) {
+    std::vector<std::string> server_jsons;
+    for (const XdsServer* server : entry.second.servers()) {
+      server_jsons.emplace_back(
+          JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
+    }
+    if (!server_jsons.empty()) {
       parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                      JsonDump(server->ToJson())));
+                                      absl::StrJoin(server_jsons, ",\n")));
     }
     parts.push_back("      },\n");
   }

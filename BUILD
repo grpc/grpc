@@ -4014,6 +4014,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
+        "absl/types:span",
         "upb_base_lib",
         "upb_mem_lib",
         "upb_textformat_lib",

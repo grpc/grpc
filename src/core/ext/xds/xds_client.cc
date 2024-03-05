@@ -1584,9 +1584,9 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                        "\" not present in bootstrap config")));
       return;
     }
-    xds_server = authority->server(0);
+    xds_server = authority->servers().front();
   }
-  if (xds_server == nullptr) xds_server = bootstrap_->server(0);
+  if (xds_server == nullptr) xds_server = bootstrap_->servers().front();
   {
     MutexLock lock(&mu_);
     MaybeRegisterResourceTypeLocked(type);
