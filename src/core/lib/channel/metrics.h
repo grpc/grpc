@@ -27,7 +27,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -126,6 +128,11 @@ class StatsPlugin {
   virtual bool EnableMetric(absl::string_view metric_name) = 0;
   virtual bool DisableMetric(absl::string_view metric_name) = 0;
 
+  virtual ClientCallTracer* GetClientCallTracer(
+      grpc_core::ChannelFilter* channel_filter, grpc_core::Slice path,
+      grpc_core::Arena* arena, bool registered_method) = 0;
+  virtual ServerCallTracerFactory* GetServerCallTracerFactory() = 0;
+
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
@@ -185,6 +192,12 @@ class GlobalStatsPluginRegistry {
                          absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
+      }
+    }
+
+    void ForEach(absl::FunctionRef<void(std::shared_ptr<StatsPlugin>)> f) {
+      for (auto& plugin : plugins_) {
+        f(plugin);
       }
     }
 

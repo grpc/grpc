@@ -36,6 +36,7 @@
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
+#include "otel_client_filter.h"
 
 #include <grpcpp/ext/otel_plugin.h>
 
@@ -115,15 +116,56 @@ class InternalOpenTelemetryPluginOption
 
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
  public:
+  struct Client {
+    struct Attempt {
+      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          sent_total_compressed_message_size;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          rcvd_total_compressed_message_size;
+    } attempt;
+  };
+  struct Server {
+    struct Call {
+      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          sent_total_compressed_message_size;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          rcvd_total_compressed_message_size;
+    } call;
+  };
+
   OpenTelemetryPlugin(
       const absl::flat_hash_set<std::string>& metrics,
       opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
-          meter_provider);
+          meter_provider,
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_selector,
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_attribute_filter,
+      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+          generic_method_attribute_filter,
+      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+          server_selector,
+      std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
+          plugin_options);
 
   bool IsEnabledForChannel(const ChannelScope& scope) const override;
   bool IsEnabledForServer(const ChannelArgs& args) const override;
   bool EnableMetric(absl::string_view metric_name) override;
   bool DisableMetric(absl::string_view metric_name) override;
+
+  grpc_core::ClientCallTracer* GetClientCallTracer(
+      grpc_core::ChannelFilter* channel_filter, grpc_core::Slice path,
+      grpc_core::Arena* arena, bool registered_method) override {
+    return grpc_core::GetContext<grpc_core::Arena>()
+        ->ManagedNew<OpenTelemetryCallTracer>(
+            static_cast<OpenTelemetryClientFilter*>(channel_filter), path,
+            grpc_core::GetContext<grpc_core::Arena>(), registered_method, this);
+  }
+  grpc_core::ServerCallTracerFactory* GetServerCallTracerFactory() override;
 
   void AddCounter(GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
                   uint64_t value,
@@ -142,27 +184,19 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
 
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+  target_attribute_filter() const {
+    return target_attribute_filter_;
+  }
+  absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+  generic_method_attribute_filter() const {
+    return generic_method_attribute_filter_;
+  }
+  Client& client() const { return client_; }
+
  private:
-  struct Client {
-    struct Attempt {
-      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          sent_total_compressed_message_size;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          rcvd_total_compressed_message_size;
-    } attempt;
-  } client_;
-  struct Server {
-    struct Call {
-      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          sent_total_compressed_message_size;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          rcvd_total_compressed_message_size;
-    } call;
-  } server_;
+  Client client_;
+  Server server_;
   absl::flat_hash_map<
       grpc_core::GlobalInstrumentsRegistry::UID,
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>
@@ -180,6 +214,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       double_histograms_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider;
+  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attribute_filter_;
   absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -245,6 +280,7 @@ class OpenTelemetryPluginBuilderImpl {
           generic_method_attribute_filter);
   OpenTelemetryPluginBuilderImpl& AddPluginOption(
       std::unique_ptr<InternalOpenTelemetryPluginOption> option);
+  void AddOptionalLabel(absl::string_view optional_label_key);
   absl::Status BuildAndRegisterGlobal();
 
  private:

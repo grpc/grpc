@@ -76,6 +76,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:metadata_batch",
+        "//src/core:metrics",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],

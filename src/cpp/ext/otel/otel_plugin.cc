@@ -153,11 +153,19 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   }
   grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<OpenTelemetryPlugin>(
-          metrics_, meter_provider_, std::move(target_attribute_filter_),
+          metrics_, meter_provider_, std::move(target_selector_),
+          std::move(target_attribute_filter_),
           std::move(generic_method_attribute_filter_),
           std::move(server_selector_), std::move(plugin_options_)));
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenTelemetryServerCallTracerFactory());
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [target_selector = std::move(target_selector_)](
+          grpc_core::CoreConfiguration::Builder* builder) mutable {
+        builder->channel_init()->RegisterFilter(
+            GRPC_CLIENT_CHANNEL,
+            &grpc::internal::OpenTelemetryClientFilter::kFilter);
+      });
   return absl::OkStatus();
 }
 
@@ -165,6 +173,8 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
     const absl::flat_hash_set<std::string>& metrics,
     opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
         meter_provider,
+    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+        target_selector,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter,
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
@@ -174,6 +184,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
     std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
         plugin_options)
     : meter_provider_(std::move(meter_provider)),
+      target_selector_(std::move(target_selector)),
       target_attribute_filter_(std::move(target_attribute_filter)),
       generic_method_attribute_filter_(
           std::move(generic_method_attribute_filter)),

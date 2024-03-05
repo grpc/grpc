@@ -53,7 +53,8 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
    public:
     OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
-                                   bool arena_allocated);
+                                   bool arena_allocated,
+                                   OpenTelemetryPlugin* otel_plugin);
 
     std::string TraceId() override {
       // Not implemented
@@ -100,6 +101,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
+    OpenTelemetryPlugin* otel_plugin_;
     std::unique_ptr<LabelsIterable> injected_labels_;
     // The indices of the array correspond to the OptionalLabelComponent enum.
     std::array<std::shared_ptr<std::map<std::string, std::string>>,
@@ -112,7 +114,8 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
                                    grpc_core::Slice path,
                                    grpc_core::Arena* arena,
-                                   bool registered_method);
+                                   bool registered_method,
+                                   OpenTelemetryPlugin* otel_plugin);
   ~OpenTelemetryCallTracer() override;
 
   std::string TraceId() override {
@@ -143,6 +146,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;
+  OpenTelemetryPlugin* otel_plugin_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
