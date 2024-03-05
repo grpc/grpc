@@ -41,11 +41,8 @@ class XdsBootstrapBuilder {
   }
   // If ignore_if_set is true, sets the default server only if it has
   // not already been set.
-  XdsBootstrapBuilder& SetDefaultServer(const std::string& server,
-                                        bool ignore_if_set = false) {
-    if (!ignore_if_set || absl::c_find(servers_, server) == servers_.end()) {
-      servers_.insert(servers_.begin(), {server});
-    }
+  XdsBootstrapBuilder& SetServer(const std::string& server) {
+    servers_ = {server};
     return *this;
   }
   XdsBootstrapBuilder& AddServer(absl::string_view server) {

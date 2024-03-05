@@ -480,9 +480,11 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
   return backend_ports;
 }
 
-void XdsEnd2endTest::InitClient(XdsBootstrapBuilder builder,
-                                std::string lb_expected_authority,
-                                int xds_resource_does_not_exist_timeout_ms) {
+void XdsEnd2endTest::InitClient(
+    const absl::optional<XdsBootstrapBuilder>& maybe_builder,
+    std::string lb_expected_authority,
+    int xds_resource_does_not_exist_timeout_ms) {
+  auto builder = maybe_builder.value_or(MakeBootstrapBuilder());
   if (xds_resource_does_not_exist_timeout_ms > 0) {
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -500,9 +502,6 @@ void XdsEnd2endTest::InitClient(XdsBootstrapBuilder builder,
   }
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
-  // Initialize XdsClient state.
-  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()),
-                           /*ignore_if_set=*/true);
   bootstrap_ = builder.Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
