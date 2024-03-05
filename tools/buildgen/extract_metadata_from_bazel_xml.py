@@ -351,6 +351,10 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "protobuf"
     elif bazel_dep == "@com_google_protobuf//:protoc_lib":
         return "protoc"
+    elif bazel_dep == "@io_opentelemetry_cpp//api:api":
+        return "opentelemetry-cpp::api"
+    elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics":
+        return "opentelemetry-cpp::metrics"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -831,8 +835,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     tests = [
         test
         for test in tests
-        if not test.startswith("test/cpp/ext/otel:")
-        and not test.startswith("test/cpp/ext/csm:")
+        if not test.startswith("test/cpp/ext/csm:")
         and not test.startswith("test/cpp/interop:xds_interop")
     ]
 
@@ -1156,6 +1159,7 @@ _BUILD_EXTRA_METADATA = {
         "generate_plugin_registry": True,
     },
     "grpcpp_channelz": {"language": "c++", "build": "all"},
+    "grpcpp_otel_plugin": {"language": "c++", "build": "all"},
     "grpc++_test": {
         "language": "c++",
         "build": "private",

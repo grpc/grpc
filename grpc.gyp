@@ -2352,6 +2352,19 @@
       ],
     },
     {
+      'target_name': 'grpcpp_otel_plugin',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'opentelemetry-cpp::api',
+      ],
+      'sources': [
+        'src/cpp/ext/otel/otel_client_filter.cc',
+        'src/cpp/ext/otel/otel_plugin.cc',
+        'src/cpp/ext/otel/otel_server_call_tracer.cc',
+      ],
+    },
+    {
       'target_name': 'boringssl',
       'type': 'static_library',
       'dependencies': [
