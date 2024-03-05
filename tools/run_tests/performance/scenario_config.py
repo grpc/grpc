@@ -586,7 +586,9 @@ class CXXLanguage(Language):
                         categories=list(DEFAULT_CATEGORIES) + maybe_dashboard,
                         warmup_seconds=CXX_WARMUP_SECONDS,
                     )
-                    for size in geometric_progression(1, 1024 * 1024 * 1024 + 1, 8):
+                    for size in geometric_progression(
+                        1, 1024 * 1024 * 1024 + 1, 8
+                    ):
                         yield _ping_pong_scenario(
                             "cpp_protobuf_%s_%s_qps_unconstrained_%s_%db"
                             % (synchronicity, rpc_type, secstr, size),
