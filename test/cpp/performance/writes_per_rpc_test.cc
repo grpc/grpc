@@ -41,6 +41,7 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -144,8 +145,8 @@ class InProcessCHTTP2 {
           /*is_client=*/true);
       GPR_ASSERT(transport);
       grpc_channel* channel =
-          grpc_core::Channel::Create("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                                     transport)
+          grpc_core::ChannelCreate("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                   transport)
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

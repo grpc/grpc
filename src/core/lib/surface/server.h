@@ -66,6 +66,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -77,7 +78,8 @@ namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
 
-class Server : public InternallyRefCounted<Server>,
+class Server : public ServerInterface,
+               public InternallyRefCounted<Server>,
                public CppImplOf<Server, grpc_server> {
  public:
   // Filter vtable.
@@ -134,8 +136,10 @@ class Server : public InternallyRefCounted<Server>,
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
-  const ChannelArgs& channel_args() const { return channel_args_; }
-  channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
+  const ChannelArgs& channel_args() const override { return channel_args_; }
+  channelz::ServerNode* channelz_node() const override {
+    return channelz_node_.get();
+  }
 
   // Do not call this before Start(). Returns the pollsets. The
   // vector itself is immutable, but the pollsets inside are mutable. The
@@ -146,7 +150,7 @@ class Server : public InternallyRefCounted<Server>,
     return config_fetcher_.get();
   }
 
-  ServerCallTracerFactory* server_call_tracer_factory() const {
+  ServerCallTracerFactory* server_call_tracer_factory() const override {
     return server_call_tracer_factory_;
   }
 
@@ -224,7 +228,7 @@ class Server : public InternallyRefCounted<Server>,
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
-                       RefCountedPtr<Channel> channel, size_t cq_idx,
+                       OrphanablePtr<Channel> channel, size_t cq_idx,
                        Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
@@ -257,7 +261,7 @@ class Server : public InternallyRefCounted<Server>,
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
-    RefCountedPtr<Channel> channel_;
+    OrphanablePtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;

@@ -204,6 +204,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:metrics",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
     ],
 )

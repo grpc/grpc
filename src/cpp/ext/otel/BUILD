@@ -59,6 +59,7 @@ grpc_cc_library(
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//:call_tracer",
         "//:config",
         "//:gpr",
         "//:gpr_platform",

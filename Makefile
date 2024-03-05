@@ -959,7 +959,6 @@ endif
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib', 'libssl']
 LIBGRPC_SRC = \
     src/core/client_channel/backup_poller.cc \
-    src/core/client_channel/channel_connectivity.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -1391,6 +1390,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
@@ -1459,6 +1459,7 @@ LIBGRPC_SRC = \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/uuid_v4.cc \
     src/core/lib/gprpp/validation_errors.cc \
     src/core/lib/gprpp/windows/directory_reader.cc \
     src/core/lib/gprpp/work_serializer.cc \
@@ -1633,15 +1634,14 @@ LIBGRPC_SRC = \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
     src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
     src/core/lib/surface/channel_stack_type.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
@@ -1649,6 +1649,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
@@ -1669,6 +1670,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \
@@ -1891,7 +1893,6 @@ endif
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBGRPC_UNSECURE_SRC = \
     src/core/client_channel/backup_poller.cc \
-    src/core/client_channel/channel_connectivity.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -1992,6 +1993,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
@@ -2059,6 +2061,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/gprpp/status_helper.cc \
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
+    src/core/lib/gprpp/uuid_v4.cc \
     src/core/lib/gprpp/validation_errors.cc \
     src/core/lib/gprpp/work_serializer.cc \
     src/core/lib/handshaker/proxy_mapper_registry.cc \
@@ -2195,15 +2198,14 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
     src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
     src/core/lib/surface/channel_stack_type.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
@@ -2211,6 +2213,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
@@ -2231,6 +2234,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \
