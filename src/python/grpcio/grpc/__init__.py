@@ -1219,7 +1219,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
             termination of the RPC.
 
         Raises:
-          AbortError: An grpc.AbortError is always raised to signal the abortion
+          AbortError: A grpc.AbortError is always raised to signal the abortion
             the RPC to the gRPC runtime.
         """
         raise NotImplementedError()
@@ -1238,7 +1238,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
             StatusCode.OK.
 
         Raises:
-          AbortError: An grpc.AbortError is always raised to signal the abortion
+          AbortError: A grpc.AbortError is always raised to signal the abortion
             the RPC to the gRPC runtime.
         """
         raise NotImplementedError()
