@@ -40,6 +40,7 @@
 
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -299,6 +300,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
 
+    /// Returns the channel target.
+    virtual absl::string_view GetTarget() = 0;
+
     /// Returns the channel authority.
     virtual absl::string_view GetAuthority() = 0;
 
@@ -318,6 +322,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the EventEngine to use for timers and async work.
     virtual grpc_event_engine::experimental::EventEngine* GetEventEngine() = 0;
+
+    /// Returns the stats plugin group for reporting metrics.
+    virtual GlobalStatsPluginRegistry::StatsPluginGroup&
+    GetStatsPluginGroup() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };

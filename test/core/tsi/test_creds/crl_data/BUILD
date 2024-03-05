@@ -26,4 +26,6 @@ exports_files([
     "intermediate_ca.key",
     "intermediate_ca.pem",
     "evil_ca.pem",
+    "ca_with_akid.pem",
+    "crl_with_akid.crl",
 ])

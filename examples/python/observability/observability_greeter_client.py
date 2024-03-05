@@ -47,16 +47,16 @@ def run():
     provider = MeterProvider(metric_readers=[reader])
     otel_plugin = BaseOpenTelemetryPlugin(provider)
 
-    with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
-        with grpc.insecure_channel(target="localhost:50051") as channel:
-            stub = helloworld_pb2_grpc.GreeterStub(channel)
-            try:
-                response = stub.SayHello(
-                    helloworld_pb2.HelloRequest(name="You")
-                )
-                print(f"Greeter client received: {response.message}")
-            except grpc.RpcError as rpc_error:
-                print("Call failed with code: ", rpc_error.code())
+    grpc_observability.start_open_telemetry_observability(plugins=[otel_plugin])
+
+    with grpc.insecure_channel(target="localhost:50051") as channel:
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        try:
+            response = stub.SayHello(helloworld_pb2.HelloRequest(name="You"))
+            print(f"Greeter client received: {response.message}")
+        except grpc.RpcError as rpc_error:
+            print("Call failed with code: ", rpc_error.code())
+    grpc_observability.end_open_telemetry_observability()
 
     # Sleep to make sure all metrics are exported.
     time.sleep(5)
