@@ -98,7 +98,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/batch_builder.h"
@@ -764,7 +764,7 @@ class FilterStackCall final : public ChannelBasedCall {
     struct {
       int* cancelled;
       // backpointer to owning server if this is a server side call.
-      Server* core_server;
+      ServerInterface* core_server;
     } server;
   } final_op_;
   AtomicError status_error_;
@@ -3288,7 +3288,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall,
                    const Completion& completion);
   void Finish(ServerMetadataHandle result);
 
-  Server* const server_;
+  ServerInterface* const server_;
   const void* const server_transport_data_;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_ = nullptr;
   PipeSender<MessageHandle>* server_to_client_messages_ = nullptr;
@@ -3974,9 +3974,7 @@ grpc_call* MakeServerCall(CallHandler call_handler) {
   return (new ServerCall(std::move(call_handler)))->c_ptr();
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
-  Crash("not implemented");
-}
+grpc_call* MakeServerCall(CallHandler) { Crash("not implemented"); }
 #endif
 
 }  // namespace grpc_core

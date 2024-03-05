@@ -170,11 +170,6 @@ class CallInitiator {
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
-  auto PushClientInitialMetadata(ClientMetadataHandle md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
-    return spine_->call_filters().PushClientInitialMetadata(std::move(md));
-  }
-
   auto PullServerInitialMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullServerInitialMetadata();

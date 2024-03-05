@@ -82,7 +82,10 @@ grpc_cc_test(
         "absl/status:statusor",
         "gtest",
     ],
-    deps = ["//src/core:chaotic_good_frame"],
+    deps = [
+        "//:channel_create",
+        "//src/core:chaotic_good_frame",
+    ],
 )
 
 grpc_proto_fuzzer(

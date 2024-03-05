@@ -61,6 +61,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -212,6 +213,10 @@ struct grpc_channel_stack {
   grpc_event_engine::experimental::EventEngine* EventEngine() const {
     return event_engine->get();
   }
+
+  grpc_core::ManualConstructor<
+      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group;
 
   // Minimal infrastructure to act like a RefCounted thing without converting
   // everything.

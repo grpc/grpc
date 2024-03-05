@@ -17,6 +17,7 @@
 #include "src/core/lib/transport/call_filters.h"
 
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -165,21 +166,10 @@ template class InfallibleOperationExecutor<ServerMetadataHandle>;
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
 
-CallFilters::CallFilters() : stack_(nullptr), call_data_(nullptr) {}
-
-CallFilters::CallFilters(RefCountedPtr<Stack> stack)
-    : stack_(std::move(stack)),
-      call_data_(gpr_malloc_aligned(stack_->data_.call_data_size,
-                                    stack_->data_.call_data_alignment)) {
-  for (const auto& constructor : stack_->data_.filter_constructor) {
-    constructor.call_init(Offset(call_data_, constructor.call_offset),
-                          constructor.channel_data);
-  }
-  client_initial_metadata_state_.Start();
-  client_to_server_message_state_.Start();
-  server_initial_metadata_state_.Start();
-  server_to_client_message_state_.Start();
-}
+CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
+    : stack_(nullptr),
+      call_data_(nullptr),
+      client_initial_metadata_(std::move(client_initial_metadata)) {}
 
 CallFilters::~CallFilters() {
   if (call_data_ != nullptr) {

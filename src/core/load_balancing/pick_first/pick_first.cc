@@ -44,6 +44,7 @@
 #include "src/core/load_balancing/health_check_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -77,6 +78,25 @@ namespace {
 //
 
 constexpr absl::string_view kPickFirst = "pick_first";
+
+const auto kMetricDisconnections =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.pick_first.disconnections",
+        "EXPERIMENTAL.  Number of times the selected subchannel becomes "
+        "disconnected.",
+        "{disconnection}", {kMetricLabelTarget}, {}, false);
+
+const auto kMetricConnectionAttemptsSucceeded =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.pick_first.connection_attempts_succeeded",
+        "EXPERIMENTAL.  Number of successful connection attempts.",
+        "{attempt}", {kMetricLabelTarget}, {}, false);
+
+const auto kMetricConnectionAttemptsFailed =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.pick_first.connection_attempts_failed",
+        "EXPERIMENTAL.  Number of failed connection attempts.",
+        "{attempt}", {kMetricLabelTarget}, {}, false);
 
 class PickFirstConfig : public LoadBalancingPolicy::Config {
  public:
@@ -675,6 +695,9 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         p->latest_pending_subchannel_list_.get());
   }
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
+  auto& stats_plugins =
+      subchannel_list_->policy_->channel_control_helper()
+          ->GetStatsPluginGroup();
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get() ||
@@ -693,6 +716,9 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     }
     // Any state change is considered to be a failure of the existing
     // connection.
+    stats_plugins.AddCounter(
+        kMetricDisconnections, 1,
+        {subchannel_list_->policy_->channel_control_helper()->GetTarget()}, {});
     // TODO(roth): We could check the connectivity states of all the
     // subchannels here, just in case one of them happens to be READY,
     // and we could switch to that rather than going IDLE.
@@ -749,6 +775,16 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     if (!IsPickFirstHappyEyeballsEnabled()) {
       subchannel_list_->in_transient_failure_ = false;
     }
+    // We consider it a successful connection attempt only if the
+    // previous state was CONNECTING.  In particular, we don't want to
+    // increment this counter if we got a new address list and found the
+    // existing connection already in state READY.
+    if (old_state == GRPC_CHANNEL_CONNECTING) {
+      stats_plugins.AddCounter(
+          kMetricConnectionAttemptsSucceeded, 1,
+          {subchannel_list_->policy_->channel_control_helper()->GetTarget()},
+          {});
+    }
     ProcessUnselectedReadyLocked();
     return;
   }
@@ -777,6 +813,13 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     }
     subchannel_list_->StartConnectingNextSubchannel();
     return;
+  }
+  // We've already started trying to connect.  Any subchannel that
+  // reports TF is a connection attempt failure.
+  if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    stats_plugins.AddCounter(
+        kMetricConnectionAttemptsFailed, 1,
+        {subchannel_list_->policy_->channel_control_helper()->GetTarget()}, {});
   }
   if (!IsPickFirstHappyEyeballsEnabled()) {
     // Ignore any other updates for subchannels we're not currently trying to

@@ -538,14 +538,17 @@ namespace metadata_detail {
 // The string is expected to be readable, but not necessarily parsable.
 class DebugStringBuilder {
  public:
-  // Add one key/value pair to the output.
-  void Add(absl::string_view key, absl::string_view value);
+  // Add one key/value pair to the output if it is allow listed.
+  // Redact only the value if it is not allow listed.
+  void AddAfterRedaction(absl::string_view key, absl::string_view value);
 
   // Finalize the output and return the string.
   // Subsequent Add calls are UB.
   std::string TakeOutput() { return std::move(out_); }
 
  private:
+  bool IsAllowListed(absl::string_view key) const;
+  void Add(absl::string_view key, absl::string_view value);
   std::string out_;
 };
 
@@ -1281,7 +1284,7 @@ class MetadataMap {
   std::string DebugString() const {
     metadata_detail::DebugStringBuilder builder;
     Log([&builder](absl::string_view key, absl::string_view value) {
-      builder.Add(key, value);
+      builder.AddAfterRedaction(key, value);
     });
     return builder.TakeOutput();
   }
