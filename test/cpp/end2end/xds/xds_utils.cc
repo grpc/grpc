@@ -317,6 +317,12 @@ void XdsResourceUtils::SetRouteConfiguration(
   }
 }
 
+std::string XdsResourceUtils::LocalityNameString(absl::string_view sub_zone) {
+  return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                         kDefaultLocalityRegion, kDefaultLocalityZone,
+                         sub_zone);
+}
+
 ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(
     const EdsResourceArgs& args, absl::string_view eds_service_name) {
   ClusterLoadAssignment assignment;
