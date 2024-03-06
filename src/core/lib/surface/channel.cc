@@ -64,7 +64,22 @@ Channel::RegisteredCall::~RegisteredCall() {}
 Channel::Channel(std::string target, const ChannelArgs& channel_args)
     : target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      compression_options_(CompressionOptionsFromChannelArgs(channel_args)) {}
+      compression_options_(CompressionOptionsFromChannelArgs(channel_args)),
+      call_size_estimator_(1024),
+      allocator_(channel_args.GetObject<ResourceQuota>()
+                     ->memory_quota()
+                     ->CreateMemoryOwner()) {}
+
+Arena* Channel::CreateArena() {
+  const size_t initial_size = call_size_estimator_.CallSizeEstimate();
+  global_stats().IncrementCallInitialSize(initial_size);
+  return Arena::Create(initial_size, &allocator_);
+}
+
+void Channel::DestroyArena(Arena* arena) {
+  call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  arena->Destroy();
+}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {

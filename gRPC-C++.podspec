@@ -259,6 +259,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
 
     ss.source_files = 'src/core/client_channel/backup_poller.h',
+                      'src/core/client_channel/client_channel.h',
                       'src/core/client_channel/client_channel_channelz.h',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.h',
@@ -1133,6 +1134,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/promise/latch.h',
                       'src/core/lib/promise/loop.h',
                       'src/core/lib/promise/map.h',
+                      'src/core/lib/promise/observable.h',
                       'src/core/lib/promise/party.h',
                       'src/core/lib/promise/pipe.h',
                       'src/core/lib/promise/poll.h',
@@ -1238,7 +1240,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.h',
-                      'src/core/lib/transport/call_factory.h',
                       'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.h',
                       'src/core/lib/transport/call_size_estimator.h',
@@ -1540,6 +1541,7 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zutil.h'
 
     ss.private_header_files = 'src/core/client_channel/backup_poller.h',
+                              'src/core/client_channel/client_channel.h',
                               'src/core/client_channel/client_channel_channelz.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
@@ -2396,6 +2398,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/latch.h',
                               'src/core/lib/promise/loop.h',
                               'src/core/lib/promise/map.h',
+                              'src/core/lib/promise/observable.h',
                               'src/core/lib/promise/party.h',
                               'src/core/lib/promise/pipe.h',
                               'src/core/lib/promise/poll.h',
@@ -2501,7 +2504,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
-                              'src/core/lib/transport/call_factory.h',
                               'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/call_size_estimator.h',

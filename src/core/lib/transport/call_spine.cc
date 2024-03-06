@@ -18,16 +18,7 @@
 
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata) {
-  // Send initial metadata.
-  call_initiator.SpawnGuarded(
-      "send_initial_metadata",
-      [client_initial_metadata = std::move(client_initial_metadata),
-       call_initiator]() mutable {
-        return call_initiator.PushClientInitialMetadata(
-            std::move(client_initial_metadata));
-      });
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   // Read messages from handler into initiator.
   call_handler.SpawnGuarded("read_messages", [call_handler,
                                               call_initiator]() mutable {
@@ -98,10 +89,25 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
   });
 }
 
+ClientMetadataHandle& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
+// FIXME: implement a way to peek at the unprocessed client initial metadata
+// (the code here now is just a placeholder to get this to build)
+  static ClientMetadataHandle md;
+  return md;
+}
+
+CallHandler UnstartedCallHandler::StartCall(
+    RefCountedPtr<CallFilters::Stack> stack) {
+// FIXME: attach stack to CallHandler
+  return CallHandler(std::move(spine_));
+}
+
 CallInitiatorAndHandler MakeCall(
+    ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
   auto spine = CallSpine::Create(event_engine, arena);
-  return {CallInitiator(spine), CallHandler(spine)};
+  return {CallInitiator(spine),
+          UnstartedCallHandler(spine, std::move(client_initial_metadata))};
 }
 
 }  // namespace grpc_core

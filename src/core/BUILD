@@ -7224,38 +7224,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "call_factory",
-    srcs = [
-        "lib/transport/call_factory.cc",
-    ],
-    hdrs = [
-        "lib/transport/call_factory.h",
-    ],
-    deps = [
-        "arena",
-        "call_size_estimator",
-        "call_spine",
-        "channel_args",
-        "ref_counted",
-        "resource_quota",
-        "//:gpr_platform",
-        "//:stats",
-    ],
-)
-
-grpc_cc_library(
-    name = "call_destination",
-    hdrs = [
-        "lib/transport/call_destination.h",
-    ],
-    deps = [
-        "call_spine",
-        "//:gpr_platform",
-        "//:orphanable",
-    ],
-)
-
-grpc_cc_library(
     name = "parsed_metadata",
     srcs = [
         "lib/transport/parsed_metadata.cc",
@@ -7319,7 +7287,9 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "call_filters",
         "call_final_info",
+        "dual_ref_counted",
         "for_each",
         "if",
         "latch",

@@ -55,7 +55,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -100,18 +99,6 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
       builder.IsPromising(), std::move(target), args, std::move(*r));
 }
 
-namespace {
-
-class NotReallyACallFactory final : public CallFactory {
- public:
-  using CallFactory::CallFactory;
-  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
-    Crash("NotReallyACallFactory::CreateCall should never be called");
-  }
-};
-
-}  // namespace
-
 LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
                              const ChannelArgs& channel_args,
@@ -119,8 +106,7 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
-      channel_stack_(std::move(channel_stack)),
-      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
+      channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
