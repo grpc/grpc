@@ -21,8 +21,9 @@ import sys
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
-from grpc._cython.cygrpc import AbortError
-from grpc._cython.cygrpc import BaseError
+from grpc._errors import AbortError
+from grpc._errors import BaseError
+from grpc._errors import RpcError
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
@@ -307,13 +308,6 @@ class Status(abc.ABC):
         termination of the RPC.
       trailing_metadata: The trailing :term:`metadata` in the RPC.
     """
-
-
-#############################  gRPC Exceptions  ################################
-
-
-class RpcError(BaseError):
-    """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
 
 ##############################  Shared Context  ################################

@@ -42,7 +42,7 @@ from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
-from grpc._cython.cygrpc import AbortError
+from grpc._errors import AbortError
 from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction

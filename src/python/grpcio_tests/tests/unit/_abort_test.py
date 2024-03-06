@@ -20,7 +20,7 @@ import unittest
 import weakref
 
 import grpc
-from grpc._cython.cygrpc import AbortError
+from grpc import AbortError
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
