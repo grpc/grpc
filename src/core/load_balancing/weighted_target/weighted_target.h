@@ -1,4 +1,5 @@
-// Copyright 2021 gRPC authors.
+//
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,16 +12,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_BUILTINS_H
-#define GRPC_SRC_CORE_LIB_SURFACE_BUILTINS_H
+#ifndef GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_TARGET_WEIGHTED_TARGET_H
+#define GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_TARGET_WEIGHTED_TARGET_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
-namespace grpc_core {
-void RegisterBuiltins(CoreConfiguration::Builder* builder);
-}  // namespace grpc_core
+// Channel arg key indicating the weighted_target child name.
+#define GRPC_ARG_LB_WEIGHTED_TARGET_CHILD \
+   GRPC_ARG_NO_SUBCHANNEL_PREFIX "lb_weighted_target_child"
 
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_BUILTINS_H
+#endif  // GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_TARGET_WEIGHTED_TARGET_H

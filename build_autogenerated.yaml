@@ -823,6 +823,7 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
@@ -925,6 +926,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
@@ -1110,11 +1112,11 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
@@ -1123,7 +1125,9 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/legacy_channel.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -1145,6 +1149,7 @@ libs:
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/metadata_compression_traits.h
+  - src/core/lib/transport/metadata_info.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -1174,9 +1179,11 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
   - src/core/load_balancing/ring_hash/ring_hash.h
+  - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
@@ -1233,7 +1240,6 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/client_channel/backup_poller.cc
-  - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -1665,6 +1671,7 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -1733,6 +1740,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
@@ -1907,15 +1915,14 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -1923,6 +1930,7 @@ libs:
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
@@ -1943,6 +1951,7 @@ libs:
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
+  - src/core/lib/transport/metadata_info.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/tcp_connect_handshaker.cc
@@ -2039,6 +2048,7 @@ libs:
   - z
   - absl/algorithm:container
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -2319,6 +2329,7 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
@@ -2420,6 +2431,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
@@ -2570,11 +2582,11 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
@@ -2583,7 +2595,9 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/legacy_channel.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -2605,6 +2619,7 @@ libs:
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
   - src/core/lib/transport/metadata_compression_traits.h
+  - src/core/lib/transport/metadata_info.h
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
@@ -2633,9 +2648,11 @@ libs:
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
+  - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
+  - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -2683,7 +2700,6 @@ libs:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/client_channel/backup_poller.cc
-  - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -2784,6 +2800,7 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -2851,6 +2868,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
@@ -2987,15 +3005,14 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -3003,6 +3020,7 @@ libs:
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
@@ -3023,6 +3041,7 @@ libs:
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
+  - src/core/lib/transport/metadata_info.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/tcp_connect_handshaker.cc
@@ -3095,6 +3114,7 @@ libs:
   - z
   - absl/algorithm:container
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -4393,6 +4413,7 @@ libs:
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
+  - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
@@ -4641,7 +4662,6 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
@@ -4654,7 +4674,7 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -4741,8 +4761,8 @@ libs:
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -4943,7 +4963,6 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -4951,7 +4970,6 @@ libs:
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -4959,7 +4977,6 @@ libs:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
@@ -5008,6 +5025,7 @@ libs:
   - utf8_range_lib
   - z
   - absl/base:config
+  - absl/base:no_destructor
   - absl/cleanup:cleanup
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
@@ -6392,6 +6410,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -6432,6 +6451,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -6456,6 +6476,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -6483,6 +6504,7 @@ targets:
   - upb_message_lib
   - utf8_range_lib
   - absl/base:config
+  - absl/base:no_destructor
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -12714,10 +12736,10 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/channel/metrics.h
+  - test/core/util/fake_stats_plugin.h
   src:
-  - src/core/lib/channel/metrics.cc
   - test/core/channel/metrics_test.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13461,12 +13483,14 @@ targets:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/pick_first_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - protobuf
@@ -16851,6 +16875,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
@@ -16862,6 +16887,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/rls_server.cc
@@ -19485,10 +19511,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/gprpp/uuid_v4.h
+  headers: []
   src:
-  - src/core/lib/gprpp/uuid_v4.cc
   - test/core/gprpp/uuid_v4_test.cc
   deps:
   - gtest
@@ -19564,9 +19588,11 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/fake_stats_plugin.h
   src:
   - test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - grpc_test_util
@@ -19579,11 +19605,13 @@ targets:
   - test/core/client_channel/lb_policy/lb_policy_test_lib.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/util/fake_stats_plugin.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/client_channel/lb_policy/weighted_round_robin_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
   - protobuf
@@ -21224,6 +21252,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -21265,6 +21294,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
   - src/proto/grpc/testing/xds/v3/wrr_locality.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
   - test/cpp/end2end/xds/xds_server.cc

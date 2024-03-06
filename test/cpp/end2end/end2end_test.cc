@@ -1206,9 +1206,9 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
       s = stub_->Echo(&context, request, &response);
     });
     if (!GetParam().callback_server()) {
-      service_.ClientWaitUntilRpcStarted();
+      EXPECT_EQ(service_.ClientWaitUntilNRpcsStarted(1), 1);
     } else {
-      callback_service_.ClientWaitUntilRpcStarted();
+      EXPECT_EQ(callback_service_.ClientWaitUntilNRpcsStarted(1), 1);
     }
 
     context.TryCancel();

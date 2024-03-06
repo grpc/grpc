@@ -119,3 +119,25 @@
   doc: Number of items enqueued onto work serializers
 - counter: work_serializer_items_dequeued
   doc: Number of items dequeued from work serializers
+- counter: econnaborted_count
+  doc: Number of ECONNABORTED errors
+- counter: econnreset_count
+  doc: Number of ECONNRESET errors
+- counter: epipe_count
+  doc: Number of EPIPE errors
+- counter: etimedout_count
+  doc: Number of ETIMEDOUT errors
+- counter: econnrefused_count
+  doc: Number of ECONNREFUSED errors
+- counter: enetunreach_count
+  doc: Number of ENETUNREACH errors
+- counter: enomsg_count
+  doc: Number of ENOMSG errors
+- counter: enotconn_count
+  doc: Number of ENOTCONN errors
+- counter: enobufs_count
+  doc: Number of ENOBUFS errors
+- counter: uncommon_io_error_count
+  doc: Number of uncommon io errors
+- counter: msg_errqueue_error_count
+  doc: Number of uncommon errors returned by MSG_ERRQUEUE
