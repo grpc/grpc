@@ -1784,8 +1784,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_factory.cc" role="src" />
