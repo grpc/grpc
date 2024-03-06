@@ -16,6 +16,7 @@
 
 CORE_SOURCE_FILES = [
     'src/core/client_channel/backup_poller.cc',
+    'src/core/client_channel/client_channel.cc',
     'src/core/client_channel/client_channel_channelz.cc',
     'src/core/client_channel/client_channel_factory.cc',
     'src/core/client_channel/client_channel_filter.cc',
@@ -759,7 +760,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/surface/wait_for_cq_end_op.cc',
     'src/core/lib/transport/batch_builder.cc',
     'src/core/lib/transport/bdp_estimator.cc',
-    'src/core/lib/transport/call_factory.cc',
     'src/core/lib/transport/call_filters.cc',
     'src/core/lib/transport/call_final_info.cc',
     'src/core/lib/transport/call_size_estimator.cc',

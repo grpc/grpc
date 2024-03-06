@@ -959,6 +959,7 @@ endif
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 're2', 'upb_textformat_lib', 'upb_json_lib', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib', 'libssl']
 LIBGRPC_SRC = \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -1657,7 +1658,6 @@ LIBGRPC_SRC = \
     src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
@@ -1893,6 +1893,7 @@ endif
 # transitive_deps: ['address_sorting', 'gpr', 'grpc_abseil', 'cares', 'z', 'utf8_range_lib', 'upb_message_lib', 'upb_mem_lib', 'upb_base_lib']
 LIBGRPC_UNSECURE_SRC = \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
@@ -2221,7 +2222,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \

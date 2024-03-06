@@ -217,6 +217,7 @@ libs:
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_channelz.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
@@ -1027,6 +1028,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -1132,7 +1134,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -1240,6 +1241,7 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -1938,7 +1940,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
@@ -2205,6 +2206,7 @@ libs:
   - include/grpc/support/workaround_list.h
   headers:
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_channelz.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
@@ -2528,6 +2530,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -2602,7 +2605,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -2700,6 +2702,7 @@ libs:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -3028,7 +3031,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
@@ -4677,7 +4679,6 @@ libs:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -4980,7 +4981,6 @@ libs:
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc

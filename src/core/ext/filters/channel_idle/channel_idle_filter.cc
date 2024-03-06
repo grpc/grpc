@@ -88,14 +88,10 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
     }                                                                   \
   } while (0)
 
-namespace {
-
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
       .value_or(DefaultIdleTimeout());
 }
-
-}  // namespace
 
 struct MaxAgeFilter::Config {
   Duration max_connection_age;
@@ -294,12 +290,14 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
   if (!IsV3ChannelIdleFiltersEnabled()) return;
-  builder->channel_init()
-      ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)
-      .ExcludeFromMinimalStack()
-      .If([](const ChannelArgs& channel_args) {
-        return GetClientIdleTimeout(channel_args) != Duration::Infinity();
-      });
+  if (!IsCallV3Enabled()) {
+    builder->channel_init()
+        ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)
+        .ExcludeFromMinimalStack()
+        .If([](const ChannelArgs& channel_args) {
+          return GetClientIdleTimeout(channel_args) != Duration::Infinity();
+        });
+  }
   builder->channel_init()
       ->RegisterFilter<MaxAgeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()

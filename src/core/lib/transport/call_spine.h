@@ -22,11 +22,13 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -233,6 +235,11 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
+  template <typename ContextType>
+  void SetContext(ContextType context) {
+    // FIXME: implement
+  }
+
   auto PullClientInitialMetadata() {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     return spine_->call_filters().PullClientInitialMetadata();
@@ -307,12 +314,56 @@ class CallHandler {
   RefCountedPtr<CallSpine> spine_;
 };
 
+class UnstartedCallHandler {
+ public:
+  explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
+      : spine_(std::move(spine)) {}
+
+  // Returns the client initial metadata, which has not yet been
+  // processed by the stack that will ultimately be used for this call.
+  ClientMetadataHandle& UnprocessedClientInitialMetadata();
+
+  // Starts the call using the specified stack.
+  // This must be called only once, and the UnstartedCallHandler object
+  // may not be used after this is called.
+  CallHandler StartCall(RefCountedPtr<CallFilters::Stack> stack);
+
+  template <typename ContextType>
+  void SetContext(ContextType context) {
+    // FIXME: implement
+  }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->SpawnWaitable(name, std::move(promise_factory));
+  }
+
+ private:
+  RefCountedPtr<CallSpine> spine_;
+};
+
 struct CallInitiatorAndHandler {
   CallInitiator initiator;
-  CallHandler handler;
+  UnstartedCallHandler unstarted_handler;
 };
 
 CallInitiatorAndHandler MakeCall(
+    ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena);
 
 template <typename CallHalf>
@@ -324,8 +375,7 @@ auto OutgoingMessages(CallHalf h) {
   return Wrapper{std::move(h)};
 }
 
-// Forward a call from `call_handler` to `call_initiator` (with initial metadata
-// `client_initial_metadata`)
+// Forward a call from `call_handler` to `call_initiator`
 void ForwardCall(CallHandler call_handler, CallInitiator call_initiator);
 
 CallInitiator MakeFailedCall(absl::Status status);

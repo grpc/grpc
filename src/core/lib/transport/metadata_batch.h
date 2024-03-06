@@ -503,6 +503,14 @@ struct WaitForReady {
   static std::string DisplayValue(ValueType x);
 };
 
+// Annotation added by retry code to indicate a transparent retry.
+struct IsTransparentRetry {
+  static absl::string_view DebugKey() { return "IsTransparentRetry"; }
+  static constexpr bool kRepeatable = false;
+  using ValueType = bool;
+  static std::string DisplayValue(ValueType x) { return x ? "true" : "false"; }
+};
+
 // Annotation added by a transport to note that server trailing metadata
 // is a Trailers-Only response.
 struct GrpcTrailersOnly {
@@ -1514,7 +1522,8 @@ using grpc_metadata_batch_base = grpc_core::MetadataMap<
     grpc_core::GrpcStreamNetworkState, grpc_core::PeerString,
     grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire,
     grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady,
-    grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit,
+    grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly,
+    grpc_core::GrpcTarPit,
     grpc_core::GrpcRegisteredMethod GRPC_CUSTOM_CLIENT_METADATA
         GRPC_CUSTOM_SERVER_METADATA>;
 

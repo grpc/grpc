@@ -994,7 +994,7 @@ class ClientChannelFilter::ClientChannelControlHelper
       const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    ChannelArgs subchannel_args = ClientChannelFilter::MakeSubchannelArgs(
+    ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
     // Create subchannel.

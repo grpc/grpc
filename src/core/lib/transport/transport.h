@@ -541,6 +541,7 @@ class FilterStackTransport {
   ~FilterStackTransport() = default;
 };
 
+// FIXME: should this just be an alias for CallDestination?
 class ClientTransport {
  public:
   virtual void StartCall(CallHandler call_handler) = 0;
