@@ -1584,7 +1584,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                        "\" not present in bootstrap config")));
       return;
     }
-    xds_server = authority->servers().front();
+    xds_server =
+        authority->servers().empty() ? nullptr : authority->servers().front();
   }
   if (xds_server == nullptr) xds_server = bootstrap_->servers().front();
   {
