@@ -14,22 +14,27 @@
 # limitations under the License.
 
 # Generates a CA with the same issuer name as the good CA in this directory
-openssl req -x509 -new -newkey rsa:2048 -nodes -keyout evil_ca.key -out evil_ca.pem \
-  -config ca-openssl.cnf -days 3650 -extensions v3_req
-
-# Generate the CRL file:
-# ----------------------------------------------------------------------------
 rm -rf evil_ca
 mkdir evil_ca
-cp ca-openssl.cnf evil_ca/
-cp evil_ca.key evil_ca/
-cp evil_ca.pem evil_ca/
+cp evil_ca.cnf evil_ca/
 pushd evil_ca 
 touch index.txt
 echo 1 > ./serial
 echo 1000 > ./crlnumber
 
-openssl ca -gencrl -out evil.crl -keyfile evil_ca.key -cert evil_ca.pem -crldays 3650
+# Generate the 
+# openssl genrsa -out temp.rsa 2048
+# openssl pkcs8 -topk8 -in temp.rsa -out evil_ca.key -nocrypt
+# rm temp.rsa
+# openssl req -key evil_ca.key -new -out temp.csr -config evil_ca.cnf
+# openssl x509 -req -days 3650 -in temp.csr -CA "../ca.pem" -CAkey "../ca.key" -CAcreateserial -out evil_ca.pem -extfile evil_ca.cnf -extensions 'v3_req'
+openssl req -x509 -new -newkey rsa:2048 -nodes -keyout evil_ca.key -out evil_ca.pem \
+  -config "../evil_ca.cnf" -days 3650 -extensions v3_req
+
+# Generate the CRL file:
+# ----------------------------------------------------------------------------
+
+openssl ca -config=evil_ca.cnf -gencrl -out evil.crl -keyfile evil_ca.key -cert evil_ca.pem -crldays 3650
 popd
 cp "./evil_ca/evil.crl" ./crls/
 rm -rf evil_ca

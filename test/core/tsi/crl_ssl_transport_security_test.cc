@@ -60,10 +60,6 @@ const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
 const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
 const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
 const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
-const char* kEvilCertKeyPath =
-    "test/core/tsi/test_creds/crl_data/evil_cert.key";
-const char* kEvilCertCertPath =
-    "test/core/tsi/test_creds/crl_data/evil_cert.pem";
 
 const char* kRevokedIntermediateKeyPath =
     "test/core/tsi/test_creds/crl_data/leaf_signed_by_intermediate.key";
@@ -76,6 +72,7 @@ const char* kModifiedSignaturePath =
     "test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl";
 const char* kModifiedContentPath =
     "test/core/tsi/test_creds/crl_data/crls/invalid_content.crl";
+const char* kEvilCrlPath = "test/core/tsi/test_creds/crl_data/crls/evil.crl";
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
@@ -456,7 +453,7 @@ TEST_P(CrlSslTransportSecurityTest, CrlProviderModifiedSignatureCrl) {
 }
 
 TEST_P(CrlSslTransportSecurityTest, CrlFromBadCa) {
-  std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
+  std::string root_crl = grpc_core::testing::GetFileContents(kEvilCrlPath);
   std::string intermediate_crl =
       grpc_core::testing::GetFileContents(kIntermediateCrlPath);
 
@@ -466,8 +463,8 @@ TEST_P(CrlSslTransportSecurityTest, CrlFromBadCa) {
   ASSERT_TRUE(provider.ok()) << provider.status();
 
   auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
-                                        kEvilCertKeyPath, kEvilCertCertPath,
-                                        nullptr, *provider, false, false, true);
+                                        kValidKeyPath, kValidCertPath, nullptr,
+                                        *provider, false, false, false);
   fixture->Run();
 }
 

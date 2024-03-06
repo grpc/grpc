@@ -141,6 +141,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
         "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:evil.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
         "//test/core/tsi/test_creds/crl_data/crls:invalid_content.crl",
         "//test/core/tsi/test_creds/crl_data/crls:invalid_signature.crl",
