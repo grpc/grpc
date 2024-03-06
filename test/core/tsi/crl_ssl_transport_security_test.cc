@@ -68,6 +68,10 @@ const char* kRevokedIntermediateCertPath =
 const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kIntermediateCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
+const char* kModifiedSignature =
+    "test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl";
+const char* kModifiedContent =
+    "test/core/tsi/test_creds/crl_data/crls/invalid_content.crl";
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
