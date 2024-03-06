@@ -85,8 +85,6 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
   size_t GetInitialCallSizeEstimate() const;
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
-
  private:
   grpc_channel_stack* channel_stack_;
   ChannelArgs args_;

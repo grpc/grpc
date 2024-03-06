@@ -781,7 +781,6 @@ static constexpr uint8_t kFilterExaminesServerInitialMetadata = 1;
 static constexpr uint8_t kFilterIsLast = 2;
 static constexpr uint8_t kFilterExaminesOutboundMessages = 4;
 static constexpr uint8_t kFilterExaminesInboundMessages = 8;
-static constexpr uint8_t kFilterExaminesCallContext = 16;
 
 namespace promise_filter_detail {
 
@@ -846,8 +845,7 @@ class BaseCallData : public Activity, private Wakeable {
         public promise_detail::Context<grpc_polling_entity>,
         public promise_detail::Context<CallFinalization>,
         public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine>,
-        public promise_detail::Context<CallContext> {
+            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
@@ -857,8 +855,7 @@ class BaseCallData : public Activity, private Wakeable {
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
           promise_detail::Context<grpc_event_engine::experimental::EventEngine>(
-              call_data->event_engine_),
-          promise_detail::Context<CallContext>(call_data->call_context_) {}
+              call_data->event_engine_) {}
   };
 
   class Flusher {
@@ -1204,7 +1201,6 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
   CallFinalization finalization_;
-  CallContext* call_context_ = nullptr;
   grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
@@ -1496,14 +1492,6 @@ struct CallDataFilterWithFlagsMethods {
 };
 
 struct ChannelFilterMethods {
-  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args,
-      NextPromiseFactory next_promise_factory) {
-    return static_cast<ChannelFilter*>(elem->channel_data)
-        ->MakeCallPromise(std::move(call_args),
-                          std::move(next_promise_factory));
-  }
-
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
     if (!static_cast<ChannelFilter*>(elem->channel_data)
@@ -1567,8 +1555,6 @@ MakePromiseBasedFilter(const char* name) {
   return grpc_channel_filter{
       // start_transport_stream_op_batch
       promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
-      // make_call_promise
-      promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
       // start_transport_op
       promise_filter_detail::ChannelFilterMethods::StartTransportOp,
       // sizeof_call_data
@@ -1606,8 +1592,6 @@ MakePromiseBasedFilter(const char* name) {
   return grpc_channel_filter{
       // start_transport_stream_op_batch
       promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
-      // make_call_promise
-      promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
       // start_transport_op
       promise_filter_detail::ChannelFilterMethods::StartTransportOp,
       // sizeof_call_data

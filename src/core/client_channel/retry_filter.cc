@@ -35,9 +35,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 //
 // Retry filter
@@ -142,7 +142,6 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
 
 const grpc_channel_filter RetryFilter::kVtable = {
     RetryFilter::LegacyCallData::StartTransportStreamOpBatch,
-    nullptr,
     RetryFilter::StartTransportOp,
     sizeof(RetryFilter::LegacyCallData),
     RetryFilter::LegacyCallData::Init,

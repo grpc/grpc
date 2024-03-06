@@ -96,8 +96,8 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
   *(*r)->stats_plugin_group =
       GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   return MakeOrphanable<LegacyChannel>(
-      grpc_channel_stack_type_is_client(builder.channel_stack_type()),
-      builder.IsPromising(), std::move(target), args, std::move(*r));
+      grpc_channel_stack_type_is_client(builder.channel_stack_type()), false,
+      std::move(target), args, std::move(*r));
 }
 
 namespace {
@@ -409,8 +409,7 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
 ClientChannelFilter* LegacyChannel::GetClientChannelFilter() const {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel_stack_.get());
-  if (elem->filter != &ClientChannelFilter::kFilterVtableWithPromises &&
-      elem->filter != &ClientChannelFilter::kFilterVtableWithoutPromises) {
+  if (elem->filter != &ClientChannelFilter::kFilter) {
     return nullptr;
   }
   return static_cast<ClientChannelFilter*>(elem->channel_data);

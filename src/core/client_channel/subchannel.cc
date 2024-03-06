@@ -1,4 +1,3 @@
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
 #include <grpc/support/port_platform.h>
 
@@ -133,36 +131,6 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
   return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
          channel_stack_->call_stack_size;
-}
-
-ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
-    CallArgs call_args) {
-  // If not using channelz, we just need to call the channel stack.
-  if (channelz_subchannel() == nullptr) {
-    return channel_stack_->MakeClientCallPromise(std::move(call_args));
-  }
-  // Otherwise, we need to wrap the channel stack promise with code that
-  // handles the channelz updates.
-  return OnCancel(
-      Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-          [self = Ref()](ServerMetadataHandle metadata) {
-            channelz::SubchannelNode* channelz_subchannel =
-                self->channelz_subchannel();
-            GPR_ASSERT(channelz_subchannel != nullptr);
-            if (metadata->get(GrpcStatusMetadata())
-                    .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
-              channelz_subchannel->RecordCallFailed();
-            } else {
-              channelz_subchannel->RecordCallSucceeded();
-            }
-            return metadata;
-          }),
-      [self = Ref()]() {
-        channelz::SubchannelNode* channelz_subchannel =
-            self->channelz_subchannel();
-        GPR_ASSERT(channelz_subchannel != nullptr);
-        channelz_subchannel->RecordCallFailed();
-      });
 }
 
 //

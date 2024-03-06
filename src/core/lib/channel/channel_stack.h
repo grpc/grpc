@@ -108,18 +108,6 @@ struct grpc_channel_filter {
   // See grpc_call_next_op on how to call the next element in the stack
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
-  // Create a promise to execute one call.
-  // If this is non-null, it may be used in preference to
-  // start_transport_stream_op_batch.
-  // If this is used in preference to start_transport_stream_op_batch, the
-  // following can be omitted also:
-  //   - calling init_call_elem, destroy_call_elem, set_pollset_or_pollset_set
-  //   - allocation of memory for call data
-  // There is an on-going migration to move all filters to providing this, and
-  // then to drop start_transport_stream_op_batch.
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> (*make_call_promise)(
-      grpc_channel_element* elem, grpc_core::CallArgs call_args,
-      grpc_core::NextPromiseFactory next_promise_factory);
   // Called to handle channel level operations - e.g. new calls, or transport
   // closure.
   // See grpc_channel_next_op on how to call the next element in the stack
@@ -229,11 +217,6 @@ struct grpc_channel_stack {
     IncrementRefCount();
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
   }
-
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-  MakeClientCallPromise(grpc_core::CallArgs call_args);
-  grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-  MakeServerCallPromise(grpc_core::CallArgs call_args);
 };
 
 // A call stack tracks a set of related filters for one call, and guarantees

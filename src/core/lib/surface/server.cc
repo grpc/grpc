@@ -794,7 +794,6 @@ class Server::ChannelBroadcaster {
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
-    Server::ChannelData::MakeCallPromise,
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -1505,100 +1504,6 @@ void Server::MatchThenPublish(CallHandler call_handler, size_t cq_idx) {
                      });
         });
   });
-}
-
-ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
-    grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
-  auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
-  auto* server = chand->server_.get();
-  if (server->ShutdownCalled()) return CancelledDueToServerShutdown();
-  auto cleanup_ref =
-      absl::MakeCleanup([server] { server->ShutdownUnrefOnRequest(); });
-  if (!server->ShutdownRefOnRequest()) return CancelledDueToServerShutdown();
-  auto path_ptr =
-      call_args.client_initial_metadata->get_pointer(HttpPathMetadata());
-  if (path_ptr == nullptr) {
-    return [] {
-      return ServerMetadataFromStatus(
-          absl::InternalError("Missing :path header"));
-    };
-  }
-  auto host_ptr =
-      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
-  if (host_ptr == nullptr) {
-    return [] {
-      return ServerMetadataFromStatus(
-          absl::InternalError("Missing :authority header"));
-    };
-  }
-  // Find request matcher.
-  RequestMatcherInterface* matcher;
-  RegisteredMethod* rm = nullptr;
-  if (IsRegisteredMethodLookupInTransportEnabled()) {
-    rm = static_cast<RegisteredMethod*>(
-        call_args.client_initial_metadata->get(GrpcRegisteredMethod())
-            .value_or(nullptr));
-  } else {
-    rm = server->GetRegisteredMethod(host_ptr->as_string_view(),
-                                     path_ptr->as_string_view());
-  }
-  ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
-      maybe_read_first_message([] { return NextResult<MessageHandle>(); });
-  if (rm != nullptr) {
-    matcher = rm->matcher.get();
-    switch (rm->payload_handling) {
-      case GRPC_SRM_PAYLOAD_NONE:
-        break;
-      case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
-        maybe_read_first_message =
-            Map(call_args.client_to_server_messages->Next(),
-                [](NextResult<MessageHandle> msg)
-                    -> absl::StatusOr<NextResult<MessageHandle>> {
-                  return std::move(msg);
-                });
-    }
-  } else {
-    matcher = server->unregistered_request_matcher_.get();
-  }
-  return TrySeq(
-      std::move(maybe_read_first_message),
-      [cleanup_ref = std::move(cleanup_ref), matcher,
-       chand](NextResult<MessageHandle> payload) mutable {
-        return Map(
-            [cleanup_ref = std::move(cleanup_ref),
-             mr = matcher->MatchRequest(chand->cq_idx())]() mutable {
-              return mr();
-            },
-            [payload = std::move(payload)](
-                absl::StatusOr<RequestMatcherInterface::MatchResult> mr) mutable
-            -> absl::StatusOr<std::pair<RequestMatcherInterface::MatchResult,
-                                        NextResult<MessageHandle>>> {
-              if (!mr.ok()) return mr.status();
-              return std::make_pair(std::move(*mr), std::move(payload));
-            });
-      },
-      [call_args =
-           std::move(call_args)](std::pair<RequestMatcherInterface::MatchResult,
-                                           NextResult<MessageHandle>>
-                                     r) mutable {
-        auto& mr = r.first;
-        auto& payload = r.second;
-        auto* rc = mr.TakeCall();
-        auto* cq_for_new_request = mr.cq();
-        auto* server_call_context =
-            GetContext<CallContext>()->server_call_context();
-        rc->Complete(std::move(payload), *call_args.client_initial_metadata);
-        server_call_context->PublishInitialMetadata(
-            std::move(call_args.client_initial_metadata), rc->initial_metadata);
-        return server_call_context->MakeTopOfServerCallPromise(
-            std::move(call_args), rc->cq_bound_to_call,
-            [rc, cq_for_new_request](grpc_call* call) {
-              *rc->call = call;
-              grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
-                             Server::DoneRequestEvent, rc, &rc->completion,
-                             true);
-            });
-      });
 }
 
 void Server::ChannelData::FinishDestroy(void* arg,
