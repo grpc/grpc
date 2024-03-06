@@ -235,7 +235,7 @@ struct Server::RequestedCall {
 
   template <typename NextMessage>
   void Complete(NextMessage payload, ClientMetadata& md) {
-    Timestamp deadline = GetContext<CallContext>()->deadline();
+    Timestamp deadline = GetContext<HasContext>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
         GPR_ASSERT(!payload.has_value());
@@ -1490,7 +1490,7 @@ void Server::MatchThenPublish(CallHandler call_handler, size_t cq_idx) {
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
-          auto* call_context = GetContext<CallContext>();
+          auto* call_context = GetContext<HasContext>();
           *rc->call = call_context->c_call();
           grpc_call_ref(*rc->call);
           grpc_call_set_completion_queue(call_context->c_call(),

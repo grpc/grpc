@@ -7326,8 +7326,8 @@ grpc_cc_library(
     deps = [
         "1999",
         "call_filters",
-        "default_event_engine",
         "call_final_info",
+        "default_event_engine",
         "for_each",
         "if",
         "latch",
