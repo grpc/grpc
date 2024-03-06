@@ -1096,10 +1096,10 @@ static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
     return 0;
   }
   // The certificate is not revoked
+  // RFC5280k - Not supported
+  // RFC5280l - Not supported
   X509_CRL_free(*crl);
   return 1;
-  // RFC5280j - Not supporting reasons
-  // RFC5280k - Not supporting reasons
 }
 
 // Checks each certificate in the chain for revocation
