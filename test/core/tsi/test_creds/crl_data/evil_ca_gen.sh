@@ -17,7 +17,7 @@
 rm -rf evil_ca
 mkdir evil_ca
 cp evil_ca.cnf evil_ca/
-pushd evil_ca 
+pushd evil_ca  || exit
 touch index.txt
 echo 1 > ./serial
 echo 1000 > ./crlnumber
@@ -29,6 +29,6 @@ openssl req -x509 -new -newkey rsa:2048 -nodes -keyout evil_ca.key -out evil_ca.
 # Generate the CRL file:
 # ----------------------------------------------------------------------------
 openssl ca -config=evil_ca.cnf -gencrl -out evil.crl -keyfile evil_ca.key -cert evil_ca.pem -crldays 3650
-popd
+popd || exit
 cp "./evil_ca/evil.crl" ./crls/
 rm -rf evil_ca
