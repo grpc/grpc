@@ -127,8 +127,6 @@ grpc_cc_test(
     srcs = ["crl_ssl_transport_security_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data:ca.pem",
-        "//test/core/tsi/test_creds/crl_data:evil_cert.key",
-        "//test/core/tsi/test_creds/crl_data:evil_cert.pem",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.key",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
         "//test/core/tsi/test_creds/crl_data:leaf_and_intermediate_chain.pem",
