@@ -127,6 +127,8 @@ grpc_cc_test(
     srcs = ["crl_ssl_transport_security_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:evil_cert.key",
+        "//test/core/tsi/test_creds/crl_data:evil_cert.pem",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.key",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
         "//test/core/tsi/test_creds/crl_data:leaf_and_intermediate_chain.pem",
@@ -140,6 +142,8 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:invalid_content.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:invalid_signature.crl",
         "//test/core/tsi/test_creds/crl_data/crls_missing_intermediate:ab06acdd.r0",
         "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
