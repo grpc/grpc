@@ -170,8 +170,8 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     // call at any moment).
     std::vector<CallAttemptTracer*> tracers_;
   };
-  explicit DelegatingClientCallTracer(ClientCallTracer* tracer)
-      : tracers_{tracer} {}
+  explicit DelegatingClientCallTracer(Arena* arena, ClientCallTracer* tracer)
+      : arena_(arena), tracers_{tracer} {}
   ~DelegatingClientCallTracer() override {}
   CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override {
     std::vector<CallAttemptTracer*> attempt_tracers;
@@ -181,7 +181,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
       GPR_DEBUG_ASSERT(attempt_tracer != nullptr);
       attempt_tracers.push_back(attempt_tracer);
     }
-    return GetContext<Arena>()->ManagedNew<DelegatingClientCallAttemptTracer>(
+    return arena_->ManagedNew<DelegatingClientCallAttemptTracer>(
         std::move(attempt_tracers));
   }
 
@@ -207,6 +207,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
   void AddTracer(ClientCallTracer* tracer) { tracers_.push_back(tracer); }
 
  private:
+  Arena* arena_;
   std::vector<ClientCallTracer*> tracers_;
 };
 
@@ -299,7 +300,8 @@ class DelegatingServerCallTracer : public ServerCallTracer {
   std::vector<ServerCallTracer*> tracers_;
 };
 
-void AddClientCallTracerToContext(grpc_call_context_element* call_context,
+void AddClientCallTracerToContext(Arena* arena,
+                                  grpc_call_context_element* call_context,
                                   ClientCallTracer* tracer) {
   if (call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
       nullptr) {
@@ -319,8 +321,7 @@ void AddClientCallTracerToContext(grpc_call_context_element* call_context,
       // Create a new delegating tracer and add the first tracer and the new
       // tracer to the list.
       auto* delegating_tracer =
-          GetContext<Arena>()->ManagedNew<DelegatingClientCallTracer>(
-              orig_tracer);
+          arena->ManagedNew<DelegatingClientCallTracer>(arena, orig_tracer);
       call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value =
           delegating_tracer;
       delegating_tracer->AddTracer(tracer);
@@ -328,7 +329,8 @@ void AddClientCallTracerToContext(grpc_call_context_element* call_context,
   }
 }
 
-void AddServerCallTracerToContext(grpc_call_context_element* call_context,
+void AddServerCallTracerToContext(Arena* arena,
+                                  grpc_call_context_element* call_context,
                                   ServerCallTracer* tracer) {
   GPR_DEBUG_ASSERT(
       call_context[GRPC_CONTEXT_CALL_TRACER].value ==
@@ -352,8 +354,7 @@ void AddServerCallTracerToContext(grpc_call_context_element* call_context,
       // Create a new delegating tracer and add the first tracer and the new
       // tracer to the list.
       auto* delegating_tracer =
-          GetContext<Arena>()->ManagedNew<DelegatingServerCallTracer>(
-              orig_tracer);
+          arena->ManagedNew<DelegatingServerCallTracer>(orig_tracer);
       call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value =
           delegating_tracer;
       call_context[GRPC_CONTEXT_CALL_TRACER].value = delegating_tracer;

@@ -517,10 +517,10 @@ void OpenTelemetryPlugin::RecordHistogram(
 }
 
 grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
-    absl::string_view target, grpc_core::Slice path, grpc_core::Arena* arena,
-    bool registered_method) {
+    absl::string_view canonical_target, grpc_core::Slice path,
+    grpc_core::Arena* arena, bool registered_method) {
   return arena->ManagedNew<OpenTelemetryCallTracer>(
-      target, std::move(path), arena, registered_method, this);
+      canonical_target, std::move(path), arena, registered_method, this);
 }
 grpc_core::ServerCallTracerFactory*
 OpenTelemetryPlugin::GetServerCallTracerFactory(grpc_core::Arena* arena) {

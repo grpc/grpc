@@ -217,9 +217,9 @@ class StatsPlugin {
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
-  virtual ClientCallTracer* GetClientCallTracer(absl::string_view target,
-                                                Slice path, Arena* arena,
-                                                bool registered_method) = 0;
+  virtual ClientCallTracer* GetClientCallTracer(
+      absl::string_view canonical_target, Slice path, Arena* arena,
+      bool registered_method) = 0;
   virtual ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) = 0;
 
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own

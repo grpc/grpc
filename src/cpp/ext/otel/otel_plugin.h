@@ -261,8 +261,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   void AddCallback(grpc_core::RegisteredMetricCallback* callback) override {}
   void RemoveCallback(grpc_core::RegisteredMetricCallback* callback) override {}
   grpc_core::ClientCallTracer* GetClientCallTracer(
-      absl::string_view target, grpc_core::Slice path, grpc_core::Arena* arena,
-      bool registered_method) override;
+      absl::string_view canonical_target, grpc_core::Slice path,
+      grpc_core::Arena* arena, bool registered_method) override;
   grpc_core::ServerCallTracerFactory* GetServerCallTracerFactory(
       grpc_core::Arena* arena) override;
 

@@ -828,9 +828,10 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         .ForEach([&](std::shared_ptr<grpc_core::StatsPlugin> stats_plugin) {
           if (stats_plugin->IsEnabledForChannel(scope)) {
             grpc_core::AddClientCallTracerToContext(
-                call->context_, stats_plugin->GetClientCallTracer(
-                                    channel->target(), grpc_core::Slice(path),
-                                    arena, args->registered_method));
+                arena, call->context_,
+                stats_plugin->GetClientCallTracer(
+                    channel->target(), grpc_core::Slice(CSliceRef(path)), arena,
+                    args->registered_method));
           }
         });
   } else {
@@ -845,9 +846,10 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->channel_args())
         .ForEach([&](std::shared_ptr<grpc_core::StatsPlugin> stats_plugin) {
           grpc_core::AddServerCallTracerToContext(
-              call->context_, stats_plugin->GetServerCallTracerFactory(arena)
-                                  ->CreateNewServerCallTracer(
-                                      arena, args->server->channel_args()));
+              arena, call->context_,
+              stats_plugin->GetServerCallTracerFactory(arena)
+                  ->CreateNewServerCallTracer(arena,
+                                              args->server->channel_args()));
         });
   }
 
@@ -2756,15 +2758,16 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     grpc_core::StatsPlugin::ChannelScope scope(args->channel->target(),
                                                /*authority=*/"");
     grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope)
-        .ForEach([&,
-                  this](std::shared_ptr<grpc_core::StatsPlugin> stats_plugin) {
-          if (stats_plugin->IsEnabledForChannel(scope)) {
-            grpc_core::AddClientCallTracerToContext(
-                this->context(), stats_plugin->GetClientCallTracer(
-                                     args->channel->target(), std::move(path),
-                                     arena, args->registered_method));
-          }
-        });
+        .ForEach(
+            [&, this](std::shared_ptr<grpc_core::StatsPlugin> stats_plugin) {
+              if (stats_plugin->IsEnabledForChannel(scope)) {
+                grpc_core::AddClientCallTracerToContext(
+                    arena, this->context(),
+                    stats_plugin->GetClientCallTracer(args->channel->target(),
+                                                      std::move(path), arena,
+                                                      args->registered_method));
+              }
+            });
   }
 
   void OrphanCall() override { MaybeUnpublishFromParent(); }
@@ -3414,9 +3417,10 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
       args->server->channel_args())
       .ForEach([&, this](std::shared_ptr<grpc_core::StatsPlugin> stats_plugin) {
         grpc_core::AddServerCallTracerToContext(
-            this->context(), stats_plugin->GetServerCallTracerFactory(arena)
-                                 ->CreateNewServerCallTracer(
-                                     arena, args->server->channel_args()));
+            arena, this->context(),
+            stats_plugin->GetServerCallTracerFactory(arena)
+                ->CreateNewServerCallTracer(arena,
+                                            args->server->channel_args()));
       });
   ScopedContext activity_context(this);
   Spawn("server_promise",

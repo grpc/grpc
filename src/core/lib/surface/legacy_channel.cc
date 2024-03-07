@@ -116,7 +116,9 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
                              const ChannelArgs& channel_args,
                              RefCountedPtr<grpc_channel_stack> channel_stack)
-    : Channel(std::move(target), channel_args),
+    : Channel(channel_args.GetOwnedString(GRPC_ARG_SERVER_URI)
+                  .value_or(std::move(target)),
+              channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
       channel_stack_(std::move(channel_stack)),
