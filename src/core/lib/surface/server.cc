@@ -235,7 +235,7 @@ struct Server::RequestedCall {
 
   template <typename NextMessage>
   void Complete(NextMessage payload, ClientMetadata& md) {
-    Timestamp deadline = GetContext<CallContext>()->deadline();
+    Timestamp deadline = GetContext<HasContext>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
         GPR_ASSERT(!payload.has_value());

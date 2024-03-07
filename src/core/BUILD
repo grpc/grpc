@@ -7323,9 +7323,12 @@ grpc_cc_library(
     deps=[
         "1999",
         "call_filters",
-        "default_event_engine",
         "call_final_info",
+<<<<<<< HEAD
         "dual_ref_counted",
+=======
+        "default_event_engine",
+>>>>>>> origin/chan3+2
         "for_each",
         "if",
         "latch",
