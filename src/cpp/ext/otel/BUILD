@@ -31,14 +31,13 @@ package(
 grpc_cc_library(
     name = "otel_plugin",
     srcs = [
-        "otel_client_filter.cc",
+        "otel_call_tracer.cc",
         "otel_plugin.cc",
         "otel_server_call_tracer.cc",
     ],
     hdrs = [
         "key_value_iterable.h",
         "otel_call_tracer.h",
-        "otel_client_filter.h",
         "otel_plugin.h",
         "otel_server_call_tracer.h",
         "//:include/grpcpp/ext/otel_plugin.h",

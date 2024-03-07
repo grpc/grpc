@@ -29,12 +29,12 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
@@ -162,6 +162,9 @@ class CallbackMetricReporter {
 
 class RegisteredMetricCallback;
 
+class ClientCallTracer;
+class ServerCallTracerFactory;
+
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
@@ -182,13 +185,6 @@ class StatsPlugin {
 
   virtual bool IsEnabledForChannel(const ChannelScope& scope) const = 0;
   virtual bool IsEnabledForServer(const ChannelArgs& args) const = 0;
-  virtual bool EnableMetric(absl::string_view metric_name) = 0;
-  virtual bool DisableMetric(absl::string_view metric_name) = 0;
-
-  virtual ClientCallTracer* GetClientCallTracer(
-      grpc_core::ChannelFilter* channel_filter, grpc_core::Slice path,
-      grpc_core::Arena* arena, bool registered_method) = 0;
-  virtual ServerCallTracerFactory* GetServerCallTracerFactory() = 0;
 
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -214,7 +210,6 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) = 0;
-
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
@@ -222,13 +217,10 @@ class StatsPlugin {
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
-  // TODO(yijiem): Details pending.
-  // std::unique_ptr<AsyncInstrument> GetObservableGauge(
-  //     absl::string_view name, absl::string_view description,
-  //     absl::string_view unit);
-  // AsyncInstrument* GetObservableCounter(
-  //     absl::string_view name, absl::string_view description,
-  //     absl::string_view unit);
+  virtual ClientCallTracer* GetClientCallTracer(absl::string_view target,
+                                                Slice path, Arena* arena,
+                                                bool registered_method) = 0;
+  virtual ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) = 0;
 
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
   // representation of the label_values and use it multiple times. We would
@@ -250,6 +242,11 @@ class GlobalStatsPluginRegistry {
     void push_back(std::shared_ptr<StatsPlugin> plugin) {
       plugins_.push_back(std::move(plugin));
     }
+    void ForEach(absl::FunctionRef<void(std::shared_ptr<StatsPlugin>)> f) {
+      for (auto& plugin : plugins_) {
+        f(plugin);
+      }
+    }
 
     template <class T, class U>
     void AddCounter(T handle, U value,
@@ -265,12 +262,6 @@ class GlobalStatsPluginRegistry {
                          absl::Span<const absl::string_view> optional_values) {
       for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
-      }
-    }
-
-    void ForEach(absl::FunctionRef<void(std::shared_ptr<StatsPlugin>)> f) {
-      for (auto& plugin : plugins_) {
-        f(plugin);
       }
     }
     void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
@@ -314,8 +305,7 @@ class GlobalStatsPluginRegistry {
   // a specified scope.
   static StatsPluginGroup GetStatsPluginsForChannel(
       const StatsPlugin::ChannelScope& scope);
-  // TODO(yijiem): Implement this.
-  // StatsPluginsGroup GetStatsPluginsForServer(ChannelArgs& args);
+  static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
 
  private:
   friend class GlobalStatsPluginRegistryTestPeer;

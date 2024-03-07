@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "otel_plugin.h"
+
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -31,11 +33,17 @@ namespace internal {
 class OpenTelemetryServerCallTracerFactory
     : public grpc_core::ServerCallTracerFactory {
  public:
+  explicit OpenTelemetryServerCallTracerFactory(
+      OpenTelemetryPlugin* otel_plugin);
+
   grpc_core::ServerCallTracer* CreateNewServerCallTracer(
       grpc_core::Arena* arena,
       const grpc_core::ChannelArgs& channel_args) override;
 
   bool IsServerTraced(const grpc_core::ChannelArgs& args) override;
+
+ private:
+  OpenTelemetryPlugin* otel_plugin_;
 };
 
 }  // namespace internal

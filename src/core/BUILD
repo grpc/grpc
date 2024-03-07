@@ -7574,10 +7574,11 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena",
         "channel_args",
         "no_destruct",
+        "slice",
         "time",
-        "//:call_tracer",
         "//:gpr",
     ],
 )

@@ -56,12 +56,14 @@ namespace {
 
 class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
-  explicit OpenTelemetryServerCallTracer(const grpc_core::ChannelArgs& args)
+  OpenTelemetryServerCallTracer(const grpc_core::ChannelArgs& args,
+                                OpenTelemetryPlugin* otel_plugin)
       : start_time_(absl::Now()),
         active_plugin_options_view_(
-            ActivePluginOptionsView::MakeForServer(args)),
+            ActivePluginOptionsView::MakeForServer(args, otel_plugin)),
         injected_labels_from_plugin_options_(
-            OpenTelemetryPluginState().plugin_options.size()) {}
+            otel_plugin->plugin_options().size()),
+        otel_plugin_(otel_plugin) {}
 
   std::string TraceId() override {
     // Not implemented
@@ -147,9 +149,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::string_view MethodForStats() const {
     absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
     if (registered_method_ ||
-        (OpenTelemetryPluginState().generic_method_attribute_filter !=
-             nullptr &&
-         OpenTelemetryPluginState().generic_method_attribute_filter(method))) {
+        (otel_plugin_->generic_method_attribute_filter() != nullptr &&
+         otel_plugin_->generic_method_attribute_filter()(method))) {
       return method;
     }
     return "other";
@@ -164,6 +165,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // infrastructure, this should move to be done per server.
   std::vector<std::unique_ptr<LabelsIterable>>
       injected_labels_from_plugin_options_;
+  OpenTelemetryPlugin* otel_plugin_;
 };
 
 void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
@@ -185,10 +187,10 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
           .value_or(nullptr) != nullptr;
   std::array<std::pair<absl::string_view, absl::string_view>, 1>
       additional_labels = {{{OpenTelemetryMethodKey(), MethodForStats()}}};
-  if (OpenTelemetryPluginState().server.call.started != nullptr) {
+  if (otel_plugin_->server().call.started != nullptr) {
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
-    OpenTelemetryPluginState().server.call.started->Add(
+    otel_plugin_->server().call.started->Add(
         1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr, {},
@@ -215,24 +217,22 @@ void OpenTelemetryServerCallTracer::RecordEnd(
       injected_labels_from_plugin_options_, additional_labels,
       /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
       /*is_client=*/false);
-  if (OpenTelemetryPluginState().server.call.duration != nullptr) {
-    OpenTelemetryPluginState().server.call.duration->Record(
+  if (otel_plugin_->server().call.duration != nullptr) {
+    otel_plugin_->server().call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
         opentelemetry::context::Context{});
   }
-  if (OpenTelemetryPluginState()
-          .server.call.sent_total_compressed_message_size != nullptr) {
-    OpenTelemetryPluginState()
-        .server.call.sent_total_compressed_message_size->Record(
-            final_info->stats.transport_stream_stats.outgoing.data_bytes,
-            labels, opentelemetry::context::Context{});
+  if (otel_plugin_->server().call.sent_total_compressed_message_size !=
+      nullptr) {
+    otel_plugin_->server().call.sent_total_compressed_message_size->Record(
+        final_info->stats.transport_stream_stats.outgoing.data_bytes, labels,
+        opentelemetry::context::Context{});
   }
-  if (OpenTelemetryPluginState()
-          .server.call.rcvd_total_compressed_message_size != nullptr) {
-    OpenTelemetryPluginState()
-        .server.call.rcvd_total_compressed_message_size->Record(
-            final_info->stats.transport_stream_stats.incoming.data_bytes,
-            labels, opentelemetry::context::Context{});
+  if (otel_plugin_->server().call.rcvd_total_compressed_message_size !=
+      nullptr) {
+    otel_plugin_->server().call.rcvd_total_compressed_message_size->Record(
+        final_info->stats.transport_stream_stats.incoming.data_bytes, labels,
+        opentelemetry::context::Context{});
   }
 }
 
@@ -242,18 +242,22 @@ void OpenTelemetryServerCallTracer::RecordEnd(
 // OpenTelemetryServerCallTracerFactory
 //
 
+OpenTelemetryServerCallTracerFactory::OpenTelemetryServerCallTracerFactory(
+    OpenTelemetryPlugin* otel_plugin)
+    : otel_plugin_(otel_plugin) {}
+
 grpc_core::ServerCallTracer*
 OpenTelemetryServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& args) {
-  return arena->ManagedNew<OpenTelemetryServerCallTracer>(args);
+  return arena->ManagedNew<OpenTelemetryServerCallTracer>(args, otel_plugin_);
 }
 
 bool OpenTelemetryServerCallTracerFactory::IsServerTraced(
     const grpc_core::ChannelArgs& args) {
   // Return true only if there is no server selector registered or if the server
   // selector returns true.
-  return OpenTelemetryPluginState().server_selector == nullptr ||
-         OpenTelemetryPluginState().server_selector(args);
+  return otel_plugin_->server_selector() == nullptr ||
+         otel_plugin_->server_selector()(args);
 }
 
 }  // namespace internal

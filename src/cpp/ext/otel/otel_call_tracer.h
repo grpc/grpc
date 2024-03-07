@@ -42,7 +42,6 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/otel/otel_client_filter.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -101,7 +100,6 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
-    OpenTelemetryPlugin* otel_plugin_;
     std::unique_ptr<LabelsIterable> injected_labels_;
     // The indices of the array correspond to the OptionalLabelComponent enum.
     std::array<std::shared_ptr<std::map<std::string, std::string>>,
@@ -109,9 +107,11 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
         optional_labels_array_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
+    OpenTelemetryPlugin* otel_plugin_;
+    ActivePluginOptionsView active_plugin_options_view_;
   };
 
-  explicit OpenTelemetryCallTracer(OpenTelemetryClientFilter* parent,
+  explicit OpenTelemetryCallTracer(absl::string_view target,
                                    grpc_core::Slice path,
                                    grpc_core::Arena* arena,
                                    bool registered_method,
@@ -138,11 +138,13 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   void RecordAnnotation(absl::string_view /*annotation*/) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
+  absl::string_view target() const;
+
  private:
   absl::string_view MethodForStats() const;
 
-  const OpenTelemetryClientFilter* parent_;
   // Client method.
+  absl::string_view target_;
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;
