@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # cmake build file for C++ gRPC OpenTelemetry example.
-# Assumes absl, protobuf, prometheus-cpp, opentelemetry-cpp and gRPC have been installed using cmake.
+# Assumes absl, protobuf, prometheus-cpp, opentelemetry-cpp and gRPC (with -DgRPC_BUILD_OPENTELEMETRY_PLUGIN=ON) have been installed using cmake.
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building helloworld.
 
