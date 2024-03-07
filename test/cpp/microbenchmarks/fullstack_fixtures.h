@@ -19,6 +19,7 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -37,6 +38,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/create_channel_internal.h"
@@ -53,6 +55,7 @@ class FixtureConfiguration {
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+    c->SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
     c->SetResourceQuota(ResourceQuota());
   }
 
@@ -206,8 +209,8 @@ class EndpointPairFixture : public BaseFixture {
           grpc_create_chttp2_transport(c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
       grpc_channel* channel =
-          grpc_core::Channel::Create(
-              "target", c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_)
+          grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                   client_transport_)
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,

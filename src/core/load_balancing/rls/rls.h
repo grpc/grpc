@@ -1,4 +1,5 @@
-// Copyright 2021 gRPC authors.
+//
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,16 +12,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_BUILTINS_H
-#define GRPC_SRC_CORE_LIB_SURFACE_BUILTINS_H
+#ifndef GRPC_SRC_CORE_LOAD_BALANCING_RLS_RLS_H
+#define GRPC_SRC_CORE_LOAD_BALANCING_RLS_RLS_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
+// A test-only channel arg to set the instance ID of the RLS LB
+// policy for use in metric labels.
+#define GRPC_ARG_TEST_ONLY_RLS_INSTANCE_ID "grpc.test-only.rls.instance_id"
 
-namespace grpc_core {
-void RegisterBuiltins(CoreConfiguration::Builder* builder);
-}  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_BUILTINS_H
+#endif  // GRPC_SRC_CORE_LOAD_BALANCING_RLS_RLS_H

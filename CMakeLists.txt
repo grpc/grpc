@@ -1803,7 +1803,6 @@ endif()
 
 add_library(grpc
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/channel_connectivity.cc
   src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -2304,6 +2303,7 @@ add_library(grpc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/uuid_v4.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/windows/directory_reader.cc
   src/core/lib/gprpp/work_serializer.cc
@@ -2478,15 +2478,14 @@ add_library(grpc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
-  src/core/lib/surface/builtins.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
   src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
@@ -2494,6 +2493,7 @@ add_library(grpc
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
@@ -2904,7 +2904,6 @@ endif()
 
 add_library(grpc_unsecure
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/channel_connectivity.cc
   src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
@@ -3073,6 +3072,7 @@ add_library(grpc_unsecure
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/uuid_v4.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/work_serializer.cc
   src/core/lib/handshaker/proxy_mapper_registry.cc
@@ -3209,15 +3209,14 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
-  src/core/lib/surface/builtins.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
   src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
@@ -3225,6 +3224,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
@@ -5136,7 +5136,6 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
-  src/core/lib/channel/server_call_tracer_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -5337,7 +5336,6 @@ add_library(grpc_authorization_provider
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
-  src/core/lib/surface/builtins.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -5345,7 +5343,6 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/call_log_batch.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
@@ -5353,7 +5350,6 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
   src/core/lib/surface/wait_for_cq_end_op.cc
@@ -8463,6 +8459,7 @@ add_executable(call_filters_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/channel/channel_args.cc
+  src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
@@ -8487,6 +8484,7 @@ add_executable(call_filters_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
@@ -25868,6 +25866,7 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/core/util/fake_stats_plugin.cc
   test/core/util/test_lb_policies.cc
   test/cpp/end2end/rls_end2end_test.cc
   test/cpp/end2end/rls_server.cc
@@ -31566,7 +31565,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uuid_v4_test
-  src/core/lib/gprpp/uuid_v4.cc
   test/core/gprpp/uuid_v4_test.cc
 )
 if(WIN32 AND MSVC)

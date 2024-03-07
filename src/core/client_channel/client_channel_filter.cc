@@ -94,7 +94,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -1196,16 +1195,6 @@ class ClientChannelFilter::ClientChannelControlHelper
 //
 // ClientChannelFilter implementation
 //
-
-ClientChannelFilter* ClientChannelFilter::GetFromChannel(Channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtableWithPromises &&
-      elem->filter != &kFilterVtableWithoutPromises) {
-    return nullptr;
-  }
-  return static_cast<ClientChannelFilter*>(elem->channel_data);
-}
 
 grpc_error_handle ClientChannelFilter::Init(grpc_channel_element* elem,
                                             grpc_channel_element_args* args) {
