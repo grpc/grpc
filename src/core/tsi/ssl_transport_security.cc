@@ -1067,10 +1067,10 @@ static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
   auto crl = GetCrlFromProvider(provider, cert);
   // Not finding a CRL is a specific behavior. Per RFC5280, not having a CRL to
   // check for a given certificate means that we cannot know for certain if the
-  // status is Revoked or Unrevoked and instead if Undetermined. How a user
+  // status is Revoked or Unrevoked and instead is Undetermined. How a user
   // handles an Undetermined CRL is up to them. We use absl::IsNotFound as an
   // analogue for not finding the Crl from the provider, thus the certificate in
-  // question is undetermined.
+  // question is Undetermined.
   if (absl::IsNotFound(crl.status())) {
     // TODO(gtcooke94) knob for undetermined being revoked or unrevoked. By
     // default, unrevoked.
