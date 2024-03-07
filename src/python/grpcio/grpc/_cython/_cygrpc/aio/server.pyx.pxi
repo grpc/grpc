@@ -13,8 +13,6 @@
 # limitations under the License.
 
 
-from grpc._errors import BaseError, AbortError, InternalError, UsageError
-
 import inspect
 import traceback
 import functools

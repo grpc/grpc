@@ -24,8 +24,6 @@ from typing import Any, AsyncIterator, Generator, Generic, Optional, Tuple
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc
-from grpc._errors import InternalError
-from grpc._errors import UsageError
 
 from . import _base_call
 from ._metadata import Metadata
@@ -339,7 +337,7 @@ class _StreamResponseMixin(Call):
         if self._response_style is _APIStyle.UNKNOWN:
             self._response_style = style
         elif self._response_style is not style:
-            raise UsageError(_API_STYLE_ERROR)
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -420,7 +418,7 @@ class _StreamRequestMixin(Call):
 
     def _raise_for_different_style(self, style: _APIStyle):
         if self._request_style is not style:
-            raise UsageError(_API_STYLE_ERROR)
+            raise cygrpc.UsageError(_API_STYLE_ERROR)
 
     def cancel(self) -> bool:
         if super().cancel():
@@ -492,7 +490,7 @@ class _StreamRequestMixin(Call):
         )
         try:
             await self._cython_call.send_serialized_message(serialized_request)
-        except InternalError as err:
+        except cygrpc.InternalError as err:
             self._cython_call.set_internal_error(str(err))
             await self._raise_for_status()
         except asyncio.CancelledError:
