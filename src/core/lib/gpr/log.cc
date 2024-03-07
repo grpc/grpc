@@ -138,8 +138,8 @@ void gpr_set_log_function(gpr_log_func f) {
 void gpr_default_log(gpr_log_func_args* args) {
   switch (args->severity) {
     case GPR_LOG_SEVERITY_DEBUG:
-      //  TODO(tjagtap) : Make it debug
-      LOG(INFO).AtLocation(args->file, args->line) << args->message;
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(args->file, args->line) << args->message;
       return;
     case GPR_LOG_SEVERITY_INFO:
       LOG(INFO).AtLocation(args->file, args->line) << args->message;
