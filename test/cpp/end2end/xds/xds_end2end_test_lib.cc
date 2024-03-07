@@ -361,6 +361,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (backend_metrics.has_value()) {
     *request->mutable_param()->mutable_backend_metrics() = *backend_metrics;
   }
+  if (server_notify_client_when_started) {
+    request->mutable_param()->set_server_notify_client_when_started(true);
+  }
 }
 
 //

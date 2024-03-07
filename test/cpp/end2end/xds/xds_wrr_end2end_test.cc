@@ -48,12 +48,6 @@ class WrrTest : public XdsEnd2endTest {
   void SetUp() override {
     // No-op -- tests must explicitly call InitClient().
   }
-
-  static std::string LocalityNameString(absl::string_view sub_zone) {
-    return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                           kDefaultLocalityRegion, kDefaultLocalityZone,
-                           sub_zone);
-  }
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, WrrTest, ::testing::Values(XdsTestType()),
