@@ -102,7 +102,11 @@ void FileExternalAccountCredentials::RetrieveSubjectToken(
     std::function<void(std::string, grpc_error_handle)> cb) {
   // To retrieve the subject token, we read the file every time we make a
   // request because it may have changed since the last request.
-  auto content_slice = LoadFile(file_, /*add_null_terminator=*/false);
+  absl::StatusOr<Slice> content_slice;
+  {
+    grpc_core::MutexLock l(&m_);
+    content_slice = LoadFile(file_, /*add_null_terminator=*/false);
+  }
   if (!content_slice.ok()) {
     cb("", content_slice.status());
     return;

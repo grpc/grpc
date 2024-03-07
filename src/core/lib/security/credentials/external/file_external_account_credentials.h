@@ -52,6 +52,7 @@ class FileExternalAccountCredentials final : public ExternalAccountCredentials {
   std::string file_;
   std::string format_type_;
   std::string format_subject_token_field_name_;
+  grpc_core::Mutex m_;
 };
 
 }  // namespace grpc_core
