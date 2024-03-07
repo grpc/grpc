@@ -114,6 +114,8 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
+#define GRPC_EXPERIMENT_ABSL_LOGGING
+inline bool IsAbslLoggingEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
@@ -174,6 +176,8 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
+#define GRPC_EXPERIMENT_ABSL_LOGGING
+inline bool IsAbslLoggingEnabled() { return false; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
@@ -236,6 +240,8 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WRR_DELEGATE_TO_PICK_FIRST
 inline bool IsWrrDelegateToPickFirstEnabled() { return true; }
+#define GRPC_EXPERIMENT_ABSL_LOGGING
+inline bool IsAbslLoggingEnabled() { return false; }
 #endif
 
 #else
@@ -278,6 +284,7 @@ enum ExperimentIds {
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdWrrDelegateToPickFirst,
+  kExperimentIdAbslLogging,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
@@ -432,6 +439,11 @@ inline bool IsWorkSerializerDispatchEnabled() {
 inline bool IsWrrDelegateToPickFirstEnabled() {
   return IsExperimentEnabled(kExperimentIdWrrDelegateToPickFirst);
 }
+#define GRPC_EXPERIMENT_ABSL_LOGGING
+inline bool IsAbslLoggingEnabled() {
+  return IsExperimentEnabled(kExperimentIdAbslLogging);
+}
+
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 

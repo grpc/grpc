@@ -32,6 +32,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 
@@ -43,6 +44,7 @@ static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
 void gpr_default_log(gpr_log_func_args* args);
+void gpr_platform_log(gpr_log_func_args* args);
 static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
 static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
@@ -72,6 +74,13 @@ const char* gpr_log_severity_string(gpr_log_severity severity) {
 int gpr_should_log(gpr_log_severity severity) {
   return static_cast<gpr_atm>(severity) >=
                  gpr_atm_no_barrier_load(&g_min_severity_to_print)
+             ? 1
+             : 0;
+}
+
+int gpr_should_log_stacktrace(gpr_log_severity severity) {
+  return static_cast<gpr_atm>(severity) >=
+                 gpr_atm_no_barrier_load(&g_min_severity_to_print_stacktrace)
              ? 1
              : 0;
 }
@@ -136,6 +145,9 @@ void gpr_set_log_function(gpr_log_func f) {
 }
 
 void gpr_default_log(gpr_log_func_args* args) {
+  if (IsAbslLoggingEnabled()) {
+    gpr_platform_log(args);
+  }
   switch (args->severity) {
     case GPR_LOG_SEVERITY_DEBUG:
       //  Log DEBUG messages as VLOG(2).
