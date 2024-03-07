@@ -89,6 +89,7 @@ dll: "..."                # see below.
 Currently, the "`build`" tag have these meanings:
 
 * `"all"`: library to build on `"make all"`, and install on the system.
+* `"plugin"`: library to build on `"make all"`, and install, but the corresponding CMake option defaults to off. The option needs to be declared manually at present to allow depending on third-party dependencies.
 * `"protoc"`: a protoc plugin to build on `"make all"` and install on the system.
 * `"private"`: a library to only build for tests.
 * `"test"`: a test binary to run on `"make test"`.

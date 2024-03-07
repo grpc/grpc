@@ -5098,7 +5098,7 @@ libs:
   deps:
   - grpc++
 - name: grpcpp_otel_plugin
-  build: all
+  build: plugin
   language: c++
   public_headers:
   - include/grpcpp/ext/otel_plugin.h

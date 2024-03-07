@@ -200,7 +200,7 @@
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
     # TODO(jtattermusch): extract the metadata to a centralized location.
-    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+    if lib_or_target.build not in ["all", "plugin", "protoc", "tool", "test", "private"]:
       return False
     if lib_or_target.boringssl:
       # Don't generate target for boringssl libs or tests
@@ -300,7 +300,6 @@
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
   option(gRPC_DOWNLOAD_ARCHIVES "Download archives for empty 3rd party directories" ON)
-  option(gRPC_BUILD_OPENTELEMETRY_PLUGIN "Build gRPC OpenTelemetry Plugin" OFF)
 
   set(gRPC_INSTALL_default ON)
   if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -492,7 +491,8 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> <%text>${_gRPC_SYSTEMD_LIBRARIES}</%text>)
   endif()
 
-  if(gRPC_BUILD_OPENTELEMETRY_PLUGIN)
+  option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
+  if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
     include(cmake/opentelemetry-cpp.cmake)
   endif()
 
@@ -737,12 +737,16 @@
       if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
+
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif()
   %   else:
+  %     if lib.build in ["plugin"]:
+  if(gRPC_BUILD_${lib.name.upper()})
+  %     endif
   ${cc_library(lib)}
   %     if not lib.build in ["tool"]:
   %       if any(proto_re.match(src) for src in lib.src):
@@ -752,6 +756,9 @@
   %       if any(proto_re.match(src) for src in lib.src):
   endif()
   %       endif
+  %     endif
+  %     if lib.build in ["plugin"]:
+  endif()
   %     endif
   %   endif
   % endfor
@@ -792,7 +799,6 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-
   add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):

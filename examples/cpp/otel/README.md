@@ -46,7 +46,7 @@ The following libraries need to be installed before building the example with CM
 * protobuf
 * prometheus-cpp
 * opentelemetry-cpp (with the options `-DWITH_ABSEIL=ON` `-DWITH_PROMETHEUS=ON`)
-* grpc (with the option `-DgRPC_BUILD_OPENTELEMETRY_PLUGIN=ON`)
+* grpc (with the option `-DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON`)
 
 You can find a complete set of instructions for building gRPC and running the
 Hello World app in the [C++ Quick Start][].
