@@ -34,9 +34,45 @@ def import_python_module(path: str) -> types.ModuleType:
 class Bunch(dict):
     """Allows dot-accessible dictionaries."""
 
-    def __init__(self, d: Mapping):
-        dict.__init__(self, d)
-        self.__dict__.update(d)
+    def __contains__(self, k):
+        try:
+            return dict.__contains__(self, k) or hasattr(self, k)
+        except:
+            return False
+
+    def __getattr__(self, k):
+        try:
+            # Throws exception if not in prototype chain
+            return object.__getattribute__(self, k)
+        except AttributeError:
+            try:
+                return self[k]
+            except KeyError:
+                raise AttributeError(k)
+
+    def __setattr__(self, k, v):
+        try:
+            # Throws exception if not in prototype chain
+            object.__getattribute__(self, k)
+        except AttributeError:
+            try:
+                self[k] = v
+            except:
+                raise AttributeError(k)
+        else:
+            object.__setattr__(self, k, v)
+
+    def __delattr__(self, k):
+        try:
+            # Throws exception if not in prototype chain
+            object.__getattribute__(self, k)
+        except AttributeError:
+            try:
+                del self[k]
+            except KeyError:
+                raise AttributeError(k)
+        else:
+            object.__delattr__(self, k)
 
 
 def to_bunch(var: Any) -> Any:
