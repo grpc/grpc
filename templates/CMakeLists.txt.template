@@ -197,19 +197,6 @@
         deps.append(d)
     return deps
 
-  def get_all_deps(target_dict, all_libs):
-    ret = set()
-    get_all_deps_recurse(target_dict, all_libs, ret)
-    return ret
-
-  def get_all_deps_recurse(target_dict, all_libs, all_deps):
-    for d in target_dict.get('deps', []):
-      if not d in all_deps:
-        all_deps.add(d)
-        for other_lib in all_libs:
-          if other_lib.name == d:
-            get_all_deps_recurse(other_lib, all_libs, all_deps)
-
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
     # TODO(jtattermusch): extract the metadata to a centralized location.
@@ -844,11 +831,11 @@
       dll_annotations.append("GRPC_DLL_EXPORTS")
     if lib.name in grpcxx_libs:
       dll_annotations.append("GRPCXX_DLL_EXPORTS")
-    if set(gpr_libs) & set(get_all_deps(lib, libs)):
+    if set(gpr_libs) & set(lib.transitive_deps):
       dll_annotations.append("GPR_DLL_IMPORTS")
-    if set(grpc_libs) & set(get_all_deps(lib, libs)):
+    if set(grpc_libs) & set(lib.transitive_deps):
       dll_annotations.append("GRPC_DLL_IMPORTS")
-    if set(grpcxx_libs) & set(get_all_deps(lib, libs)):
+    if set(grpcxx_libs) & set(lib.transitive_deps):
       dll_annotations.append("GRPCXX_DLL_IMPORTS")
     %>
     % if dll_annotations:
@@ -945,11 +932,11 @@
   % endfor
   )<%
   dll_annotations = []
-  if set(gpr_libs) & set(get_all_deps(tgt, libs)):
+  if set(gpr_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GPR_DLL_IMPORTS")
-  if set(grpc_libs) & set(get_all_deps(tgt, libs)):
+  if set(grpc_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GRPC_DLL_IMPORTS")
-  if set(grpcxx_libs) & set(get_all_deps(tgt, libs)):
+  if set(grpcxx_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GRPCXX_DLL_IMPORTS")
   %>
   % if dll_annotations:
