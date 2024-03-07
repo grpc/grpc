@@ -78,6 +78,14 @@ typedef struct grpc_call_create_args {
 
 namespace grpc_core {
 
+class CallContext {
+ public:
+ private:
+};
+
+template <>
+struct ContextType<CallContext> {};
+
 grpc_call* MakeServerCall(CallHandler handler);
 
 }  // namespace grpc_core

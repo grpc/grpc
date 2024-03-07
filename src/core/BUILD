@@ -7227,9 +7227,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name="call_factory",
-    srcs=[
-        "lib/transport/call_factory.cc",
-    ],
     hdrs=[
         "lib/transport/call_factory.h",
     ],

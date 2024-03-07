@@ -17,12 +17,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/transport/call_size_estimator.h"
+#include <memory>
+
+#include "call_filters.h"
+#include "metadata.h"
+
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/transport/call_spine.h"
-#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -62,7 +63,7 @@ class CallDestination : public Orphanable {
 class DelegatingCallDestination : public CallDestination {
  protected:
   explicit DelegatingCallDestination(
-      RefCountedPtr<CallDestination> wrapped_destination)
+      OrphanablePtr<CallDestination> wrapped_destination)
       : wrapped_destination_(std::move(wrapped_destination)) {}
 
   CallDestination* wrapped_destination() const {
@@ -70,7 +71,60 @@ class DelegatingCallDestination : public CallDestination {
   }
 
  private:
-  RefCountedPtr<CallDestination> wrapped_destination_;
+  OrphanablePtr<CallDestination> wrapped_destination_;
+};
+
+class InterceptionChain : public RefCounted<InterceptionChain> {
+ public:
+  class Builder {
+   public:
+    template <typename T>
+    absl::void_t<typename T::Call> Add() {
+      AddEntity<T>();
+    };
+
+    template <typename T>
+    absl::enable_if_t<std::is_base_of<CallDestination, T>::value> Add() {
+      AddEntity<T>();
+    };
+
+    absl::StatusOr<RefCountedPtr<InterceptionChain>> Build();
+
+   private:
+    struct Filter {};
+
+    struct Interceptor {
+      std::vector<Filter> filters;
+    };
+
+    struct Entity {
+      size_t size;
+      size_t alignment;
+      absl::Status (*init)(void* data, const ChannelArgs& args);
+      void (*destroy)(void* data);
+    };
+
+    template <typename T>
+    void AddEntity() {
+      Entity entity;
+      entity.size = sizeof(T);
+      entity.alignment = alignof(T);
+      entity.init = [](void* data, const ChannelArgs& args) {
+        auto val = T::Create(args);
+        if (!val.ok()) return val.status();
+        new (data) T(std::move(val).value());
+        return absl::OkStatus();
+      };
+      entity.destroy = [](void* data) { static_cast<T*>(data)->~T(); };
+      entities.push_back(entity);
+    }
+
+    std::vector<Interceptor> interceptors;
+    std::vector<Filter> building_filters;
+    std::vector<Entity> entities;
+  };
+
+  CallInitiator MakeCall(ClientMetadataHandle metadata);
 };
 
 }  // namespace grpc_core

@@ -1482,19 +1482,18 @@ void Server::MatchThenPublish(CallHandler call_handler, size_t cq_idx) {
               });
         },
         // Publish call to cq
-        [](std::tuple<CallFilters::NextMessage,
-                      RequestMatcherInterface::MatchResult,
-                      ClientMetadataHandle>
-               r) {
+        [call_handler](std::tuple<CallFilters::NextMessage,
+                                  RequestMatcherInterface::MatchResult,
+                                  ClientMetadataHandle>
+                           r) mutable {
           RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
-          auto* call_context = GetContext<CallContext>();
-          *rc->call = call_context->c_call();
+          grpc_call* call = MakeServerCall(std::move(call_handler));
+          *rc->call = call;
           grpc_call_ref(*rc->call);
-          grpc_call_set_completion_queue(call_context->c_call(),
-                                         rc->cq_bound_to_call);
+          grpc_call_set_completion_queue(call, rc->cq_bound_to_call);
           call_context->server_call_context()->PublishInitialMetadata(
               std::move(md), rc->initial_metadata);
           // TODO(ctiller): publish metadata

@@ -195,11 +195,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
 
   size_t GetInitialCallSizeEstimate() const override { return 0; }
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) override {
-    Crash("legacy MakeCallPromise() method called in call v3 impl");
-  }
-
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
     Crash("legacy ping method called in call v3 impl");
   }
