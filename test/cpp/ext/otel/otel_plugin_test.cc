@@ -40,6 +40,9 @@ namespace grpc {
 namespace testing {
 namespace {
 
+#define GRPC_ARG_SERVER_SELECTOR_KEY "grpc.testing.server_selector_key"
+#define GRPC_ARG_SERVER_SELECTOR_VALUE "grpc.testing.server_selector_value"
+
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
   opentelemetry::metrics::Provider::GetMeterProvider();
 }
@@ -937,9 +940,6 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
 
 using OpenTelemetryPluginNPCMetricsTest = OpenTelemetryPluginEnd2EndTest;
 
-// TEST_F(OpenTelemetryPluginNPCMetricsTest,
-//        RegisterMultipleOpenTelemetryPlugins) {}
-
 template <typename HandleType, typename ValueType>
 void VerifyCounter(
     absl::AnyInvocable<HandleType()> register_function,
@@ -987,7 +987,7 @@ void VerifyCounter(
   }
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, UInt64Counter) {
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
@@ -1023,7 +1023,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, UInt64Counter) {
       kOptionalLabelValues);
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, DoubleCounter) {
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
   constexpr absl::string_view kMetricName = "double_counter";
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
@@ -1082,13 +1082,15 @@ void VerifyHistogram(
     absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_label_keys,
-    absl::Span<const absl::string_view> optional_label_values) {
+    absl::Span<const absl::string_view> optional_label_values,
+    size_t num_plugins = 1) {
   HandleType handle = register_function();
   init_function();
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
   auto stats_plugins =
-      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
-  ASSERT_EQ(stats_plugins.size(), 1);
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  ASSERT_EQ(stats_plugins.size(), num_plugins);
   for (auto v : histogram_values) {
     stats_plugins.RecordHistogram(handle, v, label_values,
                                   optional_label_values);
@@ -1134,7 +1136,7 @@ void VerifyHistogram(
   }
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, UInt64Histogram) {
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
   constexpr absl::string_view kMetricName = "uint64_histogram";
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
@@ -1152,13 +1154,15 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, UInt64Histogram) {
             kOptionalLabelKeys, /*enable_by_default=*/true);
       },
       [&, this]() {
-        Init(std::move(Options()
-                           .set_metric_names({kMetricName})
-                           .set_target_selector([](absl::string_view target) {
-                             return absl::StartsWith(target, "dns:///");
-                           })
-                           .add_optional_label(kOptionalLabelKeys[0])
-                           .add_optional_label(kOptionalLabelKeys[1])));
+        Init(std::move(
+            Options()
+                .set_metric_names({kMetricName})
+                .set_server_selector([](const grpc_core::ChannelArgs& args) {
+                  return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                         GRPC_ARG_SERVER_SELECTOR_VALUE;
+                })
+                .add_optional_label(kOptionalLabelKeys[0])
+                .add_optional_label(kOptionalLabelKeys[1])));
       },
       [&, this]() {
         return ReadCurrentMetricsData(
@@ -1171,7 +1175,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, UInt64Histogram) {
       kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, DoubleHistogram) {
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
   constexpr absl::string_view kMetricName = "double_histogram";
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
@@ -1189,13 +1193,15 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, DoubleHistogram) {
             kOptionalLabelKeys, /*enable_by_default=*/true);
       },
       [&, this]() {
-        Init(std::move(Options()
-                           .set_metric_names({kMetricName})
-                           .set_target_selector([](absl::string_view target) {
-                             return absl::StartsWith(target, "dns:///");
-                           })
-                           .add_optional_label(kOptionalLabelKeys[0])
-                           .add_optional_label(kOptionalLabelKeys[1])));
+        Init(std::move(
+            Options()
+                .set_metric_names({kMetricName})
+                .set_server_selector([](const grpc_core::ChannelArgs& args) {
+                  return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                         GRPC_ARG_SERVER_SELECTOR_VALUE;
+                })
+                .add_optional_label(kOptionalLabelKeys[0])
+                .add_optional_label(kOptionalLabelKeys[1])));
       },
       [&, this]() {
         return ReadCurrentMetricsData(
@@ -1206,6 +1212,78 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, DoubleHistogram) {
       },
       {1.1, 1.2, 2.2, 3.3, 4.4, 4.5, 5.5, 6.6}, 28.8, 1.1, 6.6, 8, kMetricName,
       kLabelKeys, kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest,
+       RegisterMultipleOpenTelemetryPlugins) {
+  constexpr absl::string_view kMetricName = "double_histogram";
+  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                      "optional_label_key_2"};
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto instrument_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          kMetricName, "A simple double histogram.", "unit", kLabelKeys,
+          kOptionalLabelKeys, /*enable_by_default=*/true);
+  // Build and register a separate OpenTelemetryPlugin and verify its histogram
+  // recording.
+  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader;
+  ConfigureOpenTelemetryPluginBuilderWithOptions(
+      std::move(
+          Options()
+              .set_metric_names({kMetricName})
+              .set_server_selector([](const grpc_core::ChannelArgs& args) {
+                return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                       GRPC_ARG_SERVER_SELECTOR_VALUE;
+              })
+              .add_optional_label(kOptionalLabelKeys[0])
+              .add_optional_label(kOptionalLabelKeys[1])),
+      &ot_builder, &reader);
+  EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
+  VerifyHistogram<
+      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
+      double>(
+      [&]() { return instrument_handle; }, []() {},
+      [&]() {
+        return ::grpc::testing::ReadCurrentMetricsData(
+            reader,
+            [&](const absl::flat_hash_map<
+                std::string,
+                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                    data) { return !data.contains(kMetricName); });
+      },
+      {1.23, 2.34, 3.45, 4.56}, 11.58, 1.23, 4.56, 4, kMetricName, kLabelKeys,
+      kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
+  // Now build and register another OpenTelemetryPlugin using the test fixture.
+  // Note this will record to the first plugin as well.
+  VerifyHistogram<
+      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
+      double>(
+      [&]() { return instrument_handle; },
+      [&, this]() {
+        Init(std::move(
+            Options()
+                .set_metric_names({kMetricName})
+                .set_server_selector([](const grpc_core::ChannelArgs& args) {
+                  return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                         GRPC_ARG_SERVER_SELECTOR_VALUE;
+                })
+                .add_optional_label(kOptionalLabelKeys[0])
+                .add_optional_label(kOptionalLabelKeys[1])));
+      },
+      [&, this]() {
+        return ReadCurrentMetricsData(
+            [&](const absl::flat_hash_map<
+                std::string,
+                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                    data) { return !data.contains(kMetricName); });
+      },
+      {1.1, 1.2, 2.2, 3.3, 4.4, 4.5, 5.5, 6.6}, 28.8, 1.1, 6.6, 8, kMetricName,
+      kLabelKeys, kLabelValues, kOptionalLabelKeys, kOptionalLabelValues, 2);
 }
 
 }  // namespace
