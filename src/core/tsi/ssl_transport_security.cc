@@ -72,6 +72,7 @@
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND 16384
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
+const size_t kMaxChainLength = 100;
 
 // Putting a macro like this and littering the source file with #if is really
 // bad practice.
@@ -1114,8 +1115,13 @@ static int CheckChainRevocation(
   if (chain == nullptr) {
     return 0;
   }
+  // BoringSSL returns a size_t (unsigned), while OpenSSL returns an int
+  // (signed). In OpenSSL, a -1 can indicate a problem. By forcing it into a
+  // size_t, a -1 return will result in the chain_length being a very large
+  // number, so it will still fail this check because that very large number
+  // will be >= kMaxChainLength
   size_t chain_length = sk_X509_num(chain);
-  if (chain_length == 0) {
+  if (chain_length > kMaxChainLength || chain_length == 0) {
     return 0;
   }
   // Loop to < chain_length - 1 because the last cert is the trust anchor/root
@@ -2294,13 +2300,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return result;
   }
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
-  if (options->skip_server_certificate_verification) {
-    SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
-  } else {
-    SSL_CTX_set_cert_verify_callback(ssl_context, CustomVerificationFunction,
-                                     nullptr);
-  }
-
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
@@ -2319,6 +2318,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     }
   }
 #endif
+  X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+  X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+  //
+  X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
 
   *factory = impl;
   return TSI_OK;
@@ -2548,6 +2551,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
             ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
       }
 #endif
+      X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+      X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+      //
+      X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
     } while (false);
 
     if (result != TSI_OK) {
