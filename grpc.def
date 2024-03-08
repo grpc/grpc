@@ -19,6 +19,8 @@ EXPORTS
     grpc_compression_options_enable_algorithm
     grpc_compression_options_disable_algorithm
     grpc_compression_options_is_algorithm_enabled
+    grpc_server_add_passive_listener_endpoint
+    grpc_server_add_passive_listener_connected_fd
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init

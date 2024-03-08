@@ -887,6 +887,7 @@ include/grpc/event_engine/internal/memory_allocator_impl.h \
 include/grpc/event_engine/internal/slice_cast.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
+include/grpc/event_engine/passive_listener_injection.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_buffer.h \
@@ -1038,6 +1039,7 @@ include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
+include/grpcpp/passive_listener.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \

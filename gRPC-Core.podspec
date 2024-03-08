@@ -126,6 +126,7 @@ Pod::Spec.new do |s|
                       'include/grpc/event_engine/internal/slice_cast.h',
                       'include/grpc/event_engine/memory_allocator.h',
                       'include/grpc/event_engine/memory_request.h',
+                      'include/grpc/event_engine/passive_listener_injection.h',
                       'include/grpc/event_engine/port.h',
                       'include/grpc/event_engine/slice.h',
                       'include/grpc/event_engine/slice_buffer.h',
