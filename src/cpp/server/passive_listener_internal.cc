@@ -27,13 +27,13 @@ void ServerBuilderPassiveListener::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   grpc_core::ExecCtx exec_ctx;
-  // DO NOT SUBMIT(hork): convert grpc::ServerCredentials to creds
   grpc_server_add_passive_listener_endpoint(
       server_->c_server(), std::move(endpoint), creds_->c_creds());
 }
 
 absl::Status ServerBuilderPassiveListener::AcceptConnectedFd(
     GRPC_UNUSED int fd) {
+  GPR_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
   return grpc_server_add_passive_listener_connected_fd(
       server_->c_server(), fd, creds_->c_creds(), &server_args_);

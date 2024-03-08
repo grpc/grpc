@@ -88,7 +88,9 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
 
 TEST_F(ServerBuilderTest, CreatePassiveListener) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
-  ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
+  ServerBuilder()
+      .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+      .BuildAndStart();
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
@@ -99,7 +101,9 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
   int fd = -1;
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
-      ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
+      ServerBuilder()
+          .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+          .BuildAndStart();
   auto accept_status = passive_listener->AcceptConnectedFd(fd);
   ASSERT_FALSE(accept_status.ok())
       << "Connection should have failed for fd::" << fd;
@@ -135,7 +139,9 @@ TEST_F(ServerBuilderTest, DISABLED_PassiveListenerAcceptConnectedEndpoint) {
   };
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
-      ServerBuilder().CreatePassiveListener(passive_listener).BuildAndStart();
+      ServerBuilder()
+          .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+          .BuildAndStart();
   passive_listener->AcceptConnectedEndpoint(std::make_unique<NoopEndpoint>());
   server->Shutdown();
 }

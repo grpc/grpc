@@ -3012,6 +3012,7 @@ grpc_cc_library(
         "avl",
         "channel_stack_type",
         "dual_ref_counted",
+        "examine_stack",
         "ref_counted",
         "ref_counted_string",
         "time",

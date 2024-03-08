@@ -410,6 +410,13 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     cq->RegisterServer(server.get());
   }
 
+  for (auto& weak_passive_listener : passive_listeners_) {
+    auto passive_listener = weak_passive_listener.lock();
+    if (passive_listener != nullptr) {
+      passive_listener->Initialize(server.get(), args);
+    }
+  }
+
   if (!has_frequently_polled_cqs) {
     gpr_log(GPR_ERROR,
             "At least one of the completion queues must be frequently polled");
@@ -453,14 +460,6 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     added_port = true;
     if (port.selected_port != nullptr) {
       *port.selected_port = r;
-    }
-  }
-
-  for (auto& weak_passive_listener : passive_listeners_) {
-    auto passive_listener = weak_passive_listener.lock();
-    if (passive_listener != nullptr) {
-      // DO NOT SUBMIT(hork): implement setting server on listener
-      passive_listener->Initialize(server.get(), args);
     }
   }
 

@@ -406,7 +406,6 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
-  // DO NOT SUBMIT(hork): map?
   std::vector<std::weak_ptr<experimental::ServerBuilderPassiveListener>>
       passive_listeners_;
 
