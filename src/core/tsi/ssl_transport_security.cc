@@ -2300,6 +2300,12 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     return result;
   }
   SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
+  if (options->skip_server_certificate_verification) {
+    SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
+  } else {
+    SSL_CTX_set_cert_verify_callback(ssl_context, CustomVerificationFunction,
+                                     nullptr);
+  }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
