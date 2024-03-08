@@ -13,7 +13,6 @@
 # limitations under the License.
 #
 
-from grpc._errors import UsageError
 
 class _WatchConnectivityFailed(Exception):
     """Dedicated exception class for watch connectivity failed.
