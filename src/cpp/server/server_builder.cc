@@ -46,14 +46,10 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/server_interceptor.h>
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/surface/server.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
-#include "src/cpp/server/passive_listener.h"
+#include "src/cpp/server/passive_listener_internal.h"
 
 namespace grpc {
 
@@ -232,13 +228,12 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 ServerBuilder& ServerBuilder::CreatePassiveListener(
     std::unique_ptr<experimental::PassiveListener>& passive_listener,
     std::shared_ptr<grpc::ServerCredentials> creds) {
-  auto chttp2_listener =
+  auto builder_listener =
       std::make_shared<experimental::ServerBuilderPassiveListener>(
           std::move(creds));
-  passive_listeners_.push_back(chttp2_listener);
-  passive_listener =
-      std::make_unique<grpc::experimental::PassiveListenerWrapper>(
-          std::move(chttp2_listener));
+  passive_listeners_.push_back(builder_listener);
+  passive_listener = std::make_unique<grpc::experimental::PassiveListenerOwner>(
+      std::move(builder_listener));
   return *this;
 }
 

@@ -56,6 +56,9 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -65,6 +68,7 @@
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -126,6 +130,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
 
   void Orphan() override;
+
+  void AcceptInjectedConnection(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint);
 
  private:
   class ConfigFetcherWatcher
@@ -379,13 +387,17 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       handshake_mgr_(MakeRefCounted<HandshakeManager>()),
       deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
-  grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
+  if (accepting_pollset != nullptr) {
+    grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
+  }
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_SERVER, args, interested_parties_, handshake_mgr_.get());
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
-  grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
+  if (accepting_pollset_ != nullptr) {
+    grpc_pollset_set_del_pollset(interested_parties_, accepting_pollset_);
+  }
   grpc_pollset_set_destroy(interested_parties_);
   gpr_free(acceptor_);
 }
@@ -805,6 +817,13 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
   on_destroy_done_ = on_destroy_done;
 }
 
+void Chttp2ServerListener::AcceptInjectedConnection(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint) {
+  auto* c_endpoint = grpc_event_engine_endpoint_create(std::move(endpoint));
+  OnAccept(this, c_endpoint, nullptr, nullptr);
+}
+
 void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
@@ -1107,3 +1126,92 @@ void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+
+void grpc_server_add_passive_listener_endpoint(
+    grpc_server* server,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    grpc_server_credentials* creds) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error_handle err;
+  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+  grpc_core::ChannelArgs args = core_server->channel_args();
+  auto peer_addr = grpc_event_engine::experimental::ResolvedAddressToURI(
+      endpoint->GetPeerAddress());
+  GRPC_API_TRACE(
+      "grpc_server_add_passive_listener_endpoint(server=%p, endpiont=%s, "
+      "creds=%p)",
+      3,
+      (server, peer_addr.ok() ? peer_addr->c_str() : "<unknown_peer_type>",
+       creds));
+  // Create security context.
+  if (creds == nullptr) {
+    gpr_log(
+        GPR_ERROR, "%s",
+        grpc_core::StatusToString(
+            GRPC_ERROR_CREATE("No credentials specified for passive listener"))
+            .c_str());
+    return;
+  }
+  // TODO(yashykt): Ideally, we would not want to have different behavior here
+  // based on whether a config fetcher is configured or not. Currently, we have
+  // a feature for SSL credentials reloading with an application callback that
+  // assumes that there is a single security connector. If we delay the creation
+  // of the security connector to after the creation of the listener(s), we
+  // would have potentially multiple security connectors which breaks the
+  // assumption for SSL creds reloading. When the API for SSL creds reloading is
+  // rewritten, we would be able to make this workaround go away by removing
+  // that assumption. As an immediate drawback of this workaround, config
+  // fetchers need to be registered before adding ports to the server.
+  if (core_server->config_fetcher() != nullptr) {
+    // Create channel args.
+    args = args.SetObject(creds->Ref());
+  } else {
+    sc = creds->create_security_connector(grpc_core::ChannelArgs());
+    if (sc == nullptr) {
+      gpr_log(
+          GPR_ERROR, "%s",
+          grpc_core::StatusToString(
+              GRPC_ERROR_CREATE(absl::StrCat(
+                  "Unable to create secure server with credentials of type ",
+                  creds->type().name())))
+              .c_str());
+      return;
+    }
+    args = args.SetObject(creds->Ref()).SetObject(sc);
+  }
+  grpc_core::Chttp2ServerListener* listener =
+      new grpc_core::Chttp2ServerListener(core_server, args,
+                                          grpc_core::ModifyArgsForConnection);
+  core_server->AddListener(
+      grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(listener));
+  listener->AcceptInjectedConnection(std::move(endpoint));
+}
+
+absl::Status grpc_server_add_passive_listener_connected_fd(
+    grpc_server* server, int fd, grpc_server_credentials* creds,
+    grpc_channel_args* server_args) {
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  auto args = grpc_core::CoreConfiguration::Get()
+                  .channel_args_preconditioning()
+                  .PreconditionChannelArgs(server_args);
+  auto engine =
+      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+  auto* supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::EventEngineSupportsFdExtension>(
+      engine.get());
+  if (supports_fd == nullptr) {
+    return absl::UnimplementedError(
+        "The server's EventEngine does not support adding endpoints from "
+        "connected file descriptors.");
+  }
+  auto endpoint = supports_fd->CreateEndpointFromFd(
+      fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
+  grpc_server_add_passive_listener_endpoint(server, std::move(endpoint), creds);
+  return absl::OkStatus();
+#else
+  return absl::UnimplementedError(
+      "This platform does not support file descriptors");
+#endif
+}

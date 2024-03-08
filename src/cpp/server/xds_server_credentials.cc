@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/security/server_credentials.h>
 
+#include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
 namespace grpc {
@@ -30,7 +31,8 @@ namespace grpc {
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
-  if (fallback_credentials->IsInsecure()) {
+  if (fallback_credentials->c_creds()->type() ==
+      grpc_core::InsecureCredentials::Type()) {
     grpc_server_credentials* insecure_creds =
         grpc_insecure_server_credentials_create();
     auto xds_creds = std::make_shared<SecureServerCredentials>(
@@ -39,8 +41,7 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
     return xds_creds;
   }
   return std::make_shared<SecureServerCredentials>(
-      grpc_xds_server_credentials_create(
-          fallback_credentials->AsSecureServerCredentials()->c_creds()));
+      grpc_xds_server_credentials_create(fallback_credentials->c_creds()));
 }
 
 namespace experimental {

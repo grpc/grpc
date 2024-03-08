@@ -295,6 +295,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
     "include/grpc/event_engine/internal/slice_cast.h",
+    "include/grpc/event_engine/passive_listener_injection.h",
 ]
 
 GRPCXX_SRCS = [
@@ -320,6 +321,7 @@ GRPCXX_SRCS = [
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
+    "src/cpp/server/passive_listener_internal.cc",
     "src/cpp/server/server_builder.cc",
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
@@ -337,6 +339,7 @@ GRPCXX_HDRS = [
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
     "src/cpp/server/health/default_health_check_service.h",
+    "src/cpp/server/passive_listener_internal.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
 ]
@@ -422,6 +425,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
+    "include/grpcpp/passive_listener.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/tls_crl_provider.h",
@@ -1181,6 +1185,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
+        "//src/core:grpc_insecure_credentials",
         "//src/core:xds_enabled_server",
     ],
 )

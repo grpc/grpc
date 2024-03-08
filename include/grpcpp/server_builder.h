@@ -33,6 +33,7 @@
 #include <grpcpp/impl/channel_argument_option.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/passive_listener.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
@@ -77,31 +78,6 @@ class ExternalConnectionAcceptor {
   // If called before grpc::Server is started or after it is shut down, the new
   // connection will be closed.
   virtual void HandleNewConnection(NewConnectionParameters* p) = 0;
-};
-
-/// -- EXPERIMENTAL API --
-/// Interface for used for Server Endpoint injection.
-class PassiveListener {
- public:
-  virtual ~PassiveListener() = default;
-  /// -- EXPERIMENTAL API --
-  ///
-  /// Takes an Endpoint for an established connection, and treats it as if the
-  /// connection had been accepted by the server.
-  ///
-  /// The server must be started before endpoints can be accepted.
-  virtual void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) = 0;
-
-  /// -- EXPERIMENTAL API --
-  ///
-  /// Takes a connected file descriptor, and treats it as if the server had
-  /// accepted the connection itself.
-  ///
-  /// Returns a failure status if the server's active EventEngine does not
-  /// support Endpoint creation from fds.
-  virtual absl::Status AcceptConnectedFd(int fd) = 0;
 };
 
 }  // namespace experimental
@@ -351,7 +327,7 @@ class ServerBuilder {
   /// This can be called multiple times to create passive listeners with
   /// different server credentials.
   ServerBuilder& CreatePassiveListener(
-      std::unique_ptr<experimental::PassiveListener>& passive_listener,
+      std::unique_ptr<grpc::experimental::PassiveListener>& passive_listener,
       std::shared_ptr<grpc::ServerCredentials> creds);
 
  protected:
@@ -430,6 +406,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
+  // DO NOT SUBMIT(hork): map?
   std::vector<std::weak_ptr<experimental::ServerBuilderPassiveListener>>
       passive_listeners_;
 
