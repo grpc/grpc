@@ -2326,7 +2326,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #endif
   X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
   X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-  //
   X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
 
   *factory = impl;
@@ -2559,7 +2558,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
       X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-      //
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
     } while (false);
 
