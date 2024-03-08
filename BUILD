@@ -2514,7 +2514,6 @@ grpc_cc_library(
         "channel_arg_names",
         "channel_stack_builder",
         "config",
-        "//src/core:examine_stack",
         "exec_ctx",
         "gpr",
         "grpc_base",

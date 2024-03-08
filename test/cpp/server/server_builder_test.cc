@@ -96,7 +96,9 @@ TEST_F(ServerBuilderTest, CreatePassiveListener) {
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
-  // DO NOT SUBMIT(hork): This needs a real socket
+#ifndef GPR_SUPPORT_CHANNELS_FROM_FD
+  GTEST_SKIP() << "Platform does not support fds";
+#endif
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   ServerBuilder builder;
