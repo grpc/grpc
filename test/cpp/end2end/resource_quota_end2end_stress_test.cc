@@ -148,8 +148,8 @@ TEST_F(End2EndResourceQuotaUnaryTest, MultipleUnaryRPCTest) { MakeGrpcCalls(); }
 class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
  protected:
   End2EndConnectionQuotaTest() {
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ = absl::StrCat("[::]:", port);
+    port_ = grpc_pick_unused_port_or_die();
+    server_address_ = absl::StrCat("[::]:", port_);
     payload_ = std::string(kPayloadSizeBytes, 'a');
     ServerBuilder builder;
     builder.AddListeningPort(server_address_, InsecureServerCredentials());
@@ -164,7 +164,7 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
   ~End2EndConnectionQuotaTest() override { server_->Shutdown(); }
 
   std::unique_ptr<EchoTestService::Stub> CreateGrpcChannelStub() {
-    ::grpc::ChannelArguments args;
+    grpc::ChannelArguments args;
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
     args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 20000);
@@ -172,9 +172,9 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
     args.SetInt(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS, 15000);
     args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
 
-    return EchoTestService::NewStub(
-        CreateCustomChannel(absl::StrCat("ipv6:", server_address_),
-                            grpc::InsecureChannelCredentials(), args));
+    return EchoTestService::NewStub(CreateCustomChannel(
+        absl::StrCat("ipv6:", absl::StrCat("[::1]:", port_)),
+        grpc::InsecureChannelCredentials(), args));
   }
 
   void TestExceedingConnectionQuota() {

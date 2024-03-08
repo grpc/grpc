@@ -511,8 +511,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                     .release();
             auto on_close_transport = [](void* arg,
                                          grpc_error_handle /*handle*/) {
-              grpc_core::ConnectionQuota* connection_quota =
-                  static_cast<grpc_core::ConnectionQuota*>(arg);
+              ConnectionQuota* connection_quota =
+                  static_cast<ConnectionQuota*>(arg);
               connection_quota->ReleaseConnections(1);
               connection_quota->Unref();
             };
