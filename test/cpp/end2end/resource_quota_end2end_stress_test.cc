@@ -53,7 +53,6 @@ class EchoClientUnaryReactor : public grpc::ClientUnaryReactor {
   EchoClientUnaryReactor(ClientContext* ctx, EchoTestService::Stub* stub,
                          const std::string payload, Status* status)
       : ctx_(ctx), payload_(payload), status_(status) {
-    ctx_->set_wait_for_ready(true);
     request_.set_message(payload);
     stub->async()->Echo(ctx_, &request_, &response_, this);
     StartCall();
@@ -120,6 +119,7 @@ class End2EndResourceQuotaUnaryTest : public ::testing::Test {
     Status status;
     auto stub = EchoTestService::NewStub(
         CreateChannel(server_address_, grpc::InsecureChannelCredentials()));
+    ctx.set_wait_for_ready(true);
     EchoClientUnaryReactor reactor(&ctx, stub.get(), payload_, &status);
     reactor.Await();
   }
@@ -144,6 +144,83 @@ class End2EndResourceQuotaUnaryTest : public ::testing::Test {
 };
 
 TEST_F(End2EndResourceQuotaUnaryTest, MultipleUnaryRPCTest) { MakeGrpcCalls(); }
+
+class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
+ protected:
+  End2EndConnectionQuotaTest() {
+    int port = grpc_pick_unused_port_or_die();
+    server_address_ = absl::StrCat("[::]:", port);
+    payload_ = std::string(kPayloadSizeBytes, 'a');
+    ServerBuilder builder;
+    builder.AddListeningPort(server_address_, InsecureServerCredentials());
+    builder.AddChannelArgument(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS,
+                               GetParam());
+    builder.AddChannelArgument(
+        GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 10000);
+    builder.RegisterService(&grpc_service_);
+    server_ = builder.BuildAndStart();
+  }
+
+  ~End2EndConnectionQuotaTest() override { server_->Shutdown(); }
+
+  std::unique_ptr<EchoTestService::Stub> CreateGrpcChannelStub() {
+    ::grpc::ChannelArguments args;
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+    args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 20000);
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 10000);
+    args.SetInt(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS, 15000);
+    args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+
+    return EchoTestService::NewStub(
+        CreateCustomChannel(absl::StrCat("ipv6:", server_address_),
+                            grpc::InsecureChannelCredentials(), args));
+  }
+
+  void TestExceedingConnectionQuota() {
+    const int kNumConnections = 2 * GetParam();
+    std::vector<std::unique_ptr<EchoTestService::Stub>> stubs;
+    std::vector<ClientContext*> contexts;
+    for (int i = 0; i < kNumConnections; i++) {
+      stubs.push_back(CreateGrpcChannelStub());
+      contexts.push_back(new ClientContext());
+    }
+    for (int i = 0; i < kNumConnections; ++i) {
+      ClientContext ctx;
+      Status status;
+      ctx.set_wait_for_ready(false);
+      EchoClientUnaryReactor reactor(&ctx, stubs[i].get(), payload_, &status);
+      reactor.Await();
+      // The first half RPCs should succeed.
+      if (i < kNumConnections / 2) {
+        EXPECT_TRUE(status.ok());
+
+      } else {
+        // The second half should fail because they would attempt to create a
+        // new connection and fail since it would exceed the connection quota
+        // limit set at the server.
+        EXPECT_FALSE(status.ok());
+      }
+    }
+
+    for (int i = 0; i < kNumConnections; i++) {
+      delete contexts[i];
+    }
+  }
+
+  int port_;
+  std::unique_ptr<Server> server_;
+  string server_address_;
+  GrpcCallbackServiceImpl grpc_service_;
+  std::string payload_;
+};
+
+TEST_P(End2EndConnectionQuotaTest, ConnectionQuotaTest) {
+  TestExceedingConnectionQuota();
+}
+
+INSTANTIATE_TEST_SUITE_P(ConnectionQuotaParamTest, End2EndConnectionQuotaTest,
+                         ::testing::ValuesIn<int>({10, 100}));
 
 }  // namespace testing
 }  // namespace grpc

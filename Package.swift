@@ -1608,6 +1608,8 @@ let package = Package(
         "src/core/lib/resource_quota/api.h",
         "src/core/lib/resource_quota/arena.cc",
         "src/core/lib/resource_quota/arena.h",
+        "src/core/lib/resource_quota/connection_quota.cc",
+        "src/core/lib/resource_quota/connection_quota.h",
         "src/core/lib/resource_quota/memory_quota.cc",
         "src/core/lib/resource_quota/memory_quota.h",
         "src/core/lib/resource_quota/periodic_update.cc",

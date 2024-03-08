@@ -1596,6 +1596,8 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/connection_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/connection_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.cc" role="src" />
