@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CPP_SERVER_PASSIVE_LISTENER_H
-#define GRPC_CPP_SERVER_PASSIVE_LISTENER_H
+#ifndef GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
+#define GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
@@ -75,4 +75,4 @@ class ServerBuilderPassiveListener final
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_CPP_SERVER_PASSIVE_LISTENER_H
+#endif  // GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
