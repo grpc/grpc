@@ -109,7 +109,6 @@ task 'dlls', [:plat] do |t, args|
   env += 'SYSTEM=MINGW32 '
   env += 'EMBED_ZLIB=true '
   env += 'EMBED_OPENSSL=true '
-  env += 'EMBED_CARES=true '
   env += 'BUILDDIR=/tmp '
   env += "V=#{verbose} "
   env += "GRPC_RUBY_BUILD_PROCS=#{nproc_override} "

@@ -402,9 +402,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return test_->work_serializer_;
     }
 
-    ConnectivityStateTracker& state_tracker() {
-      return state_tracker_;
-    }
+    ConnectivityStateTracker& state_tracker() { return state_tracker_; }
 
    private:
     const std::string address_;
