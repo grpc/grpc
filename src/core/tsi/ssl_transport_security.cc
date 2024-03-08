@@ -1126,7 +1126,7 @@ static int CheckChainRevocation(
   }
   // Loop to < chain_length - 1 because the last cert is the trust anchor/root
   // which cannot be revoked
-  for (unsigned long i = 0; i < chain_length - 1; i++) {
+  for (size_t i = 0; i < chain_length - 1; i++) {
     X509* cert = sk_X509_value(chain, i);
     X509* issuer = sk_X509_value(chain, i + 1);
     int ret = CheckCertRevocation(provider, cert, issuer);
