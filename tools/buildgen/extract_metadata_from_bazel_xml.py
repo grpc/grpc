@@ -351,6 +351,10 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "protobuf"
     elif bazel_dep == "@com_google_protobuf//:protoc_lib":
         return "protoc"
+    elif bazel_dep == "@io_opentelemetry_cpp//api:api":
+        return "opentelemetry-cpp::api"
+    elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics":
+        return "opentelemetry-cpp::metrics"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -1156,6 +1160,10 @@ _BUILD_EXTRA_METADATA = {
         "generate_plugin_registry": True,
     },
     "grpcpp_channelz": {"language": "c++", "build": "all"},
+    "grpcpp_otel_plugin": {
+        "language": "c++",
+        "build": "plugin",
+    },
     "grpc++_test": {
         "language": "c++",
         "build": "private",

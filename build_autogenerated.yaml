@@ -5103,6 +5103,24 @@ libs:
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
   - grpc++
+- name: grpcpp_otel_plugin
+  build: plugin
+  language: c++
+  public_headers:
+  - include/grpcpp/ext/otel_plugin.h
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_call_tracer.h
+  - src/cpp/ext/otel/otel_client_filter.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  src:
+  - src/cpp/ext/otel/otel_client_filter.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  deps:
+  - grpc++
+  - opentelemetry-cpp::api
 targets:
 - name: fd_conservation_posix_test
   build: test

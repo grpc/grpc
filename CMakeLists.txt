@@ -224,6 +224,11 @@ set(gRPC_ABSL_USED_TARGETS
   absl_meta
 )
 
+# The OpenTelemetry plugin support "package" build only at present.
+set(gRPC_OPENTELEMETRY_PROVIDER "package")
+#  set(gRPC_OPENTELEMETRY_PROVIDER "module" CACHE STRING "Provider of opentelemetry library")
+#  set_property(CACHE gRPC_OPENTELEMETRY_PROVIDER PROPERTY STRINGS "module" "package")
+
 set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
 if(UNIX)
@@ -346,6 +351,11 @@ include(cmake/download_archive.cmake)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   include(cmake/systemd.cmake)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ${_gRPC_SYSTEMD_LIBRARIES})
+endif()
+
+option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
+if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+  include(cmake/opentelemetry-cpp.cmake)
 endif()
 
 # Setup external proto library at third_party/envoy-api with 2 download URLs
@@ -1610,7 +1620,6 @@ if(gRPC_INSTALL)
 endif()
 
 
-
 add_library(gpr
   src/core/lib/config/config_vars.cc
   src/core/lib/config/config_vars_non_generated.cc
@@ -1773,7 +1782,6 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
 
 
 add_library(grpc
@@ -2745,7 +2753,6 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
-
 add_library(grpc_test_util
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2812,7 +2819,6 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-
 add_library(grpc_test_util_unsecure
   test/core/event_engine/test_init.cc
   test/core/util/build.cc
@@ -2876,7 +2882,6 @@ endif()
 
 
 endif()
-
 
 add_library(grpc_unsecure
   src/core/client_channel/backup_poller.cc
@@ -3453,7 +3458,6 @@ endif()
 
 if(gRPC_BUILD_TESTS)
 
-
 add_library(gtest
   third_party/googletest/googlemock/src/gmock-cardinalities.cc
   third_party/googletest/googlemock/src/gmock-internal-utils.cc
@@ -3526,7 +3530,6 @@ target_link_libraries(gtest
 
 endif()
 
-
 add_library(upb_base_lib
   third_party/upb/upb/base/status.c
 )
@@ -3576,7 +3579,6 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
 
 
 add_library(upb_json_lib ${_gRPC_STATIC_WIN32}
@@ -3666,7 +3668,6 @@ if(gRPC_INSTALL)
 endif()
 
 
-
 add_library(upb_mem_lib
   third_party/upb/upb/mem/alloc.c
   third_party/upb/upb/mem/arena.c
@@ -3717,7 +3718,6 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
 
 
 add_library(upb_message_lib
@@ -3778,7 +3778,6 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
 
 
 add_library(upb_textformat_lib ${_gRPC_STATIC_WIN32}
@@ -3867,7 +3866,6 @@ if(gRPC_INSTALL)
 endif()
 
 
-
 add_library(utf8_range_lib
   third_party/utf8_range/naive.c
   third_party/utf8_range/range2-neon.c
@@ -3923,7 +3921,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 if(gRPC_BUILD_CODEGEN)
-
 add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -4005,7 +4002,6 @@ target_link_libraries(benchmark_helpers
 endif()
 
 endif()
-
 
 add_library(grpc++
   src/core/ext/transport/binder/client/binder_connector.cc
@@ -4347,7 +4343,6 @@ if(gRPC_INSTALL)
 endif()
 
 
-
 add_library(grpc++_alts
   src/cpp/common/alts_context.cc
   src/cpp/common/alts_util.cc
@@ -4419,7 +4414,6 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
 
 
 add_library(grpc++_error_details
@@ -4494,7 +4488,6 @@ endif()
 
 
 if(gRPC_BUILD_CODEGEN)
-
 add_library(grpc++_reflection ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1/reflection.grpc.pb.cc
@@ -4579,7 +4572,6 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
-
 add_library(grpc++_test
   src/cpp/client/channel_test_peer.cc
 )
@@ -4653,7 +4645,6 @@ endforeach()
 endif()
 if(gRPC_BUILD_TESTS)
 
-
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
@@ -4705,7 +4696,6 @@ target_link_libraries(grpc++_test_config
 
 endif()
 if(gRPC_BUILD_TESTS)
-
 
 add_library(grpc++_test_util
   src/core/lib/gpr/subprocess_posix.cc
@@ -4778,7 +4768,6 @@ target_link_libraries(grpc++_test_util
 
 
 endif()
-
 
 add_library(grpc++_unsecure
   src/cpp/client/channel_cc.cc
@@ -5086,7 +5075,6 @@ if(gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
 
 
 add_library(grpc_authorization_provider
@@ -5527,7 +5515,6 @@ if(gRPC_INSTALL)
 endif()
 
 
-
 add_library(grpc_plugin_support
   src/compiler/cpp_generator.cc
   src/compiler/csharp_generator.cc
@@ -5602,7 +5589,6 @@ endif()
 # grpcpp_channelz doesn't build with protobuf-lite
 # See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
-
 add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
@@ -5674,6 +5660,81 @@ if(gRPC_BUILD_CODEGEN)
 # See https://github.com/grpc/grpc/issues/22826
 if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+endif()
+if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+
+add_library(grpcpp_otel_plugin
+  src/cpp/ext/otel/otel_client_filter.cc
+  src/cpp/ext/otel/otel_plugin.cc
+  src/cpp/ext/otel/otel_server_call_tracer.cc
+)
+
+target_compile_features(grpcpp_otel_plugin PUBLIC cxx_std_14)
+
+set_target_properties(grpcpp_otel_plugin PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpcpp_otel_plugin PROPERTIES COMPILE_PDB_NAME "grpcpp_otel_plugin"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpcpp_otel_plugin
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpcpp_otel_plugin.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpcpp_otel_plugin
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpcpp_otel_plugin
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  opentelemetry-cpp::api
+)
+
+foreach(_hdr
+  include/grpcpp/ext/otel_plugin.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpcpp_otel_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
