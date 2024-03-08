@@ -15,6 +15,17 @@
 from grpc_observability._open_telemetry_observability import (
     OpenTelemetryObservability,
 )
+from grpc_observability._open_telemetry_observability import (
+    end_open_telemetry_observability,
+)
+from grpc_observability._open_telemetry_observability import (
+    start_open_telemetry_observability,
+)
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 
-__all__ = ("OpenTelemetryObservability", "OpenTelemetryPlugin")
+__all__ = (
+    "OpenTelemetryObservability",
+    "OpenTelemetryPlugin",
+    "start_open_telemetry_observability",
+    "end_open_telemetry_observability",
+)

@@ -195,6 +195,9 @@ class XdsResourceUtils {
                                     bool use_rds = false,
                                     const Listener* listener_to_copy = nullptr);
 
+  // Returns a string representing the locality with the specified sub_zone.
+  static std::string LocalityNameString(absl::string_view sub_zone);
+
   // Arguments for constructing an EDS resource.
   struct EdsResourceArgs {
     // An individual endpoint for a backend running on a specified port.

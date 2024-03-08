@@ -19,9 +19,9 @@
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 #include "absl/functional/any_invocable.h"
-#include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/variant.h"
 #include "opentelemetry/sdk/metrics/data/point_data.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"

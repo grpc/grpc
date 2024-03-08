@@ -20,9 +20,9 @@
 #define GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 
 #include "absl/functional/any_invocable.h"
-#include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 

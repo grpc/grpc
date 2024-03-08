@@ -44,7 +44,12 @@ HISTOGRAM_PARAMS = {
 # target number of RPCs outstanding on across all client channels in
 # non-ping-pong tests (since we can only specify per-channel numbers, the
 # actual target will be slightly higher)
-OUTSTANDING_REQUESTS = {"async": 6400, "async-limited": 800, "sync": 1000}
+OUTSTANDING_REQUESTS = {
+    "async": 6400,
+    "async-limited": 800,
+    "sync": 1000,
+    "callback": 6400,
+}
 
 # wide is the number of client channels in multi-channel tests (1 otherwise)
 WIDE = 64
@@ -561,7 +566,14 @@ class CXXLanguage(Language):
                 maybe_dashboard = (
                     [DASHBOARD] if rpc_type in ("unary", "streaming") else []
                 )
-                for synchronicity in ["sync", "async"]:
+                for synchronicity in ["sync", "async", "callback"]:
+                    # TODO(hork): Re-enable when the callback scenarios support
+                    # one-sided streaming.
+                    if synchronicity == "callback" and rpc_type in (
+                        "streaming_from_client",
+                        "streaming_from_server",
+                    ):
+                        continue
                     yield _ping_pong_scenario(
                         "cpp_protobuf_%s_%s_ping_pong_%s"
                         % (synchronicity, rpc_type, secstr),
@@ -574,7 +586,6 @@ class CXXLanguage(Language):
                         categories=list(DEFAULT_CATEGORIES) + maybe_dashboard,
                         warmup_seconds=CXX_WARMUP_SECONDS,
                     )
-
                     for size in geometric_progression(
                         1, 1024 * 1024 * 1024 + 1, 8
                     ):

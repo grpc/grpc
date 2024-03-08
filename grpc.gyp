@@ -62,6 +62,10 @@
       '-Isrc/core/ext/upbdefs-gen',
       '-Ithird_party/utf8_range',
       '-Ithird_party/xxhash',
+      '-Ithird_party/cares/cares/include',
+      '-Ithird_party/cares',
+      '-Ithird_party/cares/cares',
+      '-Ithird_party/address_sorting/include',
     ],
     'ldflags': [
       '-g',
@@ -143,6 +147,10 @@
             '-Isrc/core/ext/upbdefs-gen',
             '-Ithird_party/utf8_range',
             '-Ithird_party/xxhash',
+            '-Ithird_party/cares/cares/include',
+            '-Ithird_party/cares',
+            '-Ithird_party/cares/cares',
+            '-Ithird_party/address_sorting/include',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -156,6 +164,10 @@
             '-Isrc/core/ext/upbdefs-gen',
             '-Ithird_party/utf8_range',
             '-Ithird_party/xxhash',
+            '-Ithird_party/cares/cares/include',
+            '-Ithird_party/cares',
+            '-Ithird_party/cares/cares',
+            '-Ithird_party/address_sorting/include',
             '-stdlib=libc++',
             '-std=c++14',
             '-Wno-error=deprecated-declarations',
@@ -2349,6 +2361,19 @@
         'src/proto/grpc/channelz/channelz.proto',
         'src/cpp/server/channelz/channelz_service.cc',
         'src/cpp/server/channelz/channelz_service_plugin.cc',
+      ],
+    },
+    {
+      'target_name': 'grpcpp_otel_plugin',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'opentelemetry-cpp::api',
+      ],
+      'sources': [
+        'src/cpp/ext/otel/otel_client_filter.cc',
+        'src/cpp/ext/otel/otel_plugin.cc',
+        'src/cpp/ext/otel/otel_server_call_tracer.cc',
       ],
     },
     {
