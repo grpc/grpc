@@ -18,6 +18,7 @@
 #include <grpc/event_engine/passive_listener_injection.h>
 #include <grpc/grpc.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc {
@@ -26,24 +27,41 @@ namespace experimental {
 void ServerBuilderPassiveListener::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
+  GPR_DEBUG_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
+  if (creds_->c_creds() == nullptr) {
+    auto creds = grpc_insecure_server_credentials_create();
+    grpc_server_add_passive_listener_endpoint(server_->c_server(),
+                                              std::move(endpoint), creds);
+    grpc_server_credentials_release(creds);
+    return;
+  }
   grpc_server_add_passive_listener_endpoint(
       server_->c_server(), std::move(endpoint), creds_->c_creds());
 }
 
 absl::Status ServerBuilderPassiveListener::AcceptConnectedFd(
     GRPC_UNUSED int fd) {
-  GPR_ASSERT(server_ != nullptr);
+  GPR_DEBUG_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
+  if (creds_->c_creds() == nullptr) {
+    auto creds = grpc_insecure_server_credentials_create();
+    auto result = grpc_server_add_passive_listener_connected_fd(
+        server_->c_server(), fd, creds, server_args_);
+    grpc_server_credentials_release(creds);
+    return result;
+  }
   return grpc_server_add_passive_listener_connected_fd(
-      server_->c_server(), fd, creds_->c_creds(), &server_args_);
+      server_->c_server(), fd, creds_->c_creds(), server_args_);
 }
 
 void ServerBuilderPassiveListener::Initialize(
     grpc::Server* server, grpc::ChannelArguments& arguments) {
   GPR_DEBUG_ASSERT(server_ == nullptr);
   server_ = server;
-  arguments.SetChannelArgs(&server_args_);
+  grpc_channel_args tmp_args;
+  arguments.SetChannelArgs(&tmp_args);
+  server_args_ = grpc_channel_args_copy(&tmp_args);
 }
 
 }  // namespace experimental

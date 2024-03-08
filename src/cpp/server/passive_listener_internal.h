@@ -19,6 +19,8 @@
 #include <grpcpp/passive_listener.h>
 #include <grpcpp/server.h>
 
+#include "src/core/lib/channel/channel_args.h"
+
 namespace grpc {
 namespace experimental {
 
@@ -52,6 +54,10 @@ class ServerBuilderPassiveListener final
       std::shared_ptr<grpc::ServerCredentials> creds)
       : creds_(std::move(creds)) {}
 
+  ~ServerBuilderPassiveListener() override {
+    grpc_channel_args_destroy(server_args_);
+  }
+
   void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override;
@@ -62,7 +68,7 @@ class ServerBuilderPassiveListener final
 
  private:
   grpc::Server* server_ = nullptr;
-  grpc_channel_args server_args_;
+  grpc_channel_args* server_args_ = nullptr;
   std::shared_ptr<grpc::ServerCredentials> creds_;
 };
 

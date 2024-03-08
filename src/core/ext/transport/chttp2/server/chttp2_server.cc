@@ -1193,9 +1193,14 @@ absl::Status grpc_server_add_passive_listener_connected_fd(
     grpc_server* server, int fd, grpc_server_credentials* creds,
     grpc_channel_args* server_args) {
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  // Create security context.
+  if (creds == nullptr) {
+    return GRPC_ERROR_CREATE("No credentials specified for passive listener");
+  }
   auto args = grpc_core::CoreConfiguration::Get()
                   .channel_args_preconditioning()
-                  .PreconditionChannelArgs(server_args);
+                  .PreconditionChannelArgs(server_args)
+                  .SetObject(creds->Ref());
   auto engine =
       args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
   auto* supports_fd = grpc_event_engine::experimental::QueryExtension<

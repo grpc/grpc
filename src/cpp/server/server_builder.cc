@@ -411,6 +411,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   for (auto& weak_passive_listener : passive_listeners_) {
+    has_frequently_polled_cqs = true;
     auto passive_listener = weak_passive_listener.lock();
     if (passive_listener != nullptr) {
       passive_listener->Initialize(server.get(), args);

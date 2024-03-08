@@ -16,6 +16,8 @@
 //
 //
 
+#include <sys/socket.h>
+
 #include <gtest/gtest.h>
 
 #include "gtest/gtest.h"
@@ -94,20 +96,22 @@ TEST_F(ServerBuilderTest, CreatePassiveListener) {
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
-#ifndef GPR_SUPPORT_CHANNELS_FROM_FD
-  GTEST_SKIP_("fds not supported on this platform");
-#endif
-  // DO NOT SUBMIT(hork): implement fd connection
-  int fd = -1;
+  // DO NOT SUBMIT(hork): This needs a real socket
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
   std::unique_ptr<experimental::PassiveListener> passive_listener;
-  auto server =
-      ServerBuilder()
-          .CreatePassiveListener(passive_listener, InsecureServerCredentials())
-          .BuildAndStart();
+  ServerBuilder builder;
+  auto cq = builder.AddCompletionQueue();
+  builder.CreatePassiveListener(passive_listener, InsecureServerCredentials());
+  auto server = builder.BuildAndStart();
+  ASSERT_NE(server.get(), nullptr);
   auto accept_status = passive_listener->AcceptConnectedFd(fd);
+#ifndef GPR_SUPPORT_CHANNELS_FROM_FD
   ASSERT_FALSE(accept_status.ok())
-      << "Connection should have failed for fd::" << fd;
+      << "fds are not supported on this platform, this should have failed";
+#endif
+  ASSERT_TRUE(accept_status.ok()) << accept_status;
   server->Shutdown();
+  close(fd);
 }
 
 // DO NOT SUBMIT(hork): hangs. Likely a kept ref.

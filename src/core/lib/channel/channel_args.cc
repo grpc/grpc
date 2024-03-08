@@ -41,7 +41,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/examine_stack.h"
 
 namespace grpc_core {
 
@@ -130,8 +129,6 @@ ChannelArgs::ChannelArgs(AVL<RefCountedStringValue, Value> args)
     : args_(std::move(args)) {}
 
 ChannelArgs ChannelArgs::Set(grpc_arg arg) const {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: %s", GetCurrentStackTrace()->c_str());
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: (%s):(%d)", arg.key, arg.type);
   switch (arg.type) {
     case GRPC_ARG_INTEGER:
       return Set(arg.key, arg.value.integer);
