@@ -3168,7 +3168,7 @@ TEST(CredentialsTest,
   std::vector<std::thread> threads;
   threads.reserve(thread_count);
   for (int i = 0; i < thread_count; ++i) {
-    threads.emplace_back([&]() {
+    threads.emplace_back([=]() {
       auto state = RequestMetadataState::NewInstance(
           absl::OkStatus(),
           "authorization: Bearer token_exchange_access_token");
