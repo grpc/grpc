@@ -103,8 +103,11 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   ServerBuilder builder;
   auto cq = builder.AddCompletionQueue();
-  builder.CreatePassiveListener(passive_listener, InsecureServerCredentials());
-  auto server = builder.BuildAndStart();
+  // TODO(hork): why is the service necessary? Queue isn't drained otherwise.
+  auto server =
+      builder.RegisterService(&g_service)
+          .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+          .BuildAndStart();
   ASSERT_NE(server.get(), nullptr);
   auto accept_status = passive_listener->AcceptConnectedFd(fd);
 #ifndef GPR_SUPPORT_CHANNELS_FROM_FD
@@ -116,8 +119,7 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
   close(fd);
 }
 
-// DO NOT SUBMIT(hork): hangs. Likely a kept ref.
-TEST_F(ServerBuilderTest, DISABLED_PassiveListenerAcceptConnectedEndpoint) {
+TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
   class NoopEndpoint
       : public grpc_event_engine::experimental::EventEngine::Endpoint {
     bool Read(absl::AnyInvocable<void(absl::Status)> /* on_read */,

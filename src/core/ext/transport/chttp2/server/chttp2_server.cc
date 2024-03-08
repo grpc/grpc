@@ -269,7 +269,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   }
 
   Server* const server_;
-  grpc_tcp_server* tcp_server_;
+  grpc_tcp_server* tcp_server_ = nullptr;
   grpc_resolved_address resolved_address_;
   Chttp2ServerArgsModifier const args_modifier_;
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
@@ -923,8 +923,13 @@ void Chttp2ServerListener::Orphan() {
     }
     tcp_server = tcp_server_;
   }
-  grpc_tcp_server_shutdown_listeners(tcp_server);
-  grpc_tcp_server_unref(tcp_server);
+  if (tcp_server != nullptr) {
+    grpc_tcp_server_shutdown_listeners(tcp_server);
+    grpc_tcp_server_unref(tcp_server);
+  } else {
+    // Passive listeners do not have iomgr grpc_tcp_servers
+    TcpServerShutdownComplete(this, absl::OkStatus());
+  }
 }
 
 }  // namespace
