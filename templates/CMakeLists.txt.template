@@ -200,7 +200,7 @@
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
     # TODO(jtattermusch): extract the metadata to a centralized location.
-    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+    if lib_or_target.build not in ["all", "plugin", "protoc", "tool", "test", "private"]:
       return False
     if lib_or_target.boringssl:
       # Don't generate target for boringssl libs or tests
@@ -361,6 +361,11 @@
     absl_meta
   )
 
+  # The OpenTelemetry plugin support "package" build only at present.
+  set(gRPC_OPENTELEMETRY_PROVIDER "package")
+  #  set(gRPC_OPENTELEMETRY_PROVIDER "module" CACHE STRING "Provider of opentelemetry library")
+  #  set_property(CACHE gRPC_OPENTELEMETRY_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
   if(UNIX)
@@ -484,6 +489,11 @@
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     include(cmake/systemd.cmake)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> <%text>${_gRPC_SYSTEMD_LIBRARIES}</%text>)
+  endif()
+
+  option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
+  if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+    include(cmake/opentelemetry-cpp.cmake)
   endif()
 
   % for external_proto_library in external_proto_libraries:
@@ -727,12 +737,16 @@
       if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
+
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif()
   %   else:
+  %     if lib.build in ["plugin"]:
+  if(gRPC_BUILD_${lib.name.upper()})
+  %     endif
   ${cc_library(lib)}
   %     if not lib.build in ["tool"]:
   %       if any(proto_re.match(src) for src in lib.src):
@@ -742,6 +756,9 @@
   %       if any(proto_re.match(src) for src in lib.src):
   endif()
   %       endif
+  %     endif
+  %     if lib.build in ["plugin"]:
+  endif()
   %     endif
   %   endif
   % endfor
@@ -782,7 +799,6 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-
   add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
