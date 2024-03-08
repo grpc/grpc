@@ -237,46 +237,37 @@ class StatsPlugin {
 // function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
-  class StatsPluginGroup {
+  class StatsPluginGroup : public std::vector<std::shared_ptr<StatsPlugin>> {
    public:
-    void push_back(std::shared_ptr<StatsPlugin> plugin) {
-      plugins_.push_back(std::move(plugin));
-    }
+    StatsPluginGroup() : std::vector<std::shared_ptr<StatsPlugin>>() {}
+
     void ForEach(absl::FunctionRef<void(std::shared_ptr<StatsPlugin>)> f) {
-      for (auto& plugin : plugins_) {
+      for (auto& plugin : *this) {
         f(plugin);
       }
     }
 
-    template <class T, class U>
-    void AddCounter(T handle, U value,
+    template <class HandleType, class ValueType>
+    void AddCounter(HandleType handle, ValueType value,
                     absl::Span<const absl::string_view> label_values,
                     absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
+      for (auto& plugin : *this) {
         plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
-    template <class T, class U>
-    void RecordHistogram(T handle, U value,
+    template <class HandleType, class ValueType>
+    void RecordHistogram(HandleType handle, ValueType value,
                          absl::Span<const absl::string_view> label_values,
                          absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
+      for (auto& plugin : *this) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
     }
-    void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
-                  int64_t value,
+    template <class HandleType, class ValueType>
+    void SetGauge(HandleType handle, ValueType value,
                   absl::Span<const absl::string_view> label_values,
                   absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
-        plugin->SetGauge(handle, value, label_values, optional_values);
-      }
-    }
-    void SetGauge(GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-                  double value,
-                  absl::Span<const absl::string_view> label_values,
-                  absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
+      for (auto& plugin : *this) {
         plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
@@ -293,11 +284,6 @@ class GlobalStatsPluginRegistry {
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
-
-   private:
-    friend class RegisteredMetricCallback;
-
-    std::vector<std::shared_ptr<StatsPlugin>> plugins_;
   };
 
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);

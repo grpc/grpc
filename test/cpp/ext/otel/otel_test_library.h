@@ -55,6 +55,12 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
 };
 
 class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
+ public:
+  template <typename HandleType, typename ValueType>
+  friend void VerifyCounter(OpenTelemetryPluginEnd2EndTest* test,
+                            HandleType handle, std::vector<ValueType> data,
+                            ValueType result, absl::string_view metric_name);
+
  protected:
   struct Options {
    public:
@@ -112,6 +118,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
+    Options& add_optional_label(absl::string_view optional_label_key) {
+      optional_label_keys.emplace(optional_label_key);
+      return *this;
+    }
+
     absl::flat_hash_set<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
@@ -133,6 +144,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::vector<
         std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
         plugin_options;
+    absl::flat_hash_set<absl::string_view> optional_label_keys;
   };
 
   // Note that we can't use SetUp() here since we want to send in parameters.

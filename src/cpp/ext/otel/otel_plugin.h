@@ -266,9 +266,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   grpc_core::ServerCallTracerFactory* GetServerCallTracerFactory(
       grpc_core::Arena* arena) override;
 
-  // TODO(yashkt, yijiem): implement and test this.
-  bool EnableMetric(absl::string_view metric_name) { return false; }
-  bool DisableMetric(absl::string_view metric_name) { return false; }
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {
     return server_selector_;

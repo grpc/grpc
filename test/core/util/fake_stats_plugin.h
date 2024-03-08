@@ -368,6 +368,16 @@ class FakeStatsPlugin : public StatsPlugin {
     callbacks_.erase(callback);
   }
 
+  ClientCallTracer* GetClientCallTracer(absl::string_view /*canonical_target*/,
+                                        Slice /*path*/, Arena* /*arena*/,
+                                        bool /*registered_method*/) override {
+    return nullptr;
+  }
+  ServerCallTracerFactory* GetServerCallTracerFactory(
+      Arena* /*arena*/) override {
+    return nullptr;
+  }
+
   absl::optional<uint64_t> GetCounterValue(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       absl::Span<const absl::string_view> label_values,

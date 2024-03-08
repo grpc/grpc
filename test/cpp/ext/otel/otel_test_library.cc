@@ -32,6 +32,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
@@ -114,6 +115,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   for (auto& option : config.plugin_options) {
     ot_builder.AddPluginOption(std::move(option));
   }
+  for (auto& optional_label_key : config.optional_label_keys) {
+    ot_builder.AddOptionalLabel(optional_label_key);
+  }
   ASSERT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
@@ -148,6 +152,10 @@ void OpenTelemetryPluginEnd2EndTest::TearDown() {
   server_->Shutdown();
   grpc_shutdown_blocking();
   grpc_core::ServerCallTracerFactory::TestOnlyReset();
+  grpc_core::GlobalInstrumentsRegistryTestPeer::
+      ResetGlobalInstrumentsRegistry();
+  grpc_core::GlobalStatsPluginRegistryTestPeer::
+      ResetGlobalStatsPluginRegistry();
 }
 
 void OpenTelemetryPluginEnd2EndTest::ResetStub(

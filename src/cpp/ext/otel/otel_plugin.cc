@@ -106,6 +106,9 @@ class NPCMetricsKeyValueIterable
         return false;
       }
     }
+    if (enabled_optional_label_keys_ == nullptr) {
+      return true;
+    }
     // Note that if there is duplicated enabled keys we will send them multiple
     // times.
     for (int i = 0; i < optional_label_keys_.size(); i++) {
@@ -212,6 +215,9 @@ OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
 OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::AddOptionalLabel(
     absl::string_view optional_label_key) {
+  if (optional_label_keys_ == nullptr) {
+    optional_label_keys_ = std::make_shared<std::set<absl::string_view>>();
+  }
   optional_label_keys_->emplace(optional_label_key);
   return *this;
 }
@@ -345,17 +351,20 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                                           std::string(descriptor.name),
                                           std::string(descriptor.description),
                                           std::string(descriptor.unit)));
+                break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
                 double_counters_.emplace(
                     descriptor.index, meter->CreateDoubleCounter(
                                           std::string(descriptor.name),
                                           std::string(descriptor.description),
                                           std::string(descriptor.unit)));
+                break;
               default:
                 grpc_core::Crash(
                     absl::StrFormat("Unknown or unsupported value type: %d",
                                     descriptor.value_type));
             }
+            break;
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kHistogram:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
@@ -364,37 +373,46 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                                           std::string(descriptor.name),
                                           std::string(descriptor.description),
                                           std::string(descriptor.unit)));
+                break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
                 double_histograms_.emplace(
                     descriptor.index, meter->CreateDoubleHistogram(
                                           std::string(descriptor.name),
                                           std::string(descriptor.description),
                                           std::string(descriptor.unit)));
+                break;
               default:
                 grpc_core::Crash(
                     absl::StrFormat("Unknown or unsupported value type: %d",
                                     descriptor.value_type));
             }
+            break;
           // TODO(yashkt, yijiem): implement gauges.
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+                break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+                break;
               default:
                 grpc_core::Crash(
                     absl::StrFormat("Unknown or unsupported value type: %d",
                                     descriptor.value_type));
             }
+            break;
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
               kCallbackGauge:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+                break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+                break;
               default:
                 grpc_core::Crash(
                     absl::StrFormat("Unknown or unsupported value type: %d",
                                     descriptor.value_type));
             }
+            break;
           default:
             grpc_core::Crash(absl::StrFormat("Unknown instrument_type: %d",
                                              descriptor.instrument_type));

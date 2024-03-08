@@ -281,13 +281,13 @@ RegisteredMetricCallback::RegisteredMetricCallback(
       callback_(std::move(callback)),
       metrics_(std::move(metrics)),
       min_interval_(min_interval) {
-  for (auto& plugin : stats_plugin_group_.plugins_) {
+  for (auto& plugin : stats_plugin_group_) {
     plugin->AddCallback(this);
   }
 }
 
 RegisteredMetricCallback::~RegisteredMetricCallback() {
-  for (auto& plugin : stats_plugin_group_.plugins_) {
+  for (auto& plugin : stats_plugin_group_) {
     plugin->RemoveCallback(this);
   }
 }
