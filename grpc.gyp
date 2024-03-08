@@ -2661,6 +2661,7 @@
       'sources': [
         'third_party/boringssl-with-bazel/src/crypto/test/abi_test.cc',
         'third_party/boringssl-with-bazel/src/crypto/test/file_test.cc',
+        'third_party/boringssl-with-bazel/src/crypto/test/file_util.cc',
         'third_party/boringssl-with-bazel/src/crypto/test/test_util.cc',
         'third_party/boringssl-with-bazel/src/crypto/test/wycheproof_util.cc',
       ],
