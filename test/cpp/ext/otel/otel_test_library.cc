@@ -162,8 +162,8 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
              std::string,
              std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
         continue_predicate) {
-  return ::grpc::testing::ReadCurrentMetricsData(reader_,
-                                                 std::move(continue_predicate));
+  return grpc::testing::ReadCurrentMetricsData(reader_,
+                                               std::move(continue_predicate));
 }
 
 absl::flat_hash_map<
