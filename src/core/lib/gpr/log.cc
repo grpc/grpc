@@ -145,7 +145,7 @@ void gpr_set_log_function(gpr_log_func f) {
 }
 
 void gpr_default_log(gpr_log_func_args* args) {
-  if (IsAbslLoggingEnabled()) {
+  if (grpc_core::IsAbslLoggingEnabled()) {
     gpr_platform_log(args);
   }
   switch (args->severity) {
