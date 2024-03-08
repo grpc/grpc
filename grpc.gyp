@@ -2371,7 +2371,7 @@
         'opentelemetry-cpp::api',
       ],
       'sources': [
-        'src/cpp/ext/otel/otel_client_filter.cc',
+        'src/cpp/ext/otel/otel_call_tracer.cc',
         'src/cpp/ext/otel/otel_plugin.cc',
         'src/cpp/ext/otel/otel_server_call_tracer.cc',
       ],

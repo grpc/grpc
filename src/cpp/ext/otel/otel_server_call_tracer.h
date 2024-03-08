@@ -21,11 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "otel_plugin.h"
-
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
