@@ -51,9 +51,6 @@ EOF
 
     # reload after adding units
     systemctl --user daemon-reload
-
-    ## starting at boot is not necessary for testing
-    # systemctl --user enable sdsockact.socket
 }
 
 teardown_after() {
@@ -94,4 +91,4 @@ if [ ${RESULT} -ne 0 ]; then
 fi
 pass "Response received"
 
-# teardown is called upon exit
+# teardown_after is called upon exit
