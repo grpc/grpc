@@ -105,7 +105,6 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
   un->sun_family = AF_UNIX;
   int offset_start = 0;
   if (absl::StartsWith(path, "///")) {
-    std::cout << "offset" << std::endl;
     offset_start = 2;
   } else if (absl::StartsWith(path, "//")) {
     return GRPC_ERROR_CREATE(absl::StrCat(
@@ -113,7 +112,6 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
   }
   path.copy(un->sun_path, path.size() - offset_start, offset_start);
   un->sun_path[path.size() - offset_start] = '\0';
-  std::cout << "un->sun_path " << un->sun_path <<  std::endl;
   resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
   return absl::OkStatus();
 }
