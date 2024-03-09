@@ -23,6 +23,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
@@ -52,8 +53,6 @@
 
 // Avoid some IWYU confusion:
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
-
-#define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
 
 namespace grpc_core {
 
@@ -126,10 +125,10 @@ void* ErrorCopy(void* p) {
 void ErrorDestroy(void* p) { delete static_cast<absl::Status*>(p); }
 int ErrorCompare(void* p, void* q) { return QsortCompare(p, q); }
 
+}  // namespace
+
 const grpc_arg_pointer_vtable kLameFilterErrorArgVtable = {
     ErrorCopy, ErrorDestroy, ErrorCompare};
-
-}  // namespace
 
 grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
   return grpc_channel_arg_pointer_create(
@@ -138,27 +137,3 @@ grpc_arg MakeLameClientErrorArg(grpc_error_handle* error) {
 }
 
 }  // namespace grpc_core
-
-grpc_channel* grpc_lame_client_channel_create(const char* target,
-                                              grpc_status_code error_code,
-                                              const char* error_message) {
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_API_TRACE(
-      "grpc_lame_client_channel_create(target=%s, error_code=%d, "
-      "error_message=%s)",
-      3, (target, (int)error_code, error_message));
-  if (error_code == GRPC_STATUS_OK) error_code = GRPC_STATUS_UNKNOWN;
-  grpc_core::ChannelArgs args =
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(nullptr)
-          .Set(GRPC_ARG_LAME_FILTER_ERROR,
-               grpc_core::ChannelArgs::Pointer(
-                   new absl::Status(static_cast<absl::StatusCode>(error_code),
-                                    error_message),
-                   &grpc_core::kLameFilterErrorArgVtable));
-  auto channel = grpc_core::Channel::Create(target, std::move(args),
-                                            GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  GPR_ASSERT(channel.ok());
-  return channel->release()->c_ptr();
-}

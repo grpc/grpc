@@ -57,22 +57,24 @@ def serve():
     provider = MeterProvider(metric_readers=[reader])
     otel_plugin = BaseOpenTelemetryPlugin(provider)
 
-    with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
-        server = grpc.server(
-            thread_pool=futures.ThreadPoolExecutor(max_workers=10),
-        )
-        helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-        server.add_insecure_port("[::]:" + _SERVER_PORT)
-        server.start()
-        print("Server started, listening on " + _SERVER_PORT)
+    grpc_observability.start_open_telemetry_observability(plugins=[otel_plugin])
 
-        # Sleep to make sure client made RPC call and all metrics are exported.
-        time.sleep(10)
-        print("Metrics exported on Server side:")
-        for metric in all_metrics:
-            print(metric)
+    server = grpc.server(
+        thread_pool=futures.ThreadPoolExecutor(max_workers=10),
+    )
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+    server.add_insecure_port("[::]:" + _SERVER_PORT)
+    server.start()
+    print("Server started, listening on " + _SERVER_PORT)
 
-        server.stop(0)
+    # Sleep to make sure client made RPC call and all metrics are exported.
+    time.sleep(10)
+    print("Metrics exported on Server side:")
+    for metric in all_metrics:
+        print(metric)
+
+    server.stop(0)
+    grpc_observability.end_open_telemetry_observability()
 
 
 if __name__ == "__main__":

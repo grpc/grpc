@@ -778,7 +778,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,

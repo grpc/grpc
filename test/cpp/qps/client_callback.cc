@@ -378,11 +378,11 @@ std::unique_ptr<Client> CreateCallbackClient(const ClientConfig& config) {
     case STREAMING_FROM_CLIENT:
     case STREAMING_FROM_SERVER:
     case STREAMING_BOTH_WAYS:
-      assert(false);
-      return nullptr;
+      grpc_core::Crash(
+          "STREAMING_FROM_* scenarios are not supported by the callback "
+          "API");
     default:
-      assert(false);
-      return nullptr;
+      grpc_core::Crash(absl::StrCat("Unknown RPC type: ", config.rpc_type()));
   }
 }
 

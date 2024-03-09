@@ -402,6 +402,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return test_->work_serializer_;
     }
 
+    ConnectivityStateTracker& state_tracker() { return state_tracker_; }
+
    private:
     const std::string address_;
     LoadBalancingPolicyTest* const test_;
@@ -587,7 +589,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       queue_.push_back(ReresolutionRequested());
     }
 
-    absl::string_view GetAuthority() override { return "server.example.com"; }
+    absl::string_view GetTarget() override { return test_->target_; }
+
+    absl::string_view GetAuthority() override { return test_->authority_; }
 
     RefCountedPtr<grpc_channel_credentials> GetChannelCredentials() override {
       return nullptr;
@@ -600,6 +604,11 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
     grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
       return test_->fuzzing_ee_.get();
+    }
+
+    GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
+        override {
+      return test_->stats_plugin_group_;
     }
 
     void AddTraceEvent(TraceSeverity, absl::string_view) override {}
@@ -1494,6 +1503,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   OrphanablePtr<LoadBalancingPolicy> lb_policy_;
   const absl::string_view lb_policy_name_;
   const ChannelArgs channel_args_;
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  std::string target_ = "dns:server.example.com";
+  std::string authority_ = "server.example.com";
 };
 
 }  // namespace testing

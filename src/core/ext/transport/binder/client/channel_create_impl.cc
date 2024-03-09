@@ -28,6 +28,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 
 namespace {
 
@@ -56,8 +57,8 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DEFAULT_AUTHORITY, "binder.authority");
   auto channel =
-      grpc_core::Channel::Create("binder_target_placeholder", channel_args,
-                                 GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      grpc_core::ChannelCreate("binder_target_placeholder", channel_args,
+                               GRPC_CLIENT_DIRECT_CHANNEL, transport);
   // TODO(mingcl): Handle error properly
   GPR_ASSERT(channel.ok());
   grpc_channel_args_destroy(args);
@@ -75,8 +76,8 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
                           .SetObject(g_factory);
 
   auto channel =
-      grpc_core::Channel::Create("binder_channel_target_placeholder",
-                                 channel_args, GRPC_CLIENT_CHANNEL, nullptr);
+      grpc_core::ChannelCreate("binder_channel_target_placeholder",
+                               channel_args, GRPC_CLIENT_CHANNEL, nullptr);
 
   if (!channel.ok()) {
     return grpc_lame_client_channel_create(
