@@ -421,7 +421,7 @@ absl::Status ChaoticGoodServerTransport::NewStream(
   if (stream_id <= last_seen_new_stream_id_) {
     return absl::InternalError("Stream id is not increasing");
   }
-  stream_map_.emplace(stream_id, std::move(call_initiator));
+  stream_map_.emplace(stream_id, call_initiator);
   lock.Release();
   call_initiator.OnDone([this, stream_id]() {
     MutexLock lock(&mu_);
