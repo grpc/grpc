@@ -173,7 +173,7 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
     args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
 
     return EchoTestService::NewStub(CreateCustomChannel(
-        absl::StrCat("ipv6:", absl::StrCat("[::1]:", port_)),
+        absl::StrCat("ipv6:[::1]:", port_)),
         grpc::InsecureChannelCredentials(), args));
   }
 
