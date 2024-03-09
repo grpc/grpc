@@ -413,7 +413,7 @@ absl::optional<CallInitiator> ChaoticGoodServerTransport::ExtractStream(
 
 absl::Status ChaoticGoodServerTransport::NewStream(
     uint32_t stream_id, CallInitiator call_initiator) {
-  MutexLock lock(&mu_);
+  ReleasableMutexLock lock(&mu_);
   auto it = stream_map_.find(stream_id);
   if (it != stream_map_.end()) {
     return absl::InternalError("Stream already exists");
@@ -422,6 +422,11 @@ absl::Status ChaoticGoodServerTransport::NewStream(
     return absl::InternalError("Stream id is not increasing");
   }
   stream_map_.emplace(stream_id, std::move(call_initiator));
+  lock.Release();
+  call_initiator.OnDone([this, stream_id]() {
+    MutexLock lock(&mu_);
+    stream_map_.erase(stream_id);
+  });
   return absl::OkStatus();
 }
 
