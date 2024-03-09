@@ -173,17 +173,15 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
     args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
 
     return EchoTestService::NewStub(CreateCustomChannel(
-        absl::StrCat("ipv6:[::1]:", port_)),
+        absl::StrCat("ipv6:[::1]:", port_),
         grpc::InsecureChannelCredentials(), args));
   }
 
   void TestExceedingConnectionQuota() {
     const int kNumConnections = 2 * GetParam();
     std::vector<std::unique_ptr<EchoTestService::Stub>> stubs;
-    std::vector<ClientContext*> contexts;
     for (int i = 0; i < kNumConnections; i++) {
       stubs.push_back(CreateGrpcChannelStub());
-      contexts.push_back(new ClientContext());
     }
     for (int i = 0; i < kNumConnections; ++i) {
       ClientContext ctx;
@@ -201,10 +199,6 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
         // limit set at the server.
         EXPECT_FALSE(status.ok());
       }
-    }
-
-    for (int i = 0; i < kNumConnections; i++) {
-      delete contexts[i];
     }
   }
 
