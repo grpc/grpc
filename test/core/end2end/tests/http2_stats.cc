@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -130,33 +131,6 @@ class FakeCallTracer : public ClientCallTracer {
 grpc_transport_stream_stats
     FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats_;
 
-class FakeClientFilter : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::StatusOr<FakeClientFilter> Create(
-      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
-    return FakeClientFilter();
-  }
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override {
-    auto* call_context = GetContext<grpc_call_context_element>();
-    auto* tracer = GetContext<Arena>()->ManagedNew<FakeCallTracer>();
-    GPR_DEBUG_ASSERT(
-        call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-        nullptr);
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
-        nullptr;
-    return next_promise_factory(std::move(call_args));
-  }
-};
-
-const grpc_channel_filter FakeClientFilter::kFilter =
-    MakePromiseBasedFilter<FakeClientFilter, FilterEndpoint::kClient>(
-        "fake_client");
-
 class FakeServerCallTracer : public ServerCallTracer {
  public:
   ~FakeServerCallTracer() override {}
@@ -211,6 +185,47 @@ class FakeServerCallTracerFactory : public ServerCallTracerFactory {
   }
 };
 
+class FakeStatsPlugin : public grpc_core::StatsPlugin {
+  bool IsEnabledForChannel(const ChannelScope& /*scope*/) const override {
+    return true;
+  }
+  bool IsEnabledForServer(const ChannelArgs& /*args*/) const override {
+    return true;
+  }
+  void AddCounter(
+      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {}
+  void AddCounter(
+      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {}
+  void RecordHistogram(
+      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {}
+  void RecordHistogram(
+      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
+      double value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) override {}
+  void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
+                int64_t value, absl::Span<const absl::string_view> label_values,
+                absl::Span<const absl::string_view> optional_values) override {}
+  void SetGauge(GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+                double value, absl::Span<const absl::string_view> label_values,
+                absl::Span<const absl::string_view> optional_values) override {}
+  void AddCallback(RegisteredMetricCallback* callback) override {}
+  void RemoveCallback(RegisteredMetricCallback* callback) override {}
+  ClientCallTracer* GetClientCallTracer(absl::string_view canonical_target,
+                                        Slice path, Arena* arena,
+                                        bool registered_method) override {
+    return arena->ManagedNew<FakeCallTracer>();
+  }
+  ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) override {
+    return arena->ManagedNew<FakeServerCallTracerFactory>();
+  }
+};
+
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   if (!IsHttp2StatsFixEnabled()) {
@@ -219,12 +234,8 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
   g_client_call_ended_notify = new Notification();
   g_server_call_ended_notify = new Notification();
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterFilter<FakeClientFilter>(
-        GRPC_CLIENT_CHANNEL);
-  });
-  ServerCallTracerFactory::RegisterGlobal(new FakeServerCallTracerFactory);
-
+  grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
+      std::make_shared<FakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
   auto send_from_server = RandomSlice(20);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
