@@ -193,32 +193,34 @@ class FakeStatsPlugin : public grpc_core::StatsPlugin {
     return true;
   }
   void AddCounter(
-      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
+      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle /*handle*/,
+      uint64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void AddCounter(
-      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
-      absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
+      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
+      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle /*handle*/,
+      uint64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
-  void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
-                int64_t value, absl::Span<const absl::string_view> label_values,
-                absl::Span<const absl::string_view> optional_values) override {}
-  void SetGauge(GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-                double value, absl::Span<const absl::string_view> label_values,
-                absl::Span<const absl::string_view> optional_values) override {}
-  void AddCallback(RegisteredMetricCallback* callback) override {}
-  void RemoveCallback(RegisteredMetricCallback* callback) override {}
-  ClientCallTracer* GetClientCallTracer(absl::string_view canonical_target,
-                                        Slice path, Arena* arena,
-                                        bool registered_method) override {
+      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
+  void SetGauge(
+      GlobalInstrumentsRegistry::GlobalInt64GaugeHandle /*handle*/,
+      int64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
+  void SetGauge(
+      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
+  void AddCallback(RegisteredMetricCallback* /*callback*/) override {}
+  void RemoveCallback(RegisteredMetricCallback* /*callback*/) override {}
+  ClientCallTracer* GetClientCallTracer(absl::string_view /*canonical_target*/,
+                                        Slice /*path*/, Arena* arena,
+                                        bool /*registered_method*/) override {
     return arena->ManagedNew<FakeCallTracer>();
   }
   ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) override {
