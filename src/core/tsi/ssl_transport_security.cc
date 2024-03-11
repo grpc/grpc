@@ -2268,14 +2268,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);
+      X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+      X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+      X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Cannot load server root certificates.");
         break;
       }
     }
-    // X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
-    // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-    // X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
 
     if (options->num_alpn_protocols != 0) {
       result = build_alpn_protocol_name_list(
@@ -2478,11 +2478,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
         }
       }
-
-      // X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-      // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-      // X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
-
       switch (options->client_certificate_request) {
         case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
