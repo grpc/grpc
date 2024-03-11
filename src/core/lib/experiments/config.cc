@@ -32,8 +32,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
