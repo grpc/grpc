@@ -24,8 +24,6 @@ from grpc_observability import _cyobservability
 from grpc_observability._open_telemetry_exporter import (
     _OpenTelemetryExporterDelegator,
 )
-from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
-from grpc_observability._open_telemetry_plugin import _OpenTelemetryPlugin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +32,12 @@ ServerCallTracerFactoryCapsule = (
     Any  # it appears only once in the function signature
 )
 grpc_observability = Any  # grpc_observability.py imports this module.
+OpenTelemetryPlugin = (
+    Any  # grpc_observability._open_telemetry_plugin.py import this module.
+)
+_OpenTelemetryPlugin = (
+    Any  # grpc_observability._open_telemetry_plugin.py import this module.
+)
 
 GRPC_STATUS_CODE_TO_STRING = {
     grpc.StatusCode.OK: "OK",
@@ -61,7 +65,7 @@ _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
 
 def start_open_telemetry_observability(
     *,
-    plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
+    plugins: Iterable[_OpenTelemetryPlugin],
 ) -> None:
     _start_open_telemetry_observability(
         OpenTelemetryObservability(plugins=plugins)
@@ -87,21 +91,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def __init__(
         self,
         *,
-        plugins: Optional[Iterable[OpenTelemetryPlugin]] = None,
+        plugins: Optional[Iterable[_OpenTelemetryPlugin]],
     ):
-        _plugins = []
-        if plugins:
-            for plugin in plugins:
-                _plugins.append(_OpenTelemetryPlugin(plugin))
-
-        self.exporter = _OpenTelemetryExporterDelegator(_plugins)
-
-    def __enter__(self):
-        _start_open_telemetry_observability(self)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        _end_open_telemetry_observability()
+        self.exporter = _OpenTelemetryExporterDelegator(plugins)
 
     def observability_init(self):
         try:
