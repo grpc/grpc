@@ -88,8 +88,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
@@ -148,8 +146,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
@@ -209,8 +205,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
@@ -257,7 +251,6 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPendingQueueCap,
-  kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdChaoticGood,
@@ -347,10 +340,6 @@ inline bool IsPeerStateBasedFramingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() {
   return IsExperimentEnabled(kExperimentIdPendingQueueCap);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() {
-  return IsExperimentEnabled(kExperimentIdPickFirstHappyEyeballs);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 inline bool IsPromiseBasedClientCallEnabled() {

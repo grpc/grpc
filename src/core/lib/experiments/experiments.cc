@@ -83,9 +83,6 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -220,8 +217,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
@@ -342,9 +337,6 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -479,8 +471,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
@@ -601,9 +591,6 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -738,8 +725,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
