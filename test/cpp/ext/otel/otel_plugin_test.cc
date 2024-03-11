@@ -1259,7 +1259,6 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       {1.23, 2.34, 3.45, 4.56}, 11.58, 1.23, 4.56, 4, kMetricName, kLabelKeys,
       kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
   // Now build and register another OpenTelemetryPlugin using the test fixture.
-  // Note this will record to the first plugin as well.
   VerifyHistogram<
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
       double>(
@@ -1284,6 +1283,21 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       },
       {1.1, 1.2, 2.2, 3.3, 4.4, 4.5, 5.5, 6.6}, 28.8, 1.1, 6.6, 8, kMetricName,
       kLabelKeys, kLabelValues, kOptionalLabelKeys, kOptionalLabelValues, 2);
+  // Verify that the first plugin gets the data as well.
+  VerifyHistogram<
+      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
+      double>(
+      [&]() { return instrument_handle; }, []() {},
+      [&]() {
+        return ::grpc::testing::ReadCurrentMetricsData(
+            reader,
+            [&](const absl::flat_hash_map<
+                std::string,
+                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                    data) { return !data.contains(kMetricName); });
+      },
+      {}, 28.8, 1.1, 6.6, 8, kMetricName, kLabelKeys, kLabelValues,
+      kOptionalLabelKeys, kOptionalLabelValues, 2);
 }
 
 }  // namespace
