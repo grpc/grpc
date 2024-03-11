@@ -1289,7 +1289,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       double>(
       [&]() { return instrument_handle; }, []() {},
       [&]() {
-        return ::grpc::testing::ReadCurrentMetricsData(
+        return grpc::testing::ReadCurrentMetricsData(
             reader,
             [&](const absl::flat_hash_map<
                 std::string,
