@@ -1245,6 +1245,8 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     gpr_free(root_store);
     return nullptr;
   }
+  X509_VERIFY_PARAM* param = X509_STORE_get0_param(root_store->store);
+  X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
   return root_store;
 }
 
@@ -2271,6 +2273,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
         break;
       }
     }
+    // X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+    // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+    // X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
 
     if (options->num_alpn_protocols != 0) {
       result = build_alpn_protocol_name_list(
@@ -2324,9 +2329,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     }
   }
 #endif
-  X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
-  X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-  X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
 
   *factory = impl;
   return TSI_OK;
@@ -2476,6 +2478,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
         }
       }
+
+      // X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+      // X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+      // X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
+
       switch (options->client_certificate_request) {
         case TSI_DONT_REQUEST_CLIENT_CERTIFICATE:
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_NONE, nullptr);
@@ -2556,9 +2563,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
             ssl_keylogging_callback<tsi_ssl_server_handshaker_factory>);
       }
 #endif
-      X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-      X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-      X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
     } while (false);
 
     if (result != TSI_OK) {
