@@ -1297,7 +1297,6 @@ class CallFilters {
     MessageHandle value_;
   };
 
-  CallFilters();
   explicit CallFilters(ClientMetadataHandle client_initial_metadata);
   ~CallFilters();
 

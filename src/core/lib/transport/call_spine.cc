@@ -93,11 +93,8 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   });
 }
 
-ClientMetadataHandle& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
-  // FIXME: implement a way to peek at the unprocessed client initial metadata
-  // (the code here now is just a placeholder to get this to build)
-  static ClientMetadataHandle md;
-  return md;
+ClientMetadata& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
+  return *spine_->call_filters().unprocessed_client_initial_metadata();
 }
 
 CallHandler UnstartedCallHandler::StartCall(
@@ -106,10 +103,11 @@ CallHandler UnstartedCallHandler::StartCall(
   return CallHandler(std::move(spine_));
 }
 
-CallInitiatorAndHandler MakeCall(
+CallInitiatorAndUnstartedHandler MakeCall(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
-  auto spine = CallSpine::Create(event_engine, arena, nullptr);
+  auto spine = CallSpine::Create(std::move(client_initial_metadata),
+                                 event_engine, arena, nullptr);
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 

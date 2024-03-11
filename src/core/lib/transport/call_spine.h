@@ -38,10 +38,12 @@ namespace grpc_core {
 class CallSpine final : public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
+      ClientMetadataHandle client_initial_metadata,
       grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
       grpc_call_context_element* legacy_context) {
     return RefCountedPtr<CallSpine>(
-        arena->New<CallSpine>(event_engine, arena, legacy_context));
+        arena->New<CallSpine>(std::move(client_initial_metadata), event_engine,
+                              arena, legacy_context));
   }
 
   ~CallSpine() override {
@@ -107,11 +109,18 @@ class CallSpine final : public Party {
     return legacy_context_[index];
   }
 
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return event_engine_;
+  }
+
  private:
   friend class Arena;
-  CallSpine(grpc_event_engine::experimental::EventEngine* event_engine,
+  CallSpine(ClientMetadataHandle client_initial_metadata,
+            grpc_event_engine::experimental::EventEngine* event_engine,
             Arena* arena, grpc_call_context_element* legacy_context)
-      : Party(arena, 1), event_engine_(event_engine) {
+      : Party(arena, 1),
+        call_filters_(std::move(client_initial_metadata)),
+        event_engine_(event_engine) {
     if (legacy_context == nullptr) {
       legacy_context_ = static_cast<grpc_call_context_element*>(
           arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
@@ -151,10 +160,6 @@ class CallSpine final : public Party {
     }
     this->~CallSpine();
     a->Destroy();
-  }
-
-  grpc_event_engine::experimental::EventEngine* event_engine() const override {
-    return event_engine_;
   }
 
   // Call filters/pipes part of the spine
@@ -306,6 +311,10 @@ class CallHandler {
 
   Arena* arena() { return spine_->arena(); }
 
+  grpc_event_engine::experimental::EventEngine* event_engine() {
+    return spine_->event_engine();
+  }
+
   grpc_call_context_element& legacy_context(grpc_context_index index) const {
     return spine_->legacy_context(index);
   }
@@ -319,19 +328,31 @@ class UnstartedCallHandler {
   explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
+  UnstartedCallHandler(const UnstartedCallHandler&) = delete;
+  UnstartedCallHandler& operator=(const UnstartedCallHandler&) = delete;
+  UnstartedCallHandler(UnstartedCallHandler&&) = default;
+  UnstartedCallHandler& operator=(UnstartedCallHandler&&) = default;
+
   // Returns the client initial metadata, which has not yet been
   // processed by the stack that will ultimately be used for this call.
-  ClientMetadataHandle& UnprocessedClientInitialMetadata();
+  ClientMetadata& UnprocessedClientInitialMetadata();
 
   // Starts the call using the specified stack.
   // This must be called only once, and the UnstartedCallHandler object
   // may not be used after this is called.
   CallHandler StartCall(RefCountedPtr<CallFilters::Stack> stack);
 
+  void Cancel(absl::Status status) {
+    spine_->call_filters().PushServerTrailingMetadata(
+        ServerMetadataFromStatus(std::move(status)));
+  }
+
   template <typename ContextType>
   void SetContext(ContextType context) {
     // FIXME: implement
   }
+
+  Arena* arena() { return spine_->arena(); }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
@@ -357,12 +378,12 @@ class UnstartedCallHandler {
   RefCountedPtr<CallSpine> spine_;
 };
 
-struct CallInitiatorAndHandler {
+struct CallInitiatorAndUnstartedHandler {
   CallInitiator initiator;
   UnstartedCallHandler unstarted_handler;
 };
 
-CallInitiatorAndHandler MakeCall(
+CallInitiatorAndUnstartedHandler MakeCall(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena);
 
