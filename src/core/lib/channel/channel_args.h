@@ -233,12 +233,12 @@ struct GetObjectImpl<
   static Result Get(StoredType p) { return p; };
   static ReffedResult GetReffed(StoredType p) {
     if (p == nullptr) return nullptr;
-    return p->Ref();
+    return p->template RefAsSubclass<T>();
   };
   static ReffedResult GetReffed(StoredType p, const DebugLocation& location,
                                 const char* reason) {
     if (p == nullptr) return nullptr;
-    return p->Ref(location, reason);
+    return p->template RefAsSubclass<T>(location, reason);
   };
 };
 
@@ -324,9 +324,23 @@ class ChannelArgs {
     const grpc_arg_pointer_vtable* vtable_;
   };
 
+  // Helper to create a `Pointer` object to an object that is not owned by the
+  // `ChannelArgs` object. Useful for tests, a code smell for production code.
+  template <typename T>
+  static Pointer UnownedPointer(T* p) {
+    static const grpc_arg_pointer_vtable vtable = {
+        [](void* p) -> void* { return p; },
+        [](void*) {},
+        [](void* p, void* q) { return QsortCompare(p, q); },
+    };
+    return Pointer(p, &vtable);
+  }
+
   class Value {
    public:
-    explicit Value(int n) : rep_(reinterpret_cast<void*>(n), &int_vtable_) {}
+    explicit Value(int n)
+        : rep_(reinterpret_cast<void*>(static_cast<intptr_t>(n)),
+               &int_vtable_) {}
     explicit Value(std::string s)
         : rep_(RefCountedString::Make(s).release(), &string_vtable_) {}
     explicit Value(Pointer p) : rep_(std::move(p)) {}
@@ -345,7 +359,7 @@ class ChannelArgs {
       return &rep_;
     }
 
-    std::string ToString() const;
+    absl::string_view ToString(std::list<std::string>& backing) const;
 
     grpc_arg MakeCArg(const char* name) const;
 

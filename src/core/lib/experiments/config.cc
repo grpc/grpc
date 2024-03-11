@@ -94,8 +94,7 @@ class TestExperiments {
 
 TestExperiments* g_test_experiments = nullptr;
 
-GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
-  g_loaded.store(true, std::memory_order_relaxed);
+GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
   // Set defaults from metadata.
   Experiments experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -151,6 +150,11 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariable() {
   return experiments;
 }
 
+Experiments LoadExperimentsFromConfigVariable() {
+  g_loaded.store(true, std::memory_order_relaxed);
+  return LoadExperimentsFromConfigVariableInner();
+}
+
 Experiments& ExperimentsSingleton() {
   // One time initialization:
   static NoDestruct<Experiments> experiments{
@@ -174,6 +178,10 @@ bool IsExperimentEnabled(size_t experiment_id) {
   return ExperimentsSingleton().enabled[experiment_id];
 }
 
+bool IsExperimentEnabledInConfiguration(size_t experiment_id) {
+  return LoadExperimentsFromConfigVariableInner().enabled[experiment_id];
+}
+
 bool IsTestExperimentEnabled(size_t experiment_id) {
   return (*g_test_experiments)[experiment_id];
 }
@@ -193,7 +201,7 @@ void PrintExperimentsList() {
   for (auto name_index : visitation_order) {
     const size_t i = name_index.second;
     gpr_log(
-        GPR_DEBUG, "%s",
+        GPR_INFO, "%s",
         absl::StrCat(
             "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
             std::string(max_experiment_length -

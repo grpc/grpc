@@ -35,6 +35,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/notification.h"
@@ -95,6 +96,15 @@ MATCHER(SRVRecordEq, "") {
 MATCHER(StatusCodeEq, "") {
   return std::get<0>(arg).code() == std::get<1>(arg);
 }
+
+#define SKIP_TEST_FOR_NATIVE_DNS_RESOLVER()                              \
+  do {                                                                   \
+    if (grpc_core::ConfigVars::Get().DnsResolver() == "native") {        \
+      GTEST_SKIP()                                                       \
+          << "This test specifies a target DNS server which the native " \
+             "DNS resolver does not support.";                           \
+    }                                                                    \
+  } while (0)
 
 }  // namespace
 
@@ -227,6 +237,7 @@ EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 #ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -242,6 +253,7 @@ TEST_F(EventEngineDNSTest, QueryNXHostname) {
 }
 
 TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -257,6 +269,7 @@ TEST_F(EventEngineDNSTest, QueryWithIPLiteral) {
 }
 
 TEST_F(EventEngineDNSTest, QueryARecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -274,6 +287,7 @@ TEST_F(EventEngineDNSTest, QueryARecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryAAAARecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -294,6 +308,7 @@ TEST_F(EventEngineDNSTest, QueryAAAARecord) {
 }
 
 TEST_F(EventEngineDNSTest, TestAddressSorting) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupHostname(
       [this](auto result) {
@@ -311,6 +326,7 @@ TEST_F(EventEngineDNSTest, TestAddressSorting) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   const SRVRecord kExpectedRecords[] = {
       {/*host=*/"ipv4-only-multi-target.dns-test.event-engine", /*port=*/1234,
        /*priority=*/0, /*weight=*/0},
@@ -329,6 +345,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecord) {
 }
 
 TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupSRV(
       [this](auto result) {
@@ -341,6 +358,7 @@ TEST_F(EventEngineDNSTest, QuerySRVRecordWithLocalhost) {
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecord) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   // clang-format off
   const std::string kExpectedRecord =
       "grpc_config=[{"
@@ -370,6 +388,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecord) {
 }
 
 TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   auto dns_resolver = CreateDefaultDNSResolver();
   dns_resolver->LookupTXT(
       [this](auto result) {
@@ -382,6 +401,7 @@ TEST_F(EventEngineDNSTest, QueryTXTRecordWithLocalhost) {
 }
 
 TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
+  SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
   const std::string name = "dont-care-since-wont-be-resolved.test.com:1234";
   auto dns_resolver = CreateDNSResolverWithNonResponsiveServer();
   dns_resolver->LookupHostname(
@@ -415,7 +435,15 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(
       [this](auto result) {
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
         EXPECT_SUCCESS();
+#else
+        EXPECT_TRUE(result.ok());
+        EXPECT_THAT(*result,
+                    Pointwise(ResolvedAddressEq(),
+                              {*URIToResolvedAddress("ipv6:[::1]:1"),
+                               *URIToResolvedAddress("ipv4:127.0.0.1:1")}));
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
         dns_resolver_signal_.Notify();
       },
       "localhost:1", "");
@@ -570,5 +598,10 @@ TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhost) {
 TEST_F(EventEngineDNSTest, UnparseableHostPortsBadLocalhostWithPort) {
   TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
                           &dns_resolver_signal_, "[localhost]:1");
+}
+
+TEST_F(EventEngineDNSTest, UnparseableHostPortsEmptyHostname) {
+  TestUnparseableHostPort(CreateDNSResolverWithoutSpecifyingServer(),
+                          &dns_resolver_signal_, ":443");
 }
 // END

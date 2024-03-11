@@ -276,6 +276,10 @@ class RefCounted : public Impl {
  public:
   using RefCountedChildType = Child;
 
+  // Not copyable nor movable.
+  RefCounted(const RefCounted&) = delete;
+  RefCounted& operator=(const RefCounted&) = delete;
+
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~RefCounted() = default;
 
@@ -301,19 +305,20 @@ class RefCounted : public Impl {
     return RefCountedPtr<const Child>(static_cast<const Child*>(this));
   }
 
-  // TODO(roth): Once all of our code is converted to C++ and can use
-  // RefCountedPtr<> instead of manual ref-counting, make this method
-  // private, since it will only be used by RefCountedPtr<>, which is a
-  // friend of this class.
-  void Unref() const {
-    if (GPR_UNLIKELY(refs_.Unref())) {
-      unref_behavior_(static_cast<const Child*>(this));
-    }
+  template <
+      typename Subclass,
+      std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
+  RefCountedPtr<Subclass> RefAsSubclass() {
+    IncrementRefCount();
+    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
   }
-  void Unref(const DebugLocation& location, const char* reason) const {
-    if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      unref_behavior_(static_cast<const Child*>(this));
-    }
+  template <
+      typename Subclass,
+      std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
+  RefCountedPtr<Subclass> RefAsSubclass(const DebugLocation& location,
+                                        const char* reason) {
+    IncrementRefCount(location, reason);
+    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
   }
 
   // RefIfNonZero() for mutable types.
@@ -340,9 +345,20 @@ class RefCounted : public Impl {
                                           : nullptr);
   }
 
-  // Not copyable nor movable.
-  RefCounted(const RefCounted&) = delete;
-  RefCounted& operator=(const RefCounted&) = delete;
+  // TODO(roth): Once all of our code is converted to C++ and can use
+  // RefCountedPtr<> instead of manual ref-counting, make this method
+  // private, since it will only be used by RefCountedPtr<>, which is a
+  // friend of this class.
+  void Unref() const {
+    if (GPR_UNLIKELY(refs_.Unref())) {
+      unref_behavior_(static_cast<const Child*>(this));
+    }
+  }
+  void Unref(const DebugLocation& location, const char* reason) const {
+    if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
+      unref_behavior_(static_cast<const Child*>(this));
+    }
+  }
 
  protected:
   // Note: Tracing is a no-op on non-debug builds.

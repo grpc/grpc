@@ -20,9 +20,12 @@
 
 #include <stdio.h>
 
-#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
+    defined(GPR_WINDOWS)
 #include <string.h>
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 #include <sys/param.h>
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
 
 #include "gtest/gtest.h"
 
@@ -34,11 +37,12 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -47,6 +51,10 @@
 namespace grpc {
 namespace {
 
+// The GetAbsoluteFilePath and CreateRootCertsBundle helper functions are only
+// defined on some platforms. On other platforms (e.g. Windows), we rely on
+// built-in helper functions to play similar (but not exactly the same) roles.
+#if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE)
 TEST(AbsoluteFilePathTest, ConcatenatesCorrectly) {
   const char* directory = "nonexistent/test/directory";
   const char* filename = "doesnotexist.txt";
@@ -68,22 +76,26 @@ TEST(CreateRootCertsBundleTest, ReturnsEmpty) {
 
 TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
   // Test that CreateRootCertsBundle returns a correct slice.
-  grpc_slice roots_bundle = grpc_empty_slice();
-  GRPC_LOG_IF_ERROR(
-      "load_file",
-      grpc_load_file("test/core/security/etc/bundle.pem", 1, &roots_bundle));
+  absl::string_view roots_bundle_str;
+  auto roots_bundle = grpc_core::LoadFile("test/core/security/etc/bundle.pem",
+                                          /*add_null_terminator=*/false);
+  if (roots_bundle.ok()) roots_bundle_str = roots_bundle->as_string_view();
   // result_slice should have the same content as roots_bundle.
-  grpc_slice result_slice =
-      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots");
-  char* result_str = grpc_slice_to_c_string(result_slice);
-  char* bundle_str = grpc_slice_to_c_string(roots_bundle);
-  EXPECT_STREQ(result_str, bundle_str);
-  // Clean up.
-  gpr_free(result_str);
-  gpr_free(bundle_str);
-  grpc_slice_unref(roots_bundle);
-  grpc_slice_unref(result_slice);
+  grpc_core::Slice result_slice(
+      grpc_core::CreateRootCertsBundle("test/core/security/etc/test_roots"));
+  EXPECT_EQ(result_slice.as_string_view(), roots_bundle_str)
+      << "Expected: \"" << result_slice.as_string_view() << "\"\n"
+      << "Actual:   \"" << roots_bundle_str << "\"";
 }
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+
+#if defined(GPR_WINDOWS)
+TEST(LoadSystemRootCertsTest, Success) {
+  grpc_slice roots_slice = grpc_core::LoadSystemRootCerts();
+  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(roots_slice));
+  grpc_slice_unref(roots_slice);
+}
+#endif  // GPR_WINDOWS
 
 }  // namespace
 }  // namespace grpc
@@ -100,4 +112,4 @@ int main() {
       "systems ***\n");
   return 0;
 }
-#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE || GPR_WINDOWS

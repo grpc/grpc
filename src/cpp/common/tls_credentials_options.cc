@@ -39,6 +39,12 @@ TlsCredentialsOptions::~TlsCredentialsOptions() {
   grpc_tls_credentials_options_destroy(c_credentials_options_);
 }
 
+TlsCredentialsOptions::TlsCredentialsOptions(
+    const TlsCredentialsOptions& other) {
+  c_credentials_options_ =
+      grpc_tls_credentials_options_copy(other.c_credentials_options_);
+}
+
 void TlsCredentialsOptions::set_certificate_provider(
     std::shared_ptr<CertificateProviderInterface> certificate_provider) {
   certificate_provider_ = certificate_provider;
@@ -93,6 +99,18 @@ void TlsCredentialsOptions::set_certificate_verifier(
     grpc_tls_credentials_options_set_certificate_verifier(
         c_credentials_options_, certificate_verifier_->c_verifier());
   }
+}
+
+void TlsCredentialsOptions::set_min_tls_version(grpc_tls_version tls_version) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_min_tls_version(options, tls_version);
+}
+
+void TlsCredentialsOptions::set_max_tls_version(grpc_tls_version tls_version) {
+  grpc_tls_credentials_options* options = mutable_c_credentials_options();
+  GPR_ASSERT(options != nullptr);
+  grpc_tls_credentials_options_set_max_tls_version(options, tls_version);
 }
 
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()

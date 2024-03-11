@@ -35,6 +35,9 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -81,25 +84,6 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
   new (&refcount->refs) grpc_core::RefCount(
       1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_stream_refcount) ? "stream_refcount"
                                                              : nullptr);
-}
-
-static void move64bits(uint64_t* from, uint64_t* to) {
-  *to += *from;
-  *from = 0;
-}
-
-void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
-                                       grpc_transport_one_way_stats* to) {
-  move64bits(&from->framing_bytes, &to->framing_bytes);
-  move64bits(&from->data_bytes, &to->data_bytes);
-  move64bits(&from->header_bytes, &to->header_bytes);
-}
-
-void grpc_transport_move_stats(grpc_transport_stream_stats* from,
-                               grpc_transport_stream_stats* to) {
-  grpc_transport_move_one_way_stats(&from->incoming, &to->incoming);
-  grpc_transport_move_one_way_stats(&from->outgoing, &to->outgoing);
-  to->latency = std::exchange(from->latency, gpr_inf_future(GPR_TIMESPAN));
 }
 
 namespace grpc_core {
@@ -231,41 +215,3 @@ grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
   op->op.on_complete = &op->outer_on_complete;
   return &op->op;
 }
-
-namespace grpc_core {
-
-ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
-                                              Arena* arena) {
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
-  grpc_status_code code;
-  std::string message;
-  grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,
-                        nullptr, nullptr);
-  hdl->Set(GrpcStatusMetadata(), code);
-  if (!status.ok()) {
-    hdl->Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
-  }
-  return hdl;
-}
-
-std::string Message::DebugString() const {
-  std::string out = absl::StrCat(payload_.Length(), "b");
-  auto flags = flags_;
-  auto explain = [&flags, &out](uint32_t flag, absl::string_view name) {
-    if (flags & flag) {
-      flags &= ~flag;
-      absl::StrAppend(&out, ":", name);
-    }
-  };
-  explain(GRPC_WRITE_BUFFER_HINT, "write_buffer");
-  explain(GRPC_WRITE_NO_COMPRESS, "no_compress");
-  explain(GRPC_WRITE_THROUGH, "write_through");
-  explain(GRPC_WRITE_INTERNAL_COMPRESS, "compress");
-  explain(GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED, "was_compressed");
-  if (flags != 0) {
-    absl::StrAppend(&out, ":huh=0x", absl::Hex(flags));
-  }
-  return out;
-}
-
-}  // namespace grpc_core

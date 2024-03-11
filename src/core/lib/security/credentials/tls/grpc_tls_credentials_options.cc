@@ -149,3 +149,15 @@ void grpc_tls_credentials_options_set_crl_provider(
   GPR_ASSERT(options != nullptr);
   options->set_crl_provider(provider);
 }
+
+void grpc_tls_credentials_options_set_min_tls_version(
+    grpc_tls_credentials_options* options, grpc_tls_version min_tls_version) {
+  GPR_ASSERT(options != nullptr);
+  options->set_min_tls_version(min_tls_version);
+}
+
+void grpc_tls_credentials_options_set_max_tls_version(
+    grpc_tls_credentials_options* options, grpc_tls_version max_tls_version) {
+  GPR_ASSERT(options != nullptr);
+  options->set_max_tls_version(max_tls_version);
+}

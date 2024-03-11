@@ -364,7 +364,7 @@ class ConnectedChannelStream : public Orphanable {
   grpc_stream_refcount stream_refcount_;
   StreamPtr stream_;
   Arena* arena_ = GetContext<Arena>();
-  Party* const party_ = static_cast<Party*>(Activity::current());
+  Party* const party_ = GetContext<Party>();
   ExternallyObservableLatch<void> finished_;
 };
 
@@ -383,17 +383,18 @@ auto ConnectedChannelStream::RecvMessages(
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: received payload of %" PRIdPTR
                       " bytes",
-                      Activity::current()->DebugTag().c_str(),
+                      GetContext<Activity>()->DebugTag().c_str(),
                       pending_message->payload()->Length());
             }
             return Map(incoming_messages.Push(std::move(pending_message)),
                        [](bool ok) -> LoopCtl<absl::Status> {
                          if (!ok) {
                            if (grpc_call_trace.enabled()) {
-                             gpr_log(GPR_INFO,
-                                     "%s[connected] RecvMessage: failed to "
-                                     "push message towards the application",
-                                     Activity::current()->DebugTag().c_str());
+                             gpr_log(
+                                 GPR_INFO,
+                                 "%s[connected] RecvMessage: failed to "
+                                 "push message towards the application",
+                                 GetContext<Activity>()->DebugTag().c_str());
                            }
                            return absl::OkStatus();
                          }
@@ -406,11 +407,13 @@ auto ConnectedChannelStream::RecvMessages(
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: reached end of stream with "
                       "status:%s",
-                      Activity::current()->DebugTag().c_str(),
+                      GetContext<Activity>()->DebugTag().c_str(),
                       status.status().ToString().c_str());
             }
             if (cancel_on_error && !status.ok()) {
               incoming_messages.CloseWithError();
+            } else {
+              incoming_messages.Close();
             }
             return Immediate(LoopCtl<absl::Status>(status.status()));
           };
@@ -442,7 +445,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
   transport->filter_stack_transport()->InitStream(stream->stream(),
                                                   stream->stream_refcount(),
                                                   nullptr, GetContext<Arena>());
-  auto* party = static_cast<Party*>(Activity::current());
+  auto* party = GetContext<Party>();
   party->Spawn("set_polling_entity", call_args.polling_entity->Wait(),
                [transport, stream = stream->InternalRef()](
                    grpc_polling_entity polling_entity) {
@@ -472,7 +475,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
                if (grpc_call_trace.enabled()) {
                  gpr_log(GPR_DEBUG,
                          "%s[connected] Publish client initial metadata: %s",
-                         Activity::current()->DebugTag().c_str(),
+                         GetContext<Activity>()->DebugTag().c_str(),
                          server_initial_metadata->DebugString().c_str());
                }
                return Map(pipe->Push(std::move(server_initial_metadata)),
@@ -579,7 +582,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
       stream->stream(), stream->stream_refcount(),
       GetContext<CallContext>()->server_call_context()->server_stream_data(),
       GetContext<Arena>());
-  auto* party = static_cast<Party*>(Activity::current());
+  auto* party = GetContext<Party>();
 
   // Arifacts we need for the lifetime of the call.
   struct CallData {
@@ -745,7 +748,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
                       : nullptr;
         if (md != nullptr) {
           call_data->sent_initial_metadata = true;
-          auto* party = static_cast<Party*>(Activity::current());
+          auto* party = GetContext<Party>();
           party->Spawn("connected/send_initial_metadata",
                        GetContext<BatchBuilder>()->SendServerInitialMetadata(
                            stream->batch_target(), std::move(md)),
@@ -775,7 +778,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
               gpr_log(
                   GPR_DEBUG,
                   "%s[connected] Got trailing metadata; status=%s metadata=%s",
-                  Activity::current()->DebugTag().c_str(),
+                  GetContext<Activity>()->DebugTag().c_str(),
                   status.status().ToString().c_str(),
                   status.ok() ? (*status)->DebugString().c_str() : "<none>");
             }
@@ -871,10 +874,12 @@ grpc_channel_filter MakeConnectedFilter() {
         // do this, and I'm not sure what that is yet. This is only "safe"
         // because call stacks place no additional data after the last call
         // element, and the last call element MUST be the connected channel.
-        channel_stack->call_stack_size +=
-            static_cast<channel_data*>(elem->channel_data)
-                ->transport->filter_stack_transport()
-                ->SizeOfStream();
+        auto* transport =
+            static_cast<channel_data*>(elem->channel_data)->transport;
+        if (transport->filter_stack_transport() != nullptr) {
+          channel_stack->call_stack_size +=
+              transport->filter_stack_transport()->SizeOfStream();
+        }
       },
       connected_channel_destroy_channel_elem,
       connected_channel_get_channel_info,
@@ -882,13 +887,27 @@ grpc_channel_filter MakeConnectedFilter() {
   };
 }
 
-ArenaPromise<ServerMetadataHandle> MakeTransportCallPromise(
+ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
-  return transport->client_transport()->MakeCallPromise(std::move(call_args));
+  auto spine = GetContext<CallContext>()->MakeCallSpine(std::move(call_args));
+  transport->client_transport()->StartCall(CallHandler{spine});
+  return Map(spine->server_trailing_metadata().receiver.Next(),
+             [](NextResult<ServerMetadataHandle> r) {
+               if (r.has_value()) {
+                 auto md = std::move(r.value());
+                 md->Set(GrpcStatusFromWire(), true);
+                 return md;
+               }
+               auto m = GetContext<Arena>()->MakePooled<ServerMetadata>(
+                   GetContext<Arena>());
+               m->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+               m->Set(GrpcCallWasCancelled(), true);
+               return m;
+             });
 }
 
-const grpc_channel_filter kPromiseBasedTransportFilter =
-    MakeConnectedFilter<MakeTransportCallPromise>();
+const grpc_channel_filter kClientPromiseBasedTransportFilter =
+    MakeConnectedFilter<MakeClientTransportCallPromise>();
 
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 const grpc_channel_filter kClientEmulatedFilter =
@@ -906,9 +925,35 @@ const grpc_channel_filter kServerEmulatedFilter =
     MakeConnectedFilter<nullptr>();
 #endif
 
-bool TransportSupportsPromiseBasedCalls(const ChannelArgs& args) {
+// noop filter for the v3 stack: placeholder for now because other code requires
+// we have a terminator.
+// TODO(ctiller): delete when v3 transition is complete.
+const grpc_channel_filter kServerPromiseBasedTransportFilter = {
+    nullptr,
+    [](grpc_channel_element*, CallArgs, NextPromiseFactory)
+        -> ArenaPromise<ServerMetadataHandle> { Crash("not implemented"); },
+    /* init_call: */ [](grpc_channel_element*, CallSpineInterface*) {},
+    connected_channel_start_transport_op,
+    0,
+    nullptr,
+    set_pollset_or_pollset_set,
+    nullptr,
+    sizeof(channel_data),
+    connected_channel_init_channel_elem,
+    +[](grpc_channel_stack*, grpc_channel_element*) {},
+    connected_channel_destroy_channel_elem,
+    connected_channel_get_channel_info,
+    "connected",
+};
+
+bool TransportSupportsClientPromiseBasedCalls(const ChannelArgs& args) {
   auto* transport = args.GetObject<Transport>();
   return transport->client_transport() != nullptr;
+}
+
+bool TransportSupportsServerPromiseBasedCalls(const ChannelArgs& args) {
+  auto* transport = args.GetObject<Transport>();
+  return transport->server_transport() != nullptr;
 }
 
 }  // namespace
@@ -923,32 +968,33 @@ void RegisterConnectedChannel(CoreConfiguration::Builder* builder) {
   // Option 1, and our ideal: the transport supports promise based calls,
   // and so we simply use the transport directly.
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                       &kClientPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL,
-                       &kPromiseBasedTransportFilter)
+                       &kClientPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kPromiseBasedTransportFilter)
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerPromiseBasedTransportFilter)
       .Terminal()
-      .If(TransportSupportsPromiseBasedCalls);
+      .If(TransportSupportsServerPromiseBasedCalls);
 
   // Option 2: the transport does not support promise based calls.
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL, &kClientEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .IfNot(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL, &kClientEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .IfNot(TransportSupportsClientPromiseBasedCalls);
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &kServerEmulatedFilter)
       .Terminal()
-      .IfNot(TransportSupportsPromiseBasedCalls);
+      .IfNot(TransportSupportsServerPromiseBasedCalls);
 }
 
 }  // namespace grpc_core

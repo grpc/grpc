@@ -56,6 +56,12 @@
 
 namespace grpc_core {
 
+const NoInterceptor ChannelIdleFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
+
 namespace {
 
 constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
@@ -216,17 +222,6 @@ void MaxAgeFilter::PostInit() {
   }
 }
 
-// Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
-  IncreaseCallCount();
-  return ArenaPromise<ServerMetadataHandle>(
-      [decrementer = Decrementer(this),
-       next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
-}
-
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (!op->disconnect_with_error.ok()) Shutdown();
@@ -293,14 +288,16 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
+  GPR_ASSERT(MaxAgeFilter::kFilter.init_call != nullptr);
+  if (!IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
-      ->RegisterFilter(GRPC_CLIENT_CHANNEL, &ClientIdleFilter::kFilter)
+      ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
   builder->channel_init()
-      ->RegisterFilter(GRPC_SERVER_CHANNEL, &MaxAgeFilter::kFilter)
+      ->RegisterFilter<MaxAgeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return MaxAgeFilter::Config::FromChannelArgs(channel_args).enable();

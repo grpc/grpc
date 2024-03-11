@@ -26,10 +26,10 @@ import logging
 import multiprocessing
 import os
 import os.path
-import pipes
 import platform
 import random
 import re
+import shlex
 import socket
 import subprocess
 import sys
@@ -285,6 +285,7 @@ class CLanguage(object):
                     "cmake",
                     "cmake_ninja_vs2019",
                     "cmake_vs2019",
+                    "cmake_vs2022",
                 ],
             )
             _check_arch(self.args.arch, ["default", "x64", "x86"])
@@ -301,6 +302,8 @@ class CLanguage(object):
                 activate_vs_tools = "2019"
             elif self.args.compiler == "cmake_vs2019":
                 cmake_generator = "Visual Studio 16 2019"
+            elif self.args.compiler == "cmake_vs2022":
+                cmake_generator = "Visual Studio 17 2022"
             else:
                 print("should never reach here.")
                 sys.exit(1)
@@ -479,7 +482,7 @@ class CLanguage(object):
                         cmdline = [binary] + target["args"]
                         shortname = target.get(
                             "shortname",
-                            " ".join(pipes.quote(arg) for arg in cmdline),
+                            " ".join(shlex.quote(arg) for arg in cmdline),
                         )
                         shortname += shortname_ext
                         out.append(
@@ -571,6 +574,13 @@ class CLanguage(object):
                     "-DgRPC_SSL_PROVIDER=package",
                 ],
             )
+        elif compiler == "gcc10.2_openssl111":
+            return (
+                "debian11_openssl111",
+                [
+                    "-DgRPC_SSL_PROVIDER=package",
+                ],
+            )
         elif compiler == "gcc12":
             return ("gcc_12", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc12_openssl309":
@@ -584,8 +594,8 @@ class CLanguage(object):
             return ("alpine", [])
         elif compiler == "clang6":
             return ("clang_6", self._clang_cmake_configure_extra_args())
-        elif compiler == "clang16":
-            return ("clang_16", self._clang_cmake_configure_extra_args())
+        elif compiler == "clang17":
+            return ("clang_17", self._clang_cmake_configure_extra_args())
         else:
             raise Exception("Compiler %s not supported." % compiler)
 
@@ -597,81 +607,6 @@ class CLanguage(object):
 
     def __str__(self):
         return self.lang_suffix
-
-
-# This tests Node on grpc/grpc-node and will become the standard for Node testing
-class RemoteNodeLanguage(object):
-    def __init__(self):
-        self.platform = platform_string()
-
-    def configure(self, config, args):
-        self.config = config
-        self.args = args
-        # Note: electron ABI only depends on major and minor version, so that's all
-        # we should specify in the compiler argument
-        _check_compiler(
-            self.args.compiler,
-            [
-                "default",
-                "node0.12",
-                "node4",
-                "node5",
-                "node6",
-                "node7",
-                "node8",
-                "electron1.3",
-                "electron1.6",
-            ],
-        )
-        if self.args.compiler == "default":
-            self.runtime = "node"
-            self.node_version = "8"
-        else:
-            if self.args.compiler.startswith("electron"):
-                self.runtime = "electron"
-                self.node_version = self.args.compiler[8:]
-            else:
-                self.runtime = "node"
-                # Take off the word "node"
-                self.node_version = self.args.compiler[4:]
-
-    # TODO: update with Windows/electron scripts when available for grpc/grpc-node
-    def test_specs(self):
-        if self.platform == "windows":
-            return [
-                self.config.job_spec(
-                    ["tools\\run_tests\\helper_scripts\\run_node.bat"]
-                )
-            ]
-        else:
-            return [
-                self.config.job_spec(
-                    ["tools/run_tests/helper_scripts/run_grpc-node.sh"],
-                    None,
-                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
-                )
-            ]
-
-    def pre_build_steps(self):
-        return []
-
-    def build_steps(self):
-        return []
-
-    def build_steps_environ(self):
-        """Extra environment variables set for pre_build_steps and build_steps jobs."""
-        return {}
-
-    def post_tests_steps(self):
-        return []
-
-    def dockerfile_dir(self):
-        return "tools/dockerfile/test/node_jessie_%s" % _docker_arch_suffix(
-            self.args.arch
-        )
-
-    def __str__(self):
-        return "grpc-node"
 
 
 class Php7Language(object):
@@ -897,6 +832,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python312_config = _python_config_generator(
+            name="py312",
+            major="3",
+            minor="12",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -921,7 +863,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python37_config,
-                    python311_config,
+                    python312_config,
                 )
         elif args.compiler == "python3.7":
             return (python37_config,)
@@ -933,6 +875,8 @@ class PythonLanguage(object):
             return (python310_config,)
         elif args.compiler == "python3.11":
             return (python311_config,)
+        elif args.compiler == "python3.12":
+            return (python312_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -946,6 +890,7 @@ class PythonLanguage(object):
                 python39_config,
                 python310_config,
                 python311_config,
+                python312_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1009,6 +954,7 @@ class RubyLanguage(object):
                 "src/ruby/end2end/bad_usage_fork_test.rb",
                 "src/ruby/end2end/prefork_without_using_grpc_test.rb",
                 "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                "src/ruby/end2end/fork_test_repro_35489.rb",
             ]:
                 # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
                 # is fixed. Otherwise we see too many flakes.
@@ -1187,6 +1133,19 @@ class ObjCLanguage(object):
                 },
             )
         )
+        out.append(
+            self.config.job_spec(
+                ["src/objective-c/tests/build_one_example.sh"],
+                timeout_seconds=20 * 60,
+                shortname="ios-buildtest-example-switft-use-frameworks",
+                cpu_cost=1e6,
+                environ={
+                    "SCHEME": "SwiftUseFrameworks",
+                    "EXAMPLE_PATH": "src/objective-c/examples/SwiftUseFrameworks",
+                },
+            )
+        )
+
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
         # out.append(
@@ -1296,7 +1255,6 @@ with open("tools/run_tests/generated/configs.json") as f:
 _LANGUAGES = {
     "c++": CLanguage("cxx", "c++"),
     "c": CLanguage("c", "c"),
-    "grpc-node": RemoteNodeLanguage(),
     "php7": Php7Language(),
     "python": PythonLanguage(),
     "ruby": RubyLanguage(),
@@ -1708,29 +1666,28 @@ argp.add_argument(
         "gcc8",
         "gcc10.2",
         "gcc10.2_openssl102",
+        "gcc10.2_openssl111",
         "gcc12",
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang16",
+        "clang17",
         # TODO: Automatically populate from supported version
-        "python2.7",
-        "python3.5",
         "python3.7",
         "python3.8",
         "python3.9",
         "python3.10",
         "python3.11",
+        "python3.12",
         "pypy",
         "pypy3",
         "python_alpine",
         "all_the_cpythons",
-        "electron1.3",
-        "electron1.6",
         "coreclr",
         "cmake",
         "cmake_ninja_vs2019",
         "cmake_vs2019",
+        "cmake_vs2022",
         "mono",
     ],
     default="default",

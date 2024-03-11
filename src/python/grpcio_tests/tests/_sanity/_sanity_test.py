@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import json
+import os
 import pkgutil
+import sys
 import unittest
 
 import tests
@@ -40,8 +42,21 @@ class SanityTest(unittest.TestCase):
 
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
         tests_json = json.loads(tests_json_string.decode())
+        final_tests = []
 
-        self.assertSequenceEqual(tests_json, test_suite_names)
+        # Observability is not supported in Windows and MacOS and Asyncio.
+        if (
+            os.name == "nt"
+            or "darwin" in sys.platform
+            or self.TEST_PKG_PATH == "tests_aio"
+        ):
+            for test_case in tests_json:
+                if "observability" not in test_case:
+                    final_tests.append(test_case)
+        else:
+            final_tests = tests_json
+
+        self.assertSequenceEqual(final_tests, test_suite_names)
         self.assertGreater(len(test_suite_names), 0)
 
 

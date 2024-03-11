@@ -22,7 +22,7 @@
 #include <string>
 
 #include "upb/base/string_view.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/alts_context.h>

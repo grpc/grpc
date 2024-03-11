@@ -149,7 +149,10 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._channel.close()
 
     def testUnaryUnary(self):
-        multi_callable = self._channel.unary_unary(_UNARY_UNARY)
+        multi_callable = self._channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )
         futures = []
         for _ in range(test_constants.THREAD_CONCURRENCY):
             futures.append(multi_callable.future(_REQUEST))
@@ -178,7 +181,10 @@ class ResourceExhaustedTest(unittest.TestCase):
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
 
     def testUnaryStream(self):
-        multi_callable = self._channel.unary_stream(_UNARY_STREAM)
+        multi_callable = self._channel.unary_stream(
+            _UNARY_STREAM,
+            _registered_method=True,
+        )
         calls = []
         for _ in range(test_constants.THREAD_CONCURRENCY):
             calls.append(multi_callable(_REQUEST))
@@ -205,7 +211,10 @@ class ResourceExhaustedTest(unittest.TestCase):
             self.assertEqual(_RESPONSE, response)
 
     def testStreamUnary(self):
-        multi_callable = self._channel.stream_unary(_STREAM_UNARY)
+        multi_callable = self._channel.stream_unary(
+            _STREAM_UNARY,
+            _registered_method=True,
+        )
         futures = []
         request = iter([_REQUEST] * test_constants.STREAM_LENGTH)
         for _ in range(test_constants.THREAD_CONCURRENCY):
@@ -236,7 +245,10 @@ class ResourceExhaustedTest(unittest.TestCase):
         self.assertEqual(_RESPONSE, multi_callable(request))
 
     def testStreamStream(self):
-        multi_callable = self._channel.stream_stream(_STREAM_STREAM)
+        multi_callable = self._channel.stream_stream(
+            _STREAM_STREAM,
+            _registered_method=True,
+        )
         calls = []
         request = iter([_REQUEST] * test_constants.STREAM_LENGTH)
         for _ in range(test_constants.THREAD_CONCURRENCY):

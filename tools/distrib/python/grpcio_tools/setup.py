@@ -23,8 +23,8 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
+import traceback
 
-import pkg_resources
 import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
@@ -127,6 +127,40 @@ class BuildExt(build_ext.build_ext):
             filename = filename[: -len(orig_ext_suffix)] + new_ext_suffix
         return filename
 
+    def build_extensions(self):
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #
+        #   If we are not using a permissive compiler that's OK with being
+        #   passed wrong std flags, swap out compile function by adding a filter
+        #   for it.
+        old_compile = self.compiler._compile
+
+        def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            if src.endswith(".c"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if "-std=c++" not in arg
+                ]
+            elif src.endswith(".cc") or src.endswith(".cpp"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if "-std=c11" not in arg
+                ]
+            return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+        self.compiler._compile = new_compile
+
+        try:
+            build_ext.build_ext.build_extensions(self)
+        except Exception as error:
+            formatted_exception = traceback.format_exc()
+            support.diagnose_build_ext_error(self, error, formatted_exception)
+            raise CommandError(
+                "Failed `build_ext` step:\n{}".format(formatted_exception)
+            )
+
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -138,27 +172,16 @@ class BuildExt(build_ext.build_ext):
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
-    EXTRA_ENV_COMPILE_ARGS = "-std=c++14"
+    EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
-        if sys.version_info < (3, 5):
-            # We use define flags here and don't directly add to DEFINE_MACROS below to
-            # ensure that the expert user/builder has a way of turning it off (via the
-            # envvars) without adding yet more GRPC-specific envvars.
-            # See https://sourceforge.net/p/mingw-w64/bugs/363/
-            if "32" in platform.architecture()[0]:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime32 -D_timeb=__timeb32"
-                    " -D_ftime_s=_ftime32_s -D_hypot=hypot"
-                )
-            else:
-                EXTRA_ENV_COMPILE_ARGS += (
-                    " -D_ftime=_ftime64 -D_timeb=__timeb64 -D_hypot=hypot"
-                )
-        else:
-            # We need to statically link the C++ Runtime, only the C runtime is
-            # available dynamically
-            EXTRA_ENV_COMPILE_ARGS += " /MT"
+        # MSVC by defaults uses C++14 so C11 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " /std:c11"
+        # We need to statically link the C++ Runtime, only the C runtime is
+        # available dynamically
+        EXTRA_ENV_COMPILE_ARGS += " /MT"
     elif "linux" in sys.platform or "darwin" in sys.platform:
+        # GCC & Clang by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
@@ -225,22 +248,6 @@ if "win32" in sys.platform:
 elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
-# By default, Python3 setuptools(distutils) enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target and (
-        pkg_resources.parse_version(mac_target)
-        < pkg_resources.parse_version("10.10.0")
-    ):
-        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-        os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-            r"macosx-[0-9]+\.[0-9]+-(.+)",
-            r"macosx-10.10-\1",
-            sysconfig.get_platform(),
-        )
-
 
 def package_data():
     tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace(".", os.path.sep)
@@ -287,7 +294,6 @@ def extension_modules():
             os.path.join("grpc_root", "include"),
         ]
         + CC_INCLUDES,
-        language="c++",
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
         extra_link_args=list(EXTRA_LINK_ARGS),

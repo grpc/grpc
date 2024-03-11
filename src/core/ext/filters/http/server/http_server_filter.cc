@@ -51,6 +51,7 @@ namespace grpc_core {
 
 const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
 const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
+const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
@@ -140,7 +141,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-            Activity::current()->DebugTag().c_str());
+            GetContext<Activity>()->DebugTag().c_str());
   }
   FilterOutgoingMetadata(&md);
   md.Set(HttpStatusMetadata(), 200);

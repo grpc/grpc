@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
+
 from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
@@ -181,7 +183,15 @@ if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
         try:
             return asyncio.get_running_loop()
         except RuntimeError:
-            return asyncio.get_event_loop_policy().get_event_loop()
+            with warnings.catch_warnings():
+                # Convert DeprecationWarning to errors so we can capture them with except
+                warnings.simplefilter("error", DeprecationWarning)
+                try:
+                    return asyncio.get_event_loop_policy().get_event_loop()
+                # Since version 3.12, DeprecationWarning is emitted if there is no
+                # current event loop.
+                except DeprecationWarning:
+                    return asyncio.get_event_loop_policy().new_event_loop()
 else:
     def get_working_loop():
         """Returns a running event loop."""

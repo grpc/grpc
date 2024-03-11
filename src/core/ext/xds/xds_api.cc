@@ -40,9 +40,9 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
-#include "upb/upb.hpp"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -75,32 +75,29 @@ struct XdsApiContext {
   upb_Arena* arena;
 };
 
-void PopulateMetadataValue(const XdsApiContext& context,
-                           google_protobuf_Value* value_pb, const Json& value);
+void PopulateMetadataValue(google_protobuf_Value* value_pb, const Json& value,
+                           upb_Arena* arena);
 
-void PopulateListValue(const XdsApiContext& context,
-                       google_protobuf_ListValue* list_value,
-                       const Json::Array& values) {
+void PopulateListValue(google_protobuf_ListValue* list_value,
+                       const Json::Array& values, upb_Arena* arena) {
   for (const auto& value : values) {
-    auto* value_pb =
-        google_protobuf_ListValue_add_values(list_value, context.arena);
-    PopulateMetadataValue(context, value_pb, value);
+    auto* value_pb = google_protobuf_ListValue_add_values(list_value, arena);
+    PopulateMetadataValue(value_pb, value, arena);
   }
 }
 
-void PopulateMetadata(const XdsApiContext& context,
-                      google_protobuf_Struct* metadata_pb,
-                      const Json::Object& metadata) {
+void PopulateMetadata(google_protobuf_Struct* metadata_pb,
+                      const Json::Object& metadata, upb_Arena* arena) {
   for (const auto& p : metadata) {
-    google_protobuf_Value* value = google_protobuf_Value_new(context.arena);
-    PopulateMetadataValue(context, value, p.second);
+    google_protobuf_Value* value = google_protobuf_Value_new(arena);
+    PopulateMetadataValue(value, p.second, arena);
     google_protobuf_Struct_fields_set(
-        metadata_pb, StdStringToUpbString(p.first), value, context.arena);
+        metadata_pb, StdStringToUpbString(p.first), value, arena);
   }
 }
 
-void PopulateMetadataValue(const XdsApiContext& context,
-                           google_protobuf_Value* value_pb, const Json& value) {
+void PopulateMetadataValue(google_protobuf_Value* value_pb, const Json& value,
+                           upb_Arena* arena) {
   switch (value.type()) {
     case Json::Type::kNull:
       google_protobuf_Value_set_null_value(value_pb, 0);
@@ -118,63 +115,17 @@ void PopulateMetadataValue(const XdsApiContext& context,
       break;
     case Json::Type::kObject: {
       google_protobuf_Struct* struct_value =
-          google_protobuf_Value_mutable_struct_value(value_pb, context.arena);
-      PopulateMetadata(context, struct_value, value.object());
+          google_protobuf_Value_mutable_struct_value(value_pb, arena);
+      PopulateMetadata(struct_value, value.object(), arena);
       break;
     }
     case Json::Type::kArray: {
       google_protobuf_ListValue* list_value =
-          google_protobuf_Value_mutable_list_value(value_pb, context.arena);
-      PopulateListValue(context, list_value, value.array());
+          google_protobuf_Value_mutable_list_value(value_pb, arena);
+      PopulateListValue(list_value, value.array(), arena);
       break;
     }
   }
-}
-
-void PopulateNode(const XdsApiContext& context, const XdsBootstrap::Node* node,
-                  const std::string& user_agent_name,
-                  const std::string& user_agent_version,
-                  envoy_config_core_v3_Node* node_msg) {
-  if (node != nullptr) {
-    if (!node->id().empty()) {
-      envoy_config_core_v3_Node_set_id(node_msg,
-                                       StdStringToUpbString(node->id()));
-    }
-    if (!node->cluster().empty()) {
-      envoy_config_core_v3_Node_set_cluster(
-          node_msg, StdStringToUpbString(node->cluster()));
-    }
-    if (!node->metadata().empty()) {
-      google_protobuf_Struct* metadata =
-          envoy_config_core_v3_Node_mutable_metadata(node_msg, context.arena);
-      PopulateMetadata(context, metadata, node->metadata());
-    }
-    if (!node->locality_region().empty() || !node->locality_zone().empty() ||
-        !node->locality_sub_zone().empty()) {
-      envoy_config_core_v3_Locality* locality =
-          envoy_config_core_v3_Node_mutable_locality(node_msg, context.arena);
-      if (!node->locality_region().empty()) {
-        envoy_config_core_v3_Locality_set_region(
-            locality, StdStringToUpbString(node->locality_region()));
-      }
-      if (!node->locality_zone().empty()) {
-        envoy_config_core_v3_Locality_set_zone(
-            locality, StdStringToUpbString(node->locality_zone()));
-      }
-      if (!node->locality_sub_zone().empty()) {
-        envoy_config_core_v3_Locality_set_sub_zone(
-            locality, StdStringToUpbString(node->locality_sub_zone()));
-      }
-    }
-  }
-  envoy_config_core_v3_Node_set_user_agent_name(
-      node_msg, StdStringToUpbString(user_agent_name));
-  envoy_config_core_v3_Node_set_user_agent_version(
-      node_msg, StdStringToUpbString(user_agent_version));
-  envoy_config_core_v3_Node_add_client_features(
-      node_msg,
-      upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
-      context.arena);
 }
 
 void MaybeLogDiscoveryRequest(
@@ -185,7 +136,8 @@ void MaybeLogDiscoveryRequest(
     const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.def_pool);
     char buf[10240];
-    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
             context.client, buf);
   }
@@ -201,6 +153,50 @@ std::string SerializeDiscoveryRequest(
 }
 
 }  // namespace
+
+void XdsApi::PopulateNode(envoy_config_core_v3_Node* node_msg,
+                          upb_Arena* arena) {
+  if (node_ != nullptr) {
+    if (!node_->id().empty()) {
+      envoy_config_core_v3_Node_set_id(node_msg,
+                                       StdStringToUpbString(node_->id()));
+    }
+    if (!node_->cluster().empty()) {
+      envoy_config_core_v3_Node_set_cluster(
+          node_msg, StdStringToUpbString(node_->cluster()));
+    }
+    if (!node_->metadata().empty()) {
+      google_protobuf_Struct* metadata =
+          envoy_config_core_v3_Node_mutable_metadata(node_msg, arena);
+      PopulateMetadata(metadata, node_->metadata(), arena);
+    }
+    if (!node_->locality_region().empty() || !node_->locality_zone().empty() ||
+        !node_->locality_sub_zone().empty()) {
+      envoy_config_core_v3_Locality* locality =
+          envoy_config_core_v3_Node_mutable_locality(node_msg, arena);
+      if (!node_->locality_region().empty()) {
+        envoy_config_core_v3_Locality_set_region(
+            locality, StdStringToUpbString(node_->locality_region()));
+      }
+      if (!node_->locality_zone().empty()) {
+        envoy_config_core_v3_Locality_set_zone(
+            locality, StdStringToUpbString(node_->locality_zone()));
+      }
+      if (!node_->locality_sub_zone().empty()) {
+        envoy_config_core_v3_Locality_set_sub_zone(
+            locality, StdStringToUpbString(node_->locality_sub_zone()));
+      }
+    }
+  }
+  envoy_config_core_v3_Node_set_user_agent_name(
+      node_msg, StdStringToUpbString(user_agent_name_));
+  envoy_config_core_v3_Node_set_user_agent_version(
+      node_msg, StdStringToUpbString(user_agent_version_));
+  envoy_config_core_v3_Node_add_client_features(
+      node_msg,
+      upb_StringView_FromString("envoy.lb.does_not_support_overprovisioning"),
+      arena);
+}
 
 std::string XdsApi::CreateAdsRequest(
     absl::string_view type_url, absl::string_view version,
@@ -248,8 +244,7 @@ std::string XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(context, node_, user_agent_name_, user_agent_version_,
-                 node_msg);
+    PopulateNode(node_msg, arena.ptr());
     envoy_config_core_v3_Node_add_client_features(
         node_msg, upb_StringView_FromString("xds.config.resource-in-sotw"),
         context.arena);
@@ -274,7 +269,8 @@ void MaybeLogDiscoveryResponse(
         envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(
             context.def_pool);
     char buf[10240];
-    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
             buf);
   }
@@ -362,7 +358,8 @@ void MaybeLogLrsRequest(
         envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(
             context.def_pool);
     char buf[10240];
-    upb_TextEncode(request, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
             context.client, buf);
   }
@@ -390,7 +387,7 @@ std::string XdsApi::CreateLrsInitialRequest() {
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(context, node_, user_agent_name_, user_agent_version_, node_msg);
+  PopulateNode(node_msg, arena.ptr());
   envoy_config_core_v3_Node_add_client_features(
       node_msg,
       upb_StringView_FromString("envoy.lrs.supports_send_all_clusters"),
@@ -523,7 +520,8 @@ void MaybeLogLrsResponse(
         envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(
             context.def_pool);
     char buf[10240];
-    upb_TextEncode(response, msg_type, nullptr, 0, buf, sizeof(buf));
+    upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
+                   nullptr, 0, buf, sizeof(buf));
     gpr_log(GPR_DEBUG, "[xds_client %p] received LRS response: %s",
             context.client, buf);
   }
@@ -569,87 +567,6 @@ absl::Status XdsApi::ParseLrsResponse(absl::string_view encoded_response,
       google_protobuf_Duration_seconds(load_reporting_interval_duration),
       google_protobuf_Duration_nanos(load_reporting_interval_duration));
   return absl::OkStatus();
-}
-
-namespace {
-
-google_protobuf_Timestamp* EncodeTimestamp(const XdsApiContext& context,
-                                           Timestamp value) {
-  google_protobuf_Timestamp* timestamp =
-      google_protobuf_Timestamp_new(context.arena);
-  gpr_timespec timespec = value.as_timespec(GPR_CLOCK_REALTIME);
-  google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
-  google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
-  return timestamp;
-}
-
-}  // namespace
-
-std::string XdsApi::AssembleClientConfig(
-    const ResourceTypeMetadataMap& resource_type_metadata_map) {
-  upb::Arena arena;
-  // Create the ClientConfig for resource metadata from XdsClient
-  auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
-  // Fill-in the node information
-  auto* node = envoy_service_status_v3_ClientConfig_mutable_node(client_config,
-                                                                 arena.ptr());
-  const XdsApiContext context = {client_, tracer_, def_pool_->ptr(),
-                                 arena.ptr()};
-  PopulateNode(context, node_, user_agent_name_, user_agent_version_, node);
-  // Dump each resource.
-  std::vector<std::string> type_url_storage;
-  for (const auto& p : resource_type_metadata_map) {
-    absl::string_view type_url = p.first;
-    const ResourceMetadataMap& resource_metadata_map = p.second;
-    type_url_storage.emplace_back(
-        absl::StrCat("type.googleapis.com/", type_url));
-    for (const auto& q : resource_metadata_map) {
-      absl::string_view resource_name = q.first;
-      const ResourceMetadata& metadata = *q.second;
-      auto* entry =
-          envoy_service_status_v3_ClientConfig_add_generic_xds_configs(
-              client_config, context.arena);
-      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_type_url(
-          entry, StdStringToUpbString(type_url_storage.back()));
-      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_name(
-          entry, StdStringToUpbString(resource_name));
-      envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_client_status(
-          entry, metadata.client_status);
-      if (!metadata.serialized_proto.empty()) {
-        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_version_info(
-            entry, StdStringToUpbString(metadata.version));
-        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_last_updated(
-            entry, EncodeTimestamp(context, metadata.update_time));
-        auto* any_field =
-            envoy_service_status_v3_ClientConfig_GenericXdsConfig_mutable_xds_config(
-                entry, context.arena);
-        google_protobuf_Any_set_type_url(
-            any_field, StdStringToUpbString(type_url_storage.back()));
-        google_protobuf_Any_set_value(
-            any_field, StdStringToUpbString(metadata.serialized_proto));
-      }
-      if (metadata.client_status == XdsApi::ResourceMetadata::NACKED) {
-        auto* update_failure_state =
-            envoy_admin_v3_UpdateFailureState_new(context.arena);
-        envoy_admin_v3_UpdateFailureState_set_details(
-            update_failure_state,
-            StdStringToUpbString(metadata.failed_details));
-        envoy_admin_v3_UpdateFailureState_set_version_info(
-            update_failure_state,
-            StdStringToUpbString(metadata.failed_version));
-        envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
-            update_failure_state,
-            EncodeTimestamp(context, metadata.failed_update_time));
-        envoy_service_status_v3_ClientConfig_GenericXdsConfig_set_error_state(
-            entry, update_failure_state);
-      }
-    }
-  }
-  // Serialize the upb message to bytes
-  size_t output_length;
-  char* output = envoy_service_status_v3_ClientConfig_serialize(
-      client_config, arena.ptr(), &output_length);
-  return std::string(output, output_length);
 }
 
 }  // namespace grpc_core

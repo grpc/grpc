@@ -27,8 +27,8 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/client_channel_factory.h"
+#include "src/core/client_channel/client_channel_factory.h"
+#include "src/core/client_channel/client_channel_filter.h"
 
 namespace grpc_core {
 

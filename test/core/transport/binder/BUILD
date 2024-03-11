@@ -44,6 +44,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -61,6 +62,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -78,6 +80,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -98,6 +101,7 @@ grpc_cc_test(
     tags = [
         # To avoid `symbolizer buffer too small` warning of UBSAN
         "noubsan",
+        "no_test_ios",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -117,6 +121,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_test_ios"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

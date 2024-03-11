@@ -47,6 +47,7 @@ _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = (
 _TWISTED_CONSTANTLY_DEP_NAME = "com_github_twisted_constantly"
 
 _GRPC_DEP_NAMES = [
+    "platforms",
     "boringssl",
     "zlib",
     "com_google_protobuf",
@@ -78,16 +79,16 @@ _GRPC_DEP_NAMES = [
     "com_envoyproxy_protoc_gen_validate",
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
-    "com_github_cncf_udpa",
+    "com_github_cncf_xds",
     "google_cloud_cpp",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    "platforms",
     "rules_cc",
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
-    "io_opentelemetry_cpp",
     # TODO(stanleycheung): remove when prometheus-cpp has new release
     "com_github_jupp0r_prometheus_cpp",
     _BAZEL_SKYLIB_DEP_NAME,
@@ -172,9 +173,13 @@ build_rules = {
     "Label": lambda a: None,
 }
 exec((bazel_file), build_rules)
-for name in _GRPC_DEP_NAMES:
-    assert name in list(names_and_urls.keys())
-assert len(_GRPC_DEP_NAMES) == len(list(names_and_urls.keys()))
+grpc_dep_names_set = set(_GRPC_DEP_NAMES)
+names_set = set(names_and_urls.keys())
+if grpc_dep_names_set != names_set:
+    print("Differences detected between GRPC_DEP_NAMES and grpc_deps.bzl")
+    print("- GRPC_DEP_NAMES only:", grpc_dep_names_set - names_set)
+    print("- grpc_deps.bzl only:", names_set - grpc_dep_names_set)
+    sys.exit(1)
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
 # we don't require that there is a corresponding git module for these.

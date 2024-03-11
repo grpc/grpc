@@ -704,12 +704,20 @@ std::string GenerateSelfSignedCertificate(
   // infinite future is from RFC 5280 Section 4.1.2.5.1.
   ASN1_UTCTIME* infinite_past = ASN1_UTCTIME_new();
   GPR_ASSERT(ASN1_UTCTIME_set(infinite_past, /*posix_time=*/0));
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+  GPR_ASSERT(X509_set_notBefore(x509, infinite_past));
+#else
   GPR_ASSERT(X509_set1_notBefore(x509, infinite_past));
+#endif
   ASN1_UTCTIME_free(infinite_past);
   ASN1_GENERALIZEDTIME* infinite_future = ASN1_GENERALIZEDTIME_new();
   GPR_ASSERT(
       ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+  GPR_ASSERT(X509_set_notAfter(x509, infinite_future));
+#else
   GPR_ASSERT(X509_set1_notAfter(x509, infinite_future));
+#endif
   ASN1_GENERALIZEDTIME_free(infinite_future);
   // Set the subject DN.
   X509_NAME* subject_name = X509_NAME_new();
@@ -753,4 +761,28 @@ std::string GenerateSelfSignedCertificate(
   BN_free(bignum);
   BN_free(n);
   return pem;
+}
+
+X509* ReadPemCert(absl::string_view pem_cert) {
+  BIO* cert_bio =
+      BIO_new_mem_buf(pem_cert.data(), static_cast<int>(pem_cert.size()));
+  // Errors on BIO
+  if (cert_bio == nullptr) {
+    return nullptr;
+  }
+  X509* cert = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  BIO_free(cert_bio);
+  return cert;
+}
+
+X509_CRL* ReadCrl(absl::string_view crl_pem) {
+  BIO* crl_bio =
+      BIO_new_mem_buf(crl_pem.data(), static_cast<int>(crl_pem.size()));
+  // Errors on BIO
+  if (crl_bio == nullptr) {
+    return nullptr;
+  }
+  X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
+  BIO_free(crl_bio);
+  return crl;
 }

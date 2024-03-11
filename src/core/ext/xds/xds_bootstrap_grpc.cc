@@ -101,6 +101,10 @@ bool GrpcXdsBootstrap::GrpcXdsServer::Equals(const XdsServer& other) const {
           server_features_ == o.server_features_);
 }
 
+std::string GrpcXdsBootstrap::GrpcXdsServer::Key() const {
+  return JsonDump(ToJson());
+}
+
 const JsonLoaderInterface* GrpcXdsBootstrap::GrpcXdsServer::JsonLoader(
     const JsonArgs&) {
   static const auto* loader =
@@ -354,21 +358,6 @@ const XdsBootstrap::Authority* GrpcXdsBootstrap::LookupAuthority(
   auto it = authorities_.find(name);
   if (it != authorities_.end()) {
     return &it->second;
-  }
-  return nullptr;
-}
-
-const XdsBootstrap::XdsServer* GrpcXdsBootstrap::FindXdsServer(
-    const XdsBootstrap::XdsServer& server) const {
-  if (static_cast<const GrpcXdsServer&>(server) == servers_[0]) {
-    return &servers_[0];
-  }
-  for (auto& p : authorities_) {
-    const auto* authority_server =
-        static_cast<const GrpcXdsServer*>(p.second.server());
-    if (authority_server != nullptr && *authority_server == server) {
-      return authority_server;
-    }
   }
   return nullptr;
 }

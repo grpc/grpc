@@ -198,6 +198,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "switch_test",
+    srcs = ["switch_test.cc"],
+    external_deps = ["gtest"],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:switch"],
+)
+
+grpc_cc_test(
     name = "loop_test",
     srcs = ["loop_test.cc"],
     external_deps = ["gtest"],
@@ -237,6 +248,20 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = ["//src/core:try_join"],
+)
+
+grpc_cc_test(
+    name = "all_ok_test",
+    srcs = ["all_ok_test.cc"],
+    external_deps = [
+        "absl/utility",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = ["//src/core:all_ok"],
 )
 
 grpc_cc_test(
@@ -456,6 +481,25 @@ grpc_cc_test(
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
+    ],
+)
+
+grpc_cc_test(
+    name = "observable_test",
+    srcs = ["observable_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
+    language = "c++",
+    tags = ["promise_test"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:loop",
+        "//src/core:map",
+        "//src/core:notification",
+        "//src/core:observable",
     ],
 )
 

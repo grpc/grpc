@@ -1,0 +1,5 @@
+actions {
+  create_channel {
+    inproc: true
+  }
+}

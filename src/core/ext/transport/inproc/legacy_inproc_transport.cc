@@ -61,6 +61,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -1264,7 +1265,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
-    auto new_channel = grpc_core::Channel::Create(
+    auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
       GPR_ASSERT(!channel);

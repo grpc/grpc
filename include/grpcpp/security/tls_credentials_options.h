@@ -45,6 +45,12 @@ class TlsCredentialsOptions {
   // will be used in the TLS handshake
   TlsCredentialsOptions();
   ~TlsCredentialsOptions();
+
+  // Copy constructor does a deep copy of the underlying pointer. No assignment
+  // permitted
+  TlsCredentialsOptions(const TlsCredentialsOptions& other);
+  TlsCredentialsOptions& operator=(const TlsCredentialsOptions& other) = delete;
+
   // ---- Setters for member fields ----
   // Sets the certificate provider used to store root certs and identity certs.
   void set_certificate_provider(
@@ -108,6 +114,15 @@ class TlsCredentialsOptions {
   void set_crl_directory(const std::string& path);
 
   void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
+
+  // Sets the minimum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.2.
+  // @param tls_version: The minimum TLS version.
+  void set_min_tls_version(grpc_tls_version tls_version);
+  // Sets the maximum TLS version that will be negotiated during the TLS
+  // handshake. If not set, the underlying SSL library will use TLS v1.3.
+  // @param tls_version: The maximum TLS version.
+  void set_max_tls_version(grpc_tls_version tls_version);
 
   // ----- Getters for member fields ----
   // Returns a deep copy of the internal c options. The caller takes ownership

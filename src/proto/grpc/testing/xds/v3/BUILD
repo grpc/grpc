@@ -212,6 +212,16 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "http_protocol_options_proto",
+    srcs = [
+        "http_protocol_options.proto",
+    ],
+    deps = [
+        "protocol_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "range_proto",
     srcs = [
         "range.proto",

@@ -93,8 +93,6 @@ void create_loop_destroy(void* addr) {
           grpc_timeout_milliseconds_to_deadline(POLL_MILLIS);
       ASSERT_EQ(grpc_completion_queue_next(cq, poll_time, nullptr).type,
                 GRPC_OP_COMPLETE);
-      // check that the watcher from "watch state" was free'd
-      ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(chan), 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);
@@ -292,8 +290,6 @@ void watches_with_short_timeouts(void* addr) {
       grpc_event ev = grpc_completion_queue_next(cq, poll_time, nullptr);
       ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
       ASSERT_EQ(ev.success, false);
-      // check that the watcher from "watch state" was free'd
-      ASSERT_EQ(grpc_channel_num_external_connectivity_watchers(chan), 0);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);

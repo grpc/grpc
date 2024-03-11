@@ -203,18 +203,6 @@ struct grpc_chttp2_stream_link {
   grpc_chttp2_stream* next;
   grpc_chttp2_stream* prev;
 };
-// We keep several sets of connection wide parameters
-typedef enum {
-  // The settings our peer has asked for (and we have acked)
-  GRPC_PEER_SETTINGS = 0,
-  // The settings we'd like to have
-  GRPC_LOCAL_SETTINGS,
-  // The settings we've published to our peer
-  GRPC_SENT_SETTINGS,
-  // The settings the peer has acked
-  GRPC_ACKED_SETTINGS,
-  GRPC_NUM_SETTING_SETS
-} grpc_chttp2_setting_set;
 
 typedef enum {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
@@ -359,12 +347,8 @@ struct grpc_chttp2_transport final
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
-  /// bitmask of setting indexes to send out
-  /// Hack: it's common for implementations to assume 65536 bytes initial send
-  /// window -- this should by rights be 0
-  uint32_t force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   /// settings values
-  uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
+  grpc_core::Http2SettingsManager settings;
 
   grpc_event_engine::experimental::EventEngine::TaskHandle
       settings_ack_watchdog =
@@ -538,11 +522,6 @@ struct grpc_chttp2_transport final
   /// is this a client?
   bool is_client;
 
-  /// are the local settings dirty and need to be sent?
-  bool dirtied_local_settings = true;
-  /// have local settings been sent?
-  bool sent_local_settings = false;
-
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
   // True if pings should be acked
@@ -660,6 +639,9 @@ struct grpc_chttp2_stream {
 
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
+
+  /// Number of times written
+  int64_t write_counter = 0;
 
   /// Only set when enabled.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
@@ -796,7 +778,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,

@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -43,7 +43,10 @@ class GrpcXdsClient : public XdsClient {
  public:
   // Factory function to get or create the global XdsClient instance.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
-      const ChannelArgs& args, const char* reason);
+      absl::string_view key, const ChannelArgs& args, const char* reason);
+
+  // Builds ClientStatusResponse containing all resources from all XdsClients
+  static grpc_slice DumpAllClientConfigs();
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support
@@ -57,10 +60,12 @@ class GrpcXdsClient : public XdsClient {
   // work for callers that use interested_parties() but not for callers
   // that also use certificate_provider_store(), but we should consider
   // alternatives for that case as well.
-  GrpcXdsClient(std::unique_ptr<GrpcXdsBootstrap> bootstrap,
+  GrpcXdsClient(absl::string_view key,
+                std::unique_ptr<GrpcXdsBootstrap> bootstrap,
                 const ChannelArgs& args,
                 OrphanablePtr<XdsTransportFactory> transport_factory);
-  ~GrpcXdsClient() override;
+
+  void Orphan() override;
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
@@ -76,13 +81,16 @@ class GrpcXdsClient : public XdsClient {
     return *certificate_provider_store_;
   }
 
+  absl::string_view key() const { return key_; }
+
  private:
+  std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
 };
 
 namespace internal {
 void SetXdsChannelArgsForTest(grpc_channel_args* args);
-void UnsetGlobalXdsClientForTest();
+void UnsetGlobalXdsClientsForTest();
 // Sets bootstrap config to be used when no env var is set.
 // Does not take ownership of config.
 void SetXdsFallbackBootstrapConfig(const char* config);
