@@ -74,7 +74,6 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/server_address.h"
 
 namespace grpc_core {
 
