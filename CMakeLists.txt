@@ -1648,6 +1648,8 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/gpr/alloc.cc
   src/core/lib/gpr/android/log.cc
   src/core/lib/gpr/atm.cc
@@ -2302,8 +2304,6 @@ add_library(grpc
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/event_engine/windows/windows_listener.cc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/posix/directory_reader.cc
@@ -3069,8 +3069,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/event_engine/windows/windows_listener.cc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -5181,8 +5179,6 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/windows/windows_engine.cc
   src/core/lib/event_engine/windows/windows_listener.cc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -8523,8 +8519,6 @@ add_executable(call_filters_test
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -10189,8 +10183,6 @@ add_executable(chunked_vector_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -13333,8 +13325,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -13406,8 +13396,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_tag_test
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_tag_test.cc
   test/core/experiments/fixtures/experiments.cc
 )
@@ -13451,8 +13439,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(experiments_test
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   test/core/experiments/experiments_test.cc
   test/core/experiments/fixtures/experiments.cc
 )
@@ -14188,8 +14174,6 @@ add_executable(flow_control_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14275,8 +14259,6 @@ add_executable(for_each_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -17721,8 +17703,6 @@ add_executable(interceptor_list_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -18912,8 +18892,6 @@ add_executable(map_pipe_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -21110,8 +21088,6 @@ add_executable(periodic_update_test
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
-  src/core/lib/experiments/config.cc
-  src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc

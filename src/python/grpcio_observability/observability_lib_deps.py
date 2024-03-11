@@ -20,6 +20,8 @@ CC_FILES=[
     'grpc_root/src/core/lib/config/load_config.cc',
     'grpc_root/src/core/lib/debug/trace.cc',
     'grpc_root/src/core/lib/event_engine/thread_local.cc',
+    'grpc_root/src/core/lib/experiments/config.cc',
+    'grpc_root/src/core/lib/experiments/experiments.cc',
     'grpc_root/src/core/lib/gpr/alloc.cc',
     'grpc_root/src/core/lib/gpr/android/log.cc',
     'grpc_root/src/core/lib/gpr/atm.cc',

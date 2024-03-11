@@ -190,6 +190,7 @@ grpc_cc_library(
     ),
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log",
         "absl/strings",
     ],
     language = "c++",
@@ -198,7 +199,6 @@ grpc_cc_library(
     deps = [
         "no_destruct",
         "//:config_vars",
-        "//:gpr",
     ],
 )
 
