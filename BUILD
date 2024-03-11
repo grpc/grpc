@@ -772,6 +772,7 @@ grpc_cc_library(
         "//src/core:env",
         "//src/core:event_engine_thread_local",
         "//src/core:examine_stack",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:no_destruct",
         "//src/core:strerror",
