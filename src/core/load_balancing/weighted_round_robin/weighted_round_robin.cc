@@ -44,7 +44,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -69,7 +68,6 @@
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/endpoint_list.h"
 #include "src/core/load_balancing/oob_backend_metric.h"
-#include "src/core/load_balancing/subchannel_list.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/load_balancing/lb_policy.h"
