@@ -115,7 +115,8 @@ class ChaoticGoodServerTransport final : public Transport,
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
   static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames);
+                           MpscSender<ServerFrame> outgoing_frames,
+                           CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
@@ -133,9 +134,10 @@ class ChaoticGoodServerTransport final : public Transport,
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame);
+                                 absl::Status error, ClientFragmentFrame frame,
+                                 uint32_t stream_id);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame);
+                            ClientFragmentFrame frame, uint32_t stream_id);
 
   Acceptor* acceptor_ = nullptr;
   InterActivityLatch<void> got_acceptor_;
