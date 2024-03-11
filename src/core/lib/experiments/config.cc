@@ -34,8 +34,6 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/no_destruct.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 namespace grpc_core {
