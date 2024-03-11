@@ -185,6 +185,9 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
+    # This is needed for protobuf/main.cc
+    if "win32" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " Shell32.lib"
     # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
     # variables and objects) global weak symbols. When a process loads the
     # protobuf wheel's shared object library before loading *this* C extension,
