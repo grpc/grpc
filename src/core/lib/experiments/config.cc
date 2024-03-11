@@ -201,29 +201,29 @@ void PrintExperimentsList() {
   }
   for (auto name_index : visitation_order) {
     const size_t i = name_index.second;
-    LOG(INFO) << "gRPC EXPERIMENT " << g_experiment_metadata[i].name
-              << (std::string(max_experiment_length -
-                                  strlen(g_experiment_metadata[i].name) + 1,
-                              ' '))
-              << (IsExperimentEnabled(i) ? "ON " : "OFF") << " (default:"
-              << (g_experiment_metadata[i].default_value ? "ON" : "OFF")
-              << (g_check_constraints_cb != nullptr
-                      ? absl::StrCat(
-                            " + ",
-                            g_experiment_metadata[i].additional_constaints,
-                            " => ",
-                            (*g_check_constraints_cb)(g_experiment_metadata[i])
-                                ? "ON "
-                                : "OFF")
-                      : std::string())
-              << (g_forced_experiments[i].forced
-                      ? absl::StrCat(" force:", g_forced_experiments[i].value
-                                                    ? "ON"
-                                                    : "OFF")
-                      : std::string())
-              << ")";
+    std::string experiment_details = absl::StrCat(
+        "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
+        std::string(
+            max_experiment_length - strlen(g_experiment_metadata[i].name) + 1,
+            ' '),
+        IsExperimentEnabled(i) ? "ON " : "OFF",
+        " (default:", g_experiment_metadata[i].default_value ? "ON" : "OFF",
+        (g_check_constraints_cb != nullptr
+             ? absl::StrCat(
+                   " + ", g_experiment_metadata[i].additional_constaints,
+                   " => ",
+                   (*g_check_constraints_cb)(g_experiment_metadata[i]) ? "ON "
+                                                                       : "OFF")
+             : std::string()),
+        g_forced_experiments[i].forced
+            ? absl::StrCat(" force:",
+                           g_forced_experiments[i].value ? "ON" : "OFF")
+            : std::string(),
+        ")");
+    LOG(INFO) << experiment_details;
   }
 }
+
 
 void ForceEnableExperiment(absl::string_view experiment, bool enable) {
   ABSL_CHECK(g_loaded.load(std::memory_order_relaxed) == false);
