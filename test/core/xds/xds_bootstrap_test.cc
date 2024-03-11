@@ -55,19 +55,22 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-MATCHER_P(EqXdsServer, name, "equals XdsServer") {
+MATCHER_P2(EqXdsServer, name, creds_config_type, "equals XdsServer") {
   auto* server = static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(arg);
-  if (!::testing::ExplainMatchResult(::testing::Not(nullptr), server,
-                                     result_listener) ||
-      !::testing::ExplainMatchResult(::testing::Not(nullptr),
-                                     server->channel_creds_config(),
+  if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), server,
                                      result_listener)) {
     return false;
   }
-  return ::testing::ExplainMatchResult(name, server->server_uri(),
-                                       result_listener) &&
-         ::testing::ExplainMatchResult(
-             "fake", server->channel_creds_config()->type(), result_listener);
+  bool ok = ::testing::ExplainMatchResult(name, server->server_uri(),
+                                          result_listener);
+  auto creds_config = server->channel_creds_config();
+  if (!::testing::ExplainMatchResult(::testing::Ne(nullptr), creds_config,
+                                     result_listener)) {
+    return false;
+  }
+  ok |= ::testing::ExplainMatchResult(creds_config_type, creds_config->type(),
+                                      result_listener);
+  return ok;
 }
 
 TEST(XdsBootstrapTest, Basic) {
@@ -159,11 +162,9 @@ TEST(XdsBootstrapTest, Basic) {
   auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
   auto bootstrap = std::move(*bootstrap_or);
-  auto servers = bootstrap->servers();
-  EXPECT_THAT(servers, ::testing::SizeIs(2));
   EXPECT_THAT(bootstrap->servers(),
-              ::testing::ElementsAre(EqXdsServer("fake:///lb1"),
-                                     EqXdsServer("fake:///lb2")));
+              ::testing::ElementsAre(EqXdsServer("fake:///lb1", "fake"),
+                                     EqXdsServer("fake:///lb2", "fake")));
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
@@ -171,17 +172,18 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(authority->client_listener_resource_name_template(),
             "xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/"
             "server/%s");
-  EXPECT_THAT(authority->servers(),
-              ::testing::ElementsAre(EqXdsServer("fake:///xds_server"),
-                                     EqXdsServer("fake:///xds_server2")));
+  EXPECT_THAT(
+      authority->servers(),
+      ::testing::ElementsAre(EqXdsServer("fake:///xds_server", "fake"),
+                             EqXdsServer("fake:///xds_server2", "fake")));
   authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example2.com"));
   ASSERT_NE(authority, nullptr);
   EXPECT_EQ(authority->client_listener_resource_name_template(),
             "xdstp://xds.example2.com/envoy.config.listener.v3.Listener/grpc/"
             "server/%s");
-  EXPECT_THAT(authority->servers(),
-              ::testing::ElementsAre(EqXdsServer("fake:///xds_server3")));
+  EXPECT_THAT(authority->servers(), ::testing::ElementsAre(EqXdsServer(
+                                        "fake:///xds_server3", "fake")));
   ASSERT_NE(bootstrap->node(), nullptr);
   EXPECT_EQ(bootstrap->node()->id(), "foo");
   EXPECT_EQ(bootstrap->node()->cluster(), "bar");
@@ -217,11 +219,8 @@ TEST(XdsBootstrapTest, ValidWithoutNode) {
   auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
   auto bootstrap = std::move(*bootstrap_or);
-  auto* server = static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(
-      bootstrap->servers().front());
-  EXPECT_EQ(server->server_uri(), "fake:///lb");
-  ASSERT_NE(server->channel_creds_config(), nullptr);
-  EXPECT_EQ(server->channel_creds_config()->type(), "fake");
+  EXPECT_THAT(bootstrap->servers(),
+              ::testing::ElementsAre(EqXdsServer("fake:///lb", "fake")));
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -238,11 +237,8 @@ TEST(XdsBootstrapTest, InsecureCreds) {
   auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
   auto bootstrap = std::move(*bootstrap_or);
-  auto* server = static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(
-      bootstrap->servers().front());
-  EXPECT_EQ(server->server_uri(), "fake:///lb");
-  ASSERT_NE(server->channel_creds_config(), nullptr);
-  EXPECT_EQ(server->channel_creds_config()->type(), "insecure");
+  EXPECT_THAT(bootstrap->servers(),
+              ::testing::ElementsAre(EqXdsServer("fake:///lb", "insecure")));
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 
@@ -275,11 +271,8 @@ TEST(XdsBootstrapTest, GoogleDefaultCreds) {
   auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
   ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
   auto bootstrap = std::move(*bootstrap_or);
-  auto* server = static_cast<const GrpcXdsBootstrap::GrpcXdsServer*>(
-      bootstrap->servers().front());
-  EXPECT_EQ(server->server_uri(), "fake:///lb");
-  ASSERT_NE(server->channel_creds_config(), nullptr);
-  EXPECT_EQ(server->channel_creds_config()->type(), "google_default");
+  EXPECT_THAT(bootstrap->servers(), ::testing::ElementsAre(EqXdsServer(
+                                        "fake:///lb", "google_default")));
   EXPECT_EQ(bootstrap->node(), nullptr);
 }
 

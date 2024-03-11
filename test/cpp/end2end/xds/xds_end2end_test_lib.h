@@ -566,14 +566,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Initializes global state for the client, such as the bootstrap file
   // and channel args for the XdsClient.  Then calls ResetStub().
   // All tests must call this exactly once at the start of the test.
-  void InitClient(
-      const absl::optional<XdsBootstrapBuilder>& builder = absl::nullopt,
-      std::string lb_expected_authority = "",
-      int xds_resource_does_not_exist_timeout_ms = 0);
+  void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
+                  std::string lb_expected_authority = "",
+                  int xds_resource_does_not_exist_timeout_ms = 0);
 
   XdsBootstrapBuilder MakeBootstrapBuilder() {
-    return XdsBootstrapBuilder().SetServer(
-        absl::StrCat("localhost:", balancer_->port()));
+    return XdsBootstrapBuilder().SetServers(
+        {absl::StrCat("localhost:", balancer_->port())});
   }
 
   // Sets channel_, stub_, stub1_, and stub2_.

@@ -1279,7 +1279,7 @@ TEST_P(XdsFederationLoadReportingTest, SameServerInAuthorityAndTopLevel) {
   std::string xds_server =
       absl::StrCat("localhost:", authority_balancer_->port());
   XdsBootstrapBuilder builder;
-  builder.SetServer(xds_server);
+  builder.SetServers({xds_server});
   builder.AddAuthority(kAuthority, xds_server);
   InitClient(builder);
   CreateAndStartBackends(1);
