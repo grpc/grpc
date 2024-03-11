@@ -20,7 +20,7 @@
 
 #include <gtest/gtest.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

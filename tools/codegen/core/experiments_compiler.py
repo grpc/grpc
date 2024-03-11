@@ -192,6 +192,7 @@ class ExperimentDefinition(object):
             print("Failed to create experiment definition")
             return
         self._allow_in_fuzzing_config = True
+        self._uses_polling = False
         self._name = attributes["name"]
         self._description = attributes["description"]
         self._expiry = attributes["expiry"]
@@ -199,6 +200,9 @@ class ExperimentDefinition(object):
         self._additional_constraints = {}
         self._test_tags = []
         self._requires = set()
+
+        if "uses_polling" in attributes:
+            self._uses_polling = attributes["uses_polling"]
 
         if "allow_in_fuzzing_config" in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -403,8 +407,9 @@ class ExperimentsCompiler(object):
             if mode != "test":
                 include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H"
             else:
-                file_path_list = output_file.split("/")[0:-1]
-                file_name = output_file.split("/")[-1].split(".")[0]
+                real_output_file = output_file.replace(".github", "")
+                file_path_list = real_output_file.split("/")[0:-1]
+                file_name = real_output_file.split("/")[-1].split(".")[0]
 
                 include_guard = f"GRPC_{'_'.join(path.upper() for path in file_path_list)}_{file_name.upper()}_H"
 
@@ -562,9 +567,13 @@ class ExperimentsCompiler(object):
                     break
 
             print("#include <grpc/support/port_platform.h>", file=C)
+            print(file=C)
             if any_requires:
                 print("#include <stdint.h>", file=C)
-            print(f'#include "{header_file_path}"', file=C)
+                print(file=C)
+            print(
+                f'#include "{header_file_path.replace(".github", "")}"', file=C
+            )
             print(file=C)
             print("#ifndef GRPC_EXPERIMENTS_ARE_FINAL", file=C)
             idx = 0
@@ -620,6 +629,14 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
+    def _ExperimentEnableSet(self, name):
+        s = set()
+        s.add(name)
+        for exp in self._experiment_definitions[name]._requires:
+            for req in self._ExperimentEnableSet(exp):
+                s.add(req)
+        return s
+
     def GenExperimentsBzl(self, mode, output_file):
         assert self._FinalizeExperiments()
         if self._bzl_list_for_defaults is None:
@@ -671,12 +688,22 @@ class ExperimentsCompiler(object):
             else:
                 print("EXPERIMENT_ENABLES = {", file=B)
             for name, exp in self._experiment_definitions.items():
-                enables = exp._requires.copy()
-                enables.add(name)
                 print(
-                    f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
+                    f"    \"{name}\": \"{','.join(sorted(self._ExperimentEnableSet(name)))}\",",
+                    file=B,
                 )
             print("}", file=B)
+
+            # Generate a list of experiments that use polling.
+            print(file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENT_POLLERS = [", file=B)
+            else:
+                print("EXPERIMENT_POLLERS = [", file=B)
+            for name, exp in self._experiment_definitions.items():
+                if exp._uses_polling:
+                    print(f'    "{name}",', file=B)
+            print("]", file=B)
 
             print(file=B)
             if mode == "test":

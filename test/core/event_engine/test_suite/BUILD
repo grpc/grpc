@@ -57,6 +57,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "posix_event_engine_native_dns_test",
+    srcs = ["posix_event_engine_native_dns_test.cc"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//:config_vars",
+        "//src/core:posix_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:dns",
+    ],
+)
+
+grpc_cc_test(
     name = "thready_posix_event_engine_test",
     srcs = ["thready_posix_event_engine_test.cc"],
     tags = [

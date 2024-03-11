@@ -259,8 +259,8 @@ TEST_P(H2SslCertTest, SimpleRequestBody) {
   simple_request_body(fixture_.get(), GetParam().result);
 }
 
-// TODO(gtcooke94) SimpleRequestBodyUseEngineTest was failing on OpenSSL3.0
-// and 1.1.1 and removed. Investigate and rewrite a better test
+// TODO(b/283304471) SimpleRequestBodyUseEngineTest was failing on OpenSSL3.0
+// and 1.1.1 and removed. Investigate and rewrite a better test.
 
 INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
                          ::testing::ValuesIn(configs));

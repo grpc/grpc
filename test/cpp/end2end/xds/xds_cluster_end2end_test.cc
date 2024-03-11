@@ -23,10 +23,13 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/surface/call.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -41,6 +44,8 @@ using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
+using OptionalLabelComponent =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -303,6 +308,69 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
+TEST_P(CdsTest, MetricLabels) {
+  // Injects a fake client call tracer factory. Try keep this at top.
+  grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
+  CreateAndStartBackends(2);
+  // Populates EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populates service labels to CDS resources.
+  auto cluster = default_cluster_;
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  *label_map["service_name"].mutable_string_value() = "myservice";
+  *label_map["service_namespace"].mutable_string_value() = "mynamespace";
+  balancer_->ads_service()->SetCdsResource(cluster);
+  ChannelArguments channel_args;
+  channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
+                          &fake_client_call_tracer_factory);
+  ResetStub(/*failover_timeout_ms=*/0, &channel_args);
+  // Send an RPC to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Verify that the optional labels are recorded in the call tracer.
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsServiceLabels,
+              ::testing::Pointee(::testing::ElementsAre(
+                  ::testing::Pair("service_name", "myservice"),
+                  ::testing::Pair("service_namespace", "mynamespace")))),
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsLocalityLabels,
+              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
+                  "grpc.lb.locality", LocalityNameString("locality0")))))));
+  // Send an RPC to backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  // Verify that the optional labels are recorded in the call tracer.
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsServiceLabels,
+              ::testing::Pointee(::testing::ElementsAre(
+                  ::testing::Pair("service_name", "myservice"),
+                  ::testing::Pair("service_namespace", "mynamespace")))),
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsLocalityLabels,
+              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
+                  "grpc.lb.locality", LocalityNameString("locality1")))))));
+  // TODO(yashkt, yijiem): This shutdown shouldn't actually be necessary.
+  // The only reason it's here is to add a delay before
+  // fake_client_call_tracer_factory goes out of scope, since there may
+  // be lingering callbacks in the call stack that are using the
+  // CallAttemptTracer even after we get here, which would then cause a
+  // crash.  Find a cleaner way to fix this.
+  balancer_->Shutdown();
+}
+
 //
 // CDS deletion tests
 //
@@ -329,9 +397,9 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
-                           "\" does not exist"),
-              result.status.error_message());
+    EXPECT_EQ(
+        absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
+        result.status.error_message());
     return false;
   });
   // Make sure we ACK'ed the update.
@@ -1872,6 +1940,7 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
+  grpc_core::RegisterFakeStatsPlugin();
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

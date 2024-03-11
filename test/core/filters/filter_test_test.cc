@@ -64,7 +64,7 @@ class DelayStartFilter final : public ChannelFilter {
         [args = std::move(args), i = 10]() mutable -> Poll<CallArgs> {
           --i;
           if (i == 0) return std::move(args);
-          Activity::current()->ForceImmediateRepoll();
+          GetContext<Activity>()->ForceImmediateRepoll();
           return Pending{};
         },
         next);

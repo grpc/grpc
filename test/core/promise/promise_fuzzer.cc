@@ -304,10 +304,10 @@ class Fuzzer {
           if (!called) {
             if (config.owning()) {
               wakers_[config.waker()].push_back(
-                  Activity::current()->MakeOwningWaker());
+                  GetContext<Activity>()->MakeOwningWaker());
             } else {
               wakers_[config.waker()].push_back(
-                  Activity::current()->MakeNonOwningWaker());
+                  GetContext<Activity>()->MakeNonOwningWaker());
             }
             return Pending();
           }

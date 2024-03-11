@@ -202,7 +202,7 @@ class BatchBuilder {
     ~Batch();
     Batch(const Batch&) = delete;
     Batch& operator=(const Batch&) = delete;
-    std::string DebugPrefix(Activity* activity = Activity::current()) const {
+    std::string DebugPrefix(Activity* activity = GetContext<Activity>()) const {
       return absl::StrFormat("%s[connected] [batch %p] ", activity->DebugTag(),
                              this);
     }

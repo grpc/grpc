@@ -410,7 +410,8 @@ struct GrpcLbClientStatsMetadata {
   static const char* DisplayMemento(MementoType) {
     return "<internal-lb-stats>";
   }
-  static MementoType ParseMemento(Slice, bool, MetadataParseErrorFn) {
+  static MementoType ParseMemento(Slice, bool, MetadataParseErrorFn error) {
+    error("not a valid value for grpclb_client_stats", Slice());
     return nullptr;
   }
 };
@@ -537,14 +538,17 @@ namespace metadata_detail {
 // The string is expected to be readable, but not necessarily parsable.
 class DebugStringBuilder {
  public:
-  // Add one key/value pair to the output.
-  void Add(absl::string_view key, absl::string_view value);
+  // Add one key/value pair to the output if it is allow listed.
+  // Redact only the value if it is not allow listed.
+  void AddAfterRedaction(absl::string_view key, absl::string_view value);
 
   // Finalize the output and return the string.
   // Subsequent Add calls are UB.
   std::string TakeOutput() { return std::move(out_); }
 
  private:
+  bool IsAllowListed(absl::string_view key) const;
+  void Add(absl::string_view key, absl::string_view value);
   std::string out_;
 };
 
@@ -649,9 +653,8 @@ class ParseHelper {
     return ParsedMetadata<Container>(
         typename ParsedMetadata<Container>::FromSlicePair{},
         Slice::FromCopiedString(key),
-        IsUniquelyUnownedEnabled() && will_keep_past_request_lifetime_
-            ? value_.TakeUniquelyOwned()
-            : std::move(value_),
+        will_keep_past_request_lifetime_ ? value_.TakeUniquelyOwned()
+                                         : std::move(value_),
         transport_size_);
   }
 
@@ -1050,7 +1053,7 @@ class UnknownMap {
  public:
   explicit UnknownMap(Arena* arena) : unknown_(arena) {}
 
-  using BackingType = ChunkedVector<std::pair<Slice, Slice>, 10>;
+  using BackingType = ChunkedVector<std::pair<Slice, Slice>, 5>;
 
   void Append(absl::string_view key, Slice value);
   void Remove(absl::string_view key);
@@ -1067,7 +1070,7 @@ class UnknownMap {
 
  private:
   // Backing store for added metadata.
-  ChunkedVector<std::pair<Slice, Slice>, 10> unknown_;
+  BackingType unknown_;
 };
 
 // Given a factory template Factory, construct a type that derives from
@@ -1281,7 +1284,7 @@ class MetadataMap {
   std::string DebugString() const {
     metadata_detail::DebugStringBuilder builder;
     Log([&builder](absl::string_view key, absl::string_view value) {
-      builder.Add(key, value);
+      builder.AddAfterRedaction(key, value);
     });
     return builder.TakeOutput();
   }

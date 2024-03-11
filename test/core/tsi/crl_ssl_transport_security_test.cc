@@ -32,7 +32,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -201,10 +200,11 @@ class CrlSslTransportSecurityTest
       // Handshake succeeds because the CRL that revokes the cert is not
       // present.
       bool expect_server_success = expect_server_success_;
+      bool expect_client_success = false;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      bool expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
-                                       ? expect_client_success_1_2_
-                                       : expect_client_success_1_3_;
+      expect_client_success = GetParam() == tsi_tls_version::TSI_TLS1_2
+                                  ? expect_client_success_1_2_
+                                  : expect_client_success_1_3_;
 #else
       //  If using OpenSSL version < 1.1, the CRL revocation won't
       //  be enabled anyways, so we always expect the connection to

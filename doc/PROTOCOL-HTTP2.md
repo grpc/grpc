@@ -75,7 +75,7 @@ Base64-encoded values.
 
 **ASCII-Value** should not have leading or trailing whitespace. If it contains
 leading or trailing whitespace, it may be stripped. The **ASCII-Value**
-character range defined is more strict than HTTP. Implementations must not error
+character range defined is stricter than HTTP. Implementations must not error
 due to receiving an invalid **ASCII-Value** that's a valid **field-value** in
 HTTP, but the precise behavior is not strictly defined: they may throw the value
 away or accept the value. If accepted, care must be taken to make sure that the

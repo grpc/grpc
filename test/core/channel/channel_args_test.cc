@@ -209,6 +209,37 @@ TEST(ChannelArgsTest, GetNonOwningEventEngine) {
   ASSERT_EQ(p.use_count(), 2);
 }
 
+struct MutableValue : public RefCounted<MutableValue> {
+  static constexpr absl::string_view ChannelArgName() {
+    return "grpc.test.mutable_value";
+  }
+  static int ChannelArgsCompare(const MutableValue* a, const MutableValue* b) {
+    return a->i - b->i;
+  }
+  int i = 42;
+};
+
+struct ConstValue : public RefCounted<ConstValue> {
+  static constexpr absl::string_view ChannelArgName() {
+    return "grpc.test.const_value";
+  }
+  static constexpr bool ChannelArgUseConstPtr() { return true; };
+  static int ChannelArgsCompare(const ConstValue* a, const ConstValue* b) {
+    return a->i - b->i;
+  }
+  int i = 42;
+};
+
+TEST(ChannelArgsTest, SetObjectRespectsMutabilityConstraints) {
+  auto m = MakeRefCounted<MutableValue>();
+  auto c = MakeRefCounted<const ConstValue>();
+  auto args = ChannelArgs().SetObject(m).SetObject(c);
+  RefCountedPtr<MutableValue> m1 = args.GetObjectRef<MutableValue>();
+  RefCountedPtr<const ConstValue> c1 = args.GetObjectRef<ConstValue>();
+  EXPECT_EQ(m1.get(), m.get());
+  EXPECT_EQ(c1.get(), c.get());
+}
+
 }  // namespace grpc_core
 
 TEST(GrpcChannelArgsTest, Create) {

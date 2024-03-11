@@ -25,6 +25,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/channel_arg_names.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -57,8 +58,15 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/stat.h>  // IWYU pragma: keep
 #include <sys/un.h>
+#endif  // GPR_WINDOWS
 #endif
 
 namespace grpc_event_engine {
@@ -208,6 +216,13 @@ PosixTcpOptions TcpOptionsFromEndpointConfig(const EndpointConfig& config) {
   if (value != nullptr) {
     options.socket_mutator =
         grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(value));
+  }
+  value =
+      config.GetVoidPointer(GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY);
+  if (value != nullptr) {
+    options.memory_allocator_factory =
+        static_cast<grpc_event_engine::experimental::MemoryAllocatorFactory*>(
+            value);
   }
   return options;
 }

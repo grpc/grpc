@@ -42,7 +42,6 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -53,12 +52,15 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/message.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
 
@@ -70,82 +72,7 @@
 
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
 
-/// Internal bit flag for grpc_begin_message's \a flags signaling the use of
-/// compression for the message. (Does not apply for stream compression.)
-#define GRPC_WRITE_INTERNAL_COMPRESS (0x80000000u)
-/// Internal bit flag for determining whether the message was compressed and had
-/// to be decompressed by the message_decompress filter. (Does not apply for
-/// stream compression.)
-#define GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED (0x40000000u)
-/// Mask of all valid internal flags.
-#define GRPC_WRITE_INTERNAL_USED_MASK \
-  (GRPC_WRITE_INTERNAL_COMPRESS | GRPC_WRITE_INTERNAL_TEST_ONLY_WAS_COMPRESSED)
-
 namespace grpc_core {
-
-// Server metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ServerMetadata = grpc_metadata_batch;
-using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
-
-// Client initial metadata type
-// TODO(ctiller): This should be a bespoke instance of MetadataMap<>
-using ClientMetadata = grpc_metadata_batch;
-using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
-
-class Message {
- public:
-  Message() = default;
-  ~Message() = default;
-  Message(SliceBuffer payload, uint32_t flags)
-      : payload_(std::move(payload)), flags_(flags) {}
-  Message(const Message&) = delete;
-  Message& operator=(const Message&) = delete;
-
-  uint32_t flags() const { return flags_; }
-  uint32_t& mutable_flags() { return flags_; }
-  SliceBuffer* payload() { return &payload_; }
-  const SliceBuffer* payload() const { return &payload_; }
-
-  std::string DebugString() const;
-
- private:
-  SliceBuffer payload_;
-  uint32_t flags_ = 0;
-};
-
-using MessageHandle = Arena::PoolPtr<Message>;
-
-// Ok/not-ok check for trailing metadata, so that it can be used as result types
-// for TrySeq.
-inline bool IsStatusOk(const ServerMetadataHandle& m) {
-  return m->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN) ==
-         GRPC_STATUS_OK;
-}
-
-ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, const absl::Status&> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
-
-template <>
-struct StatusCastImpl<ServerMetadataHandle, absl::Status&> {
-  static ServerMetadataHandle Cast(const absl::Status& m) {
-    return ServerMetadataFromStatus(m);
-  }
-};
 
 // Move only type that tracks call startup.
 // Allows observation of when client_initial_metadata has been processed by the
@@ -303,24 +230,6 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
 // the same refcount
 grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
                                                void* buffer, size_t length);
-
-struct grpc_transport_one_way_stats {
-  uint64_t framing_bytes = 0;
-  uint64_t data_bytes = 0;
-  uint64_t header_bytes = 0;
-};
-
-struct grpc_transport_stream_stats {
-  grpc_transport_one_way_stats incoming;
-  grpc_transport_one_way_stats outgoing;
-  gpr_timespec latency = gpr_inf_future(GPR_TIMESPAN);
-};
-
-void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
-                                       grpc_transport_one_way_stats* to);
-
-void grpc_transport_move_stats(grpc_transport_stream_stats* from,
-                               grpc_transport_stream_stats* to);
 
 // This struct (which is present in both grpc_transport_stream_op_batch
 // and grpc_transport_op_batch) is a convenience to allow filters or
@@ -633,9 +542,7 @@ class FilterStackTransport {
 
 class ClientTransport {
  public:
-  // Create a promise to execute one client call.
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) = 0;
+  virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
   ~ClientTransport() = default;
@@ -643,10 +550,24 @@ class ClientTransport {
 
 class ServerTransport {
  public:
-  // Register the factory function for the filter stack part of a call
-  // promise.
-  void SetCallPromiseFactory(
-      absl::AnyInvocable<ArenaPromise<ServerMetadataHandle>(CallArgs) const>);
+  // Acceptor helps transports create calls.
+  class Acceptor {
+   public:
+    // Returns an arena that can be used to allocate memory for initial metadata
+    // parsing, and later passed to CreateCall() as the underlying arena for
+    // that call.
+    virtual Arena* CreateArena() = 0;
+    // Create a call at the server (or fail)
+    // arena must have been previously allocated by CreateArena()
+    virtual absl::StatusOr<CallInitiator> CreateCall(
+        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
+
+   protected:
+    ~Acceptor() = default;
+  };
+
+  // Called once slightly after transport setup to register the accept function.
+  virtual void SetAcceptor(Acceptor* acceptor) = 0;
 
  protected:
   ~ServerTransport() = default;

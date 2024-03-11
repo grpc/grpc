@@ -38,7 +38,6 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
@@ -316,6 +315,12 @@ void XdsResourceUtils::SetRouteConfiguration(
     ClientHcmAccessor().Pack(http_connection_manager, &listener);
     ads_service->SetLdsResource(listener);
   }
+}
+
+std::string XdsResourceUtils::LocalityNameString(absl::string_view sub_zone) {
+  return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                         kDefaultLocalityRegion, kDefaultLocalityZone,
+                         sub_zone);
 }
 
 ClusterLoadAssignment XdsResourceUtils::BuildEdsResource(

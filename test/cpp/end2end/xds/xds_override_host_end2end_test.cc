@@ -267,7 +267,7 @@ TEST_P(OverrideHostTest, HappyPath) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Get cookie for backend #0.
   auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 0);
-  EXPECT_THAT(cookies,
+  ASSERT_THAT(cookies,
               ::testing::ElementsAre(::testing::AllOf(
                   ::testing::Field("name", &Cookie::name, kCookieName),
                   ::testing::Field("attributes", &Cookie::attributes,
@@ -290,6 +290,91 @@ TEST_P(OverrideHostTest, HappyPath) {
                      .set_metadata({cookies.front().Header()})
                      .set_rpc_service(RpcService::SERVICE_ECHO2));
   EXPECT_EQ(backends_[0]->backend_service2()->request_count(), 5);
+}
+
+TEST_P(OverrideHostTest, AffinityWorksAcrossPriorities) {
+  CreateAndStartBackends(3);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  // Locality 0 contains backends 0 and 1.  We start with this locality
+  // in priority 0.
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 2)}})));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // Get cookie for backend 1.
+  auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 1);
+  ASSERT_THAT(cookies,
+              ::testing::ElementsAre(::testing::AllOf(
+                  ::testing::Field("name", &Cookie::name, kCookieName),
+                  ::testing::Field("attributes", &Cookie::attributes,
+                                   ::testing::ElementsAre("HttpOnly")),
+                  ::testing::Field("value", &Cookie::value,
+                                   ::testing::Not(::testing::IsEmpty())))));
+  // The cookie should send all traffic to backend 1.
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookies.front().Header()}));
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
+  // Send an update that moves locality 0 to priority 1.
+  // Add a new locality in priority 0 containing backend 2.
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality1", CreateEndpointsForBackends(2, 3)},
+      {"locality0", CreateEndpointsForBackends(0, 2), kDefaultLocalityWeight,
+       /*priority=*/1},
+  })));
+  WaitForBackend(DEBUG_LOCATION, 2);
+  // Using the cookie should continue to send traffic to backend 1.
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookies.front().Header()}));
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
+}
+
+TEST_P(OverrideHostTest,
+       AffinityWorksAcrossPrioritiesHeuristicChangesChildName) {
+  CreateAndStartBackends(3);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  // Priority 0:
+  // - locality 0: backend 0
+  // - locality 1: backend 1
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+      {"locality1", CreateEndpointsForBackends(1, 2)},
+  })));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // Get cookie for backend 1.
+  // It may take more requests than usual to hit the backend we want,
+  // since the weighted_target policy does not do a strict round-robin.
+  auto cookies =
+      GetCookiesForBackend(DEBUG_LOCATION, 1, /*max_requests_per_backend=*/10);
+  ASSERT_THAT(cookies,
+              ::testing::ElementsAre(::testing::AllOf(
+                  ::testing::Field("name", &Cookie::name, kCookieName),
+                  ::testing::Field("attributes", &Cookie::attributes,
+                                   ::testing::ElementsAre("HttpOnly")),
+                  ::testing::Field("value", &Cookie::value,
+                                   ::testing::Not(::testing::IsEmpty())))));
+  // The cookie should send all traffic to backend 1.
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookies.front().Header()}));
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
+  // Priority 0:
+  // - locality 0: backend 0
+  // - locality 2: backend 2
+  // Priority 1:
+  // - locality 1: backend 1
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(EdsResourceArgs({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+      {"locality2", CreateEndpointsForBackends(2, 3)},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       /*priority=*/1},
+  })));
+  WaitForBackend(DEBUG_LOCATION, 2);
+  // Using the cookie should continue to send traffic to backend 1.
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookies.front().Header()}));
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 5);
 }
 
 TEST_P(OverrideHostTest, DrainingIncludedFromOverrideSet) {
@@ -639,7 +724,7 @@ TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
   ResetBackendCounters();
   // Get cookie for backend 1.
   auto cookies = GetCookiesForBackend(DEBUG_LOCATION, 1);
-  EXPECT_THAT(cookies,
+  ASSERT_THAT(cookies,
               ::testing::ElementsAre(::testing::AllOf(
                   ::testing::Field("name", &Cookie::name, kCookieName),
                   ::testing::Field("attributes", &Cookie::attributes,

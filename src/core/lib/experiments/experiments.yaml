@@ -26,6 +26,9 @@
 #              Defaults to the empty list.
 #              If any of the experiments in the required list is determined to
 #              be disabled at runtime, this experiment is disabled at runtime.
+# uses_polling: optional boolean (false if not specified) that indicates that
+#              this experiment should be tested with all different polling
+#              engines.
 #
 # Well known test tags:
 #   core_end2end_test:   all tests, fixtures in the core end2end suite
@@ -37,18 +40,22 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: block_excessive_requests_before_settings_ack
-  description:
-    If set, block excessive requests before receiving SETTINGS ACK.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [bad_client_test]
+- name: absl_base64
+  description: Use abseil base64 functions.
+  expiry: 2024/06/01
+  owner: roth@google.com
+  test_tags: ["credential_token_tests"]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with
     cancellation.
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: vigneshbabu@google.com
+  test_tags: []
+- name: call_v3
+  description: Promise-based call version 3.
+  expiry: 2024/06/01
+  owner: ctiller@google.com
   test_tags: []
 - name: canary_client_privacy
   description:
@@ -57,23 +64,16 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: chttp2_batch_requests
+- name: chaotic_good
   description:
-    Cap the number of requests received by one transport read prior to offload.
-  expiry: 2024/03/03
+    If set, enable the chaotic good load transport (this is mostly here for testing)
+  expiry: 2024/09/09
   owner: ctiller@google.com
-  test_tags: ["cpp_end2end_test", "flow_control_test"]
-  requires: [combiner_offload_to_event_engine]
-- name: chttp2_offload_on_rst_stream
-  description:
-    Offload work on RST_STREAM.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: ["cpp_end2end_test", "flow_control_test"]
-  requires: [combiner_offload_to_event_engine]
+  requires: [promise_based_client_call, promise_based_server_call]
+  test_tags: [core_end2end_test]
 - name: client_idleness
   description: If enabled, client channel idleness is enabled by default.
-  expiry: 2023/12/15
+  expiry: 2024/03/15
   owner: roth@google.com
   test_tags: []
 - name: client_privacy
@@ -83,29 +83,26 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: combiner_offload_to_event_engine
-  description:
-    Offload Combiner work onto the EventEngine instead of the Executor.
-  expiry: 2024/01/15
-  owner: hork@google.com
-  test_tags: []
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2024/01/21
+  expiry: 2024/04/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
+  uses_polling: true
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2024/01/08
+  expiry: 2024/04/01
   owner: yijiem@google.com
   test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
+  uses_polling: true
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
+  uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2024/04/01
@@ -129,22 +126,10 @@
   description:
     Allows overriding keepalive_permit_without_calls for servers.
     Refer https://github.com/grpc/grpc/pull/33917 for more information.
-  expiry: 2023/12/31
+  expiry: 2024/12/31
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: lazier_stream_updates
-  description:
-    Allow streams to consume up to 50% of the incoming window before we
-    force send a flow control update.
-  expiry: 2024/01/23
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
-- name: memory_pressure_controller
-  description: New memory pressure controller
-  expiry: 2024/05/05
-  owner: ctiller@google.com
-  test_tags: [resource_quota_test]
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever
@@ -153,14 +138,7 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/01/15
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
-- name: overload_protection
-  description:
-    If chttp2 has more streams than it can handle open, send RST_STREAM immediately
-    on new streams appearing.
-  expiry: 2024/03/03
+  expiry: 2024/06/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: peer_state_based_framing
@@ -168,7 +146,7 @@
     If set, the max sizes of frames sent to lower layers is controlled based
     on the peer's memory pressure which is reflected in its max http2 frame
     size.
-  expiry: 2024/01/01
+  expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
 - name: pending_queue_cap
@@ -185,16 +163,9 @@
 - name: pick_first_happy_eyeballs
   description:
     Use Happy Eyeballs in pick_first.
-  expiry: 2023/12/15
+  expiry: 2024/03/15
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
-- name: ping_on_rst_stream
-  description:
-    Send a ping on receiving some RST_STREAM frames on the server
-    (proportion configurable via grpc.http2.ping_on_rst_stream_percent channel arg).
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: []
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -202,6 +173,7 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "lame_client_test"]
+  requires: ["event_engine_listener", "event_engine_client"]
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
@@ -209,6 +181,7 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
+  requires: [promise_based_client_call, promise_based_server_call, registered_method_lookup_in_transport]
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -216,53 +189,22 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
-  requires: [lazier_stream_updates]
-- name: red_max_concurrent_streams
-  description:
-    Perform random early rejection of requests that would exceed a newly reduced
-    MAX_CONCURRENT_STREAMS but are allowed by the current.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
 - name: registered_method_lookup_in_transport
   description:
     Change registered method's lookup point to transport
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
-- name: registered_methods_map
-  description:
-    Use absl::flat_hash_map for registered methods.
-  expiry: 2024/01/31
-  owner: alishananda@google.com
-  test_tags: []
-- name: rfc_max_concurrent_streams
-  description:
-    If set, enable rfc-compliant behavior (cancellation) in the advent that 
-    max concurrent streams are exceeded in chttp2.
-    See https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [bad_client_test]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
-  expiry: 2024/03/03
+  expiry: 2024/08/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: vigneshbabu@google.com
-  test_tags: []
-- name: separate_ping_from_keepalive
-  description:
-    Keep a different keepalive timeout (resolution is seeing data after sending a ping)
-    from a ping timeout (resolution is getting a ping ack after sending a ping)
-    The first can be short and determines liveness.
-    The second can be longer and determines protocol correctness.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
   test_tags: []
 - name: server_privacy
   description:
@@ -271,50 +213,58 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: settings_timeout
-  description:
-    If set, use the settings timeout to send settings frame to the peer.
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: []
-- name: tarpit
-  description:
-    If set, tarpit invalid requests for some amount of time
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [bad_client_test]
 - name: tcp_frame_size_tuning
   description:
     If set, enables TCP to use RPC size estimation made by higher layers.
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2024/01/01
+  expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2024/01/01
+  expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
-  expiry: 2024/02/01
+  expiry: 2024/09/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: uniquely_unowned
-  description: Ensure HPACK table takes a unique copy of data when parsing unknown metadata
-  expiry: 2024/03/03
+- name: v3_backend_metric_filter
+  description:
+    Use the backend metric filter utilizing the v3 filter api
+  expiry: 2024/05/05
   owner: ctiller@google.com
+  test_tags: []
+- name: v3_channel_idle_filters
+  description:
+    Use the v3 filter API version of the idle filters.
+  expiry: 2024/04/04
+  owner: ctiller@google.com
+  test_tags: []
+- name: v3_compression_filter
+  description:
+    Use the compression filter utilizing the v3 filter api
+  expiry: 2024/04/04
+  owner: ctiller@google.com
+  test_tags: ["compression_test"]
+- name: v3_server_auth_filter
+  description:
+    Use the server auth filter utilizing the v3 filter api
+  expiry: 2024/04/04
+  owner: ctiller@google.com
+  test_tags: []
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/01/01
+  expiry: 2024/04/01
   owner: ctiller@google.com
   test_tags: []
 - name: work_serializer_dispatch
@@ -322,19 +272,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/02/10
-  owner: ctiller@google.com
+  expiry: 2024/03/31
+  owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
-- name: write_size_cap
-  description:
-    Limit outgoing writes proportional to the target write size
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]
-  requires: [write_size_policy]
-- name: write_size_policy
-  description:
-    Try to size writes such that they don't create too large of a backlog
-  expiry: 2024/03/03
-  owner: ctiller@google.com
-  test_tags: [flow_control_test]

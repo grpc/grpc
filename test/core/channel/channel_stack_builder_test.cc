@@ -62,8 +62,8 @@ const grpc_channel_filter* FilterNamed(const char* name) {
       ->emplace(
           name,
           new grpc_channel_filter{
-              grpc_call_next_op, nullptr, grpc_channel_next_op, 0, CallInitFunc,
-              grpc_call_stack_ignore_set_pollset_or_pollset_set,
+              grpc_call_next_op, nullptr, nullptr, grpc_channel_next_op, 0,
+              CallInitFunc, grpc_call_stack_ignore_set_pollset_or_pollset_set,
               CallDestroyFunc, 0, ChannelInitFunc,
               [](grpc_channel_stack*, grpc_channel_element*) {},
               ChannelDestroyFunc, grpc_channel_next_get_info, name})

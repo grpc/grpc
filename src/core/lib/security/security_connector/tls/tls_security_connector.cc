@@ -379,7 +379,8 @@ void TlsChannelSecurityConnector::check_peer(
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(options_->certificate_verifier() != nullptr);
   auto* pending_request = new ChannelPendingVerifierRequest(
-      Ref(), on_peer_checked, peer, target_name);
+      RefAsSubclass<TlsChannelSecurityConnector>(), on_peer_checked, peer,
+      target_name);
   {
     MutexLock lock(&verifier_request_map_mu_);
     pending_verifier_requests_.emplace(on_peer_checked, pending_request);
@@ -653,8 +654,8 @@ void TlsServerSecurityConnector::check_peer(
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   if (options_->certificate_verifier() != nullptr) {
-    auto* pending_request =
-        new ServerPendingVerifierRequest(Ref(), on_peer_checked, peer);
+    auto* pending_request = new ServerPendingVerifierRequest(
+        RefAsSubclass<TlsServerSecurityConnector>(), on_peer_checked, peer);
     {
       MutexLock lock(&verifier_request_map_mu_);
       pending_verifier_requests_.emplace(on_peer_checked, pending_request);

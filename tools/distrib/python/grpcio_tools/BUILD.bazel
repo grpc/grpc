@@ -28,6 +28,7 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/compiler:grpc_plugin_support",
+        "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protoc_lib",
     ],
 )

@@ -30,23 +30,22 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 // The interface hierarchy is as follows -
 //                 CallTracerAnnotationInterface
-//                      /          \
+//                    |                  |
 //        ClientCallTracer       CallTracerInterface
-//                                /             \
+//                                |              |
 //                      CallAttemptTracer    ServerCallTracer
 
 // The base class for all tracer implementations.
@@ -128,6 +127,12 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   // as transparent retry attempts.)
   class CallAttemptTracer : public CallTracerInterface {
    public:
+    enum class OptionalLabelComponent : std::uint8_t {
+      kXdsServiceLabels,
+      kXdsLocalityLabels,
+      kSize,  // keep last
+    };
+
     ~CallAttemptTracer() override {}
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
     // and `RecordEnd` should be moved into CallTracerInterface.
@@ -140,6 +145,11 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
+
+    // Adds optional labels to be reported by the underlying tracer in a call.
+    virtual void AddOptionalLabels(
+        OptionalLabelComponent component,
+        std::shared_ptr<std::map<std::string, std::string>> labels) = 0;
   };
 
   ~ClientCallTracer() override {}
@@ -175,7 +185,8 @@ class ServerCallTracerFactory {
 
   virtual ~ServerCallTracerFactory() {}
 
-  virtual ServerCallTracer* CreateNewServerCallTracer(Arena* arena) = 0;
+  virtual ServerCallTracer* CreateNewServerCallTracer(
+      Arena* arena, const ChannelArgs& channel_args) = 0;
 
   // Returns true if a server is to be traced, false otherwise.
   virtual bool IsServerTraced(const ChannelArgs& /*args*/) { return true; }
@@ -189,6 +200,9 @@ class ServerCallTracerFactory {
   // before grpc_init(). It is the responsibility of the caller to maintain
   // this for the lifetime of the process.
   static void RegisterGlobal(ServerCallTracerFactory* factory);
+
+  // Deletes any previous registered ServerCallTracerFactory.
+  static void TestOnlyReset();
 
   static absl::string_view ChannelArgName();
 };

@@ -88,9 +88,11 @@ class HPackParser {
   HPackParser();
   ~HPackParser();
 
-  // Non-copyable/movable
+  // Non-copyable
   HPackParser(const HPackParser&) = delete;
   HPackParser& operator=(const HPackParser&) = delete;
+  HPackParser(HPackParser&&) = default;
+  HPackParser& operator=(HPackParser&&) = default;
 
   // Begin parsing a new frame
   // Sink receives each parsed header,
@@ -121,8 +123,6 @@ class HPackParser {
   // Helper classes: see implementation
   class Parser;
   class Input;
-  class MetadataSizeEncoder;
-  class MetadataSizesAnnotation;
 
   // Helper to parse a string and turn it into a slice with appropriate memory
   // management characteristics

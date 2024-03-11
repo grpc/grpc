@@ -85,7 +85,7 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/googleapis",
         proto_prefix="third_party/googleapis/",
     ),
-    "com_github_cncf_udpa": ExternalProtoLibrary(
+    "com_github_cncf_xds": ExternalProtoLibrary(
         destination="third_party/xds", proto_prefix="third_party/xds/"
     ),
     "opencensus_proto": ExternalProtoLibrary(
@@ -99,11 +99,13 @@ EXTERNAL_PROTO_LIBRARIES = {
 # For that we need mapping from external repo name to a corresponding
 # path to a git submodule.
 EXTERNAL_SOURCE_PREFIXES = {
-    "@utf8_range": "third_party/utf8_range",
-    "@com_googlesource_code_re2": "third_party/re2",
-    "@com_google_googletest": "third_party/googletest",
-    "@com_google_protobuf": "third_party/upb",
-    "@zlib": "third_party/zlib",
+    # TODO(veblush): Remove @utf8_range// item once protobuf is upgraded to 26.x
+    "@utf8_range//": "third_party/utf8_range",
+    "@com_googlesource_code_re2//": "third_party/re2",
+    "@com_google_googletest//": "third_party/googletest",
+    "@com_google_protobuf//upb": "third_party/upb/upb",
+    "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
+    "@zlib//": "third_party/zlib",
 }
 
 
@@ -209,9 +211,9 @@ def _try_extract_source_file_path(label: str) -> str:
         # This is an external source file. We are only interested in sources
         # for some of the external libraries.
         for lib_name, prefix in EXTERNAL_SOURCE_PREFIXES.items():
-            if label.startswith(lib_name + "//"):
+            if label.startswith(lib_name):
                 return (
-                    label.replace("%s//" % lib_name, prefix + "/")
+                    label.replace("%s" % lib_name, prefix)
                     .replace(":", "/")
                     .replace("//", "/")
                 )
@@ -349,6 +351,10 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "protobuf"
     elif bazel_dep == "@com_google_protobuf//:protoc_lib":
         return "protoc"
+    elif bazel_dep == "@io_opentelemetry_cpp//api:api":
+        return "opentelemetry-cpp::api"
+    elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/metrics:metrics":
+        return "opentelemetry-cpp::metrics"
     else:
         # Two options here:
         # * either this is not external dependency at all (which is fine, we will treat it as internal library)
@@ -574,7 +580,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
-        ("@com_github_cncf_udpa//", ""),
+        ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
@@ -895,8 +901,16 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         if not test.startswith("test/cpp/util:channelz_sampler_test")
     ]
 
+    # chaotic good not supported outside bazel
+    tests = [
+        test
+        for test in tests
+        if not test.startswith("test/core/transport/chaotic_good")
+    ]
+
     # we don't need to generate fuzzers outside of bazel
     tests = [test for test in tests if not test.endswith("_fuzzer")]
+    tests = [test for test in tests if "_fuzzer_" not in test]
 
     return tests
 
@@ -1067,15 +1081,20 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:upb": {
+    "@com_google_protobuf//upb:base": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb",
+        "_RENAME": "upb_base_lib",
     },
-    "@com_google_protobuf//upb/collections:collections": {
+    "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb_collections_lib",
+        "_RENAME": "upb_mem_lib",
+    },
+    "@com_google_protobuf//upb:message": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_message_lib",
     },
     "@com_google_protobuf//upb/json:json": {
         "language": "c",
@@ -1087,7 +1106,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_textformat_lib",
     },
-    "@utf8_range//:utf8_range": {
+    "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
         "build": "all",
         # rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
@@ -1141,6 +1160,10 @@ _BUILD_EXTRA_METADATA = {
         "generate_plugin_registry": True,
     },
     "grpcpp_channelz": {"language": "c++", "build": "all"},
+    "grpcpp_otel_plugin": {
+        "language": "c++",
+        "build": "plugin",
+    },
     "grpc++_test": {
         "language": "c++",
         "build": "private",
@@ -1387,6 +1410,15 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
+# TODO(veblush): Remove this workaround once protobuf is upgraded to 26.x
+if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
+    md = _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    del _BUILD_EXTRA_METADATA[
+        "@com_google_protobuf//third_party/utf8_range:utf8_range"
+    ]
+    _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)

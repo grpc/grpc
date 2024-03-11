@@ -19,6 +19,9 @@
 #include <cstdint>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -56,19 +59,13 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   const uint32_t type_and_flags = ReadLittleEndianUint32(data);
   header.type = static_cast<FrameType>(type_and_flags & 0xff);
   const uint32_t flags = type_and_flags >> 8;
-  if (flags > 3) return absl::InvalidArgumentError("Invalid flags");
-  header.flags = BitSet<2>::FromInt(flags);
+  if (flags > 7) return absl::InvalidArgumentError("Invalid flags");
+  header.flags = BitSet<3>::FromInt(flags);
   header.stream_id = ReadLittleEndianUint32(data + 4);
   header.header_length = ReadLittleEndianUint32(data + 8);
-  if (header.flags.is_set(0) && header.header_length <= 0) {
-    return absl::InvalidArgumentError("Invalid header length");
-  }
   header.message_length = ReadLittleEndianUint32(data + 12);
   header.message_padding = ReadLittleEndianUint32(data + 16);
   header.trailer_length = ReadLittleEndianUint32(data + 20);
-  if (header.flags.is_set(1) && header.trailer_length <= 0) {
-    return absl::InvalidArgumentError("Invalid trailer length");
-  }
   return header;
 }
 
@@ -77,6 +74,14 @@ uint32_t FrameHeader::GetFrameLength() const {
   // through different channel. So not included in the frame length calculation.
   uint32_t frame_length = header_length + trailer_length;
   return frame_length;
+}
+
+std::string FrameHeader::ToString() const {
+  return absl::StrFormat(
+      "[type=0x%02x, flags=0x%02x, stream_id=%d, header_length=%d, "
+      "message_length=%d, message_padding=%d, trailer_length=%d]",
+      static_cast<uint8_t>(type), flags.ToInt<uint8_t>(), stream_id,
+      header_length, message_length, message_padding, trailer_length);
 }
 
 }  // namespace chaotic_good

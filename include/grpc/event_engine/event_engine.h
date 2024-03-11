@@ -16,7 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -24,6 +23,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/extensible.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -100,7 +100,8 @@ namespace experimental {
 /// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine : public std::enable_shared_from_this<EventEngine> {
+class EventEngine : public std::enable_shared_from_this<EventEngine>,
+                    public Extensible {
  public:
   /// A duration between two events.
   ///
@@ -176,7 +177,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint {
+  class Endpoint : public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -268,7 +269,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
-  class Listener {
+  class Listener : public Extensible {
    public:
     /// Called when the listener has accepted a new client connection.
     using AcceptCallback = absl::AnyInvocable<void(
@@ -443,6 +444,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a RunAfter returns.
+  ///
+  /// Implementations may return a \a kInvalid handle if the callback can be
+  /// immediately executed, and is therefore not cancellable.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///

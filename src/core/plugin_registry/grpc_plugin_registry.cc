@@ -21,9 +21,12 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/builtins.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/lame_client.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
+
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -40,6 +43,8 @@ extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
 extern void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder);
+extern void RegisterLegacyChannelIdleFilters(
+    CoreConfiguration::Builder* builder);
 extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
 extern void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
@@ -71,6 +76,20 @@ extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
 #endif
 
+namespace {
+
+void RegisterBuiltins(CoreConfiguration::Builder* builder) {
+  RegisterServerCallTracerFilter(builder);
+  builder->channel_init()
+      ->RegisterFilter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
+      .Terminal();
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .BeforeAll();
+}
+
+}  // namespace
+
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   grpc_event_engine::experimental::RegisterEventEngineChannelArgPreconditioning(
       builder);
@@ -89,6 +108,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
   RegisterChannelIdleFilters(builder);
+  RegisterLegacyChannelIdleFilters(builder);
   RegisterConnectedChannel(builder);
   RegisterGrpcLbPolicy(builder);
   RegisterHttpFilters(builder);

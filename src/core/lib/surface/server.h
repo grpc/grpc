@@ -66,6 +66,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -77,7 +78,8 @@ namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
 
-class Server : public InternallyRefCounted<Server>,
+class Server : public ServerInterface,
+               public InternallyRefCounted<Server>,
                public CppImplOf<Server, grpc_server> {
  public:
   // Filter vtable.
@@ -134,8 +136,10 @@ class Server : public InternallyRefCounted<Server>,
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
-  const ChannelArgs& channel_args() const { return channel_args_; }
-  channelz::ServerNode* channelz_node() const { return channelz_node_.get(); }
+  const ChannelArgs& channel_args() const override { return channel_args_; }
+  channelz::ServerNode* channelz_node() const override {
+    return channelz_node_.get();
+  }
 
   // Do not call this before Start(). Returns the pollsets. The
   // vector itself is immutable, but the pollsets inside are mutable. The
@@ -146,7 +150,7 @@ class Server : public InternallyRefCounted<Server>,
     return config_fetcher_.get();
   }
 
-  ServerCallTracerFactory* server_call_tracer_factory() const {
+  ServerCallTracerFactory* server_call_tracer_factory() const override {
     return server_call_tracer_factory_;
   }
 
@@ -211,26 +215,6 @@ class Server : public InternallyRefCounted<Server>,
  private:
   struct RequestedCall;
 
-  struct ChannelRegisteredMethod {
-    ChannelRegisteredMethod() = default;
-    ChannelRegisteredMethod(RegisteredMethod* server_registered_method_arg,
-                            uint32_t flags_arg, bool has_host_arg,
-                            Slice method_arg, Slice host_arg)
-        : server_registered_method(server_registered_method_arg),
-          flags(flags_arg),
-          has_host(has_host_arg),
-          method(std::move(method_arg)),
-          host(std::move(host_arg)) {}
-
-    ~ChannelRegisteredMethod() = default;
-
-    RegisteredMethod* server_registered_method = nullptr;
-    uint32_t flags;
-    bool has_host;
-    Slice method;
-    Slice host;
-  };
-
   class RequestMatcherInterface;
   class RealRequestMatcherFilterStack;
   class RealRequestMatcherPromises;
@@ -238,73 +222,50 @@ class Server : public InternallyRefCounted<Server>,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ChannelData {
+  class ChannelData final : public ServerTransport::Acceptor {
    public:
     ChannelData() = default;
     ~ChannelData();
 
     void InitTransport(RefCountedPtr<Server> server,
-                       RefCountedPtr<Channel> channel, size_t cq_idx,
+                       OrphanablePtr<Channel> channel, size_t cq_idx,
                        Transport* transport, intptr_t channelz_socket_uuid);
 
     RefCountedPtr<Server> server() const { return server_; }
     Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
-    ChannelRegisteredMethod* GetRegisteredMethod(const grpc_slice& host,
-                                                 const grpc_slice& path);
-
-    ChannelRegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
-                                                 const absl::string_view& path);
+    RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
+                                          const absl::string_view& path);
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
     static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
         grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
+    void InitCall(RefCountedPtr<CallSpineInterface> call);
+
+    Arena* CreateArena() override;
+    absl::StatusOr<CallInitiator> CreateCall(
+        ClientMetadata& client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;
 
     static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
-    static void SetRegisteredMethodOnMetadata(void* arg,
-                                              ServerMetadata* metadata);
+    void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
     static void FinishDestroy(void* arg, grpc_error_handle error);
 
-    struct StringViewStringViewPairHash
-        : absl::flat_hash_set<
-              std::pair<absl::string_view, absl::string_view>>::hasher {
-      using is_transparent = void;
-    };
-
-    struct StringViewStringViewPairEq
-        : std::equal_to<std::pair<absl::string_view, absl::string_view>> {
-      using is_transparent = void;
-    };
-
     RefCountedPtr<Server> server_;
-    RefCountedPtr<Channel> channel_;
+    OrphanablePtr<Channel> channel_;
     // The index into Server::cqs_ of the CQ used as a starting point for
     // where to publish new incoming calls.
     size_t cq_idx_;
     absl::optional<std::list<ChannelData*>::iterator> list_position_;
-    // A hash-table of the methods and hosts of the registered methods.
-    // TODO(vjpai): Convert this to an STL map type as opposed to a direct
-    // bucket implementation. (Consider performance impact, hash function to
-    // use, etc.)
-    std::unique_ptr<std::vector<ChannelRegisteredMethod>>
-        old_registered_methods_;
-    // Map of registered methods.
-    absl::flat_hash_map<std::pair<std::string, std::string> /*host, method*/,
-                        std::unique_ptr<ChannelRegisteredMethod>,
-                        StringViewStringViewPairHash,
-                        StringViewStringViewPairEq>
-        registered_methods_;
-    uint32_t registered_method_max_probes_;
     grpc_closure finish_destroy_channel_closure_;
     intptr_t channelz_socket_uuid_;
   };
@@ -413,6 +374,17 @@ class Server : public InternallyRefCounted<Server>,
     grpc_cq_completion completion;
   };
 
+  struct StringViewStringViewPairHash
+      : absl::flat_hash_set<
+            std::pair<absl::string_view, absl::string_view>>::hasher {
+    using is_transparent = void;
+  };
+
+  struct StringViewStringViewPairEq
+      : std::equal_to<std::pair<absl::string_view, absl::string_view>> {
+    using is_transparent = void;
+  };
+
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
@@ -498,7 +470,11 @@ class Server : public InternallyRefCounted<Server>,
   bool starting_ ABSL_GUARDED_BY(mu_global_) = false;
   CondVar starting_cv_;
 
-  std::vector<std::unique_ptr<RegisteredMethod>> registered_methods_;
+  // Map of registered methods.
+  absl::flat_hash_map<std::pair<std::string, std::string> /*host, method*/,
+                      std::unique_ptr<RegisteredMethod>,
+                      StringViewStringViewPairHash, StringViewStringViewPairEq>
+      registered_methods_;
 
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
@@ -521,7 +497,7 @@ class Server : public InternallyRefCounted<Server>,
           0,
           channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
               .value_or(3000)))};
-  Duration max_time_in_pending_queue_{Duration::Seconds(30)};
+  const Duration max_time_in_pending_queue_;
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;

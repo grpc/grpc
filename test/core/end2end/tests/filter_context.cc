@@ -82,7 +82,7 @@ grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
 void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter test_filter = {
-    start_transport_stream_op_batch, nullptr, grpc_channel_next_op,
+    start_transport_stream_op_batch, nullptr, nullptr, grpc_channel_next_op,
     sizeof(call_data), init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set, destroy_call_elem, 0,
     init_channel_elem, grpc_channel_stack_no_post_init, destroy_channel_elem,
@@ -98,6 +98,7 @@ const grpc_channel_filter test_filter = {
 // Simple request to test that filters see a consistent view of the
 // call context.
 CORE_END2END_TEST(CoreEnd2endTest, FilterContext) {
+  SKIP_IF_CHAOTIC_GOOD();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     for (auto type : {GRPC_CLIENT_CHANNEL, GRPC_CLIENT_SUBCHANNEL,
                       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_SERVER_CHANNEL}) {

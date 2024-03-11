@@ -49,6 +49,10 @@
 
 namespace grpc_core {
 
+const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
+const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
+const NoInterceptor HttpServerFilter::Call::OnFinalize;
+
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata>("http-server");
@@ -71,85 +75,81 @@ ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
 }
 }  // namespace
 
-ArenaPromise<ServerMetadataHandle> HttpServerFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  const auto& md = call_args.client_initial_metadata;
-
-  auto method = md->get(HttpMethodMetadata());
+ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, HttpServerFilter* filter) {
+  auto method = md.get(HttpMethodMetadata());
   if (method.has_value()) {
     switch (*method) {
       case HttpMethodMetadata::kPost:
         break;
       case HttpMethodMetadata::kPut:
-        if (allow_put_requests_) {
+        if (filter->allow_put_requests_) {
           break;
         }
         ABSL_FALLTHROUGH_INTENDED;
       case HttpMethodMetadata::kInvalid:
       case HttpMethodMetadata::kGet:
-        return Immediate(MalformedRequest("Bad method header"));
+        return MalformedRequest("Bad method header");
     }
   } else {
-    return Immediate(MalformedRequest("Missing :method header"));
+    return MalformedRequest("Missing :method header");
   }
 
-  auto te = md->Take(TeMetadata());
+  auto te = md.Take(TeMetadata());
   if (te == TeMetadata::kTrailers) {
     // Do nothing, ok.
   } else if (!te.has_value()) {
-    return Immediate(MalformedRequest("Missing :te header"));
+    return MalformedRequest("Missing :te header");
   } else {
-    return Immediate(MalformedRequest("Bad :te header"));
+    return MalformedRequest("Bad :te header");
   }
 
-  auto scheme = md->Take(HttpSchemeMetadata());
+  auto scheme = md.Take(HttpSchemeMetadata());
   if (scheme.has_value()) {
     if (*scheme == HttpSchemeMetadata::kInvalid) {
-      return Immediate(MalformedRequest("Bad :scheme header"));
+      return MalformedRequest("Bad :scheme header");
     }
   } else {
-    return Immediate(MalformedRequest("Missing :scheme header"));
+    return MalformedRequest("Missing :scheme header");
   }
 
-  md->Remove(ContentTypeMetadata());
+  md.Remove(ContentTypeMetadata());
 
-  Slice* path_slice = md->get_pointer(HttpPathMetadata());
+  Slice* path_slice = md.get_pointer(HttpPathMetadata());
   if (path_slice == nullptr) {
-    return Immediate(MalformedRequest("Missing :path header"));
+    return MalformedRequest("Missing :path header");
   }
 
-  if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    absl::optional<Slice> host = md->Take(HostMetadata());
+  if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    absl::optional<Slice> host = md.Take(HostMetadata());
     if (host.has_value()) {
-      md->Set(HttpAuthorityMetadata(), std::move(*host));
+      md.Set(HttpAuthorityMetadata(), std::move(*host));
     }
   }
 
-  if (md->get_pointer(HttpAuthorityMetadata()) == nullptr) {
-    return Immediate(MalformedRequest("Missing :authority header"));
+  if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
+    return MalformedRequest("Missing :authority header");
   }
 
-  if (!surface_user_agent_) {
-    md->Remove(UserAgentMetadata());
+  if (!filter->surface_user_agent_) {
+    md.Remove(UserAgentMetadata());
   }
 
-  call_args.server_initial_metadata->InterceptAndMap(
-      [](ServerMetadataHandle md) {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-                  Activity::current()->DebugTag().c_str());
-        }
-        FilterOutgoingMetadata(md.get());
-        md->Set(HttpStatusMetadata(), 200);
-        md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
-        return md;
-      });
+  return nullptr;
+}
 
-  return Map(next_promise_factory(std::move(call_args)),
-             [](ServerMetadataHandle md) -> ServerMetadataHandle {
-               FilterOutgoingMetadata(md.get());
-               return md;
-             });
+void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[http-server] Write metadata",
+            GetContext<Activity>()->DebugTag().c_str());
+  }
+  FilterOutgoingMetadata(&md);
+  md.Set(HttpStatusMetadata(), 200);
+  md.Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
+}
+
+void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  FilterOutgoingMetadata(&md);
 }
 
 absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(

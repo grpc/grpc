@@ -259,6 +259,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       allow_put_requests_ = allow_put_requests;
     }
 
+    void StopListening();
+
     void StopListeningAndSendGoaways();
 
    private:
@@ -297,10 +299,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         auto peer_identity = context->auth_context()->GetPeerIdentity();
         CountedService<
             TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
-        const auto status = TestMultipleServiceImpl<RpcService>::Echo(
-            context, request, response);
-        CountedService<
-            TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
         {
           grpc_core::MutexLock lock(&mu_);
           clients_.insert(context->peer());
@@ -320,6 +318,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
             recorder->RecordNamedMetric(key, p.second);
           }
         }
+        const auto status = TestMultipleServiceImpl<RpcService>::Echo(
+            context, request, response);
+        CountedService<
+            TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
         return status;
       }
 
@@ -597,6 +599,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
     absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
+    bool server_notify_client_when_started = false;
 
     RpcOptions() {}
 
@@ -659,6 +662,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     RpcOptions& set_backend_metrics(
         absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
       backend_metrics = std::move(metrics);
+      return *this;
+    }
+
+    RpcOptions& set_server_notify_client_when_started(
+        bool rpc_server_notify_client_when_started) {
+      server_notify_client_when_started = rpc_server_notify_client_when_started;
       return *this;
     }
 
@@ -932,9 +941,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Returns a regex that can be matched against an RPC failure status
   // message for a connection failure.
   static std::string MakeConnectionFailureRegex(absl::string_view prefix);
-
-  // Returns the contents of the specified file.
-  static std::string ReadFile(const char* file_path);
 
   // Returns a private key pair, read from local files.
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(

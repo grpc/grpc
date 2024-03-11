@@ -79,13 +79,17 @@ class CrlImpl : public Crl {
 
 class CertificateInfoImpl : public CertificateInfo {
  public:
-  explicit CertificateInfoImpl(absl::string_view issuer) : issuer_(issuer) {}
-  // Returns a string representation of the issuer pulled from the
-  // certificate.
+  explicit CertificateInfoImpl(absl::string_view issuer,
+                               absl::string_view authority_key_identifier = "")
+      : issuer_(issuer), authority_key_identifier_(authority_key_identifier) {}
   absl::string_view Issuer() const override { return issuer_; }
+  absl::string_view AuthorityKeyIdentifier() const override {
+    return authority_key_identifier_;
+  }
 
  private:
   const std::string issuer_;
+  const std::string authority_key_identifier_;
 };
 
 // Defining this here lets us hide implementation details (and includes) from
@@ -98,11 +102,7 @@ class DirectoryReloaderCrlProvider
       std::chrono::seconds duration, std::function<void(absl::Status)> callback,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      std::shared_ptr<DirectoryReader> directory_impl)
-      : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
-        reload_error_callback_(std::move(callback)),
-        event_engine_(std::move(event_engine)),
-        crl_directory_(std::move(directory_impl)) {}
+      std::shared_ptr<DirectoryReader> directory_impl);
 
   ~DirectoryReloaderCrlProvider() override;
   std::shared_ptr<Crl> GetCrl(const CertificateInfo& certificate_info) override;

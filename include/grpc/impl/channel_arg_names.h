@@ -106,6 +106,12 @@
  */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
+/** Maximum time to allow a request to be:
+    (1) received by the server, but
+    (2) not requested by a RequestCall (in the completion queue based API)
+    before the request is cancelled */
+#define GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS \
+  "grpc.server_max_unrequested_time_in_server"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a
@@ -384,6 +390,15 @@
  *  Defaults to 250ms. */
 #define GRPC_ARG_HAPPY_EYEBALLS_CONNECTION_ATTEMPT_DELAY_MS \
   "grpc.happy_eyeballs_connection_attempt_delay_ms"
+/** It accepts a MemoryAllocatorFactory as input and If specified, it forces
+ * the default event engine to use memory allocators created using the provided
+ * factory. */
+#define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \
+  "grpc.event_engine_use_memory_allocator_factory"
+/** Configure the max number of allowed incoming connections to the server.
+ * If unspecified, it is unlimited */
+#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \
+  "grpc.max_allowed_incoming_connections"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

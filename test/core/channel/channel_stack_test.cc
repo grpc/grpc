@@ -83,6 +83,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_channel_filter filter = {
       call_func,
       nullptr,
+      nullptr,
       channel_func,
       sizeof(int),
       call_init_func,

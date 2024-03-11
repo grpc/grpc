@@ -230,5 +230,19 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:time",
+        "//test/core/util:build",
+    ],
+)
+
+grpc_cc_test(
+    name = "query_extensions_test",
+    srcs = ["query_extensions_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr_platform",
+        "//src/core:event_engine_query_extensions",
     ],
 )

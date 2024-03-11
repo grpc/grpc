@@ -99,6 +99,7 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:grpc",
         "//src/core:decode_huff",
         "//src/core:huffsyms",
     ],
@@ -443,6 +444,23 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "http2_settings_test",
+    srcs = [
+        "http2_settings_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:http2_settings",
         "//test/core/util:grpc_test_util",
     ],
 )

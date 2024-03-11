@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/python/grpcio_observability/grpc_observability/python_census_context.h"
+#include "python_census_context.h"
 
 #include <string.h>
 
@@ -23,9 +23,9 @@
 #include "absl/numeric/int128.h"
 #include "absl/random/random.h"
 #include "absl/strings/escaping.h"
+#include "rpc_encoding.h"
 
 #include "src/core/lib/transport/transport.h"
-#include "src/cpp/ext/filters/census/rpc_encoding.h"
 
 namespace grpc_observability {
 
@@ -90,10 +90,10 @@ void ToGrpcTraceBinHeader(const PythonCensusContext& ctx, uint8_t* out) {
   uint8_t trace_options_rep_[kSizeTraceOptions];
 
   std::string trace_id =
-      absl::HexStringToBytes(absl::string_view(ctx.SpanContext().TraceId()));
+      absl::HexStringToBytes(absl::string_view(ctx.GetSpanContext().TraceId()));
   std::string span_id =
-      absl::HexStringToBytes(absl::string_view(ctx.SpanContext().SpanId()));
-  trace_options_rep_[0] = ctx.SpanContext().IsSampled() ? 1 : 0;
+      absl::HexStringToBytes(absl::string_view(ctx.GetSpanContext().SpanId()));
+  trace_options_rep_[0] = ctx.GetSpanContext().IsSampled() ? 1 : 0;
 
   memcpy(reinterpret_cast<uint8_t*>(&out[kTraceIdOfs + 1]), trace_id.c_str(),
          kSizeTraceID);
@@ -156,14 +156,13 @@ size_t StatsContextSerialize(size_t /*max_tags_len*/, grpc_slice* /*tags*/) {
 
 size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
                               uint64_t* server_elapsed_time) {
-  return grpc::internal::RpcServerStatsEncoding::Decode(
-      absl::string_view(buf, buf_size), server_elapsed_time);
+  return RpcServerStatsEncoding::Decode(absl::string_view(buf, buf_size),
+                                        server_elapsed_time);
 }
 
 size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
                             size_t buf_size) {
-  return grpc::internal::RpcServerStatsEncoding::Encode(server_elapsed_time,
-                                                        buf, buf_size);
+  return RpcServerStatsEncoding::Encode(server_elapsed_time, buf, buf_size);
 }
 
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info) {

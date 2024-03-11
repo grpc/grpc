@@ -29,7 +29,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/oob_backend_metric.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -42,12 +41,13 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_util.h"
-#include "src/core/lib/load_balancing/delegating_helper.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/load_balancing/lb_policy_factory.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
-#include "src/core/lib/load_balancing/subchannel_interface.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
+#include "src/core/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {
 
@@ -527,7 +527,9 @@ class OobBackendMetricTestLoadBalancingPolicy
       subchannel->AddDataWatcher(MakeOobBackendMetricWatcher(
           Duration::Seconds(1),
           std::make_unique<BackendMetricWatcher>(
-              EndpointAddresses(address, per_address_args), parent()->Ref())));
+              EndpointAddresses(address, per_address_args),
+              parent()
+                  ->RefAsSubclass<OobBackendMetricTestLoadBalancingPolicy>())));
       return subchannel;
     }
   };

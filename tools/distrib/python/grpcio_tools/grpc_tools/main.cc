@@ -29,6 +29,8 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/compiler/python_generator.h"
 
 using ::google::protobuf::FileDescriptor;
@@ -105,14 +107,16 @@ class ErrorCollectorImpl : public MultiFileErrorCollector {
                      std::vector<::grpc_tools::ProtocWarning>* warnings)
       : errors_(errors), warnings_(warnings) {}
 
-  void AddError(const std::string& filename, int line, int column,
-                const std::string& message) {
-    errors_->emplace_back(filename, line, column, message);
+  void RecordError(absl::string_view filename, int line, int column,
+                   absl::string_view message) override {
+    errors_->emplace_back(std::string(filename), line, column,
+                          std::string(message));
   }
 
-  void AddWarning(const std::string& filename, int line, int column,
-                  const std::string& message) {
-    warnings_->emplace_back(filename, line, column, message);
+  void RecordWarning(absl::string_view filename, int line, int column,
+                     absl::string_view message) override {
+    warnings_->emplace_back(std::string(filename), line, column,
+                            std::string(message));
   }
 
  private:

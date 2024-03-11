@@ -78,6 +78,20 @@ TEST(OrphanablePtr, InternallyRefCounted) {
   bar->FinishWork();
 }
 
+TEST(OrphanablePtr, InternallyRefCountedRefAsSubclass) {
+  class Subclass : public Bar {
+   public:
+    void StartWork() { self_ref_ = RefAsSubclass<Subclass>(); }
+    void FinishWork() { self_ref_.reset(); }
+
+   private:
+    RefCountedPtr<Subclass> self_ref_;
+  };
+  auto bar = MakeOrphanable<Subclass>();
+  bar->StartWork();
+  bar->FinishWork();
+}
+
 class Baz : public InternallyRefCounted<Baz> {
  public:
   Baz() : Baz(0) {}
@@ -101,6 +115,32 @@ TEST(OrphanablePtr, InternallyRefCountedWithTracing) {
   auto baz = MakeOrphanable<Baz>();
   baz->StartWork();
   baz->FinishWork();
+}
+
+class Qux : public InternallyRefCounted<Qux> {
+ public:
+  Qux() : Qux(0) {}
+  explicit Qux(int value) : InternallyRefCounted<Qux>("Qux"), value_(value) {}
+  ~Qux() override { self_ref_ = RefIfNonZero(DEBUG_LOCATION, "extra_work"); }
+  void Orphan() override { Unref(); }
+  int value() const { return value_; }
+
+  void StartWork() { self_ref_ = RefIfNonZero(DEBUG_LOCATION, "work"); }
+  void FinishWork() {
+    // This is a little ugly, but it makes the logged ref and unref match up.
+    self_ref_.release();
+    Unref(DEBUG_LOCATION, "work");
+  }
+
+ private:
+  int value_;
+  RefCountedPtr<Qux> self_ref_;
+};
+
+TEST(OrphanablePtr, InternallyRefCountedIfNonZero) {
+  auto qux = MakeOrphanable<Qux>();
+  qux->StartWork();
+  qux->FinishWork();
 }
 
 }  // namespace

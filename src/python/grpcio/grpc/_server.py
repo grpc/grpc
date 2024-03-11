@@ -579,7 +579,7 @@ def _call_behavior(
                                 exception.__traceback__,
                             )
                         )
-                    traceback.print_exc()
+                        traceback.print_exc()
                     _LOGGER.exception(details)
                     _abort(
                         state,

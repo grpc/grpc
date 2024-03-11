@@ -261,13 +261,15 @@ TEST(GcpEnvParsingTest, NoEnvironmentVariableSet) {
 }
 
 TEST(GcpEnvParsingTest, ConfigFileDoesNotExist) {
-  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE",
-                    "/tmp/gcp_observability_config_does_not_exist");
+  const char* kPath = "/tmp/gcp_observability_config_does_not_exist";
+  grpc_core::SetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE", kPath);
 
   auto config = GcpObservabilityConfig::ReadFromEnv();
 
-  EXPECT_EQ(config.status(),
-            absl::FailedPreconditionError("Failed to load file"));
+  EXPECT_EQ(config.status().code(), absl::StatusCode::kFailedPrecondition);
+  EXPECT_THAT(
+      std::string(config.status().message()),
+      ::testing::StartsWith(absl::StrCat("error loading file ", kPath)));
 
   grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG_FILE");
 }

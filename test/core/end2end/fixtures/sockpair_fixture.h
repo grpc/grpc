@@ -38,6 +38,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
@@ -108,8 +109,8 @@ class SockpairFixture : public CoreTestFixture {
     auto* client_endpoint = std::exchange(ep_.client, nullptr);
     EXPECT_NE(client_endpoint, nullptr);
     transport = grpc_create_chttp2_transport(args, client_endpoint, true);
-    auto channel = Channel::Create("socketpair-target", args,
-                                   GRPC_CLIENT_DIRECT_CHANNEL, transport);
+    auto channel = ChannelCreate("socketpair-target", args,
+                                 GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel* client;
     if (channel.ok()) {
       client = channel->release()->c_ptr();

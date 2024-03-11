@@ -29,7 +29,6 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "test/core/util/test_config.h"
@@ -66,6 +65,22 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   std::string cert_chain_2_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
+
+TEST_F(GrpcTlsCredentialsOptionsTest, BadTlsVersionsForChannelCredentials) {
+  auto options = grpc_tls_credentials_options_create();
+  options->set_max_tls_version(grpc_tls_version::TLS1_2);
+  options->set_min_tls_version(grpc_tls_version::TLS1_3);
+  auto credentials = grpc_tls_credentials_create(options);
+  EXPECT_EQ(credentials, nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, BadTlsVersionsForServerCredentials) {
+  auto server_options = grpc_tls_credentials_options_create();
+  server_options->set_max_tls_version(grpc_tls_version::TLS1_2);
+  server_options->set_min_tls_version(grpc_tls_version::TLS1_3);
+  auto server_credentials = grpc_tls_server_credentials_create(server_options);
+  EXPECT_EQ(server_credentials, nullptr);
+}
 
 //
 // Tests for Default Root Certs.

@@ -53,15 +53,22 @@ namespace grpc_core {
 namespace experimental {
 
 namespace {
-std::string IssuerFromCrl(X509_CRL* crl) {
+// TODO(gtcooke94) Move ssl_transport_security_utils to it's own BUILD target
+// and add this to it.
+absl::StatusOr<std::string> IssuerFromCrl(X509_CRL* crl) {
   if (crl == nullptr) {
-    return "";
+    return absl::InvalidArgumentError("crl cannot be null");
   }
-  char* buf = X509_NAME_oneline(X509_CRL_get_issuer(crl), nullptr, 0);
-  std::string ret;
-  if (buf != nullptr) {
-    ret = buf;
+  X509_NAME* issuer = X509_CRL_get_issuer(crl);
+  if (issuer == nullptr) {
+    return absl::InvalidArgumentError("crl cannot have null issuer");
   }
+  unsigned char* buf = nullptr;
+  int len = i2d_X509_NAME(issuer, &buf);
+  if (len < 0 || buf == nullptr) {
+    return absl::InvalidArgumentError("crl cannot have null issuer");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
 }
@@ -103,11 +110,11 @@ absl::StatusOr<std::unique_ptr<Crl>> Crl::Parse(absl::string_view crl_string) {
 }
 
 absl::StatusOr<std::unique_ptr<CrlImpl>> CrlImpl::Create(X509_CRL* crl) {
-  std::string issuer = IssuerFromCrl(crl);
-  if (issuer.empty()) {
-    return absl::InvalidArgumentError("Issuer of crl cannot be empty");
+  absl::StatusOr<std::string> issuer = IssuerFromCrl(crl);
+  if (!issuer.ok()) {
+    return issuer.status();
   }
-  return std::make_unique<CrlImpl>(crl, issuer);
+  return std::make_unique<CrlImpl>(crl, *issuer);
 }
 
 CrlImpl::~CrlImpl() { X509_CRL_free(crl_); }
@@ -148,8 +155,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     return absl::InvalidArgumentError("Refresh duration minimum is 60 seconds");
   }
   auto provider = std::make_shared<DirectoryReloaderCrlProvider>(
-      refresh_duration, reload_error_callback,
-      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      refresh_duration, reload_error_callback, /*event_engine=*/nullptr,
       MakeDirectoryReader(directory));
   // This could be slow to do at startup, but we want to
   // make sure it's done before the provider is used.
@@ -157,10 +163,28 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
   return provider;
 }
 
+DirectoryReloaderCrlProvider::DirectoryReloaderCrlProvider(
+    std::chrono::seconds duration, std::function<void(absl::Status)> callback,
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
+    std::shared_ptr<DirectoryReader> directory_impl)
+    : refresh_duration_(Duration::FromSecondsAsDouble(duration.count())),
+      reload_error_callback_(std::move(callback)),
+      crl_directory_(std::move(directory_impl)) {
+  // Must be called before `GetDefaultEventEngine`
+  grpc_init();
+  if (event_engine == nullptr) {
+    event_engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+  } else {
+    event_engine_ = std::move(event_engine);
+  }
+}
+
 DirectoryReloaderCrlProvider::~DirectoryReloaderCrlProvider() {
   if (refresh_handle_.has_value()) {
     event_engine_->Cancel(refresh_handle_.value());
   }
+  // Call here because we call grpc_init in the constructor
+  grpc_shutdown();
 }
 
 void DirectoryReloaderCrlProvider::UpdateAndStartTimer() {
@@ -209,9 +233,9 @@ absl::Status DirectoryReloaderCrlProvider::Update() {
     // in-place updated in crls_.
     for (auto& kv : new_crls) {
       std::shared_ptr<Crl>& crl = kv.second;
-      // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on the
-      // RHS, because C++ does not guarantee which of those will be executed
-      // first.
+      // It's not safe to say crl->Issuer() on the LHS and std::move(crl) on
+      // the RHS, because C++ does not guarantee which of those will be
+      // executed first.
       std::string issuer(crl->Issuer());
       crls_[std::move(issuer)] = std::move(crl);
     }

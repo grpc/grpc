@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from grpc_observability._gcp_observability import GCPOpenCensusObservability
+from grpc_observability._open_telemetry_observability import (
+    OpenTelemetryObservability,
+)
+from grpc_observability._open_telemetry_observability import (
+    end_open_telemetry_observability,
+)
+from grpc_observability._open_telemetry_observability import (
+    start_open_telemetry_observability,
+)
+from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 
-__all__ = ("GCPOpenCensusObservability",)
+__all__ = (
+    "OpenTelemetryObservability",
+    "OpenTelemetryPlugin",
+    "start_open_telemetry_observability",
+    "end_open_telemetry_observability",
+)
