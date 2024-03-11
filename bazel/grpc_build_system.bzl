@@ -204,7 +204,6 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
-            "api/include",
             "include",
             "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
             "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.

@@ -23,6 +23,7 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
+import traceback
 
 import setuptools
 from setuptools import Extension
@@ -125,6 +126,40 @@ class BuildExt(build_ext.build_ext):
         if new_ext_suffix and filename.endswith(orig_ext_suffix):
             filename = filename[: -len(orig_ext_suffix)] + new_ext_suffix
         return filename
+
+    def build_extensions(self):
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #
+        #   If we are not using a permissive compiler that's OK with being
+        #   passed wrong std flags, swap out compile function by adding a filter
+        #   for it.
+        old_compile = self.compiler._compile
+
+        def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            if src.endswith(".c"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if "-std=c++" not in arg
+                ]
+            elif src.endswith(".cc") or src.endswith(".cpp"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if "-std=c11" not in arg
+                ]
+            return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+        self.compiler._compile = new_compile
+
+        try:
+            build_ext.build_ext.build_extensions(self)
+        except Exception as error:
+            formatted_exception = traceback.format_exc()
+            support.diagnose_build_ext_error(self, error, formatted_exception)
+            raise CommandError(
+                "Failed `build_ext` step:\n{}".format(formatted_exception)
+            )
 
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
@@ -259,7 +294,6 @@ def extension_modules():
             os.path.join("grpc_root", "include"),
         ]
         + CC_INCLUDES,
-        language="c++",
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
         extra_link_args=list(EXTRA_LINK_ARGS),
