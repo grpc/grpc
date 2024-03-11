@@ -1614,6 +1614,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resource_quota/api.h )
   s.files += %w( src/core/lib/resource_quota/arena.cc )
   s.files += %w( src/core/lib/resource_quota/arena.h )
+  s.files += %w( src/core/lib/resource_quota/connection_quota.cc )
+  s.files += %w( src/core/lib/resource_quota/connection_quota.h )
   s.files += %w( src/core/lib/resource_quota/memory_quota.cc )
   s.files += %w( src/core/lib/resource_quota/memory_quota.h )
   s.files += %w( src/core/lib/resource_quota/periodic_update.cc )

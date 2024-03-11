@@ -1400,6 +1400,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "connection_quota",
+    srcs = [
+        "lib/resource_quota/connection_quota.cc",
+    ],
+    hdrs = [
+        "lib/resource_quota/connection_quota.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "memory_quota",
+        "ref_counted",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota_trace",
     srcs = [
         "lib/resource_quota/trace.cc",
@@ -1426,6 +1443,7 @@ grpc_cc_library(
         "@grpc:alt_grpc_base_legacy",
     ],
     deps = [
+        "connection_quota",
         "memory_quota",
         "ref_counted",
         "thread_quota",
@@ -6747,6 +6765,7 @@ grpc_cc_library(
         "channel_args",
         "channel_args_endpoint_config",
         "closure",
+        "connection_quota",
         "error",
         "error_utils",
         "grpc_insecure_credentials",
