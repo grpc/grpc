@@ -210,7 +210,7 @@ XdsServer StartXdsServerAndConfigureBootstrap(
   // Generate xDS bootstrap and set the env var.
   std::string bootstrap =
       grpc::testing::XdsBootstrapBuilder()
-          .SetServer(absl::StrCat("localhost:", xds_server_port))
+          .SetServers({absl::StrCat("localhost:", xds_server_port)})
           .SetXdsChannelCredentials("insecure")
           .Build();
   grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap);
