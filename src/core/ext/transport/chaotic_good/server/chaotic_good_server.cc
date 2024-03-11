@@ -39,6 +39,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -397,22 +399,28 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   }
   GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       args->endpoint));
-  self->connection_->endpoint_ = PromiseEndpoint(
+  auto ee_endpoint =
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
-          args->endpoint),
-      SliceBuffer());
+          args->endpoint);
+  auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::ChaoticGoodExtension>(ee_endpoint.get());
+  self->connection_->endpoint_ =
+      PromiseEndpoint(std::move(ee_endpoint), SliceBuffer());
   auto activity = MakeActivity(
-      [self]() {
-        return TrySeq(Race(EndpointReadSettingsFrame(self),
-                           TrySeq(Sleep(Timestamp::Now() + kConnectionDeadline),
-                                  []() -> absl::StatusOr<bool> {
-                                    return absl::DeadlineExceededError(
-                                        "Waiting for initial settings frame");
-                                  })),
-                      [self](bool is_control_endpoint) {
-                        return EndpointWriteSettingsFrame(self,
-                                                          is_control_endpoint);
-                      });
+      [self, chaotic_good_ext]() {
+        return TrySeq(
+            Race(EndpointReadSettingsFrame(self),
+                 TrySeq(Sleep(Timestamp::Now() + kConnectionDeadline),
+                        []() -> absl::StatusOr<bool> {
+                          return absl::DeadlineExceededError(
+                              "Waiting for initial settings frame");
+                        })),
+            [self, chaotic_good_ext](bool is_control_endpoint) {
+              if (chaotic_good_ext != nullptr) {
+                chaotic_good_ext->EnableStatsCollection(is_control_endpoint);
+              }
+              return EndpointWriteSettingsFrame(self, is_control_endpoint);
+            });
       },
       EventEngineWakeupScheduler(self->connection_->listener_->event_engine_),
       [self](absl::Status status) {
