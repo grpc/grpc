@@ -20,8 +20,6 @@
 
 #include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
