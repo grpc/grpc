@@ -118,7 +118,11 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
                 }),
             [](StatusFlag status) { return StatusCast<absl::Status>(status); });
       },
-      [&error, &frame, &call_initiator, this]() {
+      [&error, &frame]() {
+        // EOF frames may arrive after the call_initiator's OnDone callback
+        // has been invoked. In that case, the call_initiator would have
+        // already been removed from the stream_map and hence the EOF frame
+        // cannot be pushed into the call. No need to log such frames.
         if (!frame.end_of_stream) {
           gpr_log(
               GPR_INFO,
