@@ -45,6 +45,11 @@
   expiry: 2024/06/01
   owner: roth@google.com
   test_tags: ["credential_token_tests"]
+- name: absl_logging
+  description: Use abseil logging functions.
+  expiry: 2024/08/01
+  owner: tjagtap@google.com
+  test_tags: []
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with

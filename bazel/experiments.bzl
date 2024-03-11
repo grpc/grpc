@@ -18,6 +18,7 @@
 
 EXPERIMENT_ENABLES = {
     "absl_base64": "absl_base64",
+    "absl_logging": "absl_logging",
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",

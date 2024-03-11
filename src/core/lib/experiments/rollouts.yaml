@@ -42,6 +42,8 @@
 
 - name: absl_base64
   default: true
+- name: absl_logging
+  default: false
 - name: call_status_override_on_cancellation
   default: debug
 - name: call_v3
