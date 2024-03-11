@@ -191,6 +191,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log",
+        "absl/log:absl_check",
         "absl/strings",
     ],
     language = "c++",

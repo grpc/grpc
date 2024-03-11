@@ -198,6 +198,7 @@
         'absl/flags:flag',
         'absl/flags:marshalling',
         'absl/functional:any_invocable',
+        'absl/log:absl_check',
         'absl/log:log',
         'absl/memory:memory',
         'absl/random:random',
