@@ -192,6 +192,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/log",
         "absl/log:absl_check",
+        "absl/base:no_destructor",
         "absl/strings",
     ],
     language = "c++",

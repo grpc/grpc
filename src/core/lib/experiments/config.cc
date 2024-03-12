@@ -24,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/base/no_destructor.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/absl_check.h"
 #include "absl/log/log.h"
@@ -154,7 +155,7 @@ Experiments LoadExperimentsFromConfigVariable() {
 
 Experiments& ExperimentsSingleton() {
   // One time initialization:
-  static NoDestruct<Experiments> experiments{
+  static absl::NoDestructor<Experiments> experiments{
       LoadExperimentsFromConfigVariable()};
   return *experiments;
 }
