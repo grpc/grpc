@@ -202,6 +202,7 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
         this->first_destination = this->final_destination.get();
       }
     }
+    ~Chain();
     CallDestination* first_destination;
     std::vector<Destructor> destructors;
     void* chain_data;

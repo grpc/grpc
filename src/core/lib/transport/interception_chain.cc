@@ -130,4 +130,12 @@ InterceptionChain::Builder::Build(const ChannelArgs& args) {
   return MakeRefCounted<InterceptionChain>(std::move(chain));
 }
 
+InterceptionChain::Chain::~Chain() {
+  uint8_t* p = static_cast<uint8_t*>(chain_data);
+  for (auto& destructor : destructors) {
+    destructor.destroy(p + destructor.offset);
+  }
+  gpr_free_aligned(chain_data);
+}
+
 }  // namespace grpc_core

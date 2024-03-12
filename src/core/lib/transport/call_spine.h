@@ -124,6 +124,8 @@ class CallSpine final : public Party {
     if (legacy_context == nullptr) {
       legacy_context_ = static_cast<grpc_call_context_element*>(
           arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
+      memset(legacy_context_, 0,
+             sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT);
       legacy_context_is_owned_ = true;
     } else {
       legacy_context_ = legacy_context;

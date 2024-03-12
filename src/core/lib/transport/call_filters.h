@@ -1634,6 +1634,11 @@ class CallFilters {
       if (filters_->server_trailing_metadata_ == nullptr) {
         return filters_->server_trailing_metadata_waiter_.pending();
       }
+      // If no stack has been set, we can just return the result of the call
+      if (filters_->stack_ == nullptr) {
+        return std::move(filters_->server_trailing_metadata_);
+      }
+      // Otherwise we need to process it through all the filters.
       return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
                              std::move(filters_->server_trailing_metadata_),
                              filters_->call_data_);
