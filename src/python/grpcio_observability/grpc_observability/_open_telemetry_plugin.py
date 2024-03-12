@@ -13,22 +13,18 @@
 # limitations under the License.
 
 import abc
-from typing import Callable, Dict, Iterable, List, Optional, Union
+from typing import Callable, Dict, Iterable, List, Optional
 
 # pytype: disable=pyi-error
-import grpc
-from grpc_observability import _open_telemetry_measures
+# import grpc
+# from grpc_observability import _open_telemetry_measures
 from grpc_observability import _open_telemetry_observability
-from grpc_observability._cyobservability import MetricsName
-from grpc_observability._observability import StatsData
-from opentelemetry.metrics import Counter
-from opentelemetry.metrics import Histogram
-from opentelemetry.metrics import Meter
+# from grpc_observability._cyobservability import MetricsName
+# from grpc_observability._observability import StatsData
+# from opentelemetry.metrics import Counter
+# from opentelemetry.metrics import Histogram
+# from opentelemetry.metrics import Meter
 from opentelemetry.metrics import MeterProvider
-
-GRPC_METHOD_LABEL = "grpc.method"
-GRPC_TARGET_LABEL = "grpc.target"
-GRPC_OTHER_LABEL_VALUE = "other"
 
 
 class OpenTelemetryLabelInjector(abc.ABC):
@@ -87,121 +83,6 @@ class OpenTelemetryPluginOption(abc.ABC):
     def get_label_injector(self) -> Optional[OpenTelemetryLabelInjector]:
         # Returns the LabelsInjector used by this plugin option, or None.
         raise NotImplementedError()
-
-
-class _OpenTelemetryPlugin:
-    _plugin: "OpenTelemetryPlugin"
-    _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
-
-    def __init__(self, plugin: "OpenTelemetryPlugin"):
-        self._plugin = plugin
-        self._metric_to_recorder = dict()
-
-        meter_provider = self._plugin.meter_provider
-        if meter_provider:
-            meter = meter_provider.get_meter("grpc-python", grpc.__version__)
-            enabled_metrics = _open_telemetry_measures.base_metrics()
-            self._metric_to_recorder = self._register_metrics(
-                meter, enabled_metrics
-            )
-
-    def _should_record(self, stats_data: StatsData) -> bool:
-        # Decide if this plugin should record the stats_data.
-        return stats_data.name in self._metric_to_recorder.keys()
-
-    def _record_stats_data(self, stats_data: StatsData) -> None:
-        recorder = self._metric_to_recorder[stats_data.name]
-
-        target = stats_data.labels.get(GRPC_TARGET_LABEL, "")
-        if not self._plugin.target_attribute_filter(target):
-            # Filter target name.
-            stats_data.labels[GRPC_TARGET_LABEL] = GRPC_OTHER_LABEL_VALUE
-
-        method = stats_data.labels.get(GRPC_METHOD_LABEL, "")
-        if not self._plugin.generic_method_attribute_filter(method):
-            # Filter method name.
-            stats_data.labels[GRPC_METHOD_LABEL] = GRPC_OTHER_LABEL_VALUE
-
-        value = 0
-        if stats_data.measure_double:
-            value = stats_data.value_float
-        else:
-            value = stats_data.value_int
-        if isinstance(recorder, Counter):
-            recorder.add(value, attributes=stats_data.labels)
-        elif isinstance(recorder, Histogram):
-            recorder.record(value, attributes=stats_data.labels)
-
-    # pylint: disable=no-self-use
-    def maybe_record_stats_data(self, stats_data: List[StatsData]) -> None:
-        # Records stats data to MeterProvider.
-        if self._should_record(stats_data):
-            self._record_stats_data(stats_data)
-
-    def _register_metrics(
-        self, meter: Meter, metrics: List[_open_telemetry_measures.Metric]
-    ) -> Dict[MetricsName, Union[Counter, Histogram]]:
-        metric_to_recorder_map = {}
-        recorder = None
-        for metric in metrics:
-            if metric == _open_telemetry_measures.CLIENT_ATTEMPT_STARTED:
-                recorder = meter.create_counter(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_ATTEMPT_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_RPC_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif (
-                metric == _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES
-            ):
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_STARTED_RPCS:
-                recorder = meter.create_counter(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_SEND_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            metric_to_recorder_map[metric.cyname] = recorder
-        return metric_to_recorder_map
 
 
 # pylint: disable=no-self-use
