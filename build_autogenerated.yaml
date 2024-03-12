@@ -13189,6 +13189,34 @@ targets:
   - test/core/util/osa_distance_test.cc
   deps:
   - gtest
+- name: otel_plugin_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_call_tracer.h
+  - src/cpp/ext/otel/otel_client_filter.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_filter.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_plugin_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
