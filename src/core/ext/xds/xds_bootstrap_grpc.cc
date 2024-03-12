@@ -14,27 +14,17 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <algorithm>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/json.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -43,6 +33,14 @@
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 namespace grpc_core {
 
@@ -330,11 +328,14 @@ std::string GrpcXdsBootstrap::ToString() const {
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         entry.second.client_listener_resource_name_template()));
-    if (entry.second.server() != nullptr) {
-      parts.push_back(absl::StrFormat(
-          "    servers=[\n%s\n],\n",
-          JsonDump(static_cast<const GrpcXdsServer*>(entry.second.server())
-                       ->ToJson())));
+    std::vector<std::string> server_jsons;
+    for (const XdsServer* server : entry.second.servers()) {
+      server_jsons.emplace_back(
+          JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
+    }
+    if (!server_jsons.empty()) {
+      parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                      absl::StrJoin(server_jsons, ",\n")));
     }
     parts.push_back("      },\n");
   }
