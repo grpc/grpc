@@ -354,6 +354,8 @@ class UnstartedCallHandler {
 
   Arena* arena() { return spine_->arena(); }
 
+  Party* party() { return spine_.get(); }
+
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
     return spine_->CancelIfFails(std::move(promise));

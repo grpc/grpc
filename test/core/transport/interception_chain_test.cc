@@ -14,12 +14,43 @@
 
 #include "src/core/lib/transport/interception_chain.h"
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
 namespace {
+
+MATCHER(IsPending, "") {
+  if (arg.ready()) {
+    *result_listener << "is ready";
+    return false;
+  }
+  return true;
+}
+
+MATCHER(IsReady, "") {
+  if (arg.pending()) {
+    *result_listener << "is pending";
+    return false;
+  }
+  return true;
+}
+
+MATCHER_P(IsReady, value, "") {
+  if (arg.pending()) {
+    *result_listener << "is pending";
+    return false;
+  }
+  if (arg.value() != value) {
+    *result_listener << "is " << ::testing::PrintToString(arg.value());
+    return false;
+  }
+  return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Mutate metadata by annotating that it passed through a filter "x"
@@ -96,12 +127,18 @@ class InterceptionChainTest : public ::testing::Test {
     auto* arena = Arena::Create(1024, &memory_allocator_);
     auto call =
         MakeCall(Arena::MakePooled<ClientMetadata>(arena), nullptr, arena);
-    destination->StartCall(std::move(call.unstarted_handler));
-    auto trailing_md_promise = call.initiator.PullServerTrailingMetadata();
     Poll<ServerMetadataHandle> trailing_md;
-    do {
-      trailing_md = trailing_md_promise();
-    } while (trailing_md.pending());
+    call.initiator.SpawnInfallible(
+        "run_call", [destination, &call, &trailing_md]() mutable {
+          gpr_log(GPR_INFO, "👊 start call");
+          destination->StartCall(std::move(call.unstarted_handler));
+          // We don't do anything that will pause, so the initial poll here
+          // should entirely resolve the call.
+          trailing_md = call.initiator.PullServerTrailingMetadata()();
+          EXPECT_THAT(trailing_md, IsReady());
+          return Empty{};
+        });
+    EXPECT_THAT(trailing_md, IsReady());
     return FinishedCall{std::move(call.initiator), destination_->TakeMetadata(),
                         std::move(trailing_md.value())};
   }
@@ -110,11 +147,16 @@ class InterceptionChainTest : public ::testing::Test {
   class Destination : public CallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      gpr_log(GPR_INFO, "👊 started call: metadata=%s",
+              unstarted_call_handler.UnprocessedClientInitialMetadata()
+                  .DebugString()
+                  .c_str());
       EXPECT_EQ(metadata_.get(), nullptr);
       metadata_ =
           Arena::MakePooled<ClientMetadata>(unstarted_call_handler.arena());
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
+      unstarted_call_handler.Cancel(absl::InternalError("👊 cancelled"));
     }
 
     ClientMetadataHandle TakeMetadata() {
@@ -146,5 +188,6 @@ TEST_F(InterceptionChainTest, Empty) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  gpr_log_verbosity_init();
   return RUN_ALL_TESTS();
 }

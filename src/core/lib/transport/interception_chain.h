@@ -46,19 +46,21 @@ class Interceptor : public CallDestination {
       return MakeCallWithMetadata(std::move(metadata_));
     }
 
+    CallHandler& call_handler() { return call_handler_; }
+
    private:
     friend class Interceptor;
     HijackedCall(ClientMetadataHandle metadata, CallDestination* destination,
-                 Arena* arena,
-                 grpc_event_engine::experimental::EventEngine* event_engine)
-        : metadata_(std::move(metadata)), destination_(destination) {}
+                 CallHandler call_handler)
+        : metadata_(std::move(metadata)),
+          destination_(destination),
+          call_handler_(std::move(call_handler)) {}
 
     CallInitiator MakeCallWithMetadata(ClientMetadataHandle metadata);
 
     ClientMetadataHandle metadata_;
     CallDestination* destination_;
-    Arena* arena_;
-    grpc_event_engine::experimental::EventEngine* event_engine_;
+    CallHandler call_handler_;
   };
 
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
@@ -69,8 +71,8 @@ class Interceptor : public CallDestination {
                -> ValueOrFailure<HijackedCall> {
                  if (!metadata.ok()) return Failure{};
                  return HijackedCall(std::move(metadata.value()),
-                                     wrapped_destination_, call_handler.arena(),
-                                     call_handler.event_engine());
+                                     wrapped_destination_,
+                                     std::move(call_handler));
                });
   }
 
@@ -177,6 +179,7 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
   };
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == unstarted_call_handler.party());
     chain_->first_destination->StartCall(std::move(unstarted_call_handler));
   }
 

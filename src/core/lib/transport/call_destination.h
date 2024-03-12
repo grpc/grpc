@@ -33,6 +33,11 @@ namespace grpc_core {
 class CallDestination {
  public:
   virtual ~CallDestination() = default;
+  // Start a call. The UnstartedCallHandler will be consumed by the Destination
+  // and started.
+  // Must be called from the party owned by the call, eg the following must
+  // hold:
+  // GPR_ASSERT(GetContext<Activity>() == unstarted_call_handler.party());
   virtual void StartCall(UnstartedCallHandler unstarted_call_handler) = 0;
 };
 

@@ -99,7 +99,8 @@ ClientMetadata& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
 
 CallHandler UnstartedCallHandler::StartCall(
     RefCountedPtr<CallFilters::Stack> stack) {
-  // FIXME: attach stack to CallHandler
+  GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
+  spine_->call_filters().SetStack(std::move(stack));
   return CallHandler(std::move(spine_));
 }
 
