@@ -156,7 +156,8 @@ class InterceptionChainTest : public ::testing::Test {
           Arena::MakePooled<ClientMetadata>(unstarted_call_handler.arena());
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
-      unstarted_call_handler.Cancel(absl::InternalError("👊 cancelled"));
+      unstarted_call_handler.Cancel(
+          ServerMetadataFromStatus(absl::InternalError("👊 cancelled")));
     }
 
     ClientMetadataHandle TakeMetadata() {

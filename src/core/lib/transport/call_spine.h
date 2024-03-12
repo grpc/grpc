@@ -342,9 +342,8 @@ class UnstartedCallHandler {
   // may not be used after this is called.
   CallHandler StartCall(RefCountedPtr<CallFilters::Stack> stack);
 
-  void Cancel(absl::Status status) {
-    spine_->call_filters().PushServerTrailingMetadata(
-        ServerMetadataFromStatus(std::move(status)));
+  void Cancel(ServerMetadataHandle status) {
+    spine_->call_filters().PushServerTrailingMetadata(std::move(status));
   }
 
   template <typename ContextType>
