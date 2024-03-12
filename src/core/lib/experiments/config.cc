@@ -249,7 +249,7 @@ void RegisterExperimentConstraintsValidator(
 namespace grpc_core {
 void PrintExperimentsList() {}
 void ForceEnableExperiment(absl::string_view experiment_name, bool) {
-  Crash(absl::StrCat("ForceEnableExperiment(\"", experiment_name,
+  LOG(FATAL) << (absl::StrCat("ForceEnableExperiment(\"", experiment_name,
                      "\") called in final build"));
 }
 
