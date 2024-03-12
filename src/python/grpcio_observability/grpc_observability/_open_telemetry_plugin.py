@@ -16,15 +16,7 @@ import abc
 from typing import Callable, Dict, Iterable, List, Optional
 
 # pytype: disable=pyi-error
-# import grpc
-# from grpc_observability import _open_telemetry_measures
 from grpc_observability import _open_telemetry_observability
-
-# from grpc_observability._cyobservability import MetricsName
-# from grpc_observability._observability import StatsData
-# from opentelemetry.metrics import Counter
-# from opentelemetry.metrics import Histogram
-# from opentelemetry.metrics import Meter
 from opentelemetry.metrics import MeterProvider
 
 
