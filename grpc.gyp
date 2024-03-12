@@ -62,6 +62,10 @@
       '-Isrc/core/ext/upbdefs-gen',
       '-Ithird_party/utf8_range',
       '-Ithird_party/xxhash',
+      '-Ithird_party/cares/cares/include',
+      '-Ithird_party/cares',
+      '-Ithird_party/cares/cares',
+      '-Ithird_party/address_sorting/include',
     ],
     'ldflags': [
       '-g',
@@ -143,6 +147,10 @@
             '-Isrc/core/ext/upbdefs-gen',
             '-Ithird_party/utf8_range',
             '-Ithird_party/xxhash',
+            '-Ithird_party/cares/cares/include',
+            '-Ithird_party/cares',
+            '-Ithird_party/cares/cares',
+            '-Ithird_party/address_sorting/include',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -156,6 +164,10 @@
             '-Isrc/core/ext/upbdefs-gen',
             '-Ithird_party/utf8_range',
             '-Ithird_party/xxhash',
+            '-Ithird_party/cares/cares/include',
+            '-Ithird_party/cares',
+            '-Ithird_party/cares/cares',
+            '-Ithird_party/address_sorting/include',
             '-stdlib=libc++',
             '-std=c++14',
             '-Wno-error=deprecated-declarations',
@@ -2278,11 +2290,6 @@
         'src/core/lib/surface/validate_metadata.cc',
         'src/core/lib/surface/version.cc',
         'src/core/lib/surface/wait_for_cq_end_op.cc',
-<<<<<<< HEAD
-        'src/core/lib/transport/batch_builder.cc',
-=======
-        'src/core/lib/transport/call_factory.cc',
->>>>>>> origin/chan3+2
         'src/core/lib/transport/call_filters.cc',
         'src/core/lib/transport/call_final_info.cc',
         'src/core/lib/transport/call_size_estimator.cc',
