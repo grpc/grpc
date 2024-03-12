@@ -1031,6 +1031,8 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:experiments",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_fake_credentials",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
