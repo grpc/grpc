@@ -70,8 +70,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -129,8 +127,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -189,8 +185,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #endif
 }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -243,7 +237,6 @@ enum ExperimentIds {
   kExperimentIdAbslBase64,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCanaryClientPrivacy,
-  kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -291,10 +284,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() {
-  return IsExperimentEnabled(kExperimentIdClientIdleness);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {

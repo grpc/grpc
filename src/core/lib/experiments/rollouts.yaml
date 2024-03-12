@@ -53,8 +53,6 @@
     ios: broken
     posix: false
     windows: broken
-- name: client_idleness
-  default: true
 - name: client_privacy
   default: false
 - name: event_engine_client

@@ -20,7 +20,6 @@ EXPERIMENT_ENABLES = {
     "absl_base64": "absl_base64",
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "canary_client_privacy": "canary_client_privacy",
-    "client_idleness": "client_idleness",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",

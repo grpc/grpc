@@ -1192,6 +1192,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
@@ -1599,6 +1600,8 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/connection_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/connection_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.cc" role="src" />
@@ -2847,6 +2850,8 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs12.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs7.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs8.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pki/certificate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pki/signature_verify_cache.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/poly1305.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pool.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/posix_time.h" role="src" />
