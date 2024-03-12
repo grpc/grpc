@@ -1585,12 +1585,12 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   }
   // Find server to use.
   const XdsBootstrap::XdsServer* xds_server = nullptr;
-  absl::string_view authority_name = resource_name->authority;
-  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
-    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+  if (resource_name->authority != kOldStyleAuthority) {
+    auto* authority =
+        bootstrap_->LookupAuthority(std::string(resource_name->authority));
     if (authority == nullptr) {
       fail(absl::UnavailableError(
-          absl::StrCat("authority \"", authority_name,
+          absl::StrCat("authority \"", resource_name->authority,
                        "\" not present in bootstrap config")));
       return;
     }
@@ -1770,14 +1770,14 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
         URI::QueryParam{std::string(p.first), std::string(p.second)});
   }
   return XdsResourceName{
-      absl::StrCat("xdstp:", uri->authority()),
+      uri->authority(),
       {std::string(path_parts.second), std::move(query_params)}};
 }
 
 std::string XdsClient::ConstructFullXdsResourceName(
     absl::string_view authority, absl::string_view resource_type,
     const XdsResourceKey& key) {
-  if (absl::ConsumePrefix(&authority, "xdstp:")) {
+  if (authority != kOldStyleAuthority) {
     auto uri = URI::Create("xdstp", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
