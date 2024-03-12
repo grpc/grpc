@@ -21,7 +21,6 @@ EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
-    "client_idleness": "client_idleness",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
@@ -34,7 +33,6 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
     "pending_queue_cap": "pending_queue_cap",
-    "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
     "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
     "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
@@ -101,23 +99,14 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
             ],
-            "cpp_lb_end2end_test": [
-                "pick_first_happy_eyeballs",
-            ],
             "credential_token_tests": [
                 "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "lb_unit_test": [
-                "pick_first_happy_eyeballs",
-            ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
-            ],
-            "xds_end2end_test": [
-                "pick_first_happy_eyeballs",
             ],
         },
     },
@@ -157,20 +146,11 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "cpp_lb_end2end_test": [
-                "pick_first_happy_eyeballs",
-            ],
             "credential_token_tests": [
                 "absl_base64",
             ],
-            "lb_unit_test": [
-                "pick_first_happy_eyeballs",
-            ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
-            ],
-            "xds_end2end_test": [
-                "pick_first_happy_eyeballs",
             ],
         },
     },
@@ -229,9 +209,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
-            "cpp_lb_end2end_test": [
-                "pick_first_happy_eyeballs",
-            ],
             "credential_token_tests": [
                 "absl_base64",
             ],
@@ -239,7 +216,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
-                "pick_first_happy_eyeballs",
                 "work_serializer_dispatch",
             ],
             "resolver_component_tests_runner_invoker": [
@@ -249,7 +225,6 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "work_serializer_dispatch",
             ],
         },

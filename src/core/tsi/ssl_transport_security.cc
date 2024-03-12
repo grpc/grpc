@@ -72,6 +72,7 @@
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND 16384
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
 #define TSI_SSL_HANDSHAKER_OUTGOING_BUFFER_INITIAL_SIZE 1024
+const size_t kMaxChainLength = 100;
 
 // Putting a macro like this and littering the source file with #if is really
 // bad practice.
@@ -911,13 +912,7 @@ static int NullVerifyCallback(X509_STORE_CTX* /*ctx*/, void* /*arg*/) {
 }
 
 static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
-  int ret = X509_verify_cert(ctx);
-  if (ret <= 0) {
-    // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it.
-    return ret;
-  }
-
+  int ret = 1;
   // Verification was successful. Get the verified chain from the X509_STORE_CTX
   // and put the root on the SSL object so that we have access to it when
   // populating the tsi_peer. On error extracting the root, we return success
@@ -977,37 +972,42 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   return ret;
 }
 
-// X509_STORE_set_get_crl() sets the function to get the crl for a given
-// certificate x. When found, the crl must be assigned to *crl. This function
-// must return 0 on failure and 1 on success. If no function to get the issuer
-// is provided, the internal default function will be used instead.
-static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
-                              X509* cert) {
+static grpc_core::experimental::CrlProvider* GetCrlProvider(
+    X509_STORE_CTX* ctx) {
   ERR_clear_error();
   int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
   if (ssl_index < 0) {
     char err_str[256];
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "error getting the SSL index from the X509_STORE_CTX while looking "
             "up Crl: %s",
             err_str);
-    return 0;
+    return nullptr;
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_INFO,
             "error while fetching from CrlProvider. SSL object is null");
-    return 0;
+    return nullptr;
   }
   SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
   auto* provider = static_cast<grpc_core::experimental::CrlProvider*>(
       SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_crl_provider_index));
+  return provider;
+}
 
+// If a CRL is returned, the caller is the owner of the CRL and must make sure
+// it is freed.
+static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
+    grpc_core::experimental::CrlProvider* provider, X509* cert) {
+  if (provider == nullptr) {
+    return absl::InvalidArgumentError("CrlProvider is null.");
+  }
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
     gpr_log(GPR_INFO, "Could not get certificate issuer name");
-    return 0;
+    return absl::InvalidArgumentError(issuer_name.status().message());
   }
   absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
   std::string akid_to_use;
@@ -1026,26 +1026,140 @@ static int GetCrlFromProvider(X509_STORE_CTX* ctx, X509_CRL** crl_out,
   // and behave how we want for a missing CRL.
   // It is important to treat missing CRLs and empty CRLs differently.
   if (internal_crl == nullptr) {
-    return 0;
+    return absl::NotFoundError("Could not find Crl related to certificate.");
   }
   X509_CRL* crl =
       std::static_pointer_cast<grpc_core::experimental::CrlImpl>(internal_crl)
           ->crl();
 
-  X509_CRL* copy = X509_CRL_dup(crl);
-  *crl_out = copy;
+  return X509_CRL_dup(crl);
+}
+
+// Perform the validation checks in RFC5280 6.3.3 to ensure the given CRL is
+// valid
+// returns true if the Crl is valid, false otherwise
+static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
+  bool valid = true;
+  // RFC5280 6.3.3
+  // 6.3.3a we do not support distribution points
+  // 6.3.3b verify issuer and scope
+  valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
+  if (!valid) {
+    return valid;
+  }
+  valid = grpc_core::HasCrlSignBit(issuer);
+  if (!valid) {
+    return valid;
+  }
+  // 6.3.3c Not supporting deltas
+  // 6.3.3d Not supporting reasons masks
+  // 6.3.3e Not supporting reasons masks
+  // 6.3.3f We only support direct CRLs so these paths are by definition the
+  // same.
+  // 6.3.3g Verify CRL Signature
+  valid = grpc_core::VerifyCrlSignature(crl, issuer);
+  return valid;
+}
+
+// Check if a given certificate is revoked
+// Returns 1 if the certificate is not revoked, 0 if the certificate is revoked
+static int CheckCertRevocation(grpc_core::experimental::CrlProvider* provider,
+                               X509* cert, X509* issuer) {
+  auto crl = GetCrlFromProvider(provider, cert);
+  // Not finding a CRL is a specific behavior. Per RFC5280, not having a CRL to
+  // check for a given certificate means that we cannot know for certain if the
+  // status is Revoked or Unrevoked and instead is Undetermined. How a user
+  // handles an Undetermined CRL is up to them. We use absl::IsNotFound as an
+  // analogue for not finding the Crl from the provider, thus the certificate in
+  // question is Undetermined.
+  if (absl::IsNotFound(crl.status())) {
+    // TODO(gtcooke94) knob for undetermined being revoked or unrevoked. By
+    // default, unrevoked.
+    return 1;
+  } else if (!crl.ok()) {
+    // This is an unexpected error, return false
+    return 0;
+  }
+  // Validate the crl
+  // RFC5280 6.3.3(a-i)
+  if (!ValidateCrl(cert, issuer, *crl)) {
+    X509_CRL_free(*crl);
+    return 0;
+  }
+
+  // RFC5280 6.3.3j Actually check revocation
+  // Look for serial number of certificate in CRL  X509_REVOKED* rev =
+  // nullptr;
+  X509_REVOKED* rev;
+  if (X509_CRL_get0_by_cert(*crl, &rev, cert)) {
+    // cert is revoked
+    X509_CRL_free(*crl);
+    return 0;
+  }
+  // The certificate is not revoked
+  // RFC5280k - Not supported
+  // RFC5280l - Not supported
+  X509_CRL_free(*crl);
   return 1;
 }
 
-// When using CRL Providers, this function used to override the default
-// `check_crl` function in OpenSSL using `X509_STORE_set_check_crl`.
-// CrlProviders put the onus on the users to provide the CRLs that they want to
-// provide, and because we override default CRL fetching behavior, we can expect
-// some of these verification checks to fails for custom CRL providers as well.
-// Thus, we need a passthrough to indicate to OpenSSL that we've provided a CRL
-// and we are good with it.
-static int CheckCrlPassthrough(X509_STORE_CTX* /*ctx*/, X509_CRL* /*crl*/) {
+// Checks each certificate in the chain for revocation
+// returns 0 if any cert in the chain is revoked, 1 otherwise.
+static int CheckChainRevocation(
+    X509_STORE_CTX* ctx, grpc_core::experimental::CrlProvider* provider) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx);
+#else
+  STACK_OF(X509)* chain = X509_STORE_CTX_get_chain(ctx);
+#endif
+  if (chain == nullptr) {
+    return 0;
+  }
+  // BoringSSL returns a size_t (unsigned), while OpenSSL returns an int
+  // (signed). In OpenSSL, a -1 can indicate a problem. By forcing it into a
+  // size_t, a -1 return will result in the chain_length being a very large
+  // number, so it will still fail this check because that very large number
+  // will be >= kMaxChainLength
+  size_t chain_length = sk_X509_num(chain);
+  if (chain_length > kMaxChainLength || chain_length == 0) {
+    return 0;
+  }
+  // Loop to < chain_length - 1 because the last cert is the trust anchor/root
+  // which cannot be revoked
+  for (size_t i = 0; i < chain_length - 1; i++) {
+    X509* cert = sk_X509_value(chain, i);
+    X509* issuer = sk_X509_value(chain, i + 1);
+    int ret = CheckCertRevocation(provider, cert, issuer);
+    if (ret != 1) {
+      return ret;
+    }
+  }
   return 1;
+}
+
+// The custom verification function to set in OpenSSL using
+// X509_set_cert_verify_callback. This calls the standard OpenSSL procedure
+// (X509_verify_cert), then also extracts the root certificate in the built
+// chain and does revocation checks when a user has configured CrlProviders.
+// returns 1 on success, indicating a trusted chain to a root of trust was
+// found, 0 if a trusted chain could not be built.
+static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
+  int ret = X509_verify_cert(ctx);
+  if (ret <= 0) {
+    // Verification failed. We shouldn't expect to have a verified chain, so
+    // there is no need to attempt to extract the root cert from it, check for
+    // revocation, or check anything else.
+    return ret;
+  }
+  grpc_core::experimental::CrlProvider* provider = GetCrlProvider(ctx);
+  if (provider != nullptr) {
+    ret = CheckChainRevocation(ctx, provider);
+  }
+  if (ret <= 0) {
+    // Something has failed return the failure
+    return ret;
+  }
+  return RootCertExtractCallback(ctx, arg);
 }
 
 // Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
@@ -1069,9 +1183,9 @@ static tsi_result tsi_set_min_and_max_tls_versions(
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
       break;
 #if defined(TLS1_3_VERSION)
-    // If the library does not support TLS 1.3 and the caller requests a minimum
-    // of TLS 1.3, then return an error because the caller's request cannot be
-    // satisfied.
+    // If the library does not support TLS 1.3 and the caller requests a
+    // minimum of TLS 1.3, then return an error because the caller's request
+    // cannot be satisfied.
     case tsi_tls_version::TSI_TLS1_3:
       SSL_CTX_set_min_proto_version(ssl_context, TLS1_3_VERSION);
       break;
@@ -1131,6 +1245,12 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     gpr_free(root_store);
     return nullptr;
   }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+  X509_VERIFY_PARAM* param = X509_STORE_get0_param(root_store->store);
+#else
+  X509_VERIFY_PARAM* param = root_store->store->param;
+#endif
+  X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
   return root_store;
 }
 
@@ -1586,8 +1706,8 @@ static tsi_result ssl_bytes_remaining(tsi_ssl_handshaker* impl,
   *bytes_remaining = static_cast<uint8_t*>(gpr_malloc(bytes_in_ssl));
   int bytes_read = BIO_read(SSL_get_rbio(impl->ssl), *bytes_remaining,
                             static_cast<int>(bytes_in_ssl));
-  // If an unexpected number of bytes were read, return an error status and free
-  // all of the bytes that were read.
+  // If an unexpected number of bytes were read, return an error status and
+  // free all of the bytes that were read.
   if (bytes_read < 0 || static_cast<size_t>(bytes_read) != bytes_in_ssl) {
     gpr_log(GPR_ERROR,
             "Failed to read the expected number of bytes from SSL object.");
@@ -1662,16 +1782,16 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
           impl, remaining_bytes_to_write_to_openssl, &bytes_written_to_openssl,
           error);
       // As long as the BIO is full, drive the SSL handshake to consume bytes
-      // from the BIO. If the SSL handshake returns any bytes, write them to the
-      // peer.
+      // from the BIO. If the SSL handshake returns any bytes, write them to
+      // the peer.
       while (status == TSI_DRAIN_BUFFER) {
         status =
             ssl_handshaker_write_output_buffer(self, &bytes_written, error);
         if (status != TSI_OK) return status;
         status = ssl_handshaker_do_handshake(impl, error);
       }
-      // Move the pointer to the first byte not yet successfully written to the
-      // BIO.
+      // Move the pointer to the first byte not yet successfully written to
+      // the BIO.
       remaining_bytes_to_write_to_openssl_size -= bytes_written_to_openssl;
       remaining_bytes_to_write_to_openssl += bytes_written_to_openssl;
     }
@@ -1687,9 +1807,9 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
     *handshaker_result = nullptr;
   } else {
     // Any bytes that remain in |impl->ssl|'s read BIO after the handshake is
-    // complete must be extracted and set to the unused bytes of the handshaker
-    // result. This indicates to the gRPC stack that there are bytes from the
-    // peer that must be processed.
+    // complete must be extracted and set to the unused bytes of the
+    // handshaker result. This indicates to the gRPC stack that there are
+    // bytes from the peer that must be processed.
     unsigned char* unused_bytes = nullptr;
     size_t unused_bytes_size = 0;
     status =
@@ -1704,8 +1824,8 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
     status = ssl_handshaker_result_create(impl, unused_bytes, unused_bytes_size,
                                           handshaker_result, error);
     if (status == TSI_OK) {
-      // Indicates that the handshake has completed and that a handshaker_result
-      // has been created.
+      // Indicates that the handshake has completed and that a
+      // handshaker_result has been created.
       self->handshaker_result_created = true;
     }
   }
@@ -2152,6 +2272,15 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);
+      X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+      X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+
+#else
+      X509_VERIFY_PARAM* param = cert_store->param;
+#endif
+
+      X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Cannot load server root certificates.");
         break;
@@ -2189,21 +2318,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->skip_server_certificate_verification) {
     SSL_CTX_set_cert_verify_callback(ssl_context, NullVerifyCallback, nullptr);
   } else {
-    SSL_CTX_set_cert_verify_callback(ssl_context, RootCertExtractCallback,
+    SSL_CTX_set_cert_verify_callback(ssl_context, CustomVerificationFunction,
                                      nullptr);
   }
-
 #if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->crl_provider != nullptr) {
     SSL_CTX_set_ex_data(impl->ssl_context, g_ssl_ctx_ex_crl_provider_index,
                         options->crl_provider.get());
-    X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_context);
-    X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-    X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-    X509_STORE_set_verify_cb(cert_store, verify_cb);
-    X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-    X509_VERIFY_PARAM_set_flags(
-        param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
   } else if (options->crl_directory != nullptr &&
              strcmp(options->crl_directory, "") != 0) {
     X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
@@ -2379,7 +2500,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         case TSI_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i], SSL_VERIFY_PEER, nullptr);
           SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           RootCertExtractCallback, nullptr);
+                                           CustomVerificationFunction, nullptr);
           break;
         case TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY:
           SSL_CTX_set_verify(impl->ssl_contexts[i],
@@ -2393,7 +2514,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                              SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
                              nullptr);
           SSL_CTX_set_cert_verify_callback(impl->ssl_contexts[i],
-                                           RootCertExtractCallback, nullptr);
+                                           CustomVerificationFunction, nullptr);
           break;
       }
 
@@ -2402,13 +2523,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         SSL_CTX_set_ex_data(impl->ssl_contexts[i],
                             g_ssl_ctx_ex_crl_provider_index,
                             options->crl_provider.get());
-        X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-        X509_STORE_set_get_crl(cert_store, GetCrlFromProvider);
-        X509_STORE_set_check_crl(cert_store, CheckCrlPassthrough);
-        X509_STORE_set_verify_cb(cert_store, verify_cb);
-        X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
-        X509_VERIFY_PARAM_set_flags(
-            param, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
       } else if (options->crl_directory != nullptr &&
                  strcmp(options->crl_directory, "") != 0) {
         X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);

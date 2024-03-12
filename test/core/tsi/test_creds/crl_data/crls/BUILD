@@ -21,4 +21,5 @@ exports_files([
     "intermediate.crl",
     "invalid_signature.crl",
     "invalid_content.crl",
+    "evil.crl",
 ])

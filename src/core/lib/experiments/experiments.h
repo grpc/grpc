@@ -71,8 +71,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -88,8 +86,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
@@ -126,8 +122,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -144,8 +138,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
@@ -182,8 +174,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -201,8 +191,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
@@ -232,7 +220,6 @@ enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
-  kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -245,7 +232,6 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPendingQueueCap,
-  kExperimentIdPickFirstHappyEyeballs,
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdChaoticGood,
@@ -281,10 +267,6 @@ inline bool IsCallV3Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() {
-  return IsExperimentEnabled(kExperimentIdClientIdleness);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
@@ -333,10 +315,6 @@ inline bool IsPeerStateBasedFramingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() {
   return IsExperimentEnabled(kExperimentIdPendingQueueCap);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_HAPPY_EYEBALLS
-inline bool IsPickFirstHappyEyeballsEnabled() {
-  return IsExperimentEnabled(kExperimentIdPickFirstHappyEyeballs);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 inline bool IsPromiseBasedClientCallEnabled() {

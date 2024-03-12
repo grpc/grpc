@@ -71,11 +71,6 @@
   owner: ctiller@google.com
   requires: [promise_based_client_call, promise_based_server_call]
   test_tags: [core_end2end_test]
-- name: client_idleness
-  description: If enabled, client channel idleness is enabled by default.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: []
 - name: client_privacy
   description:
     If set, client privacy
@@ -160,12 +155,6 @@
   expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: []
-- name: pick_first_happy_eyeballs
-  description:
-    Use Happy Eyeballs in pick_first.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate

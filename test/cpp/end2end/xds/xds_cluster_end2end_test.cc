@@ -410,7 +410,7 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
 
 // Tests that we ignore Cluster deletions if configured to do so.
 TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
-  InitClient(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});

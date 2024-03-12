@@ -53,8 +53,6 @@
     ios: broken
     posix: false
     windows: broken
-- name: client_idleness
-  default: true
 - name: client_privacy
   default: false
 - name: event_engine_client
@@ -92,8 +90,6 @@
 - name: peer_state_based_framing
   default: false
 - name: pending_queue_cap
-  default: true
-- name: pick_first_happy_eyeballs
   default: true
 - name: promise_based_client_call
   default:

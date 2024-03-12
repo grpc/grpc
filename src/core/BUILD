@@ -59,6 +59,7 @@ grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
     ],
     external_deps = [
@@ -5525,7 +5526,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "connectivity_state",
-        "experiments",
         "health_check_client",
         "iomgr_fwd",
         "json",
@@ -7446,6 +7446,8 @@ grpc_cc_library(
         "error",
         "error_utils",
         "event_engine_common",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
@@ -7507,6 +7509,8 @@ grpc_cc_library(
         "default_event_engine",
         "error",
         "error_utils",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",

@@ -55,6 +55,12 @@ Generate a CA and CRL with an Authority Key Identifier
 ----------------------------------------------------------------------------
 Run `ca_with_akid_gen.sh` from the `test/core/tsi/test_creds/crl_data` directory
 
+Create CRLs with modified signatures and content
+----------------------------------------------------------------------------
+Make two copies of `test/core/tsi/test_creds/crl_data/crls/current.crl` named `test/core/tsi/test_creds/crl_data/crls/invalid_content.crl` and `test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl`.
+In `invalid_content.crl`, change the first letter on the second line.
+In `invalid_signature.crl`, change the last letter before the `=` on the second to last line.
+
 
 Clean up:
 ---------
