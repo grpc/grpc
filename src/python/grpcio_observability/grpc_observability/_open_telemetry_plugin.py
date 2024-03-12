@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Callable, Dict, Iterable, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Union
 
 # pytype: disable=pyi-error
 import grpc
@@ -29,6 +29,9 @@ from opentelemetry.metrics import MeterProvider
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_OTHER_LABEL_VALUE = "other"
+
+if TYPE_CHECKING:
+    _OpenTelemetryPlugin = Any # Forward declaration
 
 
 class OpenTelemetryLabelInjector(abc.ABC):
@@ -97,7 +100,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
-    _plugin: "_OpenTelemetryPlugin"
+    _plugin: _OpenTelemetryPlugin
 
     def __init__(
         self,
