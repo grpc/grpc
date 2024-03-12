@@ -72,8 +72,6 @@ return true;
  }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -132,8 +130,6 @@ return true;
  }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -193,8 +189,6 @@ return true;
  }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return true; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -248,7 +242,6 @@ enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
-  kExperimentIdClientIdleness,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -294,8 +287,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() { return IsExperimentEna
 inline bool IsCallV3Enabled() { return IsExperimentEnabled(kExperimentIdCallV3); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() { return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_IDLENESS
-inline bool IsClientIdlenessEnabled() { return IsExperimentEnabled(kExperimentIdClientIdleness); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() { return IsExperimentEnabled(kExperimentIdClientPrivacy); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT

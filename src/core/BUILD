@@ -59,6 +59,7 @@ grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
     ],
     external_deps = [
@@ -1402,6 +1403,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "connection_quota",
+    srcs = [
+        "lib/resource_quota/connection_quota.cc",
+    ],
+    hdrs = [
+        "lib/resource_quota/connection_quota.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "memory_quota",
+        "ref_counted",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota_trace",
     srcs = [
         "lib/resource_quota/trace.cc",
@@ -1428,6 +1446,7 @@ grpc_cc_library(
         "@grpc:alt_grpc_base_legacy",
     ],
     deps = [
+        "connection_quota",
         "memory_quota",
         "ref_counted",
         "thread_quota",
@@ -6749,6 +6768,7 @@ grpc_cc_library(
         "channel_args",
         "channel_args_endpoint_config",
         "closure",
+        "connection_quota",
         "error",
         "error_utils",
         "grpc_insecure_credentials",
@@ -7465,6 +7485,8 @@ grpc_cc_library(
         "error",
         "error_utils",
         "event_engine_common",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
@@ -7526,6 +7548,8 @@ grpc_cc_library(
         "default_event_engine",
         "error",
         "error_utils",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",

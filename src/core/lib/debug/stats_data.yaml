@@ -141,3 +141,60 @@
   doc: Number of uncommon io errors
 - counter: msg_errqueue_error_count
   doc: Number of uncommon errors returned by MSG_ERRQUEUE
+- histogram: chaotic_good_sendmsgs_per_write_control
+  doc: Number of sendmsgs per control channel endpoint write
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_recvmsgs_per_read_control
+  doc: Number of recvmsgs per control channel endpoint read
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_sendmsgs_per_write_data
+  doc: Number of sendmsgs per data channel endpoint write
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_recvmsgs_per_read_data
+  doc: Number of recvmsgs per data channel endpoint read
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_thread_hops_per_write_control
+  doc: Number of thread hops per control channel endpoint write
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_thread_hops_per_read_control
+  doc: Number of thread hops per control channel endpoint read
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_thread_hops_per_write_data
+  doc: Number of thread hops per data channel endpoint write
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_thread_hops_per_read_data
+  doc: Number of thread hops per data channel endpoint read
+  max: 100
+  buckets: 20
+- histogram: chaotic_good_tcp_read_size_data
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes received by each syscall_read in the data channel
+- histogram: chaotic_good_tcp_read_size_control
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes received by each syscall_read in the control channel
+- histogram: chaotic_good_tcp_read_offer_data
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes offered to each syscall_read in the data channel
+- histogram: chaotic_good_tcp_read_offer_control
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes offered to each syscall_read in the control channel
+- histogram: chaotic_good_tcp_write_size_data
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes offered to each syscall_write in the data channel
+- histogram: chaotic_good_tcp_write_size_control
+  max: 16777216
+  buckets: 20
+  doc: Number of bytes offered to each syscall_write in the control channel
+

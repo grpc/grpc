@@ -34,8 +34,6 @@ const char* const description_call_v3 = "Promise-based call version 3.";
 const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy = "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness = "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client = "Use EventEngine clients instead of iomgr's grpc_tcp_client";
@@ -121,7 +119,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
   {"call_status_override_on_cancellation", description_call_status_override_on_cancellation, additional_constraints_call_status_override_on_cancellation, nullptr, 0, kDefaultForDebugOnly, true},
   {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0, false, true},
   {"canary_client_privacy", description_canary_client_privacy, additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-  {"client_idleness", description_client_idleness, additional_constraints_client_idleness, nullptr, 0, true, true},
   {"client_privacy", description_client_privacy, additional_constraints_client_privacy, nullptr, 0, false, false},
   {"event_engine_client", description_event_engine_client, additional_constraints_event_engine_client, nullptr, 0, false, true},
   {"event_engine_dns", description_event_engine_dns, additional_constraints_event_engine_dns, nullptr, 0, false, false},
@@ -171,8 +168,6 @@ const char* const description_call_v3 = "Promise-based call version 3.";
 const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy = "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness = "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client = "Use EventEngine clients instead of iomgr's grpc_tcp_client";
@@ -258,7 +253,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
   {"call_status_override_on_cancellation", description_call_status_override_on_cancellation, additional_constraints_call_status_override_on_cancellation, nullptr, 0, kDefaultForDebugOnly, true},
   {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0, false, true},
   {"canary_client_privacy", description_canary_client_privacy, additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-  {"client_idleness", description_client_idleness, additional_constraints_client_idleness, nullptr, 0, true, true},
   {"client_privacy", description_client_privacy, additional_constraints_client_privacy, nullptr, 0, false, false},
   {"event_engine_client", description_event_engine_client, additional_constraints_event_engine_client, nullptr, 0, false, true},
   {"event_engine_dns", description_event_engine_dns, additional_constraints_event_engine_dns, nullptr, 0, false, false},
@@ -308,8 +302,6 @@ const char* const description_call_v3 = "Promise-based call version 3.";
 const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy = "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness = "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client = "Use EventEngine clients instead of iomgr's grpc_tcp_client";
@@ -395,7 +387,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
   {"call_status_override_on_cancellation", description_call_status_override_on_cancellation, additional_constraints_call_status_override_on_cancellation, nullptr, 0, kDefaultForDebugOnly, true},
   {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0, false, true},
   {"canary_client_privacy", description_canary_client_privacy, additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-  {"client_idleness", description_client_idleness, additional_constraints_client_idleness, nullptr, 0, true, true},
   {"client_privacy", description_client_privacy, additional_constraints_client_privacy, nullptr, 0, false, false},
   {"event_engine_client", description_event_engine_client, additional_constraints_event_engine_client, nullptr, 0, false, true},
   {"event_engine_dns", description_event_engine_dns, additional_constraints_event_engine_dns, nullptr, 0, true, false},
