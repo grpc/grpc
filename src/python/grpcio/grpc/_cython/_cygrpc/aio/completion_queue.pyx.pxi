@@ -144,7 +144,13 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         cdef bytes data
         if _has_fd_monitoring:
             # If fd monitoring is working, clean the socket without blocking.
-            data = self._read_socket.recv(1)
+            try:
+                data = self._read_socket.recv(1)
+            except BlockingIOError:
+                # Multiple bound event loops may be notified that the socket is
+                # ready, but only one will receive the data. If we didn't get the
+                # data, there's nothin to do.
+                return
         cdef grpc_event event
         cdef CallbackContext *context
 
