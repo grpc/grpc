@@ -202,6 +202,7 @@ grpc_cc_library(
     deps = [
         "no_destruct",
         "//:config_vars",
+        "//:gpr_platform",
     ],
 )
 
