@@ -36,7 +36,7 @@ ServerCallTracerFactoryCapsule = (
     Any  # it appears only once in the function signature
 )
 grpc_observability = Any  # grpc_observability.py imports this module.
-OpenTelemetryPlugin = Any # _open_telemetry_plugin.py imports this module.
+OpenTelemetryPlugin = Any  # _open_telemetry_plugin.py imports this module.
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
