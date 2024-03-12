@@ -883,6 +883,7 @@
         'src/core/lib/promise/trace.cc',
         'src/core/lib/resource_quota/api.cc',
         'src/core/lib/resource_quota/arena.cc',
+        'src/core/lib/resource_quota/connection_quota.cc',
         'src/core/lib/resource_quota/memory_quota.cc',
         'src/core/lib/resource_quota/periodic_update.cc',
         'src/core/lib/resource_quota/resource_quota.cc',
@@ -1422,6 +1423,7 @@
         'src/core/lib/promise/trace.cc',
         'src/core/lib/resource_quota/api.cc',
         'src/core/lib/resource_quota/arena.cc',
+        'src/core/lib/resource_quota/connection_quota.cc',
         'src/core/lib/resource_quota/memory_quota.cc',
         'src/core/lib/resource_quota/periodic_update.cc',
         'src/core/lib/resource_quota/resource_quota.cc',
@@ -2228,6 +2230,7 @@
         'src/core/lib/promise/trace.cc',
         'src/core/lib/resource_quota/api.cc',
         'src/core/lib/resource_quota/arena.cc',
+        'src/core/lib/resource_quota/connection_quota.cc',
         'src/core/lib/resource_quota/memory_quota.cc',
         'src/core/lib/resource_quota/periodic_update.cc',
         'src/core/lib/resource_quota/resource_quota.cc',
@@ -2361,6 +2364,19 @@
         'src/proto/grpc/channelz/channelz.proto',
         'src/cpp/server/channelz/channelz_service.cc',
         'src/cpp/server/channelz/channelz_service_plugin.cc',
+      ],
+    },
+    {
+      'target_name': 'grpcpp_otel_plugin',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'opentelemetry-cpp::api',
+      ],
+      'sources': [
+        'src/cpp/ext/otel/otel_client_filter.cc',
+        'src/cpp/ext/otel/otel_plugin.cc',
+        'src/cpp/ext/otel/otel_server_call_tracer.cc',
       ],
     },
     {

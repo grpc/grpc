@@ -36,9 +36,6 @@ const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -194,8 +191,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -295,9 +290,6 @@ const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -453,8 +445,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -554,9 +544,6 @@ const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -712,8 +699,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
