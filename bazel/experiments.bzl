@@ -22,7 +22,6 @@ EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
-    "client_idleness": "client_idleness",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
