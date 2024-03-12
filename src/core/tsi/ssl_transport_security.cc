@@ -2272,8 +2272,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+      X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+
+#else
       X509_VERIFY_PARAM* param = cert_store->param;
+#endif
+
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
       if (result != TSI_OK) {
         gpr_log(GPR_ERROR, "Cannot load server root certificates.");
