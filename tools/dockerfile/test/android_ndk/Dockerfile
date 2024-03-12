@@ -99,12 +99,12 @@ RUN mkdir /var/local/jenkins
 RUN apt update && apt upgrade -y
 
 # Java
-RUN apt-get install -y openjdk-17-jdk
+RUN apt-get install -y openjdk-11-jdk
 
 # Install Android SDK
 ENV ANDROID_HOME /opt/android-sdk
 RUN mkdir -p $ANDROID_HOME && \
-    wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip && \
+    wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
     unzip cmd.zip && rm cmd.zip && \
     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'tools' && \
