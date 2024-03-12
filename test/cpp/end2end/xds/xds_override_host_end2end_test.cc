@@ -23,7 +23,6 @@
 #include "absl/strings/str_split.h"
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session.pb.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
@@ -703,7 +702,6 @@ TEST_P(OverrideHostTest, TTLSetsMaxAge) {
 }
 
 TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
-  if (!grpc_core::IsRoundRobinDelegateToPickFirstEnabled()) return;
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   // Create 3 backends, but leave backend 0 unstarted.

@@ -110,11 +110,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -164,10 +159,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -228,10 +219,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -265,8 +252,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -359,11 +344,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -413,10 +393,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -477,10 +453,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -514,8 +486,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -608,11 +578,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -662,10 +627,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -726,10 +687,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -763,8 +720,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core

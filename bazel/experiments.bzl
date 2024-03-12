@@ -38,7 +38,6 @@ EXPERIMENT_ENABLES = {
     "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
     "registered_method_lookup_in_transport": "registered_method_lookup_in_transport",
     "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call,registered_method_lookup_in_transport",
-    "round_robin_delegate_to_pick_first": "round_robin_delegate_to_pick_first",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
@@ -52,7 +51,6 @@ EXPERIMENT_ENABLES = {
     "v3_server_auth_filter": "v3_server_auth_filter",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
-    "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
 EXPERIMENT_POLLERS = [
@@ -101,26 +99,14 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
             ],
-            "cpp_lb_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
-            ],
             "credential_token_tests": [
                 "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "lb_unit_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
-            ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
-            ],
-            "xds_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -160,23 +146,11 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "cpp_lb_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
-            ],
             "credential_token_tests": [
                 "absl_base64",
             ],
-            "lb_unit_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
-            ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
-            ],
-            "xds_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
             ],
         },
     },
@@ -235,10 +209,6 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
             ],
-            "cpp_lb_end2end_test": [
-                "round_robin_delegate_to_pick_first",
-                "wrr_delegate_to_pick_first",
-            ],
             "credential_token_tests": [
                 "absl_base64",
             ],
@@ -246,9 +216,7 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
-                "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
-                "wrr_delegate_to_pick_first",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -257,9 +225,7 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
-                "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
-                "wrr_delegate_to_pick_first",
             ],
         },
     },
