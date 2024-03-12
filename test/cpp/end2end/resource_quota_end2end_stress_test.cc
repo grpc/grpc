@@ -265,7 +265,7 @@ TEST_P(End2EndConnectionQuotaTest, ConnectionQuotaTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(ConnectionQuotaParamTest, End2EndConnectionQuotaTest,
-                         ::testing::ValuesIn<int>({10}));
+                         ::testing::ValuesIn<int>({10, 100}));
 
 }  // namespace testing
 }  // namespace grpc
