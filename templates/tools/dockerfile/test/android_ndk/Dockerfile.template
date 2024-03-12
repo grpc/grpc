@@ -32,14 +32,16 @@
       unzip cmd.zip && rm cmd.zip && ${'\\'}
       yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && ${'\\'}
       ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'tools' && ${'\\'}
+      ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && ${'\\'}
+      ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && ${'\\'}
       ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && ${'\\'}
       ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
 
   # Install gcloud
-  RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
-      tar -xf google-cloud-cli-407.0.0-linux-x86_64.tar.gz && ${'\\'}
+  RUN wget -O google-cloud-cli.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-467.0.0-linux-x86_64.tar.gz && ${'\\'}
+      tar -xf google-cloud-cli.tar.gz && ${'\\'}
       ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && ${'\\'}
-      rm -rf google-cloud-cli-407.0.0-linux-x86_64.tar.gz
+      rm -rf google-cloud-cli.tar.gz
   RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
   # Define the default command.
