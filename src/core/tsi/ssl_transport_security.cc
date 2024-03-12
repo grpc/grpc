@@ -1248,7 +1248,7 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   X509_VERIFY_PARAM* param = X509_STORE_get0_param(root_store->store);
 #else
-  X509_VERIFY_PARAM* param = root_store->param;
+  X509_VERIFY_PARAM* param = root_store->store->param;
 #endif
   X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
   return root_store;
@@ -2272,8 +2272,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       result = ssl_ctx_load_verification_certs(
           ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
           nullptr);
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
 
 #else
