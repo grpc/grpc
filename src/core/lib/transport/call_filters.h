@@ -785,7 +785,7 @@ struct ChannelDataDestructor {
 // in-flight calls.
 struct StackData {
   // Overall size and alignment of the call data for this stack.
-  size_t call_data_alignment = 0;
+  size_t call_data_alignment = 1;
   size_t call_data_size = 0;
   // A complete list of filters for this call, so that we can construct the
   // call data for each filter.

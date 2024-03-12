@@ -85,6 +85,7 @@ InterceptionChain::Builder::Build(const ChannelArgs& args) {
 
   // Instantiate the interceptors.
   std::vector<Interceptor*> interceptors;
+  interceptors.reserve(interceptors_.size());
   for (size_t i = 0; i < interceptors_.size(); ++i) {
     auto& interceptor = interceptors_[i];
     auto* interceptor_instance = interceptor.footprint.OffsetPtr(chain_memory);
@@ -100,6 +101,7 @@ InterceptionChain::Builder::Build(const ChannelArgs& args) {
       gpr_free_aligned(chain_memory);
       return status.status();
     }
+    interceptors.push_back(status.value());
   }
 
   // Create filter stacks for each interceptor.

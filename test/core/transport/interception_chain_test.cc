@@ -96,6 +96,14 @@ const NoInterceptor TestFilter<I>::Call::OnFinalize;
 template <int I>
 class TestConsumingInterceptor final : public Interceptor {
  public:
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    Consume(std::move(unstarted_call_handler))
+        .Cancel(ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
+  }
+  static absl::StatusOr<TestConsumingInterceptor<I>> Create(
+      const ChannelArgs& args, Empty) {
+    return TestConsumingInterceptor<I>{};
+  }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -160,10 +168,7 @@ class InterceptionChainTest : public ::testing::Test {
           ServerMetadataFromStatus(absl::InternalError("👊 cancelled")));
     }
 
-    ClientMetadataHandle TakeMetadata() {
-      EXPECT_NE(metadata_.get(), nullptr);
-      return std::move(metadata_);
-    }
+    ClientMetadataHandle TakeMetadata() { return std::move(metadata_); }
 
    private:
     ClientMetadataHandle metadata_;
@@ -177,11 +182,25 @@ class InterceptionChainTest : public ::testing::Test {
 // Tests begin
 
 TEST_F(InterceptionChainTest, Empty) {
-  int num_destination_calls = 0;
   auto r = InterceptionChain::Builder(destination()).Build(ChannelArgs());
   ASSERT_TRUE(r.ok()) << r.status();
-  EXPECT_EQ(num_destination_calls, 0);
   auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "👊 cancelled");
+  EXPECT_NE(finished_call.client_metadata, nullptr);
+}
+
+TEST_F(InterceptionChainTest, Consumed) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<TestConsumingInterceptor<1>>()
+               .Build(ChannelArgs());
+  ASSERT_TRUE(r.ok()) << r.status();
+  auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "👊 consumed");
+  EXPECT_EQ(finished_call.client_metadata, nullptr);
 }
 
 }  // namespace

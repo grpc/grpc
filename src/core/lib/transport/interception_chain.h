@@ -122,7 +122,8 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
     absl::enable_if_t<std::is_base_of<Interceptor, T>::value, Builder&> Add() {
       interceptors_.emplace_back(
           Footprint::For<T>(), std::move(building_filters_),
-          [](void* interceptor, const ChannelArgs& args) {
+          [](void* interceptor,
+             const ChannelArgs& args) -> absl::StatusOr<Interceptor*> {
             auto i = T::Create(args, {});
             if (!i.ok()) return i.status();
             new (interceptor) T(std::move(i.value()));
