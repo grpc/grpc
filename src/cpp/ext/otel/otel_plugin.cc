@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/nostd/shared_ptr.h"
@@ -387,12 +388,21 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                                     descriptor.value_type));
             }
             break;
-          // TODO(yashkt, yijiem): implement gauges.
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+                int64_gauges_.emplace(descriptor.index,
+                                      meter->CreateInt64ObservableGauge(
+                                          std::string(descriptor.name),
+                                          std::string(descriptor.description),
+                                          std::string(descriptor.unit)));
                 break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+                double_gauges_.emplace(descriptor.index,
+                                       meter->CreateDoubleObservableGauge(
+                                           std::string(descriptor.name),
+                                           std::string(descriptor.description),
+                                           std::string(descriptor.unit)));
                 break;
               default:
                 grpc_core::Crash(
@@ -404,8 +414,25 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
               kCallbackGauge:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+                auto observable_instrument = meter->CreateInt64ObservableGauge(
+                    std::string(descriptor.name),
+                    std::string(descriptor.description),
+                    std::string(descriptor.unit));
+                int64_gauges_.emplace(descriptor.index, observable_instrument);
+                observable_instrument->AddCallback(
+                    [handle = descriptor.index, this](
+                        opentelemetry::metrics::ObserverResult observer_result,
+                        void*) {
+
+                    },
+                    nullptr);
                 break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+                double_gauges_.emplace(descriptor.index,
+                                       meter->CreateDoubleObservableGauge(
+                                           std::string(descriptor.name),
+                                           std::string(descriptor.description),
+                                           std::string(descriptor.unit)));
                 break;
               default:
                 grpc_core::Crash(
@@ -533,6 +560,34 @@ void OpenTelemetryPlugin::RecordHistogram(
                                  optional_label_keys_),
       opentelemetry::context::Context{});
 }
+void OpenTelemetryPlugin::SetGauge(
+    grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
+    int64_t value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) override {
+  auto instrument = int64_gauges_.find(handle.index);
+  auto label_keys = label_keys_map_.find(handle.index);
+  if (instrument == int64_gauges_.end() &&
+      label_keys == label_keys_map_.end()) {
+    // This instrument is disabled.
+    return;
+  }
+  GPR_ASSERT(instrument != int64_gauges_.end() &&
+             "instrument != int64_gauges_.end()");
+  GPR_ASSERT(label_keys != label_keys_map_.end() &&
+             "label_keys != label_keys_map_.end()");
+  GPR_ASSERT(label_keys->second.first.size() == label_values.size() &&
+             "label_keys->second.first.size() == label_values.size()");
+  GPR_ASSERT(label_keys->second.second.size() == optional_values.size() &&
+             "label_keys->second.second.size() == optional_values.size()");
+}
+void OpenTelemetryPlugin::SetGauge(
+    grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+    double value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) override;
+void OpenTelemetryPlugin::AddCallback(
+    grpc_core::RegisteredMetricCallback* callback) override;
+void OpenTelemetryPlugin::RemoveCallback(
+    grpc_core::RegisteredMetricCallback* callback) override;
 
 grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
     absl::string_view canonical_target, grpc_core::Slice path,

@@ -252,14 +252,13 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   void SetGauge(
       grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
       int64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
+      absl::Span<const absl::string_view> optional_values) override;
   void SetGauge(
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
-  // TODO(yashkt, yijiem): implement async instrument.
-  void AddCallback(grpc_core::RegisteredMetricCallback* callback) override {}
-  void RemoveCallback(grpc_core::RegisteredMetricCallback* callback) override {}
+      absl::Span<const absl::string_view> optional_values) override;
+  void AddCallback(grpc_core::RegisteredMetricCallback* callback) override;
+  void RemoveCallback(grpc_core::RegisteredMetricCallback* callback) override;
   grpc_core::ClientCallTracer* GetClientCallTracer(
       absl::string_view canonical_target, grpc_core::Slice path,
       grpc_core::Arena* arena, bool registered_method) override;
@@ -305,6 +304,12 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::UID,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>
       double_histograms_;
+  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
+                      opentelemetry::nostd::shared_ptr<ObservableInstrument>>
+      int64_gauges_;
+  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
+                      opentelemetry::nostd::shared_ptr<ObservableInstrument>>
+      double_gauges_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
