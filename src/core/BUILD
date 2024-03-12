@@ -5555,7 +5555,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "connectivity_state",
-        "experiments",
         "health_check_client",
         "iomgr_fwd",
         "json",

@@ -33,7 +33,6 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
     "pending_queue_cap": "pending_queue_cap",
-    "pick_first_happy_eyeballs": "pick_first_happy_eyeballs",
     "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
     "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
@@ -103,7 +102,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -114,7 +112,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -122,7 +119,6 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -165,7 +161,6 @@ EXPERIMENTS = {
         },
         "on": {
             "cpp_lb_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -173,7 +168,6 @@ EXPERIMENTS = {
                 "absl_base64",
             ],
             "lb_unit_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -181,7 +175,6 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -243,7 +236,6 @@ EXPERIMENTS = {
                 "work_serializer_dispatch",
             ],
             "cpp_lb_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "wrr_delegate_to_pick_first",
             ],
@@ -254,7 +246,6 @@ EXPERIMENTS = {
                 "event_engine_listener",
             ],
             "lb_unit_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
                 "wrr_delegate_to_pick_first",
@@ -266,7 +257,6 @@ EXPERIMENTS = {
                 "registered_method_lookup_in_transport",
             ],
             "xds_end2end_test": [
-                "pick_first_happy_eyeballs",
                 "round_robin_delegate_to_pick_first",
                 "work_serializer_dispatch",
                 "wrr_delegate_to_pick_first",
