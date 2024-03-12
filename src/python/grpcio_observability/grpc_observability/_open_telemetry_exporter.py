@@ -15,7 +15,7 @@
 from typing import Any, Iterable, List
 
 from grpc_observability import _observability  # pytype: disable=pyi-error
-
+from grpc_observability._open_telemetry_observability import _OpenTelemetryPlugin
 
 class _OpenTelemetryExporterDelegator(_observability.Exporter):
     _plugins: Iterable[_OpenTelemetryPlugin]

@@ -93,7 +93,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
-    _plugin: _OpenTelemetryPlugin
+    _plugin: _open_telemetry_observability._OpenTelemetryPlugin
 
     def __init__(
         self,
@@ -135,7 +135,7 @@ class OpenTelemetryPlugin:
             )
         else:
             self.generic_method_attribute_filter = lambda method: False
-        self._plugin = _OpenTelemetryPlugin(self)
+        self._plugin = _open_telemetry_observability._OpenTelemetryPlugin(self)
 
     def register_global(self) -> None:
         """
