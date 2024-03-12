@@ -24,6 +24,8 @@ class AllTest(unittest.TestCase):
         expected_observability_code_elements = (
             "OpenTelemetryObservability",
             "OpenTelemetryPlugin",
+            "start_open_telemetry_observability",
+            "end_open_telemetry_observability",
         )
 
         self.assertCountEqual(
