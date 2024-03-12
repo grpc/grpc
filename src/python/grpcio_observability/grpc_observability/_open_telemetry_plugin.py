@@ -19,6 +19,7 @@ from typing import Callable, Dict, Iterable, List, Optional
 # import grpc
 # from grpc_observability import _open_telemetry_measures
 from grpc_observability import _open_telemetry_observability
+
 # from grpc_observability._cyobservability import MetricsName
 # from grpc_observability._observability import StatsData
 # from opentelemetry.metrics import Counter

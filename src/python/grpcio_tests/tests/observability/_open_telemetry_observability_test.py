@@ -24,8 +24,10 @@ import unittest
 import grpc
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
+from grpc_observability._open_telemetry_observability import (
+    GRPC_OTHER_LABEL_VALUE,
+)
 from grpc_observability._open_telemetry_observability import GRPC_METHOD_LABEL
-from grpc_observability._open_telemetry_observability import GRPC_OTHER_LABEL_VALUE
 from grpc_observability._open_telemetry_observability import GRPC_TARGET_LABEL
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import AggregationTemporality

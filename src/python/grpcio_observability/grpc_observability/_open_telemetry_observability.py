@@ -21,12 +21,10 @@ import grpc
 
 # pytype: disable=pyi-error
 from grpc_observability import _cyobservability
+from grpc_observability import _observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._cyobservability import MetricsName
 from grpc_observability._observability import StatsData
-from grpc_observability._open_telemetry_exporter import (
-    _OpenTelemetryExporterDelegator,
-)
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
@@ -194,6 +192,26 @@ def start_open_telemetry_observability(
 
 def end_open_telemetry_observability() -> None:
     _end_open_telemetry_observability()
+
+
+class _OpenTelemetryExporterDelegator(_observability.Exporter):
+    _plugins: Iterable[_OpenTelemetryPlugin]
+
+    def __init__(self, plugins: Iterable[_OpenTelemetryPlugin]):
+        self._plugins = plugins
+
+    def export_stats_data(
+        self, stats_data: List[_observability.StatsData]
+    ) -> None:
+        # Records stats data to MeterProvider.
+        for data in stats_data:
+            for plugin in self._plugins:
+                plugin.maybe_record_stats_data(data)
+
+    def export_tracing_data(
+        self, tracing_data: List[_observability.TracingData]
+    ) -> None:
+        pass
 
 
 # pylint: disable=no-self-use
