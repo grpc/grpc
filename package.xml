@@ -2889,8 +2889,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs12.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs7.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs8.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pki/certificate.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pki/signature_verify_cache.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/poly1305.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pool.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/posix_time.h" role="src" />
