@@ -77,6 +77,10 @@ int gpr_should_log(gpr_log_severity severity) {
 }
 
 void gpr_default_log(gpr_log_func_args* args) {
+  if (!grpc_core::ConfigVars::Get().AbslLogging()) {
+    gpr_platform_log(args);
+    return;
+  }
   switch (args->severity) {
     case GPR_LOG_SEVERITY_DEBUG:
       //  Log DEBUG messages as VLOG(2).
