@@ -23,17 +23,26 @@ jobs:
           # Share repository cache between workflows.
           repository-cache: true
 
+      - name: Extract input parameter from pull request description
+        env:
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: |
+          # Extract the input parameter from the pull request description
+          INPUT_PARAM=$(echo "$PR_DESCRIPTION" | grep -oP '(?<=Build Parameter: ).*')
+          echo "Input Parameter: $BUILD_PARAM"
+          echo "BUILD_PARAM=$BUILD_PARAM" >> $GITHUB_ENV
+
       - name: Run Bazel build
-        run: bazel build //src/compiler:grpc_${{ github.event.inputs.language }}_plugin
+        run: bazel build //src/compiler:grpc_${{ env.BUILD_PARAM }}_plugin
 
       - name: Copy file to destination repository
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Set up variables
-          BRANCH_NAME="update-${{ github.event.inputs.language }}-plugin-${{ github.run_id }}"
-          PR_TITLE="Update ${{ github.event.inputs.language }} plugin"
-          PR_BODY="This PR updates the ${{ github.event.inputs.language }} plugin file."
+          BRANCH_NAME="update-${{ env.BUILD_PARAM }}-plugin-${{ github.run_id }}"
+          PR_TITLE="Update ${{ env.BUILD_PARAM }} plugin"
+          PR_BODY="This PR updates the ${{ env.BUILD_PARAM }} plugin file."
           
           # Checkout destination repository
           git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/bony-ai/compiled-protos.git destination-repo
@@ -43,9 +52,9 @@ jobs:
           git checkout -b $BRANCH_NAME
           
           # Copy the file to the destination repository
-          cp ../bazel-bin/src/compiler/grpc_${{ github.event.inputs.language }}_plugin ${{ github.event.inputs.language }}/grpc_${{ github.event.inputs.language }}_plugin
+          cp ../bazel-bin/src/compiler/grpc_${{ env.BUILD_PARAM }}_plugin ${{ env.BUILD_PARAM }}/grpc_${{ env.BUILD_PARAM }}_plugin
           
-          cd ${{ github.event.inputs.language }}
+          cd ${{ env.BUILD_PARAM }}
           make
   
           # Commit changes
