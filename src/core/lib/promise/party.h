@@ -41,7 +41,6 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
-#include "src/core/lib/resource_quota/arena.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -408,8 +407,6 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
-  Arena* arena() const { return arena_; }
-
   // Return a promise that resolves to Empty{} when the current party poll is
   // complete.
   // This is useful for implementing batching and the like: we can hold some
@@ -442,8 +439,7 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(Arena* arena, size_t initial_refs)
-      : sync_(initial_refs), arena_(arena) {}
+  explicit Party(size_t initial_refs) : sync_(initial_refs) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
@@ -495,13 +491,13 @@ class Party : public Activity, private Wakeable {
       auto p = promise_();
       if (auto* r = p.value_if_ready()) {
         on_complete_(std::move(*r));
-        GetContext<Arena>()->DeletePooled(this);
+        delete this;
         return true;
       }
       return false;
     }
 
-    void Destroy() override { GetContext<Arena>()->DeletePooled(this); }
+    void Destroy() override { delete this; }
 
    private:
     union {
@@ -630,7 +626,6 @@ class Party : public Activity, private Wakeable {
 #error No synchronization method defined
 #endif
 
-  Arena* const arena_;
   uint8_t currently_polling_ = kNotPolling;
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
@@ -650,9 +645,8 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
     gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
             party_->DebugTag().c_str(), this, std::string(name).c_str());
   }
-  participants_[num_participants_++] =
-      party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
-          name, std::move(promise_factory), std::move(on_complete));
+  participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
+      name, std::move(promise_factory), std::move(on_complete));
 }
 
 template <typename Factory, typename OnComplete>
