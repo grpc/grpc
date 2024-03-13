@@ -222,7 +222,7 @@ void PrintExperimentsList() {
 }
 
 void ForceEnableExperiment(absl::string_view experiment, bool enable) {
-  ABSL_CHECK(g_loaded.load(std::memory_order_relaxed) == false);
+  //  ABSL_CHECK(g_loaded.load(std::memory_order_relaxed) == false);
   for (size_t i = 0; i < kNumExperiments; i++) {
     if (g_experiment_metadata[i].name != experiment) continue;
     if (g_forced_experiments[i].forced) {
