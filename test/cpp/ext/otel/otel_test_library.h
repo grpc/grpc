@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 #define GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
