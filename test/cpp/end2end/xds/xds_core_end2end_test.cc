@@ -27,6 +27,7 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -1069,6 +1070,179 @@ TEST_P(XdsFederationTest, FederationServer) {
                                      ServerHcmAccessor());
   }
   WaitForAllBackends(DEBUG_LOCATION);
+}
+
+//
+// XdsMetricsTest - tests xDS metrics
+//
+
+class XdsMetricsTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {
+    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
+                        .UseDisabledByDefaultMetrics(true)
+                        .BuildAndRegister();
+    InitClient();
+  }
+
+  std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
+};
+
+// Runs with RDS so that we know all resource types work properly.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsMetricsTest,
+    ::testing::Values(XdsTestType().set_enable_rds_testing()),
+    &XdsTestType::Name);
+
+TEST_P(XdsMetricsTest, MetricDefinitionResourceUpdatesValid) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindMetricDescriptorByName(
+              "grpc.xds_client.resource_updates_valid");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.resource_updates_valid");
+  EXPECT_EQ(descriptor->unit, "{resource}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server",
+                                     "grpc.xds.resource_type"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionResourceUpdatesInvalid) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindMetricDescriptorByName(
+              "grpc.xds_client.resource_updates_invalid");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.resource_updates_invalid");
+  EXPECT_EQ(descriptor->unit, "{resource}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server",
+                                     "grpc.xds.resource_type"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionConnected) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindMetricDescriptorByName(
+              "grpc.xds_client.connected");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64);
+  EXPECT_EQ(
+      descriptor->instrument_type,
+      grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.connected");
+  EXPECT_EQ(descriptor->unit, "{bool}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionResources) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindMetricDescriptorByName(
+              "grpc.xds_client.resources");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64);
+  EXPECT_EQ(
+      descriptor->instrument_type,
+      grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.resources");
+  EXPECT_EQ(descriptor->unit, "{resource}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.authority",
+                                     "grpc.xds.resource_type",
+                                     "grpc.xds.cache_state"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricValues) {
+  const auto kMetricResourceUpdatesValid =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName(
+              "grpc.xds_client.resource_updates_valid")
+              .value();
+  const auto kMetricResourceUpdatesInvalid =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName(
+              "grpc.xds_client.resource_updates_invalid")
+              .value();
+  const auto kMetricConnected =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindCallbackInt64GaugeHandleByName("grpc.xds_client.connected")
+              .value();
+  const auto kMetricResources =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindCallbackInt64GaugeHandleByName("grpc.xds_client.resources")
+              .value();
+  const std::string kTarget = absl::StrCat("xds:", kServerName);
+  const std::string kXdsServer = absl::StrCat("localhost:", balancer_->port());
+  CreateAndStartBackends(1, /*xds_enabled=*/true);
+  EdsResourceArgs args =
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk(DEBUG_LOCATION);
+  stats_plugin_->TriggerCallbacks();
+  // Check client metrics.
+  EXPECT_THAT(
+      stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
+                                           {kTarget, kXdsServer}, {}),
+      ::testing::Optional(1));
+  for (absl::string_view type_url :
+       {"envoy.config.listener.v3.Listener",
+        "envoy.config.route.v3.RouteConfiguration",
+        "envoy.config.cluster.v3.Cluster",
+        "envoy.config.endpoint.v3.ClusterLoadAssignment"}) {
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesValid,
+                                       {kTarget, kXdsServer, type_url}, {}),
+        ::testing::Optional(1));
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesInvalid,
+                                       {kTarget, kXdsServer, type_url}, {}),
+        ::testing::Optional(0));
+    EXPECT_THAT(
+        stats_plugin_->GetCallbackGaugeValue(
+            kMetricResources, {kTarget, "#old", type_url, "acked"}, {}),
+        ::testing::Optional(1));
+  }
+  // Check server metrics.
+  EXPECT_THAT(
+      stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
+                                           {"#server", kXdsServer}, {}),
+      ::testing::Optional(1));
+  for (absl::string_view type_url :
+       {"envoy.config.listener.v3.Listener",
+        "envoy.config.route.v3.RouteConfiguration"}) {
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesValid,
+                                       {"#server", kXdsServer, type_url}, {}),
+        ::testing::Optional(1));
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesInvalid,
+                                       {"#server", kXdsServer, type_url}, {}),
+        ::testing::Optional(0));
+    EXPECT_THAT(
+        stats_plugin_->GetCallbackGaugeValue(
+            kMetricResources, {"#server", "#old", type_url, "acked"}, {}),
+        ::testing::Optional(1));
+  }
 }
 
 //
