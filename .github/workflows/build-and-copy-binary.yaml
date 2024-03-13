@@ -1,0 +1,74 @@
+name: Build and Copy Plugin Binary
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-copy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v3
+
+      - name: Set up Bazel
+        uses: bazel-contrib/setup-bazel@0.8.0
+        with:
+          # Avoid downloading Bazel every time.
+          bazelisk-cache: true
+          # Store build cache per workflow.
+          disk-cache: ${{ github.workflow }}
+          # Share repository cache between workflows.
+          repository-cache: true
+
+      - name: Run Bazel build
+        run: bazel build //src/compiler:grpc_${{ github.event.inputs.language }}_plugin
+
+      - name: Copy file to destination repository
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Set up variables
+          BRANCH_NAME="update-${{ github.event.inputs.language }}-plugin-${{ github.run_id }}"
+          PR_TITLE="Update ${{ github.event.inputs.language }} plugin"
+          PR_BODY="This PR updates the ${{ github.event.inputs.language }} plugin file."
+          
+          # Checkout destination repository
+          git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/bony-ai/compiled-protos.git destination-repo
+          cd destination-repo
+          
+          # Create a new branch
+          git checkout -b $BRANCH_NAME
+          
+          # Copy the file to the destination repository
+          cp ../bazel-bin/src/compiler/grpc_${{ github.event.inputs.language }}_plugin ${{ github.event.inputs.language }}/grpc_${{ github.event.inputs.language }}_plugin
+          
+          cd ${{ github.event.inputs.language }}
+          make
+  
+          # Commit changes
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "$PR_TITLE"
+          
+          # Push the branch to the destination repository
+          git push -u origin $BRANCH_NAME
+          
+          # Create a pull request
+          PR_PAYLOAD=$(cat <<EOF
+          {
+            "title": "$PR_TITLE",
+            "body": "$PR_BODY",
+            "head": "$BRANCH_NAME",
+            "base": "main"
+          }
+          EOF
+          )
+          PR_RESPONSE=$(curl -s -X POST -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -H "Content-Type: application/json" -d "$PR_PAYLOAD" https://api.github.com/repos/bony-ai/compiled-protos/pulls)
+          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.html_url')
+          
+          # Print the PR link
+          echo "Created pull request: $PR_URL"
