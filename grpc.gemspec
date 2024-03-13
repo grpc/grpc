@@ -2880,6 +2880,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/pkcs12.h )
   s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/pkcs7.h )
   s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/pkcs8.h )
+  s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/pki/certificate.h )
+  s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/pki/signature_verify_cache.h )
   s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/poly1305.h )
   s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/pool.h )
   s.files += %w( third_party/boringssl-with-bazel/src/include/openssl/posix_time.h )
