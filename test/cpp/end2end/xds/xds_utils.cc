@@ -60,7 +60,7 @@ using ::envoy::extensions::filters::network::http_connection_manager::v3::
 
 std::string XdsBootstrapBuilder::Build() {
   std::vector<std::string> fields;
-  fields.push_back(MakeXdsServersText(top_server_));
+  fields.push_back(MakeXdsServersText(servers_));
   if (!client_default_listener_resource_name_template_.empty()) {
     fields.push_back(
         absl::StrCat("  \"client_default_listener_resource_name_template\": \"",
@@ -78,9 +78,8 @@ std::string XdsBootstrapBuilder::Build() {
 }
 
 std::string XdsBootstrapBuilder::MakeXdsServersText(
-    absl::string_view server_uri) {
+    absl::Span<const std::string> server_uris) {
   constexpr char kXdsServerTemplate[] =
-      "      \"xds_servers\": [\n"
       "        {\n"
       "          \"server_uri\": \"<SERVER_URI>\",\n"
       "          \"channel_creds\": [\n"
@@ -89,17 +88,21 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "            }\n"
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
-      "        }\n"
-      "      ]";
+      "        }";
   std::vector<std::string> server_features;
   if (ignore_resource_deletion_) {
     server_features.push_back("\"ignore_resource_deletion\"");
   }
-  return absl::StrReplaceAll(
-      kXdsServerTemplate,
-      {{"<SERVER_URI>", server_uri},
-       {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
-       {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
+  std::vector<std::string> servers;
+  for (absl::string_view server_uri : server_uris) {
+    servers.emplace_back(absl::StrReplaceAll(
+        kXdsServerTemplate,
+        {{"<SERVER_URI>", server_uri},
+         {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
+         {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}}));
+  }
+  return absl::StrCat("      \"xds_servers\": [\n",
+                      absl::StrJoin(servers, ",\n"), "\n      ]");
 }
 
 std::string XdsBootstrapBuilder::MakeNodeText() {
@@ -148,7 +151,7 @@ std::string XdsBootstrapBuilder::MakeAuthorityText() {
     const std::string& name = p.first;
     const AuthorityInfo& authority_info = p.second;
     std::vector<std::string> fields = {
-        MakeXdsServersText(authority_info.server)};
+        MakeXdsServersText({authority_info.server})};
     if (!authority_info.client_listener_resource_name_template.empty()) {
       fields.push_back(absl::StrCat(
           "\"client_listener_resource_name_template\": \"",
