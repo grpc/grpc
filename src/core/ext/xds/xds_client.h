@@ -259,7 +259,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct AuthorityState {
-    RefCountedPtr<XdsChannel> xds_channel;
+    std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
         resource_map;
   };

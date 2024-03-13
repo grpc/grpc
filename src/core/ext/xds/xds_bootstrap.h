@@ -20,6 +20,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <string>
+#include <vector>
+
+#include "absl/types/span.h"
 
 #include "src/core/lib/json/json.h"
 

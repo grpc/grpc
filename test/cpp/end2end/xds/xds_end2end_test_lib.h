@@ -239,7 +239,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
           port_(grpc_pick_unused_port_or_die()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
 
-    virtual ~ServerThread() { Shutdown(); }
+    virtual ~ServerThread() {
+      // Shutdown should be called manually. Shutdown calls virtual methods and
+      // can't be called from the base class destructor.
+      GPR_ASSERT(!running_);
+    }
 
     void Start();
     void Shutdown();

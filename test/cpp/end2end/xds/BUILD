@@ -491,3 +491,25 @@ grpc_cc_test(
         "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
+
+grpc_cc_test(
+    name = "xds_client_end2end_test",
+    srcs = ["xds_client_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    linkstatic = True,  # Fixes dyld error on MacOS
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpcpp_csds",
+        "//test/core/util:scoped_env_var",
+    ],
+)

@@ -2798,6 +2798,47 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   EXPECT_TRUE(stream->Orphaned());
 }
 
+TEST_F(XdsClientTest, Fallback) {
+  InitXdsClient();
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  // Watcher should initially not see any resource reported.
+  EXPECT_FALSE(watcher->HasEvent());
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  CheckRequestNode(*request);  // Should be present on the first request.
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  // XdsClient should have sent an ACK message to the xDS server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Cancel watch.
+  CancelFooWatch(watcher.get(), "foo1");
+  EXPECT_TRUE(stream->Orphaned());
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
