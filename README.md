@@ -1,3 +1,8 @@
+# Compiling Protoc Plugin Steps
+
+1. ```brew install bazel```
+3. ```bazel build //src/compiler:grpc_<LANGUAGE_NAME>_plugin```
+
 # gRPC – An RPC library and framework
 
 gRPC is a modern, open source, high-performance remote procedure call (RPC)
