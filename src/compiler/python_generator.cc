@@ -139,6 +139,7 @@ bool PrivateGenerator::PrintStub(
         IndentScope raii_args_indent(out);
         out->Print("channel: A grpc.Channel.\n");
       }
+      out->Print("testing workflow\n");
       out->Print("\"\"\"\n");
       for (int i = 0; i < service->method_count(); ++i) {
         auto method = service->method(i);
