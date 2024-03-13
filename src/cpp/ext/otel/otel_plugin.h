@@ -33,7 +33,9 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/metrics/observer_result.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 
@@ -285,6 +287,44 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   Server& server() { return server_; }
 
  private:
+  using LabelKeys = std::vector<absl::string_view>;
+  using OptionalLabelKeys = std::vector<absl::string_view>;
+
+  struct RegisteredMetricCallbackState {
+    grpc_core::Timestamp last_update_time;
+  };
+
+  template <typename ValueType>
+  struct ObservableState
+      : public grpc_core::RefCounted<ObservableState<ValueType>> {
+    grpc_core::GlobalInstrumentsRegistry::UID id;
+    // Caches.
+    ValueType value;
+    std::unique_ptr<std::vector<absl::string_view>> label_values;
+    std::unique_ptr<std::vector<absl::string_view>> optional_label_values;
+    opentelemetry::nostd::shared_ptr<
+        opentelemetry::metrics::ObservableInstrument>
+        instrument;
+    bool callback_registered = false;
+    // Views.
+    std::shared_ptr<
+        absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
+                            std::pair<LabelKeys, OptionalLabelKeys>>>
+        label_keys_map;
+    std::shared_ptr<std::set<absl::string_view>> optional_label_keys;
+    // We only support one Observable to one RegisteredMetricCallback and one
+    // RegisteredMetricCallback to multiple Observables relationship for now.
+    grpc_core::RegisteredMetricCallback* registered_metric_callback = nullptr;
+    absl::Mutex* mu;
+    std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
+                                        RegisteredMetricCallbackState>>
+        registered_metric_callback_state_map;
+  };
+
+  template <typename T>
+  static void ObservableCallback(opentelemetry::metrics::ObserverResult result,
+                                 void* arg);
+
   // Instruments for per-call metrics.
   Client client_;
   Server server_;
@@ -304,12 +344,19 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::UID,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>
       double_histograms_;
+  absl::Mutex mu_;
   absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      opentelemetry::nostd::shared_ptr<ObservableInstrument>>
-      int64_gauges_;
+                      grpc_core::RefCountedPtr<ObservableState<int64_t>>>
+      int64_observable_instruments_;
   absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      opentelemetry::nostd::shared_ptr<ObservableInstrument>>
-      double_gauges_;
+                      grpc_core::RefCountedPtr<ObservableState<double>>>
+      double_observable_instruments_;
+  using ObservableStatePtr =
+      absl::variant<grpc_core::RefCountedPtr<ObservableState<int64_t>>,
+                    grpc_core::RefCountedPtr<ObservableState<double>>>;
+  std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
+                                      RegisteredMetricCallbackState>>
+      registered_metric_callback_state_map_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
@@ -321,12 +368,10 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       generic_method_attribute_filter_;
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
-  using LabelKeys = std::vector<absl::string_view>;
-  using OptionalLabelKeys = std::vector<absl::string_view>;
   // Stores label keys and optional label keys for each instrument at
   // construction time.
-  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      std::pair<LabelKeys, OptionalLabelKeys>>
+  std::shared_ptr<absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
+                                      std::pair<LabelKeys, OptionalLabelKeys>>>
       label_keys_map_;
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
 };
