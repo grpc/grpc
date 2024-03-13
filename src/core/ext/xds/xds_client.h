@@ -270,6 +270,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     std::map<const XdsResourceType*, std::string /*version*/>
         resource_type_version_map_;
 
+// FIXME: absl::optional
     absl::Status status_;
   };
 
