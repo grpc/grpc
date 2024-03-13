@@ -112,6 +112,22 @@ class TestConsumingInterceptor final : public Interceptor {
 template <int I>
 class TestHijackingInterceptor final : public Interceptor {
  public:
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    unstarted_call_handler.SpawnInfallible(
+        "hijack", [this, unstarted_call_handler]() mutable {
+          return Map(Hijack(std::move(unstarted_call_handler)),
+                     [](ValueOrFailure<HijackedCall> hijacked_call) {
+                       ForwardCall(
+                           hijacked_call.value().original_call_handler(),
+                           hijacked_call.value().MakeCall());
+                       return Empty{};
+                     });
+        });
+  }
+  static absl::StatusOr<TestHijackingInterceptor<I>> Create(
+      const ChannelArgs& args, Empty) {
+    return TestHijackingInterceptor<I>{};
+  }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -203,11 +219,24 @@ TEST_F(InterceptionChainTest, Consumed) {
   EXPECT_EQ(finished_call.client_metadata, nullptr);
 }
 
+TEST_F(InterceptionChainTest, Hijacked) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<TestHijackingInterceptor<1>>()
+               .Build(ChannelArgs());
+  ASSERT_TRUE(r.ok()) << r.status();
+  auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "👊 cancelled");
+  EXPECT_NE(finished_call.client_metadata, nullptr);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_tracer_init();
   gpr_log_verbosity_init();
   return RUN_ALL_TESTS();
 }

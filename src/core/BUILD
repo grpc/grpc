@@ -7256,6 +7256,7 @@ grpc_cc_library(
     deps = [
         "call_destination",
         "call_filters",
+        "call_size_estimator",
         "call_spine",
         "metadata",
         "ref_counted",

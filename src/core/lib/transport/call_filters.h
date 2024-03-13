@@ -1123,6 +1123,8 @@ class PipeState {
 
   bool holds_error() const { return state_ == ValueState::kError; }
 
+  std::string DebugString() const;
+
  private:
   enum class ValueState : uint8_t {
     // Nothing sending nor receiving
@@ -1328,6 +1330,8 @@ class CallFilters {
   GRPC_MUST_USE_RESULT auto WasCancelled();
   void Finalize(const grpc_call_final_info* final_info);
 
+  std::string DebugString() const;
+
  private:
   template <filters_detail::PipeState(CallFilters::*state_ptr),
             void*(CallFilters::*push_ptr), typename T,
@@ -1366,6 +1370,10 @@ class CallFilters {
 
       T TakeValue() { return std::move(value_); }
 
+      absl::string_view DebugString() const {
+        return value_ != nullptr ? " (not pulled)" : "";
+      }
+
      private:
       filters_detail::PipeState& state() { return filters_->*state_ptr; }
       void*& push_slot() { return filters_->*push_ptr; }
@@ -1374,64 +1382,12 @@ class CallFilters {
       T value_;
     };
 
-    class Pull {
-     public:
-      explicit Pull(CallFilters* filters) : filters_(filters) {}
-      ~Pull() {
-        if (filters_ != nullptr) {
-          state().DropPull();
-        }
-      }
-
-      Pull(const Pull&) = delete;
-      Pull& operator=(const Pull&) = delete;
-      Pull(Pull&& other) noexcept
-          : filters_(std::exchange(other.filters_, nullptr)),
-            executor_(std::move(other.executor_)) {}
-      Pull& operator=(Pull&&) = delete;
-
-      Poll<ValueOrFailure<T>> operator()() {
-        if (executor_.IsRunning()) {
-          auto c = state().PollClosed();
-          if (c.ready() && c.value()) {
-            filters_->CancelDueToFailedPipeOperation();
-            return Failure{};
-          }
-          return FinishOperationExecutor(executor_.Step(filters_->call_data_));
-        }
-        auto p = state().PollPull();
-        auto* r = p.value_if_ready();
-        if (r == nullptr) return Pending{};
-        if (!r->ok() || !**r) {
-          filters_->CancelDueToFailedPipeOperation();
-          return Failure{};
-        }
-        return FinishOperationExecutor(executor_.Start(
-            layout(), push()->TakeValue(), filters_->call_data_));
-      }
-
-     private:
-      filters_detail::PipeState& state() { return filters_->*state_ptr; }
-      Push* push() { return static_cast<Push*>(filters_->*push_ptr); }
-      const filters_detail::Layout<filters_detail::FallibleOperator<T>>*
-      layout() {
-        return &(filters_->stack_->data_.*layout_ptr);
-      }
-
-      Poll<ValueOrFailure<T>> FinishOperationExecutor(
-          Poll<filters_detail::ResultOr<T>> p) {
-        auto* r = p.value_if_ready();
-        if (r == nullptr) return Pending{};
-        GPR_DEBUG_ASSERT(!executor_.IsRunning());
-        state().AckPull();
-        if (r->ok != nullptr) return std::move(r->ok);
-        filters_->PushServerTrailingMetadata(std::move(r->error));
-        return Failure{};
-      }
-
-      CallFilters* filters_;
-      filters_detail::OperationExecutor<T> executor_;
-    };
+    static std::string DebugString(absl::string_view name,
+                                   const CallFilters* filters) {
+      auto* push = static_cast<Push*>(filters->*push_ptr);
+      return absl::StrCat(name, ":", (filters->*state_ptr).DebugString(),
+                          push == nullptr ? "" : push->DebugString());
+    }
 
     class PullMaybe {
      public:
@@ -1632,10 +1588,13 @@ class CallFilters {
         return executor_.Step(filters_->call_data_);
       }
       if (filters_->server_trailing_metadata_ == nullptr) {
+        gpr_log(GPR_INFO, "PullServerTrailingMetadata[%p]: Pending", filters_);
         return filters_->server_trailing_metadata_waiter_.pending();
       }
       // If no stack has been set, we can just return the result of the call
       if (filters_->stack_ == nullptr) {
+        gpr_log(GPR_INFO, "PullServerTrailingMetadata[%p]: Ready: %s", filters_,
+                filters_->server_trailing_metadata_->DebugString().c_str());
         return std::move(filters_->server_trailing_metadata_);
       }
       // Otherwise we need to process it through all the filters.

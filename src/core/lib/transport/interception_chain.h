@@ -46,7 +46,7 @@ class Interceptor : public CallDestination {
       return MakeCallWithMetadata(std::move(metadata_));
     }
 
-    CallHandler& call_handler() { return call_handler_; }
+    CallHandler& original_call_handler() { return call_handler_; }
 
    private:
     friend class Interceptor;

@@ -330,11 +330,6 @@ class UnstartedCallHandler {
   explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
-  UnstartedCallHandler(const UnstartedCallHandler&) = delete;
-  UnstartedCallHandler& operator=(const UnstartedCallHandler&) = delete;
-  UnstartedCallHandler(UnstartedCallHandler&&) = default;
-  UnstartedCallHandler& operator=(UnstartedCallHandler&&) = default;
-
   // Returns the client initial metadata, which has not yet been
   // processed by the stack that will ultimately be used for this call.
   ClientMetadata& UnprocessedClientInitialMetadata();

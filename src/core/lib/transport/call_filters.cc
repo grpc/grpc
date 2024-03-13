@@ -205,13 +205,16 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation() {
   // We expect something cancelled before now
   if (server_trailing_metadata_ == nullptr) return;
-  gpr_log(GPR_DEBUG, "Cancelling due to failed pipe operation");
+  gpr_log(GPR_DEBUG, "Cancelling due to failed pipe operation: %s",
+          DebugString().c_str());
   server_trailing_metadata_ =
       ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
   server_trailing_metadata_waiter_.Wake();
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
+  gpr_log(GPR_DEBUG, "Push server trailing metadata: %s into %s",
+          md->DebugString().c_str(), DebugString().c_str());
   GPR_ASSERT(md != nullptr);
   if (server_trailing_metadata_ != nullptr) return;
   server_trailing_metadata_ = std::move(md);
@@ -221,6 +224,24 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   server_to_client_message_state_.CloseWithError();
   server_trailing_metadata_waiter_.Wake();
 }
+
+std::string CallFilters::DebugString() const {
+  std::vector<std::string> components = {
+      absl::StrFormat("this:%p", this),
+      absl::StrCat("client_initial_metadata:",
+                   client_initial_metadata_state_.DebugString()),
+      ServerInitialMetadataPromises::DebugString("server_initial_metadata",
+                                                 this),
+      ClientToServerMessagePromises::DebugString("client_to_server_message",
+                                                 this),
+      ServerToClientMessagePromises::DebugString("server_to_client_message",
+                                                 this),
+      absl::StrCat("server_trailing_metadata:",
+                   server_trailing_metadata_ == nullptr
+                       ? "not-set"
+                       : server_trailing_metadata_->DebugString())};
+  return absl::StrCat("CallFilters{", absl::StrJoin(components, ", "), "}");
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters::Stack
@@ -410,6 +431,34 @@ void filters_detail::PipeState::AckPull() {
     case ValueState::kError:
       break;
   }
+}
+
+std::string filters_detail::PipeState::DebugString() const {
+  const char* state_str = "<<invalid-value>>";
+  switch (state_) {
+    case ValueState::kIdle:
+      state_str = "Idle";
+      break;
+    case ValueState::kWaiting:
+      state_str = "Waiting";
+      break;
+    case ValueState::kQueued:
+      state_str = "Queued";
+      break;
+    case ValueState::kReady:
+      state_str = "Ready";
+      break;
+    case ValueState::kProcessing:
+      state_str = "Processing";
+      break;
+    case ValueState::kClosed:
+      state_str = "Closed";
+      break;
+    case ValueState::kError:
+      state_str = "Error";
+      break;
+  }
+  return absl::StrCat(state_str, started_ ? "" : " (not started)");
 }
 
 }  // namespace grpc_core
