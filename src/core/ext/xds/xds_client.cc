@@ -150,7 +150,8 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
       std::vector<std::string> errors;
       std::map<std::string /*authority*/, std::set<XdsResourceKey>>
           resources_seen;
-      bool have_valid_resources = false;
+      uint64_t num_valid_resources = 0;
+      uint64_t num_invalid_resources = 0;
       RefCountedPtr<ReadDelayHandle> read_delay_handle;
     };
 
@@ -743,12 +744,6 @@ XdsClient::XdsChannel::AdsCall::AdsResponseParser::ProcessAdsResponseFields(
   result_.nonce = std::move(fields.nonce);
   result_.read_delay_handle =
       MakeRefCounted<AdsReadDelayHandle>(ads_call_->Ref());
-  // Update metrics.
-  if (ads_call_->xds_client()->metrics_reporter_ != nullptr) {
-    ads_call_->xds_client()->metrics_reporter_->ReportResourceUpdates(
-        ads_call_->xds_channel()->server_.server_uri(), result_.type_url,
-        fields.num_resources);
-  }
   return absl::OkStatus();
 }
 
@@ -789,6 +784,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "incorrect resource type \"", type_url,
                      "\" (should be \"", result_.type_url, "\")"));
+    ++result_.num_invalid_resources;
     return;
   }
   // Parse the resource.
@@ -809,6 +805,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
       // there's nothing more we can do here.
       result_.errors.emplace_back(absl::StrCat(
           error_prefix, decode_result.resource.status().ToString()));
+      ++result_.num_invalid_resources;
       return;
     }
   }
@@ -824,6 +821,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   if (!parsed_resource_name.ok()) {
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
+    ++result_.num_invalid_resources;
     return;
   }
   // Cancel resource-does-not-exist timer, if needed.
@@ -883,10 +881,11 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
         result_.read_delay_handle);
     UpdateResourceMetadataNacked(result_.version, decode_status.ToString(),
                                  update_time_, &resource_state.meta);
+    ++result_.num_invalid_resources;
     return;
   }
   // Resource is valid.
-  result_.have_valid_resources = true;
+  ++result_.num_valid_resources;
   // If it didn't change, ignore it.
   if (resource_state.resource != nullptr &&
       result_.type->ResourcesEqual(resource_state.resource.get(),
@@ -920,6 +919,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::
     ResourceWrapperParsingFailed(size_t idx, absl::string_view message) {
   result_.errors.emplace_back(
       absl::StrCat("resource index ", idx, ": ", message));
+  ++result_.num_invalid_resources;
 }
 
 //
@@ -1163,12 +1163,18 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
         }
       }
       // If we had valid resources or the update was empty, update the version.
-      if (result.have_valid_resources || result.errors.empty()) {
+      if (result.num_valid_resources > 0 || result.errors.empty()) {
         xds_channel()->resource_type_version_map_[result.type] =
             std::move(result.version);
       }
       // Send ACK or NACK.
       SendMessageLocked(result.type);
+    }
+    // Update metrics.
+    if (xds_client()->metrics_reporter_ != nullptr) {
+      xds_client()->metrics_reporter_->ReportResourceUpdates(
+          xds_channel()->server_.server_uri(), result.type_url,
+          result.num_valid_resources, result.num_invalid_resources);
     }
   }
   xds_client()->work_serializer_.DrainQueue();

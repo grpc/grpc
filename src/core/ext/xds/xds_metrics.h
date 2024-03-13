@@ -30,7 +30,8 @@ class XdsMetricsReporter {
 
   virtual void ReportResourceUpdates(absl::string_view xds_server,
                                      absl::string_view resource_type,
-                                     uint64_t count) = 0;
+                                     uint64_t num_valid,
+                                     uint64_t num_invalid) = 0;
 };
 
 }  // namespace grpc_core

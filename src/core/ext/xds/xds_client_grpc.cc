@@ -94,15 +94,23 @@ constexpr absl::string_view kMetricLabelXdsResourceType =
     "grpc.xds.resource_type";
 constexpr absl::string_view kMetricLabelXdsCacheState = "grpc.xds.cache_state";
 
-const auto kMetricResourceUpdates =
+const auto kMetricResourceUpdatesValid =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.xds_client.resource_updates",
-        "EXPERIMENTAL.  A counter of resource updates from the xDS "
-        "server. Note that this is a count of resources, not response "
-        "messages; if a response message contains two resources, then we "
-        "will increment the counter twice. The counter will be "
-        "incremented even for resources that have not changed.",
-        "{update}",
+        "grpc.xds_client.resource_updates_valid",
+        "EXPERIMENTAL.  A counter of resources received that were considered "
+        "valid.  The counter will be incremented even for resources that "
+        "have not changed.",
+        "{resource}",
+        {kMetricLabelTarget, kMetricLabelXdsServer,
+         kMetricLabelXdsResourceType},
+        {}, false);
+
+const auto kMetricResourceUpdatesInvalid =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.xds_client.resource_updates_invalid",
+        "EXPERIMENTAL.  A counter of resources received that were considered "
+        "invalid.",
+        "{resource}",
         {kMetricLabelTarget, kMetricLabelXdsServer,
          kMetricLabelXdsResourceType},
         {}, false);
@@ -139,9 +147,13 @@ class GrpcXdsClient::MetricsReporter : public XdsMetricsReporter {
 
   void ReportResourceUpdates(absl::string_view xds_server,
                              absl::string_view resource_type,
-                             uint64_t count) override {
+                             uint64_t num_valid_resources,
+                             uint64_t num_invalid_resources) override {
     xds_client_.stats_plugin_group_.AddCounter(
-        kMetricResourceUpdates, count,
+        kMetricResourceUpdatesValid, num_valid_resources,
+        {xds_client_.key_, xds_server, resource_type}, {});
+    xds_client_.stats_plugin_group_.AddCounter(
+        kMetricResourceUpdatesInvalid, num_invalid_resources,
         {xds_client_.key_, xds_server, resource_type}, {});
   }
 
