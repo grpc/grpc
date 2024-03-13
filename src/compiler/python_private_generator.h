@@ -55,6 +55,9 @@ struct PrivateGenerator {
       const grpc_generator::Service* service, grpc_generator::Printer* out);
   bool PrintServicer(const grpc_generator::Service* service,
                      grpc_generator::Printer* out);
+
+  bool PrintBony(const grpc_generator::File* file,
+                 grpc_generator::Printer* out);
   bool PrintStub(const std::string& package_qualified_service_name,
                  const grpc_generator::Service* service,
                  grpc_generator::Printer* out);
