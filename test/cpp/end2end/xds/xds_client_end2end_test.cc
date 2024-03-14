@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
-#include "xds_utils.h"
 
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
