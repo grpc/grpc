@@ -168,7 +168,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
             is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto r = GetContext<Arena>()->MakePooled<ServerMetadata>();
   r->Set(GrpcStatusMetadata(), GRPC_STATUS_RESOURCE_EXHAUSTED);
   r->Set(GrpcMessageMetadata(), Slice::FromCopiedString(absl::StrFormat(
                                     "%s message larger than max (%u vs. %d)",

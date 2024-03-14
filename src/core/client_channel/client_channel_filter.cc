@@ -3525,7 +3525,7 @@ ClientChannelFilter::PromiseBasedLoadBalancedCall::MakeCallPromise(
         [this]() {
           // TODO(roth): Change CallTracer API to not pass metadata
           // batch to this method, since the batch is always empty.
-          grpc_metadata_batch metadata(GetContext<Arena>());
+          grpc_metadata_batch metadata;
           call_attempt_tracer()->RecordSendTrailingMetadata(&metadata);
         });
   }
