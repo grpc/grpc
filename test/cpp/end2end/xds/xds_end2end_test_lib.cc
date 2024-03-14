@@ -287,9 +287,10 @@ void XdsEnd2endTest::BackendServerThread::ShutdownAllServices() {
 //
 
 XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
-    XdsEnd2endTest* test_obj)
+    XdsEnd2endTest* test_obj, absl::string_view debug_label)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl(
+          debug_label,
           // First request must have node set with the right client features.
           [&](const DiscoveryRequest& request) {
             EXPECT_TRUE(request.has_node());
@@ -303,7 +304,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
             EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);
           })),
       lrs_service_(new LrsServiceImpl(
-          (GetParam().enable_load_reporting() ? 20 : 0), {kDefaultClusterName},
+          debug_label, (GetParam().enable_load_reporting() ? 20 : 0),
+          {kDefaultClusterName},
           // Fail if load reporting is used when not enabled.
           [&]() { EXPECT_TRUE(GetParam().enable_load_reporting()); },
           // Make sure we send the client feature saying that we support
@@ -410,9 +412,9 @@ void XdsEnd2endTest::TearDown() {
 }
 
 std::unique_ptr<XdsEnd2endTest::BalancerServerThread>
-XdsEnd2endTest::CreateAndStartBalancer() {
+XdsEnd2endTest::CreateAndStartBalancer(absl::string_view debug_label) {
   std::unique_ptr<BalancerServerThread> balancer =
-      std::make_unique<BalancerServerThread>(this);
+      std::make_unique<BalancerServerThread>(this, debug_label);
   balancer->Start();
   return balancer;
 }

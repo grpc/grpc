@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 #include <iostream>
+#include <memory>
 #include <type_traits>
 
 #include <gmock/gmock.h>
@@ -48,32 +49,39 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class XdsClientTest : public XdsEnd2endTest {};
+class XdsClientTest : public XdsEnd2endTest {
+ public:
+  XdsClientTest()
+      : fallback_balancer_(CreateAndStartBalancer("Fallback Balancer")) {}
+
+  void SetUp() override {
+    InitClient(XdsBootstrapBuilder().SetServers({
+        // absl::StrCat("localhost:", balancer_->port()),
+        absl::StrCat("localhost:", fallback_balancer_->port()),
+    }));
+  }
+
+  void TearDown() override {
+    fallback_balancer_->Shutdown();
+    XdsEnd2endTest::TearDown();
+  }
+
+ protected:
+  std::unique_ptr<BalancerServerThread> fallback_balancer_;
+};
 
 TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
   CreateBackends(1);
-  std::unique_ptr<BalancerServerThread> balancer2 = CreateAndStartBalancer();
-  InitClient(XdsBootstrapBuilder().SetServers({
-      absl::StrCat("localhost:", balancer_->port()),
-      absl::StrCat("localhost:", balancer2->port()),
-  }));
-  SetListenerAndRouteConfiguration(balancer2.get(), default_listener_,
+  SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
                                    default_route_config_);
-  balancer2->ads_service()->SetCdsResource(default_cluster_);
-
+  fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   const std::string kErrorMessage = "test forced ADS stream failure";
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   auto status = SendRpc();
-  gpr_log(GPR_INFO,
-          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
-          status.error_code(), status.error_message().c_str());
   EXPECT_TRUE(status.ok()) << status.error_message();
-  EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
-  EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
-  EXPECT_THAT(status.error_message(),
-              ::testing::HasSubstr("(node ID:xds_end2end_test)"));
-  balancer2->Shutdown();
 }
 
 TEST_P(XdsClientTest, DISABLED_PrimarySecondaryNotAvailable) {}

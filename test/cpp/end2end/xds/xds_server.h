@@ -73,10 +73,12 @@ class AdsServiceImpl
   };
 
   explicit AdsServiceImpl(
+      absl::string_view debug_label,
       std::function<void(const DiscoveryRequest& request)> check_first_request =
           nullptr,
       std::function<void(absl::StatusCode)> check_nack_status_code = nullptr)
-      : check_first_request_(std::move(check_first_request)),
+      : debug_label_(debug_label),
+        check_first_request_(std::move(check_first_request)),
         check_nack_status_code_(std::move(check_nack_status_code)) {}
 
   void set_wrap_resources(bool wrap_resources) {
@@ -223,14 +225,15 @@ class AdsServiceImpl
 
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+    gpr_log(GPR_INFO, "ADS[%s]: StreamAggregatedResources starts",
+            debug_label_.c_str());
     {
       grpc_core::MutexLock lock(&ads_mu_);
       if (forced_ads_failure_.has_value()) {
         gpr_log(GPR_INFO,
-                "ADS[%p]: StreamAggregatedResources forcing early failure "
+                "ADS[%s]: StreamAggregatedResources forcing early failure "
                 "with status code: %d, message: %s",
-                this, forced_ads_failure_.value().error_code(),
+                debug_label_.c_str(), forced_ads_failure_.value().error_code(),
                 forced_ads_failure_.value().error_message().c_str());
         return forced_ads_failure_.value();
       }
@@ -273,8 +276,9 @@ class AdsServiceImpl
           requests.pop_front();
           did_work = true;
           gpr_log(GPR_INFO,
-                  "ADS[%p]: Received request for type %s with content %s", this,
-                  request.type_url().c_str(), request.DebugString().c_str());
+                  "ADS[%s]: Received request for type %s with content %s",
+                  debug_label_.c_str(), request.type_url().c_str(),
+                  request.DebugString().c_str());
           SentState& sent_state = sent_state_map[request.type_url()];
           // Process request.
           ProcessRequest(request, &update_queue, &subscription_map, &sent_state,
@@ -282,7 +286,7 @@ class AdsServiceImpl
         }
       }
       if (response.has_value()) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
+        gpr_log(GPR_INFO, "ADS[%s]: Sending response: %s", debug_label_.c_str(),
                 response->DebugString().c_str());
         stream->Write(response.value());
       }
@@ -303,8 +307,8 @@ class AdsServiceImpl
         }
       }
       if (response.has_value()) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
-                response->DebugString().c_str());
+        gpr_log(GPR_INFO, "ADS[%s]: Sending update response: %s",
+                debug_label_.c_str(), response->DebugString().c_str());
         stream->Write(response.value());
       }
       {
@@ -338,7 +342,8 @@ class AdsServiceImpl
         }
       }
     }
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
+    gpr_log(GPR_INFO, "ADS[%s]: StreamAggregatedResources done",
+            debug_label_.c_str());
     RemoveClient(context->peer());
     return Status::OK;
   }
@@ -369,8 +374,8 @@ class AdsServiceImpl
       ResponseState response_state;
       if (!request.has_error_detail()) {
         response_state.state = ResponseState::ACKED;
-        gpr_log(GPR_INFO, "ADS[%p]: client ACKed resource_type=%s version=%s",
-                this, request.type_url().c_str(),
+        gpr_log(GPR_INFO, "ADS[%s]: client ACKed resource_type=%s version=%s",
+                debug_label_.c_str(), request.type_url().c_str(),
                 request.version_info().c_str());
       } else {
         response_state.state = ResponseState::NACKED;
@@ -380,8 +385,9 @@ class AdsServiceImpl
         }
         response_state.error_message = request.error_detail().message();
         gpr_log(GPR_INFO,
-                "ADS[%p]: client NACKed resource_type=%s version=%s: %s", this,
-                request.type_url().c_str(), request.version_info().c_str(),
+                "ADS[%s]: client NACKed resource_type=%s version=%s: %s",
+                debug_label_.c_str(), request.type_url().c_str(),
+                request.version_info().c_str(),
                 response_state.error_message.c_str());
       }
       resource_type_response_state_[request.type_url()].emplace_back(
@@ -412,8 +418,9 @@ class AdsServiceImpl
                          &resource_state, update_queue) ||
           ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
-                request.type_url().c_str(), resource_name.c_str());
+        gpr_log(GPR_INFO, "ADS[%s]: Sending update for type=%s name=%s",
+                debug_label_.c_str(), request.type_url().c_str(),
+                resource_name.c_str());
         resources_added_to_response.emplace(resource_name);
         if (!response->has_value()) response->emplace();
         if (resource_state.resource.has_value()) {
@@ -427,8 +434,9 @@ class AdsServiceImpl
         }
       } else {
         gpr_log(GPR_INFO,
-                "ADS[%p]: client does not need update for type=%s name=%s",
-                this, request.type_url().c_str(), resource_name.c_str());
+                "ADS[%s]: client does not need update for type=%s name=%s",
+                debug_label_.c_str(), request.type_url().c_str(),
+                resource_name.c_str());
       }
     }
     // Process unsubscriptions for any resource no longer
@@ -451,8 +459,8 @@ class AdsServiceImpl
                      SubscriptionMap* subscription_map, SentState* sent_state,
                      absl::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
-    gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s", this,
-            resource_type.c_str(), resource_name.c_str());
+    gpr_log(GPR_INFO, "ADS[%s]: Received update for type=%s name=%s",
+            debug_label_.c_str(), resource_type.c_str(), resource_name.c_str());
     auto& subscription_name_map = (*subscription_map)[resource_type];
     auto& resource_type_state = resource_map_[resource_type];
     auto& resource_name_map = resource_type_state.resource_name_map;
@@ -461,8 +469,9 @@ class AdsServiceImpl
       ResourceState& resource_state = resource_name_map[resource_name];
       if (ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
-                resource_type.c_str(), resource_name.c_str());
+        gpr_log(GPR_INFO, "ADS[%s]: Sending update for type=%s name=%s",
+                debug_label_.c_str(), resource_type.c_str(),
+                resource_name.c_str());
         response->emplace();
         if (resource_state.resource.has_value()) {
           auto* resource = (*response)->add_resources();
@@ -493,7 +502,8 @@ class AdsServiceImpl
         requests->emplace_back(std::move(request));
       }
     }
-    gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
+    gpr_log(GPR_INFO, "ADS[%s]: Null read, stream closed",
+            debug_label_.c_str());
     grpc_core::MutexLock lock(&ads_mu_);
     *stream_closed = true;
   }
@@ -562,6 +572,7 @@ class AdsServiceImpl
     clients_.erase(client);
   }
 
+  std::string debug_label_;
   std::function<void(const DiscoveryRequest& request)> check_first_request_;
   std::function<void(absl::StatusCode)> check_nack_status_code_;
 
@@ -696,12 +707,14 @@ class LrsServiceImpl
     std::map<std::string, uint64_t> dropped_requests_;
   };
 
-  LrsServiceImpl(int client_load_reporting_interval_seconds,
+  LrsServiceImpl(absl::string_view debug_label,
+                 int client_load_reporting_interval_seconds,
                  std::set<std::string> cluster_names,
                  std::function<void()> stream_started_callback = nullptr,
                  std::function<void(const LoadStatsRequest& request)>
                      check_first_request = nullptr)
-      : client_load_reporting_interval_seconds_(
+      : debug_label_(debug_label),
+        client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_(std::move(cluster_names)),
         stream_started_callback_(std::move(stream_started_callback)),
@@ -778,6 +791,7 @@ class LrsServiceImpl
     return Status::OK;
   }
 
+  std::string debug_label_;
   const int client_load_reporting_interval_seconds_;
   bool send_all_clusters_ = false;
   std::set<std::string> cluster_names_;

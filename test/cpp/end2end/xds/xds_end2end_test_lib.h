@@ -402,7 +402,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // A server thread for the xDS server.
   class BalancerServerThread : public ServerThread {
    public:
-    explicit BalancerServerThread(XdsEnd2endTest* test_obj);
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj,
+                                  absl::string_view debug_label);
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
@@ -443,7 +444,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Creates and starts a new balancer, running in its own thread.
   // Most tests will not need to call this; instead, they can use
   // balancer_, which is already populated with default resources.
-  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer();
+  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer(
+      absl::string_view debug_label = "Default Balancer");
 
   // Sets the Listener and RouteConfiguration resource on the specified
   // balancer.  If RDS is in use, they will be set as separate resources;

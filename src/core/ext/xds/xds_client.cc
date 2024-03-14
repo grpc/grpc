@@ -599,19 +599,22 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
       xds_servers = xds_client_->bootstrap().servers();
     }
     for (size_t i = a.second.xds_channels.size(); i < xds_servers.size(); ++i) {
-      gpr_log(GPR_INFO, "Falling back to %s",
-              xds_servers[i]->server_uri().c_str());
       auto channel =
           xds_client_->GetOrCreateXdsChannelLocked(*xds_servers[i], "fallback");
       for (const auto& type_resource : a.second.resource_map) {
         for (const auto& key_state : type_resource.second) {
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] xDS server: %s, subscribing to %s %s",
+                  xds_client_.get(), xds_servers[i]->server_uri().c_str(),
+                  std::string(type_resource.first->type_url()).c_str(),
+                  key_state.first.id.c_str());
           channel->SubscribeLocked(type_resource.first,
                                    {a.first, key_state.first});
         }
       }
       a.second.xds_channels.emplace_back(std::move(channel));
       if (a.second.xds_channels.back()->status().ok()) {
-        gpr_log(GPR_INFO, "[xds_client %p] Performing fallback to %s",
+        gpr_log(GPR_INFO, "[xds_client %p] Performed fallback to %s",
                 xds_client_.get(), xds_servers[i]->server_uri().c_str());
         return;
       } else {
@@ -638,6 +641,8 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
           },
       DEBUG_LOCATION);
 }
+
+// bool XdsClient::PerformFallback
 
 //
 // XdsClient::XdsChannel::RetryableCall<>
