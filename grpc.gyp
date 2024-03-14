@@ -194,9 +194,11 @@
       'dependencies': [
         'absl/base:base',
         'absl/base:core_headers',
+        'absl/base:log_severity',
         'absl/flags:flag',
         'absl/flags:marshalling',
         'absl/functional:any_invocable',
+        'absl/log:log',
         'absl/memory:memory',
         'absl/random:random',
         'absl/status:status',
