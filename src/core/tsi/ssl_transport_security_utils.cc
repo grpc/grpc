@@ -259,12 +259,19 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
+    gpr_log(GPR_DEBUG, "Could not public key from certificate.");
     EVP_PKEY_free(ikey);
     return false;
   }
-  bool ret = X509_CRL_verify(crl, ikey) == 1;
+  int ret = X509_CRL_verify(crl, ikey);
+  if (ret < 0) {
+    gpr_log(GPR_DEBUG,
+            "There was an unexpected problem checking the CRL signature.");
+  } else if (ret == 0) {
+    gpr_log(GPR_DEBUG, "CRL could not be verified.");
+  }
   EVP_PKEY_free(ikey);
-  return ret;
+  return ret == 1;
 }
 
 bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
