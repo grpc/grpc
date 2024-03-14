@@ -58,7 +58,6 @@ pyx_library(
 py_library(
     name = "_opentelemetry_observability",
     srcs = [
-        "_open_telemetry_exporter.py",
         "_open_telemetry_measures.py",
         "_open_telemetry_observability.py",
         "_open_telemetry_plugin.py",
