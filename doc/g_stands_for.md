@@ -2,7 +2,7 @@
 
 - 1.0 'g' stands for ['gRPC'](https://github.com/grpc/grpc/tree/v1.0.x)
 - 1.1 'g' stands for ['good'](https://github.com/grpc/grpc/tree/v1.1.x)
-- 1.2 'g' stands for ['green'](https://github.com/grpc/grpc/tree/v1.2.x)
+- 1.2 'g' stands for ['green_giant'](https://github.com/grpc/grpc/tree/v1.2.x)
 - 1.3 'g' stands for ['gentle'](https://github.com/grpc/grpc/tree/v1.3.x)
 - 1.4 'g' stands for ['gregarious'](https://github.com/grpc/grpc/tree/v1.4.x)
 - 1.6 'g' stands for ['garcia'](https://github.com/grpc/grpc/tree/v1.6.x)
