@@ -1045,12 +1045,12 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3b verify issuer and scope
   valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
   if (!valid) {
-    gpr_log(GPR_DEBUG, "CRL and cert issuer names mismatched");
+    gpr_log(GPR_DEBUG, "CRL and cert issuer names mismatched.");
     return valid;
   }
   valid = grpc_core::HasCrlSignBit(issuer);
   if (!valid) {
-    gpr_log(GPR_DEBUG, "CRL issuer not allowed to sign CRLs");
+    gpr_log(GPR_DEBUG, "CRL issuer not allowed to sign CRLs.");
     return valid;
   }
   // 6.3.3c Not supporting deltas
@@ -1161,9 +1161,8 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   if (provider != nullptr) {
     ret = CheckChainRevocation(ctx, provider);
     if (ret <= 0) {
-      gpr_log(GPR_DEBUG, "The chain failed revocation checks.")
-          // Something has failed return the failure
-          return ret;
+      gpr_log(GPR_DEBUG, "The chain failed revocation checks.");
+      return ret;
     }
   }
   return RootCertExtractCallback(ctx, arg);
