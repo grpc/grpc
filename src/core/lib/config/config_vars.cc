@@ -95,7 +95,7 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           FLAGS_grpc_not_use_system_ssl_roots, "GRPC_NOT_USE_SYSTEM_SSL_ROOTS",
           overrides.not_use_system_ssl_roots, false)),
       absl_logging_(LoadConfig(FLAGS_grpc_absl_logging, "GRPC_ABSL_LOGGING",
-                               overrides.absl_logging, false)),
+                               overrides.absl_logging, true)),
       dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, "GRPC_DNS_RESOLVER",
                                overrides.dns_resolver, "")),
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, "GRPC_VERBOSITY",
