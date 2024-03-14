@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
+#include "xds_utils.h"
 
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -50,11 +51,16 @@ namespace {
 class XdsClientTest : public XdsEnd2endTest {};
 
 TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
+  CreateBackends(1);
   std::unique_ptr<BalancerServerThread> balancer2 = CreateAndStartBalancer();
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", balancer2->port()),
   }));
+  SetListenerAndRouteConfiguration(balancer2.get(), default_listener_,
+                                   default_route_config_);
+  balancer2->ads_service()->SetCdsResource(default_cluster_);
+
   const std::string kErrorMessage = "test forced ADS stream failure";
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
@@ -73,8 +79,8 @@ TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
 TEST_P(XdsClientTest, DISABLED_PrimarySecondaryNotAvailable) {}
 TEST_P(XdsClientTest, DISABLED_AuthorityServers) {}
 TEST_P(XdsClientTest, DISABLED_UsesCachedResourcesAfterFailure) {}
-TEST_P(XdsClientTest, DISABLED_Revert) {}
-TEST_P(XdsClientTest, DISABLED_MiltipleClientsPerResourceFallnback) {}
+TEST_P(XdsClientTest, DISABLED_FallForward) {}
+TEST_P(XdsClientTest, DISABLED_FallbackToBrokenToFixed) {}
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsClientTest,
                          ::testing::Values(XdsTestType().set_bootstrap_source(
