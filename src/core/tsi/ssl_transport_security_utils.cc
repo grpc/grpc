@@ -268,7 +268,7 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
     gpr_log(GPR_DEBUG,
             "There was an unexpected problem checking the CRL signature.");
   } else if (ret == 0) {
-    gpr_log(GPR_DEBUG, "CRL could not be verified.");
+    gpr_log(GPR_DEBUG, "CRL failed verification.");
   }
   EVP_PKEY_free(ikey);
   return ret == 1;
