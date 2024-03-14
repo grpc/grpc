@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/interception_chain.h"
 
-#include "call_filters.h"
-#include "call_spine.h"
-#include "metadata.h"
+#include "src/core/lib/transport/call_filters.h"
+#include "src/core/lib/transport/call_spine.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -28,8 +30,8 @@ CallInitiator Interceptor::HijackedCall::MakeCall() {
 
 CallInitiator Interceptor::HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
-  auto call = grpc_core::MakeCall(
-      std::move(metadata), call_handler_.event_engine(), call_handler_.arena());
+  auto call = MakeCall(std::move(metadata), call_handler_.event_engine(),
+                       call_handler_.arena());
   destination_->StartCall(std::move(call.unstarted_handler));
   return std::move(call.initiator);
 }

@@ -203,7 +203,7 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
         this->first_destination = this->final_destination.get();
       }
     }
-    ~Chain();
+    ~Chain() override;
     CallDestination* first_destination;
     std::vector<Destructor> destructors;
     void* chain_data;
@@ -220,4 +220,4 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_INTERCEPTION_CHAIN_H
