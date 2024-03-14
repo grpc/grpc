@@ -19,6 +19,7 @@
 #define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 
 #include <grpc/grpc.h>
+#include <grpc/impl/call.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
@@ -184,6 +185,10 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
           allocator_state_(allocator_state),
           call_requester_(std::move(call_requester)) {
       ctx_->set_message_allocator_state(allocator_state);
+    }
+
+    void RunAsync(absl::AnyInvocable<void()> cb) override {
+      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
     }
 
     /// SetupReactor binds the reactor (which also releases any queued
@@ -369,6 +374,10 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
                              grpc::internal::Call* call,
                              std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
+
+    void RunAsync(absl::AnyInvocable<void()> cb) override {
+      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
+    }
 
     void SetupReactor(ServerReadReactor<RequestType>* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
@@ -595,6 +604,10 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
           req_(req),
           call_requester_(std::move(call_requester)) {}
 
+    void RunAsync(absl::AnyInvocable<void()> cb) override {
+      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
+    }
+
     void SetupReactor(ServerWriteReactor<ResponseType>* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
       // The callback for this function should not be inlined because it invokes
@@ -806,6 +819,10 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
                                    grpc::internal::Call* call,
                                    std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
+
+    void RunAsync(absl::AnyInvocable<void()> cb) override {
+      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
+    }
 
     void SetupReactor(ServerBidiReactor<RequestType, ResponseType>* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
