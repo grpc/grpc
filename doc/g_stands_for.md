@@ -1,4 +1,4 @@
-'g' stands for something different every gRPC release:
+'G' stands for something different every gRPC release:
 
 - 1.0 'g' stands for ['gRPC'](https://github.com/grpc/grpc/tree/v1.0.x)
 - 1.1 'g' stands for ['good'](https://github.com/grpc/grpc/tree/v1.1.x)
