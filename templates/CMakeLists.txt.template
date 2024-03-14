@@ -361,7 +361,7 @@
     absl_meta
   )
 
-  # The OpenTelemetry plugin support "package" build only at present.
+  # The OpenTelemetry plugin supports "package" build only at present.
   set(gRPC_OPENTELEMETRY_PROVIDER "package")
   #  set(gRPC_OPENTELEMETRY_PROVIDER "module" CACHE STRING "Provider of opentelemetry library")
   #  set_property(CACHE gRPC_OPENTELEMETRY_PROVIDER PROPERTY STRINGS "module" "package")

@@ -1899,7 +1899,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/load_balancing/rls/rls.h )
   s.files += %w( src/core/load_balancing/round_robin/round_robin.cc )
   s.files += %w( src/core/load_balancing/subchannel_interface.h )
-  s.files += %w( src/core/load_balancing/subchannel_list.h )
   s.files += %w( src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc )
   s.files += %w( src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h )
   s.files += %w( src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc )

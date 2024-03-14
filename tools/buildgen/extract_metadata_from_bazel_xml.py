@@ -835,8 +835,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     tests = [
         test
         for test in tests
-        if not test.startswith("test/cpp/ext/otel:")
-        and not test.startswith("test/cpp/ext/csm:")
+        if not test.startswith("test/cpp/ext/csm:")
         and not test.startswith("test/cpp/interop:xds_interop")
     ]
 

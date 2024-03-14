@@ -73,7 +73,9 @@ class Verifier {
   static void NoLog(gpr_log_func_args* args) {
     static const auto* const allowed_logs_by_module =
         new std::map<absl::string_view, std::regex>(
-            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")}});
+            {{"cq_verifier.cc", std::regex("^Verify .* for [0-9]+ms")},
+             {"chttp2_transport.cc",
+              std::regex("Sending goaway.*Channel Destroyed")}});
     absl::string_view filename = args->file;
     auto slash = filename.rfind('/');
     if (slash != absl::string_view::npos) {

@@ -156,12 +156,6 @@
   expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: []
-- name: pick_first_happy_eyeballs
-  description:
-    Use Happy Eyeballs in pick_first.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -191,13 +185,6 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
-- name: round_robin_delegate_to_pick_first
-  description:
-    Change round_robin code to delegate to pick_first as per dualstack
-    backend design.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
@@ -278,10 +265,3 @@
   expiry: 2024/03/31
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
-- name: wrr_delegate_to_pick_first
-  description:
-    Change WRR code to delegate to pick_first as per dualstack
-    backend design.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

@@ -91,8 +91,6 @@
   default: false
 - name: pending_queue_cap
   default: true
-- name: pick_first_happy_eyeballs
-  default: true
 - name: promise_based_client_call
   default:
     ios: broken
@@ -101,8 +99,6 @@
 - name: promise_based_server_call
   default: false
 - name: registered_method_lookup_in_transport
-  default: true
-- name: round_robin_delegate_to_pick_first
   default: true
 - name: rstpit
   default: false
@@ -128,5 +124,3 @@
     posix: true
     # TODO(ysseung): Test flakes not fully resolved.
     windows: broken
-- name: wrr_delegate_to_pick_first
-  default: true

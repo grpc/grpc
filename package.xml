@@ -1881,7 +1881,6 @@
     <file baseinstalldir="/" name="src/core/load_balancing/rls/rls.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/subchannel_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/load_balancing/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc" role="src" />

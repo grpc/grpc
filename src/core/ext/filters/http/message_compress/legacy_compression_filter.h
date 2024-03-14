@@ -87,7 +87,8 @@ class LegacyCompressionFilter : public ChannelFilter {
   MessageHandle CompressMessage(MessageHandle message,
                                 grpc_compression_algorithm algorithm) const;
   // Decompress one message synchronously.
-  absl::StatusOr<MessageHandle> DecompressMessage(MessageHandle message,
+  absl::StatusOr<MessageHandle> DecompressMessage(bool is_client,
+                                                  MessageHandle message,
                                                   DecompressArgs args) const;
 
  private:

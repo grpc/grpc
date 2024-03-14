@@ -47,7 +47,6 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/type_list.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
 #include "src/core/lib/transport/metadata_compression_traits.h"
@@ -1059,22 +1058,19 @@ class TransportSizeEncoder {
 // Handle unknown (non-trait-based) fields in the metadata map.
 class UnknownMap {
  public:
-  explicit UnknownMap(Arena* arena) : unknown_(arena) {}
-
-  using BackingType = ChunkedVector<std::pair<Slice, Slice>, 5>;
+  using BackingType = std::vector<std::pair<Slice, Slice>>;
 
   void Append(absl::string_view key, Slice value);
   void Remove(absl::string_view key);
   absl::optional<absl::string_view> GetStringValue(absl::string_view key,
                                                    std::string* backing) const;
 
-  BackingType::ConstForwardIterator begin() const { return unknown_.cbegin(); }
-  BackingType::ConstForwardIterator end() const { return unknown_.cend(); }
+  BackingType::const_iterator begin() const { return unknown_.cbegin(); }
+  BackingType::const_iterator end() const { return unknown_.cend(); }
 
   bool empty() const { return unknown_.empty(); }
   size_t size() const { return unknown_.size(); }
-  void Clear() { unknown_.Clear(); }
-  Arena* arena() const { return unknown_.arena(); }
+  void Clear() { unknown_.clear(); }
 
  private:
   // Backing store for added metadata.
@@ -1231,7 +1227,7 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 template <class Derived, typename... Traits>
 class MetadataMap {
  public:
-  explicit MetadataMap(Arena* arena);
+  MetadataMap() = default;
   ~MetadataMap();
 
   // Given a compressor factory - template taking <MetadataTrait,
@@ -1455,9 +1451,6 @@ inline bool IsStatusOk(const MetadataMap<Derived, Args...>& m) {
 }
 
 template <typename Derived, typename... Traits>
-MetadataMap<Derived, Traits...>::MetadataMap(Arena* arena) : unknown_(arena) {}
-
-template <typename Derived, typename... Traits>
 MetadataMap<Derived, Traits...>::MetadataMap(MetadataMap&& other) noexcept
     : table_(std::move(other.table_)), unknown_(std::move(other.unknown_)) {}
 
@@ -1490,7 +1483,7 @@ size_t MetadataMap<Derived, Traits...>::TransportSize() const {
 
 template <typename Derived, typename... Traits>
 Derived MetadataMap<Derived, Traits...>::Copy() const {
-  Derived out(unknown_.arena());
+  Derived out;
   metadata_detail::CopySink<Derived> sink(&out);
   ForEach(&sink);
   return out;
