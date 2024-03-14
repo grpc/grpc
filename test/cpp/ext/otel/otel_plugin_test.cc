@@ -18,6 +18,8 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
+#include <atomic>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -987,7 +989,7 @@ void VerifyCounter(
   }
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
+TEST_F(OpenTelemetryPluginNPCMetricsTest, AddUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
@@ -1023,7 +1025,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
       kOptionalLabelValues);
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
+TEST_F(OpenTelemetryPluginNPCMetricsTest, AddDoubleCounter) {
   constexpr absl::string_view kMetricName = "double_counter";
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
@@ -1298,6 +1300,210 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       },
       {}, 28.8, 1.1, 6.6, 8, kMetricName, kLabelKeys, kLabelValues,
       kOptionalLabelKeys, kOptionalLabelValues, 2);
+}
+
+template <typename HandleType, typename ValueType>
+void VerifyGauge(
+    absl::AnyInvocable<HandleType()> register_function,
+    absl::AnyInvocable<void()> init_function,
+    absl::AnyInvocable<absl::flat_hash_map<
+        std::string,
+        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>()>
+        read_metrics_data_function,
+    ValueType initial_value, ValueType skipped_value, ValueType final_value,
+    absl::string_view metric_name,
+    absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_label_keys,
+    absl::Span<const absl::string_view> optional_label_values) {
+  HandleType handle = register_function();
+  init_function();
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  ASSERT_EQ(stats_plugins.size(), 1);
+  stats_plugins.SetGauge(handle, initial_value, label_values,
+                         optional_label_values);
+  auto data = read_metrics_data_function();
+  ASSERT_EQ(data[metric_name].size(), 1);
+  ExpectEqual(opentelemetry::nostd::get<ValueType>(
+                  opentelemetry::nostd::get<
+                      opentelemetry::sdk::metrics::LastValuePointData>(
+                      data[metric_name][0].point_data)
+                      .value_),
+              initial_value);
+  EXPECT_TRUE(opentelemetry::nostd::get<
+                  opentelemetry::sdk::metrics::LastValuePointData>(
+                  data[metric_name][0].point_data)
+                  .is_lastvalue_valid_);
+  auto initial_timestamp = opentelemetry::nostd::get<
+                               opentelemetry::sdk::metrics::LastValuePointData>(
+                               data[metric_name][0].point_data)
+                               .sample_ts_;
+  stats_plugins.SetGauge(handle, skipped_value, label_values,
+                         optional_label_values);
+  stats_plugins.SetGauge(handle, final_value, label_values,
+                         optional_label_values);
+  data = read_metrics_data_function();
+  ASSERT_EQ(data[metric_name].size(), 1);
+  ExpectEqual(opentelemetry::nostd::get<ValueType>(
+                  opentelemetry::nostd::get<
+                      opentelemetry::sdk::metrics::LastValuePointData>(
+                      data[metric_name][0].point_data)
+                      .value_),
+              final_value);
+  EXPECT_TRUE(opentelemetry::nostd::get<
+                  opentelemetry::sdk::metrics::LastValuePointData>(
+                  data[metric_name][0].point_data)
+                  .is_lastvalue_valid_);
+  // This check might subject to system clock adjustment.
+  EXPECT_GT(opentelemetry::nostd::get<
+                opentelemetry::sdk::metrics::LastValuePointData>(
+                data[metric_name][0].point_data)
+                .sample_ts_.time_since_epoch(),
+            initial_timestamp.time_since_epoch());
+  const auto& attributes = data[metric_name][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), label_keys.size() + optional_label_keys.size());
+  for (int i = 0; i < label_keys.size(); i++) {
+    EXPECT_EQ(absl::get<std::string>(attributes.at(std::string(label_keys[i]))),
+              label_values[i]);
+  }
+  for (int i = 0; i < optional_label_keys.size(); i++) {
+    EXPECT_EQ(absl::get<std::string>(
+                  attributes.at(std::string(optional_label_keys[i]))),
+              optional_label_values[i]);
+  }
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {
+  constexpr absl::string_view kMetricName = "int64_gauge";
+  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                      "optional_label_key_2"};
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  VerifyGauge<grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle,
+              int64_t>(
+      [&]() {
+        return grpc_core::GlobalInstrumentsRegistry::RegisterInt64Gauge(
+            kMetricName, "A simple int64 gauge.", "unit", kLabelKeys,
+            kOptionalLabelKeys,
+            /*enable_by_default=*/true);
+      },
+      [&, this]() {
+        Init(std::move(Options()
+                           .set_metric_names({kMetricName})
+                           .set_target_selector([](absl::string_view target) {
+                             return absl::StartsWith(target, "dns:///");
+                           })
+                           .add_optional_label(kOptionalLabelKeys[0])
+                           .add_optional_label(kOptionalLabelKeys[1])));
+      },
+      [&, this]() {
+        return ReadCurrentMetricsData(
+            [&](const absl::flat_hash_map<
+                std::string,
+                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                    data) { return !data.contains(kMetricName); });
+      },
+      3, 5, 7, kMetricName, kLabelKeys, kLabelValues, kOptionalLabelKeys,
+      kOptionalLabelValues);
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
+  constexpr absl::string_view kMetricName = "double_gauge";
+  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                      "optional_label_key_2"};
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  VerifyGauge<grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle,
+              double>(
+      [&]() {
+        return grpc_core::GlobalInstrumentsRegistry::RegisterDoubleGauge(
+            kMetricName, "A simple double gauge.", "unit", kLabelKeys,
+            kOptionalLabelKeys,
+            /*enable_by_default=*/true);
+      },
+      [&, this]() {
+        Init(std::move(Options()
+                           .set_metric_names({kMetricName})
+                           .set_target_selector([](absl::string_view target) {
+                             return absl::StartsWith(target, "dns:///");
+                           })
+                           .add_optional_label(kOptionalLabelKeys[0])
+                           .add_optional_label(kOptionalLabelKeys[1])));
+      },
+      [&, this]() {
+        return ReadCurrentMetricsData(
+            [&](const absl::flat_hash_map<
+                std::string,
+                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                    data) { return !data.contains(kMetricName); });
+      },
+      3.14, 5.28, 7.42, kMetricName, kLabelKeys, kLabelValues,
+      kOptionalLabelKeys, kOptionalLabelValues);
+}
+
+// Makes sure it doesn't crash when collecting metrics data (thus triggering the
+// observable callback) from a separate thread.
+TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
+  constexpr absl::string_view kMetricName = "int64_gauge";
+  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
+  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
+                                                      "optional_label_key_2"};
+  constexpr absl::string_view kLabelValues[] = {"label_value_1",
+                                                "label_value_2"};
+  constexpr absl::string_view kOptionalLabelValues[] = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterInt64Gauge(
+      kMetricName, "A simple int64 gauge.", "unit", kLabelKeys,
+      kOptionalLabelKeys,
+      /*enable_by_default=*/true);
+  Init(std::move(Options()
+                     .set_metric_names({kMetricName})
+                     .set_target_selector([](absl::string_view target) {
+                       return absl::StartsWith(target, "dns:///");
+                     })
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
+  std::atomic_bool finished{false};
+  std::thread t([&, this]() {
+    int64_t prev_value = -1;
+    while (!finished) {
+      auto data = ReadCurrentMetricsData(
+          [&](const absl::flat_hash_map<
+              std::string,
+              std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                  data) { return !data.contains(kMetricName); });
+      ASSERT_EQ(data[kMetricName].size(), 1);
+      int64_t value = opentelemetry::nostd::get<int64_t>(
+          opentelemetry::nostd::get<
+              opentelemetry::sdk::metrics::LastValuePointData>(
+              data[kMetricName][0].point_data)
+              .value_);
+      EXPECT_GE(value, prev_value);
+      EXPECT_TRUE(opentelemetry::nostd::get<
+                      opentelemetry::sdk::metrics::LastValuePointData>(
+                      data[kMetricName][0].point_data)
+                      .is_lastvalue_valid_);
+      prev_value = value;
+    }
+  });
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  ASSERT_EQ(stats_plugins.size(), 1);
+  constexpr int kIteration = 1000000;
+  for (int i = 0; i < kIteration; i++) {
+    stats_plugins.SetGauge(handle, i, kLabelValues, kOptionalLabelValues);
+  }
+  finished = true;
+  t.join();
 }
 
 }  // namespace

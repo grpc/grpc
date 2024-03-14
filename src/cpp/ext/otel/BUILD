@@ -75,6 +75,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metrics",
         "//src/core:slice",

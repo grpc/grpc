@@ -85,9 +85,10 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
   struct GlobalInt64GaugeHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackInt64GaugeHandle : public GlobalCallbackHandle {};
-  struct GlobalCallbackDoubleGaugeHandle : public GlobalCallbackHandle {};
+  struct GlobalCallbackInt64GaugeHandle : public GlobalInstrumentHandle {};
+  struct GlobalCallbackDoubleGaugeHandle : public GlobalInstrumentHandle {};
+  using GlobalCallbackHandle = absl::variant<GlobalCallbackInt64GaugeHandle,
+                                             GlobalCallbackDoubleGaugeHandle>;
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(

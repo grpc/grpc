@@ -298,10 +298,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   struct ObservableState
       : public grpc_core::RefCounted<ObservableState<ValueType>> {
     grpc_core::GlobalInstrumentsRegistry::UID id;
-    // Caches.
-    ValueType value;
-    std::unique_ptr<std::vector<absl::string_view>> label_values;
-    std::unique_ptr<std::vector<absl::string_view>> optional_label_values;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
         instrument;
@@ -315,7 +311,15 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     // We only support one Observable to one RegisteredMetricCallback and one
     // RegisteredMetricCallback to multiple Observables relationship for now.
     grpc_core::RegisteredMetricCallback* registered_metric_callback = nullptr;
-    absl::Mutex* mu;
+    // Per-instrument mutex to synchronize accesses to caches.
+    absl::Mutex mu;
+    // Caches.
+    ValueType value;
+    std::unique_ptr<std::vector<absl::string_view>> label_values;
+    std::unique_ptr<std::vector<absl::string_view>> optional_label_values;
+    // Per-plugin mutex to synchronize to shared registered metric callback
+    // state.
+    absl::Mutex* per_plugin_mu;
     std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
                                         RegisteredMetricCallbackState>>
         registered_metric_callback_state_map;
@@ -344,16 +348,13 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::UID,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>
       double_histograms_;
-  absl::Mutex mu_;
   absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      grpc_core::RefCountedPtr<ObservableState<int64_t>>>
+                      std::unique_ptr<ObservableState<int64_t>>>
       int64_observable_instruments_;
   absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      grpc_core::RefCountedPtr<ObservableState<double>>>
+                      std::unique_ptr<ObservableState<double>>>
       double_observable_instruments_;
-  using ObservableStatePtr =
-      absl::variant<grpc_core::RefCountedPtr<ObservableState<int64_t>>,
-                    grpc_core::RefCountedPtr<ObservableState<double>>>;
+  absl::Mutex mu_;
   std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
                                       RegisteredMetricCallbackState>>
       registered_metric_callback_state_map_;
