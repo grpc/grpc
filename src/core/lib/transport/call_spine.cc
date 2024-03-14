@@ -104,11 +104,12 @@ CallHandler UnstartedCallHandler::StartCall(
   return CallHandler(std::move(spine_));
 }
 
-CallInitiatorAndUnstartedHandler MakeCall(
+CallInitiatorAndUnstartedHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+    bool arena_is_owned) {
   auto spine = CallSpine::Create(std::move(client_initial_metadata),
-                                 event_engine, arena, nullptr);
+                                 event_engine, arena, arena_is_owned, nullptr);
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 

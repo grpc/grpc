@@ -40,10 +40,10 @@ class CallSpine final : public Party {
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
       grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-      grpc_call_context_element* legacy_context) {
+      bool arena_is_owned, grpc_call_context_element* legacy_context) {
     return RefCountedPtr<CallSpine>(
         arena->New<CallSpine>(std::move(client_initial_metadata), event_engine,
-                              arena, legacy_context));
+                              arena, arena_is_owned, legacy_context));
   }
 
   ~CallSpine() override {
@@ -113,14 +113,19 @@ class CallSpine final : public Party {
     return event_engine_;
   }
 
+  Arena* arena() const { return arena_; }
+
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
             grpc_event_engine::experimental::EventEngine* event_engine,
-            Arena* arena, grpc_call_context_element* legacy_context)
-      : Party(arena, 1),
+            Arena* arena, bool arena_is_owned,
+            grpc_call_context_element* legacy_context)
+      : Party(1),
         call_filters_(std::move(client_initial_metadata)),
-        event_engine_(event_engine) {
+        arena_(arena),
+        event_engine_(event_engine),
+        arena_is_owned_(arena_is_owned) {
     if (legacy_context == nullptr) {
       legacy_context_ = static_cast<grpc_call_context_element*>(
           arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
@@ -142,7 +147,7 @@ class CallSpine final : public Party {
    public:
     explicit ScopedContext(CallSpine* spine)
         : ScopedActivity(spine),
-          Context<Arena>(spine->arena()),
+          Context<Arena>(spine->arena_),
           Context<grpc_event_engine::experimental::EventEngine>(
               spine->event_engine()),
           Context<grpc_call_context_element>(spine->legacy_context_) {}
@@ -154,24 +159,27 @@ class CallSpine final : public Party {
   }
 
   void PartyOver() override {
-    Arena* a = arena();
+    Arena* a = arena_;
     {
       ScopedContext context(this);
       CancelRemainingParticipants();
       a->DestroyManagedNewObjects();
     }
+    if (!arena_is_owned_) a = nullptr;
     this->~CallSpine();
-    a->Destroy();
+    if (a != nullptr) a->Destroy();
   }
 
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
+  Arena* const arena_;
   // Event engine associated with this call
   grpc_event_engine::experimental::EventEngine* const event_engine_;
   // Legacy context
   // TODO(ctiller): remove
   grpc_call_context_element* legacy_context_;
   bool legacy_context_is_owned_;
+  const bool arena_is_owned_;
 };
 
 class CallInitiator {
@@ -381,9 +389,10 @@ struct CallInitiatorAndUnstartedHandler {
   UnstartedCallHandler unstarted_handler;
 };
 
-CallInitiatorAndUnstartedHandler MakeCall(
+CallInitiatorAndUnstartedHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena);
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+    bool arena_is_owned);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {

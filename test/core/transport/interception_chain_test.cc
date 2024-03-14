@@ -150,7 +150,7 @@ class InterceptionChainTest : public ::testing::Test {
   FinishedCall RunCall(CallDestination* destination) {
     auto* arena = Arena::Create(1024, &memory_allocator_);
     auto call =
-        MakeCall(Arena::MakePooled<ClientMetadata>(arena), nullptr, arena);
+        MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr, arena, true);
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
@@ -176,8 +176,7 @@ class InterceptionChainTest : public ::testing::Test {
                   .DebugString()
                   .c_str());
       EXPECT_EQ(metadata_.get(), nullptr);
-      metadata_ =
-          Arena::MakePooled<ClientMetadata>(unstarted_call_handler.arena());
+      metadata_ = Arena::MakePooled<ClientMetadata>();
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
       unstarted_call_handler.Cancel(

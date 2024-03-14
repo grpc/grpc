@@ -23,15 +23,16 @@
 namespace grpc_core {
 
 CallInitiator Interceptor::HijackedCall::MakeCall() {
-  auto metadata = Arena::MakePooled<ClientMetadata>(call_handler_.arena());
+  auto metadata = Arena::MakePooled<ClientMetadata>();
   *metadata = metadata_->Copy();
   return MakeCallWithMetadata(std::move(metadata));
 }
 
 CallInitiator Interceptor::HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
-  auto call = MakeCall(std::move(metadata), call_handler_.event_engine(),
-                       call_handler_.arena());
+  auto call =
+      grpc_core::MakeCallPair(std::move(metadata), call_handler_.event_engine(),
+                              call_handler_.arena(), false);
   destination_->StartCall(std::move(call.unstarted_handler));
   return std::move(call.initiator);
 }
