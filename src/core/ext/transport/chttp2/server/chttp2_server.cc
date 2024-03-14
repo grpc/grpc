@@ -452,11 +452,13 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
   bool cleanup_connection = false;
+  bool release_connection = false;
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (!error.ok() || self->connection_->shutdown_) {
       std::string error_str = StatusToString(error);
       cleanup_connection = true;
+      release_connection = true;
       if (error.ok() && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
@@ -540,9 +542,11 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
           cleanup_connection = true;
+          release_connection = true;
         }
       } else {
         cleanup_connection = true;
+        release_connection = true;
       }
     }
     // Since the handshake manager is done, the connection no longer needs to
@@ -557,6 +561,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   OrphanablePtr<ActiveConnection> connection;
   if (cleanup_connection) {
     MutexLock listener_lock(&self->connection_->listener_->mu_);
+    if (release_connection) {
+      self->connection_->listener_->connection_quota_->ReleaseConnections(1);
+    }
     auto it = self->connection_->listener_->connections_.find(
         self->connection_.get());
     if (it != self->connection_->listener_->connections_.end()) {

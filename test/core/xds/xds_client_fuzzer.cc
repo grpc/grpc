@@ -236,13 +236,15 @@ class Fuzzer {
   const XdsBootstrap::XdsServer* GetServer(const std::string& authority) {
     const GrpcXdsBootstrap& bootstrap =
         static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap());
-    if (authority.empty()) return &bootstrap.server();
+    if (authority.empty()) return bootstrap.servers().front();
     const auto* authority_entry =
         static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
             bootstrap.LookupAuthority(authority));
     if (authority_entry == nullptr) return nullptr;
-    if (authority_entry->server() != nullptr) return authority_entry->server();
-    return &bootstrap.server();
+    if (!authority_entry->servers().empty()) {
+      return authority_entry->servers().front();
+    }
+    return bootstrap.servers().front();
   }
 
   void TriggerConnectionFailure(const std::string& authority,
