@@ -14752,6 +14752,7 @@ add_executable(fuzzing_event_engine_unittest
   src/core/lib/promise/activity.cc
   src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -17977,6 +17978,7 @@ add_executable(interception_chain_test
   src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc

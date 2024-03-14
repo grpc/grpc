@@ -270,10 +270,9 @@ class TransportTest : public ::testing::Test {
              MemoryAllocator* allocator)
         : event_engine_(event_engine), allocator_(allocator) {}
 
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
-    absl::optional<CallHandler> PopHandler();
+    Arena* CreateArena() usOr<CallInitiator> CreateCall(
+        ClientMetadata& client_initial_metadata, Arena* arena);
+    abonal<Cal> PopHandler();
 
    private:
     std::queue<CallHandler> handlers_;
