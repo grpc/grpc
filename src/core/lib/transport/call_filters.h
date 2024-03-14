@@ -1585,15 +1585,29 @@ class CallFilters {
 
     Poll<ServerMetadataHandle> operator()() {
       if (executor_.IsRunning()) {
-        return executor_.Step(filters_->call_data_);
+        auto r = executor_.Step(filters_->call_data_);
+        if (r.pending()) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        } else {
+          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_,
+                  r.value()->DebugString().c_str());
+        }
+        return r;
       }
       if (filters_->server_trailing_metadata_ == nullptr) {
-        gpr_log(GPR_INFO, "PullServerTrailingMetadata[%p]: Pending", filters_);
+        gpr_log(GPR_INFO,
+                "%s PullServerTrailingMetadata[%p]: Pending(not pushed)",
+                GetContext<Activity>()->DebugTag().c_str(), filters_);
         return filters_->server_trailing_metadata_waiter_.pending();
       }
       // If no stack has been set, we can just return the result of the call
       if (filters_->stack_ == nullptr) {
-        gpr_log(GPR_INFO, "PullServerTrailingMetadata[%p]: Ready: %s", filters_,
+        gpr_log(GPR_INFO,
+                "%s PullServerTrailingMetadata[%p]: Ready(no-stack): %s",
+                GetContext<Activity>()->DebugTag().c_str(), filters_,
                 filters_->server_trailing_metadata_->DebugString().c_str());
         return std::move(filters_->server_trailing_metadata_);
       }
@@ -1608,7 +1622,7 @@ class CallFilters {
     filters_detail::InfallibleOperationExecutor<ServerMetadataHandle> executor_;
   };
 
-  void CancelDueToFailedPipeOperation();
+  void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
   RefCountedPtr<Stack> stack_;
 

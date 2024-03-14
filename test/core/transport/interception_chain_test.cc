@@ -156,11 +156,11 @@ class InterceptionChainTest : public ::testing::Test {
         "run_call", [destination, &call, &trailing_md]() mutable {
           gpr_log(GPR_INFO, "👊 start call");
           destination->StartCall(std::move(call.unstarted_handler));
-          // We don't do anything that will pause, so the initial poll here
-          // should entirely resolve the call.
-          trailing_md = call.initiator.PullServerTrailingMetadata()();
-          EXPECT_THAT(trailing_md, IsReady());
-          return Empty{};
+          return Map(call.initiator.PullServerTrailingMetadata(),
+                     [&trailing_md](ServerMetadataHandle md) {
+                       trailing_md = std::move(md);
+                       return Empty{};
+                     });
         });
     EXPECT_THAT(trailing_md, IsReady());
     return FinishedCall{std::move(call.initiator), destination_->TakeMetadata(),
@@ -200,6 +200,8 @@ TEST_F(InterceptionChainTest, Empty) {
   auto r = InterceptionChain::Builder(destination()).Build(ChannelArgs());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
   EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
                 ->as_string_view(),
             "👊 cancelled");
@@ -212,6 +214,8 @@ TEST_F(InterceptionChainTest, Consumed) {
                .Build(ChannelArgs());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
   EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
                 ->as_string_view(),
             "👊 consumed");
@@ -224,6 +228,8 @@ TEST_F(InterceptionChainTest, Hijacked) {
                .Build(ChannelArgs());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
   EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
                 ->as_string_view(),
             "👊 cancelled");

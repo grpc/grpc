@@ -202,24 +202,25 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
   }
 }
 
-void CallFilters::CancelDueToFailedPipeOperation() {
+void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (server_trailing_metadata_ == nullptr) return;
-  gpr_log(GPR_DEBUG, "Cancelling due to failed pipe operation: %s",
-          DebugString().c_str());
+  gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
+          "Cancelling due to failed pipe operation: %s", DebugString().c_str());
   server_trailing_metadata_ =
       ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
   server_trailing_metadata_waiter_.Wake();
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
-  gpr_log(GPR_DEBUG, "Push server trailing metadata: %s into %s",
-          md->DebugString().c_str(), DebugString().c_str());
+  gpr_log(GPR_DEBUG, "%s Push server trailing metadata: %s into %s",
+          GetContext<Activity>()->DebugTag().c_str(), md->DebugString().c_str(),
+          DebugString().c_str());
   GPR_ASSERT(md != nullptr);
   if (server_trailing_metadata_ != nullptr) return;
   server_trailing_metadata_ = std::move(md);
   client_initial_metadata_state_.CloseWithError();
-  server_initial_metadata_state_.CloseWithError();
+  server_initial_metadata_state_.CloseSending();
   client_to_server_message_state_.CloseWithError();
   server_to_client_message_state_.CloseWithError();
   server_trailing_metadata_waiter_.Wake();
