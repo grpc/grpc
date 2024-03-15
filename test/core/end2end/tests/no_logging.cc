@@ -87,7 +87,7 @@ class Verifier {
     }
     auto it = allowed_logs_by_module->find(filename);
     if (it != allowed_logs_by_module->end() &&
-        std::regex_match(args->message, it->second)) {
+        std::regex_search(args->message, it->second)) {
       gpr_default_log(args);
       return;
     }
