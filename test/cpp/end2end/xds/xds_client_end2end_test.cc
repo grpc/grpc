@@ -51,25 +51,29 @@ namespace {
 class XdsClientTest : public XdsEnd2endTest {
  public:
   XdsClientTest()
-      : fallback_balancer_(CreateAndStartBalancer("Fallback Balancer")) {}
+      : fallback_balancer_(CreateAndStartBalancer("Fallback Balancer #1")),
+        fallback_balancer2_(CreateAndStartBalancer("Fallback Balancer #2")) {}
 
   void SetUp() override {
-    InitClient(XdsBootstrapBuilder().SetServers({
-        absl::StrCat("localhost:", balancer_->port()),
-        absl::StrCat("localhost:", fallback_balancer_->port()),
-    }));
+    // Overrides SetUp from a base class so we can call InitClient per-test case
   }
 
   void TearDown() override {
+    fallback_balancer2_->Shutdown();
     fallback_balancer_->Shutdown();
     XdsEnd2endTest::TearDown();
   }
 
  protected:
   std::unique_ptr<BalancerServerThread> fallback_balancer_;
+  std::unique_ptr<BalancerServerThread> fallback_balancer2_;
 };
 
 TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
+  InitClient(XdsBootstrapBuilder().SetServers({
+      absl::StrCat("localhost:", balancer_->port()),
+      absl::StrCat("localhost:", fallback_balancer_->port()),
+  }));
   CreateAndStartBackends(1);
   SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
                                    default_route_config_);
@@ -83,11 +87,57 @@ TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
   EXPECT_TRUE(status.ok()) << status.error_message();
 }
 
-TEST_P(XdsClientTest, DISABLED_PrimarySecondaryNotAvailable) {}
+TEST_P(XdsClientTest, PrimarySecondaryNotAvailable) {
+  InitClient(XdsBootstrapBuilder().SetServers({
+      absl::StrCat("localhost:", balancer_->port()),
+      absl::StrCat("localhost:", fallback_balancer_->port()),
+  }));
+  CreateAndStartBackends(1);
+  SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
+                                   default_route_config_);
+  fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  const std::string kErrorMessage = "test forced ADS stream failure";
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  fallback_balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  auto status = SendRpc();
+  ASSERT_FALSE(status.ok()) << status.error_message();
+  ASSERT_EQ(
+      status.error_message(),
+      absl::StrFormat(
+          "server.example.com: UNAVAILABLE: xDS channel for server "
+          "localhost:%d: xDS call failed with no responses received; "
+          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure (node "
+          "ID:xds_end2end_test)",
+          fallback_balancer_->port()));
+}
+
 TEST_P(XdsClientTest, DISABLED_AuthorityServers) {}
 TEST_P(XdsClientTest, DISABLED_UsesCachedResourcesAfterFailure) {}
-TEST_P(XdsClientTest, DISABLED_FallForward) {}
+
+TEST_P(XdsClientTest, DISABLED_FallForward) {
+  InitClient(XdsBootstrapBuilder().SetServers({
+      absl::StrCat("localhost:", balancer_->port()),
+      absl::StrCat("localhost:", fallback_balancer_->port()),
+  }));
+  CreateAndStartBackends(1);
+  SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
+                                   default_route_config_);
+  fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  const std::string kErrorMessage = "test forced ADS stream failure";
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  auto status = SendRpc();
+  EXPECT_TRUE(status.ok()) << status.error_message();
+}
+
 TEST_P(XdsClientTest, DISABLED_FallbackToBrokenToFixed) {}
+TEST_P(XdsClientTest, DISABLED_FallbackAfterSetup) {}
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsClientTest,
                          ::testing::Values(XdsTestType().set_bootstrap_source(
