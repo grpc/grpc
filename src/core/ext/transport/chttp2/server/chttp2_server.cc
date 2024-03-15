@@ -115,9 +115,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       Server* server, const char* name, const ChannelArgs& args,
       Chttp2ServerArgsModifier args_modifier);
 
-  static absl::StatusOr<Chttp2ServerListener*> CreatePassive(
+  static absl::Status CreateForPassiveListener(
       Server* server, const ChannelArgs& args,
-      Chttp2ServerArgsModifier args_modifier);
+      Chttp2ServerArgsModifier args_modifier,
+      PassiveListenerImpl& passive_listener);
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
@@ -791,9 +792,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   return absl::OkStatus();
 }
 
-absl::StatusOr<Chttp2ServerListener*> Chttp2ServerListener::CreatePassive(
+absl::Status Chttp2ServerListener::CreateForPassiveListener(
     Server* server, const ChannelArgs& args,
-    Chttp2ServerArgsModifier args_modifier) {
+    Chttp2ServerArgsModifier args_modifier,
+    PassiveListenerImpl& passive_listener) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier);
   grpc_error_handle error = grpc_tcp_server_create(
@@ -805,7 +807,8 @@ absl::StatusOr<Chttp2ServerListener*> Chttp2ServerListener::CreatePassive(
     return error;
   }
   server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
-  return listener;
+  passive_listener.Initialize(server, listener);
+  return absl::OkStatus();
 }
 
 Chttp2ServerListener::Chttp2ServerListener(
@@ -1216,39 +1219,20 @@ void grpc_server_add_passive_listener(
             .c_str());
     return;
   }
-  // TODO(yashykt): Ideally, we would not want to have different behavior here
-  // based on whether a config fetcher is configured or not. Currently, we have
-  // a feature for SSL credentials reloading with an application callback that
-  // assumes that there is a single security connector. If we delay the creation
-  // of the security connector to after the creation of the listener(s), we
-  // would have potentially multiple security connectors which breaks the
-  // assumption for SSL creds reloading. When the API for SSL creds reloading is
-  // rewritten, we would be able to make this workaround go away by removing
-  // that assumption. As an immediate drawback of this workaround, config
-  // fetchers need to be registered before adding ports to the server.
-  if (core_server->config_fetcher() != nullptr) {
-    // Create channel args.
-    args = args.SetObject(credentials->Ref());
-  } else {
-    sc = credentials->create_security_connector(grpc_core::ChannelArgs());
-    if (sc == nullptr) {
-      gpr_log(
-          GPR_ERROR, "%s",
-          grpc_core::StatusToString(
-              GRPC_ERROR_CREATE(absl::StrCat(
-                  "Unable to create secure server with credentials of type ",
-                  credentials->type().name())))
-              .c_str());
-      return;
-    }
-    args = args.SetObject(credentials->Ref()).SetObject(sc);
-  }
-  auto listener = grpc_core::Chttp2ServerListener::CreatePassive(
-      core_server, args, grpc_core::ModifyArgsForConnection);
-  if (!listener.ok()) {
+  sc = credentials->create_security_connector(grpc_core::ChannelArgs());
+  if (sc == nullptr) {
     gpr_log(GPR_ERROR, "%s",
-            grpc_core::StatusToString(listener.status()).c_str());
+            grpc_core::StatusToString(
+                GRPC_ERROR_CREATE(absl::StrCat(
+                    "Unable to create secure server with credentials of type ",
+                    credentials->type().name())))
+                .c_str());
     return;
   }
-  passive_listener.Initialize(core_server, *listener);
+  args = args.SetObject(credentials->Ref()).SetObject(sc);
+  auto listener = grpc_core::Chttp2ServerListener::CreateForPassiveListener(
+      core_server, args, grpc_core::ModifyArgsForConnection, passive_listener);
+  if (!listener.ok()) {
+    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(listener).c_str());
+  }
 }
