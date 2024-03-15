@@ -77,6 +77,10 @@ class TestFilter {
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
   };
+
+  static absl::StatusOr<TestFilter<I>> Create(const ChannelArgs& args, Empty) {
+    return TestFilter<I>{};
+  }
 };
 
 template <int I>
@@ -234,6 +238,25 @@ TEST_F(InterceptionChainTest, Hijacked) {
                 ->as_string_view(),
             "👊 cancelled");
   EXPECT_NE(finished_call.client_metadata, nullptr);
+}
+
+TEST_F(InterceptionChainTest, FiltersThenHijacked) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<TestFilter<1>>()
+               .Add<TestHijackingInterceptor<2>>()
+               .Build(ChannelArgs());
+  ASSERT_TRUE(r.ok()) << r.status();
+  auto finished_call = RunCall(r.value().get());
+  EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
+            GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(finished_call.server_metadata->get_pointer(GrpcMessageMetadata())
+                ->as_string_view(),
+            "👊 cancelled");
+  EXPECT_NE(finished_call.client_metadata, nullptr);
+  std::string backing;
+  EXPECT_EQ(finished_call.client_metadata->GetStringValue("passed-through-1",
+                                                          &backing),
+            "true");
 }
 
 }  // namespace
