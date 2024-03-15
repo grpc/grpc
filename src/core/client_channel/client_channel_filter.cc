@@ -268,8 +268,13 @@ class ClientChannelFilter::FilterBasedCallData
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::resolution_mu_);
 
   void ResetDeadline(Duration timeout) override {
-    const Timestamp per_method_deadline =
-        Timestamp::FromCycleCounterRoundUp(call_start_time_) + timeout;
+    gpr_log(GPR_ERROR, "here");
+    const Timestamp per_method_deadline = call_start_time_ + timeout;
+    gpr_log(GPR_ERROR, "now: %s, deadline: %s, per_method: %s cycle counter:%s",
+            grpc_core::Timestamp::Now().ToString().c_str(),
+            deadline_.ToString().c_str(),
+            per_method_deadline.ToString().c_str(),
+            call_start_time_.ToString().c_str());
     if (per_method_deadline < deadline_) {
       deadline_ = per_method_deadline;
       grpc_deadline_state_reset(&deadline_state_, deadline_);
@@ -283,7 +288,7 @@ class ClientChannelFilter::FilterBasedCallData
 
   grpc_slice path_;  // Request path.
   grpc_call_context_element* call_context_;
-  gpr_cycle_counter call_start_time_;
+  Timestamp call_start_time_;
   Timestamp deadline_;
 
   // State for handling deadlines.
@@ -387,6 +392,7 @@ class ClientChannelFilter::PromiseBasedCallData
   }
 
   void ResetDeadline(Duration timeout) override {
+    gpr_log(GPR_ERROR, "here");
     CallContext* call_context = GetContext<CallContext>();
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
@@ -532,10 +538,14 @@ class DynamicTerminationFilter::CallData {
     auto* calld = static_cast<CallData*>(elem->call_data);
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannelFilter* client_channel = chand->chand_;
-    grpc_call_element_args args = {calld->owning_call_,  nullptr,
-                                   calld->call_context_, calld->path_,
-                                   /*start_time=*/0,     calld->deadline_,
-                                   calld->arena_,        calld->call_combiner_};
+    grpc_call_element_args args = {calld->owning_call_,
+                                   nullptr,
+                                   calld->call_context_,
+                                   calld->path_,
+                                   /*start_time=*/Timestamp::InfPast(),
+                                   calld->deadline_,
+                                   calld->arena_,
+                                   calld->call_combiner_};
     auto* service_config_call_data =
         GetServiceConfigCallData(calld->call_context_);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
@@ -3478,8 +3488,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
   GPR_ASSERT(path != nullptr);
   SubchannelCall::Args call_args = {
-      connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
-      deadline_, arena_,
+      connected_subchannel()->Ref(), pollent_, path->Ref(),
+      /*start_time(fix if needed)=*/Timestamp::InfPast(), deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context(), call_combiner_};

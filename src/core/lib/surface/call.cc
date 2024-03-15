@@ -245,7 +245,14 @@ class Call : public CppImplOf<Call, grpc_call> {
   void HandleCompressionAlgorithmNotAccepted(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
 
+  // This should only be used for call latency calculation (gpr_cycle_counter is
+  // nice for profiling), and not for any other reason such as checking for
+  // deadlines. There's currently a discrepancy when mixing gpr_cycle_counter
+  // and gpr_timespec when converting to grpc_core:::Timestamp. Prefer to use
+  // start_timestamp() for general gRPC functionality.
   gpr_cycle_counter start_time() const { return start_time_; }
+
+  grpc_core::Timestamp start_timestamp() const { return start_timestamp_; }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -269,6 +276,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   mutable Mutex peer_mu_;
   Slice peer_string_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+  grpc_core::Timestamp start_timestamp_ = Timestamp::Now();
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
@@ -855,10 +863,10 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
-      call->call_stack(), args->server_transport_data,
-      call->context_,     path,
-      call->start_time(), call->send_deadline(),
-      call->arena(),      &call->call_combiner_};
+      call->call_stack(),      args->server_transport_data,
+      call->context_,          path,
+      call->start_timestamp(), call->send_deadline(),
+      call->arena(),           &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.

@@ -141,6 +141,8 @@ grpc_call* grpc_channel_create_registered_call(
        registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
        (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
+  gpr_log(GPR_ERROR, "Call created %s",
+          grpc_core::Timestamp::Now().ToString().c_str());
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(

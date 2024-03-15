@@ -102,7 +102,7 @@ class SubchannelCall {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
     Slice path;
-    gpr_cycle_counter start_time;
+    Timestamp start_time;
     Timestamp deadline;
     Arena* arena;
     grpc_call_context_element* context;
