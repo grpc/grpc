@@ -57,7 +57,7 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DEFAULT_AUTHORITY, "binder.authority");
   auto channel =
-      grpc_core::ChannelCreate("binder:target_placeholder", channel_args,
+      grpc_core::ChannelCreate("binder_target_placeholder", channel_args,
                                GRPC_CLIENT_DIRECT_CHANNEL, transport);
   // TODO(mingcl): Handle error properly
   GPR_ASSERT(channel.ok());
