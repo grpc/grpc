@@ -35,8 +35,9 @@ absl::StatusOr<OrphanablePtr<Channel>> ChannelCreate(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport) {
   global_stats().IncrementClientChannelsCreated();
-  // Canonify target string and add channel arg.
-  if (channel_stack_type != GRPC_CLIENT_DIRECT_CHANNEL) {
+  // For client channels, canonify target string and add channel arg.
+  // Note: We don't do this for direct channels or lame channels.
+  if (channel_stack_type == GRPC_CLIENT_CHANNEL) {
     target =
         CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
             target);
