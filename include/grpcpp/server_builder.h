@@ -28,6 +28,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/passive_listener_injection.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>
@@ -62,7 +63,6 @@ class ExternalConnectionAcceptorImpl;
 class CallbackGenericService;
 
 namespace experimental {
-class ServerBuilderPassiveListener;
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -382,6 +382,16 @@ class ServerBuilder {
  private:
   friend class grpc::testing::ServerBuilderPluginTest;
 
+  struct UnstartedPassiveListener {
+    std::weak_ptr<grpc_core::PassiveListenerImpl> passive_listener;
+    std::shared_ptr<grpc::ServerCredentials> credentials;
+    UnstartedPassiveListener(
+        std::weak_ptr<grpc_core::PassiveListenerImpl> listener,
+        std::shared_ptr<grpc::ServerCredentials> creds)
+        : passive_listener(std::move(listener)),
+          credentials(std::move(creds)) {}
+  };
+
   struct SyncServerSettings {
     SyncServerSettings()
         : num_cqs(1), min_pollers(1), max_pollers(2), cq_timeout_msec(10000) {}
@@ -406,8 +416,7 @@ class ServerBuilder {
   std::vector<std::unique_ptr<grpc::ServerBuilderOption>> options_;
   std::vector<std::unique_ptr<NamedService>> services_;
   std::vector<Port> ports_;
-  std::vector<std::weak_ptr<experimental::ServerBuilderPassiveListener>>
-      passive_listeners_;
+  std::vector<UnstartedPassiveListener> unstarted_passive_listeners_;
 
   SyncServerSettings sync_server_settings_;
 

@@ -16,13 +16,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+#include <grpc/passive_listener_injection.h>
 #include <grpcpp/passive_listener.h>
 #include <grpcpp/server.h>
 
-#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/surface/server.h"
 
-namespace grpc {
-namespace experimental {
+namespace grpc_core {
 
 // A PIMPL wrapper class that owns the only ref to the passive listener
 // implementation. This is returned to the application.
@@ -47,32 +47,33 @@ class PassiveListenerOwner final : public grpc::experimental::PassiveListener {
 // An implementation of the public C++ passive listener interface.
 // The server builder holds a weak_ptr to one of these objects, and the
 // application owns the instance.
-class ServerBuilderPassiveListener final
-    : public grpc::experimental::PassiveListener {
+class PassiveListenerImpl final : public grpc::experimental::PassiveListener {
  public:
-  explicit ServerBuilderPassiveListener(
-      std::shared_ptr<grpc::ServerCredentials> creds)
-      : creds_(std::move(creds)) {}
-
-  ~ServerBuilderPassiveListener() override {
-    grpc_channel_args_destroy(server_args_);
-  }
-
   void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override;
 
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
-  void Initialize(grpc::Server* server, grpc::ChannelArguments& arguments);
+  void Initialize(RefCountedPtr<Server> server,
+                  Server::ListenerInterface* listener);
 
  private:
-  grpc::Server* server_ = nullptr;
-  grpc_channel_args* server_args_ = nullptr;
-  std::shared_ptr<grpc::ServerCredentials> creds_;
+  friend void ::grpc_server_add_passive_listener(
+      grpc_server* server, grpc_server_credentials* credentials,
+      PassiveListenerImpl& passive_listener);
+  friend void ::grpc_server_accept_connected_endpoint(
+      grpc_server* server, const PassiveListenerImpl& passive_listener,
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint);
+
+  // Data members will be populated when the server is started.
+  RefCountedPtr<Server> server_;
+  // Not safe for this class to use directly -- only used within
+  // grpc_server_accept_connected_endpoint().
+  Server::ListenerInterface* listener_ = nullptr;
 };
 
-}  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H

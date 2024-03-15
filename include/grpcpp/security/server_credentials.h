@@ -36,10 +36,6 @@ class Server;
 class ServerCredentials;
 class SecureServerCredentials;
 
-namespace experimental {
-class ServerBuilderPassiveListener;
-}  // namespace experimental
-
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
   /// \warning Deprecated
@@ -80,7 +76,7 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
 
  private:
   friend class Server;
-  friend class grpc::experimental::ServerBuilderPassiveListener;
+  friend class ServerBuilder;
 
   // We need this friend declaration for access to c_creds(). When these two
   // functions are no longer necessary, this friend declaration can be removed

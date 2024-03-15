@@ -175,6 +175,8 @@ class Server : public ServerInterface,
       const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
 
+  void SetupPassiveListener(PassiveListenerImpl& listener);
+
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
   // Functions to specify that a specific registered method or the unregistered

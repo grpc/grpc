@@ -228,12 +228,12 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
 ServerBuilder& ServerBuilder::AddPassiveListener(
     std::shared_ptr<grpc::ServerCredentials> creds,
     std::unique_ptr<experimental::PassiveListener>& passive_listener) {
-  auto builder_listener =
-      std::make_shared<experimental::ServerBuilderPassiveListener>(
-          std::move(creds));
-  passive_listeners_.push_back(builder_listener);
-  passive_listener = std::make_unique<grpc::experimental::PassiveListenerOwner>(
-      std::move(builder_listener));
+  auto core_passive_listener =
+      std::make_shared<grpc_core::PassiveListenerImpl>();
+  unstarted_passive_listeners_.emplace_back(core_passive_listener,
+                                            std::move(creds));
+  passive_listener = std::make_unique<grpc_core::PassiveListenerOwner>(
+      std::move(core_passive_listener));
   return *this;
 }
 
@@ -410,11 +410,14 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     cq->RegisterServer(server.get());
   }
 
-  for (auto& weak_passive_listener : passive_listeners_) {
+  for (auto& unstarted_listener : unstarted_passive_listeners_) {
     has_frequently_polled_cqs = true;
-    auto passive_listener = weak_passive_listener.lock();
-    if (passive_listener != nullptr) {
-      passive_listener->Initialize(server.get(), args);
+    auto core_listener = unstarted_listener.passive_listener.lock();
+    if (core_listener != nullptr) {
+      core_listener->Initialize(server, args);
+      grpc_server_add_passive_listener(
+          server->c_server(), unstarted_listener.credentials->c_creds(),
+          *core_listener);
     }
   }
 

@@ -43,6 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/passive_listener_injection.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -89,6 +90,7 @@
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/cpp/server/passive_listener_internal.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -1229,6 +1231,62 @@ void grpc_server_add_passive_listener_endpoint(
   core_server->AddListener(
       grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(listener));
   listener->AcceptInjectedConnection(std::move(endpoint));
+}
+
+void grpc_server_add_passive_listener(
+    grpc_server* server, grpc_server_credentials* credentials,
+    grpc_core::PassiveListenerImpl& passive_listener) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_error_handle err;
+  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
+  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
+  grpc_core::ChannelArgs args = core_server->channel_args();
+  GRPC_API_TRACE(
+      "grpc_server_add_passive_listener(server=%p, credentials=%p, "
+      "passive_listener=%p)",
+      3, (server, credentials, &passive_listener));
+  // Create security context.
+  if (credentials == nullptr) {
+    gpr_log(
+        GPR_ERROR, "%s",
+        grpc_core::StatusToString(
+            GRPC_ERROR_CREATE("No credentials specified for passive listener"))
+            .c_str());
+    return;
+  }
+  // TODO(yashykt): Ideally, we would not want to have different behavior here
+  // based on whether a config fetcher is configured or not. Currently, we have
+  // a feature for SSL credentials reloading with an application callback that
+  // assumes that there is a single security connector. If we delay the creation
+  // of the security connector to after the creation of the listener(s), we
+  // would have potentially multiple security connectors which breaks the
+  // assumption for SSL creds reloading. When the API for SSL creds reloading is
+  // rewritten, we would be able to make this workaround go away by removing
+  // that assumption. As an immediate drawback of this workaround, config
+  // fetchers need to be registered before adding ports to the server.
+  if (core_server->config_fetcher() != nullptr) {
+    // Create channel args.
+    args = args.SetObject(credentials->Ref());
+  } else {
+    sc = credentials->create_security_connector(grpc_core::ChannelArgs());
+    if (sc == nullptr) {
+      gpr_log(
+          GPR_ERROR, "%s",
+          grpc_core::StatusToString(
+              GRPC_ERROR_CREATE(absl::StrCat(
+                  "Unable to create secure server with credentials of type ",
+                  credentials->type().name())))
+              .c_str());
+      return;
+    }
+    args = args.SetObject(credentials->Ref()).SetObject(sc);
+  }
+  grpc_core::Chttp2ServerListener* listener =
+      new grpc_core::Chttp2ServerListener(core_server, args,
+                                          grpc_core::ModifyArgsForConnection);
+  passive_listener.Initialize(core_server->Ref(), listener);
+  core_server->AddListener(
+      grpc_core::OrphanablePtr<grpc_core::Server::ListenerInterface>(listener));
 }
 
 absl::Status grpc_server_add_passive_listener_connected_fd(

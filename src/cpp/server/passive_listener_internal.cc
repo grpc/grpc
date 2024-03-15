@@ -19,49 +19,49 @@
 #include <grpc/passive_listener_injection.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/surface/server.h"
 
-namespace grpc {
-namespace experimental {
+namespace grpc_core {
 
-void ServerBuilderPassiveListener::AcceptConnectedEndpoint(
+void PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
-  GPR_DEBUG_ASSERT(server_ != nullptr);
+  GPR_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  if (creds_->c_creds() == nullptr) {
-    auto creds = grpc_insecure_server_credentials_create();
-    grpc_server_add_passive_listener_endpoint(server_->c_server(),
-                                              std::move(endpoint), creds);
-    grpc_server_credentials_release(creds);
-    return;
-  }
-  grpc_server_add_passive_listener_endpoint(
-      server_->c_server(), std::move(endpoint), creds_->c_creds());
+  grpc_server_accept_connected_endpoint(server_->c_ptr(), *this,
+                                        std::move(endpoint));
 }
 
-absl::Status ServerBuilderPassiveListener::AcceptConnectedFd(int fd) {
-  GPR_DEBUG_ASSERT(server_ != nullptr);
+absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
+  GPR_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  if (creds_->c_creds() == nullptr) {
-    auto creds = grpc_insecure_server_credentials_create();
-    auto result = grpc_server_add_passive_listener_connected_fd(
-        server_->c_server(), fd, creds, server_args_);
-    grpc_server_credentials_release(creds);
-    return result;
+  auto& args = server_->channel_args();
+  auto engine =
+      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+  auto* supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::EventEngineSupportsFdExtension>(
+      engine.get());
+  if (supports_fd == nullptr) {
+    return absl::UnimplementedError(
+        "The server's EventEngine does not support adding endpoints from "
+        "connected file descriptors.");
   }
-  return grpc_server_add_passive_listener_connected_fd(
-      server_->c_server(), fd, creds_->c_creds(), server_args_);
+  auto endpoint = supports_fd->CreateEndpointFromFd(
+      fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
+  AcceptConnectedEndpoint(std::move(endpoint));
+  return absl::OkStatus();
 }
 
-void ServerBuilderPassiveListener::Initialize(
-    grpc::Server* server, grpc::ChannelArguments& arguments) {
-  GPR_DEBUG_ASSERT(server_ == nullptr);
-  server_ = server;
-  grpc_channel_args tmp_args;
-  arguments.SetChannelArgs(&tmp_args);
-  server_args_ = grpc_channel_args_copy(&tmp_args);
+void PassiveListenerImpl::Initialize(RefCountedPtr<Server> server,
+                                     Server::ListenerInterface* listener) {
+  GPR_ASSERT(server_ == nullptr);
+  GPR_ASSERT(listener_ == nullptr);
+  server_ = std::move(server);
+  listener_ = listener;
 }
 
-}  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_core

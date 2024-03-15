@@ -21,22 +21,32 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-/** Add the connected endpoint to the 'server' and server credentials 'creds'.
-    The endpoint must be connected already. The server's EventEngine will be
-    associated with the Endpoint, and the standard http2 handshake process will
-    occur. */
-GRPCAPI void grpc_server_add_passive_listener_endpoint(
-    grpc_server* server,
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint,
-    grpc_server_credentials* creds);
+namespace grpc {
+namespace experimental {
+class PassiveListener {
+ public:
+  virtual ~PassiveListener() = default;
+  virtual void AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint) = 0;
+  virtual absl::Status AcceptConnectedFd(int fd) = 0;
+};
 
-/** Add the connected fd to the 'server' and server credentials 'creds'.
-    The fd must be connected already. The server's EventEngine will be
-    associated with a new Endpoint created from that fd, and the standard http2
-    handshake process will occur. */
-GRPCAPI absl::Status grpc_server_add_passive_listener_connected_fd(
-    grpc_server* server, int fd, grpc_server_credentials* creds,
-    grpc_channel_args* server_args);
+}  // namespace experimental
+}  // namespace grpc
+
+namespace grpc_core {
+class PassiveListenerImpl;
+}  // namespace grpc_core
+
+void grpc_server_add_passive_listener(
+    grpc_server* server, grpc_server_credentials* credentials,
+    grpc_core::PassiveListenerImpl& passive_listener);
+
+// Called to add an endpoint to passive_listener.
+void grpc_server_accept_connected_endpoint(
+    grpc_server* server, const grpc_core::PassiveListenerImpl& passive_listener,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint);
 
 #endif /* GRPC_PASSIVE_LISTENER_INJECTION_H */
