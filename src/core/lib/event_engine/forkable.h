@@ -19,7 +19,6 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -75,10 +74,6 @@ class ObjectGroupForkHandler {
   GRPC_UNUSED bool registered_ = false;
   bool is_forking_ = false;
   std::vector<std::weak_ptr<Forkable> > forkables_;
-  // Ensures that the default EventEngine is not destroyed during a fork event.
-  // TODO(hork): we don't need one per ObjectGroupForkHandler. One global should
-  // be sufficient.
-  std::shared_ptr<EventEngine> engine_saver_;
 };
 
 }  // namespace experimental
