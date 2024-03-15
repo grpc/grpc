@@ -55,7 +55,7 @@ class XdsClientTest : public XdsEnd2endTest {
 
   void SetUp() override {
     InitClient(XdsBootstrapBuilder().SetServers({
-        // absl::StrCat("localhost:", balancer_->port()),
+        absl::StrCat("localhost:", balancer_->port()),
         absl::StrCat("localhost:", fallback_balancer_->port()),
     }));
   }
