@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/server/passive_listener_internal.h"
+#include "src/core/lib/surface/passive_listener_internal.h"
 
 #include <grpc/grpc.h>
 #include <grpc/passive_listener_injection.h>
@@ -32,8 +32,10 @@ void PassiveListenerImpl::AcceptConnectedEndpoint(
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  grpc_server_accept_connected_endpoint(server_->c_ptr(), *this,
-                                        std::move(endpoint));
+  MutexLock lock(&server_->mu_global_);
+  if (server_->ShutdownCalled()) {
+    grpc_server_accept_connected_endpoint(*this, std::move(endpoint));
+  }
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
@@ -56,11 +58,11 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   return absl::OkStatus();
 }
 
-void PassiveListenerImpl::Initialize(RefCountedPtr<Server> server,
+void PassiveListenerImpl::Initialize(Server* server,
                                      Server::ListenerInterface* listener) {
   GPR_ASSERT(server_ == nullptr);
   GPR_ASSERT(listener_ == nullptr);
-  server_ = std::move(server);
+  server_ = server->Ref();
   listener_ = listener;
 }
 

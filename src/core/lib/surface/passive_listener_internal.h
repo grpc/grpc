@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
-#define GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H
+
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
 #include <grpc/passive_listener_injection.h>
 #include <grpcpp/passive_listener.h>
 #include <grpcpp/server.h>
@@ -55,15 +55,14 @@ class PassiveListenerImpl final : public grpc::experimental::PassiveListener {
 
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
-  void Initialize(RefCountedPtr<Server> server,
-                  Server::ListenerInterface* listener);
+  void Initialize(Server* server, Server::ListenerInterface* listener);
 
  private:
   friend void ::grpc_server_add_passive_listener(
       grpc_server* server, grpc_server_credentials* credentials,
       PassiveListenerImpl& passive_listener);
   friend void ::grpc_server_accept_connected_endpoint(
-      grpc_server* server, const PassiveListenerImpl& passive_listener,
+      PassiveListenerImpl& passive_listener,
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint);
 
@@ -76,4 +75,4 @@ class PassiveListenerImpl final : public grpc::experimental::PassiveListener {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H

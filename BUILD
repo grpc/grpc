@@ -321,7 +321,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
     "src/cpp/server/health/health_check_service_server_builder_option.cc",
-    "src/cpp/server/passive_listener_internal.cc",
     "src/cpp/server/server_builder.cc",
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
@@ -339,7 +338,6 @@ GRPCXX_HDRS = [
     "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
     "src/cpp/server/health/default_health_check_service.h",
-    "src/cpp/server/passive_listener_internal.h",
     "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
 ]
@@ -2546,6 +2544,7 @@ grpc_cc_library(
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
+        "//src/core:passive_listener_internal",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",

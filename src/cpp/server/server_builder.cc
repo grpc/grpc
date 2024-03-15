@@ -48,8 +48,8 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/surface/passive_listener_internal.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
-#include "src/cpp/server/passive_listener_internal.h"
 
 namespace grpc {
 
@@ -414,10 +414,17 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     has_frequently_polled_cqs = true;
     auto core_listener = unstarted_listener.passive_listener.lock();
     if (core_listener != nullptr) {
-      core_listener->Initialize(server, args);
-      grpc_server_add_passive_listener(
-          server->c_server(), unstarted_listener.credentials->c_creds(),
-          *core_listener);
+      auto* creds = unstarted_listener.credentials->c_creds();
+      if (creds == nullptr) {
+        grpc_server_credentials* insecure_creds =
+            grpc_insecure_server_credentials_create();
+        grpc_server_add_passive_listener(server->c_server(), insecure_creds,
+                                         *core_listener);
+        grpc_server_credentials_release(insecure_creds);
+      } else {
+        grpc_server_add_passive_listener(server->c_server(), creds,
+                                         *core_listener);
+      }
     }
   }
 

@@ -16,24 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/status/status.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-
-namespace grpc {
-namespace experimental {
-class PassiveListener {
- public:
-  virtual ~PassiveListener() = default;
-  virtual void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) = 0;
-  virtual absl::Status AcceptConnectedFd(int fd) = 0;
-};
-
-}  // namespace experimental
-}  // namespace grpc
 
 namespace grpc_core {
 class PassiveListenerImpl;
@@ -45,7 +29,7 @@ void grpc_server_add_passive_listener(
 
 // Called to add an endpoint to passive_listener.
 void grpc_server_accept_connected_endpoint(
-    grpc_server* server, const grpc_core::PassiveListenerImpl& passive_listener,
+    grpc_core::PassiveListenerImpl& passive_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint);
 

@@ -175,8 +175,6 @@ class Server : public ServerInterface,
       const ChannelArgs& args,
       const RefCountedPtr<channelz::SocketNode>& socket_node);
 
-  void SetupPassiveListener(PassiveListenerImpl& listener);
-
   void RegisterCompletionQueue(grpc_completion_queue* cq);
 
   // Functions to specify that a specific registered method or the unregistered
@@ -215,6 +213,7 @@ class Server : public ServerInterface,
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
  private:
+  friend class PassiveListenerImpl;
   struct RequestedCall;
 
   class RequestMatcherInterface;
