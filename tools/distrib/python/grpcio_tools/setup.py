@@ -23,7 +23,6 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
-import traceback
 
 import setuptools
 from setuptools import Extension
@@ -152,14 +151,7 @@ class BuildExt(build_ext.build_ext):
 
         self.compiler._compile = new_compile
 
-        try:
-            build_ext.build_ext.build_extensions(self)
-        except Exception as error:
-            formatted_exception = traceback.format_exc()
-            support.diagnose_build_ext_error(self, error, formatted_exception)
-            raise CommandError(
-                "Failed `build_ext` step:\n{}".format(formatted_exception)
-            )
+        build_ext.build_ext.build_extensions(self)
 
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
@@ -179,12 +171,23 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
-    elif "linux" in sys.platform or "darwin" in sys.platform:
-        # GCC & Clang by defaults uses C17 so only C++14 needs to be specified.
+    elif "linux" in sys.platform:
+        # GCC by defaults uses C17 so only C++14 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
+        # Reduce the optimization level from O3 (in many cases) to O1 to
+        # workaround gcc misalignment bug with MOVAPS (internal b/329134877)
+        EXTRA_ENV_COMPILE_ARGS += " -O1"
+    elif "darwin" in sys.platform:
+        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
+        EXTRA_ENV_COMPILE_ARGS += " -stdlib=libc++ -DHAVE_UNISTD_H"
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
+    # This is needed for protobuf/main.cc
+    if "win32" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " Shell32.lib"
     # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
     # variables and objects) global weak symbols. When a process loads the
     # protobuf wheel's shared object library before loading *this* C extension,
