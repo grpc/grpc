@@ -57,7 +57,7 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DEFAULT_AUTHORITY, "binder.authority");
   auto channel =
-      grpc_core::ChannelCreate("binder_target_placeholder", channel_args,
+      grpc_core::ChannelCreate("binder:target_placeholder", channel_args,
                                GRPC_CLIENT_DIRECT_CHANNEL, transport);
   // TODO(mingcl): Handle error properly
   GPR_ASSERT(channel.ok());
@@ -65,7 +65,8 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
   return channel->release()->c_ptr();
 }
 
-grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
+grpc_channel* CreateClientBinderChannelImpl(std::string target,
+                                            const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
 
   gpr_once_init(&g_factory_once, FactoryInit);
@@ -75,14 +76,12 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
                           .PreconditionChannelArgs(args)
                           .SetObject(g_factory);
 
-  auto channel =
-      grpc_core::ChannelCreate("binder_channel_target_placeholder",
-                               channel_args, GRPC_CLIENT_CHANNEL, nullptr);
+  auto channel = grpc_core::ChannelCreate(target, channel_args,
+                                          GRPC_CLIENT_CHANNEL, nullptr);
 
   if (!channel.ok()) {
     return grpc_lame_client_channel_create(
-        "binder_channel_target_placeholder",
-        static_cast<grpc_status_code>(channel.status().code()),
+        target.c_str(), static_cast<grpc_status_code>(channel.status().code()),
         "Failed to create binder channel");
   }
 

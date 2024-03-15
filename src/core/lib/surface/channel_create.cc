@@ -22,6 +22,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/surface/channel.h"
@@ -34,6 +35,13 @@ absl::StatusOr<OrphanablePtr<Channel>> ChannelCreate(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport) {
   global_stats().IncrementClientChannelsCreated();
+  // Canonify target string and add channel arg.
+  if (channel_stack_type != GRPC_CLIENT_DIRECT_CHANNEL) {
+    target =
+        CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
+            target);
+    args = args.Set(GRPC_ARG_SERVER_URI, target);
+  }
   // Set default authority if needed.
   if (!args.GetString(GRPC_ARG_DEFAULT_AUTHORITY).has_value()) {
     auto ssl_override = args.GetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
