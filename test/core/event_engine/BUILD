@@ -46,6 +46,7 @@ grpc_cc_test(
         "//:config_vars",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc",
         "//src/core:forkable",
         "//src/core:no_destruct",
     ],
