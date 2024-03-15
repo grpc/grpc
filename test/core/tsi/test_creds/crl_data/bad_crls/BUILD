@@ -15,8 +15,7 @@
 licenses(["notice"])
 
 exports_files([
-    "ab06acdd.r0",
-    "b9322cac.r0",
-    "current.crl",
-    "intermediate.crl",
+    "evil.crl",
+    "invalid_content.crl",
+    "invalid_signature.crl",
 ])
