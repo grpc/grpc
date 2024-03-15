@@ -588,6 +588,12 @@ class FilterStackCall final : public Call {
   }
 
  private:
+  class ScopedContext : public promise_detail::Context<Arena> {
+   public:
+    explicit ScopedContext(FilterStackCall* call)
+        : promise_detail::Context<Arena>(call->arena()) {}
+  };
+
   static constexpr gpr_atm kRecvNone = 0;
   static constexpr gpr_atm kRecvInitialMetadataFirst = 1;
 
@@ -807,6 +813,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   GPR_DEBUG_ASSERT(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
+  ScopedContext ctx(call);
   if (call->is_client()) {
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
@@ -822,18 +829,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->send_initial_metadata_.Set(
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
-    StatsPlugin::ChannelScope scope(channel->target(),
-                                    /*authority=*/"");
-    GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).ForEach(
-        [&](std::shared_ptr<StatsPlugin> stats_plugin) {
-          if (stats_plugin->IsEnabledForChannel(scope)) {
-            AddClientCallTracerToContext(
-                arena, call->context_,
-                stats_plugin->GetClientCallTracer(channel->target(),
-                                                  Slice(CSliceRef(path)), arena,
-                                                  args->registered_method));
-          }
-        });
+    channel_stack->stats_plugin_group->AddClientCallTracers(
+        channel->target(), Slice(CSliceRef(path)), args->registered_method,
+        call->context_);
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -842,15 +840,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
-    GlobalStatsPluginRegistry::GetStatsPluginsForServer(
-        args->server->channel_args())
-        .ForEach([&](std::shared_ptr<StatsPlugin> stats_plugin) {
-          AddServerCallTracerToContext(
-              arena, call->context_,
-              stats_plugin->GetServerCallTracerFactory(arena)
-                  ->CreateNewServerCallTracer(arena,
-                                              args->server->channel_args()));
-        });
+    channel_stack->stats_plugin_group->AddServerCallTracers(
+        args->server->channel_args(), call->context_);
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -2755,18 +2746,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       }
       PublishToParent(parent);
     }
-    StatsPlugin::ChannelScope scope(args->channel->target(),
-                                    /*authority=*/"");
-    GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).ForEach(
-        [&, this](std::shared_ptr<StatsPlugin> stats_plugin) {
-          if (stats_plugin->IsEnabledForChannel(scope)) {
-            AddClientCallTracerToContext(
-                arena, this->context(),
-                stats_plugin->GetClientCallTracer(args->channel->target(),
-                                                  std::move(path), arena,
-                                                  args->registered_method));
-          }
-        });
+    args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
+        args->channel->target(), path, args->registered_method,
+        this->context());
   }
 
   void OrphanCall() override { MaybeUnpublishFromParent(); }
@@ -3412,15 +3394,8 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   // collecting from when the call is created at the transport. The idea is that
   // the transport would create the call tracer and pass it in as part of the
   // metadata.
-  GlobalStatsPluginRegistry::GetStatsPluginsForServer(
-      args->server->channel_args())
-      .ForEach([&, this](std::shared_ptr<StatsPlugin> stats_plugin) {
-        AddServerCallTracerToContext(
-            arena, this->context(),
-            stats_plugin->GetServerCallTracerFactory(arena)
-                ->CreateNewServerCallTracer(arena,
-                                            args->server->channel_args()));
-      });
+  args->channel->channel_stack()->stats_plugin_group->AddServerCallTracers(
+      args->server->channel_args(), context());
   ScopedContext activity_context(this);
   Spawn("server_promise",
         channel()->channel_stack()->MakeServerCallPromise(

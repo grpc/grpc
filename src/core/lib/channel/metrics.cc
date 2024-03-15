@@ -281,13 +281,13 @@ RegisteredMetricCallback::RegisteredMetricCallback(
       callback_(std::move(callback)),
       metrics_(std::move(metrics)),
       min_interval_(min_interval) {
-  for (auto& plugin : stats_plugin_group_) {
+  for (auto& plugin : stats_plugin_group_.plugins_) {
     plugin->AddCallback(this);
   }
 }
 
 RegisteredMetricCallback::~RegisteredMetricCallback() {
-  for (auto& plugin : stats_plugin_group_) {
+  for (auto& plugin : stats_plugin_group_.plugins_) {
     plugin->RemoveCallback(this);
   }
 }
@@ -299,6 +299,28 @@ GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
     Duration min_interval) {
   return std::make_unique<RegisteredMetricCallback>(
       *this, std::move(callback), std::move(metrics), min_interval);
+}
+
+void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
+    absl::string_view target, const Slice& path, bool registered_method,
+    grpc_call_context_element* call_context) {
+  for (auto& plugin : plugins_) {
+    auto* call_tracer =
+        plugin->GetClientCallTracer(target, path, registered_method);
+    if (call_tracer != nullptr) {
+      AddClientCallTracerToContext(call_context, call_tracer);
+    }
+  }
+}
+
+void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
+    const ChannelArgs& args, grpc_call_context_element* call_context) {
+  for (auto& plugin : plugins_) {
+    auto* call_tracer = plugin->GetServerCallTracer(args);
+    if (call_tracer != nullptr) {
+      AddServerCallTracerToContext(call_context, call_tracer);
+    }
+  }
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;

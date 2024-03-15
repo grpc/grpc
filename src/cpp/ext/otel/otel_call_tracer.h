@@ -111,8 +111,9 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     ActivePluginOptionsView active_plugin_options_view_;
   };
 
-  OpenTelemetryCallTracer(absl::string_view target, grpc_core::Slice path,
-                          grpc_core::Arena* arena, bool registered_method,
+  OpenTelemetryCallTracer(absl::string_view target,
+                          const grpc_core::Slice& path, grpc_core::Arena* arena,
+                          bool registered_method,
                           OpenTelemetryPlugin* otel_plugin);
   ~OpenTelemetryCallTracer() override;
 

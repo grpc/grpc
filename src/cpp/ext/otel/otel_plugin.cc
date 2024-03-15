@@ -428,11 +428,11 @@ bool OpenTelemetryPlugin::IsEnabledForChannel(const ChannelScope& scope) const {
 }
 bool OpenTelemetryPlugin::IsEnabledForServer(
     const grpc_core::ChannelArgs& args) const {
-  if (server_selector_ == nullptr) {
-    return true;
-  }
-  return server_selector_(args);
+  // Return true only if there is no server selector registered or if the server
+  // selector returns true.
+  return server_selector_ == nullptr || server_selector_(args);
 }
+
 void OpenTelemetryPlugin::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
     uint64_t value, absl::Span<const absl::string_view> label_values,
@@ -535,15 +535,17 @@ void OpenTelemetryPlugin::RecordHistogram(
 }
 
 grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
-    absl::string_view canonical_target, grpc_core::Slice path,
-    grpc_core::Arena* arena, bool registered_method) {
-  return arena->ManagedNew<OpenTelemetryCallTracer>(
-      canonical_target, std::move(path), arena, registered_method, this);
+    absl::string_view canonical_target, const grpc_core::Slice& path,
+    bool registered_method) {
+  return grpc_core::GetContext<grpc_core::Arena>()
+      ->ManagedNew<OpenTelemetryCallTracer>(
+          canonical_target, path, grpc_core::GetContext<grpc_core::Arena>(),
+          registered_method, this);
 }
-grpc_core::ServerCallTracerFactory*
-OpenTelemetryPlugin::GetServerCallTracerFactory(grpc_core::Arena* arena) {
-  return arena
-      ->ManagedNew<grpc::internal::OpenTelemetryServerCallTracerFactory>(this);
+grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
+    const grpc_core::ChannelArgs& args) {
+  return grpc_core::GetContext<grpc_core::Arena>()
+      ->ManagedNew<grpc::internal::OpenTelemetryServerCallTracer>(args, this);
 }
 
 }  // namespace internal

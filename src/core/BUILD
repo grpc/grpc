@@ -118,6 +118,9 @@ grpc_cc_library(
     srcs = [
         "lib/channel/server_call_tracer_filter.cc",
     ],
+    hdrs = [
+        "lib/channel/server_call_tracer_filter.h",
+    ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -7580,7 +7583,9 @@ grpc_cc_library(
         "no_destruct",
         "slice",
         "time",
+        "//:call_tracer",
         "//:gpr",
+        "//:legacy_context",
     ],
 )
 

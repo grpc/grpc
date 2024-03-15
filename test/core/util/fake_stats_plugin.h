@@ -369,12 +369,11 @@ class FakeStatsPlugin : public StatsPlugin {
   }
 
   ClientCallTracer* GetClientCallTracer(absl::string_view /*canonical_target*/,
-                                        Slice /*path*/, Arena* /*arena*/,
+                                        const Slice& /*path*/,
                                         bool /*registered_method*/) override {
     return nullptr;
   }
-  ServerCallTracerFactory* GetServerCallTracerFactory(
-      Arena* /*arena*/) override {
+  ServerCallTracer* GetServerCallTracer(const ChannelArgs& /*args*/) override {
     return nullptr;
   }
 

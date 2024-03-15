@@ -234,10 +234,11 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
 //
 
 OpenTelemetryCallTracer::OpenTelemetryCallTracer(
-    absl::string_view target, grpc_core::Slice path, grpc_core::Arena* arena,
-    bool registered_method, OpenTelemetryPlugin* otel_plugin)
+    absl::string_view target, const grpc_core::Slice& path,
+    grpc_core::Arena* arena, bool registered_method,
+    OpenTelemetryPlugin* otel_plugin)
     : target_(target),
-      path_(std::move(path)),
+      path_(path.Ref()),
       arena_(arena),
       registered_method_(registered_method),
       otel_plugin_(otel_plugin) {}

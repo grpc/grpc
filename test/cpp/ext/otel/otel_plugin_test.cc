@@ -959,7 +959,6 @@ void VerifyCounter(
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
-  ASSERT_EQ(stats_plugins.size(), 1);
   for (auto v : counter_values) {
     stats_plugins.AddCounter(handle, v, label_values, optional_label_values);
   }
@@ -1090,7 +1089,6 @@ void VerifyHistogram(
   args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-  ASSERT_EQ(stats_plugins.size(), num_plugins);
   for (auto v : histogram_values) {
     stats_plugins.RecordHistogram(handle, v, label_values,
                                   optional_label_values);

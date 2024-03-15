@@ -32,7 +32,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/tcp_tracer.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -207,19 +206,15 @@ class ServerCallTracerFactory {
   static absl::string_view ChannelArgName();
 };
 
-void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
-
 // Convenience functions to add call tracers to a call context. Allows setting
 // multiple call tracers to a single call. It is only valid to add client call
 // tracers before the client_channel filter sees the send_initial_metadata op.
-void AddClientCallTracerToContext(Arena* arena,
-                                  grpc_call_context_element* call_context,
+void AddClientCallTracerToContext(grpc_call_context_element* call_context,
                                   ClientCallTracer* tracer);
 
 // TODO(yashykt): We want server call tracers to be registered through the
 // ServerCallTracerFactory, which has yet to be made into a list.
-void AddServerCallTracerToContext(Arena* arena,
-                                  grpc_call_context_element* call_context,
+void AddServerCallTracerToContext(grpc_call_context_element* call_context,
                                   ServerCallTracer* tracer);
 
 }  // namespace grpc_core

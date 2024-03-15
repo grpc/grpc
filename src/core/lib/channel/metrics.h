@@ -29,7 +29,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -163,7 +165,7 @@ class CallbackMetricReporter {
 class RegisteredMetricCallback;
 
 class ClientCallTracer;
-class ServerCallTracerFactory;
+class ServerCallTracer;
 
 // The StatsPlugin interface.
 class StatsPlugin {
@@ -218,9 +220,9 @@ class StatsPlugin {
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
   virtual ClientCallTracer* GetClientCallTracer(
-      absl::string_view canonical_target, Slice path, Arena* arena,
+      absl::string_view canonical_target, const Slice& path,
       bool registered_method) = 0;
-  virtual ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) = 0;
+  virtual ServerCallTracer* GetServerCallTracer(const ChannelArgs& args) = 0;
 
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
   // representation of the label_values and use it multiple times. We would
@@ -237,21 +239,17 @@ class StatsPlugin {
 // function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
-  class StatsPluginGroup : public std::vector<std::shared_ptr<StatsPlugin>> {
+  class StatsPluginGroup {
    public:
-    StatsPluginGroup() : std::vector<std::shared_ptr<StatsPlugin>>() {}
-
-    void ForEach(absl::FunctionRef<void(std::shared_ptr<StatsPlugin>)> f) {
-      for (auto& plugin : *this) {
-        f(plugin);
-      }
+    void push_back(std::shared_ptr<StatsPlugin> plugin) {
+      plugins_.push_back(std::move(plugin));
     }
 
     template <class HandleType, class ValueType>
     void AddCounter(HandleType handle, ValueType value,
                     absl::Span<const absl::string_view> label_values,
                     absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : *this) {
+      for (auto& plugin : plugins_) {
         plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
@@ -259,7 +257,7 @@ class GlobalStatsPluginRegistry {
     void RecordHistogram(HandleType handle, ValueType value,
                          absl::Span<const absl::string_view> label_values,
                          absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : *this) {
+      for (auto& plugin : plugins_) {
         plugin->RecordHistogram(handle, value, label_values, optional_values);
       }
     }
@@ -267,7 +265,7 @@ class GlobalStatsPluginRegistry {
     void SetGauge(HandleType handle, ValueType value,
                   absl::Span<const absl::string_view> label_values,
                   absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : *this) {
+      for (auto& plugin : plugins_) {
         plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
@@ -284,6 +282,17 @@ class GlobalStatsPluginRegistry {
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
+
+    void AddClientCallTracers(absl::string_view target, const Slice& path,
+                              bool registered_method,
+                              grpc_call_context_element* call_context);
+    void AddServerCallTracers(const ChannelArgs& args,
+                              grpc_call_context_element* call_context);
+
+   private:
+    friend class RegisteredMetricCallback;
+
+    std::vector<std::shared_ptr<StatsPlugin>> plugins_;
   };
 
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
