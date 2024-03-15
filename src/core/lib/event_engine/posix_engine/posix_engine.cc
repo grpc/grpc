@@ -686,7 +686,6 @@ std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
         fd, config,
         options.memory_allocator_factory->CreateMemoryAllocator(
             absl::StrCat("allocator:", fd)));
-    ;
   }
   return CreatePosixEndpointFromFd(
       fd, config,

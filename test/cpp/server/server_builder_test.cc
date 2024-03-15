@@ -86,10 +86,10 @@ TEST_F(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
             nullptr);
 }
 
-TEST_F(ServerBuilderTest, CreatePassiveListener) {
+TEST_F(ServerBuilderTest, AddPassiveListener) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   ServerBuilder()
-      .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+      .AddPassiveListener(InsecureServerCredentials(), passive_listener)
       .BuildAndStart();
 }
 
@@ -104,7 +104,7 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
   // TODO(hork): why is the service necessary? Queue isn't drained otherwise.
   auto server =
       builder.RegisterService(&g_service)
-          .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+          .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   ASSERT_NE(server.get(), nullptr);
   auto accept_status = passive_listener->AcceptConnectedFd(fd);
@@ -146,7 +146,7 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
       ServerBuilder()
-          .CreatePassiveListener(passive_listener, InsecureServerCredentials())
+          .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   passive_listener->AcceptConnectedEndpoint(std::make_unique<NoopEndpoint>());
   server->Shutdown();

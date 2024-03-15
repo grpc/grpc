@@ -29,7 +29,7 @@ namespace experimental {
 class PassiveListenerOwner final : public grpc::experimental::PassiveListener {
  public:
   explicit PassiveListenerOwner(std::shared_ptr<PassiveListener> listener)
-      : listener_(listener) {}
+      : listener_(std::move(listener)) {}
   void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override {

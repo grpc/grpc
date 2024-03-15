@@ -15,8 +15,8 @@
 
 #include "src/cpp/server/passive_listener_internal.h"
 
-#include <grpc/event_engine/passive_listener_injection.h>
 #include <grpc/grpc.h>
+#include <grpc/passive_listener_injection.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -40,8 +40,7 @@ void ServerBuilderPassiveListener::AcceptConnectedEndpoint(
       server_->c_server(), std::move(endpoint), creds_->c_creds());
 }
 
-absl::Status ServerBuilderPassiveListener::AcceptConnectedFd(
-    GRPC_UNUSED int fd) {
+absl::Status ServerBuilderPassiveListener::AcceptConnectedFd(int fd) {
   GPR_DEBUG_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
   if (creds_->c_creds() == nullptr) {

@@ -225,9 +225,9 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
   return *this;
 }
 
-ServerBuilder& ServerBuilder::CreatePassiveListener(
-    std::unique_ptr<experimental::PassiveListener>& passive_listener,
-    std::shared_ptr<grpc::ServerCredentials> creds) {
+ServerBuilder& ServerBuilder::AddPassiveListener(
+    std::shared_ptr<grpc::ServerCredentials> creds,
+    std::unique_ptr<experimental::PassiveListener>& passive_listener) {
   auto builder_listener =
       std::make_shared<experimental::ServerBuilderPassiveListener>(
           std::move(creds));

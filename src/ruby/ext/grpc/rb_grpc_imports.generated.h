@@ -27,10 +27,10 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
-#include <grpc/event_engine/passive_listener_injection.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
+#include <grpc/passive_listener_injection.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -102,12 +102,6 @@ extern grpc_compression_options_disable_algorithm_type grpc_compression_options_
 typedef int(*grpc_compression_options_is_algorithm_enabled_type)(const grpc_compression_options* opts, grpc_compression_algorithm algorithm);
 extern grpc_compression_options_is_algorithm_enabled_type grpc_compression_options_is_algorithm_enabled_import;
 #define grpc_compression_options_is_algorithm_enabled grpc_compression_options_is_algorithm_enabled_import
-typedef void(*grpc_server_add_passive_listener_endpoint_type)(grpc_server* server, std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint> endpoint, grpc_server_credentials* creds);
-extern grpc_server_add_passive_listener_endpoint_type grpc_server_add_passive_listener_endpoint_import;
-#define grpc_server_add_passive_listener_endpoint grpc_server_add_passive_listener_endpoint_import
-typedef absl::Status(*grpc_server_add_passive_listener_connected_fd_type)(grpc_server* server, int fd, grpc_server_credentials* creds, grpc_channel_args* server_args);
-extern grpc_server_add_passive_listener_connected_fd_type grpc_server_add_passive_listener_connected_fd_import;
-#define grpc_server_add_passive_listener_connected_fd grpc_server_add_passive_listener_connected_fd_import
 typedef void(*grpc_metadata_array_init_type)(grpc_metadata_array* array);
 extern grpc_metadata_array_init_type grpc_metadata_array_init_import;
 #define grpc_metadata_array_init grpc_metadata_array_init_import
@@ -585,6 +579,12 @@ extern grpc_authorization_policy_provider_release_type grpc_authorization_policy
 typedef void(*grpc_tls_credentials_options_set_tls_session_key_log_file_path_type)(grpc_tls_credentials_options* options, const char* path);
 extern grpc_tls_credentials_options_set_tls_session_key_log_file_path_type grpc_tls_credentials_options_set_tls_session_key_log_file_path_import;
 #define grpc_tls_credentials_options_set_tls_session_key_log_file_path grpc_tls_credentials_options_set_tls_session_key_log_file_path_import
+typedef void(*grpc_server_add_passive_listener_endpoint_type)(grpc_server* server, std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint> endpoint, grpc_server_credentials* creds);
+extern grpc_server_add_passive_listener_endpoint_type grpc_server_add_passive_listener_endpoint_import;
+#define grpc_server_add_passive_listener_endpoint grpc_server_add_passive_listener_endpoint_import
+typedef absl::Status(*grpc_server_add_passive_listener_connected_fd_type)(grpc_server* server, int fd, grpc_server_credentials* creds, grpc_channel_args* server_args);
+extern grpc_server_add_passive_listener_connected_fd_type grpc_server_add_passive_listener_connected_fd_import;
+#define grpc_server_add_passive_listener_connected_fd grpc_server_add_passive_listener_connected_fd_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import

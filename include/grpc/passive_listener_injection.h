@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_EVENT_ENGINE_PASSIVE_LISTENER_INJECTION_H
-#define GRPC_EVENT_ENGINE_PASSIVE_LISTENER_INJECTION_H
+#ifndef GRPC_PASSIVE_LISTENER_INJECTION_H
+#define GRPC_PASSIVE_LISTENER_INJECTION_H
 
 #include <grpc/support/port_platform.h>
 
@@ -39,4 +39,4 @@ GRPCAPI absl::Status grpc_server_add_passive_listener_connected_fd(
     grpc_server* server, int fd, grpc_server_credentials* creds,
     grpc_channel_args* server_args);
 
-#endif /* GRPC_EVENT_ENGINE_PASSIVE_LISTENER_INJECTION_H */
+#endif /* GRPC_PASSIVE_LISTENER_INJECTION_H */

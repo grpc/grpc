@@ -887,7 +887,6 @@ include/grpc/event_engine/internal/memory_allocator_impl.h \
 include/grpc/event_engine/internal/slice_cast.h \
 include/grpc/event_engine/memory_allocator.h \
 include/grpc/event_engine/memory_request.h \
-include/grpc/event_engine/passive_listener_injection.h \
 include/grpc/event_engine/port.h \
 include/grpc/event_engine/slice.h \
 include/grpc/event_engine/slice_buffer.h \
@@ -928,6 +927,7 @@ include/grpc/impl/grpc_types.h \
 include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
+include/grpc/passive_listener_injection.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \

@@ -326,9 +326,9 @@ class ServerBuilder {
   ///
   /// This can be called multiple times to create passive listeners with
   /// different server credentials.
-  ServerBuilder& CreatePassiveListener(
-      std::unique_ptr<grpc::experimental::PassiveListener>& passive_listener,
-      std::shared_ptr<grpc::ServerCredentials> creds);
+  ServerBuilder& AddPassiveListener(
+      std::shared_ptr<grpc::ServerCredentials> creds,
+      std::unique_ptr<grpc::experimental::PassiveListener>& passive_listener);
 
  protected:
   /// Experimental, to be deprecated
