@@ -395,6 +395,10 @@
  * factory. */
 #define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \
   "grpc.event_engine_use_memory_allocator_factory"
+/** Configure the max number of allowed incoming connections to the server.
+ * If unspecified, it is unlimited */
+#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \
+  "grpc.max_allowed_incoming_connections"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

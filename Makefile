@@ -1309,6 +1309,7 @@ LIBGRPC_SRC = \
     src/core/lib/promise/trace.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
+    src/core/lib/resource_quota/connection_quota.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
@@ -1538,6 +1539,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
@@ -1552,6 +1554,18 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
+    third_party/abseil-cpp/absl/log/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/conditions.cc \
+    third_party/abseil-cpp/absl/log/internal/fnmatch.cc \
+    third_party/abseil-cpp/absl/log/internal/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/log_format.cc \
+    third_party/abseil-cpp/absl/log/internal/log_message.cc \
+    third_party/abseil-cpp/absl/log/internal/log_sink_set.cc \
+    third_party/abseil-cpp/absl/log/internal/nullguard.cc \
+    third_party/abseil-cpp/absl/log/internal/proto.cc \
+    third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
+    third_party/abseil-cpp/absl/log/log_entry.cc \
+    third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \

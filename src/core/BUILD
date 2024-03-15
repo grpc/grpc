@@ -59,6 +59,7 @@ grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/can_track_errors.h",
+        "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
     ],
     external_deps = [
@@ -1400,6 +1401,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "connection_quota",
+    srcs = [
+        "lib/resource_quota/connection_quota.cc",
+    ],
+    hdrs = [
+        "lib/resource_quota/connection_quota.h",
+    ],
+    external_deps = ["absl/base:core_headers"],
+    deps = [
+        "memory_quota",
+        "ref_counted",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota_trace",
     srcs = [
         "lib/resource_quota/trace.cc",
@@ -1426,6 +1444,7 @@ grpc_cc_library(
         "@grpc:alt_grpc_base_legacy",
     ],
     deps = [
+        "connection_quota",
         "memory_quota",
         "ref_counted",
         "thread_quota",
@@ -5452,35 +5471,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_subchannel_list",
-    hdrs = [
-        "load_balancing/subchannel_list.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    deps = [
-        "channel_args",
-        "connectivity_state",
-        "dual_ref_counted",
-        "gpr_manual_constructor",
-        "health_check_client",
-        "iomgr_fwd",
-        "lb_policy",
-        "subchannel_interface",
-        "//:debug_location",
-        "//:endpoint_addresses",
-        "//:gpr",
-        "//:grpc_base",
-        "//:ref_counted_ptr",
-        "//:server_address",
-        "//:work_serializer",
-    ],
-)
-
-grpc_cc_library(
     name = "lb_endpoint_list",
     srcs = [
         "load_balancing/endpoint_list.cc",
@@ -5536,7 +5526,6 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "connectivity_state",
-        "experiments",
         "health_check_client",
         "iomgr_fwd",
         "json",
@@ -5703,13 +5692,10 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "connectivity_state",
-        "experiments",
-        "grpc_lb_subchannel_list",
         "json",
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
-        "subchannel_interface",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -5718,7 +5704,6 @@ grpc_cc_library(
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:server_address",
         "//:work_serializer",
     ],
 )
@@ -5762,7 +5747,6 @@ grpc_cc_library(
         "experiments",
         "grpc_backend_metric_data",
         "grpc_lb_policy_weighted_target",
-        "grpc_lb_subchannel_list",
         "json",
         "json_args",
         "json_object_loader",
@@ -5788,8 +5772,6 @@ grpc_cc_library(
         "//:oob_backend_metric",
         "//:orphanable",
         "//:ref_counted_ptr",
-        "//:server_address",
-        "//:sockaddr_utils",
         "//:stats",
         "//:work_serializer",
     ],
@@ -6747,6 +6729,7 @@ grpc_cc_library(
         "channel_args",
         "channel_args_endpoint_config",
         "closure",
+        "connection_quota",
         "error",
         "error_utils",
         "event_engine_extensions",
@@ -7466,6 +7449,8 @@ grpc_cc_library(
         "error",
         "error_utils",
         "event_engine_common",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
@@ -7527,6 +7512,8 @@ grpc_cc_library(
         "default_event_engine",
         "error",
         "error_utils",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "event_engine_wakeup_scheduler",
         "grpc_promise_endpoint",
