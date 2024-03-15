@@ -2471,6 +2471,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:load_file",
+        "//src/core:passive_listener_internal",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
