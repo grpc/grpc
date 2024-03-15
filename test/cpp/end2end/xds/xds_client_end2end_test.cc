@@ -70,7 +70,7 @@ class XdsClientTest : public XdsEnd2endTest {
 };
 
 TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
-  CreateBackends(1);
+  CreateAndStartBackends(1);
   SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
                                    default_route_config_);
   fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
