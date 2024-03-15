@@ -122,7 +122,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
-                       Chttp2ServerArgsModifier args_modifier);
+                       Chttp2ServerArgsModifier args_modifier,
+                       grpc_server_config_fetcher* config_fetcher);
   ~Chttp2ServerListener() override;
 
   void Start(Server* server,
@@ -295,6 +296,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   RefCountedPtr<channelz::ListenSocketNode> channelz_listen_socket_;
   MemoryQuotaRefPtr memory_quota_;
   ConnectionQuotaRefPtr connection_quota_;
+  grpc_server_config_fetcher* config_fetcher_ = nullptr;
 };
 
 //
@@ -729,13 +731,14 @@ grpc_error_handle Chttp2ServerListener::Create(
   grpc_error_handle error = [&]() {
     grpc_error_handle error;
     // Create Chttp2ServerListener.
-    listener = new Chttp2ServerListener(server, args, args_modifier);
+    listener = new Chttp2ServerListener(server, args, args_modifier,
+                                        server->config_fetcher());
     error = grpc_tcp_server_create(
         &listener->tcp_server_shutdown_complete_,
         grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
         OnAccept, listener, &listener->tcp_server_);
     if (!error.ok()) return error;
-    if (server->config_fetcher() != nullptr) {
+    if (listener->config_fetcher_ != nullptr) {
       listener->resolved_address_ = *addr;
       // TODO(yashykt): Consider binding so as to be able to return the port
       // number.
@@ -775,8 +778,8 @@ grpc_error_handle Chttp2ServerListener::Create(
 grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Server* server, const char* name, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier) {
-  Chttp2ServerListener* listener =
-      new Chttp2ServerListener(server, args, args_modifier);
+  Chttp2ServerListener* listener = new Chttp2ServerListener(
+      server, args, args_modifier, server->config_fetcher());
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
@@ -797,7 +800,7 @@ absl::Status Chttp2ServerListener::CreateForPassiveListener(
     Chttp2ServerArgsModifier args_modifier,
     PassiveListenerImpl& passive_listener) {
   Chttp2ServerListener* listener =
-      new Chttp2ServerListener(server, args, args_modifier);
+      new Chttp2ServerListener(server, args, args_modifier, nullptr);
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
@@ -813,12 +816,14 @@ absl::Status Chttp2ServerListener::CreateForPassiveListener(
 
 Chttp2ServerListener::Chttp2ServerListener(
     Server* server, const ChannelArgs& args,
-    Chttp2ServerArgsModifier args_modifier)
+    Chttp2ServerArgsModifier args_modifier,
+    grpc_server_config_fetcher* config_fetcher)
     : server_(server),
       args_modifier_(args_modifier),
       args_(args),
       memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
-      connection_quota_(MakeRefCounted<ConnectionQuota>()) {
+      connection_quota_(MakeRefCounted<ConnectionQuota>()),
+      config_fetcher_(config_fetcher) {
   auto max_allowed_incoming_connections =
       args.GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
   if (max_allowed_incoming_connections.has_value()) {
@@ -842,10 +847,10 @@ Chttp2ServerListener::~Chttp2ServerListener() {
 // Server callback: start listening on our ports
 void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
-  if (server_->config_fetcher() != nullptr) {
+  if (config_fetcher_ != nullptr) {
     auto watcher = std::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
-    server_->config_fetcher()->StartWatch(
+    config_fetcher_->StartWatch(
         grpc_sockaddr_to_string(&resolved_address_, false).value(),
         std::move(watcher));
   } else {
@@ -897,7 +902,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     endpoint_cleanup(error);
     return;
   }
-  if (self->server_->config_fetcher() != nullptr) {
+  if (self->config_fetcher_ != nullptr) {
     if (connection_manager == nullptr) {
       grpc_error_handle error = GRPC_ERROR_CREATE(
           "No ConnectionManager configured. Closing connection.");
@@ -962,7 +967,8 @@ void Chttp2ServerListener::Orphan() {
   // Cancel the watch before shutting down so as to avoid holding a ref to the
   // listener in the watcher.
   if (config_fetcher_watcher_ != nullptr) {
-    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+    GPR_ASSERT(config_fetcher_ != nullptr);
+    config_fetcher_->CancelWatch(config_fetcher_watcher_);
   }
   std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections;
   grpc_tcp_server* tcp_server;
