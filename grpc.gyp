@@ -284,6 +284,7 @@
         'absl/utility:utility',
         'cares',
         'gpr',
+        'protobuf',
         'address_sorting',
       ],
       'sources': [
@@ -981,6 +982,7 @@
         'src/core/lib/surface/lame_client.cc',
         'src/core/lib/surface/legacy_channel.cc',
         'src/core/lib/surface/metadata_array.cc',
+        'src/core/lib/surface/passive_listener_internal.cc',
         'src/core/lib/surface/server.cc',
         'src/core/lib/surface/validate_metadata.cc',
         'src/core/lib/surface/version.cc',
@@ -1160,6 +1162,7 @@
         'absl/utility:utility',
         'cares',
         'gpr',
+        'protobuf',
         'address_sorting',
       ],
       'sources': [
@@ -1487,6 +1490,7 @@
         'src/core/lib/surface/lame_client.cc',
         'src/core/lib/surface/legacy_channel.cc',
         'src/core/lib/surface/metadata_array.cc',
+        'src/core/lib/surface/passive_listener_internal.cc',
         'src/core/lib/surface/server.cc',
         'src/core/lib/surface/validate_metadata.cc',
         'src/core/lib/surface/version.cc',
@@ -1827,7 +1831,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
-        'protobuf',
       ],
       'sources': [
         'src/core/ext/transport/binder/client/binder_connector.cc',
@@ -1882,7 +1885,6 @@
         'src/cpp/server/health/health_check_service.cc',
         'src/cpp/server/health/health_check_service_server_builder_option.cc',
         'src/cpp/server/insecure_server_credentials.cc',
-        'src/cpp/server/passive_listener_internal.cc',
         'src/cpp/server/secure_server_credentials.cc',
         'src/cpp/server/server_builder.cc',
         'src/cpp/server/server_callback.cc',
@@ -1989,7 +1991,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_unsecure',
-        'protobuf',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -2018,7 +2019,6 @@
         'src/cpp/server/health/health_check_service.cc',
         'src/cpp/server/health/health_check_service_server_builder_option.cc',
         'src/cpp/server/insecure_server_credentials.cc',
-        'src/cpp/server/passive_listener_internal.cc',
         'src/cpp/server/server_builder.cc',
         'src/cpp/server/server_callback.cc',
         'src/cpp/server/server_cc.cc',
