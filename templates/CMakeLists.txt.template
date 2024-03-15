@@ -200,7 +200,7 @@
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
     # TODO(jtattermusch): extract the metadata to a centralized location.
-    if lib_or_target.build not in ["all", "plugin", "protoc", "tool", "test", "private"]:
+    if lib_or_target.build not in ["all", "plugin", "plugin_test", "protoc", "tool", "test", "private"]:
       return False
     if lib_or_target.boringssl:
       # Don't generate target for boringssl libs or tests
@@ -361,7 +361,7 @@
     absl_meta
   )
 
-  # The OpenTelemetry plugin support "package" build only at present.
+  # The OpenTelemetry plugin supports "package" build only at present.
   set(gRPC_OPENTELEMETRY_PROVIDER "package")
   #  set(gRPC_OPENTELEMETRY_PROVIDER "module" CACHE STRING "Provider of opentelemetry library")
   #  set_property(CACHE gRPC_OPENTELEMETRY_PROVIDER PROPERTY STRINGS "module" "package")
@@ -771,6 +771,12 @@
   % if is_generate_cmake_target(tgt):
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
+  <%block filter='platforms_condition_block(tgt.platforms)'>
+  ${cc_binary(tgt)}
+  </%block>
+  endif()
+  % elif tgt.build in ["plugin_test"]:
+  if(gRPC_BUILD_TESTS AND ${tgt.plugin_option})
   <%block filter='platforms_condition_block(tgt.platforms)'>
   ${cc_binary(tgt)}
   </%block>

@@ -169,7 +169,7 @@ MessageHandle ChannelCompression::CompressMessage(
 }
 
 absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
-    MessageHandle message, DecompressArgs args) const {
+    bool is_client, MessageHandle message, DecompressArgs args) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
     gpr_log(GPR_INFO, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
             message->payload()->Length(),
@@ -186,8 +186,9 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
       message->payload()->Length() >
           static_cast<size_t>(*args.max_recv_message_length)) {
     return absl::ResourceExhaustedError(absl::StrFormat(
-        "Received message larger than max (%u vs. %d)",
-        message->payload()->Length(), *args.max_recv_message_length));
+        "%s: Received message larger than max (%u vs. %d)",
+        is_client ? "CLIENT" : "SERVER", message->payload()->Length(),
+        *args.max_recv_message_length));
   }
   // Check if decompression is enabled (if not, we can just pass the message
   // up).
@@ -264,8 +265,8 @@ void ClientCompressionFilter::Call::OnServerInitialMetadata(
 absl::StatusOr<MessageHandle>
 ClientCompressionFilter::Call::OnServerToClientMessage(
     MessageHandle message, ClientCompressionFilter* filter) {
-  return filter->compression_engine_.DecompressMessage(std::move(message),
-                                                       decompress_args_);
+  return filter->compression_engine_.DecompressMessage(
+      /*is_client=*/true, std::move(message), decompress_args_);
 }
 
 void ServerCompressionFilter::Call::OnClientInitialMetadata(
@@ -276,8 +277,8 @@ void ServerCompressionFilter::Call::OnClientInitialMetadata(
 absl::StatusOr<MessageHandle>
 ServerCompressionFilter::Call::OnClientToServerMessage(
     MessageHandle message, ServerCompressionFilter* filter) {
-  return filter->compression_engine_.DecompressMessage(std::move(message),
-                                                       decompress_args_);
+  return filter->compression_engine_.DecompressMessage(
+      /*is_client=*/false, std::move(message), decompress_args_);
 }
 
 void ServerCompressionFilter::Call::OnServerInitialMetadata(
