@@ -12,5 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_EVENT_ENGINE_INTERNAL_SAVE_DEFAULT_ENGINE_H
+#define GRPC_EVENT_ENGINE_INTERNAL_SAVE_DEFAULT_ENGINE_H
+
 void grpc_save_default_engine();
 void grpc_release_default_engine();
+
+#endif  // GRPC_EVENT_ENGINE_INTERNAL_SAVE_DEFAULT_ENGINE_H
