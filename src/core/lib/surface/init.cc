@@ -20,8 +20,6 @@
 
 #include "src/core/lib/surface/init.h"
 
-#include <memory>
-
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/fork.h>
@@ -34,7 +32,6 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -54,22 +51,6 @@
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-
-std::shared_ptr<grpc_event_engine::experimental::EventEngine>* g_saved_engine_ =
-    nullptr;
-
-void save_default_event_engine() {
-  if (g_saved_engine_ == nullptr) return;
-  g_saved_engine_ =
-      new std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
-          grpc_event_engine::experimental::GetDefaultEventEngine());
-}
-
-void release_default_event_engine() {
-  if (g_saved_engine_ == nullptr) return;
-  g_saved_engine_->reset();
-  delete g_saved_engine_;
-}
 
 #define MAX_PLUGINS 128
 

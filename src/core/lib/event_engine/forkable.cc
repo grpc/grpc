@@ -22,13 +22,11 @@
 #include <pthread.h>
 #endif
 
+#include <algorithm>
 #include <utility>
 #include <vector>
 
 #include "src/core/lib/config/config_vars.h"
-
-extern void save_default_event_engine();
-extern void release_default_event_engine();
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -58,7 +56,6 @@ void ObjectGroupForkHandler::RegisterForkable(
 
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
-    save_default_event_engine();
     GPR_ASSERT(!std::exchange(is_forking_, true));
     GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
     for (auto it = forkables_.begin(); it != forkables_.end();) {
@@ -87,7 +84,6 @@ void ObjectGroupForkHandler::PostforkParent() {
       }
     }
     is_forking_ = false;
-    release_default_event_engine();
   }
 }
 
@@ -105,7 +101,6 @@ void ObjectGroupForkHandler::PostforkChild() {
       }
     }
     is_forking_ = false;
-    release_default_event_engine();
   }
 }
 
