@@ -20,8 +20,11 @@
 
 #include "src/core/lib/surface/init.h"
 
+#include <memory>
+
 #include "absl/base/thread_annotations.h"
 
+#include <grpc/event_engine/internal/save_default_engine.h>
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -63,6 +66,8 @@ static int g_initializations ABSL_GUARDED_BY(g_init_mu) = []() {
 }();
 static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
+static std::shared_ptr<grpc_event_engine::experimental::EventEngine>*
+    g_saved_engine = nullptr;
 
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
@@ -203,5 +208,19 @@ void grpc_maybe_wait_for_async_shutdown(void) {
   grpc_core::MutexLock lock(g_init_mu);
   while (g_shutting_down) {
     g_shutting_down_cv->Wait(g_init_mu);
+  }
+}
+
+void grpc_save_default_engine() {
+  if (g_saved_engine != nullptr) {
+    g_saved_engine =
+        new std::shared_ptr<grpc_event_engine::experimental::EventEngine>(
+            grpc_event_engine::experimental::GetDefaultEventEngine());
+  }
+}
+void grpc_release_default_engine() {
+  if (g_saved_engine != nullptr) {
+    delete g_saved_engine;
+    g_saved_engine = nullptr;
   }
 }
