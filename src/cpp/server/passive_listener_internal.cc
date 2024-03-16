@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/surface/passive_listener_internal.h"
+#include "src/cpp/server/passive_listener_internal.h"
 
 #include <grpc/grpc.h>
 #include <grpc/passive_listener_injection.h>
@@ -25,16 +25,17 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/server.h"
 
-namespace grpc_core {
+namespace grpc {
+namespace experimental {
 
 void PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  MutexLock lock(&server_->mu_global_);
-  if (server_->ShutdownCalled()) {
-    grpc_server_accept_connected_endpoint(*this, std::move(endpoint));
+  // DO NOT SUBMIT(hork): what to do when shutdown?
+  if (!server_->ShutdownCalled()) {
+    grpc_server_accept_connected_endpoint(listener_, std::move(endpoint));
   }
 }
 
@@ -58,12 +59,13 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   return absl::OkStatus();
 }
 
-void PassiveListenerImpl::Initialize(Server* server,
-                                     Server::ListenerInterface* listener) {
-  GPR_ASSERT(server_ == nullptr);
+void PassiveListenerImpl::Initialize(grpc_core::Server* server,
+                                     grpc_core::ListenerInterface* listener) {
+  GPR_ASSERT(server_.get() == nullptr);
   GPR_ASSERT(listener_ == nullptr);
   server_ = server->Ref();
   listener_ = listener;
 }
 
-}  // namespace grpc_core
+}  // namespace experimental
+}  // namespace grpc

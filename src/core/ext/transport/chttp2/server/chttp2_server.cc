@@ -81,7 +81,6 @@
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/passive_listener_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
@@ -104,7 +103,7 @@ const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 const char kVSockUriPrefix[] = "vsock:";
 
-class Chttp2ServerListener : public Server::ListenerInterface {
+class Chttp2ServerListener : public ListenerInterface {
  public:
   static grpc_error_handle Create(Server* server, grpc_resolved_address* addr,
                                   const ChannelArgs& args,
@@ -115,10 +114,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       Server* server, const char* name, const ChannelArgs& args,
       Chttp2ServerArgsModifier args_modifier);
 
-  static absl::Status CreateForPassiveListener(
+  static absl::StatusOr<ListenerInterface*> CreateForPassiveListener(
       Server* server, const ChannelArgs& args,
-      Chttp2ServerArgsModifier args_modifier,
-      PassiveListenerImpl& passive_listener);
+      Chttp2ServerArgsModifier args_modifier);
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
@@ -137,7 +135,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   void Orphan() override;
 
-  void AcceptConnectedEndpoint(std::unique_ptr<EventEngine::Endpoint> endpoint);
+  void AcceptConnectedEndpoint(
+      std::unique_ptr<EventEngine::Endpoint> endpoint) override;
 
  private:
   class ConfigFetcherWatcher
@@ -759,7 +758,7 @@ grpc_error_handle Chttp2ServerListener::Create(
               absl::StrCat("chttp2 listener ", *string_address));
     }
     // Register with the server only upon success
-    server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
+    server->AddListener(OrphanablePtr<ListenerInterface>(listener));
     return absl::OkStatus();
   }();
   if (!error.ok()) {
@@ -791,14 +790,14 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   // TODO(yangg) channelz
   TcpServerFdHandler** arg_val = args.GetPointer<TcpServerFdHandler*>(name);
   *arg_val = grpc_tcp_server_create_fd_handler(listener->tcp_server_);
-  server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
+  server->AddListener(OrphanablePtr<ListenerInterface>(listener));
   return absl::OkStatus();
 }
 
-absl::Status Chttp2ServerListener::CreateForPassiveListener(
+absl::StatusOr<ListenerInterface*>
+Chttp2ServerListener::CreateForPassiveListener(
     Server* server, const ChannelArgs& args,
-    Chttp2ServerArgsModifier args_modifier,
-    PassiveListenerImpl& passive_listener) {
+    Chttp2ServerArgsModifier args_modifier) {
   Chttp2ServerListener* listener =
       new Chttp2ServerListener(server, args, args_modifier, nullptr);
   grpc_error_handle error = grpc_tcp_server_create(
@@ -809,9 +808,8 @@ absl::Status Chttp2ServerListener::CreateForPassiveListener(
     delete listener;
     return error;
   }
-  server->AddListener(OrphanablePtr<Server::ListenerInterface>(listener));
-  passive_listener.Initialize(server, listener);
-  return absl::OkStatus();
+  server->AddListener(OrphanablePtr<ListenerInterface>(listener));
+  return listener;
 }
 
 Chttp2ServerListener::Chttp2ServerListener(
@@ -986,13 +984,8 @@ void Chttp2ServerListener::Orphan() {
     }
     tcp_server = tcp_server_;
   }
-  if (tcp_server != nullptr) {
-    grpc_tcp_server_shutdown_listeners(tcp_server);
-    grpc_tcp_server_unref(tcp_server);
-  } else {
-    // Passive listeners do not have iomgr grpc_tcp_servers
-    TcpServerShutdownComplete(this, absl::OkStatus());
-  }
+  grpc_tcp_server_shutdown_listeners(tcp_server);
+  grpc_tcp_server_unref(tcp_server);
 }
 
 }  // namespace
@@ -1196,26 +1189,20 @@ void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 void grpc_server_accept_connected_endpoint(
-    grpc_core::PassiveListenerImpl& passive_listener,
+    grpc_core::ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
-  grpc_core::Chttp2ServerListener* core_listener =
-      static_cast<grpc_core::Chttp2ServerListener*>(passive_listener.listener_);
   core_listener->AcceptConnectedEndpoint(std::move(endpoint));
 }
 
-void grpc_server_add_passive_listener(
-    grpc_server* server, grpc_server_credentials* credentials,
-    grpc_core::PassiveListenerImpl& passive_listener) {
+grpc_core::ListenerInterface* grpc_server_add_passive_listener(
+    grpc_core::Server* server, grpc_server_credentials* credentials) {
   grpc_core::ExecCtx exec_ctx;
   grpc_error_handle err;
   grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
-  grpc_core::Server* core_server = grpc_core::Server::FromC(server);
-  grpc_core::ChannelArgs args = core_server->channel_args();
-  GRPC_API_TRACE(
-      "grpc_server_add_passive_listener(server=%p, credentials=%p, "
-      "passive_listener=%p)",
-      3, (server, credentials, &passive_listener));
+  grpc_core::ChannelArgs args = server->channel_args();
+  GRPC_API_TRACE("grpc_server_add_passive_listener(server=%p, credentials=%p)",
+                 2, (server, credentials));
   // Create security context.
   if (credentials == nullptr) {
     gpr_log(
@@ -1223,7 +1210,7 @@ void grpc_server_add_passive_listener(
         grpc_core::StatusToString(
             GRPC_ERROR_CREATE("No credentials specified for passive listener"))
             .c_str());
-    return;
+    return nullptr;
   }
   sc = credentials->create_security_connector(grpc_core::ChannelArgs());
   if (sc == nullptr) {
@@ -1233,12 +1220,14 @@ void grpc_server_add_passive_listener(
                     "Unable to create secure server with credentials of type ",
                     credentials->type().name())))
                 .c_str());
-    return;
+    return nullptr;
   }
   args = args.SetObject(credentials->Ref()).SetObject(sc);
   auto listener = grpc_core::Chttp2ServerListener::CreateForPassiveListener(
-      core_server, args, grpc_core::ModifyArgsForConnection, passive_listener);
+      server, args, grpc_core::ModifyArgsForConnection);
   if (!listener.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(listener).c_str());
+    gpr_log(GPR_ERROR, "%s",
+            grpc_core::StatusToString(listener.status()).c_str());
   }
+  return *listener;
 }

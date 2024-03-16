@@ -48,8 +48,8 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/surface/passive_listener_internal.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
+#include "src/cpp/server/passive_listener_internal.h"
 
 namespace grpc {
 
@@ -229,10 +229,10 @@ ServerBuilder& ServerBuilder::AddPassiveListener(
     std::shared_ptr<grpc::ServerCredentials> creds,
     std::unique_ptr<experimental::PassiveListener>& passive_listener) {
   auto core_passive_listener =
-      std::make_shared<grpc_core::PassiveListenerImpl>();
+      std::make_shared<experimental::PassiveListenerImpl>();
   unstarted_passive_listeners_.emplace_back(core_passive_listener,
                                             std::move(creds));
-  passive_listener = std::make_unique<grpc_core::PassiveListenerOwner>(
+  passive_listener = std::make_unique<experimental::PassiveListenerOwner>(
       std::move(core_passive_listener));
   return *this;
 }
@@ -412,18 +412,23 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   for (auto& unstarted_listener : unstarted_passive_listeners_) {
     has_frequently_polled_cqs = true;
-    auto core_listener = unstarted_listener.passive_listener.lock();
-    if (core_listener != nullptr) {
+    auto passive_listener = unstarted_listener.passive_listener.lock();
+    auto* core_server = grpc_core::Server::FromC(server->c_server());
+    if (passive_listener != nullptr) {
       auto* creds = unstarted_listener.credentials->c_creds();
       if (creds == nullptr) {
         grpc_server_credentials* insecure_creds =
             grpc_insecure_server_credentials_create();
-        grpc_server_add_passive_listener(server->c_server(), insecure_creds,
-                                         *core_listener);
+        auto* core_listener =
+            grpc_server_add_passive_listener(core_server, insecure_creds);
+        // DO NOT SUBMIT(hork): what to do when the listener is a nullptr
+        passive_listener->Initialize(core_server, core_listener);
         grpc_server_credentials_release(insecure_creds);
       } else {
-        grpc_server_add_passive_listener(server->c_server(), creds,
-                                         *core_listener);
+        auto* core_listener =
+            grpc_server_add_passive_listener(core_server, creds);
+        // DO NOT SUBMIT(hork): what to do when the listener is a nullptr
+        passive_listener->Initialize(core_server, core_listener);
       }
     }
   }

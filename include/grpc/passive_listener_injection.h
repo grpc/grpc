@@ -20,16 +20,16 @@
 #include <grpc/grpc.h>
 
 namespace grpc_core {
-class PassiveListenerImpl;
+class ListenerInterface;
+class Server;
 }  // namespace grpc_core
 
-void grpc_server_add_passive_listener(
-    grpc_server* server, grpc_server_credentials* credentials,
-    grpc_core::PassiveListenerImpl& passive_listener);
+grpc_core::ListenerInterface* grpc_server_add_passive_listener(
+    grpc_core::Server* server, grpc_server_credentials* credentials);
 
 // Called to add an endpoint to passive_listener.
 void grpc_server_accept_connected_endpoint(
-    grpc_core::PassiveListenerImpl& passive_listener,
+    grpc_core::ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint);
 

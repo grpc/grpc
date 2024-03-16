@@ -383,10 +383,10 @@ class ServerBuilder {
   friend class grpc::testing::ServerBuilderPluginTest;
 
   struct UnstartedPassiveListener {
-    std::weak_ptr<grpc_core::PassiveListenerImpl> passive_listener;
+    std::weak_ptr<experimental::PassiveListener> passive_listener;
     std::shared_ptr<grpc::ServerCredentials> credentials;
     UnstartedPassiveListener(
-        std::weak_ptr<grpc_core::PassiveListenerImpl> listener,
+        std::weak_ptr<experimental::PassiveListener> listener,
         std::shared_ptr<grpc::ServerCredentials> creds)
         : passive_listener(std::move(listener)),
           credentials(std::move(creds)) {}

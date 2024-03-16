@@ -18,6 +18,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+namespace grpc_core {
+class ListenerInterface;
+class Server;
+}  // namespace grpc_core
+
 namespace grpc {
 namespace experimental {
 
@@ -44,6 +49,10 @@ class PassiveListener {
   /// Returns a failure status if the server's active EventEngine does not
   /// support Endpoint creation from fds.
   virtual absl::Status AcceptConnectedFd(int fd) = 0;
+
+  // DO NOT SUBMIT(hork): describe
+  virtual void Initialize(grpc_core::Server* server,
+                          grpc_core::ListenerInterface* listener) = 0;
 };
 
 }  // namespace experimental

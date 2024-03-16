@@ -18,15 +18,14 @@
 
 #include <grpc/passive_listener_injection.h>
 #include <grpcpp/passive_listener.h>
-#include <grpcpp/server.h>
 
 #include "src/core/lib/surface/server.h"
 
-namespace grpc_core {
-
+namespace grpc {
+namespace experimental {
 // A PIMPL wrapper class that owns the only ref to the passive listener
 // implementation. This is returned to the application.
-class PassiveListenerOwner final : public grpc::experimental::PassiveListener {
+class PassiveListenerOwner final : public PassiveListener {
  public:
   explicit PassiveListenerOwner(std::shared_ptr<PassiveListener> listener)
       : listener_(std::move(listener)) {}
@@ -40,6 +39,9 @@ class PassiveListenerOwner final : public grpc::experimental::PassiveListener {
     return listener_->AcceptConnectedFd(fd);
   }
 
+  void Initialize(grpc_core::Server* /* server */,
+                  grpc_core::ListenerInterface* /* listener */) override {}
+
  private:
   std::shared_ptr<PassiveListener> listener_;
 };
@@ -47,32 +49,27 @@ class PassiveListenerOwner final : public grpc::experimental::PassiveListener {
 // An implementation of the public C++ passive listener interface.
 // The server builder holds a weak_ptr to one of these objects, and the
 // application owns the instance.
-class PassiveListenerImpl final : public grpc::experimental::PassiveListener {
+class PassiveListenerImpl final : public PassiveListener {
  public:
+  ~PassiveListenerImpl() override { GPR_ASSERT(server_.get() != nullptr); }
   void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override;
 
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
-  void Initialize(Server* server, Server::ListenerInterface* listener);
+  void Initialize(grpc_core::Server* server,
+                  grpc_core::ListenerInterface* listener) override;
 
  private:
-  friend void ::grpc_server_add_passive_listener(
-      grpc_server* server, grpc_server_credentials* credentials,
-      PassiveListenerImpl& passive_listener);
-  friend void ::grpc_server_accept_connected_endpoint(
-      PassiveListenerImpl& passive_listener,
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint);
-
-  // Data members will be populated when the server is started.
-  RefCountedPtr<Server> server_;
+  // Data members will be populated when initialized.
+  grpc_core::RefCountedPtr<grpc_core::Server> server_;
   // Not safe for this class to use directly -- only used within
   // grpc_server_accept_connected_endpoint().
-  Server::ListenerInterface* listener_ = nullptr;
+  grpc_core::ListenerInterface* listener_ = nullptr;
 };
 
-}  // namespace grpc_core
+}  // namespace experimental
+}  // namespace grpc
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H

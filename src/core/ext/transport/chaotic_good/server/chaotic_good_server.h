@@ -51,7 +51,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 class ChaoticGoodServerListener final
-    : public Server::ListenerInterface,
+    : public ListenerInterface,
       public RefCounted<ChaoticGoodServerListener> {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
@@ -137,6 +137,10 @@ class ChaoticGoodServerListener final
   void Start(Server*, const std::vector<grpc_pollset*>*) override {
     StartListening().IgnoreError();
   };
+
+  void AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+      /* endpoint */) override {}
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;

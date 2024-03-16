@@ -74,9 +74,46 @@
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
   "grpc.server.max_pending_requests_hard_limit"
 
+namespace grpc {
+namespace experimental {
+class PassiveListenerImpl;
+}  // namespace experimental
+}  // namespace grpc
+
 namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
+
+class Server;
+
+/// Interface for listeners.
+/// Implementations must override the Orphan() method, which should stop
+/// listening and initiate destruction of the listener.
+class ListenerInterface : public Orphanable {
+ public:
+  ~ListenerInterface() override = default;
+
+  /// Starts listening. This listener may refer to the pollset object beyond
+  /// this call, so it is a pointer rather than a reference.
+  virtual void Start(Server* server,
+                     const std::vector<grpc_pollset*>* pollsets) = 0;
+
+  /// Takes an Endpoint for an established connection, and treats it as if the
+  /// connection had been accepted by the server.
+  ///
+  /// The server must be started before endpoints can be accepted.
+  virtual void AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint) = 0;
+
+  /// Returns the channelz node for the listen socket, or null if not
+  /// supported.
+  virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
+
+  /// Sets a closure to be invoked by the listener when its destruction
+  /// is complete.
+  virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
+};
 
 class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
@@ -108,27 +145,6 @@ class Server : public ServerInterface,
     gpr_timespec* deadline;
     grpc_byte_buffer** optional_payload;
     grpc_completion_queue* cq;
-  };
-
-  /// Interface for listeners.
-  /// Implementations must override the Orphan() method, which should stop
-  /// listening and initiate destruction of the listener.
-  class ListenerInterface : public Orphanable {
-   public:
-    ~ListenerInterface() override = default;
-
-    /// Starts listening. This listener may refer to the pollset object beyond
-    /// this call, so it is a pointer rather than a reference.
-    virtual void Start(Server* server,
-                       const std::vector<grpc_pollset*>* pollsets) = 0;
-
-    /// Returns the channelz node for the listen socket, or null if not
-    /// supported.
-    virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
-
-    /// Sets a closure to be invoked by the listener when its destruction
-    /// is complete.
-    virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
   explicit Server(const ChannelArgs& args);
@@ -213,7 +229,7 @@ class Server : public ServerInterface,
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
  private:
-  friend class PassiveListenerImpl;
+  friend class ::grpc::experimental::PassiveListenerImpl;
   struct RequestedCall;
 
   class RequestMatcherInterface;

@@ -131,7 +131,7 @@ void* grpc_get_endpoint_binder(const std::string& service) {
 
 namespace grpc_core {
 
-class BinderServerListener : public Server::ListenerInterface {
+class BinderServerListener : public ListenerInterface {
  public:
   BinderServerListener(
       Server* server, std::string addr, BinderTxReceiverFactory factory,
@@ -150,6 +150,10 @@ class BinderServerListener : public Server::ListenerInterface {
     endpoint_binder_ = tx_receiver_->GetRawBinder();
     grpc_add_endpoint_binder(addr_, endpoint_binder_);
   }
+
+  void AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+      /* endpoint */) override {}
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
@@ -240,7 +244,7 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   std::string conn_id = addr.substr(kBinderUriScheme.size());
   Server* core_server = Server::FromC(server);
   core_server->AddListener(
-      OrphanablePtr<Server::ListenerInterface>(new BinderServerListener(
+      OrphanablePtr<ListenerInterface>(new BinderServerListener(
           core_server, conn_id, std::move(factory), security_policy)));
   return true;
 }

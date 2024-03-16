@@ -6709,24 +6709,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "passive_listener_internal",
-    srcs = ["lib/surface/passive_listener_internal.cc"],
-    hdrs =
-        ["lib/surface/passive_listener_internal.h"],
-    deps = [
-        "channel_args",
-        "channel_args_endpoint_config",
-        "event_engine_extensions",
-        "event_engine_query_extensions",
-        "//:exec_ctx",
-        "//:gpr_platform",
-        "//:grpc++_public_hdrs",
-        "//:grpc_public_hdrs",
-        "//:server",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_transport_chttp2_server",
     srcs = [
         "ext/transport/chttp2/server/chttp2_server.cc",
@@ -6754,7 +6736,6 @@ grpc_cc_library(
         "handshaker_registry",
         "iomgr_fwd",
         "memory_quota",
-        "passive_listener_internal",
         "pollset_set",
         "resolved_address",
         "resource_quota",
