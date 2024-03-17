@@ -94,6 +94,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "fd_conservation_posix_test",
+    timeout = "long",
     srcs = ["fd_conservation_posix_test.cc"],
     language = "C++",
     tags = ["no_windows"],
