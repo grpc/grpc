@@ -20,6 +20,7 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
+#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -420,17 +421,33 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
       });
 }
 
-bool OpenTelemetryPlugin::IsEnabledForChannel(const ChannelScope& scope) const {
-  if (target_selector_ == nullptr) {
-    return true;
+std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+OpenTelemetryPlugin::IsEnabledForChannel(const ChannelScope& scope) const {
+  if (target_selector_ == nullptr || target_selector_(scope.target())) {
+    return {true,
+            std::make_shared<ScopeConfig>(
+                ActivePluginOptionsView::MakeForClient(scope.target(), this),
+                // Use the original target string only if a filter on the
+                // attribute is not registered or if the filter returns true,
+                // otherwise use "other".
+                target_attribute_filter_ == nullptr ||
+                        target_attribute_filter_(scope.target())
+                    ? scope.target()
+                    : "other")};
   }
-  return target_selector_(scope.target());
+  return {false, nullptr};
 }
-bool OpenTelemetryPlugin::IsEnabledForServer(
+std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+OpenTelemetryPlugin::IsEnabledForServer(
     const grpc_core::ChannelArgs& args) const {
   // Return true only if there is no server selector registered or if the server
   // selector returns true.
-  return server_selector_ == nullptr || server_selector_(args);
+  if (server_selector_ == nullptr || server_selector_(args)) {
+    return {true, std::make_shared<ScopeConfig>(
+                      ActivePluginOptionsView::MakeForServer(args, this),
+                      /*filtered_target=*/"")};
+  }
+  return {false, nullptr};
 }
 
 void OpenTelemetryPlugin::AddCounter(
@@ -535,17 +552,21 @@ void OpenTelemetryPlugin::RecordHistogram(
 }
 
 grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
-    absl::string_view canonical_target, const grpc_core::Slice& path,
-    bool registered_method) {
+    const grpc_core::Slice& path, bool registered_method,
+    std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   return grpc_core::GetContext<grpc_core::Arena>()
       ->ManagedNew<OpenTelemetryCallTracer>(
-          canonical_target, path, grpc_core::GetContext<grpc_core::Arena>(),
-          registered_method, this);
+          path, grpc_core::GetContext<grpc_core::Arena>(), registered_method,
+          this,
+          std::static_pointer_cast<OpenTelemetryPlugin::ScopeConfig>(
+              scope_config));
 }
 grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
-    const grpc_core::ChannelArgs& args) {
+    std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   return grpc_core::GetContext<grpc_core::Arena>()
-      ->ManagedNew<grpc::internal::OpenTelemetryServerCallTracer>(args, this);
+      ->ManagedNew<grpc::internal::OpenTelemetryServerCallTracer>(
+          this, std::static_pointer_cast<OpenTelemetryPlugin::ScopeConfig>(
+                    scope_config));
 }
 
 }  // namespace internal

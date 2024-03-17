@@ -35,7 +35,6 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
@@ -179,14 +178,22 @@ class StatsPlugin {
     absl::string_view authority() const { return authority_; }
 
    private:
-    absl::string_view target_;
-    absl::string_view authority_;
+    std::string target_;
+    std::string authority_;
+  };
+  // A general-purpose way for StatsPlugin to store per-channel or per-server
+  // state.
+  class ScopeConfig {
+   public:
+    virtual ~ScopeConfig() = default;
   };
 
   virtual ~StatsPlugin() = default;
 
-  virtual bool IsEnabledForChannel(const ChannelScope& scope) const = 0;
-  virtual bool IsEnabledForServer(const ChannelArgs& args) const = 0;
+  virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
+      const ChannelScope& scope) const = 0;
+  virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& args) const = 0;
 
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
@@ -220,9 +227,10 @@ class StatsPlugin {
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
   virtual ClientCallTracer* GetClientCallTracer(
-      absl::string_view canonical_target, const Slice& path,
-      bool registered_method) = 0;
-  virtual ServerCallTracer* GetServerCallTracer(const ChannelArgs& args) = 0;
+      const Slice& path, bool registered_method,
+      std::shared_ptr<ScopeConfig> scope_config) = 0;
+  virtual ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<ScopeConfig> scope_config) = 0;
 
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
   // representation of the label_values and use it multiple times. We would
@@ -241,32 +249,37 @@ class GlobalStatsPluginRegistry {
  public:
   class StatsPluginGroup {
    public:
-    void push_back(std::shared_ptr<StatsPlugin> plugin) {
-      plugins_.push_back(std::move(plugin));
+    void AddStatsPlugin(std::shared_ptr<StatsPlugin> plugin,
+                        std::shared_ptr<StatsPlugin::ScopeConfig> config) {
+      PluginState plugin_state;
+      plugin_state.plugin = std::move(plugin);
+      plugin_state.scope_config = std::move(config);
+      plugins_state_.push_back(std::move(plugin_state));
     }
 
     template <class HandleType, class ValueType>
     void AddCounter(HandleType handle, ValueType value,
                     absl::Span<const absl::string_view> label_values,
                     absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
-        plugin->AddCounter(handle, value, label_values, optional_values);
+      for (auto& state : plugins_state_) {
+        state.plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
     template <class HandleType, class ValueType>
     void RecordHistogram(HandleType handle, ValueType value,
                          absl::Span<const absl::string_view> label_values,
                          absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
-        plugin->RecordHistogram(handle, value, label_values, optional_values);
+      for (auto& state : plugins_state_) {
+        state.plugin->RecordHistogram(handle, value, label_values,
+                                      optional_values);
       }
     }
     template <class HandleType, class ValueType>
     void SetGauge(HandleType handle, ValueType value,
                   absl::Span<const absl::string_view> label_values,
                   absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : plugins_) {
-        plugin->SetGauge(handle, value, label_values, optional_values);
+      for (auto& state : plugins_state_) {
+        state.plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
 
@@ -290,9 +303,14 @@ class GlobalStatsPluginRegistry {
                               grpc_call_context_element* call_context);
 
    private:
+    struct PluginState {
+      std::shared_ptr<StatsPlugin::ScopeConfig> scope_config;
+      std::shared_ptr<StatsPlugin> plugin;
+    };
+
     friend class RegisteredMetricCallback;
 
-    std::vector<std::shared_ptr<StatsPlugin>> plugins_;
+    std::vector<PluginState> plugins_state_;
   };
 
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);

@@ -53,7 +53,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
-  active_plugin_options_view_.ForEach(
+  scope_config_->active_plugin_options_view()->ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t index) {
         auto* labels_injector = plugin_option.labels_injector();
@@ -62,7 +62,8 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
               labels_injector->GetLabels(recv_initial_metadata);
         }
         return true;
-      });
+      },
+      otel_plugin_);
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
           .value_or(nullptr) != nullptr;
@@ -75,7 +76,7 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
         1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr, {},
-                            /*is_client=*/false));
+                            /*is_client=*/false, otel_plugin_));
   }
 }
 
@@ -97,7 +98,7 @@ void OpenTelemetryServerCallTracer::RecordEnd(
   KeyValueIterable labels(
       injected_labels_from_plugin_options_, additional_labels,
       /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
-      /*is_client=*/false);
+      /*is_client=*/false, otel_plugin_);
   if (otel_plugin_->server().call.duration != nullptr) {
     otel_plugin_->server().call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,

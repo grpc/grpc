@@ -258,13 +258,15 @@ class FakeStatsPlugin : public StatsPlugin {
         });
   }
 
-  bool IsEnabledForChannel(const ChannelScope& scope) const override {
-    if (channel_filter_ == nullptr) return true;
-    return channel_filter_(scope);
+  std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
+      const ChannelScope& scope) const override {
+    if (channel_filter_ == nullptr) return {true, nullptr};
+    return {channel_filter_(scope), nullptr};
   }
 
-  bool IsEnabledForServer(const ChannelArgs& /*args*/) const override {
-    return false;
+  std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& /*args*/) const override {
+    return {false, nullptr};
   }
 
   void AddCounter(
@@ -368,12 +370,13 @@ class FakeStatsPlugin : public StatsPlugin {
     callbacks_.erase(callback);
   }
 
-  ClientCallTracer* GetClientCallTracer(absl::string_view /*canonical_target*/,
-                                        const Slice& /*path*/,
-                                        bool /*registered_method*/) override {
+  ClientCallTracer* GetClientCallTracer(
+      const Slice& /*path*/, bool /*registered_method*/,
+      std::shared_ptr<ScopeConfig> scope_config) override {
     return nullptr;
   }
-  ServerCallTracer* GetServerCallTracer(const ChannelArgs& /*args*/) override {
+  ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<ScopeConfig> scope_config) override {
     return nullptr;
   }
 

@@ -67,39 +67,30 @@ namespace internal {
 
 OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
-                                   bool arena_allocated,
-                                   OpenTelemetryPlugin* otel_plugin)
+                                   bool arena_allocated)
     : parent_(parent),
       arena_allocated_(arena_allocated),
-      start_time_(absl::Now()),
-      otel_plugin_(otel_plugin),
-      active_plugin_options_view_(ActivePluginOptionsView::MakeForClient(
-          parent_->target(), otel_plugin_)) {
-  if (otel_plugin_->client().attempt.started != nullptr) {
+      start_time_(absl::Now()) {
+  if (parent_->otel_plugin_->client().attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {
             {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
              {OpenTelemetryTargetKey(),
-              // Use the original target string only if a filter on the
-              // attribute is not registered or if the filter returns true,
-              // otherwise use "other".
-              otel_plugin_->target_attribute_filter() == nullptr ||
-                      otel_plugin_->target_attribute_filter()(parent_->target())
-                  ? parent_->target()
-                  : "other"}}};
+              parent_->scope_config_->filtered_target()}}};
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
-    otel_plugin_->client().attempt.started->Add(
+    parent_->otel_plugin_->client().attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr,
-                            /*optional_labels_span=*/{}, /*is_client=*/true));
+                            /*optional_labels_span=*/{}, /*is_client=*/true,
+                            parent_->otel_plugin_));
   }
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
-  active_plugin_options_view_.ForEach(
+  parent_->scope_config_->active_plugin_options_view()->ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t /*index*/) {
         auto* labels_injector = plugin_option.labels_injector();
@@ -108,12 +99,13 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
               labels_injector->GetLabels(recv_initial_metadata));
         }
         return true;
-      });
+      },
+      parent_->otel_plugin_);
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
-  active_plugin_options_view_.ForEach(
+  parent_->scope_config_->active_plugin_options_view()->ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t /*index*/) {
         auto* labels_injector = plugin_option.labels_injector();
@@ -121,7 +113,8 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
           labels_injector->AddLabels(send_initial_metadata, nullptr);
         }
         return true;
-      });
+      },
+      parent_->otel_plugin_);
 }
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::RecordSendMessage(
@@ -158,39 +151,36 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
       additional_labels = {
           {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
            {OpenTelemetryTargetKey(),
-            // Use the original target string only if a filter on the
-            // attribute is not registered or if the filter
-            // returns true, otherwise use "other".
-            otel_plugin_->target_attribute_filter() == nullptr ||
-                    otel_plugin_->target_attribute_filter()(parent_->target())
-                ? parent_->target()
-                : "other"},
+            parent_->scope_config_->filtered_target()},
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(
                 static_cast<grpc_status_code>(status.code()))}}};
-  KeyValueIterable labels(injected_labels_from_plugin_options_,
-                          additional_labels, &active_plugin_options_view_,
-                          optional_labels_array_, /*is_client=*/true);
-  if (otel_plugin_->client().attempt.duration != nullptr) {
-    otel_plugin_->client().attempt.duration->Record(
+  KeyValueIterable labels(
+      injected_labels_from_plugin_options_, additional_labels,
+      parent_->scope_config_->active_plugin_options_view(),
+      optional_labels_array_, /*is_client=*/true, parent_->otel_plugin_);
+  if (parent_->otel_plugin_->client().attempt.duration != nullptr) {
+    parent_->otel_plugin_->client().attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
         opentelemetry::context::Context{});
   }
-  if (otel_plugin_->client().attempt.sent_total_compressed_message_size !=
-      nullptr) {
-    otel_plugin_->client().attempt.sent_total_compressed_message_size->Record(
-        transport_stream_stats != nullptr
-            ? transport_stream_stats->outgoing.data_bytes
-            : 0,
-        labels, opentelemetry::context::Context{});
+  if (parent_->otel_plugin_->client()
+          .attempt.sent_total_compressed_message_size != nullptr) {
+    parent_->otel_plugin_->client()
+        .attempt.sent_total_compressed_message_size->Record(
+            transport_stream_stats != nullptr
+                ? transport_stream_stats->outgoing.data_bytes
+                : 0,
+            labels, opentelemetry::context::Context{});
   }
-  if (otel_plugin_->client().attempt.rcvd_total_compressed_message_size !=
-      nullptr) {
-    otel_plugin_->client().attempt.rcvd_total_compressed_message_size->Record(
-        transport_stream_stats != nullptr
-            ? transport_stream_stats->incoming.data_bytes
-            : 0,
-        labels, opentelemetry::context::Context{});
+  if (parent_->otel_plugin_->client()
+          .attempt.rcvd_total_compressed_message_size != nullptr) {
+    parent_->otel_plugin_->client()
+        .attempt.rcvd_total_compressed_message_size->Record(
+            transport_stream_stats != nullptr
+                ? transport_stream_stats->incoming.data_bytes
+                : 0,
+            labels, opentelemetry::context::Context{});
   }
 }
 
@@ -234,14 +224,14 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
 //
 
 OpenTelemetryCallTracer::OpenTelemetryCallTracer(
-    absl::string_view target, const grpc_core::Slice& path,
-    grpc_core::Arena* arena, bool registered_method,
-    OpenTelemetryPlugin* otel_plugin)
-    : target_(target),
-      path_(path.Ref()),
+    const grpc_core::Slice& path, grpc_core::Arena* arena,
+    bool registered_method, OpenTelemetryPlugin* otel_plugin,
+    std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config)
+    : path_(path.Ref()),
       arena_(arena),
       registered_method_(registered_method),
-      otel_plugin_(otel_plugin) {}
+      otel_plugin_(otel_plugin),
+      scope_config_(std::move(scope_config)) {}
 
 OpenTelemetryCallTracer::~OpenTelemetryCallTracer() {}
 
@@ -264,10 +254,9 @@ OpenTelemetryCallTracer::StartNewAttempt(bool is_transparent_retry) {
   }
   if (is_first_attempt) {
     return arena_->New<OpenTelemetryCallAttemptTracer>(
-        this, /*arena_allocated=*/true, otel_plugin_);
+        this, /*arena_allocated=*/true);
   }
-  return new OpenTelemetryCallAttemptTracer(this, /*arena_allocated=*/false,
-                                            otel_plugin_);
+  return new OpenTelemetryCallAttemptTracer(this, /*arena_allocated=*/false);
 }
 
 absl::string_view OpenTelemetryCallTracer::MethodForStats() const {
@@ -289,8 +278,6 @@ void OpenTelemetryCallTracer::RecordAnnotation(
     const Annotation& /*annotation*/) {
   // Not implemented
 }
-
-absl::string_view OpenTelemetryCallTracer::target() const { return target_; }
 
 }  // namespace internal
 }  // namespace grpc

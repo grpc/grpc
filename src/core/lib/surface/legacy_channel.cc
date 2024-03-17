@@ -96,7 +96,11 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     // TODO(roth): Figure out how to populate authority here.
     // Or maybe just don't worry about this if no one needs it until after
     // the call v3 stack lands.
-    StatsPlugin::ChannelScope scope(builder.target(), "");
+    // TODO(yijiem): revert after https://github.com/grpc/grpc/pull/36134 lands
+    StatsPlugin::ChannelScope scope(
+        args.GetOwnedString(GRPC_ARG_SERVER_URI)
+            .value_or(std::string(builder.target())),
+        "");
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }
@@ -121,9 +125,7 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
                              const ChannelArgs& channel_args,
                              RefCountedPtr<grpc_channel_stack> channel_stack)
-    : Channel(channel_args.GetOwnedString(GRPC_ARG_SERVER_URI)
-                  .value_or(std::move(target)),
-              channel_args),
+    : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
       channel_stack_(std::move(channel_stack)),

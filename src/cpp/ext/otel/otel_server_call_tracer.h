@@ -34,14 +34,14 @@ namespace internal {
 
 class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
-  OpenTelemetryServerCallTracer(const grpc_core::ChannelArgs& args,
-                                OpenTelemetryPlugin* otel_plugin)
+  OpenTelemetryServerCallTracer(
+      OpenTelemetryPlugin* otel_plugin,
+      std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config)
       : start_time_(absl::Now()),
-        active_plugin_options_view_(
-            ActivePluginOptionsView::MakeForServer(args, otel_plugin)),
         injected_labels_from_plugin_options_(
             otel_plugin->plugin_options().size()),
-        otel_plugin_(otel_plugin) {}
+        otel_plugin_(otel_plugin),
+        scope_config_(std::move(scope_config)) {}
 
   std::string TraceId() override {
     // Not implemented
@@ -62,7 +62,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // arguments.
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
-    active_plugin_options_view_.ForEach(
+    scope_config_->active_plugin_options_view()->ForEach(
         [&](const InternalOpenTelemetryPluginOption& plugin_option,
             size_t index) {
           auto* labels_injector = plugin_option.labels_injector();
@@ -72,7 +72,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
                 injected_labels_from_plugin_options_[index].get());
           }
           return true;
-        });
+        },
+        otel_plugin_);
   }
 
   void RecordSendTrailingMetadata(
@@ -138,12 +139,12 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
   bool registered_method_;
-  ActivePluginOptionsView active_plugin_options_view_;
   // TODO(yashykt): It's wasteful to do this per call. When we re-haul the stats
   // infrastructure, this should move to be done per server.
   std::vector<std::unique_ptr<LabelsIterable>>
       injected_labels_from_plugin_options_;
   OpenTelemetryPlugin* otel_plugin_;
+  std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config_;
 };
 
 }  // namespace internal

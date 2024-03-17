@@ -52,8 +52,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
    public:
     OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
-                                   bool arena_allocated,
-                                   OpenTelemetryPlugin* otel_plugin);
+                                   bool arena_allocated);
 
     std::string TraceId() override {
       // Not implemented
@@ -107,14 +106,12 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
         optional_labels_array_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
-    OpenTelemetryPlugin* otel_plugin_;
-    ActivePluginOptionsView active_plugin_options_view_;
   };
 
-  OpenTelemetryCallTracer(absl::string_view target,
-                          const grpc_core::Slice& path, grpc_core::Arena* arena,
-                          bool registered_method,
-                          OpenTelemetryPlugin* otel_plugin);
+  OpenTelemetryCallTracer(
+      const grpc_core::Slice& path, grpc_core::Arena* arena,
+      bool registered_method, OpenTelemetryPlugin* otel_plugin,
+      std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config);
   ~OpenTelemetryCallTracer() override;
 
   std::string TraceId() override {
@@ -137,17 +134,15 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   void RecordAnnotation(absl::string_view /*annotation*/) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
-  absl::string_view target() const;
-
  private:
   absl::string_view MethodForStats() const;
 
   // Client method.
-  absl::string_view target_;
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;
   OpenTelemetryPlugin* otel_plugin_;
+  std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

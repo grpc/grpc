@@ -16,6 +16,8 @@
 
 #include "src/core/lib/channel/metrics.h"
 
+#include <memory>
+
 #include "absl/container/flat_hash_map.h"
 
 #include "src/core/lib/gprpp/crash.h"
@@ -281,14 +283,14 @@ RegisteredMetricCallback::RegisteredMetricCallback(
       callback_(std::move(callback)),
       metrics_(std::move(metrics)),
       min_interval_(min_interval) {
-  for (auto& plugin : stats_plugin_group_.plugins_) {
-    plugin->AddCallback(this);
+  for (auto& state : stats_plugin_group_.plugins_state_) {
+    state.plugin->AddCallback(this);
   }
 }
 
 RegisteredMetricCallback::~RegisteredMetricCallback() {
-  for (auto& plugin : stats_plugin_group_.plugins_) {
-    plugin->RemoveCallback(this);
+  for (auto& state : stats_plugin_group_.plugins_state_) {
+    state.plugin->RemoveCallback(this);
   }
 }
 
@@ -304,9 +306,9 @@ GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
     absl::string_view target, const Slice& path, bool registered_method,
     grpc_call_context_element* call_context) {
-  for (auto& plugin : plugins_) {
-    auto* call_tracer =
-        plugin->GetClientCallTracer(target, path, registered_method);
+  for (auto& state : plugins_state_) {
+    auto* call_tracer = state.plugin->GetClientCallTracer(
+        path, registered_method, state.scope_config);
     if (call_tracer != nullptr) {
       AddClientCallTracerToContext(call_context, call_tracer);
     }
@@ -315,8 +317,8 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
     const ChannelArgs& args, grpc_call_context_element* call_context) {
-  for (auto& plugin : plugins_) {
-    auto* call_tracer = plugin->GetServerCallTracer(args);
+  for (auto& state : plugins_state_) {
+    auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
     if (call_tracer != nullptr) {
       AddServerCallTracerToContext(call_context, call_tracer);
     }
@@ -339,8 +341,11 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
   MutexLock lock(&*mutex_);
   StatsPluginGroup group;
   for (const auto& plugin : *plugins_) {
-    if (plugin->IsEnabledForChannel(scope)) {
-      group.push_back(plugin);
+    bool is_enabled = false;
+    std::shared_ptr<StatsPlugin::ScopeConfig> config;
+    std::tie(is_enabled, config) = plugin->IsEnabledForChannel(scope);
+    if (is_enabled) {
+      group.AddStatsPlugin(plugin, config);
     }
   }
   return group;
@@ -351,8 +356,11 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
   MutexLock lock(&*mutex_);
   StatsPluginGroup group;
   for (const auto& plugin : *plugins_) {
-    if (plugin->IsEnabledForServer(args)) {
-      group.push_back(plugin);
+    bool is_enabled = false;
+    std::shared_ptr<StatsPlugin::ScopeConfig> config;
+    std::tie(is_enabled, config) = plugin->IsEnabledForServer(args);
+    if (is_enabled) {
+      group.AddStatsPlugin(plugin, config);
     }
   }
   return group;
