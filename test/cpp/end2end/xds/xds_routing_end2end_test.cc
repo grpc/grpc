@@ -402,18 +402,12 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(XdsTestType(), XdsTestType().set_enable_rds_testing()),
     &XdsTestType::Name);
 
-MATCHER_P2(AdjustedClockInRange, t1, t2,
+MATCHER_P2(ClockInRange, t1, t2,
            absl::StrFormat("time between %s and %s", t1.ToString().c_str(),
                            t2.ToString().c_str())) {
-  gpr_cycle_counter cycle_now = gpr_get_cycle_counter();
-  grpc_core::Timestamp cycle_time =
-      grpc_core::Timestamp::FromCycleCounterRoundDown(cycle_now);
-  grpc_core::Timestamp time_spec =
-      grpc_core::Timestamp::FromTimespecRoundDown(gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_core::Timestamp now = arg + (time_spec - cycle_time);
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), now, result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), now, result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::Ge(t1), arg, result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::Lt(t2), arg, result_listener);
   return ok;
 }
 
@@ -1619,7 +1613,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_rpc_method(METHOD_ECHO1)
                           .set_wait_for_ready(true)
                           .set_timeout(kTimeoutApplication));
-  EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
+  EXPECT_THAT(NowFromCycleCounter(), ClockInRange(t1, t2));
   // Test max_stream_duration of 2.5 seconds applied
   t0 = NowFromCycleCounter();
   t1 = t0 + (kTimeoutMaxStreamDuration * grpc_test_slowdown_factor());
@@ -1631,7 +1625,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
                           .set_rpc_method(METHOD_ECHO2)
                           .set_wait_for_ready(true)
                           .set_timeout(kTimeoutApplication));
-  EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
+  EXPECT_THAT(NowFromCycleCounter(), ClockInRange(t1, t2));
   // Test http_stream_duration of 3.5 seconds applied
   t0 = NowFromCycleCounter();
   t1 = t0 + (kTimeoutHttpMaxStreamDuration * grpc_test_slowdown_factor());
@@ -1639,7 +1633,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
       RpcOptions().set_wait_for_ready(true).set_timeout(kTimeoutApplication));
-  EXPECT_THAT(NowFromCycleCounter(), AdjustedClockInRange(t1, t2));
+  EXPECT_THAT(NowFromCycleCounter(), ClockInRange(t1, t2));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {

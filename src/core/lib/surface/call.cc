@@ -252,7 +252,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   // start_timestamp() for general gRPC functionality.
   gpr_cycle_counter start_time() const { return start_time_; }
 
-  grpc_core::Timestamp start_timestamp() const { return start_timestamp_; }
+  Timestamp start_timestamp() const { return start_timestamp_; }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -276,7 +276,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   mutable Mutex peer_mu_;
   Slice peer_string_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
-  grpc_core::Timestamp start_timestamp_ = Timestamp::Now();
+  Timestamp start_timestamp_ = Timestamp::Now();
 };
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
