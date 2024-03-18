@@ -37,7 +37,6 @@ void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
   RunAsync([this, reactor]() {
     reactor->OnCancel();
     MaybeDone();
-    Unref();
   });
 }
 
