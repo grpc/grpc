@@ -354,7 +354,7 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
     out_addr = tmp_addr;
   }
   // Treat :: or 0.0.0.0 as a family-agnostic wildcard.
-  if (ResolvedAddressIsWildcard(out_addr)) {
+  if (MaybeGetWildcardPortFromAddress(out_addr).has_value()) {
     out_addr = ResolvedAddressMakeWild6(out_port);
   }
   // open the socket
