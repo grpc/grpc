@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <vector>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -29,7 +30,11 @@ namespace grpc_core {
 
 class InterceptionChain;
 
-// A delegating CallDestination for use as a hijacking filter.
+namespace interception_chain_detail {
+class ChainAllocator;
+}
+
+// A delegating UnstartedCallDestination for use as a hijacking filter.
 // Implementations may look at the unprocessed initial metadata
 // and decide to do one of two things:
 //
@@ -37,7 +42,7 @@ class InterceptionChain;
 //    be used to start new calls with the same metadata.
 //
 // 2. It can consume the call by calling `Consume`.
-class Interceptor : public CallDestination {
+class Interceptor : public UnstartedCallDestination {
  protected:
   class HijackedCall {
    public:
@@ -50,7 +55,8 @@ class Interceptor : public CallDestination {
 
    private:
     friend class Interceptor;
-    HijackedCall(ClientMetadataHandle metadata, CallDestination* destination,
+    HijackedCall(ClientMetadataHandle metadata,
+                 UnstartedCallDestination* destination,
                  CallHandler call_handler)
         : metadata_(std::move(metadata)),
           destination_(destination),
@@ -59,7 +65,7 @@ class Interceptor : public CallDestination {
     CallInitiator MakeCallWithMetadata(ClientMetadataHandle metadata);
 
     ClientMetadataHandle metadata_;
-    CallDestination* destination_;
+    UnstartedCallDestination* destination_;
     CallHandler call_handler_;
   };
 
@@ -82,20 +88,161 @@ class Interceptor : public CallDestination {
 
  private:
   friend class InterceptionChain;
+  friend class interception_chain_detail::ChainAllocator;
 
-  CallDestination* wrapped_destination_;
+  UnstartedCallDestination* wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
 };
 
+namespace interception_chain_detail {
+struct Footprint {
+  template <typename T>
+  static Footprint For() {
+    return {
+        sizeof(T),
+        alignof(T),
+        [](void* p) { static_cast<T*>(p)->~T(); },
+    };
+  }
+
+  size_t size;
+  size_t alignment;
+  void (*destroy)(void* p);
+  size_t offset = 0;
+  void* OffsetPtr(void* base) const {
+    return static_cast<char*>(base) + offset;
+  }
+};
+
+struct FilterDef {
+  Footprint footprint;
+  absl::Status (*init)(void* filter, const ChannelArgs& args);
+  void (*add_to_stack_builder)(CallFilters::StackBuilder& stack_builder,
+                               void* filter);
+};
+
+struct InterceptorDef {
+  InterceptorDef(Footprint footprint, std::vector<FilterDef> filters,
+                 absl::StatusOr<Interceptor*> (*init)(void* interceptor,
+                                                      const ChannelArgs& args))
+      : footprint(footprint), filters(std::move(filters)), init(init) {}
+  Footprint footprint;
+  std::vector<FilterDef> filters;
+  absl::StatusOr<Interceptor*> (*init)(void* interceptor,
+                                       const ChannelArgs& args);
+};
+
+struct Destructor {
+  void (*destroy)(void* p);
+  size_t offset;
+};
+
+struct Chain : public RefCounted<Chain> {
+  Chain(UnstartedCallDestination* first_destination,
+        std::vector<Destructor> destructors, void* chain_data,
+        std::shared_ptr<UnstartedCallDestination> final_destination)
+      : first_destination(first_destination),
+        destructors(std::move(destructors)),
+        chain_data(chain_data),
+        final_destination(std::move(final_destination)) {
+    GPR_ASSERT(this->final_destination != nullptr);
+    if (this->first_destination == nullptr) {
+      this->first_destination = this->final_destination.get();
+    }
+  }
+  ~Chain() override;
+  UnstartedCallDestination* first_destination;
+  std::vector<Destructor> destructors;
+  void* chain_data;
+  std::shared_ptr<UnstartedCallDestination> final_destination;
+};
+
+class CallStarter final : public UnstartedCallDestination {
+ public:
+  CallStarter(RefCountedPtr<CallFilters::Stack> stack,
+              std::shared_ptr<CallDestination> destination)
+      : stack_(std::move(stack)), destination_(std::move(destination)) {}
+
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    destination_->HandleCall(unstarted_call_handler.StartCall(stack_));
+  }
+
+ private:
+  const RefCountedPtr<CallFilters::Stack> stack_;
+  const std::shared_ptr<CallDestination> destination_;
+};
+
+class ChainAllocator {
+ public:
+  ChainAllocator() = default;
+  ~ChainAllocator();
+
+  ChainAllocator(const ChainAllocator&) = delete;
+  ChainAllocator& operator=(const ChainAllocator&) = delete;
+  ChainAllocator(ChainAllocator&&) = delete;
+  ChainAllocator& operator=(ChainAllocator&&) = delete;
+
+  // Phase 1: Add interceptors and filters to the chain.
+  void Append(InterceptorDef& interceptor);
+  void Append(FilterDef& filter);
+
+  // Phase 2: Instantiate all filters and interceptors.
+  // Memory stays owned by this class, but the interceptors and filters are
+  // available to be manipulated.
+  absl::Status Instantiate(const ChannelArgs& args);
+
+  // After phase 2: construct a filter stack given a set of filter defs
+  RefCountedPtr<CallFilters::Stack> MakeFilterStack(
+      absl::Span<const FilterDef> filters);
+
+  Interceptor* interceptor(size_t i) { return interceptors_[i]; }
+
+  // Phase 3: Build the finalized chain.
+  RefCountedPtr<Chain> Build(std::shared_ptr<UnstartedCallDestination> final);
+
+ private:
+  void Append(Footprint& footprint);
+
+  size_t chain_size_ = 0;
+  size_t chain_alignment_ = 1;
+  std::vector<Destructor> destructors_;
+  std::vector<FilterDef*> filter_defs_;
+  std::vector<InterceptorDef*> interceptor_defs_;
+  std::vector<Interceptor*> interceptors_;
+  size_t instantiated_filters_ = 0;
+  size_t instantiated_interceptors_ = 0;
+  void* chain_data_ = nullptr;
+};
+}  // namespace interception_chain_detail
+
 class InterceptionChain final : public RefCounted<InterceptionChain>,
-                                public CallDestination {
+                                public UnstartedCallDestination {
  public:
   class Builder {
    public:
-    explicit Builder(std::shared_ptr<CallDestination> final_destination)
-        : final_destination_(std::move(final_destination)) {
-      GPR_ASSERT(final_destination_ != nullptr);
-    }
+    // The kind of destination that the chain will eventually call.
+    // We can bottom out in various types depending on where we're intercepting:
+    // - The top half of the client channel wants to terminate on a
+    //   UnstartedCallDestination (specifically the LB call destination).
+    // - The bottom half of the client channel and the server code wants to
+    //   terminate on a ClientTransport - which unlike a
+    //   UnstartedCallDestination demands a started CallHandler.
+    // There's some adaption code that's needed to start filters just prior
+    // to the bottoming out, and some design considerations to make with that.
+    // One way (that's not chosen here) would be to have the caller of the
+    // Builder provide something that can build an adaptor
+    // UnstartedCallDestination with parameters supplied by this builder - that
+    // disperses the responsibility of building the adaptor to the caller, which
+    // is not ideal - we might want to adjust the way this construct is built in
+    // the future, and building is a builder responsibility.
+    // Instead, we declare a relatively closed set of destinations here, and
+    // hide the adaptors inside the builder at build time.
+    using FinalDestination =
+        absl::variant<std::shared_ptr<UnstartedCallDestination>,
+                      std::shared_ptr<CallDestination>>;
+
+    explicit Builder(FinalDestination final_destination)
+        : final_destination_(std::move(final_destination)) {}
 
     // Add a filter with a `Call` class as an inner member.
     // Call class must be one compatible with the filters described in
@@ -103,7 +250,7 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
     template <typename T>
     absl::enable_if_t<sizeof(typename T::Call), Builder&> Add() {
       building_filters_.push_back({
-          Footprint::For<T>(),
+          interception_chain_detail::Footprint::For<T>(),
           [](void* filter, const ChannelArgs& args) {
             auto f = T::Create(args, {});
             if (!f.ok()) return f.status();
@@ -121,7 +268,8 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
     template <typename T>
     absl::enable_if_t<std::is_base_of<Interceptor, T>::value, Builder&> Add() {
       interceptors_.emplace_back(
-          Footprint::For<T>(), std::move(building_filters_),
+          interception_chain_detail::Footprint::For<T>(),
+          std::move(building_filters_),
           [](void* interceptor,
              const ChannelArgs& args) -> absl::StatusOr<Interceptor*> {
             auto i = T::Create(args, {});
@@ -137,46 +285,9 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
         const ChannelArgs& args);
 
    private:
-    struct Footprint {
-      template <typename T>
-      static Footprint For() {
-        return {
-            sizeof(T),
-            alignof(T),
-            [](void* p) { static_cast<T*>(p)->~T(); },
-        };
-      }
-
-      size_t size;
-      size_t alignment;
-      void (*destroy)(void* p);
-      size_t offset = 0;
-      void* OffsetPtr(void* base) const {
-        return static_cast<char*>(base) + offset;
-      }
-    };
-
-    struct FilterDef {
-      Footprint footprint;
-      absl::Status (*init)(void* filter, const ChannelArgs& args);
-      void (*add_to_stack_builder)(CallFilters::StackBuilder& stack_builder,
-                                   void* filter);
-    };
-
-    struct InterceptorDef {
-      InterceptorDef(Footprint footprint, std::vector<FilterDef> filters,
-                     absl::StatusOr<Interceptor*> (*init)(
-                         void* interceptor, const ChannelArgs& args))
-          : footprint(footprint), filters(std::move(filters)), init(init) {}
-      Footprint footprint;
-      std::vector<FilterDef> filters;
-      absl::StatusOr<Interceptor*> (*init)(void* interceptor,
-                                           const ChannelArgs& args);
-    };
-
-    std::vector<InterceptorDef> interceptors_;
-    std::vector<FilterDef> building_filters_;
-    std::shared_ptr<CallDestination> final_destination_;
+    std::vector<interception_chain_detail::InterceptorDef> interceptors_;
+    std::vector<interception_chain_detail::FilterDef> building_filters_;
+    FinalDestination final_destination_;
   };
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
@@ -184,38 +295,13 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
     chain_->first_destination->StartCall(std::move(unstarted_call_handler));
   }
 
- private:
-  struct Destructor {
-    void (*destroy)(void* p);
-    size_t offset;
-  };
-
-  struct Chain : public RefCounted<Chain> {
-    Chain(CallDestination* first_destination,
-          std::vector<Destructor> destructors, void* chain_data,
-          std::shared_ptr<CallDestination> final_destination)
-        : first_destination(first_destination),
-          destructors(std::move(destructors)),
-          chain_data(chain_data),
-          final_destination(std::move(final_destination)) {
-      GPR_ASSERT(this->final_destination != nullptr);
-      if (this->first_destination == nullptr) {
-        this->first_destination = this->final_destination.get();
-      }
-    }
-    ~Chain() override;
-    CallDestination* first_destination;
-    std::vector<Destructor> destructors;
-    void* chain_data;
-    std::shared_ptr<CallDestination> final_destination;
-  };
-
  public:
-  explicit InterceptionChain(RefCountedPtr<Chain> chain)
+  explicit InterceptionChain(
+      RefCountedPtr<interception_chain_detail::Chain> chain)
       : chain_(std::move(chain)) {}
 
  private:
-  const RefCountedPtr<Chain> chain_;
+  const RefCountedPtr<interception_chain_detail::Chain> chain_;
 };
 
 }  // namespace grpc_core

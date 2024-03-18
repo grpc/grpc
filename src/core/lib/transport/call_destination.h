@@ -22,23 +22,32 @@
 
 namespace grpc_core {
 
-// CallDestination is responsible for starting an UnstartedCallHandler
+// UnstartedCallDestination is responsible for starting an UnstartedCallHandler
 // and then processing operations on the resulting CallHandler.
 //
-// Examples of CallDestinations include:
-// - a client transport
-// - the server API
+// Examples of UnstartedCallDestinations include:
 // - a load-balanced call in the client channel
 // - a hijacking filter (see Interceptor)
-class CallDestination {
+class UnstartedCallDestination {
  public:
-  virtual ~CallDestination() = default;
+  virtual ~UnstartedCallDestination() = default;
   // Start a call. The UnstartedCallHandler will be consumed by the Destination
   // and started.
   // Must be called from the party owned by the call, eg the following must
   // hold:
   // GPR_ASSERT(GetContext<Activity>() == unstarted_call_handler.party());
   virtual void StartCall(UnstartedCallHandler unstarted_call_handler) = 0;
+};
+
+// CallDestination is responsible for handling processing of an already started
+// call.
+//
+// Examples of CallDestinations include:
+// - a client transport
+// - the server API
+class CallDestination {
+ public:
+  virtual void HandleCall(CallHandler unstarted_call_handler) = 0;
 };
 
 }  // namespace grpc_core

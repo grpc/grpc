@@ -14,6 +14,8 @@
 
 #include "src/core/lib/transport/interception_chain.h"
 
+#include <memory>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -81,6 +83,9 @@ class TestFilter {
   static absl::StatusOr<TestFilter<I>> Create(const ChannelArgs& args, Empty) {
     return TestFilter<I>{};
   }
+
+ private:
+  std::unique_ptr<int> i_ = std::make_unique<int>(I);
 };
 
 template <int I>
@@ -95,6 +100,41 @@ template <int I>
 const NoInterceptor TestFilter<I>::Call::OnFinalize;
 
 ///////////////////////////////////////////////////////////////////////////////
+// Test call filter that fails to instantiate
+
+template <int I>
+class FailsToInstantiateFilter {
+ public:
+  class Call {
+   public:
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+  };
+
+  static absl::StatusOr<FailsToInstantiateFilter<I>> Create(
+      const ChannelArgs& args, Empty) {
+    return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
+  }
+};
+
+template <int I>
+const NoInterceptor FailsToInstantiateFilter<I>::Call::OnClientInitialMetadata;
+template <int I>
+const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerInitialMetadata;
+template <int I>
+const NoInterceptor FailsToInstantiateFilter<I>::Call::OnClientToServerMessage;
+template <int I>
+const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerToClientMessage;
+template <int I>
+const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerTrailingMetadata;
+template <int I>
+const NoInterceptor FailsToInstantiateFilter<I>::Call::OnFinalize;
+
+///////////////////////////////////////////////////////////////////////////////
 // Test call interceptor - consumes calls
 
 template <int I>
@@ -107,6 +147,21 @@ class TestConsumingInterceptor final : public Interceptor {
   static absl::StatusOr<TestConsumingInterceptor<I>> Create(
       const ChannelArgs& args, Empty) {
     return TestConsumingInterceptor<I>{};
+  }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Test call interceptor - fails to instantiate
+
+template <int I>
+class TestFailingInterceptor final : public Interceptor {
+ public:
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    Crash("unreachable");
+  }
+  static absl::StatusOr<TestFailingInterceptor<I>> Create(
+      const ChannelArgs& args, Empty) {
+    return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
   }
 };
 
@@ -142,7 +197,9 @@ class InterceptionChainTest : public ::testing::Test {
   InterceptionChainTest() {}
   ~InterceptionChainTest() override {}
 
-  std::shared_ptr<CallDestination> destination() { return destination_; }
+  std::shared_ptr<UnstartedCallDestination> destination() {
+    return destination_;
+  }
 
   struct FinishedCall {
     CallInitiator call;
@@ -150,8 +207,8 @@ class InterceptionChainTest : public ::testing::Test {
     ServerMetadataHandle server_metadata;
   };
 
-  // Run a call through a CallDestination until it's complete.
-  FinishedCall RunCall(CallDestination* destination) {
+  // Run a call through a UnstartedCallDestination until it's complete.
+  FinishedCall RunCall(UnstartedCallDestination* destination) {
     auto* arena = Arena::Create(1024, &memory_allocator_);
     auto call =
         MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr, arena, true);
@@ -172,7 +229,7 @@ class InterceptionChainTest : public ::testing::Test {
   }
 
  private:
-  class Destination : public CallDestination {
+  class Destination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
       gpr_log(GPR_INFO, "👊 started call: metadata=%s",
@@ -257,6 +314,44 @@ TEST_F(InterceptionChainTest, FiltersThenHijacked) {
   EXPECT_EQ(finished_call.client_metadata->GetStringValue("passed-through-1",
                                                           &backing),
             "true");
+}
+
+TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<TestFailingInterceptor<1>>()
+               .Build(ChannelArgs());
+  EXPECT_FALSE(r.ok());
+  EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(r.status().message(), "👊 failed to instantiate 1");
+}
+
+TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<TestFilter<1>>()
+               .Add<TestFailingInterceptor<2>>()
+               .Build(ChannelArgs());
+  EXPECT_FALSE(r.ok());
+  EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(r.status().message(), "👊 failed to instantiate 2");
+}
+
+TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<FailsToInstantiateFilter<1>>()
+               .Build(ChannelArgs());
+  EXPECT_FALSE(r.ok());
+  EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(r.status().message(), "👊 failed to instantiate 1");
+}
+
+TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
+  auto r = InterceptionChain::Builder(destination())
+               .Add<TestFilter<1>>()
+               .Add<FailsToInstantiateFilter<2>>()
+               .Build(ChannelArgs());
+  EXPECT_FALSE(r.ok());
+  EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
+  EXPECT_EQ(r.status().message(), "👊 failed to instantiate 2");
 }
 
 }  // namespace

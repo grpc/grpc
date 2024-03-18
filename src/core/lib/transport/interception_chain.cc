@@ -16,11 +16,17 @@
 
 #include "src/core/lib/transport/interception_chain.h"
 
+#include "call_destination.h"
+
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
+
+///////////////////////////////////////////////////////////////////////////////
+// Interceptor::HijackedCall
 
 CallInitiator Interceptor::HijackedCall::MakeCall() {
   auto metadata = Arena::MakePooled<ClientMetadata>();
@@ -37,110 +43,163 @@ CallInitiator Interceptor::HijackedCall::MakeCallWithMetadata(
   return std::move(call.initiator);
 }
 
-absl::StatusOr<RefCountedPtr<InterceptionChain>>
-InterceptionChain::Builder::Build(const ChannelArgs& args) {
-  if (!building_filters_.empty()) {
-    return absl::InternalError("Last filter must be a hijacker");
+///////////////////////////////////////////////////////////////////////////////
+// ChainAllocator
+
+namespace interception_chain_detail {
+
+ChainAllocator::~ChainAllocator() {
+  if (chain_data_ == nullptr) return;
+
+  for (size_t i = 0; i < instantiated_filters_; i++) {
+    filter_defs_[i]->footprint.destroy(
+        filter_defs_[i]->footprint.OffsetPtr(chain_data_));
   }
 
-  // Build the chain memory layout.
-  // We allocate a single block, and place each interceptor along with its
-  // filters in the block.
-  std::vector<Destructor> destructors;
-  std::vector<FilterDef*> filters;
-  size_t chain_size = 0;
-  size_t chain_alignment = 1;
-  auto append_to_chain = [&](Footprint& footprint) {
-    if (chain_size % footprint.alignment != 0) {
-      chain_size += footprint.alignment - (chain_size % footprint.alignment);
-    }
-    footprint.offset = chain_size;
-    chain_size += footprint.size;
-    chain_alignment = std::max(chain_alignment, footprint.alignment);
-    if (footprint.destroy != nullptr) {
-      destructors.push_back(Destructor{footprint.destroy, footprint.offset});
-    }
-  };
-  for (auto& interceptor : interceptors_) {
-    append_to_chain(interceptor.footprint);
-    for (auto& filter : interceptor.filters) {
-      filters.push_back(&filter);
-      append_to_chain(filter.footprint);
-    }
+  if (chain_data_ != nullptr) {
+    gpr_free_aligned(chain_data_);
   }
-
-  // Allocate the chain.
-  void* chain_memory = gpr_malloc_aligned(chain_size, chain_alignment);
-
-  // Instantiate the filters.
-  for (size_t i = 0; i < filters.size(); ++i) {
-    auto& filter = *filters[i];
-    auto status = filter.init(filter.footprint.OffsetPtr(chain_memory), args);
-    if (!status.ok()) {
-      for (size_t j = 0; j < i; ++j) {
-        filters[j]->footprint.destroy(
-            filters[j]->footprint.OffsetPtr(chain_memory));
-      }
-      gpr_free_aligned(chain_memory);
-      return status;
-    }
-  }
-
-  // Instantiate the interceptors.
-  std::vector<Interceptor*> interceptors;
-  interceptors.reserve(interceptors_.size());
-  for (size_t i = 0; i < interceptors_.size(); ++i) {
-    auto& interceptor = interceptors_[i];
-    auto* interceptor_instance = interceptor.footprint.OffsetPtr(chain_memory);
-    auto status = interceptor.init(interceptor_instance, args);
-    if (!status.ok()) {
-      for (size_t j = 0; j < i; ++j) {
-        interceptors[j]->~Interceptor();
-      }
-      for (size_t j = 0; j < filters.size(); ++j) {
-        filters[j]->footprint.destroy(
-            filters[j]->footprint.OffsetPtr(chain_memory));
-      }
-      gpr_free_aligned(chain_memory);
-      return status.status();
-    }
-    interceptors.push_back(status.value());
-  }
-
-  // Create filter stacks for each interceptor.
-  for (size_t building = 0; building < interceptors_.size(); ++building) {
-    CallFilters::StackBuilder stack_builder;
-    for (auto& filter : interceptors_[building].filters) {
-      filter.add_to_stack_builder(stack_builder,
-                                  filter.footprint.OffsetPtr(chain_memory));
-    }
-    interceptors[building]->filter_stack_ = stack_builder.Build();
-  }
-
-  // Create the chain.
-  auto chain = MakeRefCounted<Chain>(
-      interceptors.empty() ? nullptr : interceptors.back(),
-      std::move(destructors), chain_memory, std::move(final_destination_));
-
-  // Fill in the rest of the interceptor data.
-  for (size_t building = 0; building < interceptors_.size(); ++building) {
-    if (building + 1 == interceptors_.size()) {
-      interceptors[building]->wrapped_destination_ =
-          chain->final_destination.get();
-    } else {
-      interceptors[building]->wrapped_destination_ = interceptors[building + 1];
-    }
-  }
-
-  return MakeRefCounted<InterceptionChain>(std::move(chain));
 }
 
-InterceptionChain::Chain::~Chain() {
+void ChainAllocator::Append(InterceptorDef& interceptor) {
+  Append(interceptor.footprint);
+  interceptor_defs_.push_back(&interceptor);
+}
+
+void ChainAllocator::Append(FilterDef& filter) {
+  Append(filter.footprint);
+  filter_defs_.push_back(&filter);
+}
+
+void ChainAllocator::Append(Footprint& footprint) {
+  if (chain_size_ % footprint.alignment != 0) {
+    chain_size_ += footprint.alignment - (chain_size_ % footprint.alignment);
+  }
+  footprint.offset = chain_size_;
+  chain_size_ += footprint.size;
+  chain_alignment_ = std::max(chain_alignment_, footprint.alignment);
+  if (footprint.destroy != nullptr) {
+    destructors_.push_back(Destructor{footprint.destroy, footprint.offset});
+  }
+}
+
+absl::Status ChainAllocator::Instantiate(const ChannelArgs& args) {
+  GPR_ASSERT(chain_data_ == nullptr);
+
+  chain_data_ = gpr_malloc_aligned(chain_size_, chain_alignment_);
+
+  for (instantiated_filters_ = 0; instantiated_filters_ < filter_defs_.size();
+       ++instantiated_filters_) {
+    auto& filter = *filter_defs_[instantiated_filters_];
+    auto status = filter.init(filter.footprint.OffsetPtr(chain_data_), args);
+    if (!status.ok()) return status;
+  }
+
+  interceptors_.reserve(interceptor_defs_.size());
+  for (instantiated_interceptors_ = 0;
+       instantiated_interceptors_ < interceptor_defs_.size();
+       ++instantiated_interceptors_) {
+    auto interceptor = interceptor_defs_[instantiated_interceptors_];
+    auto* interceptor_instance = interceptor->footprint.OffsetPtr(chain_data_);
+    auto status = interceptor->init(interceptor_instance, args);
+    if (!status.ok()) return status.status();
+    interceptors_.push_back(status.value());
+  }
+
+  return absl::OkStatus();
+}
+
+RefCountedPtr<CallFilters::Stack> ChainAllocator::MakeFilterStack(
+    absl::Span<const FilterDef> filters) {
+  CallFilters::StackBuilder stack_builder;
+  for (auto& filter : filters) {
+    filter.add_to_stack_builder(stack_builder,
+                                filter.footprint.OffsetPtr(chain_data_));
+  }
+  return stack_builder.Build();
+}
+
+RefCountedPtr<Chain> ChainAllocator::Build(
+    std::shared_ptr<UnstartedCallDestination> final_destination) {
+  for (size_t building = 0; building < interceptors_.size(); ++building) {
+    if (building + 1 == interceptors_.size()) {
+      interceptors_[building]->wrapped_destination_ = final_destination.get();
+    } else {
+      interceptors_[building]->wrapped_destination_ =
+          interceptors_[building + 1];
+    }
+  }
+
+  return MakeRefCounted<Chain>(
+      interceptors_.empty() ? nullptr : interceptors_.back(),
+      std::move(destructors_), std::exchange(chain_data_, nullptr),
+      std::move(final_destination));
+}
+}  // namespace interception_chain_detail
+
+///////////////////////////////////////////////////////////////////////////////
+// Chain
+
+namespace interception_chain_detail {
+Chain::~Chain() {
   uint8_t* p = static_cast<uint8_t*>(chain_data);
   for (auto& destructor : destructors) {
     destructor.destroy(p + destructor.offset);
   }
   gpr_free_aligned(chain_data);
+}
+}  // namespace interception_chain_detail
+
+absl::StatusOr<RefCountedPtr<InterceptionChain>>
+InterceptionChain::Builder::Build(const ChannelArgs& args) {
+  // Build the chain memory layout.
+  // We allocate a single block, and place each interceptor along with its
+  // filters in the block.
+  interception_chain_detail::ChainAllocator chain_allocator;
+  for (auto& interceptor : interceptors_) {
+    chain_allocator.Append(interceptor);
+    for (auto& filter : interceptor.filters) {
+      chain_allocator.Append(filter);
+    }
+  }
+  for (auto& filter : building_filters_) {
+    chain_allocator.Append(filter);
+  }
+
+  // Instantiate the interceptors.
+  auto instantiation_result = chain_allocator.Instantiate(args);
+  if (!instantiation_result.ok()) return instantiation_result;
+
+  // Create filter stacks for each interceptor.
+  for (size_t building = 0; building < interceptors_.size(); ++building) {
+    chain_allocator.interceptor(building)->filter_stack_ =
+        chain_allocator.MakeFilterStack(interceptors_[building].filters);
+  }
+
+  // Build the final UnstartedCallDestination in the chain - what we do here
+  // depends on both the type of the final destination and the filters we have
+  // that haven't been captured into an Interceptor yet.
+  absl::StatusOr<std::shared_ptr<UnstartedCallDestination>> terminator = Match(
+      final_destination_,
+      [this](std::shared_ptr<UnstartedCallDestination> final_destination)
+          -> absl::StatusOr<std::shared_ptr<UnstartedCallDestination>> {
+        if (!building_filters_.empty()) {
+          // TODO(ctiller): consider interjecting a hijacker here
+          return absl::InternalError("Last filter must be a hijacker");
+        }
+        return final_destination;
+      },
+      [this,
+       &chain_allocator](std::shared_ptr<CallDestination> final_destination)
+          -> absl::StatusOr<std::shared_ptr<UnstartedCallDestination>> {
+        return std::make_shared<interception_chain_detail::CallStarter>(
+            chain_allocator.MakeFilterStack(building_filters_),
+            std::move(final_destination));
+      });
+  if (!terminator.ok()) return terminator.status();
+
+  return MakeRefCounted<InterceptionChain>(
+      chain_allocator.Build(std::move(terminator.value())));
 }
 
 }  // namespace grpc_core
