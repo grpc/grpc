@@ -2930,6 +2930,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_trace",
         "channel_stack_type",
+        "interception_chain",
         "//:channel_stack_builder",
         "//:debug_location",
         "//:gpr",
@@ -7325,8 +7326,6 @@ grpc_cc_library(
     deps = [
         "1999",
         "call_filters",
-        "call_final_info",
-        "default_event_engine",
         "dual_ref_counted",
         "for_each",
         "if",

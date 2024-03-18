@@ -1633,8 +1633,8 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
     });
   }
-  auto segment = CoreConfiguration::Get().channel_init().CreateStackSegment(
-      GRPC_CLIENT_CHANNEL, channel_args_);
+  CoreConfiguration::Get().channel_init().AddToInterceptionChain(
+      GRPC_CLIENT_CHANNEL, channel_args_, builder);
 // FIXME: add filters registered for CLIENT_CHANNEL plus filters returned
 // by config selector
 #if 0

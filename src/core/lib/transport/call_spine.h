@@ -21,7 +21,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
