@@ -43,7 +43,7 @@ using ::google::protobuf::io::StringOutputStream;
 using ::google::protobuf::io::ZeroCopyOutputStream;
 
 namespace grpc_tools {
-int protoc_main(int argc, char* argv[]) {
+int protoc_main(int argc, char* argv[], char* version) {
   google::protobuf::compiler::CommandLineInterface cli;
   cli.AllowPlugins("protoc-");
 
@@ -57,8 +57,12 @@ int protoc_main(int argc, char* argv[]) {
   cli.RegisterGenerator("--pyi_out", &pyi_generator,
                         "Generate Python pyi stub.");
 
+  // Get grpc_tools version
+  std::string grpc_tools_version = version;
+
   // gRPC Python
-  grpc_python_generator::GeneratorConfiguration grpc_py_config;
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(
+      grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator,
                         "Generate Python source file.");
@@ -181,11 +185,14 @@ int protoc_get_protos(
 }
 
 int protoc_get_services(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
+    char* protobuf_path, char* version,
+    const std::vector<std::string>* include_paths,
     std::vector<std::pair<std::string, std::string>>* files_out,
     std::vector<::grpc_tools::ProtocError>* errors,
     std::vector<::grpc_tools::ProtocWarning>* warnings) {
-  grpc_python_generator::GeneratorConfiguration grpc_py_config;
+  std::string grpc_tools_version = version;
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(
+      grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   return generate_code(&grpc_py_generator, protobuf_path, include_paths,
                        files_out, errors, warnings);

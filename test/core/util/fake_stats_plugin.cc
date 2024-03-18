@@ -175,6 +175,44 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
       GlobalInstrumentsRegistry::InstrumentType::kHistogram);
 }
 
+absl::optional<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindInt64GaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleGaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackInt64GaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackDoubleGaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+}
+
 GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
 GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
     absl::string_view name) {

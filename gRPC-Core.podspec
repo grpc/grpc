@@ -195,11 +195,12 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.32'
+    ss.dependency 'BoringSSL-GRPC', '0.0.33'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/log_severity', abseil_version
     ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -211,6 +212,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
     ss.dependency 'abseil/random/bit_gen_ref', abseil_version
@@ -231,7 +233,6 @@ Pod::Spec.new do |s|
 
     ss.source_files = 'src/core/client_channel/backup_poller.cc',
                       'src/core/client_channel/backup_poller.h',
-                      'src/core/client_channel/channel_connectivity.cc',
                       'src/core/client_channel/client_channel_channelz.cc',
                       'src/core/client_channel/client_channel_channelz.h',
                       'src/core/client_channel/client_channel_factory.cc',
@@ -1317,6 +1318,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
+                      'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                       'src/core/lib/event_engine/extensions/supports_fd.h',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
@@ -1508,6 +1510,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/time_util.h',
                       'src/core/lib/gprpp/type_list.h',
                       'src/core/lib/gprpp/unique_type_name.h',
+                      'src/core/lib/gprpp/uuid_v4.cc',
+                      'src/core/lib/gprpp/uuid_v4.h',
                       'src/core/lib/gprpp/validation_errors.cc',
                       'src/core/lib/gprpp/validation_errors.h',
                       'src/core/lib/gprpp/windows/directory_reader.cc',
@@ -1721,6 +1725,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/api.h',
                       'src/core/lib/resource_quota/arena.cc',
                       'src/core/lib/resource_quota/arena.h',
+                      'src/core/lib/resource_quota/connection_quota.cc',
+                      'src/core/lib/resource_quota/connection_quota.h',
                       'src/core/lib/resource_quota/memory_quota.cc',
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/periodic_update.cc',
@@ -1870,8 +1876,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/slice/slice_string_helpers.h',
                       'src/core/lib/surface/api_trace.cc',
                       'src/core/lib/surface/api_trace.h',
-                      'src/core/lib/surface/builtins.cc',
-                      'src/core/lib/surface/builtins.h',
                       'src/core/lib/surface/byte_buffer.cc',
                       'src/core/lib/surface/byte_buffer_reader.cc',
                       'src/core/lib/surface/call.cc',
@@ -1882,9 +1886,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/call_trace.h',
                       'src/core/lib/surface/channel.cc',
                       'src/core/lib/surface/channel.h',
+                      'src/core/lib/surface/channel_create.cc',
+                      'src/core/lib/surface/channel_create.h',
                       'src/core/lib/surface/channel_init.cc',
                       'src/core/lib/surface/channel_init.h',
-                      'src/core/lib/surface/channel_ping.cc',
                       'src/core/lib/surface/channel_stack_type.cc',
                       'src/core/lib/surface/channel_stack_type.h',
                       'src/core/lib/surface/completion_queue.cc',
@@ -1899,9 +1904,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/init_internally.h',
                       'src/core/lib/surface/lame_client.cc',
                       'src/core/lib/surface/lame_client.h',
+                      'src/core/lib/surface/legacy_channel.cc',
+                      'src/core/lib/surface/legacy_channel.h',
                       'src/core/lib/surface/metadata_array.cc',
                       'src/core/lib/surface/server.cc',
                       'src/core/lib/surface/server.h',
+                      'src/core/lib/surface/server_interface.h',
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
@@ -1997,9 +2005,9 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/ring_hash/ring_hash.cc',
                       'src/core/load_balancing/ring_hash/ring_hash.h',
                       'src/core/load_balancing/rls/rls.cc',
+                      'src/core/load_balancing/rls/rls.h',
                       'src/core/load_balancing/round_robin/round_robin.cc',
                       'src/core/load_balancing/subchannel_interface.h',
-                      'src/core/load_balancing/subchannel_list.h',
                       'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc',
                       'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                       'src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc',
@@ -2968,6 +2976,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
+                              'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                               'src/core/lib/event_engine/extensions/supports_fd.h',
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/grpc_polled_fd.h',
@@ -3072,6 +3081,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/time_util.h',
                               'src/core/lib/gprpp/type_list.h',
                               'src/core/lib/gprpp/unique_type_name.h',
+                              'src/core/lib/gprpp/uuid_v4.h',
                               'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/gprpp/xxhash_inline.h',
@@ -3186,6 +3196,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/try_seq.h',
                               'src/core/lib/resource_quota/api.h',
                               'src/core/lib/resource_quota/arena.h',
+                              'src/core/lib/resource_quota/connection_quota.h',
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/periodic_update.h',
                               'src/core/lib/resource_quota/resource_quota.h',
@@ -3257,11 +3268,11 @@ Pod::Spec.new do |s|
                               'src/core/lib/slice/slice_refcount.h',
                               'src/core/lib/slice/slice_string_helpers.h',
                               'src/core/lib/surface/api_trace.h',
-                              'src/core/lib/surface/builtins.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
                               'src/core/lib/surface/call_trace.h',
                               'src/core/lib/surface/channel.h',
+                              'src/core/lib/surface/channel_create.h',
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
                               'src/core/lib/surface/completion_queue.h',
@@ -3270,7 +3281,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/init_internally.h',
                               'src/core/lib/surface/lame_client.h',
+                              'src/core/lib/surface/legacy_channel.h',
                               'src/core/lib/surface/server.h',
+                              'src/core/lib/surface/server_interface.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
@@ -3322,8 +3335,8 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/outlier_detection/outlier_detection.h',
                               'src/core/load_balancing/pick_first/pick_first.h',
                               'src/core/load_balancing/ring_hash/ring_hash.h',
+                              'src/core/load_balancing/rls/rls.h',
                               'src/core/load_balancing/subchannel_interface.h',
-                              'src/core/load_balancing/subchannel_list.h',
                               'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                               'src/core/load_balancing/weighted_target/weighted_target.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',

@@ -36,9 +36,6 @@ const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -83,9 +80,6 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -116,11 +110,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -170,10 +159,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -194,8 +179,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -220,8 +203,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
@@ -238,10 +219,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -275,8 +252,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -295,9 +270,6 @@ const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -342,9 +314,6 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -375,11 +344,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -429,10 +393,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -453,8 +413,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -479,8 +437,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
@@ -497,10 +453,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -534,8 +486,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core
@@ -554,9 +504,6 @@ const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -601,9 +548,6 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
@@ -634,11 +578,6 @@ const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
     static_cast<uint8_t>(
         grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -688,10 +627,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -712,8 +647,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -738,8 +671,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
@@ -756,10 +687,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
      required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -793,8 +720,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
 };
 
 }  // namespace grpc_core

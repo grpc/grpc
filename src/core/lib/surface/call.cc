@@ -98,7 +98,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/batch_builder.h"
@@ -757,7 +757,7 @@ class FilterStackCall final : public Call {
     struct {
       int* cancelled;
       // backpointer to owning server if this is a server side call.
-      Server* core_server;
+      ServerInterface* core_server;
     } server;
   } final_op_;
   AtomicError status_error_;
@@ -3368,7 +3368,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall,
                    const Completion& completion);
   void Finish(ServerMetadataHandle result);
 
-  Server* const server_;
+  ServerInterface* const server_;
   const void* const server_transport_data_;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_ = nullptr;
   PipeSender<MessageHandle>* server_to_client_messages_ = nullptr;
@@ -3684,7 +3684,7 @@ class ServerCallSpine final : public CallSpineInterface,
                               public ServerCallContext,
                               public BasicPromiseBasedCall {
  public:
-  ServerCallSpine(Server* server, Channel* channel, Arena* arena);
+  ServerCallSpine(ServerInterface* server, Channel* channel, Arena* arena);
 
   // CallSpineInterface
   Pipe<ClientMetadataHandle>& client_initial_metadata() override {
@@ -3771,7 +3771,8 @@ class ServerCallSpine final : public CallSpineInterface,
   ClientMetadataHandle client_initial_metadata_stored_;
 };
 
-ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
+ServerCallSpine::ServerCallSpine(ServerInterface* server, Channel* channel,
+                                 Arena* arena)
     : BasicPromiseBasedCall(arena, 0, 1,
                             [channel, server]() -> grpc_call_create_args {
                               grpc_call_create_args args;
@@ -4119,14 +4120,15 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
   }
 }
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
+RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface* server,
                                                  Channel* channel,
                                                  Arena* arena) {
   return RefCountedPtr<ServerCallSpine>(
       arena->New<ServerCallSpine>(server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
+RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface*, Channel*,
+                                                 Arena*) {
   Crash("not implemented");
 }
 #endif

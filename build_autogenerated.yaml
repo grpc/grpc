@@ -125,9 +125,11 @@ libs:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/base:log_severity
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/log:log
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -845,6 +847,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -926,6 +929,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
@@ -1040,6 +1044,7 @@ libs:
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -1111,11 +1116,11 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
@@ -1124,7 +1129,9 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/legacy_channel.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -1176,8 +1183,8 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
   - src/core/load_balancing/ring_hash/ring_hash.h
+  - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
-  - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/xds_channel_args.h
@@ -1236,7 +1243,6 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/client_channel/backup_poller.cc
-  - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -1737,6 +1743,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
@@ -1833,6 +1840,7 @@ libs:
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -1911,15 +1919,14 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -1927,6 +1934,7 @@ libs:
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
@@ -2347,6 +2355,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -2427,6 +2436,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
@@ -2537,6 +2547,7 @@ libs:
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -2577,11 +2588,11 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
@@ -2590,7 +2601,9 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/legacy_channel.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -2641,8 +2654,8 @@ libs:
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
+  - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
-  - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
@@ -2692,7 +2705,6 @@ libs:
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/client_channel/backup_poller.cc
-  - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -2861,6 +2873,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
@@ -2953,6 +2966,7 @@ libs:
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -2997,15 +3011,14 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -3013,6 +3026,7 @@ libs:
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
@@ -4427,6 +4441,7 @@ libs:
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -4611,6 +4626,7 @@ libs:
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -4654,7 +4670,6 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
@@ -4667,7 +4682,7 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -4756,7 +4771,6 @@ libs:
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -4910,6 +4924,7 @@ libs:
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -4957,7 +4972,6 @@ libs:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -4965,7 +4979,6 @@ libs:
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -4973,7 +4986,6 @@ libs:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
@@ -5094,6 +5106,24 @@ libs:
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
   - grpc++
+- name: grpcpp_otel_plugin
+  build: plugin
+  language: c++
+  public_headers:
+  - include/grpcpp/ext/otel_plugin.h
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_call_tracer.h
+  - src/cpp/ext/otel/otel_client_filter.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  src:
+  - src/cpp/ext/otel/otel_client_filter.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  deps:
+  - grpc++
+  - opentelemetry-cpp::api
 targets:
 - name: fd_conservation_posix_test
   build: test
@@ -6407,6 +6437,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -6447,6 +6478,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -6471,6 +6503,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -7665,6 +7698,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -7714,6 +7748,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -9761,6 +9796,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -9815,6 +9851,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -9904,6 +9941,7 @@ targets:
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -9954,6 +9992,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -11554,6 +11593,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -11604,6 +11644,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -12232,6 +12273,7 @@ targets:
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -12282,6 +12324,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -13165,6 +13208,35 @@ targets:
   - test/core/util/osa_distance_test.cc
   deps:
   - gtest
+- name: otel_plugin_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_call_tracer.h
+  - src/cpp/ext/otel/otel_client_filter.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_filter.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_plugin_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
@@ -16869,6 +16941,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
@@ -16880,6 +16953,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/rls_server.cc
@@ -19503,10 +19577,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/gprpp/uuid_v4.h
+  headers: []
   src:
-  - src/core/lib/gprpp/uuid_v4.cc
   - test/core/gprpp/uuid_v4_test.cc
   deps:
   - gtest

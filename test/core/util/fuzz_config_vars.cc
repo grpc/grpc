@@ -18,10 +18,6 @@
 
 #include "test/core/util/fuzz_config_vars.h"
 
-#include <string>
-
-#include "absl/types/optional.h"
-
 #include "test/core/util/fuzz_config_vars_helpers.h"
 
 namespace grpc_core {
