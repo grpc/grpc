@@ -69,10 +69,11 @@ const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kIntermediateCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
 const char* kModifiedSignaturePath =
-    "test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl";
+    "test/core/tsi/test_creds/crl_data/bad_crls/invalid_signature.crl";
 const char* kModifiedContentPath =
-    "test/core/tsi/test_creds/crl_data/crls/invalid_content.crl";
-const char* kEvilCrlPath = "test/core/tsi/test_creds/crl_data/crls/evil.crl";
+    "test/core/tsi/test_creds/crl_data/bad_crls/invalid_content.crl";
+const char* kEvilCrlPath =
+    "test/core/tsi/test_creds/crl_data/bad_crls/evil.crl";
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
