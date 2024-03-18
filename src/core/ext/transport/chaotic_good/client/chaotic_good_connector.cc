@@ -370,15 +370,11 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   // Create channel.
-  std::string canonical_target = grpc_core::CoreConfiguration::Get()
-                                     .resolver_registry()
-                                     .AddDefaultPrefixIfNeeded(target);
   auto r = grpc_core::ChannelCreate(
       target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .Set(GRPC_ARG_SERVER_URI, canonical_target)
           .SetObject(
               grpc_core::NoDestructSingleton<
                   grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get()),

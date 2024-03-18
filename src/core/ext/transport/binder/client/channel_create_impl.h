@@ -34,7 +34,8 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
         security_policy);
 
 // Creates a GRPC_CLIENT_CHANNEL channel
-grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args);
+grpc_channel* CreateClientBinderChannelImpl(std::string target,
+                                            const grpc_channel_args* args);
 
 }  // namespace internal
 }  // namespace grpc
