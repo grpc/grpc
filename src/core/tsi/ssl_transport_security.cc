@@ -1045,10 +1045,12 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3b verify issuer and scope
   valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
   if (!valid) {
+    gpr_log(GPR_DEBUG, "CRL and cert issuer names mismatched.");
     return valid;
   }
   valid = grpc_core::HasCrlSignBit(issuer);
   if (!valid) {
+    gpr_log(GPR_DEBUG, "CRL issuer not allowed to sign CRLs.");
     return valid;
   }
   // 6.3.3c Not supporting deltas
@@ -1058,6 +1060,9 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // same.
   // 6.3.3g Verify CRL Signature
   valid = grpc_core::VerifyCrlSignature(crl, issuer);
+  if (!valid) {
+    gpr_log(GPR_DEBUG, "Crl signature check failed.");
+  }
   return valid;
 }
 
@@ -1146,6 +1151,7 @@ static int CheckChainRevocation(
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   int ret = X509_verify_cert(ctx);
   if (ret <= 0) {
+    gpr_log(GPR_DEBUG, "Failed to verify cert chain.");
     // Verification failed. We shouldn't expect to have a verified chain, so
     // there is no need to attempt to extract the root cert from it, check for
     // revocation, or check anything else.
@@ -1154,10 +1160,10 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   grpc_core::experimental::CrlProvider* provider = GetCrlProvider(ctx);
   if (provider != nullptr) {
     ret = CheckChainRevocation(ctx, provider);
-  }
-  if (ret <= 0) {
-    // Something has failed return the failure
-    return ret;
+    if (ret <= 0) {
+      gpr_log(GPR_DEBUG, "The chain failed revocation checks.");
+      return ret;
+    }
   }
   return RootCertExtractCallback(ctx, arg);
 }
