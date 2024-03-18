@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H
-#define GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H
+#ifndef GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
+#define GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -72,4 +72,4 @@ class PassiveListenerImpl final : public PassiveListener {
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_PASSIVE_LISTENER_INTERNAL_H
+#endif  // GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H
