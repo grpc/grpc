@@ -259,7 +259,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   struct AuthorityState {
-    RefCountedPtr<XdsChannel> xds_channel;
+    std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
         resource_map;
   };
@@ -318,6 +318,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   RefCountedPtr<XdsChannel> GetOrCreateXdsChannelLocked(
       const XdsBootstrap::XdsServer& server, const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  bool PerformFallbackLocked(const std::string& authority,
+                             AuthorityState& authority_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
