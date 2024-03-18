@@ -18,8 +18,6 @@
 
 #include <sys/socket.h>
 
-#include <thread>
-
 #include <gtest/gtest.h>
 
 #include <grpc/event_engine/slice_buffer.h>
@@ -29,7 +27,6 @@
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/port.h"
@@ -37,10 +34,6 @@
 
 namespace grpc {
 namespace {
-
-using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::NotifyOnDelete;
-using grpc_event_engine::experimental::SliceBuffer;
 
 testing::EchoTestService::Service g_service;
 
@@ -126,67 +119,6 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
-  class NoopEndpoint : public EventEngine::Endpoint {
-   public:
-    explicit NoopEndpoint(grpc_core::Notification* destroyed)
-        : state_(std::make_shared<EndpointState>(destroyed)) {}
-    ~NoopEndpoint() override {
-      std::thread deleter([state = state_]() {
-        cleanup_thread(state->read);
-        cleanup_thread(state->write);
-      });
-      deleter.detach();
-    }
-
-    bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* /* args */) override {
-      buffer->Clear();
-      cleanup_thread(state_->read);
-      state_->read = new std::thread([cb = std::move(on_read)]() mutable {
-        cb(absl::UnknownError("test"));
-      });
-      return false;
-    }
-
-    bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* /* args */) override {
-      data->Clear();
-      cleanup_thread(state_->write);
-      state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
-        cb(absl::UnknownError("test"));
-      });
-      return false;
-    }
-
-    const EventEngine::ResolvedAddress& GetPeerAddress() const override {
-      return peer_;
-    }
-
-    const EventEngine::ResolvedAddress& GetLocalAddress() const override {
-      return local_;
-    }
-
-   private:
-    struct EndpointState {
-      explicit EndpointState(grpc_core::Notification* deleter)
-          : delete_notifier_(deleter) {}
-      std::thread* read = nullptr;
-      std::thread* write = nullptr;
-      NotifyOnDelete delete_notifier_;
-    };
-
-    static void cleanup_thread(std::thread* thd) {
-      if (thd != nullptr) {
-        thd->join();
-        delete thd;
-      }
-    }
-
-    std::shared_ptr<EndpointState> state_;
-    EventEngine::ResolvedAddress peer_;
-    EventEngine::ResolvedAddress local_;
-  };
-
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
       ServerBuilder()
@@ -194,9 +126,8 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
           .BuildAndStart();
   grpc_core::Notification endpoint_destroyed;
   passive_listener->AcceptConnectedEndpoint(
-      std::make_unique<NoopEndpoint>(&endpoint_destroyed));
-  // The passive listener holds a server ref, so it must be destroyed before the
-  // server can shut down
+      std::make_unique<grpc_event_engine::experimental::ThreadedNoopEndpoint>(
+          &endpoint_destroyed));
   endpoint_destroyed.WaitForNotification();
   server->Shutdown();
 }
