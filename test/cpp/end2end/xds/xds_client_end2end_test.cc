@@ -29,6 +29,7 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
@@ -48,6 +49,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
+const std::string kErrorMessage = "test forced ADS stream failure";
+
 class XdsClientTest : public XdsEnd2endTest {
  public:
   XdsClientTest()
@@ -62,6 +65,31 @@ class XdsClientTest : public XdsEnd2endTest {
     XdsEnd2endTest::TearDown();
   }
 
+  std::string SetupServer(BalancerServerThread* balancer, size_t backend,
+                          int server_id) {
+    Listener listener = default_listener_;
+    RouteConfiguration route_config = default_route_config_;
+    Cluster cluster = default_cluster_;
+    if (server_id > 0) {
+      listener.set_name(absl::StrFormat("server%d.example.com", server_id));
+      cluster.set_name(absl::StrFormat("cluster%d", server_id));
+      cluster.mutable_eds_cluster_config()->set_service_name(
+          absl::StrFormat("eds%d", server_id));
+      route_config.set_name(absl::StrFormat("route%d", server_id));
+      route_config.mutable_virtual_hosts(0)
+          ->mutable_routes(0)
+          ->mutable_route()
+          ->set_cluster(cluster.name());
+    }
+    SetListenerAndRouteConfiguration(balancer, listener, route_config);
+    balancer->ads_service()->SetCdsResource(cluster);
+    balancer->ads_service()->SetEdsResource(BuildEdsResource(
+        EdsResourceArgs(
+            {{"locality0", CreateEndpointsForBackends(backend, backend + 1)}}),
+        cluster.eds_cluster_config().service_name()));
+    return listener.name();
+  }
+
  protected:
   std::unique_ptr<BalancerServerThread> fallback_balancer_;
 };
@@ -74,17 +102,8 @@ TEST_P(XdsClientTest, FallbackAndFallForward) {
   // Primary xDS server has backends_[0] configured and fallback server has
   // backends_[1]
   CreateAndStartBackends(2);
-  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
-                                   default_route_config_);
-  balancer_->ads_service()->SetCdsResource(default_cluster_);
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 1)}})));
-  SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
-                                   default_route_config_);
-  fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
-  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1)}})));
-  const std::string kErrorMessage = "test forced ADS stream failure";
+  SetupServer(balancer_.get(), 0, 0);
+  SetupServer(fallback_balancer_.get(), 1, 0);
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   // Primary server down, fallback server data is used (backends_[1])
@@ -109,13 +128,6 @@ TEST_P(XdsClientTest, PrimarySecondaryNotAvailable) {
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
   }));
-  CreateAndStartBackends(1);
-  SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
-                                   default_route_config_);
-  fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const std::string kErrorMessage = "test forced ADS stream failure";
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   fallback_balancer_->ads_service()->ForceADSFailure(
@@ -132,27 +144,40 @@ TEST_P(XdsClientTest, PrimarySecondaryNotAvailable) {
           fallback_balancer_->port()));
 }
 
-TEST_P(XdsClientTest, DISABLED_AuthorityServers) {}
-TEST_P(XdsClientTest, DISABLED_UsesCachedResourcesAfterFailure) {}
-
-TEST_P(XdsClientTest, DISABLED_FallForward) {
+TEST_P(XdsClientTest, UsesCachedResourcesAfterFailure) {
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
   }));
-  CreateAndStartBackends(1);
-  SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
-                                   default_route_config_);
-  fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  const std::string kErrorMessage = "test forced ADS stream failure";
+  // 4 backends - cross product of two data plane targets and two balancers
+  CreateAndStartBackends(4);
+  SetupServer(balancer_.get(), 0, 0);
+  SetupServer(fallback_balancer_.get(), 1, 0);
+  auto server_name = SetupServer(balancer_.get(), 2, 2);
+  SetupServer(fallback_balancer_.get(), 3, 2);
+  auto status = SendRpc();
+  ASSERT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
-  auto status = SendRpc();
-  EXPECT_TRUE(status.ok()) << status.error_message();
+  auto channel = CreateChannel(0, server_name.c_str());
+  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  ClientContext context;
+  EchoRequest request;
+  EchoResponse response;
+  // server2.example.com is configured from the fallback server
+  status = stub->Echo(&context, request, &response);
+  ASSERT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 0);
+  EXPECT_EQ(backends_[3]->backend_service()->request_count(), 1);
+  // Calling server.example.com still uses cached value
+  status = SendRpc();
+  ASSERT_TRUE(status.ok());
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 2);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
 
+TEST_P(XdsClientTest, DISABLED_AuthorityServers) {}
 TEST_P(XdsClientTest, DISABLED_FallbackToBrokenToFixed) {}
 TEST_P(XdsClientTest, DISABLED_FallbackAfterSetup) {}
 
