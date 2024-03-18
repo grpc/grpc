@@ -1793,6 +1793,7 @@ grpc_cc_library(
         "channel",
         "channel_arg_names",
         "channelz",
+        "config",
         "gpr",
         "grpc_base",
         "grpc_public_hdrs",

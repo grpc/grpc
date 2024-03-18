@@ -314,12 +314,7 @@ absl::StatusOr<OrphanablePtr<Channel>> CreateChannel(const char* target,
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return absl::InvalidArgumentError("channel target is NULL");
   }
-  // Add channel arg containing the server URI.
-  std::string canonical_target =
-      CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
-          target);
-  return ChannelCreate(target, args.Set(GRPC_ARG_SERVER_URI, canonical_target),
-                       GRPC_CLIENT_CHANNEL, nullptr);
+  return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);
 }
 
 }  // namespace
