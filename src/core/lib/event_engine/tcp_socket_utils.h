@@ -57,7 +57,7 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
                             int port);
 
 // Returns the port number associated with the address if the given address is
-// not a wildcard ipv6 or ipv6 address. Otherwise returns absl::nullopt
+// a wildcard ipv4 or ipv6 address. Otherwise returns absl::nullopt
 absl::optional<int> ResolvedAddressIsWildcard(
     const EventEngine::ResolvedAddress& addr);
 
