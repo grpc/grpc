@@ -229,7 +229,7 @@ class Server : public ServerInterface,
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
  private:
-  friend class ::grpc::experimental::PassiveListenerImpl;
+  friend class grpc::experimental::PassiveListenerImpl;
   struct RequestedCall;
 
   class RequestMatcherInterface;
