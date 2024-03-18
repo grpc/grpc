@@ -28,9 +28,9 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/gprpp/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
-#include "test/core/util/stack_tracer.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
@@ -117,20 +117,23 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
 #endif
   ASSERT_TRUE(accept_status.ok()) << accept_status;
   server->Shutdown();
-  close(fd);
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
   class NoopEndpoint
       : public grpc_event_engine::experimental::EventEngine::Endpoint {
    public:
-    NoopEndpoint(std::thread* read_thread, std::thread* write_thread)
-        : read_thread_(read_thread), write_thread_(write_thread) {}
+    NoopEndpoint(std::thread** read_thread, std::thread** write_thread,
+                 grpc_core::Notification* destroyed)
+        : read_thread_(read_thread),
+          write_thread_(write_thread),
+          destroyed_(destroyed) {}
+    ~NoopEndpoint() { destroyed_->Notify(); }
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               grpc_event_engine::experimental::SliceBuffer* /* buffer */,
               const ReadArgs* /* args */) override {
-      if (read_thread_ != nullptr) read_thread_->join();
-      read_thread_ = new std::thread([on_read = std::move(on_read)]() mutable {
+      if (*read_thread_ != nullptr) (*read_thread_)->join();
+      *read_thread_ = new std::thread([on_read = std::move(on_read)]() mutable {
         on_read(absl::UnknownError("test"));
       });
       return false;
@@ -138,8 +141,8 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                grpc_event_engine::experimental::SliceBuffer* /* data */,
                const WriteArgs* /* args */) override {
-      if (write_thread_ != nullptr) write_thread_->join();
-      write_thread_ =
+      if (*write_thread_ != nullptr) (*write_thread_)->join();
+      *write_thread_ =
           new std::thread([on_writable = std::move(on_writable)]() mutable {
             on_writable(absl::UnknownError("test"));
           });
@@ -157,8 +160,9 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
    private:
     grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_;
     grpc_event_engine::experimental::EventEngine::ResolvedAddress local_;
-    std::thread* read_thread_ = nullptr;
-    std::thread* write_thread_ = nullptr;
+    std::thread** read_thread_;
+    std::thread** write_thread_;
+    grpc_core::Notification* destroyed_;
   };
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
@@ -167,10 +171,12 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
           .BuildAndStart();
   std::thread* read_thread = nullptr;
   std::thread* write_thread = nullptr;
-  passive_listener->AcceptConnectedEndpoint(
-      std::make_unique<NoopEndpoint>(read_thread, write_thread));
+  grpc_core::Notification endpoint_destroyed;
+  passive_listener->AcceptConnectedEndpoint(std::make_unique<NoopEndpoint>(
+      &read_thread, &write_thread, &endpoint_destroyed));
   // The passive listener holds a server ref, so it must be destroyed before the
   // server can shut down
+  endpoint_destroyed.WaitForNotification();
   if (read_thread != nullptr) read_thread->join();
   if (write_thread != nullptr) write_thread->join();
   server->Shutdown();
