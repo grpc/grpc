@@ -37,6 +37,10 @@
 namespace grpc {
 namespace {
 
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::NotifyOnDelete;
+using grpc_event_engine::experimental::SliceBuffer;
+
 testing::EchoTestService::Service g_service;
 
 std::string MakePort() {
@@ -121,60 +125,57 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
-  class NoopEndpoint
-      : public grpc_event_engine::experimental::EventEngine::Endpoint {
+  class NoopEndpoint : public EventEngine::Endpoint {
    public:
     NoopEndpoint(std::thread** read_thread, std::thread** write_thread,
                  grpc_core::Notification* destroyed)
         : read_thread_(read_thread),
           write_thread_(write_thread),
-          delete_notifier_(destroyed) {}
+          delete_notifier_(std::make_shared<NotifyOnDelete>(destroyed)) {}
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              grpc_event_engine::experimental::SliceBuffer* buffer,
-              const ReadArgs* /* args */) override {
+              SliceBuffer* buffer, const ReadArgs* /* args */) override {
       buffer->Clear();
       if (*read_thread_ != nullptr) {
         (*read_thread_)->join();
         delete *read_thread_;
       }
-      *read_thread_ = new std::thread([on_read = std::move(on_read)]() mutable {
+      *read_thread_ = new std::thread([notifier = delete_notifier_,
+                                       on_read = std::move(on_read)]() mutable {
         on_read(absl::UnknownError("test"));
       });
       return false;
     }
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               grpc_event_engine::experimental::SliceBuffer* data,
-               const WriteArgs* /* args */) override {
+               SliceBuffer* data, const WriteArgs* /* args */) override {
       data->Clear();
       if (*write_thread_ != nullptr) {
         (*write_thread_)->join();
         delete write_thread_;
       }
       *write_thread_ =
-          new std::thread([on_writable = std::move(on_writable)]() mutable {
+          new std::thread([notifier = delete_notifier_,
+                           on_writable = std::move(on_writable)]() mutable {
             on_writable(absl::UnknownError("test"));
           });
       return false;
     }
 
-    const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-    GetPeerAddress() const override {
+    const EventEngine::ResolvedAddress& GetPeerAddress() const override {
       return peer_;
     }
 
-    const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-    GetLocalAddress() const override {
+    const EventEngine::ResolvedAddress& GetLocalAddress() const override {
       return local_;
     }
 
    private:
-    grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_;
-    grpc_event_engine::experimental::EventEngine::ResolvedAddress local_;
+    EventEngine::ResolvedAddress peer_;
+    EventEngine::ResolvedAddress local_;
     std::thread** read_thread_;
     std::thread** write_thread_;
-    grpc_event_engine::experimental::NotifyOnDelete delete_notifier_;
+    std::shared_ptr<NotifyOnDelete> delete_notifier_;
   };
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
