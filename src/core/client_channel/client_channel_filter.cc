@@ -386,7 +386,6 @@ class ClientChannelFilter::PromiseBasedCallData
   }
 
   void ResetDeadline(Duration timeout) override {
-    gpr_log(GPR_ERROR, "here");
     CallContext* call_context = GetContext<CallContext>();
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
