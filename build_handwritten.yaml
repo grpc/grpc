@@ -199,6 +199,9 @@ ruby_gem:
   - boringssl
   - re2
   - z
+swift_boringssl_package:
+  deps:
+  - boringssl
 swift_package:
   deps:
   - grpc

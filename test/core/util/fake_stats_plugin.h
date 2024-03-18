@@ -220,7 +220,8 @@ class FakeStatsPlugin : public StatsPlugin {
             return;
           }
           switch (descriptor.instrument_type) {
-            case GlobalInstrumentsRegistry::InstrumentType::kCounter:
+            case GlobalInstrumentsRegistry::InstrumentType::kCounter: {
+              MutexLock lock(&mu_);
               if (descriptor.value_type ==
                   GlobalInstrumentsRegistry::ValueType::kUInt64) {
                 uint64_counters_.emplace(descriptor.index, descriptor);
@@ -228,7 +229,9 @@ class FakeStatsPlugin : public StatsPlugin {
                 double_counters_.emplace(descriptor.index, descriptor);
               }
               break;
-            case GlobalInstrumentsRegistry::InstrumentType::kHistogram:
+            }
+            case GlobalInstrumentsRegistry::InstrumentType::kHistogram: {
+              MutexLock lock(&mu_);
               if (descriptor.value_type ==
                   GlobalInstrumentsRegistry::ValueType::kUInt64) {
                 uint64_histograms_.emplace(descriptor.index, descriptor);
@@ -236,7 +239,9 @@ class FakeStatsPlugin : public StatsPlugin {
                 double_histograms_.emplace(descriptor.index, descriptor);
               }
               break;
-            case GlobalInstrumentsRegistry::InstrumentType::kGauge:
+            }
+            case GlobalInstrumentsRegistry::InstrumentType::kGauge: {
+              MutexLock lock(&mu_);
               if (descriptor.value_type ==
                   GlobalInstrumentsRegistry::ValueType::kInt64) {
                 int64_gauges_.emplace(descriptor.index, descriptor);
@@ -244,7 +249,9 @@ class FakeStatsPlugin : public StatsPlugin {
                 double_gauges_.emplace(descriptor.index, descriptor);
               }
               break;
-            case GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge:
+            }
+            case GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge: {
+              MutexLock lock(&callback_mu_);
               if (descriptor.value_type ==
                   GlobalInstrumentsRegistry::ValueType::kInt64) {
                 int64_callback_gauges_.emplace(descriptor.index, descriptor);
@@ -252,6 +259,7 @@ class FakeStatsPlugin : public StatsPlugin {
                 double_callback_gauges_.emplace(descriptor.index, descriptor);
               }
               break;
+            }
             default:
               Crash("unknown instrument type");
           }
@@ -288,6 +296,7 @@ class FakeStatsPlugin : public StatsPlugin {
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
             absl::StrJoin(optional_values, ", ").c_str());
+    MutexLock lock(&mu_);
     auto iter = uint64_counters_.find(handle.index);
     if (iter == uint64_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
@@ -302,6 +311,7 @@ class FakeStatsPlugin : public StatsPlugin {
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
             absl::StrJoin(optional_values, ", ").c_str());
+    MutexLock lock(&mu_);
     auto iter = double_counters_.find(handle.index);
     if (iter == double_counters_.end()) return;
     iter->second.Add(value, label_values, optional_values);
@@ -316,6 +326,7 @@ class FakeStatsPlugin : public StatsPlugin {
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
             absl::StrJoin(optional_values, ", ").c_str());
+    MutexLock lock(&mu_);
     auto iter = uint64_histograms_.find(handle.index);
     if (iter == uint64_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
@@ -330,6 +341,7 @@ class FakeStatsPlugin : public StatsPlugin {
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
             absl::StrJoin(optional_values, ", ").c_str());
+    MutexLock lock(&mu_);
     auto iter = double_histograms_.find(handle.index);
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
@@ -343,6 +355,7 @@ class FakeStatsPlugin : public StatsPlugin {
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
             absl::StrJoin(optional_values, ", ").c_str());
+    MutexLock lock(&mu_);
     auto iter = int64_gauges_.find(handle.index);
     if (iter == int64_gauges_.end()) return;
     iter->second.Set(value, label_values, optional_values);
@@ -356,6 +369,7 @@ class FakeStatsPlugin : public StatsPlugin {
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
             absl::StrJoin(optional_values, ", ").c_str());
+    MutexLock lock(&mu_);
     auto iter = double_gauges_.find(handle.index);
     if (iter == double_gauges_.end()) return;
     iter->second.Set(value, label_values, optional_values);
@@ -384,6 +398,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
     auto iter = uint64_counters_.find(handle.index);
     if (iter == uint64_counters_.end()) {
       return absl::nullopt;
@@ -394,6 +409,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
     auto iter = double_counters_.find(handle.index);
     if (iter == double_counters_.end()) {
       return absl::nullopt;
@@ -404,6 +420,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
     auto iter = uint64_histograms_.find(handle.index);
     if (iter == uint64_histograms_.end()) {
       return absl::nullopt;
@@ -414,6 +431,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
     auto iter = double_histograms_.find(handle.index);
     if (iter == double_histograms_.end()) {
       return absl::nullopt;
@@ -424,6 +442,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
     auto iter = int64_gauges_.find(handle.index);
     if (iter == int64_gauges_.end()) {
       return absl::nullopt;
@@ -434,6 +453,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&mu_);
     auto iter = double_gauges_.find(handle.index);
     if (iter == double_gauges_.end()) {
       return absl::nullopt;
@@ -452,6 +472,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&callback_mu_);
     auto iter = int64_callback_gauges_.find(handle.index);
     if (iter == int64_callback_gauges_.end()) {
       return absl::nullopt;
@@ -462,6 +483,7 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&callback_mu_);
     auto iter = double_callback_gauges_.find(handle.index);
     if (iter == double_callback_gauges_.end()) {
       return absl::nullopt;
@@ -485,6 +507,7 @@ class FakeStatsPlugin : public StatsPlugin {
               this, handle.index, value,
               absl::StrJoin(label_values, ", ").c_str(),
               absl::StrJoin(optional_values, ", ").c_str());
+      MutexLock lock(&plugin_.callback_mu_);
       auto iter = plugin_.int64_callback_gauges_.find(handle.index);
       if (iter == plugin_.int64_callback_gauges_.end()) return;
       iter->second.Set(value, label_values, optional_values);
@@ -501,6 +524,7 @@ class FakeStatsPlugin : public StatsPlugin {
               this, handle.index, value,
               absl::StrJoin(label_values, ", ").c_str(),
               absl::StrJoin(optional_values, ", ").c_str());
+      MutexLock lock(&plugin_.callback_mu_);
       auto iter = plugin_.double_callback_gauges_.find(handle.index);
       if (iter == plugin_.double_callback_gauges_.end()) return;
       iter->second.Set(value, label_values, optional_values);
@@ -633,14 +657,24 @@ class FakeStatsPlugin : public StatsPlugin {
 
   absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
   // Instruments.
-  absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_;
-  absl::flat_hash_map<uint32_t, Counter<double>> double_counters_;
-  absl::flat_hash_map<uint32_t, Histogram<uint64_t>> uint64_histograms_;
-  absl::flat_hash_map<uint32_t, Histogram<double>> double_histograms_;
-  absl::flat_hash_map<uint32_t, Gauge<int64_t>> int64_gauges_;
-  absl::flat_hash_map<uint32_t, Gauge<double>> double_gauges_;
-  absl::flat_hash_map<uint32_t, Gauge<int64_t>> int64_callback_gauges_;
-  absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_;
+  Mutex mu_;
+  absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_
+      ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<uint32_t, Counter<double>> double_counters_
+      ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<uint32_t, Histogram<uint64_t>> uint64_histograms_
+      ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<uint32_t, Histogram<double>> double_histograms_
+      ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<uint32_t, Gauge<int64_t>> int64_gauges_
+      ABSL_GUARDED_BY(&mu_);
+  absl::flat_hash_map<uint32_t, Gauge<double>> double_gauges_
+      ABSL_GUARDED_BY(&mu_);
+  Mutex callback_mu_;
+  absl::flat_hash_map<uint32_t, Gauge<int64_t>> int64_callback_gauges_
+      ABSL_GUARDED_BY(&callback_mu_);
+  absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_
+      ABSL_GUARDED_BY(&callback_mu_);
   std::set<RegisteredMetricCallback*> callbacks_;
 };
 

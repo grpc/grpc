@@ -536,7 +536,10 @@ def update_test_metadata_with_transitive_metadata(
     """Patches test build metadata with transitive metadata."""
     for lib_name, lib_dict in list(all_extra_metadata.items()):
         # Skip if it isn't not an test
-        if lib_dict.get("build") != "test" or lib_dict.get("_TYPE") != "target":
+        if (
+            lib_dict.get("build") != "test"
+            and lib_dict.get("build") != "plugin_test"
+        ) or lib_dict.get("_TYPE") != "target":
             continue
 
         bazel_rule = bazel_rules[_get_bazel_label(lib_name)]
@@ -752,6 +755,7 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
         lib_name
         for lib_name in list(lib_dict.keys())
         if lib_dict[lib_name].get("_TYPE", "library") == "test"
+        or lib_dict[lib_name].get("_TYPE", "library") == "plugin_test"
     ]
 
     # list libraries and targets in predefined order
@@ -835,8 +839,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     tests = [
         test
         for test in tests
-        if not test.startswith("test/cpp/ext/otel:")
-        and not test.startswith("test/cpp/ext/csm:")
+        if not test.startswith("test/cpp/ext/csm:")
         and not test.startswith("test/cpp/interop:xds_interop")
     ]
 
@@ -1007,7 +1010,7 @@ def _generate_build_extra_metadata_for_tests(
                     " to %s" % (test_name, long_name)
                 )
                 test_metadata[test_name]["_RENAME"] = long_name
-
+    print(test_metadata["test/cpp/ext/otel:otel_plugin_test"])
     return test_metadata
 
 
@@ -1302,6 +1305,13 @@ _BUILD_EXTRA_METADATA = {
         "_TYPE": "target",
         "_RENAME": "grpc_cli",
     },
+    "test/cpp/ext/otel:otel_plugin_test": {
+        "language": "c++",
+        "build": "plugin_test",
+        "_TYPE": "target",
+        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
+        "_RENAME": "otel_plugin_test",
+    },
     # TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     # For now it's ok to disable them as these binaries aren't very useful anyway.
     # 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
@@ -1419,10 +1429,10 @@ if "@com_google_protobuf//third_party/utf8_range:utf8_range" not in bazel_rules:
         "@com_google_protobuf//third_party/utf8_range:utf8_range"
     ]
     _BUILD_EXTRA_METADATA["@utf8_range//:utf8_range"] = md
-all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules)
 )
+all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
 # The final build metadata includes transitive dependencies, and sources/headers

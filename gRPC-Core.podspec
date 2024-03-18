@@ -195,11 +195,12 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.32'
+    ss.dependency 'BoringSSL-GRPC', '0.0.33'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/log_severity', abseil_version
     ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
@@ -211,6 +212,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
     ss.dependency 'abseil/random/bit_gen_ref', abseil_version
@@ -1317,6 +1319,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
+                      'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                       'src/core/lib/event_engine/extensions/supports_fd.h',
                       'src/core/lib/event_engine/forkable.cc',
                       'src/core/lib/event_engine/forkable.h',
@@ -1723,6 +1726,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/api.h',
                       'src/core/lib/resource_quota/arena.cc',
                       'src/core/lib/resource_quota/arena.h',
+                      'src/core/lib/resource_quota/connection_quota.cc',
+                      'src/core/lib/resource_quota/connection_quota.h',
                       'src/core/lib/resource_quota/memory_quota.cc',
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/periodic_update.cc',
@@ -2004,7 +2009,6 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/rls/rls.h',
                       'src/core/load_balancing/round_robin/round_robin.cc',
                       'src/core/load_balancing/subchannel_interface.h',
-                      'src/core/load_balancing/subchannel_list.h',
                       'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc',
                       'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                       'src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc',
@@ -2974,6 +2978,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
+                              'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                               'src/core/lib/event_engine/extensions/supports_fd.h',
                               'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/grpc_polled_fd.h',
@@ -3193,6 +3198,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/promise/try_seq.h',
                               'src/core/lib/resource_quota/api.h',
                               'src/core/lib/resource_quota/arena.h',
+                              'src/core/lib/resource_quota/connection_quota.h',
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/periodic_update.h',
                               'src/core/lib/resource_quota/resource_quota.h',
@@ -3333,7 +3339,6 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/ring_hash/ring_hash.h',
                               'src/core/load_balancing/rls/rls.h',
                               'src/core/load_balancing/subchannel_interface.h',
-                              'src/core/load_balancing/subchannel_list.h',
                               'src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h',
                               'src/core/load_balancing/weighted_target/weighted_target.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',

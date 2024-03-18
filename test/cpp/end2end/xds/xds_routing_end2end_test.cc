@@ -115,7 +115,7 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
 
 // Tests that we ignore Listener deletions if configured to do so.
 TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
-  InitClient(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});

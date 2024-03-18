@@ -40,7 +40,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -858,7 +857,6 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 }
 
 TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
-  if (!IsWrrDelegateToPickFirstEnabled()) return;
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
@@ -1066,7 +1064,6 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {
-  if (!IsWrrDelegateToPickFirstEnabled()) return;
   const auto kRrFallback =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.rr_fallback")
