@@ -26,6 +26,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpcpp/support/status.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -174,6 +175,11 @@ class AdsServiceImpl
   void ForceADSFailure(Status status) {
     grpc_core::MutexLock lock(&ads_mu_);
     forced_ads_failure_ = std::move(status);
+  }
+
+  void ClearADSFailure() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    forced_ads_failure_ = absl::nullopt;
   }
 
  private:

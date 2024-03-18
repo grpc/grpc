@@ -51,40 +51,57 @@ namespace {
 class XdsClientTest : public XdsEnd2endTest {
  public:
   XdsClientTest()
-      : fallback_balancer_(CreateAndStartBalancer("Fallback Balancer #1")),
-        fallback_balancer2_(CreateAndStartBalancer("Fallback Balancer #2")) {}
+      : fallback_balancer_(CreateAndStartBalancer("Fallback Balancer")) {}
 
   void SetUp() override {
     // Overrides SetUp from a base class so we can call InitClient per-test case
   }
 
   void TearDown() override {
-    fallback_balancer2_->Shutdown();
     fallback_balancer_->Shutdown();
     XdsEnd2endTest::TearDown();
   }
 
  protected:
   std::unique_ptr<BalancerServerThread> fallback_balancer_;
-  std::unique_ptr<BalancerServerThread> fallback_balancer2_;
 };
 
-TEST_P(XdsClientTest, FallbackToSecondaryAndTertiary) {
+TEST_P(XdsClientTest, FallbackAndFallForward) {
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
   }));
-  CreateAndStartBackends(1);
+  // Primary xDS server has backends_[0] configured and fallback server has
+  // backends_[1]
+  CreateAndStartBackends(2);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   default_route_config_);
+  balancer_->ads_service()->SetCdsResource(default_cluster_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 1)}})));
   SetListenerAndRouteConfiguration(fallback_balancer_.get(), default_listener_,
                                    default_route_config_);
   fallback_balancer_->ads_service()->SetCdsResource(default_cluster_);
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  fallback_balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1)}})));
   const std::string kErrorMessage = "test forced ADS stream failure";
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  // Primary server down, fallback server data is used (backends_[1])
   auto status = SendRpc();
   EXPECT_TRUE(status.ok()) << status.error_message();
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 1);
+  // Primary server is back. backends_[0] will be used when the data makes it
+  // all way to the client
+  balancer_->ads_service()->ClearADSFailure();
+  SendRpcsUntil(DEBUG_LOCATION, [&](const auto& /* result */) {
+    if (backends_[0]->backend_service()->request_count() > 0) {
+      return false;
+    }
+    return true;
+  });
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
 }
 
 TEST_P(XdsClientTest, PrimarySecondaryNotAvailable) {
