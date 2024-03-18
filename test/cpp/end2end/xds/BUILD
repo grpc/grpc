@@ -493,8 +493,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "xds_client_end2end_test",
-    srcs = ["xds_client_end2end_test.cc"],
+    name = "xds_fallback_end2end_test",
+    srcs = ["xds_fallback_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],

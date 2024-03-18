@@ -51,9 +51,9 @@ namespace {
 
 const std::string kErrorMessage = "test forced ADS stream failure";
 
-class XdsClientTest : public XdsEnd2endTest {
+class XdsFallbackTest : public XdsEnd2endTest {
  public:
-  XdsClientTest()
+  XdsFallbackTest()
       : fallback_balancer_(CreateAndStartBalancer("Fallback Balancer")) {}
 
   void SetUp() override {
@@ -94,7 +94,7 @@ class XdsClientTest : public XdsEnd2endTest {
   std::unique_ptr<BalancerServerThread> fallback_balancer_;
 };
 
-TEST_P(XdsClientTest, FallbackAndFallForward) {
+TEST_P(XdsFallbackTest, FallbackAndFallForward) {
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
@@ -123,7 +123,7 @@ TEST_P(XdsClientTest, FallbackAndFallForward) {
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
 }
 
-TEST_P(XdsClientTest, PrimarySecondaryNotAvailable) {
+TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
@@ -144,7 +144,7 @@ TEST_P(XdsClientTest, PrimarySecondaryNotAvailable) {
           fallback_balancer_->port()));
 }
 
-TEST_P(XdsClientTest, UsesCachedResourcesAfterFailure) {
+TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
@@ -177,11 +177,11 @@ TEST_P(XdsClientTest, UsesCachedResourcesAfterFailure) {
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
 
-TEST_P(XdsClientTest, DISABLED_AuthorityServers) {}
-TEST_P(XdsClientTest, DISABLED_FallbackToBrokenToFixed) {}
-TEST_P(XdsClientTest, DISABLED_FallbackAfterSetup) {}
+TEST_P(XdsFallbackTest, DISABLED_AuthorityServers) {}
+TEST_P(XdsFallbackTest, DISABLED_FallbackToBrokenToFixed) {}
+TEST_P(XdsFallbackTest, DISABLED_FallbackAfterSetup) {}
 
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsClientTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsFallbackTest,
                          ::testing::Values(XdsTestType().set_bootstrap_source(
                              XdsTestType::kBootstrapFromEnvVar)),
                          &XdsTestType::Name);
