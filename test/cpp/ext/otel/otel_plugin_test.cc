@@ -43,6 +43,92 @@ namespace {
 #define GRPC_ARG_SERVER_SELECTOR_KEY "grpc.testing.server_selector_key"
 #define GRPC_ARG_SERVER_SELECTOR_VALUE "grpc.testing.server_selector_value"
 
+void VerifyAttributes(
+    absl::flat_hash_map<
+        std::string,
+        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
+    absl::string_view metric_name,
+    absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_label_keys,
+    absl::Span<const absl::string_view> optional_label_values) {
+  const auto& attributes = data[metric_name][0].attributes.GetAttributes();
+  EXPECT_EQ(attributes.size(), label_keys.size() + optional_label_keys.size());
+  for (int i = 0; i < label_keys.size(); i++) {
+    EXPECT_EQ(absl::get<std::string>(attributes.at(std::string(label_keys[i]))),
+              label_values[i]);
+  }
+  for (int i = 0; i < optional_label_keys.size(); i++) {
+    EXPECT_EQ(absl::get<std::string>(
+                  attributes.at(std::string(optional_label_keys[i]))),
+              optional_label_values[i]);
+  }
+}
+
+template <typename ValueType>
+void VerifyCounterResult(
+    absl::flat_hash_map<
+        std::string,
+        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
+    absl::string_view metric_name, ValueType result) {
+  ASSERT_EQ(data[metric_name].size(), 1);
+  EXPECT_TRUE(opentelemetry::nostd::holds_alternative<
+              opentelemetry::sdk::metrics::SumPointData>(
+      data[metric_name][0].point_data));
+  EXPECT_EQ(
+      opentelemetry::nostd::get<ValueType>(
+          opentelemetry::nostd::get<opentelemetry::sdk::metrics::SumPointData>(
+              data[metric_name][0].point_data)
+              .value_),
+      result);
+}
+
+template <typename ValueType>
+void ExpectEqual(ValueType v, ValueType expectation) {
+  EXPECT_EQ(v, expectation);
+}
+
+template <>
+void ExpectEqual(double v, double expectation) {
+  EXPECT_THAT(v, ::testing::DoubleEq(expectation));
+}
+
+template <typename ValueType>
+void VerifyHistogramResult(
+    absl::flat_hash_map<
+        std::string,
+        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
+    absl::string_view metric_name, ValueType sum, ValueType min, ValueType max,
+    int count) {
+  ASSERT_EQ(data[metric_name].size(), 1);
+  EXPECT_TRUE(opentelemetry::nostd::holds_alternative<
+              opentelemetry::sdk::metrics::HistogramPointData>(
+      data[metric_name][0].point_data));
+  ExpectEqual(opentelemetry::nostd::get<ValueType>(
+                  opentelemetry::nostd::get<
+                      opentelemetry::sdk::metrics::HistogramPointData>(
+                      data[metric_name][0].point_data)
+                      .sum_),
+              sum);
+  EXPECT_EQ(opentelemetry::nostd::get<ValueType>(
+                opentelemetry::nostd::get<
+                    opentelemetry::sdk::metrics::HistogramPointData>(
+                    data[metric_name][0].point_data)
+                    .min_),
+            min);
+  EXPECT_EQ(opentelemetry::nostd::get<ValueType>(
+                opentelemetry::nostd::get<
+                    opentelemetry::sdk::metrics::HistogramPointData>(
+                    data[metric_name][0].point_data)
+                    .max_),
+            max);
+  EXPECT_EQ(opentelemetry::nostd::get<
+                opentelemetry::sdk::metrics::HistogramPointData>(
+                data[metric_name][0].point_data)
+                .count_,
+            count);
+}
+
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
   opentelemetry::metrics::Provider::GetMeterProvider();
 }
@@ -940,54 +1026,10 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
 
 using OpenTelemetryPluginNPCMetricsTest = OpenTelemetryPluginEnd2EndTest;
 
-template <typename HandleType, typename ValueType>
-void VerifyCounter(
-    absl::AnyInvocable<HandleType()> register_function,
-    absl::AnyInvocable<void()> init_function,
-    absl::AnyInvocable<absl::flat_hash_map<
-        std::string,
-        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>()>
-        read_metrics_data_function,
-    std::vector<ValueType> counter_values, ValueType result,
-    absl::string_view metric_name,
-    absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> label_values,
-    absl::Span<const absl::string_view> optional_label_keys,
-    absl::Span<const absl::string_view> optional_label_values) {
-  HandleType handle = register_function();
-  init_function();
-  auto stats_plugins =
-      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
-  for (auto v : counter_values) {
-    stats_plugins.AddCounter(handle, v, label_values, optional_label_values);
-  }
-  auto data = read_metrics_data_function();
-  ASSERT_EQ(data[metric_name].size(), 1);
-  EXPECT_TRUE(opentelemetry::nostd::holds_alternative<
-              opentelemetry::sdk::metrics::SumPointData>(
-      data[metric_name][0].point_data));
-  EXPECT_EQ(
-      opentelemetry::nostd::get<ValueType>(
-          opentelemetry::nostd::get<opentelemetry::sdk::metrics::SumPointData>(
-              data[metric_name][0].point_data)
-              .value_),
-      result);
-  const auto& attributes = data[metric_name][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), label_keys.size() + optional_label_keys.size());
-  for (int i = 0; i < label_keys.size(); i++) {
-    EXPECT_EQ(absl::get<std::string>(attributes.at(std::string(label_keys[i]))),
-              label_values[i]);
-  }
-  for (int i = 0; i < optional_label_keys.size(); i++) {
-    EXPECT_EQ(absl::get<std::string>(
-                  attributes.at(std::string(optional_label_keys[i]))),
-              optional_label_values[i]);
-  }
-}
-
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";
+  constexpr int kCounterValues[] = {1, 2, 3};
+  constexpr int kCounterResult = 6;
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
                                                       "optional_label_key_2"};
@@ -995,35 +1037,36 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  VerifyCounter<grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle,
-                int64_t>(
-      [&]() {
-        return grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
-            kMetricName, "A simple uint64 counter.", "unit", kLabelKeys,
-            kOptionalLabelKeys, /*enable_by_default=*/true);
-      },
-      [&, this]() {
-        Init(std::move(Options()
-                           .set_metric_names({kMetricName})
-                           .set_target_selector([](absl::string_view target) {
-                             return absl::StartsWith(target, "dns:///");
-                           })
-                           .add_optional_label(kOptionalLabelKeys[0])
-                           .add_optional_label(kOptionalLabelKeys[1])));
-      },
-      [&, this]() {
-        return ReadCurrentMetricsData(
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {1, 2, 3}, 6, kMetricName, kLabelKeys, kLabelValues, kOptionalLabelKeys,
-      kOptionalLabelValues);
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      kMetricName, "A simple uint64 counter.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(Options()
+                     .set_metric_names({kMetricName})
+                     .set_target_selector([](absl::string_view target) {
+                       return absl::StartsWith(target, "dns:///");
+                     })
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  for (auto v : kCounterValues) {
+    stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  VerifyCounterResult<int64_t>(data, kMetricName, kCounterResult);
+  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                   kOptionalLabelKeys, kOptionalLabelValues);
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
   constexpr absl::string_view kMetricName = "double_counter";
+  constexpr double kCounterValues[] = {1.23, 2.34, 3.45};
+  constexpr double kCounterResult = 7.02;
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
                                                       "optional_label_key_2"};
@@ -1031,111 +1074,39 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  VerifyCounter<grpc_core::GlobalInstrumentsRegistry::GlobalDoubleCounterHandle,
-                double>(
-      [&]() {
-        return grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
-            kMetricName, "A simple double counter.", "unit", kLabelKeys,
-            kOptionalLabelKeys, /*enable_by_default=*/false);
-      },
-      [&, this]() {
-        Init(std::move(Options()
-                           .set_metric_names({kMetricName})
-                           .set_target_selector([](absl::string_view target) {
-                             return absl::StartsWith(target, "dns:///");
-                           })
-                           .add_optional_label(kOptionalLabelKeys[0])
-                           .add_optional_label(kOptionalLabelKeys[1])));
-      },
-      [&, this]() {
-        return ReadCurrentMetricsData(
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {1.23, 2.34, 3.45}, 7.02, kMetricName, kLabelKeys, kLabelValues,
-      kOptionalLabelKeys, kOptionalLabelValues);
-}
-
-template <typename ValueType>
-void ExpectEqual(ValueType v, ValueType expectation) {
-  EXPECT_EQ(v, expectation);
-}
-
-template <>
-void ExpectEqual(double v, double expectation) {
-  EXPECT_THAT(v, ::testing::DoubleEq(expectation));
-}
-
-template <typename HandleType, typename ValueType>
-void VerifyHistogram(
-    absl::AnyInvocable<HandleType()> register_function,
-    absl::AnyInvocable<void()> init_function,
-    absl::AnyInvocable<absl::flat_hash_map<
-        std::string,
-        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>()>
-        read_metrics_data_function,
-    std::vector<ValueType> histogram_values, ValueType sum, ValueType min,
-    ValueType max, uint64_t count, absl::string_view metric_name,
-    absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> label_values,
-    absl::Span<const absl::string_view> optional_label_keys,
-    absl::Span<const absl::string_view> optional_label_values,
-    size_t num_plugins = 1) {
-  HandleType handle = register_function();
-  init_function();
-  grpc_core::ChannelArgs args;
-  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
+      kMetricName, "A simple double counter.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/false);
+  Init(std::move(Options()
+                     .set_metric_names({kMetricName})
+                     .set_target_selector([](absl::string_view target) {
+                       return absl::StartsWith(target, "dns:///");
+                     })
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
-      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-  for (auto v : histogram_values) {
-    stats_plugins.RecordHistogram(handle, v, label_values,
-                                  optional_label_values);
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  for (auto v : kCounterValues) {
+    stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
-  auto data = read_metrics_data_function();
-  ASSERT_EQ(data[metric_name].size(), 1);
-  EXPECT_TRUE(opentelemetry::nostd::holds_alternative<
-              opentelemetry::sdk::metrics::HistogramPointData>(
-      data[metric_name][0].point_data));
-  ExpectEqual(opentelemetry::nostd::get<ValueType>(
-                  opentelemetry::nostd::get<
-                      opentelemetry::sdk::metrics::HistogramPointData>(
-                      data[metric_name][0].point_data)
-                      .sum_),
-              sum);
-  EXPECT_EQ(opentelemetry::nostd::get<ValueType>(
-                opentelemetry::nostd::get<
-                    opentelemetry::sdk::metrics::HistogramPointData>(
-                    data[metric_name][0].point_data)
-                    .min_),
-            min);
-  EXPECT_EQ(opentelemetry::nostd::get<ValueType>(
-                opentelemetry::nostd::get<
-                    opentelemetry::sdk::metrics::HistogramPointData>(
-                    data[metric_name][0].point_data)
-                    .max_),
-            max);
-  EXPECT_EQ(opentelemetry::nostd::get<
-                opentelemetry::sdk::metrics::HistogramPointData>(
-                data[metric_name][0].point_data)
-                .count_,
-            count);
-  const auto& attributes = data[metric_name][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), label_keys.size() + optional_label_keys.size());
-  for (int i = 0; i < label_keys.size(); i++) {
-    EXPECT_EQ(absl::get<std::string>(attributes.at(std::string(label_keys[i]))),
-              label_values[i]);
-  }
-  for (int i = 0; i < optional_label_keys.size(); i++) {
-    EXPECT_EQ(absl::get<std::string>(
-                  attributes.at(std::string(optional_label_keys[i]))),
-              optional_label_values[i]);
-  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  VerifyCounterResult<double>(data, kMetricName, kCounterResult);
+  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                   kOptionalLabelKeys, kOptionalLabelValues);
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
   constexpr absl::string_view kMetricName = "uint64_histogram";
+  constexpr int kHistogramValues[] = {1, 1, 2, 3, 4, 4, 5, 6};
+  constexpr int kSum = 26;
+  constexpr int kMin = 1;
+  constexpr int kMax = 6;
+  constexpr int kCount = 8;
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
                                                       "optional_label_key_2"};
@@ -1143,38 +1114,44 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  VerifyHistogram<
-      grpc_core::GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle,
-      int64_t>(
-      [&]() {
-        return grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
-            kMetricName, "A simple uint64 histogram.", "unit", kLabelKeys,
-            kOptionalLabelKeys, /*enable_by_default=*/true);
-      },
-      [&, this]() {
-        Init(std::move(
-            Options()
-                .set_metric_names({kMetricName})
-                .set_server_selector([](const grpc_core::ChannelArgs& args) {
-                  return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
-                         GRPC_ARG_SERVER_SELECTOR_VALUE;
-                })
-                .add_optional_label(kOptionalLabelKeys[0])
-                .add_optional_label(kOptionalLabelKeys[1])));
-      },
-      [&, this]() {
-        return ReadCurrentMetricsData(
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {1, 1, 2, 3, 4, 4, 5, 6}, 26, 1, 6, 8, kMetricName, kLabelKeys,
-      kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
+      kMetricName, "A simple uint64 histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  VerifyHistogramResult<int64_t>(data, kMetricName, kSum, kMin, kMax, kCount);
+  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                   kOptionalLabelKeys, kOptionalLabelValues);
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
   constexpr absl::string_view kMetricName = "double_histogram";
+  constexpr double kHistogramValues[] = {1.1, 1.2, 2.2, 3.3,
+                                         4.4, 4.5, 5.5, 6.6};
+  constexpr double kSum = 28.8;
+  constexpr double kMin = 1.1;
+  constexpr double kMax = 6.6;
+  constexpr double kCount = 8;
   constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
   constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
                                                       "optional_label_key_2"};
@@ -1182,34 +1159,34 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  VerifyHistogram<
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
-      double>(
-      [&]() {
-        return grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-            kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-            kOptionalLabelKeys, /*enable_by_default=*/true);
-      },
-      [&, this]() {
-        Init(std::move(
-            Options()
-                .set_metric_names({kMetricName})
-                .set_server_selector([](const grpc_core::ChannelArgs& args) {
-                  return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
-                         GRPC_ARG_SERVER_SELECTOR_VALUE;
-                })
-                .add_optional_label(kOptionalLabelKeys[0])
-                .add_optional_label(kOptionalLabelKeys[1])));
-      },
-      [&, this]() {
-        return ReadCurrentMetricsData(
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {1.1, 1.2, 2.2, 3.3, 4.4, 4.5, 5.5, 6.6}, 28.8, 1.1, 6.6, 8, kMetricName,
-      kLabelKeys, kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  VerifyHistogramResult<double>(data, kMetricName, kSum, kMin, kMax, kCount);
+  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                   kOptionalLabelKeys, kOptionalLabelValues);
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest,
@@ -1222,10 +1199,9 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
       "optional_label_value_1", "optional_label_value_2"};
-  auto instrument_handle =
-      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-          kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-          kOptionalLabelKeys, /*enable_by_default=*/true);
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
   // Build and register a separate OpenTelemetryPlugin and verify its histogram
   // recording.
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
@@ -1242,60 +1218,71 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
               .add_optional_label(kOptionalLabelKeys[1])),
       &ot_builder, &reader);
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
-  VerifyHistogram<
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
-      double>(
-      [&]() { return instrument_handle; }, []() {},
-      [&]() {
-        return grpc::testing::ReadCurrentMetricsData(
-            reader,
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {1.23, 2.34, 3.45, 4.56}, 11.58, 1.23, 4.56, 4, kMetricName, kLabelKeys,
-      kLabelValues, kOptionalLabelKeys, kOptionalLabelValues);
-  // Now build and register another OpenTelemetryPlugin using the test fixture.
-  VerifyHistogram<
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
-      double>(
-      [&]() { return instrument_handle; },
-      [&, this]() {
-        Init(std::move(
-            Options()
-                .set_metric_names({kMetricName})
-                .set_server_selector([](const grpc_core::ChannelArgs& args) {
-                  return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
-                         GRPC_ARG_SERVER_SELECTOR_VALUE;
-                })
-                .add_optional_label(kOptionalLabelKeys[0])
-                .add_optional_label(kOptionalLabelKeys[1])));
-      },
-      [&, this]() {
-        return ReadCurrentMetricsData(
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {1.1, 1.2, 2.2, 3.3, 4.4, 4.5, 5.5, 6.6}, 28.8, 1.1, 6.6, 8, kMetricName,
-      kLabelKeys, kLabelValues, kOptionalLabelKeys, kOptionalLabelValues, 2);
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  {
+    constexpr double kHistogramValues[] = {1.23, 2.34, 3.45, 4.56};
+    constexpr double kSum = 11.58;
+    constexpr double kMin = 1.23;
+    constexpr double kMax = 4.56;
+    constexpr int kCount = 4;
+    auto stats_plugins =
+        grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+    for (auto v : kHistogramValues) {
+      stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                    kOptionalLabelValues);
+    }
+    auto data = grpc::testing::ReadCurrentMetricsData(
+        reader,
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) { return !data.contains(kMetricName); });
+    VerifyHistogramResult(data, kMetricName, kSum, kMin, kMax, kCount);
+    VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                     kOptionalLabelKeys, kOptionalLabelValues);
+  }
+  // Now build and register another OpenTelemetryPlugin using the test fixture
+  // and record histogram.
+  constexpr double kHistogramValues[] = {1.1, 1.2, 2.2, 3.3,
+                                         4.4, 4.5, 5.5, 6.6};
+  constexpr double kSum = 28.8;
+  constexpr double kMin = 1.1;
+  constexpr double kMax = 6.6;
+  constexpr int kCount = 8;
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  VerifyHistogramResult(data, kMetricName, kSum, kMin, kMax, kCount);
+  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                   kOptionalLabelKeys, kOptionalLabelValues);
   // Verify that the first plugin gets the data as well.
-  VerifyHistogram<
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle,
-      double>(
-      [&]() { return instrument_handle; }, []() {},
-      [&]() {
-        return grpc::testing::ReadCurrentMetricsData(
-            reader,
-            [&](const absl::flat_hash_map<
-                std::string,
-                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                    data) { return !data.contains(kMetricName); });
-      },
-      {}, 28.8, 1.1, 6.6, 8, kMetricName, kLabelKeys, kLabelValues,
-      kOptionalLabelKeys, kOptionalLabelValues, 2);
+  data = grpc::testing::ReadCurrentMetricsData(
+      reader,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  VerifyHistogramResult(data, kMetricName, kSum, kMin, kMax, kCount);
+  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
+                   kOptionalLabelKeys, kOptionalLabelValues);
 }
 
 }  // namespace
