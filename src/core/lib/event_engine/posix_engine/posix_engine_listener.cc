@@ -100,7 +100,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     }
   }
 
-  auto used_port = ResolvedAddressIsWildcard(res_addr);
+  auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
