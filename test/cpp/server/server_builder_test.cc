@@ -29,6 +29,7 @@
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/util/port.h"
@@ -127,22 +128,22 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
   class NoopEndpoint : public EventEngine::Endpoint {
    public:
-    NoopEndpoint(std::thread** read_thread, std::thread** write_thread,
-                 grpc_core::Notification* destroyed)
-        : read_thread_(read_thread),
-          write_thread_(write_thread),
-          delete_notifier_(std::make_shared<NotifyOnDelete>(destroyed)) {}
+    explicit NoopEndpoint(grpc_core::Notification* destroyed)
+        : state_(std::make_shared<EndpointState>(destroyed)) {}
+    ~NoopEndpoint() override {
+      std::thread deleter([state = state_]() {
+        cleanup_thread(state->read);
+        cleanup_thread(state->write);
+      });
+      deleter.detach();
+    }
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               SliceBuffer* buffer, const ReadArgs* /* args */) override {
       buffer->Clear();
-      if (*read_thread_ != nullptr) {
-        (*read_thread_)->join();
-        delete *read_thread_;
-      }
-      *read_thread_ = new std::thread([notifier = delete_notifier_,
-                                       on_read = std::move(on_read)]() mutable {
-        on_read(absl::UnknownError("test"));
+      cleanup_thread(state_->read);
+      state_->read = new std::thread([cb = std::move(on_read)]() mutable {
+        cb(absl::UnknownError("test"));
       });
       return false;
     }
@@ -150,15 +151,10 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                SliceBuffer* data, const WriteArgs* /* args */) override {
       data->Clear();
-      if (*write_thread_ != nullptr) {
-        (*write_thread_)->join();
-        delete write_thread_;
-      }
-      *write_thread_ =
-          new std::thread([notifier = delete_notifier_,
-                           on_writable = std::move(on_writable)]() mutable {
-            on_writable(absl::UnknownError("test"));
-          });
+      cleanup_thread(state_->write);
+      state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
+        cb(absl::UnknownError("test"));
+      });
       return false;
     }
 
@@ -171,33 +167,37 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
     }
 
    private:
+    struct EndpointState {
+      explicit EndpointState(grpc_core::Notification* deleter)
+          : delete_notifier_(deleter) {}
+      std::thread* read = nullptr;
+      std::thread* write = nullptr;
+      NotifyOnDelete delete_notifier_;
+    };
+
+    static void cleanup_thread(std::thread* thd) {
+      if (thd != nullptr) {
+        thd->join();
+        delete thd;
+      }
+    }
+
+    std::shared_ptr<EndpointState> state_;
     EventEngine::ResolvedAddress peer_;
     EventEngine::ResolvedAddress local_;
-    std::thread** read_thread_;
-    std::thread** write_thread_;
-    std::shared_ptr<NotifyOnDelete> delete_notifier_;
   };
+
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
       ServerBuilder()
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
-  std::thread* read_thread = nullptr;
-  std::thread* write_thread = nullptr;
   grpc_core::Notification endpoint_destroyed;
-  passive_listener->AcceptConnectedEndpoint(std::make_unique<NoopEndpoint>(
-      &read_thread, &write_thread, &endpoint_destroyed));
+  passive_listener->AcceptConnectedEndpoint(
+      std::make_unique<NoopEndpoint>(&endpoint_destroyed));
   // The passive listener holds a server ref, so it must be destroyed before the
   // server can shut down
   endpoint_destroyed.WaitForNotification();
-  if (read_thread != nullptr) {
-    read_thread->join();
-    delete read_thread;
-  }
-  if (write_thread != nullptr) {
-    write_thread->join();
-    delete write_thread;
-  }
   server->Shutdown();
 }
 
