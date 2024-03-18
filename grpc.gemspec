@@ -1165,6 +1165,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/promise_based_filter.cc )
   s.files += %w( src/core/lib/channel/promise_based_filter.h )
   s.files += %w( src/core/lib/channel/server_call_tracer_filter.cc )
+  s.files += %w( src/core/lib/channel/server_call_tracer_filter.h )
   s.files += %w( src/core/lib/channel/status_util.cc )
   s.files += %w( src/core/lib/channel/status_util.h )
   s.files += %w( src/core/lib/channel/tcp_tracer.h )
