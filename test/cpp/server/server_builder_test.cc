@@ -128,7 +128,7 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
         : read_thread_(read_thread),
           write_thread_(write_thread),
           destroyed_(destroyed) {}
-    ~NoopEndpoint() { destroyed_->Notify(); }
+    ~NoopEndpoint() override { destroyed_->Notify(); }
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               grpc_event_engine::experimental::SliceBuffer* /* buffer */,
               const ReadArgs* /* args */) override {
