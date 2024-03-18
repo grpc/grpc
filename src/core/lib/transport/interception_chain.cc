@@ -26,15 +26,17 @@
 namespace grpc_core {
 
 ///////////////////////////////////////////////////////////////////////////////
-// Interceptor::HijackedCall
+// HijackedCall
 
-CallInitiator Interceptor::HijackedCall::MakeCall() {
+namespace interception_chain_detail {
+
+CallInitiator HijackedCall::MakeCall() {
   auto metadata = Arena::MakePooled<ClientMetadata>();
   *metadata = metadata_->Copy();
   return MakeCallWithMetadata(std::move(metadata));
 }
 
-CallInitiator Interceptor::HijackedCall::MakeCallWithMetadata(
+CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
   auto call =
       grpc_core::MakeCallPair(std::move(metadata), call_handler_.event_engine(),
@@ -42,6 +44,48 @@ CallInitiator Interceptor::HijackedCall::MakeCallWithMetadata(
   destination_->StartCall(std::move(call.unstarted_handler));
   return std::move(call.initiator);
 }
+
+class CallStarter final : public UnstartedCallDestination {
+ public:
+  CallStarter(RefCountedPtr<CallFilters::Stack> stack,
+              std::shared_ptr<CallDestination> destination)
+      : stack_(std::move(stack)), destination_(std::move(destination)) {}
+
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    destination_->HandleCall(unstarted_call_handler.StartCall(stack_));
+  }
+
+ private:
+  const RefCountedPtr<CallFilters::Stack> stack_;
+  const std::shared_ptr<CallDestination> destination_;
+};
+
+class TerminalInterceptor final : public UnstartedCallDestination {
+ public:
+  explicit TerminalInterceptor(
+      RefCountedPtr<CallFilters::Stack> stack,
+      std::shared_ptr<UnstartedCallDestination> destination)
+      : stack_(std::move(stack)), destination_(std::move(destination)) {}
+
+  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+    unstarted_call_handler.SpawnGuarded(
+        "start_call",
+        Map(HijackCall(std::move(unstarted_call_handler), destination_.get(),
+                       stack_),
+            [](ValueOrFailure<HijackedCall> hijacked_call) -> StatusFlag {
+              if (!hijacked_call.ok()) return Failure{};
+              ForwardCall(hijacked_call.value().original_call_handler(),
+                          hijacked_call.value().MakeLastCall());
+              return Success{};
+            }));
+  }
+
+ private:
+  const RefCountedPtr<CallFilters::Stack> stack_;
+  const std::shared_ptr<UnstartedCallDestination> destination_;
+};
+
+}  // namespace interception_chain_detail
 
 ///////////////////////////////////////////////////////////////////////////////
 // ChainAllocator
@@ -181,11 +225,15 @@ InterceptionChain::Builder::Build(const ChannelArgs& args) {
   // that haven't been captured into an Interceptor yet.
   absl::StatusOr<std::shared_ptr<UnstartedCallDestination>> terminator = Match(
       final_destination_,
-      [this](std::shared_ptr<UnstartedCallDestination> final_destination)
+      [this, &chain_allocator](
+          std::shared_ptr<UnstartedCallDestination> final_destination)
           -> absl::StatusOr<std::shared_ptr<UnstartedCallDestination>> {
         if (!building_filters_.empty()) {
           // TODO(ctiller): consider interjecting a hijacker here
-          return absl::InternalError("Last filter must be a hijacker");
+          return std::make_shared<
+              interception_chain_detail::TerminalInterceptor>(
+              chain_allocator.MakeFilterStack(building_filters_),
+              final_destination);
         }
         return final_destination;
       },

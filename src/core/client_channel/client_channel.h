@@ -199,7 +199,7 @@ class ClientChannel : public Channel {
   //
   struct ResolverDataForCalls {
     RefCountedPtr<ConfigSelector> config_selector;
-    RefCountedPtr<CallDestination> call_destination;
+    RefCountedPtr<UnstartedCallDestination> call_destination;
   };
   Observable<absl::StatusOr<ResolverDataForCalls>> resolver_data_for_calls_;
 

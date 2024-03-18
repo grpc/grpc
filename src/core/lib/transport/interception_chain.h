@@ -32,7 +32,45 @@ class InterceptionChain;
 
 namespace interception_chain_detail {
 class ChainAllocator;
+
+class HijackedCall {
+ public:
+  HijackedCall(ClientMetadataHandle metadata,
+               UnstartedCallDestination* destination, CallHandler call_handler)
+      : metadata_(std::move(metadata)),
+        destination_(destination),
+        call_handler_(std::move(call_handler)) {}
+
+  CallInitiator MakeCall();
+  CallInitiator MakeLastCall() {
+    return MakeCallWithMetadata(std::move(metadata_));
+  }
+
+  CallHandler& original_call_handler() { return call_handler_; }
+
+ private:
+  CallInitiator MakeCallWithMetadata(ClientMetadataHandle metadata);
+
+  ClientMetadataHandle metadata_;
+  UnstartedCallDestination* destination_;
+  CallHandler call_handler_;
+};
+
+inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
+                       UnstartedCallDestination* destination,
+                       RefCountedPtr<CallFilters::Stack> stack) {
+  auto call_handler = unstarted_call_handler.StartCall(stack);
+  return Map(call_handler.PullClientInitialMetadata(),
+             [call_handler, destination](
+                 ValueOrFailure<ClientMetadataHandle> metadata) mutable
+             -> ValueOrFailure<HijackedCall> {
+               if (!metadata.ok()) return Failure{};
+               return HijackedCall(std::move(metadata.value()), destination,
+                                   std::move(call_handler));
+             });
 }
+
+}  // namespace interception_chain_detail
 
 // A delegating UnstartedCallDestination for use as a hijacking filter.
 // Implementations may look at the unprocessed initial metadata
@@ -44,42 +82,11 @@ class ChainAllocator;
 // 2. It can consume the call by calling `Consume`.
 class Interceptor : public UnstartedCallDestination {
  protected:
-  class HijackedCall {
-   public:
-    CallInitiator MakeCall();
-    CallInitiator MakeLastCall() {
-      return MakeCallWithMetadata(std::move(metadata_));
-    }
-
-    CallHandler& original_call_handler() { return call_handler_; }
-
-   private:
-    friend class Interceptor;
-    HijackedCall(ClientMetadataHandle metadata,
-                 UnstartedCallDestination* destination,
-                 CallHandler call_handler)
-        : metadata_(std::move(metadata)),
-          destination_(destination),
-          call_handler_(std::move(call_handler)) {}
-
-    CallInitiator MakeCallWithMetadata(ClientMetadataHandle metadata);
-
-    ClientMetadataHandle metadata_;
-    UnstartedCallDestination* destination_;
-    CallHandler call_handler_;
-  };
+  using HijackedCall = interception_chain_detail::HijackedCall;
 
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
-    auto call_handler = Consume(std::move(unstarted_call_handler));
-    return Map(call_handler.PullClientInitialMetadata(),
-               [call_handler,
-                this](ValueOrFailure<ClientMetadataHandle> metadata) mutable
-               -> ValueOrFailure<HijackedCall> {
-                 if (!metadata.ok()) return Failure{};
-                 return HijackedCall(std::move(metadata.value()),
-                                     wrapped_destination_,
-                                     std::move(call_handler));
-               });
+    return interception_chain_detail::HijackCall(
+        std::move(unstarted_call_handler), wrapped_destination_, filter_stack_);
   }
 
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
@@ -116,9 +123,10 @@ struct Footprint {
 
 struct FilterDef {
   Footprint footprint;
-  absl::Status (*init)(void* filter, const ChannelArgs& args);
-  void (*add_to_stack_builder)(CallFilters::StackBuilder& stack_builder,
-                               void* filter);
+  absl::AnyInvocable<absl::Status(void* filter, const ChannelArgs& args)> init;
+  absl::AnyInvocable<void(CallFilters::StackBuilder& stack_builder,
+                          void* filter)>
+      add_to_stack;
 };
 
 struct InterceptorDef {
@@ -155,21 +163,6 @@ struct Chain : public RefCounted<Chain> {
   std::vector<Destructor> destructors;
   void* chain_data;
   std::shared_ptr<UnstartedCallDestination> final_destination;
-};
-
-class CallStarter final : public UnstartedCallDestination {
- public:
-  CallStarter(RefCountedPtr<CallFilters::Stack> stack,
-              std::shared_ptr<CallDestination> destination)
-      : stack_(std::move(stack)), destination_(std::move(destination)) {}
-
-  void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-    destination_->HandleCall(unstarted_call_handler.StartCall(stack_));
-  }
-
- private:
-  const RefCountedPtr<CallFilters::Stack> stack_;
-  const std::shared_ptr<CallDestination> destination_;
 };
 
 class ChainAllocator {
@@ -283,6 +276,20 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
 
     absl::StatusOr<RefCountedPtr<InterceptionChain>> Build(
         const ChannelArgs& args);
+
+    template <typename F>
+    void AddOnServerTrailingMetadata(F f) {
+      using Impl = filters_detail::ServerTrailingMetadataInterceptor<F>;
+      building_filters_.push_back(
+          {interception_chain_detail::Footprint::For<Impl>(),
+           [f = std::move(f)](void* filter, const ChannelArgs& args) mutable {
+             new (filter) Impl(std::move(f));
+             return absl::OkStatus();
+           },
+           [](CallFilters::StackBuilder& stack_builder, void* filter) {
+             stack_builder.Add(static_cast<Impl*>(filter));
+           }});
+    }
 
    private:
     std::vector<interception_chain_detail::InterceptorDef> interceptors_;

@@ -103,6 +103,7 @@
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
@@ -680,7 +681,7 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
       if (tracer == nullptr) return;
       // TODO(roth): Change CallTracer API to not pass metadata
       // batch to this method, since the batch is always empty.
-      grpc_metadata_batch metadata(GetContext<Arena>());
+      grpc_metadata_batch metadata;
       tracer->RecordSendTrailingMetadata(&metadata);
     }
 
@@ -781,7 +782,8 @@ const NoInterceptor LbCallTracingFilter::Call::OnServerToClientMessage;
 
 }  // namespace
 
-class ClientChannel::LoadBalancedCallDestination : public CallDestination {
+class ClientChannel::LoadBalancedCallDestination
+    : public UnstartedCallDestination {
  public:
   explicit LoadBalancedCallDestination(
       RefCountedPtr<ClientChannel> client_channel)
@@ -850,8 +852,7 @@ class ClientChannel::LoadBalancedCallDestination : public CallDestination {
                 // Delegate to connected subchannel.
                 // FIXME: need to insert LbCallTracingFilter at the top of the
                 // stack
-                (*connected_subchannel)
-                    ->StartCall(unstarted_handler);
+                (*connected_subchannel)->StartCall(unstarted_handler);
                 return absl::OkStatus();
               });
         });
@@ -872,72 +873,6 @@ ClientChannelServiceConfigCallData* GetServiceConfigCallDataFromContext() {
   return static_cast<ClientChannelServiceConfigCallData*>(
       legacy_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
 }
-
-// A call destination that does not support retries.
-// To be used as an L2 filter.
-class NoRetryCallDestination : public NoRetryCallDestination {
- public:
-  NoRetryCallDestination(OrphanablePtr<CallDestination> next,
-                         RefCountedPtr<CallFilters::Stack> filter_stack,
-                         const ChannelArgs& channel_args)
-      : DelegatingCallDestination(std::move(next)),
-        filter_stack_(std::move(filter_stack)),
-        call_size_estimator_(1024),
-        allocator_(channel_args.GetObject<ResourceQuota>()
-                       ->memory_quota()
-                       ->CreateMemoryOwner()) {}
-
-  void Orphan() {}
-
-  void StartCall(UnstartedCallHandler unstarted_handler) {
-    // Start the parent call.  We take ownership of the handler.
-    CallHandler handler = unstarted_handler.StartCall(filter_stack_);
-    // Start a promise to drain the client initial metadata from the
-    // parent call, create a new child call, and forward between them.
-    handler.SpawnGuarded("drain_send_initial_metadata", [this,
-                                                         handler]() mutable {
-      return Map(
-          handler.PullClientInitialMetadata(),
-          [this, handler](ValueOrFailure<ClientMetadataHandle>
-                              client_initial_metadata) mutable -> StatusFlag {
-            if (!client_initial_metadata.ok()) return Failure{};
-            // Indicate that this is not a transparent retry.
-            *(*client_initial_metadata)
-                 ->GetOrCreatePointer(IsTransparentRetry()) = false;
-            // Set on_commit callback in context.
-            handler.SetContext<LbOnCommit>(
-                []() { GetServiceConfigCallDataFromContext()->Commit(); });
-            // Create an arena for the child call.
-            const size_t initial_size = call_size_estimator_.CallSizeEstimate();
-            // FIXME: do we want to do this for LB calls, or do we want a
-            // separate stat for this?
-            // global_stats().IncrementCallInitialSize(initial_size);
-            Arena* arena = Arena::Create(initial_size, &allocator_);
-            // Create an initiator/unstarted-handler pair using the arena.
-            // FIXME: pass in a callback that the CallSpine will use to
-            // destroy the arena:
-            // [](Arena* arena) {
-            //   call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-            //   arena->Destroy();
-            // }
-            auto child_call = MakeCall(std::move(*client_initial_metadata),
-                                       GetContext<EventEngine>(), arena);
-            // Pass the child call's unstarted handler to the next
-            // destination.
-            wrapped_destination()->StartCall(
-                std::move(child_call.unstarted_handler));
-            // Forward everything from the parent call to the child call.
-            ForwardCall(std::move(handler), std::move(child_call.initiator));
-            return Success{};
-          });
-    });
-  }
-
- private:
-  RefCountedPtr<CallFilters::Stack> filter_stack_;
-  CallSizeEstimator call_size_estimator_;
-  MemoryAllocator allocator_;
-};
 
 }  // namespace
 
@@ -1263,8 +1198,8 @@ CallInitiator ClientChannel::CreateCall(
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/unstarted-handler pair.
-  auto call = MakeCall(std::move(client_initial_metadata),
-                       GetContext<EventEngine>(), arena);
+  auto call = MakeCallPair(std::move(client_initial_metadata),
+                           GetContext<EventEngine>(), arena, true);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuarded(
@@ -1690,12 +1625,16 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
   // Construct filter stack.
-  CallFilters::StackBuilder builder;
+  InterceptionChain::Builder builder(
+      std::make_shared<LoadBalancedCallDestination>(
+          RefAsSubclass<ClientChannel>()));
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
     });
   }
+  auto segment = CoreConfiguration::Get().channel_init().CreateStackSegment(
+      GRPC_CLIENT_CHANNEL, channel_args_);
 // FIXME: add filters registered for CLIENT_CHANNEL plus filters returned
 // by config selector
 #if 0
@@ -1707,23 +1646,18 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);
 #endif
-  auto filter_stack = builder.Build();
-  // Create call destination.
-  RefCountedPtr<CallDestination> call_destination;
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
+    // TODO(ctiller): implement retries, interject them here (or get something
+    // more generic)
     Crash("call v3 stack does not yet support retries");
-  } else {
-    call_destination = MakeRefCounted<NoRetryCallDestination>(
-        MakeRefCounted<LoadBalancedCallDestination>(
-            RefAsSubclass<ClientChannel>()),
-        std::move(filter_stack), channel_args_);
   }
+  auto filter_stack = builder.Build(channel_args_);
   // Send result to data plane.
-  resolver_data_for_calls_.Set(ResolverDataForCalls{
-      std::move(config_selector), std::move(call_destination)});
+  resolver_data_for_calls_.Set(ResolverDataForCalls{std::move(config_selector),
+                                                    std::move(filter_stack)});
 }
 
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,

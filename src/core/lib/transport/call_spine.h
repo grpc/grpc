@@ -224,8 +224,6 @@ class CallInitiator {
         ServerMetadataFromStatus(absl::CancelledError()));
   }
 
-  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
-
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuarded(name, std::move(promise_factory));
@@ -297,9 +295,6 @@ class CallHandler {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
     spine_->call_filters().PushServerTrailingMetadata(std::move(status));
   }
-
-  //  void OnDone(absl::AnyInvocable<void()> fn) {
-  //  spine_->OnDone(std::move(fn)); }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {

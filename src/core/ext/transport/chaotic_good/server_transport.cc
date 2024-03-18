@@ -20,6 +20,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -260,10 +261,13 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
       auto add_result = NewStream(frame_header.stream_id, *call_initiator);
       if (add_result.ok()) {
         call_initiator->SpawnGuarded(
-            "server-write", [this, stream_id = frame_header.stream_id,
-                             call_initiator = *call_initiator]() {
-              return CallOutboundLoop(stream_id, call_initiator);
-            });
+            "server-write",
+            [this, stream_id = frame_header.stream_id,
+             call_initiator = *call_initiator,
+             remove = absl::Cleanup([stream_id = frame_header.stream_id, this] {
+               MutexLock lock(&mu_);
+               stream_map_.erase(stream_id);
+             })]() { return CallOutboundLoop(stream_id, call_initiator); });
       } else {
         call_initiator.reset();
         status = add_result;
@@ -450,10 +454,6 @@ absl::Status ChaoticGoodServerTransport::NewStream(
     return absl::InternalError("Stream id is not increasing");
   }
   stream_map_.emplace(stream_id, call_initiator);
-  call_initiator.OnDone([this, stream_id]() {
-    MutexLock lock(&mu_);
-    stream_map_.erase(stream_id);
-  });
   return absl::OkStatus();
 }
 
