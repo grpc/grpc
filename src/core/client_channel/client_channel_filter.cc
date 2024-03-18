@@ -388,7 +388,7 @@ class ClientChannelFilter::PromiseBasedCallData
   void ResetDeadline(Duration timeout) override {
     CallContext* call_context = GetContext<CallContext>();
     const Timestamp per_method_deadline =
-        Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
+        Timestamp::FromTimespecRoundUp(call_context->call_start_time()) +
         timeout;
     call_context->UpdateDeadline(per_method_deadline);
   }
