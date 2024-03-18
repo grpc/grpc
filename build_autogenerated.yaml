@@ -13210,8 +13210,9 @@ targets:
   - gtest
 - name: otel_plugin_test
   gtest: true
-  build: test
+  build: plugin_test
   language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   headers:
   - src/cpp/ext/otel/key_value_iterable.h
   - src/cpp/ext/otel/otel_call_tracer.h
