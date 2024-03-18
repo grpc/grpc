@@ -125,8 +125,8 @@ struct FilterDef {
   Footprint footprint;
   absl::AnyInvocable<absl::Status(void* filter, const ChannelArgs& args)> init;
   absl::AnyInvocable<void(CallFilters::StackBuilder& stack_builder,
-                          void* filter)>
-      add_to_stack;
+                          void* filter) const>
+      add_to_stack_builder;
 };
 
 struct InterceptorDef {
