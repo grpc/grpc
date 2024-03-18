@@ -115,10 +115,7 @@ TEST_P(XdsFallbackTest, FallbackAndFallForward) {
   // all way to the client
   balancer_->ads_service()->ClearADSFailure();
   SendRpcsUntil(DEBUG_LOCATION, [&](const auto& /* result */) {
-    if (backends_[0]->backend_service()->request_count() > 0) {
-      return false;
-    }
-    return true;
+    return backends_[0]->backend_service()->request_count() <= 0;
   });
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
 }
