@@ -313,6 +313,21 @@ TEST(TcpSocketUtilsTest, SockAddrPortTest) {
   EXPECT_EQ(ResolvedAddressToNormalizedString(wild6).value(), "[::]:22");
 }
 
+TEST(TcpSocketUtilsTest, ResolvedAddressIsWildcard) {
+  EventEngine::ResolvedAddress wild4 = ResolvedAddressMakeWild4(20);
+  EventEngine::ResolvedAddress wild6 = ResolvedAddressMakeWild6(20);
+  auto v4_port = ResolvedAddressIsWildcard(wild4);
+  ASSERT_TRUE(v4_port.has_value());
+  auto v6_port = ResolvedAddressIsWildcard(wild6);
+  ASSERT_TRUE(v6_port.has_value());
+  wild4 = MakeAddr4(kIPv4, sizeof(kIPv4));
+  v4_port = ResolvedAddressIsWildcard(wild4);
+  ASSERT_FALSE(v4_port.has_value());
+  wild6 = MakeAddr6(kMapped, sizeof(kMapped));
+  v6_port = ResolvedAddressIsWildcard(wild6);
+  ASSERT_FALSE(v6_port.has_value());
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
