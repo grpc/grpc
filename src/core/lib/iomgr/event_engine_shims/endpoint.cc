@@ -87,9 +87,14 @@ class EventEngineEndpointWrapper {
 
   absl::string_view LocalAddress() { return local_address_; }
 
-  void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
+  void Ref() {
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: reffing %p", this);
+    refs_.fetch_add(1, std::memory_order_relaxed);
+  }
   void Unref() {
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: unreffing %p", this);
     if (refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      gpr_log(GPR_ERROR, "DO NOT SUBMIT: deleting %p", this);
       delete this;
     }
   }
@@ -176,6 +181,7 @@ class EventEngineEndpointWrapper {
   }
 
   void FinishPendingWrite(absl::Status status) {
+    gpr_log(GPR_ERROR, "DO NOT SUBMIT: FinishPendingWrite");
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
