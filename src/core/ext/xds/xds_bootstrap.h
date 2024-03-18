@@ -22,8 +22,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/types/span.h"
-
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
