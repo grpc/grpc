@@ -1239,7 +1239,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx orca_service_end2end_test)
   add_dependencies(buildtests_cxx orphanable_test)
   add_dependencies(buildtests_cxx osa_distance_test)
-  add_dependencies(buildtests_cxx otel_plugin_test)
   add_dependencies(buildtests_cxx out_of_bounds_bad_client_test)
   add_dependencies(buildtests_cxx outlier_detection_lb_config_parser_test)
   add_dependencies(buildtests_cxx outlier_detection_test)
@@ -20981,7 +20980,7 @@ target_link_libraries(osa_distance_test
 
 
 endif()
-if(gRPC_BUILD_TESTS)
+if(gRPC_BUILD_TESTS AND gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_executable(otel_plugin_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc

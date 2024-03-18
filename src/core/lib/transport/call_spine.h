@@ -224,6 +224,8 @@ class CallInitiator {
         ServerMetadataFromStatus(absl::CancelledError()));
   }
 
+  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuarded(name, std::move(promise_factory));

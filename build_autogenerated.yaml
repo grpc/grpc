@@ -12037,8 +12037,10 @@ targets:
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/match.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
   - src/core/lib/gprpp/packed_table.h
   - src/core/lib/gprpp/per_cpu.h
   - src/core/lib/gprpp/ref_counted.h
@@ -14004,8 +14006,9 @@ targets:
   - gtest
 - name: otel_plugin_test
   gtest: true
-  build: test
+  build: plugin_test
   language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
   headers:
   - src/cpp/ext/otel/key_value_iterable.h
   - src/cpp/ext/otel/otel_call_tracer.h

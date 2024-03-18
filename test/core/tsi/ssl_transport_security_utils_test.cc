@@ -46,9 +46,9 @@ namespace testing {
 const char* kValidCrl = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kCrlIssuer = "test/core/tsi/test_creds/crl_data/ca.pem";
 const char* kModifiedSignature =
-    "test/core/tsi/test_creds/crl_data/crls/invalid_signature.crl";
+    "test/core/tsi/test_creds/crl_data/bad_crls/invalid_signature.crl";
 const char* kModifiedContent =
-    "test/core/tsi/test_creds/crl_data/crls/invalid_content.crl";
+    "test/core/tsi/test_creds/crl_data/bad_crls/invalid_content.crl";
 const char* kIntermediateCrl =
     "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
 const char* kIntermediateCrlIssuer =
