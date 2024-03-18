@@ -313,18 +313,18 @@ TEST(TcpSocketUtilsTest, SockAddrPortTest) {
   EXPECT_EQ(ResolvedAddressToNormalizedString(wild6).value(), "[::]:22");
 }
 
-TEST(TcpSocketUtilsTest, ResolvedAddressIsWildcard) {
+TEST(TcpSocketUtilsTest, MaybeGetWildcardPortFromAddress) {
   EventEngine::ResolvedAddress wild4 = ResolvedAddressMakeWild4(20);
   EventEngine::ResolvedAddress wild6 = ResolvedAddressMakeWild6(20);
-  auto v4_port = ResolvedAddressIsWildcard(wild4);
+  auto v4_port = MaybeGetWildcardPortFromAddress(wild4);
   ASSERT_TRUE(v4_port.has_value());
-  auto v6_port = ResolvedAddressIsWildcard(wild6);
+  auto v6_port = MaybeGetWildcardPortFromAddress(wild6);
   ASSERT_TRUE(v6_port.has_value());
   wild4 = MakeAddr4(kIPv4, sizeof(kIPv4));
-  v4_port = ResolvedAddressIsWildcard(wild4);
+  v4_port = MaybeGetWildcardPortFromAddress(wild4);
   ASSERT_FALSE(v4_port.has_value());
   wild6 = MakeAddr6(kMapped, sizeof(kMapped));
-  v6_port = ResolvedAddressIsWildcard(wild6);
+  v6_port = MaybeGetWildcardPortFromAddress(wild6);
   ASSERT_FALSE(v6_port.has_value());
 }
 
