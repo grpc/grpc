@@ -18,6 +18,8 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
+#include <type_traits>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -43,90 +45,69 @@ namespace {
 #define GRPC_ARG_SERVER_SELECTOR_KEY "grpc.testing.server_selector_key"
 #define GRPC_ARG_SERVER_SELECTOR_VALUE "grpc.testing.server_selector_value"
 
-void VerifyAttributes(
-    absl::flat_hash_map<
-        std::string,
-        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
-    absl::string_view metric_name,
-    absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> label_values,
-    absl::Span<const absl::string_view> optional_label_keys,
-    absl::Span<const absl::string_view> optional_label_values) {
-  const auto& attributes = data[metric_name][0].attributes.GetAttributes();
-  EXPECT_EQ(attributes.size(), label_keys.size() + optional_label_keys.size());
-  for (int i = 0; i < label_keys.size(); i++) {
-    EXPECT_EQ(absl::get<std::string>(attributes.at(std::string(label_keys[i]))),
-              label_values[i]);
-  }
-  for (int i = 0; i < optional_label_keys.size(); i++) {
-    EXPECT_EQ(absl::get<std::string>(
-                  attributes.at(std::string(optional_label_keys[i]))),
-              optional_label_values[i]);
+template <typename T>
+void PopulateLabelMap(
+    std::unordered_map<std::string, absl::string_view>* label_maps,
+    T label_keys, T label_values) {
+  for (int i = 0; i < label_keys.size(); ++i) {
+    (*label_maps)[std::string(label_keys[i])] = label_values[i];
   }
 }
 
-template <typename ValueType>
-void VerifyCounterResult(
-    absl::flat_hash_map<
-        std::string,
-        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
-    absl::string_view metric_name, ValueType result) {
-  ASSERT_EQ(data[metric_name].size(), 1);
-  EXPECT_TRUE(opentelemetry::nostd::holds_alternative<
-              opentelemetry::sdk::metrics::SumPointData>(
-      data[metric_name][0].point_data));
-  EXPECT_EQ(
-      opentelemetry::nostd::get<ValueType>(
-          opentelemetry::nostd::get<opentelemetry::sdk::metrics::SumPointData>(
-              data[metric_name][0].point_data)
-              .value_),
-      result);
+MATCHER_P4(AttributesEq, label_keys, label_values, optional_label_keys,
+           optional_label_values, "") {
+  std::unordered_map<std::string, absl::string_view> label_map;
+  PopulateLabelMap(&label_map, label_keys, label_values);
+  PopulateLabelMap(&label_map, optional_label_keys, optional_label_values);
+  const auto& attributes = arg.attributes.GetAttributes();
+  return std::all_of(
+      attributes.begin(), attributes.end(), [&](const auto& elem) {
+        return label_map.find(elem.first) != label_map.end() &&
+               absl::get<std::string>(elem.second) == label_map[elem.first];
+      });
+}
+
+MATCHER_P(CounterResultEq, result, "") {
+  return opentelemetry::nostd::holds_alternative<
+             opentelemetry::sdk::metrics::SumPointData>(arg.point_data) &&
+         opentelemetry::nostd::get<std::remove_cv_t<decltype(result)>>(
+             opentelemetry::nostd::get<
+                 opentelemetry::sdk::metrics::SumPointData>(arg.point_data)
+                 .value_) == result;
 }
 
 template <typename ValueType>
-void ExpectEqual(ValueType v, ValueType expectation) {
-  EXPECT_EQ(v, expectation);
+bool CompareSum(ValueType v, ValueType expectation) {
+  return v == expectation;
 }
 
 template <>
-void ExpectEqual(double v, double expectation) {
-  EXPECT_THAT(v, ::testing::DoubleEq(expectation));
+bool CompareSum(double v, double expectation) {
+  return ::testing::Matches(::testing::DoubleEq(expectation))(v);
 }
 
-template <typename ValueType>
-void VerifyHistogramResult(
-    absl::flat_hash_map<
-        std::string,
-        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
-    absl::string_view metric_name, ValueType sum, ValueType min, ValueType max,
-    int count) {
-  ASSERT_EQ(data[metric_name].size(), 1);
-  EXPECT_TRUE(opentelemetry::nostd::holds_alternative<
-              opentelemetry::sdk::metrics::HistogramPointData>(
-      data[metric_name][0].point_data));
-  ExpectEqual(opentelemetry::nostd::get<ValueType>(
-                  opentelemetry::nostd::get<
-                      opentelemetry::sdk::metrics::HistogramPointData>(
-                      data[metric_name][0].point_data)
-                      .sum_),
-              sum);
-  EXPECT_EQ(opentelemetry::nostd::get<ValueType>(
-                opentelemetry::nostd::get<
-                    opentelemetry::sdk::metrics::HistogramPointData>(
-                    data[metric_name][0].point_data)
-                    .min_),
-            min);
-  EXPECT_EQ(opentelemetry::nostd::get<ValueType>(
-                opentelemetry::nostd::get<
-                    opentelemetry::sdk::metrics::HistogramPointData>(
-                    data[metric_name][0].point_data)
-                    .max_),
-            max);
-  EXPECT_EQ(opentelemetry::nostd::get<
-                opentelemetry::sdk::metrics::HistogramPointData>(
-                data[metric_name][0].point_data)
-                .count_,
-            count);
+MATCHER_P4(HistogramResultEq, sum, min, max, count, "") {
+  return opentelemetry::nostd::holds_alternative<
+             opentelemetry::sdk::metrics::HistogramPointData>(arg.point_data) &&
+         CompareSum(opentelemetry::nostd::get<std::remove_cv_t<decltype(sum)>>(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::HistogramPointData>(
+                            arg.point_data)
+                            .sum_),
+                    sum) &&
+         opentelemetry::nostd::get<std::remove_cv_t<decltype(min)>>(
+             opentelemetry::nostd::get<
+                 opentelemetry::sdk::metrics::HistogramPointData>(
+                 arg.point_data)
+                 .min_) == min &&
+         opentelemetry::nostd::get<std::remove_cv_t<decltype(max)>>(
+             opentelemetry::nostd::get<
+                 opentelemetry::sdk::metrics::HistogramPointData>(
+                 arg.point_data)
+                 .max_) == max &&
+         opentelemetry::nostd::get<
+             opentelemetry::sdk::metrics::HistogramPointData>(arg.point_data)
+                 .count_ == count;
 }
 
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
@@ -1029,13 +1010,14 @@ using OpenTelemetryPluginNPCMetricsTest = OpenTelemetryPluginEnd2EndTest;
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";
   constexpr int kCounterValues[] = {1, 2, 3};
-  constexpr int kCounterResult = 6;
-  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                      "optional_label_key_2"};
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
+  constexpr int64_t kCounterResult = 6;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
       kMetricName, "A simple uint64 counter.", "unit", kLabelKeys,
@@ -1058,21 +1040,25 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  VerifyCounterResult<int64_t>(data, kMetricName, kCounterResult);
-  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                   kOptionalLabelKeys, kOptionalLabelValues);
+  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
+                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
+                                         AttributesEq(kLabelKeys, kLabelValues,
+                                                      kOptionalLabelKeys,
+                                                      kOptionalLabelValues),
+                                         CounterResultEq(kCounterResult))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
   constexpr absl::string_view kMetricName = "double_counter";
   constexpr double kCounterValues[] = {1.23, 2.34, 3.45};
   constexpr double kCounterResult = 7.02;
-  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                      "optional_label_key_2"};
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
       kMetricName, "A simple double counter.", "unit", kLabelKeys,
@@ -1095,24 +1081,28 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  VerifyCounterResult<double>(data, kMetricName, kCounterResult);
-  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                   kOptionalLabelKeys, kOptionalLabelValues);
+  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
+                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
+                                         AttributesEq(kLabelKeys, kLabelValues,
+                                                      kOptionalLabelKeys,
+                                                      kOptionalLabelValues),
+                                         CounterResultEq(kCounterResult))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
   constexpr absl::string_view kMetricName = "uint64_histogram";
   constexpr int kHistogramValues[] = {1, 1, 2, 3, 4, 4, 5, 6};
-  constexpr int kSum = 26;
-  constexpr int kMin = 1;
-  constexpr int kMax = 6;
-  constexpr int kCount = 8;
-  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                      "optional_label_key_2"};
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
+  constexpr int64_t kSum = 26;
+  constexpr int64_t kMin = 1;
+  constexpr int64_t kMax = 6;
+  constexpr int64_t kCount = 8;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
       kMetricName, "A simple uint64 histogram.", "unit", kLabelKeys,
@@ -1139,9 +1129,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  VerifyHistogramResult<int64_t>(data, kMetricName, kSum, kMin, kMax, kCount);
-  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                   kOptionalLabelKeys, kOptionalLabelValues);
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
@@ -1152,12 +1146,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
   constexpr double kMin = 1.1;
   constexpr double kMax = 6.6;
   constexpr double kCount = 8;
-  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                      "optional_label_key_2"};
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       kMetricName, "A simple double histogram.", "unit", kLabelKeys,
@@ -1184,20 +1179,25 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  VerifyHistogramResult<double>(data, kMetricName, kSum, kMin, kMax, kCount);
-  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                   kOptionalLabelKeys, kOptionalLabelValues);
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest,
        RegisterMultipleOpenTelemetryPlugins) {
   constexpr absl::string_view kMetricName = "double_histogram";
-  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                      "optional_label_key_2"};
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       kMetricName, "A simple double histogram.", "unit", kLabelKeys,
@@ -1205,18 +1205,15 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
   // Build and register a separate OpenTelemetryPlugin and verify its histogram
   // recording.
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
-  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader;
-  ConfigureOpenTelemetryPluginBuilderWithOptions(
-      std::move(
-          Options()
-              .set_metric_names({kMetricName})
-              .set_server_selector([](const grpc_core::ChannelArgs& args) {
-                return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
-                       GRPC_ARG_SERVER_SELECTOR_VALUE;
-              })
-              .add_optional_label(kOptionalLabelKeys[0])
-              .add_optional_label(kOptionalLabelKeys[1])),
-      &ot_builder, &reader);
+  auto reader = BuilderAndRegisterOpenTelemetryPlugin(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   grpc_core::ChannelArgs args;
   args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
@@ -1232,15 +1229,19 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       stats_plugins.RecordHistogram(handle, v, kLabelValues,
                                     kOptionalLabelValues);
     }
-    auto data = grpc::testing::ReadCurrentMetricsData(
-        reader,
+    auto data = ReadCurrentMetricsData(
         [&](const absl::flat_hash_map<
             std::string,
             std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                data) { return !data.contains(kMetricName); });
-    VerifyHistogramResult(data, kMetricName, kSum, kMin, kMax, kCount);
-    VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                     kOptionalLabelKeys, kOptionalLabelValues);
+                data) { return !data.contains(kMetricName); },
+        reader.get());
+    EXPECT_THAT(
+        data, ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
   }
   // Now build and register another OpenTelemetryPlugin using the test fixture
   // and record histogram.
@@ -1270,19 +1271,27 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  VerifyHistogramResult(data, kMetricName, kSum, kMin, kMax, kCount);
-  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                   kOptionalLabelKeys, kOptionalLabelValues);
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
   // Verify that the first plugin gets the data as well.
-  data = grpc::testing::ReadCurrentMetricsData(
-      reader,
+  data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-              data) { return !data.contains(kMetricName); });
-  VerifyHistogramResult(data, kMetricName, kSum, kMin, kMax, kCount);
-  VerifyAttributes(data, kMetricName, kLabelKeys, kLabelValues,
-                   kOptionalLabelKeys, kOptionalLabelValues);
+              data) { return !data.contains(kMetricName); },
+      reader.get());
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
 }
 
 }  // namespace

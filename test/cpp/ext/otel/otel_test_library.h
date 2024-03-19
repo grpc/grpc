@@ -153,6 +153,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   void SendRPC();
   void SendGenericRPC();
 
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
+  BuilderAndRegisterOpenTelemetryPlugin(
+      OpenTelemetryPluginEnd2EndTest::Options options);
+
   absl::flat_hash_map<
       std::string,
       std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
@@ -161,7 +165,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
           bool(const absl::flat_hash_map<
                std::string,
                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
-          continue_predicate);
+          continue_predicate,
+      opentelemetry::sdk::metrics::MetricReader* reader = nullptr);
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
@@ -173,28 +178,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   std::unique_ptr<grpc::Server> server_;
   std::unique_ptr<EchoTestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
-
- public:
-  friend void ConfigureOpenTelemetryPluginBuilderWithOptions(
-      OpenTelemetryPluginEnd2EndTest::Options options,
-      grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder,
-      std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>* reader);
 };
-
-absl::flat_hash_map<
-    std::string, std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
-ReadCurrentMetricsData(
-    std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader,
-    absl::AnyInvocable<
-        bool(const absl::flat_hash_map<
-             std::string,
-             std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
-        continue_predicate);
-
-void ConfigureOpenTelemetryPluginBuilderWithOptions(
-    OpenTelemetryPluginEnd2EndTest::Options options,
-    grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder,
-    std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>* reader);
 
 }  // namespace testing
 }  // namespace grpc

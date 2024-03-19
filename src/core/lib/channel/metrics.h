@@ -163,9 +163,6 @@ class CallbackMetricReporter {
 
 class RegisteredMetricCallback;
 
-class ClientCallTracer;
-class ServerCallTracer;
-
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
@@ -303,12 +300,12 @@ class GlobalStatsPluginRegistry {
                               grpc_call_context_element* call_context);
 
    private:
+    friend class RegisteredMetricCallback;
+
     struct PluginState {
       std::shared_ptr<StatsPlugin::ScopeConfig> scope_config;
       std::shared_ptr<StatsPlugin> plugin;
     };
-
-    friend class RegisteredMetricCallback;
 
     std::vector<PluginState> plugins_state_;
   };
