@@ -540,9 +540,8 @@ class ServerContextBase {
 
    private:
     void CallOnDone() override {}
-    void RunAsync(absl::AnyInvocable<void()> cb) override {
-      grpc_call_run_in_event_engine(call_, std::move(cb));
-    }
+
+    grpc_call* call() override { return call_; }
 
     grpc::internal::ServerReactor* reactor() override { return reactor_; }
 

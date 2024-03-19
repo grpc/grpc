@@ -187,9 +187,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       ctx_->set_message_allocator_state(allocator_state);
     }
 
-    void RunAsync(absl::AnyInvocable<void()> cb) override {
-      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
-    }
+    grpc_call* call() override { return call_.call(); }
 
     /// SetupReactor binds the reactor (which also releases any queued
     /// operations), maybe calls OnCancel if possible/needed, and maybe marks
@@ -375,9 +373,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
                              std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
-    void RunAsync(absl::AnyInvocable<void()> cb) override {
-      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
-    }
+    grpc_call* call() override { return call_.call(); }
 
     void SetupReactor(ServerReadReactor<RequestType>* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
@@ -604,9 +600,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
           req_(req),
           call_requester_(std::move(call_requester)) {}
 
-    void RunAsync(absl::AnyInvocable<void()> cb) override {
-      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
-    }
+    grpc_call* call() override { return call_.call(); }
 
     void SetupReactor(ServerWriteReactor<ResponseType>* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
@@ -820,9 +814,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
                                    std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
-    void RunAsync(absl::AnyInvocable<void()> cb) override {
-      grpc_call_run_in_event_engine(call_.call(), std::move(cb));
-    }
+    grpc_call* call() override { return call_.call(); }
 
     void SetupReactor(ServerBidiReactor<RequestType, ResponseType>* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
