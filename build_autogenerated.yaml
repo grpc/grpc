@@ -846,6 +846,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -2354,6 +2355,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -4404,7 +4406,6 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
-  - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -4440,6 +4441,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
@@ -4598,7 +4600,6 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/join_state.h
@@ -4622,7 +4623,6 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
@@ -4686,10 +4686,8 @@ libs:
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_size_estimator.h
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
@@ -4757,7 +4755,6 @@ libs:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
-  - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -4990,10 +4987,8 @@ libs:
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_size_estimator.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
@@ -5042,8 +5037,6 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/random:bit_gen_ref
-  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
@@ -5232,6 +5225,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -6385,6 +6379,7 @@ targets:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -7663,6 +7658,7 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -9157,6 +9153,7 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -9763,6 +9760,7 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -9898,6 +9896,7 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -11517,6 +11516,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
@@ -11558,6 +11558,7 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -12067,6 +12068,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -12230,6 +12232,7 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -12836,6 +12839,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
@@ -13124,6 +13128,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/notification.h
@@ -14041,6 +14046,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -19610,6 +19616,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/notification.h
