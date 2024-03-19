@@ -60,9 +60,15 @@ class XdsBootstrapBuilder {
     return *this;
   }
   XdsBootstrapBuilder& AddAuthority(
-      const std::string& authority, const std::string& server = "",
+      const std::string& authority, const std::string& servers = "",
       const std::string& client_listener_resource_name_template = "") {
-    authorities_[authority] = {server, client_listener_resource_name_template};
+    return AddAuthority(authority, std::vector<std::string>({servers}),
+                        client_listener_resource_name_template);
+  }
+  XdsBootstrapBuilder& AddAuthority(
+      const std::string& authority, const std::vector<std::string>& servers,
+      const std::string& client_listener_resource_name_template = "") {
+    authorities_[authority] = {servers, client_listener_resource_name_template};
     return *this;
   }
   XdsBootstrapBuilder& SetServerListenerResourceNameTemplate(
@@ -80,7 +86,7 @@ class XdsBootstrapBuilder {
     std::string plugin_config;
   };
   struct AuthorityInfo {
-    std::string server;
+    std::vector<std::string> servers;
     std::string client_listener_resource_name_template;
   };
 

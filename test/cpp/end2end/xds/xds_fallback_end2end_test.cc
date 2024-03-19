@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/strings/str_format.h"
+#include "xds_utils.h"
 
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -66,11 +67,13 @@ class XdsFallbackTest : public XdsEnd2endTest {
   }
 
   std::string SetupServer(BalancerServerThread* balancer, size_t backend,
-                          int server_id) {
+                          int server_id, absl::string_view authority = "") {
     Listener listener = default_listener_;
     RouteConfiguration route_config = default_route_config_;
     Cluster cluster = default_cluster_;
-    if (server_id > 0) {
+    // Server 0 uses default resources when no authority, to enable using more
+    // test framework functions
+    if (server_id > 0 && authority.empty()) {
       listener.set_name(absl::StrFormat("server%d.example.com", server_id));
       cluster.set_name(absl::StrFormat("cluster%d", server_id));
       cluster.mutable_eds_cluster_config()->set_service_name(
@@ -80,6 +83,7 @@ class XdsFallbackTest : public XdsEnd2endTest {
           ->mutable_routes(0)
           ->mutable_route()
           ->set_cluster(cluster.name());
+    } else if (!authority.empty()) {
     }
     SetListenerAndRouteConfiguration(balancer, listener, route_config);
     balancer->ads_service()->SetCdsResource(cluster);
@@ -94,9 +98,13 @@ class XdsFallbackTest : public XdsEnd2endTest {
   std::unique_ptr<BalancerServerThread> fallback_balancer_;
 };
 
-TEST_P(XdsFallbackTest, FallbackAndFallForward) {
+TEST_P(XdsFallbackTest, FallbackAndRecover) {
+  auto broken_balancer = CreateAndStartBalancer("Broken balancer");
+  broken_balancer->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   InitClient(XdsBootstrapBuilder().SetServers({
       absl::StrCat("localhost:", balancer_->port()),
+      absl::StrCat("localhost:", broken_balancer->port()),
       absl::StrCat("localhost:", fallback_balancer_->port()),
   }));
   // Primary xDS server has backends_[0] configured and fallback server has
@@ -118,6 +126,7 @@ TEST_P(XdsFallbackTest, FallbackAndFallForward) {
     return backends_[0]->backend_service()->request_count() <= 0;
   });
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
+  broken_balancer->Shutdown();
 }
 
 TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
@@ -174,8 +183,28 @@ TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
 
-TEST_P(XdsFallbackTest, DISABLED_AuthorityServers) {}
-TEST_P(XdsFallbackTest, DISABLED_FallbackToBrokenToFixed) {}
+TEST_P(XdsFallbackTest, DISABLED_AuthorityServers) {
+  auto authority_xds2_fallback = CreateAndStartBalancer("Authority B Fallback");
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  InitClient(XdsBootstrapBuilder().AddAuthority(
+      "xds1.example.com",
+      {
+          absl::StrCat("localhost:", balancer_->port()),
+          absl::StrCat("localhost:", fallback_balancer_->port()),
+      }));
+  InitClient(XdsBootstrapBuilder().AddAuthority(
+      "xds2.example.com",
+      {
+          absl::StrCat("localhost:", balancer_->port()),
+          absl::StrCat("localhost:", authority_xds2_fallback->port()),
+      }));
+
+  CreateAndStartBackends(2);
+
+  authority_xds2_fallback->Shutdown();
+}
+
 TEST_P(XdsFallbackTest, DISABLED_FallbackAfterSetup) {}
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsFallbackTest,
