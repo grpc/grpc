@@ -5116,7 +5116,6 @@ add_library(grpc_authorization_provider
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
-  src/core/lib/backoff/random_early_detection.cc
   src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
@@ -5349,10 +5348,8 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/version.cc
   src/core/lib/surface/wait_for_cq_end_op.cc
   src/core/lib/transport/batch_builder.cc
-  src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
-  src/core/lib/transport/call_size_estimator.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
@@ -5442,8 +5439,6 @@ target_link_libraries(grpc_authorization_provider
   absl::function_ref
   absl::hash
   absl::type_traits
-  absl::random_bit_gen_ref
-  absl::random_distributions
   absl::statusor
   absl::span
   absl::utility
