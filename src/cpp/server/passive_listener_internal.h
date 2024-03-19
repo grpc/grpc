@@ -29,20 +29,21 @@ class PassiveListenerOwner final : public PassiveListener {
  public:
   explicit PassiveListenerOwner(std::shared_ptr<PassiveListener> listener)
       : listener_(std::move(listener)) {}
-  void AcceptConnectedEndpoint(
+
+  absl::Status AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override {
-    listener_->AcceptConnectedEndpoint(std::move(endpoint));
+    return listener_->AcceptConnectedEndpoint(std::move(endpoint));
   }
 
   absl::Status AcceptConnectedFd(int fd) override {
     return listener_->AcceptConnectedFd(fd);
   }
 
+ private:
   void Initialize(grpc_core::Server* /* server */,
                   grpc_core::ListenerInterface* /* listener */) override {}
 
- private:
   std::shared_ptr<PassiveListener> listener_;
 };
 
@@ -52,16 +53,16 @@ class PassiveListenerOwner final : public PassiveListener {
 class PassiveListenerImpl final : public PassiveListener {
  public:
   ~PassiveListenerImpl() override { GPR_ASSERT(server_.get() != nullptr); }
-  void AcceptConnectedEndpoint(
+  absl::Status AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override;
 
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
+ private:
   void Initialize(grpc_core::Server* server,
                   grpc_core::ListenerInterface* listener) override;
 
- private:
   // Data members will be populated when initialized.
   grpc_core::RefCountedPtr<grpc_core::Server> server_;
   // Not safe for this class to use directly -- only used within

@@ -125,9 +125,11 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   grpc_core::Notification endpoint_destroyed;
-  passive_listener->AcceptConnectedEndpoint(
+  auto success = passive_listener->AcceptConnectedEndpoint(
       std::make_unique<grpc_event_engine::experimental::ThreadedNoopEndpoint>(
           &endpoint_destroyed));
+  ASSERT_TRUE(success.ok())
+      << "AcceptConnectedEndpoint failure: " << success.ToString();
   endpoint_destroyed.WaitForNotification();
   server->Shutdown();
 }

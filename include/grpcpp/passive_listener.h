@@ -24,6 +24,9 @@ class Server;
 }  // namespace grpc_core
 
 namespace grpc {
+
+class ServerBuilder;
+
 namespace experimental {
 
 /// -- EXPERIMENTAL API --
@@ -37,7 +40,7 @@ class PassiveListener {
   /// connection had been accepted by the server.
   ///
   /// The server must be started before endpoints can be accepted.
-  virtual void AcceptConnectedEndpoint(
+  virtual absl::Status AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) = 0;
 
@@ -50,7 +53,10 @@ class PassiveListener {
   /// support Endpoint creation from fds.
   virtual absl::Status AcceptConnectedFd(int fd) = 0;
 
-  // DO NOT SUBMIT(hork): describe
+ private:
+  friend class grpc::ServerBuilder;
+
+  /// Internal API. initializes a passive listener when the server is created.
   virtual void Initialize(grpc_core::Server* server,
                           grpc_core::ListenerInterface* listener) = 0;
 };

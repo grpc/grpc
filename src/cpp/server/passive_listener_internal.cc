@@ -28,15 +28,16 @@
 namespace grpc {
 namespace experimental {
 
-void PassiveListenerImpl::AcceptConnectedEndpoint(
+absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
   grpc_core::ExecCtx exec_ctx;
-  // DO NOT SUBMIT(hork): what to do when shutdown?
-  if (!server_->ShutdownCalled()) {
-    grpc_server_accept_connected_endpoint(listener_, std::move(endpoint));
+  if (server_->ShutdownCalled()) {
+    return absl::AbortedError("Server is shut down.");
   }
+  grpc_server_accept_connected_endpoint(listener_, std::move(endpoint));
+  return absl::OkStatus();
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
@@ -55,8 +56,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   }
   auto endpoint = supports_fd->CreateEndpointFromFd(
       fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
-  AcceptConnectedEndpoint(std::move(endpoint));
-  return absl::OkStatus();
+  return AcceptConnectedEndpoint(std::move(endpoint));
 }
 
 void PassiveListenerImpl::Initialize(grpc_core::Server* server,
