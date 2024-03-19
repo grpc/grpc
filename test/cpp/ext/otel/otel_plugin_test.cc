@@ -1190,7 +1190,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest,
        RegisterMultipleOpenTelemetryPlugins) {
-  constexpr absl::string_view kMetricName = "double_histogram";
+  constexpr absl::string_view kMetricName = "yet_another_double_histogram";
   constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
                                                            "label_key_2"};
   constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {

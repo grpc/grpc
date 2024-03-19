@@ -119,8 +119,6 @@ void OpenTelemetryPluginEnd2EndTest::TearDown() {
   server_->Shutdown();
   grpc_shutdown_blocking();
   grpc_core::ServerCallTracerFactory::TestOnlyReset();
-  grpc_core::GlobalInstrumentsRegistryTestPeer::
-      ResetGlobalInstrumentsRegistry();
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();
 }

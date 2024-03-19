@@ -61,11 +61,11 @@ class GlobalInstrumentsRegistry {
     kGauge,
     kCallbackGauge,
   };
-  using UID = uint32_t;
+  using InstrumentID = uint32_t;
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
     InstrumentType instrument_type;
-    UID index;
+    InstrumentID index;
     bool enable_by_default;
     absl::string_view name;
     absl::string_view description;
@@ -78,7 +78,7 @@ class GlobalInstrumentsRegistry {
     // StatsPlugins can use to uniquely identify an instrument in the current
     // process. Though this is not guaranteed to be stable between different
     // runs or between different versions.
-    UID index;
+    InstrumentID index;
   };
   struct GlobalUInt64CounterHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleCounterHandle : public GlobalInstrumentHandle {};

@@ -189,8 +189,6 @@ class OpenTelemetryPluginBuilderImpl {
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
 };
 
-class OpenTelemetryCallTracer;
-
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
  public:
   // Creates a convenience wrapper to help iterate over only those plugin
@@ -395,21 +393,13 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   Client client_;
   Server server_;
   // Instruments for non-per-call metrics.
-  absl::flat_hash_map<
-      grpc_core::GlobalInstrumentsRegistry::UID,
-      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>
-      uint64_counters_;
-  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      std::unique_ptr<opentelemetry::metrics::Counter<double>>>
-      double_counters_;
-  absl::flat_hash_map<
-      grpc_core::GlobalInstrumentsRegistry::UID,
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>
-      uint64_histograms_;
-  absl::flat_hash_map<
-      grpc_core::GlobalInstrumentsRegistry::UID,
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>>>
-      double_histograms_;
+  struct Disabled {};
+  using InstrumentType = absl::variant<
+      Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Counter<double>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
+  std::vector<InstrumentType> instruments_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
@@ -425,9 +415,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   using OptionalLabelKeys = std::vector<absl::string_view>;
   // Stores label keys and optional label keys for each instrument at
   // construction time.
-  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      std::pair<LabelKeys, OptionalLabelKeys>>
-      label_keys_map_;
+  std::vector<std::pair<LabelKeys, OptionalLabelKeys>> label_keys_store_;
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
 };
 
