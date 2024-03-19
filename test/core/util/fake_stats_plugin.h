@@ -268,13 +268,12 @@ class FakeStatsPlugin : public StatsPlugin {
 
   std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
       const ChannelScope& scope) const override {
-    if (channel_filter_ == nullptr) return {true, nullptr};
-    return {channel_filter_(scope), nullptr};
+    return {true, nullptr};
   }
 
   std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& /*args*/) const override {
-    return {false, nullptr};
+    return {true, nullptr};
   }
 
   void AddCounter(
