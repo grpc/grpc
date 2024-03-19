@@ -60,6 +60,9 @@ extern TraceFlag grpc_xds_client_refcount_trace;
 
 class XdsClient : public DualRefCounted<XdsClient> {
  public:
+  // The authority reported for old-style (non-xdstp) resource names.
+  static constexpr absl::string_view kOldStyleAuthority = "#old";
+
   class ReadDelayHandle : public RefCounted<ReadDelayHandle> {
    public:
     static RefCountedPtr<ReadDelayHandle> NoWait() { return nullptr; }
@@ -319,9 +322,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
   RefCountedPtr<XdsChannel> GetOrCreateXdsChannelLocked(
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  bool HasRequestedResources(const AuthorityState& authority_state);
 
-  bool PerformFallbackLocked(const std::string& authority,
-                             AuthorityState& authority_state)
+  // Attempts to find a suitable Xds fallback server. Returns true if
+  // a connection to a suitable server had been established.
+  bool TryFallbackLocked(const std::string& authority,
+                         AuthorityState& authority_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
