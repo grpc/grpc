@@ -1192,6 +1192,7 @@ void grpc_server_accept_connected_endpoint(
     grpc_core::ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
+  grpc_core::ExecCtx exec_ctx;
   core_listener->AcceptConnectedEndpoint(std::move(endpoint));
 }
 

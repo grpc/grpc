@@ -52,7 +52,6 @@ class PassiveListenerOwner final : public PassiveListener {
 // application owns the instance.
 class PassiveListenerImpl final : public PassiveListener {
  public:
-  ~PassiveListenerImpl() override { GPR_ASSERT(server_.get() != nullptr); }
   absl::Status AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint) override;

@@ -169,8 +169,8 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
       : state_(std::make_shared<EndpointState>(destroyed)) {}
   ~ThreadedNoopEndpoint() override {
     std::thread deleter([state = state_]() {
-      cleanup_thread(state->read);
-      cleanup_thread(state->write);
+      CleanupThread(state->read);
+      CleanupThread(state->write);
     });
     deleter.detach();
   }
@@ -178,7 +178,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
             const ReadArgs* /* args */) override {
     buffer->Clear();
-    cleanup_thread(state_->read);
+    CleanupThread(state_->read);
     state_->read = new std::thread([cb = std::move(on_read)]() mutable {
       cb(absl::UnknownError("test"));
     });
@@ -188,7 +188,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
              SliceBuffer* data, const WriteArgs* /* args */) override {
     data->Clear();
-    cleanup_thread(state_->write);
+    CleanupThread(state_->write);
     state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
       cb(absl::UnknownError("test"));
     });
@@ -212,7 +212,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
     NotifyOnDelete delete_notifier_;
   };
 
-  static void cleanup_thread(std::thread* thd) {
+  static void CleanupThread(std::thread* thd) {
     if (thd != nullptr) {
       thd->join();
       delete thd;

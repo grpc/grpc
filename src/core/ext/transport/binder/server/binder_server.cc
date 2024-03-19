@@ -243,9 +243,8 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   }
   std::string conn_id = addr.substr(kBinderUriScheme.size());
   Server* core_server = Server::FromC(server);
-  core_server->AddListener(
-      OrphanablePtr<ListenerInterface>(new BinderServerListener(
-          core_server, conn_id, std::move(factory), security_policy)));
+  core_server->AddListener(MakeOrphanable<BinderServerListener>(
+      core_server, conn_id, std::move(factory), security_policy));
   return true;
 }
 
