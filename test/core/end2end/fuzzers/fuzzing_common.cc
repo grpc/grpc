@@ -547,16 +547,6 @@ BasicFuzzer::Result BasicFuzzer::CancelActiveCall() {
   return Result::kComplete;
 }
 
-BasicFuzzer::Result BasicFuzzer::SendPingOnChannel() {
-  if (channel() != nullptr) {
-    pending_pings_++;
-    grpc_channel_ping(channel(), cq_, Decrement(&pending_pings_), nullptr);
-  } else {
-    return Result::kFailed;
-  }
-  return Result::kComplete;
-}
-
 BasicFuzzer::Result BasicFuzzer::Pause(Duration duration) {
   ++paused_;
   engine()->RunAfterExactly(duration, [this]() { --paused_; });
@@ -642,8 +632,7 @@ void BasicFuzzer::ShutdownCalls() {
 
 bool BasicFuzzer::Continue() {
   return channel() != nullptr || server() != nullptr ||
-         pending_channel_watches_ > 0 || pending_pings_ > 0 ||
-         ActiveCall() != nullptr || paused_;
+         pending_channel_watches_ > 0 || ActiveCall() != nullptr || paused_;
 }
 
 BasicFuzzer::Result BasicFuzzer::ExecuteAction(
@@ -699,7 +688,8 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
       return ValidateChannelTarget();
     // send a ping on a channel
     case api_fuzzer::Action::kPing:
-      return SendPingOnChannel();
+      // Ping is no longer a part of the API
+      return BasicFuzzer::Result::kNotSupported;
     // enable a tracer
     case api_fuzzer::Action::kEnableTracer: {
       grpc_tracer_set_enabled(action.enable_tracer().c_str(), 1);

@@ -1117,6 +1117,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/xds/xds_lb_policy_registry.h )
   s.files += %w( src/core/ext/xds/xds_listener.cc )
   s.files += %w( src/core/ext/xds/xds_listener.h )
+  s.files += %w( src/core/ext/xds/xds_metrics.h )
   s.files += %w( src/core/ext/xds/xds_resource_type.h )
   s.files += %w( src/core/ext/xds/xds_resource_type_impl.h )
   s.files += %w( src/core/ext/xds/xds_route_config.cc )
