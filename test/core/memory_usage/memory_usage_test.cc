@@ -216,8 +216,7 @@ XdsServer StartXdsServerAndConfigureBootstrap(
   grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap);
   gpr_log(GPR_INFO, "xDS bootstrap: %s", bootstrap.c_str());
   // Create ADS service.
-  xds_server.ads_service =
-      std::make_shared<grpc::testing::AdsServiceImpl>("Ads Service");
+  xds_server.ads_service = std::make_shared<grpc::testing::AdsServiceImpl>();
   xds_server.ads_service->Start();
   // Populate xDS resources.
   std::vector<XdsResourceUtils::EdsResourceArgs::Endpoint> endpoints;

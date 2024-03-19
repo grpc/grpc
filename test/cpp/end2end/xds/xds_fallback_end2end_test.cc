@@ -14,6 +14,7 @@
 //
 #include <iostream>
 #include <memory>
+#include <string_view>
 #include <type_traits>
 
 #include <gmock/gmock.h>
@@ -41,16 +42,11 @@
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
 
-#ifndef DISABLED_XDS_PROTO_IN_CC
-
-#include "src/cpp/server/csds/csds.h"
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
-
 namespace grpc {
 namespace testing {
 namespace {
 
-const std::string kErrorMessage = "test forced ADS stream failure";
+constexpr char const* kErrorMessage = "test forced ADS stream failure";
 
 class XdsFallbackTest : public XdsEnd2endTest {
  public:
@@ -66,19 +62,21 @@ class XdsFallbackTest : public XdsEnd2endTest {
     XdsEnd2endTest::TearDown();
   }
 
-  std::string SetupServer(BalancerServerThread* balancer, size_t backend,
-                          int server_id, absl::string_view authority = "") {
+  // Sets resources and returns target name
+  std::string SetXdsResourcesForTarget(BalancerServerThread* balancer,
+                                       size_t backend, int target_id = 0,
+                                       absl::string_view authority = "") {
     Listener listener = default_listener_;
     RouteConfiguration route_config = default_route_config_;
     Cluster cluster = default_cluster_;
     // Server 0 uses default resources when no authority, to enable using more
     // test framework functions
-    if (server_id > 0 && authority.empty()) {
-      listener.set_name(absl::StrFormat("server%d.example.com", server_id));
-      cluster.set_name(absl::StrFormat("cluster%d", server_id));
+    if (target_id > 0 && authority.empty()) {
+      listener.set_name(absl::StrFormat("server%d.example.com", target_id));
+      cluster.set_name(absl::StrFormat("cluster%d", target_id));
       cluster.mutable_eds_cluster_config()->set_service_name(
-          absl::StrFormat("eds%d", server_id));
-      route_config.set_name(absl::StrFormat("route%d", server_id));
+          absl::StrFormat("eds%d", target_id));
+      route_config.set_name(absl::StrFormat("route%d", target_id));
       route_config.mutable_virtual_hosts(0)
           ->mutable_routes(0)
           ->mutable_route()
@@ -110,22 +108,18 @@ TEST_P(XdsFallbackTest, FallbackAndRecover) {
   // Primary xDS server has backends_[0] configured and fallback server has
   // backends_[1]
   CreateAndStartBackends(2);
-  SetupServer(balancer_.get(), 0, 0);
-  SetupServer(fallback_balancer_.get(), 1, 0);
+  SetXdsResourcesForTarget(balancer_.get(), 0, 0);
+  SetXdsResourcesForTarget(fallback_balancer_.get(), 1, 0);
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   // Primary server down, fallback server data is used (backends_[1])
-  auto status = SendRpc();
-  EXPECT_TRUE(status.ok()) << status.error_message();
+  CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 0);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 1);
   // Primary server is back. backends_[0] will be used when the data makes it
   // all way to the client
   balancer_->ads_service()->ClearADSFailure();
-  SendRpcsUntil(DEBUG_LOCATION, [&](const auto& /* result */) {
-    return backends_[0]->backend_service()->request_count() <= 0;
-  });
-  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
+  WaitForBackend(DEBUG_LOCATION, 0);
   broken_balancer->Shutdown();
 }
 
@@ -138,15 +132,13 @@ TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   fallback_balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
-  auto status = SendRpc();
-  ASSERT_FALSE(status.ok()) << status.error_message();
-  ASSERT_EQ(
-      status.error_message(),
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrFormat(
           "server.example.com: UNAVAILABLE: xDS channel for server "
           "localhost:%d: xDS call failed with no responses received; "
-          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure (node "
-          "ID:xds_end2end_test)",
+          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure \\(node "
+          "ID:xds_end2end_test\\)",
           fallback_balancer_->port()));
 }
 
@@ -157,12 +149,11 @@ TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   }));
   // 4 backends - cross product of two data plane targets and two balancers
   CreateAndStartBackends(4);
-  SetupServer(balancer_.get(), 0, 0);
-  SetupServer(fallback_balancer_.get(), 1, 0);
-  auto server_name = SetupServer(balancer_.get(), 2, 2);
-  SetupServer(fallback_balancer_.get(), 3, 2);
-  auto status = SendRpc();
-  ASSERT_TRUE(status.ok()) << status.error_message();
+  SetXdsResourcesForTarget(balancer_.get(), 0, 0);
+  SetXdsResourcesForTarget(fallback_balancer_.get(), 1, 0);
+  auto server_name = SetXdsResourcesForTarget(balancer_.get(), 2, 2);
+  SetXdsResourcesForTarget(fallback_balancer_.get(), 3, 2);
+  CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 1);
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
@@ -172,13 +163,12 @@ TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   EchoRequest request;
   EchoResponse response;
   // server2.example.com is configured from the fallback server
-  status = stub->Echo(&context, request, &response);
+  Status status = stub->Echo(&context, request, &response);
   ASSERT_TRUE(status.ok()) << status.error_message();
   EXPECT_EQ(backends_[2]->backend_service()->request_count(), 0);
   EXPECT_EQ(backends_[3]->backend_service()->request_count(), 1);
   // Calling server.example.com still uses cached value
-  status = SendRpc();
-  ASSERT_TRUE(status.ok());
+  CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 2);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
@@ -215,8 +205,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsFallbackTest,
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
-
-#endif  // DISABLED_XDS_PROTO_IN_CC
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

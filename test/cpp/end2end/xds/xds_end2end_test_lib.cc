@@ -290,7 +290,6 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj, absl::string_view debug_label)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl(
-          debug_label,
           // First request must have node set with the right client features.
           [&](const DiscoveryRequest& request) {
             EXPECT_TRUE(request.has_node());
@@ -299,6 +298,7 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
                             "envoy.lb.does_not_support_overprovisioning",
                             "xds.config.resource-in-sotw"));
           },
+          debug_label,
           // NACKs must use the right status code.
           [&](absl::StatusCode code) {
             EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);

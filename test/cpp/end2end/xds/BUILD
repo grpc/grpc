@@ -509,7 +509,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//:grpcpp_csds",
         "//test/core/util:scoped_env_var",
     ],
 )

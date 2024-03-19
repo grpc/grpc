@@ -74,9 +74,9 @@ class AdsServiceImpl
   };
 
   explicit AdsServiceImpl(
-      absl::string_view debug_label,
       std::function<void(const DiscoveryRequest& request)> check_first_request =
           nullptr,
+      absl::string_view debug_label = "",
       std::function<void(absl::StatusCode)> check_nack_status_code = nullptr)
       : debug_label_(debug_label),
         check_first_request_(std::move(check_first_request)),
