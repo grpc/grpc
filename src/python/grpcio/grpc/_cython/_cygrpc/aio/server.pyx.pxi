@@ -985,7 +985,8 @@ cdef class AioServer:
                     rpc_coro,
                     rpc_state,
                     self._loop
-                )
+                ),
+                name=f"RPC[{_decode(rpc_state.method)}]"
             )
 
             if self._limiter is not None:
