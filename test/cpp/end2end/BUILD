@@ -1042,6 +1042,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "ssl_credentials_test",
+    timeout = "long",
     srcs = ["ssl_credentials_test.cc"],
     data = [
         "//src/core/tsi/test_creds:ca.pem",
@@ -1051,6 +1052,8 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/container:flat_hash_set",
+        "absl/strings",
         "gtest",
     ],
     tags = ["ssl_credentials_test"],
