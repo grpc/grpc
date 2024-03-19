@@ -800,6 +800,7 @@ libs:
   - src/core/ext/xds/xds_http_stateful_session_filter.h
   - src/core/ext/xds/xds_lb_policy_registry.h
   - src/core/ext/xds/xds_listener.h
+  - src/core/ext/xds/xds_metrics.h
   - src/core/ext/xds/xds_resource_type.h
   - src/core/ext/xds/xds_resource_type_impl.h
   - src/core/ext/xds/xds_route_config.h
@@ -20211,6 +20212,7 @@ targets:
   language: c++
   headers:
   - test/core/util/scoped_env_var.h
+  - test/core/xds/xds_client_test_peer.h
   - test/core/xds/xds_transport_fake.h
   src:
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -20417,6 +20419,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -20456,6 +20459,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_core_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc

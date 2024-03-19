@@ -4274,6 +4274,7 @@ grpc_cc_library(
         "//src/core:ext/xds/xds_channel_args.h",
         "//src/core:ext/xds/xds_client.h",
         "//src/core:ext/xds/xds_client_stats.h",
+        "//src/core:ext/xds/xds_metrics.h",
         "//src/core:ext/xds/xds_resource_type.h",
         "//src/core:ext/xds/xds_resource_type_impl.h",
         "//src/core:ext/xds/xds_transport.h",
