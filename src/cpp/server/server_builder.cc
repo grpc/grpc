@@ -421,13 +421,13 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
             grpc_insecure_server_credentials_create();
         auto* core_listener =
             grpc_server_add_passive_listener(core_server, insecure_creds);
-        // DO NOT SUBMIT(hork): what to do when the listener is a nullptr
+        if (core_listener == nullptr) return nullptr;
         passive_listener->Initialize(core_server, core_listener);
         grpc_server_credentials_release(insecure_creds);
       } else {
         auto* core_listener =
             grpc_server_add_passive_listener(core_server, creds);
-        // DO NOT SUBMIT(hork): what to do when the listener is a nullptr
+        if (core_listener == nullptr) return nullptr;
         passive_listener->Initialize(core_server, core_listener);
       }
     }
