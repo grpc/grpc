@@ -312,6 +312,16 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
 }
 
 GlobalStatsPluginRegistry::StatsPluginGroup
+GlobalStatsPluginRegistry::GetAllStatsPlugins() {
+  MutexLock lock(&*mutex_);
+  StatsPluginGroup group;
+  for (const auto& plugin : *plugins_) {
+    group.push_back(plugin);
+  }
+  return group;
+}
+
+GlobalStatsPluginRegistry::StatsPluginGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
     const StatsPlugin::ChannelScope& scope) {
   MutexLock lock(&*mutex_);

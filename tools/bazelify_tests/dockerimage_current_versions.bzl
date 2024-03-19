@@ -90,7 +90,7 @@ DOCKERIMAGE_CURRENT_VERSIONS = {
     "tools/dockerfile/test/android_ndk.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/android_ndk@sha256:ab154ecb062af2111d2d3550c4d3da3384201d9893bbd37d49e8160fc34bc137",
     "tools/dockerfile/test/bazel.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/bazel@sha256:eb327f8e44f2712f557de1d8918c41c3cba1112c4b39b13104c29211ed8f827a",
     "tools/dockerfile/test/bazel_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/bazel_arm64@sha256:6cddc0ecdb42a7db7105b73fc3192edb911702102d1bac671e26d44a17d7aa95",
-    "tools/dockerfile/test/binder_transport_apk.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/binder_transport_apk@sha256:a680a8b7d645a2c25948ad3f82f6380c8a1e13fcfe74fc3569acb3b0b202851e",
+    "tools/dockerfile/test/binder_transport_apk.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/binder_transport_apk@sha256:ff64e263dfa5491ee6fddd7f0d7c1a20ba756636655849a3b923c665d78c8ef2",
     "tools/dockerfile/test/csharp_debian11_arm64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_debian11_arm64@sha256:4d4bc5f15e03f3d3d8fd889670ecde2c66a2e4d2dd9db80733c05c1d90c8a248",
     "tools/dockerfile/test/csharp_debian11_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/csharp_debian11_x64@sha256:b2e5c47d986312ea0850e2f2e696b45d23ee0aabceea161d31e28559e19ec4a5",
     "tools/dockerfile/test/cxx_alpine_x64.current_version": "docker://us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_alpine_x64@sha256:f2019edf9f2afd5042567f11afb1aa78a789fc9acdcce5ee0c14cc11f6830ed7",

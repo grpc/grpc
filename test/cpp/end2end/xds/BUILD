@@ -223,6 +223,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],

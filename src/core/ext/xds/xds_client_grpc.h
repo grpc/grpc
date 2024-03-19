@@ -31,6 +31,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -41,12 +42,12 @@ namespace grpc_core {
 
 class GrpcXdsClient : public XdsClient {
  public:
+  // The key to pass to GetOrCreate() for gRPC servers.
+  static constexpr absl::string_view kServerKey = "#server";
+
   // Factory function to get or create the global XdsClient instance.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
       absl::string_view key, const ChannelArgs& args, const char* reason);
-
-  // Builds ClientStatusResponse containing all resources from all XdsClients
-  static grpc_slice DumpAllClientConfigs();
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support
@@ -83,9 +84,18 @@ class GrpcXdsClient : public XdsClient {
 
   absl::string_view key() const { return key_; }
 
+  // Builds ClientStatusResponse containing all resources from all XdsClients
+  static grpc_slice DumpAllClientConfigs();
+
  private:
+  class MetricsReporter;
+
+  void ReportCallbackMetrics(CallbackMetricReporter& reporter);
+
   std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
+  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
 };
 
 namespace internal {
