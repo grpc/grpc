@@ -53,7 +53,8 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
           injected_labels_from_plugin_options,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
           additional_labels,
-      const ActivePluginOptionsView* active_plugin_options_view,
+      const OpenTelemetryPlugin::ActivePluginOptionsView*
+          active_plugin_options_view,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
           optional_labels_span,
       bool is_client, const OpenTelemetryPlugin* otel_plugin)
@@ -128,7 +129,8 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
       injected_labels_from_plugin_options_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
-  const ActivePluginOptionsView* active_plugin_options_view_;
+  const OpenTelemetryPlugin::ActivePluginOptionsView*
+      active_plugin_options_view_;
   absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       optional_labels_;
   bool is_client_;

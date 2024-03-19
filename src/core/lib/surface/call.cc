@@ -830,8 +830,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     channel_stack->stats_plugin_group->AddClientCallTracers(
-        channel->target(), Slice(CSliceRef(path)), args->registered_method,
-        call->context_);
+        Slice(CSliceRef(path)), args->registered_method, call->context_);
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -840,8 +839,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
-    channel_stack->stats_plugin_group->AddServerCallTracers(
-        args->server->channel_args(), call->context_);
+    channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -2747,8 +2745,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       PublishToParent(parent);
     }
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
-        args->channel->target(), path, args->registered_method,
-        this->context());
+        path, args->registered_method, this->context());
   }
 
   void OrphanCall() override { MaybeUnpublishFromParent(); }
@@ -3390,13 +3387,13 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   if (channelz_node != nullptr) {
     channelz_node->RecordCallStarted();
   }
+  ScopedContext activity_context(this);
   // TODO(yashykt): In the future, we want to also enable stats and trace
   // collecting from when the call is created at the transport. The idea is that
   // the transport would create the call tracer and pass it in as part of the
   // metadata.
   args->channel->channel_stack()->stats_plugin_group->AddServerCallTracers(
-      args->server->channel_args(), context());
-  ScopedContext activity_context(this);
+      context());
   Spawn("server_promise",
         channel()->channel_stack()->MakeServerCallPromise(
             CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(),

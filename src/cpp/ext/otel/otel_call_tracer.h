@@ -111,7 +111,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   OpenTelemetryCallTracer(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
       bool registered_method, OpenTelemetryPlugin* otel_plugin,
-      std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config);
+      std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config);
   ~OpenTelemetryCallTracer() override;
 
   std::string TraceId() override {
@@ -142,7 +142,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   grpc_core::Arena* arena_;
   const bool registered_method_;
   OpenTelemetryPlugin* otel_plugin_;
-  std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config_;
+  std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

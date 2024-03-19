@@ -90,7 +90,7 @@ OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
-  parent_->scope_config_->active_plugin_options_view()->ForEach(
+  parent_->scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t /*index*/) {
         auto* labels_injector = plugin_option.labels_injector();
@@ -105,7 +105,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
 
 void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
     RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
-  parent_->scope_config_->active_plugin_options_view()->ForEach(
+  parent_->scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t /*index*/) {
         auto* labels_injector = plugin_option.labels_injector();
@@ -157,7 +157,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::
                 static_cast<grpc_status_code>(status.code()))}}};
   KeyValueIterable labels(
       injected_labels_from_plugin_options_, additional_labels,
-      parent_->scope_config_->active_plugin_options_view(),
+      &parent_->scope_config_->active_plugin_options_view(),
       optional_labels_array_, /*is_client=*/true, parent_->otel_plugin_);
   if (parent_->otel_plugin_->client().attempt.duration != nullptr) {
     parent_->otel_plugin_->client().attempt.duration->Record(
@@ -226,7 +226,7 @@ void OpenTelemetryCallTracer::OpenTelemetryCallAttemptTracer::AddOptionalLabels(
 OpenTelemetryCallTracer::OpenTelemetryCallTracer(
     const grpc_core::Slice& path, grpc_core::Arena* arena,
     bool registered_method, OpenTelemetryPlugin* otel_plugin,
-    std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config)
+    std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config)
     : path_(path.Ref()),
       arena_(arena),
       registered_method_(registered_method),

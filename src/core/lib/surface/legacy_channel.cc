@@ -96,11 +96,7 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     // TODO(roth): Figure out how to populate authority here.
     // Or maybe just don't worry about this if no one needs it until after
     // the call v3 stack lands.
-    // TODO(yijiem): revert after https://github.com/grpc/grpc/pull/36134 lands
-    StatsPlugin::ChannelScope scope(
-        args.GetOwnedString(GRPC_ARG_SERVER_URI)
-            .value_or(std::string(builder.target())),
-        "");
+    StatsPlugin::ChannelScope scope(target, "");
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }

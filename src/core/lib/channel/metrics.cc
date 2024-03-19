@@ -304,7 +304,7 @@ GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
-    absl::string_view target, const Slice& path, bool registered_method,
+    const Slice& path, bool registered_method,
     grpc_call_context_element* call_context) {
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetClientCallTracer(
@@ -316,7 +316,7 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
-    const ChannelArgs& args, grpc_call_context_element* call_context) {
+    grpc_call_context_element* call_context) {
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
     if (call_tracer != nullptr) {
@@ -345,7 +345,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
     std::shared_ptr<StatsPlugin::ScopeConfig> config;
     std::tie(is_enabled, config) = plugin->IsEnabledForChannel(scope);
     if (is_enabled) {
-      group.AddStatsPlugin(plugin, config);
+      group.AddStatsPlugin(plugin, std::move(config));
     }
   }
   return group;
@@ -360,7 +360,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
     std::shared_ptr<StatsPlugin::ScopeConfig> config;
     std::tie(is_enabled, config) = plugin->IsEnabledForServer(args);
     if (is_enabled) {
-      group.AddStatsPlugin(plugin, config);
+      group.AddStatsPlugin(plugin, std::move(config));
     }
   }
   return group;

@@ -175,8 +175,8 @@ class StatsPlugin {
     absl::string_view authority() const { return authority_; }
 
    private:
-    std::string target_;
-    std::string authority_;
+    absl::string_view target_;
+    absl::string_view authority_;
   };
   // A general-purpose way for StatsPlugin to store per-channel or per-server
   // state.
@@ -293,11 +293,9 @@ class GlobalStatsPluginRegistry {
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
 
-    void AddClientCallTracers(absl::string_view target, const Slice& path,
-                              bool registered_method,
+    void AddClientCallTracers(const Slice& path, bool registered_method,
                               grpc_call_context_element* call_context);
-    void AddServerCallTracers(const ChannelArgs& args,
-                              grpc_call_context_element* call_context);
+    void AddServerCallTracers(grpc_call_context_element* call_context);
 
    private:
     friend class RegisteredMetricCallback;

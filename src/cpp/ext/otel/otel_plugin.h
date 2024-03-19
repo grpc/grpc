@@ -189,28 +189,109 @@ class OpenTelemetryPluginBuilderImpl {
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
 };
 
-class ActivePluginOptionsView;
 class OpenTelemetryCallTracer;
 
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
  public:
-  class ScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
+  // Creates a convenience wrapper to help iterate over only those plugin
+  // options
+  // that are active over a given channel/server.
+  class ActivePluginOptionsView {
    public:
-    ScopeConfig(
-        std::unique_ptr<ActivePluginOptionsView> active_plugin_options_view,
-        absl::string_view filtered_target)
-        : active_plugin_options_view_(std::move(active_plugin_options_view)),
-          filtered_target_(filtered_target) {}
+    static ActivePluginOptionsView MakeForClient(
+        absl::string_view target, const OpenTelemetryPlugin* otel_plugin) {
+      return ActivePluginOptionsView(
+          [target](const InternalOpenTelemetryPluginOption& plugin_option) {
+            return plugin_option.IsActiveOnClientChannel(target);
+          },
+          otel_plugin);
+    }
 
-    ActivePluginOptionsView* active_plugin_options_view() const {
-      return active_plugin_options_view_.get();
+    static ActivePluginOptionsView MakeForServer(
+        const grpc_core::ChannelArgs& args,
+        const OpenTelemetryPlugin* otel_plugin) {
+      return ActivePluginOptionsView(
+          [&args](const InternalOpenTelemetryPluginOption& plugin_option) {
+            return plugin_option.IsActiveOnServer(args);
+          },
+          otel_plugin);
+    }
+
+    bool ForEach(absl::FunctionRef<
+                     bool(const InternalOpenTelemetryPluginOption&, size_t)>
+                     func,
+                 const OpenTelemetryPlugin* otel_plugin) const {
+      for (size_t i = 0; i < otel_plugin->plugin_options().size(); ++i) {
+        const auto& plugin_option = otel_plugin->plugin_options()[i];
+        if (active_mask_[i] && !func(*plugin_option, i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+   private:
+    explicit ActivePluginOptionsView(
+        absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&)> func,
+        const OpenTelemetryPlugin* otel_plugin) {
+      for (size_t i = 0; i < otel_plugin->plugin_options().size(); ++i) {
+        const auto& plugin_option = otel_plugin->plugin_options()[i];
+        if (plugin_option != nullptr && func(*plugin_option)) {
+          active_mask_.set(i);
+        }
+      }
+    }
+
+    std::bitset<64> active_mask_;
+  };
+
+  class ClientScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
+   public:
+    ClientScopeConfig(const OpenTelemetryPlugin* otel_plugin,
+                      const ChannelScope& scope)
+        : active_plugin_options_view_(ActivePluginOptionsView::MakeForClient(
+              scope.target(), otel_plugin)),
+          filtered_target_(
+              // Use the original target string only if a filter on the
+              // attribute is not registered or if the filter returns true,
+              // otherwise use "other".
+              otel_plugin->target_attribute_filter() == nullptr ||
+                      otel_plugin->target_attribute_filter()(scope.target())
+                  ? scope.target()
+                  : "other") {}
+
+    const ActivePluginOptionsView& active_plugin_options_view() const {
+      return active_plugin_options_view_;
     }
 
     absl::string_view filtered_target() const { return filtered_target_; }
 
    private:
-    std::unique_ptr<ActivePluginOptionsView> active_plugin_options_view_;
+    ActivePluginOptionsView active_plugin_options_view_;
     std::string filtered_target_;
+  };
+  class ServerScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
+   public:
+    ServerScopeConfig(const OpenTelemetryPlugin* otel_plugin,
+                      const grpc_core::ChannelArgs& args)
+        : active_plugin_options_view_(
+              ActivePluginOptionsView::MakeForServer(args, otel_plugin)),
+          injected_labels_from_plugin_options_(
+              otel_plugin->plugin_options().size()) {}
+
+    const ActivePluginOptionsView& active_plugin_options_view() const {
+      return active_plugin_options_view_;
+    }
+
+    std::vector<std::unique_ptr<LabelsIterable>>&
+    injected_labels_from_plugin_options() {
+      return injected_labels_from_plugin_options_;
+    }
+
+   private:
+    ActivePluginOptionsView active_plugin_options_view_;
+    std::vector<std::unique_ptr<LabelsIterable>>
+        injected_labels_from_plugin_options_;
   };
 
   struct Client {
@@ -348,57 +429,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
                       std::pair<LabelKeys, OptionalLabelKeys>>
       label_keys_map_;
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
-};
-
-// Creates a convenience wrapper to help iterate over only those plugin options
-// that are active over a given channel/server.
-class ActivePluginOptionsView {
- public:
-  static std::unique_ptr<ActivePluginOptionsView> MakeForClient(
-      absl::string_view target, const OpenTelemetryPlugin* otel_plugin) {
-    return std::unique_ptr<ActivePluginOptionsView>(new ActivePluginOptionsView(
-        [target](const InternalOpenTelemetryPluginOption& plugin_option) {
-          return plugin_option.IsActiveOnClientChannel(target);
-        },
-        otel_plugin));
-  }
-
-  static std::unique_ptr<ActivePluginOptionsView> MakeForServer(
-      const grpc_core::ChannelArgs& args,
-      const OpenTelemetryPlugin* otel_plugin) {
-    return std::unique_ptr<ActivePluginOptionsView>(new ActivePluginOptionsView(
-        [&args](const InternalOpenTelemetryPluginOption& plugin_option) {
-          return plugin_option.IsActiveOnServer(args);
-        },
-        otel_plugin));
-  }
-
-  bool ForEach(
-      absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&, size_t)>
-          func,
-      const OpenTelemetryPlugin* otel_plugin) const {
-    for (size_t i = 0; i < otel_plugin->plugin_options().size(); ++i) {
-      const auto& plugin_option = otel_plugin->plugin_options()[i];
-      if (active_mask_[i] && !func(*plugin_option, i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
- private:
-  explicit ActivePluginOptionsView(
-      absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&)> func,
-      const OpenTelemetryPlugin* otel_plugin) {
-    for (size_t i = 0; i < otel_plugin->plugin_options().size(); ++i) {
-      const auto& plugin_option = otel_plugin->plugin_options()[i];
-      if (plugin_option != nullptr && func(*plugin_option)) {
-        active_mask_.set(i);
-      }
-    }
-  }
-
-  std::bitset<64> active_mask_;
 };
 
 }  // namespace internal

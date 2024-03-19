@@ -424,16 +424,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
 OpenTelemetryPlugin::IsEnabledForChannel(const ChannelScope& scope) const {
   if (target_selector_ == nullptr || target_selector_(scope.target())) {
-    return {true,
-            std::make_shared<ScopeConfig>(
-                ActivePluginOptionsView::MakeForClient(scope.target(), this),
-                // Use the original target string only if a filter on the
-                // attribute is not registered or if the filter returns true,
-                // otherwise use "other".
-                target_attribute_filter_ == nullptr ||
-                        target_attribute_filter_(scope.target())
-                    ? scope.target()
-                    : "other")};
+    return {true, std::make_shared<ClientScopeConfig>(this, scope)};
   }
   return {false, nullptr};
 }
@@ -443,9 +434,7 @@ OpenTelemetryPlugin::IsEnabledForServer(
   // Return true only if there is no server selector registered or if the server
   // selector returns true.
   if (server_selector_ == nullptr || server_selector_(args)) {
-    return {true, std::make_shared<ScopeConfig>(
-                      ActivePluginOptionsView::MakeForServer(args, this),
-                      /*filtered_target=*/"")};
+    return {true, std::make_shared<ServerScopeConfig>(this, args)};
   }
   return {false, nullptr};
 }
@@ -558,15 +547,16 @@ grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
       ->ManagedNew<OpenTelemetryCallTracer>(
           path, grpc_core::GetContext<grpc_core::Arena>(), registered_method,
           this,
-          std::static_pointer_cast<OpenTelemetryPlugin::ScopeConfig>(
+          std::static_pointer_cast<OpenTelemetryPlugin::ClientScopeConfig>(
               scope_config));
 }
 grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   return grpc_core::GetContext<grpc_core::Arena>()
       ->ManagedNew<grpc::internal::OpenTelemetryServerCallTracer>(
-          this, std::static_pointer_cast<OpenTelemetryPlugin::ScopeConfig>(
-                    scope_config));
+          this,
+          std::static_pointer_cast<OpenTelemetryPlugin::ServerScopeConfig>(
+              scope_config));
 }
 
 }  // namespace internal

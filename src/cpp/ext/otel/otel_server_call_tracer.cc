@@ -53,12 +53,12 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
-  scope_config_->active_plugin_options_view()->ForEach(
+  scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
           size_t index) {
         auto* labels_injector = plugin_option.labels_injector();
         if (labels_injector != nullptr) {
-          injected_labels_from_plugin_options_[index] =
+          scope_config_->injected_labels_from_plugin_options()[index] =
               labels_injector->GetLabels(recv_initial_metadata);
         }
         return true;
@@ -80,6 +80,23 @@ void OpenTelemetryServerCallTracer::RecordReceivedInitialMetadata(
   }
 }
 
+void OpenTelemetryServerCallTracer::RecordSendInitialMetadata(
+    grpc_metadata_batch* send_initial_metadata) {
+  scope_config_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t index) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          labels_injector->AddLabels(
+              send_initial_metadata,
+              scope_config_->injected_labels_from_plugin_options()[index]
+                  .get());
+        }
+        return true;
+      },
+      otel_plugin_);
+}
+
 void OpenTelemetryServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
@@ -96,7 +113,7 @@ void OpenTelemetryServerCallTracer::RecordEnd(
             grpc_status_code_to_string(final_info->final_status)}}};
   // Currently we do not have any optional labels on the server side.
   KeyValueIterable labels(
-      injected_labels_from_plugin_options_, additional_labels,
+      scope_config_->injected_labels_from_plugin_options(), additional_labels,
       /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
       /*is_client=*/false, otel_plugin_);
   if (otel_plugin_->server().call.duration != nullptr) {

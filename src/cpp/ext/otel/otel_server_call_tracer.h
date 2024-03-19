@@ -36,10 +36,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
  public:
   OpenTelemetryServerCallTracer(
       OpenTelemetryPlugin* otel_plugin,
-      std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config)
+      std::shared_ptr<OpenTelemetryPlugin::ServerScopeConfig> scope_config)
       : start_time_(absl::Now()),
-        injected_labels_from_plugin_options_(
-            otel_plugin->plugin_options().size()),
         otel_plugin_(otel_plugin),
         scope_config_(std::move(scope_config)) {}
 
@@ -61,20 +59,7 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.
   void RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata) override {
-    scope_config_->active_plugin_options_view()->ForEach(
-        [&](const InternalOpenTelemetryPluginOption& plugin_option,
-            size_t index) {
-          auto* labels_injector = plugin_option.labels_injector();
-          if (labels_injector != nullptr) {
-            labels_injector->AddLabels(
-                send_initial_metadata,
-                injected_labels_from_plugin_options_[index].get());
-          }
-          return true;
-        },
-        otel_plugin_);
-  }
+      grpc_metadata_batch* send_initial_metadata) override;
 
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* /*send_trailing_metadata*/) override;
@@ -139,12 +124,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
   bool registered_method_;
-  // TODO(yashykt): It's wasteful to do this per call. When we re-haul the stats
-  // infrastructure, this should move to be done per server.
-  std::vector<std::unique_ptr<LabelsIterable>>
-      injected_labels_from_plugin_options_;
   OpenTelemetryPlugin* otel_plugin_;
-  std::shared_ptr<OpenTelemetryPlugin::ScopeConfig> scope_config_;
+  std::shared_ptr<OpenTelemetryPlugin::ServerScopeConfig> scope_config_;
 };
 
 }  // namespace internal
