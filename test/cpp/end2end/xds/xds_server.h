@@ -80,7 +80,10 @@ class AdsServiceImpl
       std::function<void(absl::StatusCode)> check_nack_status_code = nullptr)
       : debug_label_(debug_label),
         check_first_request_(std::move(check_first_request)),
-        check_nack_status_code_(std::move(check_nack_status_code)) {}
+        check_nack_status_code_(std::move(check_nack_status_code)) {
+    debug_label_ = absl::StrFormat(
+        "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label_);
+  }
 
   void set_wrap_resources(bool wrap_resources) {
     grpc_core::MutexLock lock(&ads_mu_);
@@ -719,12 +722,14 @@ class LrsServiceImpl
                  std::function<void()> stream_started_callback = nullptr,
                  std::function<void(const LoadStatsRequest& request)>
                      check_first_request = nullptr)
-      : debug_label_(debug_label),
-        client_load_reporting_interval_seconds_(
+      : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_(std::move(cluster_names)),
         stream_started_callback_(std::move(stream_started_callback)),
-        check_first_request_(std::move(check_first_request)) {}
+        check_first_request_(std::move(check_first_request)) {
+    debug_label_ = absl::StrFormat("%p%s%s", this,
+                                   debug_label.empty() ? "" : ":", debug_label);
+  }
 
   // Must be called before the LRS call is started.
   void set_send_all_clusters(bool send_all_clusters) {
@@ -748,7 +753,7 @@ class LrsServiceImpl
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
+    gpr_log(GPR_INFO, "LRS[%s]: StreamLoadStats starts", debug_label_.c_str());
     if (stream_started_callback_ != nullptr) stream_started_callback_();
     // Take a reference of the LrsServiceImpl object, reference will go
     // out of scope after this method exits.
@@ -775,8 +780,8 @@ class LrsServiceImpl
       // Wait for report.
       request.Clear();
       while (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
-                this, request.DebugString().c_str());
+        gpr_log(GPR_INFO, "LRS[%s]: received client load report message: %s",
+                debug_label_.c_str(), request.DebugString().c_str());
         std::vector<ClientStats> stats;
         for (const auto& cluster_stats : request.cluster_stats()) {
           stats.emplace_back(cluster_stats);
@@ -793,7 +798,7 @@ class LrsServiceImpl
         lrs_cv_.Wait(&lrs_mu_);
       }
     }
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
+    gpr_log(GPR_INFO, "LRS[%s]: StreamLoadStats done", debug_label_.c_str());
     return Status::OK;
   }
 

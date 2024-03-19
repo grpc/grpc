@@ -445,7 +445,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Most tests will not need to call this; instead, they can use
   // balancer_, which is already populated with default resources.
   std::unique_ptr<BalancerServerThread> CreateAndStartBalancer(
-      absl::string_view debug_label = "Default Balancer");
+      absl::string_view debug_label = "");
 
   // Sets the Listener and RouteConfiguration resource on the specified
   // balancer.  If RDS is in use, they will be set as separate resources;
