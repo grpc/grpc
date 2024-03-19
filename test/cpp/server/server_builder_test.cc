@@ -96,10 +96,6 @@ TEST_F(ServerBuilderTest, AddPassiveListener) {
 }
 
 TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
-#ifndef GPR_SUPPORT_CHANNELS_FROM_FD
-  GTEST_SKIP() << "Platform does not support fds";
-#endif
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   ServerBuilder builder;
   auto cq = builder.AddCompletionQueue();
@@ -109,12 +105,15 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   ASSERT_NE(server.get(), nullptr);
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
   auto accept_status = passive_listener->AcceptConnectedFd(fd);
-#ifndef GPR_SUPPORT_CHANNELS_FROM_FD
-  ASSERT_FALSE(accept_status.ok())
-      << "fds are not supported on this platform, this should have failed";
-#endif
   ASSERT_TRUE(accept_status.ok()) << accept_status;
+#else
+  int fd = -1;
+  auto accept_status = passive_listener->AcceptConnectedFd(fd);
+  ASSERT_FALSE(accept_status.ok()) << accept_status;
+#endif
   server->Shutdown();
 }
 

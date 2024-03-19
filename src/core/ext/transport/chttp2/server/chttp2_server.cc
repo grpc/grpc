@@ -1198,9 +1198,6 @@ void grpc_server_accept_connected_endpoint(
 grpc_core::ListenerInterface* grpc_server_add_passive_listener(
     grpc_core::Server* server, grpc_server_credentials* credentials) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_error_handle err;
-  grpc_core::RefCountedPtr<grpc_server_security_connector> sc;
-  grpc_core::ChannelArgs args = server->channel_args();
   GRPC_API_TRACE("grpc_server_add_passive_listener(server=%p, credentials=%p)",
                  2, (server, credentials));
   // Create security context.
@@ -1212,7 +1209,8 @@ grpc_core::ListenerInterface* grpc_server_add_passive_listener(
             .c_str());
     return nullptr;
   }
-  sc = credentials->create_security_connector(grpc_core::ChannelArgs());
+  grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
+      credentials->create_security_connector(grpc_core::ChannelArgs());
   if (sc == nullptr) {
     gpr_log(GPR_ERROR, "%s",
             grpc_core::StatusToString(
@@ -1222,7 +1220,8 @@ grpc_core::ListenerInterface* grpc_server_add_passive_listener(
                 .c_str());
     return nullptr;
   }
-  args = args.SetObject(credentials->Ref()).SetObject(sc);
+  auto args =
+      server->channel_args().SetObject(credentials->Ref()).SetObject(sc);
   auto listener = grpc_core::Chttp2ServerListener::CreateForPassiveListener(
       server, args, grpc_core::ModifyArgsForConnection);
   if (!listener.ok()) {

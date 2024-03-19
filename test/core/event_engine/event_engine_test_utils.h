@@ -162,7 +162,7 @@ class NotifyOnDelete {
 
 // An endpoint implementation that supports Read and Write via std::threads.
 // Passing a grpc_core::Notification will allow owners to know when all
-// in-flight callbacks have been run, and all state endpoint destroyed.
+// in-flight callbacks have been run, and all endpoint state has been destroyed.
 class ThreadedNoopEndpoint : public EventEngine::Endpoint {
  public:
   explicit ThreadedNoopEndpoint(grpc_core::Notification* destroyed)
