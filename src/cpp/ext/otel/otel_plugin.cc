@@ -32,7 +32,7 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

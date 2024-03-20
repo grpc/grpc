@@ -38,11 +38,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/backend_metric.h"
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
-#include "src/core/load_balancing/oob_backend_metric_internal.h"
-#include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_stream_client.h"
+#include "src/core/client_channel/client_channel_channelz.h"
+#include "src/core/client_channel/subchannel.h"
+#include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -57,6 +55,8 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/load_balancing/backend_metric_parser.h"
+#include "src/core/load_balancing/oob_backend_metric_internal.h"
 
 namespace grpc_core {
 

@@ -37,6 +37,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -69,10 +70,11 @@ class ChaoticGoodClientTransport final : public Transport,
                                          public ClientTransport {
  public:
   ChaoticGoodClientTransport(
-      std::unique_ptr<PromiseEndpoint> control_endpoint,
-      std::unique_ptr<PromiseEndpoint> data_endpoint,
+      PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
+      const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      HPackParser hpack_parser, HPackCompressor hpack_encoder);
   ~ChaoticGoodClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -81,9 +83,12 @@ class ChaoticGoodClientTransport final : public Transport,
   absl::string_view GetTransportName() const override { return "chaotic_good"; }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
-  void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
+  void PerformOp(grpc_transport_op*) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
-  void Orphan() override { delete this; }
+  void Orphan() override {
+    AbortWithError();
+    delete this;
+  }
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
@@ -98,15 +103,15 @@ class ChaoticGoodClientTransport final : public Transport,
   absl::optional<CallHandler> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
   auto OnTransportActivityDone();
-  auto TransportWriteLoop();
-  auto TransportReadLoop();
+  auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
+  auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call
   auto PushFrameIntoCall(ServerFragmentFrame frame, CallHandler call_handler);
 
+  grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
   MpscReceiver<ClientFrame> outgoing_frames_;
-  ChaoticGoodTransport transport_;
   // Assigned aligned bytes from setting frame.
   size_t aligned_bytes_ = 64;
   Mutex mu_;
@@ -115,6 +120,8 @@ class ChaoticGoodClientTransport final : public Transport,
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   ActivityPtr writer_;
   ActivityPtr reader_;
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
+      "chaotic_good_client", GRPC_CHANNEL_READY};
 };
 
 }  // namespace chaotic_good

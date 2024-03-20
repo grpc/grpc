@@ -34,10 +34,10 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;

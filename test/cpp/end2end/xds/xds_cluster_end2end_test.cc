@@ -23,11 +23,10 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/call.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/util/fake_stats_plugin.h"
@@ -309,12 +308,13 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
-TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
+TEST_P(CdsTest, MetricLabels) {
   // Injects a fake client call tracer factory. Try keep this at top.
   grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
-  CreateAndStartBackends(1);
+  CreateAndStartBackends(2);
   // Populates EDS resources.
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Populates service labels to CDS resources.
   auto cluster = default_cluster_;
@@ -328,17 +328,46 @@ TEST_P(CdsTest, VerifyCsmServiceLabelsParsing) {
   channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
                           &fake_client_call_tracer_factory);
   ResetStub(/*failover_timeout_ms=*/0, &channel_args);
-  // Sends an RPC and verifies that the service labels are recorded in the fake
-  // client call tracer.
-  CheckRpcSendOk(DEBUG_LOCATION);
-  EXPECT_THAT(fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
-                  ->GetLastCallAttemptTracer()
-                  ->GetOptionalLabels(),
-              ::testing::ElementsAre(::testing::Pair(
-                  OptionalLabelComponent::kXdsServiceLabels,
-                  ::testing::Pointee(::testing::ElementsAre(
-                      ::testing::Pair("service_name", "myservice"),
-                      ::testing::Pair("service_namespace", "mynamespace"))))));
+  // Send an RPC to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Verify that the optional labels are recorded in the call tracer.
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsServiceLabels,
+              ::testing::Pointee(::testing::ElementsAre(
+                  ::testing::Pair("service_name", "myservice"),
+                  ::testing::Pair("service_namespace", "mynamespace")))),
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsLocalityLabels,
+              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
+                  "grpc.lb.locality", LocalityNameString("locality0")))))));
+  // Send an RPC to backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  // Verify that the optional labels are recorded in the call tracer.
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsServiceLabels,
+              ::testing::Pointee(::testing::ElementsAre(
+                  ::testing::Pair("service_name", "myservice"),
+                  ::testing::Pair("service_namespace", "mynamespace")))),
+          ::testing::Pair(
+              OptionalLabelComponent::kXdsLocalityLabels,
+              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
+                  "grpc.lb.locality", LocalityNameString("locality1")))))));
+  // TODO(yashkt, yijiem): This shutdown shouldn't actually be necessary.
+  // The only reason it's here is to add a delay before
+  // fake_client_call_tracer_factory goes out of scope, since there may
+  // be lingering callbacks in the call stack that are using the
+  // CallAttemptTracer even after we get here, which would then cause a
+  // crash.  Find a cleaner way to fix this.
   balancer_->Shutdown();
 }
 
@@ -381,7 +410,7 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
 
 // Tests that we ignore Cluster deletions if configured to do so.
 TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
-  InitClient(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -452,7 +481,6 @@ TEST_P(EdsTest, Vanilla) {
 }
 
 TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
-  if (!grpc_core::IsRoundRobinDelegateToPickFirstEnabled()) return;
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   const size_t kNumRpcsPerAddress = 10;

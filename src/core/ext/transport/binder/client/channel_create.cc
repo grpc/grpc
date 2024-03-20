@@ -43,7 +43,7 @@
 
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 #include "src/core/ext/transport/binder/client/connection_id_generator.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
@@ -121,33 +121,21 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   grpc_binder::TryEstablishConnectionWithUri(static_cast<JNIEnv*>(jni_env_void),
                                              context, uri, connection_id);
 
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
+  grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
 
   // Set server URI to a URI that contains connection id. The URI will be used
   // by subchannel connector to obtain correct endpoint binder from
   // `EndpointBinderPool`.
-  grpc_channel_args* new_args;
-  {
-    string server_uri = "binder:" + connection_id;
-    grpc_arg server_uri_arg =
-        grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_SERVER_URI),
-                                       const_cast<char*>(server_uri.c_str()));
-    const char* to_remove[] = {GRPC_ARG_SERVER_URI};
-    new_args = grpc_channel_args_copy_and_add_and_remove(
-        &channel_args, to_remove, 1, &server_uri_arg, 1);
-  }
+  string server_uri = "binder:" + connection_id;
 
-  grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
 
-  auto channel = CreateChannelInternal(
-      "", grpc::internal::CreateClientBinderChannelImpl(new_args),
+  return CreateChannelInternal(
+      "",
+      grpc::internal::CreateClientBinderChannelImpl(server_uri, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-
-  grpc_channel_args_destroy(new_args);
-
-  return channel;
 }
 
 bool InitializeBinderChannelJavaClass(void* jni_env_void) {

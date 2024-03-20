@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
-  auto observability = grpc::experimental::CsmObservabilityBuilder()
+  auto observability = grpc::CsmObservabilityBuilder()
                            .SetMeterProvider(std::move(meter_provider))
                            .BuildAndRegister();
   if (!observability.ok()) {

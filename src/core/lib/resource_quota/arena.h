@@ -173,6 +173,8 @@ class Arena {
     }
   }
 
+  // Allocates T from the arena.
+  // The caller is responsible for calling p->~T(), but should NOT delete.
   // TODO(roth): We currently assume that all callers need alignment of 16
   // bytes, which may be wrong in some cases. When we have time, we should
   // change this to instead use the alignment of the type being allocated by
@@ -185,6 +187,7 @@ class Arena {
   }
 
   // Like New, but has the arena call p->~T() at arena destruction time.
+  // The caller should NOT delete.
   template <typename T, typename... Args>
   T* ManagedNew(Args&&... args) {
     auto* p = New<ManagedNewImpl<T>>(std::forward<Args>(args)...);

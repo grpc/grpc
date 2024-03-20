@@ -15,13 +15,34 @@
 """Builds the content of xds-protos package"""
 
 import os
+import sys
 
 from grpc_tools import protoc
-import pkg_resources
+
+if sys.version_info >= (3, 9, 0):
+    from importlib import resources
+else:
+    import pkg_resources
 
 
 def localize_path(p):
     return os.path.join(*p.split("/"))
+
+
+def _get_resource_file_name(
+    package_or_requirement: str, resource_name: str
+) -> str:
+    """Obtain the filename for a resource on the file system."""
+    file_name = None
+    if sys.version_info >= (3, 9, 0):
+        file_name = (
+            resources.files(package_or_requirement) / resource_name
+        ).resolve()
+    else:
+        file_name = pkg_resources.resource_filename(
+            package_or_requirement, resource_name
+        )
+    return str(file_name)
 
 
 # We might not want to compile all the protos
@@ -46,7 +67,7 @@ OPENCENSUS_PROTO_ROOT = os.path.join(
     GRPC_ROOT, "third_party", "opencensus-proto", "src"
 )
 OPENTELEMETRY_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "opentelemetry")
-WELL_KNOWN_PROTOS_INCLUDE = pkg_resources.resource_filename("grpc_tools", "_proto")
+WELL_KNOWN_PROTOS_INCLUDE = _get_resource_file_name("grpc_tools", "_proto")
 
 OUTPUT_PATH = WORK_DIR
 

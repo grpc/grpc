@@ -61,16 +61,10 @@ const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
 const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
-const NoInterceptor ChannelIdleFilter::Call::OnFinalize;
 
 namespace {
 
-// TODO(roth): This can go back to being a constant when the experiment
-// is removed.
-Duration DefaultIdleTimeout() {
-  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
-  return Duration::Infinity();
-}
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -93,7 +87,7 @@ namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(DefaultIdleTimeout());
+      .value_or(kDefaultIdleTimeout);
 }
 
 }  // namespace
@@ -294,6 +288,7 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
+  GPR_ASSERT(MaxAgeFilter::kFilter.init_call != nullptr);
   if (!IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
       ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)

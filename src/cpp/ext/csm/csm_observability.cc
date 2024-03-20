@@ -45,11 +45,17 @@ namespace grpc {
 
 namespace internal {
 
+namespace {
+std::atomic<bool> g_csm_plugin_enabled(false);
+}
+
 bool CsmServerSelector(const grpc_core::ChannelArgs& args) {
-  return args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
+  return g_csm_plugin_enabled &&
+         args.GetBool(GRPC_ARG_XDS_ENABLED_SERVER).value_or(false);
 }
 
 bool CsmChannelTargetSelector(absl::string_view target) {
+  if (!g_csm_plugin_enabled) return false;
   auto uri = grpc_core::URI::Parse(target);
   if (!uri.ok()) {
     gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
@@ -94,7 +100,24 @@ class CsmOpenTelemetryPluginOption
 
 }  // namespace internal
 
-namespace experimental {
+//
+// CsmObservability
+//
+
+CsmObservability::~CsmObservability() {
+  if (valid_) {
+    internal::g_csm_plugin_enabled = false;
+  }
+}
+
+CsmObservability::CsmObservability(CsmObservability&& other) noexcept {
+  other.valid_ = false;
+}
+CsmObservability& CsmObservability::operator=(
+    CsmObservability&& other) noexcept {
+  other.valid_ = false;
+  return *this;
+}
 
 //
 // CsmObservabilityBuilder
@@ -107,8 +130,7 @@ CsmObservabilityBuilder::CsmObservabilityBuilder()
 CsmObservabilityBuilder::~CsmObservabilityBuilder() = default;
 
 CsmObservabilityBuilder& CsmObservabilityBuilder::SetMeterProvider(
-    std::shared_ptr<opentelemetry::sdk::metrics::MeterProvider>
-        meter_provider) {
+    std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider) {
   builder_->SetMeterProvider(meter_provider);
   return *this;
 }
@@ -133,15 +155,11 @@ absl::StatusOr<CsmObservability> CsmObservabilityBuilder::BuildAndRegister() {
   builder_->AddPluginOption(
       std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>());
   auto status = builder_->BuildAndRegisterGlobal();
+  internal::g_csm_plugin_enabled = true;
   if (!status.ok()) {
     return status;
   }
   return CsmObservability();
 }
 
-std::unique_ptr<OpenTelemetryPluginOption> MakeCsmOpenTelemetryPluginOption() {
-  return std::make_unique<grpc::internal::CsmOpenTelemetryPluginOption>();
-}
-
-}  // namespace experimental
 }  // namespace grpc

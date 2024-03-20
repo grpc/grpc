@@ -55,6 +55,7 @@ BANNED_EXCEPT = {
     "grpc_call_cancel(": ["src/core/lib/surface/call.cc"],
     "grpc_channel_destroy(": [
         "src/core/lib/surface/channel.cc",
+        "src/core/lib/surface/legacy_channel.cc",
         "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
     ],
     "grpc_closure_create(": [
@@ -79,7 +80,7 @@ BANNED_EXCEPT = {
     # TODO(roth): Fix these callers to use the absl random library instead.
     "std::random_device": [
         "src/core/load_balancing/rls/rls.cc",
-        "src/core/ext/filters/client_channel/resolver/google_c2p/google_c2p_resolver.cc",
+        "src/core/resolver/google_c2p/google_c2p_resolver.cc",
     ],
     # use 'grpc_core::Crash' instead
     "GPR_ASSERT(false": [],

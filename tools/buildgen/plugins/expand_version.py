@@ -106,7 +106,7 @@ class Version:
         return "%d.%d.%d" % (self.major, self.minor, self.patch)
 
     def php_current_version(self):
-        return "7.4"
+        return "8.1"
 
     def php_debian_version(self):
         return "buster"

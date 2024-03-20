@@ -52,6 +52,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -1075,55 +1076,6 @@ Slice HPackParser::String::Take() {
   }
   GPR_UNREACHABLE_CODE(return Slice());
 }
-
-class HPackParser::MetadataSizeEncoder {
- public:
-  explicit MetadataSizeEncoder(std::string& summary) : summary_(summary) {}
-
-  void Encode(const Slice& key, const Slice& value) {
-    AddToSummary(key.as_string_view(), value.size());
-  }
-
-  template <typename Key, typename Value>
-  void Encode(Key, const Value& value) {
-    AddToSummary(Key::key(), EncodedSizeOfKey(Key(), value));
-  }
-
- private:
-  void AddToSummary(absl::string_view key,
-                    size_t value_length) GPR_ATTRIBUTE_NOINLINE {
-    absl::StrAppend(&summary_, key, ":",
-                    hpack_constants::SizeForEntry(key.size(), value_length),
-                    ",");
-  }
-  std::string& summary_;
-};
-
-class HPackParser::MetadataSizesAnnotation
-    : public CallTracerAnnotationInterface::Annotation {
- public:
-  MetadataSizesAnnotation(grpc_metadata_batch* metadata_buffer,
-                          uint64_t soft_limit, uint64_t hard_limit)
-      : CallTracerAnnotationInterface::Annotation(
-            CallTracerAnnotationInterface::AnnotationType::kMetadataSizes),
-        metadata_buffer_(metadata_buffer),
-        soft_limit_(soft_limit),
-        hard_limit_(hard_limit) {}
-
-  std::string ToString() const override {
-    std::string metadata_annotation =
-        absl::StrCat("gRPC metadata soft_limit:", soft_limit_,
-                     ",hard_limit:", hard_limit_, ",");
-    MetadataSizeEncoder encoder(metadata_annotation);
-    metadata_buffer_->Encode(&encoder);
-    return metadata_annotation;
-  }
-
- private:
-  grpc_metadata_batch* metadata_buffer_;
-  uint64_t soft_limit_;
-  uint64_t hard_limit_;
-};
 
 // PUBLIC INTERFACE
 

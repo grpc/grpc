@@ -150,7 +150,8 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
       std::vector<std::string> errors;
       std::map<std::string /*authority*/, std::set<XdsResourceKey>>
           resources_seen;
-      bool have_valid_resources = false;
+      uint64_t num_valid_resources = 0;
+      uint64_t num_invalid_resources = 0;
       RefCountedPtr<ReadDelayHandle> read_delay_handle;
     };
 
@@ -783,6 +784,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "incorrect resource type \"", type_url,
                      "\" (should be \"", result_.type_url, "\")"));
+    ++result_.num_invalid_resources;
     return;
   }
   // Parse the resource.
@@ -803,6 +805,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
       // there's nothing more we can do here.
       result_.errors.emplace_back(absl::StrCat(
           error_prefix, decode_result.resource.status().ToString()));
+      ++result_.num_invalid_resources;
       return;
     }
   }
@@ -818,6 +821,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
   if (!parsed_resource_name.ok()) {
     result_.errors.emplace_back(
         absl::StrCat(error_prefix, "Cannot parse xDS resource name"));
+    ++result_.num_invalid_resources;
     return;
   }
   // Cancel resource-does-not-exist timer, if needed.
@@ -877,10 +881,11 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::ParseResource(
         result_.read_delay_handle);
     UpdateResourceMetadataNacked(result_.version, decode_status.ToString(),
                                  update_time_, &resource_state.meta);
+    ++result_.num_invalid_resources;
     return;
   }
   // Resource is valid.
-  result_.have_valid_resources = true;
+  ++result_.num_valid_resources;
   // If it didn't change, ignore it.
   if (resource_state.resource != nullptr &&
       result_.type->ResourcesEqual(resource_state.resource.get(),
@@ -914,6 +919,7 @@ void XdsClient::XdsChannel::AdsCall::AdsResponseParser::
     ResourceWrapperParsingFailed(size_t idx, absl::string_view message) {
   result_.errors.emplace_back(
       absl::StrCat("resource index ", idx, ": ", message));
+  ++result_.num_invalid_resources;
 }
 
 //
@@ -1157,12 +1163,18 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
         }
       }
       // If we had valid resources or the update was empty, update the version.
-      if (result.have_valid_resources || result.errors.empty()) {
+      if (result.num_valid_resources > 0 || result.errors.empty()) {
         xds_channel()->resource_type_version_map_[result.type] =
             std::move(result.version);
       }
       // Send ACK or NACK.
       SendMessageLocked(result.type);
+    }
+    // Update metrics.
+    if (xds_client()->metrics_reporter_ != nullptr) {
+      xds_client()->metrics_reporter_->ReportResourceUpdates(
+          xds_channel()->server_.server_uri(), result.type_url,
+          result.num_valid_resources, result.num_invalid_resources);
     }
   }
   xds_client()->work_serializer_.DrainQueue();
@@ -1484,10 +1496,13 @@ bool XdsClient::XdsChannel::LrsCall::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
+constexpr absl::string_view XdsClient::kOldStyleAuthority;
+
 XdsClient::XdsClient(
     std::unique_ptr<XdsBootstrap> bootstrap,
     OrphanablePtr<XdsTransportFactory> transport_factory,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
+    std::unique_ptr<XdsMetricsReporter> metrics_reporter,
     std::string user_agent_name, std::string user_agent_version,
     Duration resource_request_timeout)
     : DualRefCounted<XdsClient>(
@@ -1500,7 +1515,8 @@ XdsClient::XdsClient(
       api_(this, &grpc_xds_client_trace, bootstrap_->node(), &def_pool_,
            std::move(user_agent_name), std::move(user_agent_version)),
       work_serializer_(engine),
-      engine_(std::move(engine)) {
+      engine_(std::move(engine)),
+      metrics_reporter_(std::move(metrics_reporter)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
@@ -1575,18 +1591,19 @@ void XdsClient::WatchResource(const XdsResourceType* type,
   }
   // Find server to use.
   const XdsBootstrap::XdsServer* xds_server = nullptr;
-  absl::string_view authority_name = resource_name->authority;
-  if (absl::ConsumePrefix(&authority_name, "xdstp:")) {
-    auto* authority = bootstrap_->LookupAuthority(std::string(authority_name));
+  if (resource_name->authority != kOldStyleAuthority) {
+    auto* authority =
+        bootstrap_->LookupAuthority(std::string(resource_name->authority));
     if (authority == nullptr) {
       fail(absl::UnavailableError(
-          absl::StrCat("authority \"", authority_name,
+          absl::StrCat("authority \"", resource_name->authority,
                        "\" not present in bootstrap config")));
       return;
     }
-    xds_server = authority->server();
+    xds_server =
+        authority->servers().empty() ? nullptr : authority->servers().front();
   }
-  if (xds_server == nullptr) xds_server = &bootstrap_->server();
+  if (xds_server == nullptr) xds_server = bootstrap_->servers().front();
   {
     MutexLock lock(&mu_);
     MaybeRegisterResourceTypeLocked(type);
@@ -1737,10 +1754,11 @@ const XdsResourceType* XdsClient::GetResourceTypeLocked(
 absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
     absl::string_view name, const XdsResourceType* type) {
   // Old-style names use the empty string for authority.
-  // authority is prefixed with "old:" to indicate that it's an old-style
-  // name.
+  // authority is set to kOldStyleAuthority to indicate that it's an
+  // old-style name.
   if (!xds_federation_enabled_ || !absl::StartsWith(name, "xdstp:")) {
-    return XdsResourceName{"old:", {std::string(name), {}}};
+    return XdsResourceName{std::string(kOldStyleAuthority),
+                           {std::string(name), {}}};
   }
   // New style name.  Parse URI.
   auto uri = URI::Parse(name);
@@ -1759,14 +1777,14 @@ absl::StatusOr<XdsClient::XdsResourceName> XdsClient::ParseXdsResourceName(
         URI::QueryParam{std::string(p.first), std::string(p.second)});
   }
   return XdsResourceName{
-      absl::StrCat("xdstp:", uri->authority()),
+      uri->authority(),
       {std::string(path_parts.second), std::move(query_params)}};
 }
 
 std::string XdsClient::ConstructFullXdsResourceName(
     absl::string_view authority, absl::string_view resource_type,
     const XdsResourceKey& key) {
-  if (absl::ConsumePrefix(&authority, "xdstp:")) {
+  if (authority != kOldStyleAuthority) {
     auto uri = URI::Create("xdstp", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
@@ -2117,6 +2135,55 @@ void XdsClient::DumpClientConfig(
                              entry);
       }
     }
+  }
+}
+
+namespace {
+
+absl::string_view CacheStateForEntry(const XdsApi::ResourceMetadata& metadata,
+                                     bool resource_cached) {
+  switch (metadata.client_status) {
+    case XdsApi::ResourceMetadata::REQUESTED:
+      return "requested";
+    case XdsApi::ResourceMetadata::DOES_NOT_EXIST:
+      return "does_not_exist";
+    case XdsApi::ResourceMetadata::ACKED:
+      return "acked";
+    case XdsApi::ResourceMetadata::NACKED:
+      return resource_cached ? "nacked_but_cached" : "nacked";
+  }
+  Crash("unknown resource state");
+}
+
+}  // namespace
+
+void XdsClient::ReportResourceCounts(
+    absl::FunctionRef<void(const ResourceCountLabels&, uint64_t)> func) {
+  ResourceCountLabels labels;
+  for (const auto& a : authority_state_map_) {  // authority
+    labels.xds_authority = a.first;
+    for (const auto& t : a.second.resource_map) {  // type
+      labels.resource_type = t.first->type_url();
+      // Count the number of entries in each state.
+      std::map<absl::string_view, uint64_t> counts;
+      for (const auto& r : t.second) {  // resource id
+        absl::string_view cache_state =
+            CacheStateForEntry(r.second.meta, r.second.resource != nullptr);
+        ++counts[cache_state];
+      }
+      // Report the count for each state.
+      for (const auto& c : counts) {
+        labels.cache_state = c.first;
+        func(labels, c.second);
+      }
+    }
+  }
+}
+
+void XdsClient::ReportServerConnections(
+    absl::FunctionRef<void(absl::string_view, bool)> func) {
+  for (const auto& p : xds_channel_map_) {
+    func(p.second->server_uri(), p.second->status().ok());
   }
 }
 

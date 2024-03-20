@@ -29,12 +29,12 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/core/util/cmdline.h"
+#include "test/core/util/tls_utils.h"
 
 static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   grpc::experimental::StsCredentialsOptions options;
@@ -45,13 +45,10 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
       return nullptr;
     }
   } else {
-    grpc_slice sts_options_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(json_file_path, 1, &sts_options_slice)));
-    auto status = grpc::experimental::StsCredentialsOptionsFromJson(
-        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sts_options_slice)),
-        &options);
-    grpc_slice_unref(sts_options_slice);
+    std::string sts_options =
+        grpc_core::testing::GetFileContents(json_file_path);
+    auto status = grpc::experimental::StsCredentialsOptionsFromJson(sts_options,
+                                                                    &options);
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
       return nullptr;
@@ -65,15 +62,10 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
 
 static grpc_call_credentials* create_refresh_token_creds(
     const char* json_refresh_token_file_path) {
-  grpc_slice refresh_token;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file",
-      grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
-  grpc_call_credentials* result = grpc_google_refresh_token_credentials_create(
-      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(refresh_token),
-      nullptr);
-  grpc_slice_unref(refresh_token);
-  return result;
+  std::string refresh_token =
+      grpc_core::testing::GetFileContents(json_refresh_token_file_path);
+  return grpc_google_refresh_token_credentials_create(refresh_token.c_str(),
+                                                      nullptr);
 }
 
 int main(int argc, char** argv) {

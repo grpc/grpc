@@ -24,7 +24,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import pkg_resources
 import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
@@ -127,6 +126,33 @@ class BuildExt(build_ext.build_ext):
             filename = filename[: -len(orig_ext_suffix)] + new_ext_suffix
         return filename
 
+    def build_extensions(self):
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #
+        #   If we are not using a permissive compiler that's OK with being
+        #   passed wrong std flags, swap out compile function by adding a filter
+        #   for it.
+        old_compile = self.compiler._compile
+
+        def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            if src.endswith(".c"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if "-std=c++" not in arg
+                ]
+            elif src.endswith(".cc") or src.endswith(".cpp"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if "-std=c11" not in arg
+                ]
+            return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+
+        self.compiler._compile = new_compile
+
+        build_ext.build_ext.build_extensions(self)
+
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -145,12 +171,23 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         # We need to statically link the C++ Runtime, only the C runtime is
         # available dynamically
         EXTRA_ENV_COMPILE_ARGS += " /MT"
-    elif "linux" in sys.platform or "darwin" in sys.platform:
-        # GCC & Clang by defaults uses C17 so only C++14 needs to be specified.
+    elif "linux" in sys.platform:
+        # GCC by defaults uses C17 so only C++14 needs to be specified.
         EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
         EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
+        # Reduce the optimization level from O3 (in many cases) to O1 to
+        # workaround gcc misalignment bug with MOVAPS (internal b/329134877)
+        EXTRA_ENV_COMPILE_ARGS += " -O1"
+    elif "darwin" in sys.platform:
+        # AppleClang by defaults uses C17 so only C++14 needs to be specified.
+        EXTRA_ENV_COMPILE_ARGS += " -std=c++14"
+        EXTRA_ENV_COMPILE_ARGS += " -fno-wrapv -frtti"
+        EXTRA_ENV_COMPILE_ARGS += " -stdlib=libc++ -DHAVE_UNISTD_H"
 if EXTRA_ENV_LINK_ARGS is None:
     EXTRA_ENV_LINK_ARGS = ""
+    # This is needed for protobuf/main.cc
+    if "win32" in sys.platform:
+        EXTRA_ENV_LINK_ARGS += " Shell32.lib"
     # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
     # variables and objects) global weak symbols. When a process loads the
     # protobuf wheel's shared object library before loading *this* C extension,
@@ -214,22 +251,6 @@ if "win32" in sys.platform:
 elif "linux" in sys.platform or "darwin" in sys.platform:
     DEFINE_MACROS += (("HAVE_PTHREAD", 1),)
 
-# By default, Python3 setuptools(distutils) enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target and (
-        pkg_resources.parse_version(mac_target)
-        < pkg_resources.parse_version("10.10.0")
-    ):
-        os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-        os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-            r"macosx-[0-9]+\.[0-9]+-(.+)",
-            r"macosx-10.10-\1",
-            sysconfig.get_platform(),
-        )
-
 
 def package_data():
     tools_path = GRPC_PYTHON_TOOLS_PACKAGE.replace(".", os.path.sep)
@@ -276,7 +297,6 @@ def extension_modules():
             os.path.join("grpc_root", "include"),
         ]
         + CC_INCLUDES,
-        language="c++",
         define_macros=list(DEFINE_MACROS),
         extra_compile_args=list(EXTRA_COMPILE_ARGS),
         extra_link_args=list(EXTRA_LINK_ARGS),

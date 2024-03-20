@@ -1,11 +1,12 @@
 gRPC Python Observability
-===========
+=========================
+
 Package for gRPC Python Observability.
 
 More details can be found in `OpenTelemetry Metrics gRFC <https://github.com/grpc/proposal/blob/master/A66-otel-stats.md#opentelemetry-metrics>`_.
 
 How gRPC Python Observability Works
--------------------------
+-----------------------------------
 
 gRPC Python is a wrapper layer built upon the gRPC Core (written in C/C++). Most of telemetry data
 is collected at core layer and then exported to Python layer. To optimize performance and reduce
@@ -56,13 +57,12 @@ GCC-like stuff, but you may end up having a bad time.
 
 
 Dependencies
--------------------------
+------------
 gRPC Python Observability Depends on the following packages:
 
 ::
 
   grpcio
-  opentelemetry-sdk==1.21.0
   opentelemetry-api==1.21.0
 
 

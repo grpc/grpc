@@ -77,6 +77,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -742,7 +743,7 @@ class ChannelBroadcaster {
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
     for (const RefCountedPtr<Channel>& channel : channels_) {
-      SendShutdown(channel->c_ptr(), send_goaway, force_disconnect);
+      SendShutdown(channel.get(), send_goaway, force_disconnect);
     }
     channels_.clear();  // just for safety against double broadcast
   }
@@ -759,7 +760,7 @@ class ChannelBroadcaster {
     delete a;
   }
 
-  static void SendShutdown(grpc_channel* channel, bool send_goaway,
+  static void SendShutdown(Channel* channel, bool send_goaway,
                            grpc_error_handle send_disconnect) {
     ShutdownCleanupArgs* sc = new ShutdownCleanupArgs;
     GRPC_CLOSURE_INIT(&sc->closure, ShutdownCleanup, sc,
@@ -773,8 +774,7 @@ class ChannelBroadcaster {
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
-    elem =
-        grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+    elem = grpc_channel_stack_element(channel->channel_stack(), 0);
     elem->filter->start_transport_op(elem, op);
   }
 
@@ -911,8 +911,9 @@ grpc_error_handle Server::SetupTransport(
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
-  absl::StatusOr<RefCountedPtr<Channel>> channel =
-      Channel::Create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
+  global_stats().IncrementServerChannelsCreated();
+  absl::StatusOr<OrphanablePtr<Channel>> channel =
+      LegacyChannel::Create("", args.SetObject(transport), GRPC_SERVER_CHANNEL);
   if (!channel.ok()) {
     return absl_status_to_grpc_error(channel.status());
   }
@@ -925,7 +926,7 @@ grpc_error_handle Server::SetupTransport(
   }
   if (cq_idx == cqs_.size()) {
     // Completion queue not found.  Pick a random one to publish new calls to.
-    cq_idx = static_cast<size_t>(rand()) % cqs_.size();
+    cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
   }
   // Set up channelz node.
   intptr_t channelz_socket_uuid = 0;
@@ -1309,11 +1310,11 @@ absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        RefCountedPtr<Channel> channel,
+                                        OrphanablePtr<Channel> channel,
                                         size_t cq_idx, Transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);
-  channel_ = channel;
+  channel_ = std::move(channel);
   cq_idx_ = cq_idx;
   channelz_socket_uuid_ = channelz_socket_uuid;
   // Publish channel.
@@ -1392,7 +1393,7 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   auto* chand = static_cast<Server::ChannelData*>(arg);
   // create a call
   grpc_call_create_args args;
-  args.channel = chand->channel_;
+  args.channel = chand->channel_->Ref();
   args.server = chand->server_.get();
   args.parent = nullptr;
   args.propagation_mask = 0;
@@ -1454,6 +1455,7 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           if (registered_method == nullptr) {
             rm = server_->unregistered_request_matcher_.get();
           } else {
+            payload_handling = registered_method->payload_handling;
             rm = registered_method->matcher.get();
           }
           auto maybe_read_first_message = If(
@@ -1485,6 +1487,7 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           rc->Complete(std::move(std::get<0>(r)), *md);
           auto* call_context = GetContext<CallContext>();
           *rc->call = call_context->c_call();
+          grpc_call_ref(*rc->call);
           grpc_call_set_completion_queue(call_context->c_call(),
                                          rc->cq_bound_to_call);
           call_context->server_call_context()->PublishInitialMetadata(

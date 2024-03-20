@@ -166,7 +166,7 @@ MessageHandle LegacyCompressionFilter::CompressMessage(
 }
 
 absl::StatusOr<MessageHandle> LegacyCompressionFilter::DecompressMessage(
-    MessageHandle message, DecompressArgs args) const {
+    bool is_client, MessageHandle message, DecompressArgs args) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
     gpr_log(GPR_INFO, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
             message->payload()->Length(),
@@ -183,8 +183,9 @@ absl::StatusOr<MessageHandle> LegacyCompressionFilter::DecompressMessage(
       message->payload()->Length() >
           static_cast<size_t>(*args.max_recv_message_length)) {
     return absl::ResourceExhaustedError(absl::StrFormat(
-        "Received message larger than max (%u vs. %d)",
-        message->payload()->Length(), *args.max_recv_message_length));
+        "%s: Received message larger than max (%u vs. %d)",
+        is_client ? "CLIENT" : "SERVER", message->payload()->Length(),
+        *args.max_recv_message_length));
   }
   // Check if decompression is enabled (if not, we can just pass the message
   // up).
@@ -266,7 +267,8 @@ LegacyClientCompressionFilter::MakeCallPromise(
   call_args.server_to_client_messages->InterceptAndMap(
       [decompress_err, decompress_args,
        this](MessageHandle message) -> absl::optional<MessageHandle> {
-        auto r = DecompressMessage(std::move(message), *decompress_args);
+        auto r = DecompressMessage(/*is_client=*/true, std::move(message),
+                                   *decompress_args);
         if (!r.ok()) {
           decompress_err->Set(ServerMetadataFromStatus(r.status()));
           return absl::nullopt;
@@ -288,7 +290,8 @@ LegacyServerCompressionFilter::MakeCallPromise(
   call_args.client_to_server_messages->InterceptAndMap(
       [decompress_err, decompress_args,
        this](MessageHandle message) -> absl::optional<MessageHandle> {
-        auto r = DecompressMessage(std::move(message), decompress_args);
+        auto r = DecompressMessage(/*is_client=*/false, std::move(message),
+                                   decompress_args);
         if (grpc_call_trace.enabled()) {
           gpr_log(GPR_DEBUG, "%s[compression] DecompressMessage returned %s",
                   GetContext<Activity>()->DebugTag().c_str(),

@@ -444,6 +444,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a RunAfter returns.
+  ///
+  /// Implementations may return a \a kInvalid handle if the callback can be
+  /// immediately executed, and is therefore not cancellable.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///

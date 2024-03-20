@@ -35,14 +35,13 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -224,7 +223,6 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection complete");
-  if (!IsRoundRobinDelegateToPickFirstEnabled()) ExpectReresolutionRequest();
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -239,7 +237,6 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
 }
 
 TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
-  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
@@ -338,7 +335,6 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
-  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.

@@ -958,7 +958,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
                             XCTAssertEqualObjects(
                                 error.localizedDescription,
-                                @"Received message larger than max (4194305 vs. 4194304)");
+                                @"CLIENT: Received message larger than max (4194305 vs. 4194304)");
                             [expectation fulfill];
                           }];
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);
