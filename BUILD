@@ -290,6 +290,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
+    "include/grpc/passive_listener.h",
     "include/grpc/passive_listener_injection.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
@@ -2417,25 +2418,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "passive_listener_internal",
-    srcs = [
-        "src/cpp/server/passive_listener_internal.cc",
-    ],
-    hdrs = ["src/cpp/server/passive_listener_internal.h"],
-    deps = [
-        "exec_ctx",
-        "gpr_public_hdrs",
-        "grpc++_public_hdrs",
-        "grpc_public_hdrs",
-        "server",
-        "//src/core:channel_args",
-        "//src/core:channel_args_endpoint_config",
-        "//src/core:event_engine_extensions",
-        "//src/core:event_engine_query_extensions",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc++_base",
     srcs = GRPCXX_SRCS + [
         "src/cpp/client/insecure_credentials.cc",
@@ -2453,7 +2435,6 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS + [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/server/passive_listener_internal.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
@@ -2496,7 +2477,6 @@ grpc_cc_library(
         "iomgr",
         "iomgr_timer",
         "legacy_context",
-        "passive_listener_internal",
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
@@ -2519,6 +2499,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:load_file",
+        "//src/core:passive_listener_internal",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -2577,7 +2558,6 @@ grpc_cc_library(
         "iomgr",
         "iomgr_timer",
         "legacy_context",
-        "passive_listener_internal",
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
@@ -2593,6 +2573,7 @@ grpc_cc_library(
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
+        "//src/core:passive_listener_internal",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",

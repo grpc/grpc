@@ -14,40 +14,12 @@
 #ifndef GRPCPP_PASSIVE_LISTENER_H
 #define GRPCPP_PASSIVE_LISTENER_H
 
-#include <grpc/support/port_platform.h>
-
-#include <grpc/event_engine/event_engine.h>
+#include <grpc/passive_listener.h>
 
 namespace grpc {
-
-class ServerBuilder;
-
 namespace experimental {
 
-/// -- EXPERIMENTAL API --
-/// Interface for used for Server Endpoint injection.
-class PassiveListener {
- public:
-  virtual ~PassiveListener() = default;
-  /// -- EXPERIMENTAL API --
-  ///
-  /// Takes an Endpoint for an established connection, and treats it as if the
-  /// connection had been accepted by the server.
-  ///
-  /// The server must be started before endpoints can be accepted.
-  virtual absl::Status AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) = 0;
-
-  /// -- EXPERIMENTAL API --
-  ///
-  /// Takes a connected file descriptor, and treats it as if the server had
-  /// accepted the connection itself.
-  ///
-  /// Returns a failure status if the server's active EventEngine does not
-  /// support Endpoint creation from fds.
-  virtual absl::Status AcceptConnectedFd(int fd) = 0;
-};
+using grpc_core::experimental::PassiveListener;
 
 }  // namespace experimental
 }  // namespace grpc

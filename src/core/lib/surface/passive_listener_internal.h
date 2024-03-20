@@ -16,13 +16,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/passive_listener.h>
 #include <grpc/passive_listener_injection.h>
-#include <grpcpp/passive_listener.h>
 
 #include "src/core/lib/surface/server.h"
 
-namespace grpc {
+namespace grpc_core {
 namespace experimental {
+
 // A PIMPL wrapper class that owns the only ref to the passive listener
 // implementation. This is returned to the application.
 class PassiveListenerOwner final : public PassiveListener {
@@ -56,7 +57,9 @@ class PassiveListenerImpl final : public PassiveListener {
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
  private:
-  friend class grpc::ServerBuilder;
+  friend absl::Status(::grpc_server_add_passive_listener)(
+      Server* server, grpc_server_credentials* credentials,
+      PassiveListenerImpl& passive_listener);
 
   // Data members will be populated when initialized.
   grpc_core::RefCountedPtr<grpc_core::Server> server_;
@@ -66,6 +69,6 @@ class PassiveListenerImpl final : public PassiveListener {
 };
 
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CPP_SERVER_PASSIVE_LISTENER_INTERNAL_H

@@ -89,8 +89,6 @@ class Server;
 /// listening and initiate destruction of the listener.
 class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
  public:
-  ~ListenerInterface() override = default;
-
   /// Starts listening. This listener may refer to the pollset object beyond
   /// this call, so it is a pointer rather than a reference.
   virtual void Start(Server* server,
@@ -176,7 +174,7 @@ class Server : public ServerInterface,
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
   // the listener.
-  void AddListener(OrphanablePtr<ListenerInterface> listener);
+  void AddListener(RefCountedPtr<ListenerInterface> listener);
 
   /// Takes an Endpoint for an established connection, and treats it as if the
   /// connection had been accepted by the server.
@@ -385,9 +383,9 @@ class Server : public ServerInterface,
   };
 
   struct Listener {
-    explicit Listener(OrphanablePtr<ListenerInterface> l)
+    explicit Listener(RefCountedPtr<ListenerInterface> l)
         : listener(std::move(l)) {}
-    OrphanablePtr<ListenerInterface> listener;
+    RefCountedPtr<ListenerInterface> listener;
     grpc_closure destroy_done;
   };
 

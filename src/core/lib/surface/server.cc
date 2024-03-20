@@ -850,7 +850,7 @@ Server::~Server() {
   }
 }
 
-void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
+void Server::AddListener(RefCountedPtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
   if (listen_socket_node != nullptr && channelz_node_ != nullptr) {
@@ -1146,7 +1146,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 
 void Server::StopListening() {
   // Listeners cannot be destroyed when the listener_mu lobck is held.
-  std::list<OrphanablePtr<ListenerInterface>> listeners_to_destroy;
+  std::list<RefCountedPtr<ListenerInterface>> listeners_to_destroy;
   for (auto& listener : listeners_) {
     if (listener.listener == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =

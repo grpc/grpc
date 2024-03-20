@@ -13,7 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/server/passive_listener_internal.h"
+#include "src/core/lib/surface/passive_listener_internal.h"
 
 #include <grpc/grpc.h>
 #include <grpc/passive_listener_injection.h>
@@ -25,14 +25,14 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/server.h"
 
-namespace grpc {
+namespace grpc_core {
 namespace experimental {
 
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
-  return grpc_server_accept_connected_endpoint(server_.get(), listener_,
+  return grpc_server_accept_connected_endpoint(server_.get(), listener_.get(),
                                                std::move(endpoint));
 }
 
@@ -56,4 +56,4 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
 }
 
 }  // namespace experimental
-}  // namespace grpc
+}  // namespace grpc_core
