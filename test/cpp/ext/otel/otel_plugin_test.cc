@@ -25,6 +25,7 @@
 #include "gtest/gtest.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/variant.h"
+#include "opentelemetry/sdk/common/attribute_utils.h"
 #include "opentelemetry/sdk/metrics/data/point_data.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
@@ -47,33 +48,40 @@ namespace {
 
 template <typename T>
 void PopulateLabelMap(
-    std::unordered_map<std::string, absl::string_view>* label_maps,
-    T label_keys, T label_values) {
+    T label_keys, T label_values,
+    std::unordered_map<std::string,
+                       opentelemetry::sdk::common::OwnedAttributeValue>*
+        label_maps) {
   for (int i = 0; i < label_keys.size(); ++i) {
-    (*label_maps)[std::string(label_keys[i])] = label_values[i];
+    (*label_maps)[std::string(label_keys[i])] = std::string(label_values[i]);
   }
 }
 
 MATCHER_P4(AttributesEq, label_keys, label_values, optional_label_keys,
            optional_label_values, "") {
-  std::unordered_map<std::string, absl::string_view> label_map;
-  PopulateLabelMap(&label_map, label_keys, label_values);
-  PopulateLabelMap(&label_map, optional_label_keys, optional_label_values);
-  const auto& attributes = arg.attributes.GetAttributes();
-  return std::all_of(
-      attributes.begin(), attributes.end(), [&](const auto& elem) {
-        return label_map.find(elem.first) != label_map.end() &&
-               absl::get<std::string>(elem.second) == label_map[elem.first];
-      });
+  std::unordered_map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>
+      label_map;
+  PopulateLabelMap(label_keys, label_values, &label_map);
+  PopulateLabelMap(optional_label_keys, optional_label_values, &label_map);
+  return ::testing::ExplainMatchResult(
+      ::testing::UnorderedElementsAreArray(label_map),
+      arg.attributes.GetAttributes(), result_listener);
 }
 
 MATCHER_P(CounterResultEq, result, "") {
-  return opentelemetry::nostd::holds_alternative<
-             opentelemetry::sdk::metrics::SumPointData>(arg.point_data) &&
-         opentelemetry::nostd::get<std::remove_cv_t<decltype(result)>>(
-             opentelemetry::nostd::get<
-                 opentelemetry::sdk::metrics::SumPointData>(arg.point_data)
-                 .value_) == result;
+  return ::testing::ExplainMatchResult(
+             true,
+             opentelemetry::nostd::holds_alternative<
+                 opentelemetry::sdk::metrics::SumPointData>(arg.point_data),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             result,
+             opentelemetry::nostd::get<std::remove_cv_t<decltype(result)>>(
+                 opentelemetry::nostd::get<
+                     opentelemetry::sdk::metrics::SumPointData>(arg.point_data)
+                     .value_),
+             result_listener);
 }
 
 template <typename ValueType>
@@ -87,27 +95,45 @@ bool CompareSum(double v, double expectation) {
 }
 
 MATCHER_P4(HistogramResultEq, sum, min, max, count, "") {
-  return opentelemetry::nostd::holds_alternative<
-             opentelemetry::sdk::metrics::HistogramPointData>(arg.point_data) &&
-         CompareSum(opentelemetry::nostd::get<std::remove_cv_t<decltype(sum)>>(
-                        opentelemetry::nostd::get<
-                            opentelemetry::sdk::metrics::HistogramPointData>(
-                            arg.point_data)
-                            .sum_),
-                    sum) &&
-         opentelemetry::nostd::get<std::remove_cv_t<decltype(min)>>(
+  return ::testing::ExplainMatchResult(
+             true,
+             opentelemetry::nostd::holds_alternative<
+                 opentelemetry::sdk::metrics::HistogramPointData>(
+                 arg.point_data),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             true,
+             CompareSum(
+                 opentelemetry::nostd::get<std::remove_cv_t<decltype(sum)>>(
+                     opentelemetry::nostd::get<
+                         opentelemetry::sdk::metrics::HistogramPointData>(
+                         arg.point_data)
+                         .sum_),
+                 sum),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             min,
+             opentelemetry::nostd::get<std::remove_cv_t<decltype(min)>>(
+                 opentelemetry::nostd::get<
+                     opentelemetry::sdk::metrics::HistogramPointData>(
+                     arg.point_data)
+                     .min_),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             max,
+             opentelemetry::nostd::get<std::remove_cv_t<decltype(max)>>(
+                 opentelemetry::nostd::get<
+                     opentelemetry::sdk::metrics::HistogramPointData>(
+                     arg.point_data)
+                     .max_),
+             result_listener) &&
+         ::testing::ExplainMatchResult(
+             count,
              opentelemetry::nostd::get<
                  opentelemetry::sdk::metrics::HistogramPointData>(
                  arg.point_data)
-                 .min_) == min &&
-         opentelemetry::nostd::get<std::remove_cv_t<decltype(max)>>(
-             opentelemetry::nostd::get<
-                 opentelemetry::sdk::metrics::HistogramPointData>(
-                 arg.point_data)
-                 .max_) == max &&
-         opentelemetry::nostd::get<
-             opentelemetry::sdk::metrics::HistogramPointData>(arg.point_data)
-                 .count_ == count;
+                 .count_,
+             result_listener);
 }
 
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
@@ -1205,7 +1231,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
   // Build and register a separate OpenTelemetryPlugin and verify its histogram
   // recording.
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
-  auto reader = BuilderAndRegisterOpenTelemetryPlugin(std::move(
+  auto reader = BuildAndRegisterOpenTelemetryPlugin(std::move(
       Options()
           .set_metric_names({kMetricName})
           .set_server_selector([](const grpc_core::ChannelArgs& args) {

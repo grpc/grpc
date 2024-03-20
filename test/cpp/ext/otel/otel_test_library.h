@@ -154,7 +154,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   void SendGenericRPC();
 
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
-  BuilderAndRegisterOpenTelemetryPlugin(
+  BuildAndRegisterOpenTelemetryPlugin(
       OpenTelemetryPluginEnd2EndTest::Options options);
 
   absl::flat_hash_map<

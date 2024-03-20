@@ -178,7 +178,7 @@ class StatsPlugin {
     absl::string_view target_;
     absl::string_view authority_;
   };
-  // A general-purpose way for StatsPlugin to store per-channel or per-server
+  // A general-purpose way for stats plugin to store per-channel or per-server
   // state.
   class ScopeConfig {
    public:
@@ -187,35 +187,65 @@ class StatsPlugin {
 
   virtual ~StatsPlugin() = default;
 
+  // Whether this stats plugin is enabled for the channel specified by \a scope.
+  // Returns true and a channel-specific ScopeConfig which may then be used to
+  // configure the ClientCallTracer in GetClientCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
       const ChannelScope& scope) const = 0;
+  // Whether this stats plugin is enabled for the server specified by \a args.
+  // Returns true and a server-specific ScopeConfig which may then be used to
+  // configure the ServerCallTracer in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
 
+  // Adds \a value to the uint64 counter specified by \a handle. \a label_values
+  // and \a optional_label_values specify attributes that are associated with
+  // this measurement and must match with their corresponding keys in
+  // GlobalInstrumentsRegistry::RegisterUInt64Counter().
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Adds \a value to the double counter specified by \a handle. \a label_values
+  // and \a optional_label_values specify attributes that are associated with
+  // this measurement and must match with their corresponding keys in
+  // GlobalInstrumentsRegistry::RegisterDoubleCounter().
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Records a uint64 \a value to the histogram specified by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterUInt64Histogram().
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Records a double \a value to the histogram specified by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterDoubleHistogram().
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Sets an int64 \a value to the gauge specifed by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterInt64Gauge().
   virtual void SetGauge(
       GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle, int64_t value,
       absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Sets a double \a value to the gauge specifed by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterDoubleGauge().
   virtual void SetGauge(
       GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
@@ -223,9 +253,11 @@ class StatsPlugin {
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
+  // Gets a ClientCallTracer which can be used in a call.
   virtual ClientCallTracer* GetClientCallTracer(
       const Slice& path, bool registered_method,
       std::shared_ptr<ScopeConfig> scope_config) = 0;
+  // Gets a ServerCallTracer which can be used in a call.
   virtual ServerCallTracer* GetServerCallTracer(
       std::shared_ptr<ScopeConfig> scope_config) = 0;
 

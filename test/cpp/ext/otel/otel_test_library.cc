@@ -95,7 +95,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
         });
     channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
   }
-  reader_ = BuilderAndRegisterOpenTelemetryPlugin(std::move(config));
+  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   grpc_init();
   grpc::ServerBuilder builder;
   int port;
@@ -185,7 +185,7 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
 }
 
 std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
-OpenTelemetryPluginEnd2EndTest::BuilderAndRegisterOpenTelemetryPlugin(
+OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
     OpenTelemetryPluginEnd2EndTest::Options options) {
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   // We are resetting the MeterProvider and OpenTelemetry plugin at the start

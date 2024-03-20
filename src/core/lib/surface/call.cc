@@ -2719,9 +2719,10 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                  "non-nullptr.");
     }
     ScopedContext context(this);
+    args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
+        *args->path, args->registered_method, this->context());
     send_initial_metadata_ =
         GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
-    Slice path = args->path->Ref();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
@@ -2744,8 +2745,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       }
       PublishToParent(parent);
     }
-    args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
-        path, args->registered_method, this->context());
   }
 
   void OrphanCall() override { MaybeUnpublishFromParent(); }
