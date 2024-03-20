@@ -62,7 +62,7 @@ class PassiveListenerImpl final : public PassiveListener {
       PassiveListenerImpl& passive_listener);
 
   // Data members will be populated when initialized.
-  grpc_core::RefCountedPtr<grpc_core::Server> server_;
+  grpc_core::Server* server_ = nullptr;
   // Not safe for this class to use directly -- only used within
   // grpc_server_accept_connected_endpoint().
   RefCountedPtr<grpc_core::ListenerInterface> listener_;

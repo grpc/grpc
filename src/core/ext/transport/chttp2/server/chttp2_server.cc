@@ -1171,8 +1171,7 @@ absl::Status grpc_server_add_passive_listener(
   if (credentials == nullptr) {
     return GRPC_ERROR_CREATE("No credentials specified for passive listener");
   }
-  grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
-      credentials->create_security_connector(grpc_core::ChannelArgs());
+  auto sc = credentials->create_security_connector(grpc_core::ChannelArgs());
   if (sc == nullptr) {
     return GRPC_ERROR_CREATE(
         absl::StrCat("Unable to create secure server with credentials of type ",
@@ -1187,5 +1186,6 @@ absl::Status grpc_server_add_passive_listener(
             grpc_core::StatusToString(listener.status()).c_str());
   }
   passive_listener.listener_ = *listener;
+  passive_listener.server_ = server;
   return absl::OkStatus();
 }

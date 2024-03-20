@@ -32,7 +32,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
-  return grpc_server_accept_connected_endpoint(server_.get(), listener_.get(),
+  return grpc_server_accept_connected_endpoint(server_, listener_.get(),
                                                std::move(endpoint));
 }
 
