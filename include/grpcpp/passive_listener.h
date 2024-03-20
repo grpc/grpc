@@ -18,12 +18,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-namespace grpc_core {
-class ListenerInterface;
-class Server;
-class PassiveListenerImpl;
-}  // namespace grpc_core
-
 namespace grpc {
 
 class ServerBuilder;

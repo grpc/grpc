@@ -115,8 +115,7 @@ class Chttp2ServerListener : public ListenerInterface {
       Chttp2ServerArgsModifier args_modifier);
 
   static absl::StatusOr<ListenerInterface*> CreateForPassiveListener(
-      Server* server, const ChannelArgs& args,
-      Chttp2ServerArgsModifier args_modifier);
+      Server* server, const ChannelArgs& args);
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
@@ -244,32 +243,6 @@ class Chttp2ServerListener : public ListenerInterface {
 
   static void DestroyListener(Server* /*server*/, void* arg,
                               grpc_closure* destroy_done);
-
-  // The interface required by RefCountedPtr<> has been manually implemented
-  // here to take a ref on tcp_server_ instead. Note that, the handshaker
-  // needs tcp_server_ to exist for the lifetime of the handshake since it's
-  // needed by acceptor. Sharing refs between the listener and tcp_server_ is
-  // just an optimization to avoid taking additional refs on the listener,
-  // since TcpServerShutdownComplete already holds a ref to the listener.
-  void IncrementRefCount() { grpc_tcp_server_ref(tcp_server_); }
-  void IncrementRefCount(const DebugLocation& /* location */,
-                         const char* /* reason */) {
-    IncrementRefCount();
-  }
-
-  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<Chttp2ServerListener>(this);
-  }
-  GRPC_MUST_USE_RESULT RefCountedPtr<Chttp2ServerListener> Ref(
-      const DebugLocation& /* location */, const char* /* reason */) {
-    return Ref();
-  }
-
-  void Unref() { grpc_tcp_server_unref(tcp_server_); }
-  void Unref(const DebugLocation& /* location */, const char* /* reason */) {
-    Unref();
-  }
 
   Server* const server_ = nullptr;
   grpc_tcp_server* tcp_server_ = nullptr;
@@ -795,19 +768,14 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
 }
 
 absl::StatusOr<ListenerInterface*>
-Chttp2ServerListener::CreateForPassiveListener(
-    Server* server, const ChannelArgs& args,
-    Chttp2ServerArgsModifier args_modifier) {
-  Chttp2ServerListener* listener =
-      new Chttp2ServerListener(server, args, args_modifier, nullptr);
-  grpc_error_handle error = grpc_tcp_server_create(
-      &listener->tcp_server_shutdown_complete_,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-      OnAccept, listener, &listener->tcp_server_);
-  if (!error.ok()) {
-    delete listener;
-    return error;
-  }
+Chttp2ServerListener::CreateForPassiveListener(Server* server,
+                                               const ChannelArgs& args) {
+  Chttp2ServerListener* listener = new Chttp2ServerListener(
+      server, args, /*args_modifier=*/
+      [](const ChannelArgs& args, grpc_error_handle*) { return args; },
+      nullptr);
+  // Held until TcpServerShutdownComplete
+  listener->Ref().release();
   server->AddListener(OrphanablePtr<ListenerInterface>(listener));
   return listener;
 }
@@ -956,7 +924,7 @@ void Chttp2ServerListener::TcpServerShutdownComplete(
     void* arg, grpc_error_handle /*error*/) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
   self->channelz_listen_socket_.reset();
-  delete self;
+  self->Unref();
 }
 
 // Server callback: destroy the tcp listener (so we don't generate further
@@ -1188,14 +1156,6 @@ void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-absl::Status grpc_server_accept_connected_endpoint(
-    grpc_core::Server* server, grpc_core::ListenerInterface* core_listener,
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint) {
-  grpc_core::ExecCtx exec_ctx;
-  return server->AcceptConnectedEndpoint(core_listener, std::move(endpoint));
-}
-
 grpc_core::ListenerInterface* grpc_server_add_passive_listener(
     grpc_core::Server* server, grpc_server_credentials* credentials) {
   grpc_core::ExecCtx exec_ctx;
@@ -1223,8 +1183,8 @@ grpc_core::ListenerInterface* grpc_server_add_passive_listener(
   }
   auto args =
       server->channel_args().SetObject(credentials->Ref()).SetObject(sc);
-  auto listener = grpc_core::Chttp2ServerListener::CreateForPassiveListener(
-      server, args, grpc_core::ModifyArgsForConnection);
+  auto listener =
+      grpc_core::Chttp2ServerListener::CreateForPassiveListener(server, args);
   if (!listener.ok()) {
     gpr_log(GPR_ERROR, "%s",
             grpc_core::StatusToString(listener.status()).c_str());

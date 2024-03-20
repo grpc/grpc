@@ -87,7 +87,7 @@ class Server;
 /// Interface for listeners.
 /// Implementations must override the Orphan() method, which should stop
 /// listening and initiate destruction of the listener.
-class ListenerInterface : public Orphanable {
+class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
  public:
   ~ListenerInterface() override = default;
 
@@ -527,8 +527,7 @@ class Server : public ServerInterface,
 
   std::list<ChannelData*> channels_;
 
-  grpc_core::Mutex listener_mu_ ABSL_ACQUIRED_AFTER(mu_global_);
-  std::list<Listener> listeners_ ABSL_GUARDED_BY(listener_mu_);
+  std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.

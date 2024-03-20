@@ -417,27 +417,17 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     if (passive_listener != nullptr) {
       auto* creds = unstarted_listener.credentials->c_creds();
       if (creds == nullptr) {
-        grpc_server_credentials* insecure_creds =
-            grpc_insecure_server_credentials_create();
-        auto* core_listener =
-            grpc_server_add_passive_listener(core_server, insecure_creds);
-        if (core_listener == nullptr) {
-          // Failed to create a passive listener. The error is already logged.
-          return nullptr;
-        }
-        passive_listener->server_ = core_server->Ref();
-        passive_listener->listener_ = core_listener;
-        grpc_server_credentials_release(insecure_creds);
-      } else {
-        auto* core_listener =
-            grpc_server_add_passive_listener(core_server, creds);
-        if (core_listener == nullptr) {
-          // Failed to create a passive listener. The error is already logged.
-          return nullptr;
-        }
-        passive_listener->server_ = core_server->Ref();
-        passive_listener->listener_ = core_listener;
+        gpr_log(GPR_ERROR, "Credentials missing for PassiveListener");
+        return nullptr;
       }
+      auto* core_listener =
+          grpc_server_add_passive_listener(core_server, creds);
+      if (core_listener == nullptr) {
+        // Failed to create a passive listener. The error is already logged.
+        return nullptr;
+      }
+      passive_listener->server_ = core_server->Ref();
+      passive_listener->listener_ = core_listener;
     }
   }
 
