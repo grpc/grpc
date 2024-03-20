@@ -1160,7 +1160,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
           const std::string& authority = a.first;
           AuthorityState& authority_state = a.second;
           // Skip authorities that are not using this xDS channel.
-          if (authority_state.xds_channels.back() == xds_channel()) {
+          if (authority_state.xds_channels.back() != xds_channel()) {
             continue;
           }
           auto seen_authority_it = result.resources_seen.find(authority);
