@@ -237,7 +237,7 @@ void GrpcXdsBootstrap::GrpcAuthority::JsonPostLoad(
     ValidationErrors* /*errors*/) {
   if (!IsFallbackExperimentEnabled()) {
     if (servers_.size() > 1) {
-      servers_ = {servers_[0]};
+      servers_.resize(1);
     }
   }
 }
@@ -250,10 +250,8 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
     absl::string_view json_string) {
   auto json = JsonParse(json_string);
   if (!json.ok()) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Failed to parse bootstrap "
-                     "JSON string: ",
-                     json.status().ToString()));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Failed to parse bootstrap JSON string: ", json.status().ToString()));
   }
   // Validate JSON.
   class XdsJsonArgs : public JsonArgs {
@@ -320,7 +318,7 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
   }
   if (!IsFallbackExperimentEnabled()) {
     if (servers_.size() > 1) {
-      servers_ = {servers_[0]};
+      servers_.resize(1);
     }
   }
 }
