@@ -53,9 +53,6 @@ class PassiveListener {
   /// Returns a failure status if the server's active EventEngine does not
   /// support Endpoint creation from fds.
   virtual absl::Status AcceptConnectedFd(int fd) = 0;
-
- private:
-  friend class grpc::ServerBuilder;
 };
 
 }  // namespace experimental
