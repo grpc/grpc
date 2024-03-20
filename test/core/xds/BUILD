@@ -37,6 +37,7 @@ grpc_cc_test(
         "//:gpr",
         "//src/core:grpc_xds_client",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 
