@@ -37,6 +37,7 @@
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
@@ -176,18 +177,24 @@ TEST_P(XdsFallbackTest, PerAuthorityServers) {
   auto authority_xds2_fallback = CreateAndStartBalancer("Authority B Fallback");
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
-  InitClient(XdsBootstrapBuilder().AddAuthority(
-      "xds1.example.com",
-      {
-          absl::StrCat("localhost:", balancer_->port()),
-          absl::StrCat("localhost:", fallback_balancer_->port()),
-      }));
-  InitClient(XdsBootstrapBuilder().AddAuthority(
-      "xds2.example.com",
-      {
-          absl::StrCat("localhost:", balancer_->port()),
-          absl::StrCat("localhost:", authority_xds2_fallback->port()),
-      }));
+  InitClient(
+      XdsBootstrapBuilder()
+          .AddAuthority(
+              "xds1.example.com",
+              {
+                  absl::StrCat("localhost:", balancer_->port()),
+                  absl::StrCat("localhost:", fallback_balancer_->port()),
+              },
+              "xdstp://xds1.example.com/envoy.config.listener.v3.Listener"
+              "client/%s?client_listener_resource_name_template_not_in_use")
+          .AddAuthority(
+              "xds2.example.com",
+              {
+                  absl::StrCat("localhost:", balancer_->port()),
+                  absl::StrCat("localhost:", authority_xds2_fallback->port()),
+              },
+              "xdstp://xds2.example.com/envoy.config.listener.v3.Listener"
+              "client/%s?client_listener_resource_name_template_not_in_use"));
 
   CreateAndStartBackends(2);
 
@@ -206,6 +213,8 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsFallbackTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_core::testing::ScopedEnvVar fallback_enabled(
+      "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   // Make the backup poller poll very frequently in order to pick up

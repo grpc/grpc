@@ -589,9 +589,7 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   // Find all watchers for this channel.
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (auto& a : xds_client_->authority_state_map_) {  // authority
-    gpr_log(GPR_INFO, "%d", xds_client_->HasRequestedResources(a.second));
     if (a.second.xds_channels.back() != this ||
-        !xds_client_->HasRequestedResources(a.second) ||
         xds_client_->TryFallbackLocked(a.first, a.second)) {
       continue;
     }
@@ -1624,6 +1622,9 @@ bool XdsClient::HasRequestedResources(const AuthorityState& authority_state) {
 
 bool XdsClient::TryFallbackLocked(const std::string& authority,
                                   AuthorityState& authority_state) {
+  if (!HasRequestedResources(authority_state)) {
+    return false;
+  }
   std::vector<const XdsBootstrap::XdsServer*> xds_servers;
   if (authority != kOldStyleAuthority) {
     xds_servers = bootstrap().LookupAuthority(authority)->servers();
