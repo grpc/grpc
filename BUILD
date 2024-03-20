@@ -65,6 +65,30 @@ bool_flag(
     build_setting_default = False,
 )
 
+platform(
+    name = "android_x86_64",
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "android_arm64",
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+platform(
+    name = "android_armv7",
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:armv7",
+    ],
+)
+
 config_setting(
     name = "grpc_no_rls_flag",
     flag_values = {":disable_grpc_rls": "true"},
@@ -84,6 +108,8 @@ config_setting(
 config_setting(
     name = "android",
     values = {"crosstool_top": "//external:android/crosstool"},
+    # TODO: Use constraint_values to detect android after Bazel 7.0 platforms migration is finished
+    # constraint_values = [ "@platforms//os:android" ],
 )
 
 config_setting(
@@ -4247,6 +4273,7 @@ grpc_cc_library(
         "//src/core:ext/xds/xds_channel_args.h",
         "//src/core:ext/xds/xds_client.h",
         "//src/core:ext/xds/xds_client_stats.h",
+        "//src/core:ext/xds/xds_metrics.h",
         "//src/core:ext/xds/xds_resource_type.h",
         "//src/core:ext/xds/xds_resource_type_impl.h",
         "//src/core:ext/xds/xds_transport.h",

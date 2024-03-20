@@ -360,8 +360,10 @@ class GlobalStatsPluginRegistry {
 
   // Registers a stats plugin with the global stats plugin registry.
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
-  // The following two functions can be invoked to get a stats plugin group for
+
+  // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
+  static StatsPluginGroup GetAllStatsPlugins();
   static StatsPluginGroup GetStatsPluginsForChannel(
       const StatsPlugin::ChannelScope& scope);
   static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
