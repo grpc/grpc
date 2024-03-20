@@ -166,6 +166,7 @@ class RegisteredMetricCallback;
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
+  // Configuration (scope) for a specific client channel.
   class ChannelScope {
    public:
     ChannelScope(absl::string_view target, absl::string_view authority)
@@ -253,11 +254,13 @@ class StatsPlugin {
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
-  // Gets a ClientCallTracer which can be used in a call.
+  // Gets a ClientCallTracer associated with this stats plugin which can be used
+  // in a call.
   virtual ClientCallTracer* GetClientCallTracer(
       const Slice& path, bool registered_method,
       std::shared_ptr<ScopeConfig> scope_config) = 0;
-  // Gets a ServerCallTracer which can be used in a call.
+  // Gets a ServerCallTracer associated with this stats plugin which can be used
+  // in a call.
   virtual ServerCallTracer* GetServerCallTracer(
       std::shared_ptr<ScopeConfig> scope_config) = 0;
 
@@ -271,13 +274,19 @@ class StatsPlugin {
   //     absl::Span<absl::string_view> label_values) = 0;
 };
 
-// A global registry of StatsPlugins. It has shared ownership to the registered
-// StatsPlugins. This API is supposed to be used during runtime after the main
+// A global registry of stats plugins. It has shared ownership to the registered
+// stats plugins. This API is supposed to be used during runtime after the main
 // function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
+  // A stats plugin group object is how the user code normally interacts with
+  // stats plugins. They got a stats plugin group which contains all the stats
+  // plugins for a specific scope and all operations on the stats plugin group
+  // will be applied to all the stats plugins within the group.
   class StatsPluginGroup {
    public:
+    // Adds a stats plugin and a scope config (per-channel or per-server) to the
+    // group.
     void AddStatsPlugin(std::shared_ptr<StatsPlugin> plugin,
                         std::shared_ptr<StatsPlugin::ScopeConfig> config) {
       PluginState plugin_state;
@@ -285,7 +294,8 @@ class GlobalStatsPluginRegistry {
       plugin_state.scope_config = std::move(config);
       plugins_state_.push_back(std::move(plugin_state));
     }
-
+    // Adds a counter in all stats plugins within the group. See the StatsPlugin
+    // interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void AddCounter(HandleType handle, ValueType value,
                     absl::Span<const absl::string_view> label_values,
@@ -294,6 +304,8 @@ class GlobalStatsPluginRegistry {
         state.plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
+    // Records a value to a histogram in all stats plugins within the group. See
+    // the StatsPlugin interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void RecordHistogram(HandleType handle, ValueType value,
                          absl::Span<const absl::string_view> label_values,
@@ -303,6 +315,8 @@ class GlobalStatsPluginRegistry {
                                       optional_values);
       }
     }
+    // Sets a value to a gauge in all stats plugins within the group. See the
+    // StatsPlugin interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void SetGauge(HandleType handle, ValueType value,
                   absl::Span<const absl::string_view> label_values,
@@ -325,8 +339,12 @@ class GlobalStatsPluginRegistry {
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
 
+    // Adds all available client call tracers associated with the stats plugins
+    // within the group to \a call_context.
     void AddClientCallTracers(const Slice& path, bool registered_method,
                               grpc_call_context_element* call_context);
+    // Adds all available server call tracers associated with the stats plugins
+    // within the group to \a call_context.
     void AddServerCallTracers(grpc_call_context_element* call_context);
 
    private:
@@ -340,8 +358,9 @@ class GlobalStatsPluginRegistry {
     std::vector<PluginState> plugins_state_;
   };
 
+  // Registers a stats plugin with the global stats plugin registry.
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
-  // The following two functions can be invoked to get a StatsPluginGroup for
+  // The following two functions can be invoked to get a stats plugin group for
   // a specified scope.
   static StatsPluginGroup GetStatsPluginsForChannel(
       const StatsPlugin::ChannelScope& scope);
