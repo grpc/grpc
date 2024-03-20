@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
+
 #include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
@@ -19,3 +22,5 @@ namespace grpc_core {
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
