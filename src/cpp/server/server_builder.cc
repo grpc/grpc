@@ -425,7 +425,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
           // Failed to create a passive listener. The error is already logged.
           return nullptr;
         }
-        passive_listener->Initialize(core_server, core_listener);
+        passive_listener->server_ = core_server->Ref();
+        passive_listener->listener_ = core_listener;
         grpc_server_credentials_release(insecure_creds);
       } else {
         auto* core_listener =
@@ -434,7 +435,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
           // Failed to create a passive listener. The error is already logged.
           return nullptr;
         }
-        passive_listener->Initialize(core_server, core_listener);
+        passive_listener->server_ = core_server->Ref();
+        passive_listener->listener_ = core_listener;
       }
     }
   }

@@ -21,6 +21,7 @@
 namespace grpc_core {
 class ListenerInterface;
 class Server;
+class PassiveListenerImpl;
 }  // namespace grpc_core
 
 namespace grpc {
@@ -55,10 +56,6 @@ class PassiveListener {
 
  private:
   friend class grpc::ServerBuilder;
-
-  /// Internal API. initializes a passive listener when the server is created.
-  virtual void Initialize(grpc_core::Server* server,
-                          grpc_core::ListenerInterface* listener) = 0;
 };
 
 }  // namespace experimental

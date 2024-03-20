@@ -857,7 +857,31 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
     channelz_node_->AddChildListenSocket(
         listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
+  grpc_core::MutexLock lock(&listener_mu_);
   listeners_.emplace_back(std::move(listener));
+}
+
+absl::Status Server::AcceptConnectedEndpoint(
+    grpc_core::ListenerInterface* core_listener,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint) {
+  {
+    grpc_core::MutexLock lock(&listener_mu_);
+    // search the listener list for this listener to ensure it's owned and
+    // alive.
+    bool found = false;
+    for (const auto& listener : listeners_) {
+      if (listener.listener.get() == core_listener) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return absl::NotFoundError("Listener is not owned by this server");
+    }
+  }
+  core_listener->AcceptConnectedEndpoint(std::move(endpoint));
+  return absl::OkStatus();
 }
 
 void Server::Start() {
@@ -898,8 +922,11 @@ void Server::Start() {
                                    pollset);
     }
   }
-  for (auto& listener : listeners_) {
-    listener.listener->Start(this, &pollsets_);
+  {
+    grpc_core::MutexLock lock(&listener_mu_);
+    for (auto& listener : listeners_) {
+      listener.listener->Start(this, &pollsets_);
+    }
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
@@ -1022,18 +1049,21 @@ void Server::MaybeFinishShutdown() {
     MutexLock lock(&mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
-  if (!channels_.empty() || listeners_destroyed_ < listeners_.size()) {
-    if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
-                                  last_shutdown_message_time_),
-                     gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
-      last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
-      gpr_log(GPR_DEBUG,
-              "Waiting for %" PRIuPTR " channels and %" PRIuPTR "/%" PRIuPTR
-              " listeners to be destroyed before shutting down server",
-              channels_.size(), listeners_.size() - listeners_destroyed_,
-              listeners_.size());
+  {
+    grpc_core::MutexLock lock(&listener_mu_);
+    if (!channels_.empty() || listeners_destroyed_ < listeners_.size()) {
+      if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
+                                    last_shutdown_message_time_),
+                       gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
+        last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
+        gpr_log(GPR_DEBUG,
+                "Waiting for %" PRIuPTR " channels and %" PRIuPTR "/%" PRIuPTR
+                " listeners to be destroyed before shutting down server",
+                channels_.size(), listeners_.size() - listeners_destroyed_,
+                listeners_.size());
+      }
+      return;
     }
-    return;
   }
   shutdown_published_ = true;
   for (auto& shutdown_tag : shutdown_tags_) {
@@ -1125,18 +1155,27 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 }
 
 void Server::StopListening() {
-  for (auto& listener : listeners_) {
-    if (listener.listener == nullptr) continue;
-    channelz::ListenSocketNode* channelz_listen_socket_node =
-        listener.listener->channelz_listen_socket_node();
-    if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
-      channelz_node_->RemoveChildListenSocket(
-          channelz_listen_socket_node->uuid());
+  // Listeners cannot be destroyed when the listener_mu lobck is held.
+  std::list<OrphanablePtr<ListenerInterface>> listeners_to_destroy;
+  {
+    grpc_core::MutexLock lock(&listener_mu_);
+    for (auto& listener : listeners_) {
+      if (listener.listener == nullptr) continue;
+      channelz::ListenSocketNode* channelz_listen_socket_node =
+          listener.listener->channelz_listen_socket_node();
+      if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
+        channelz_node_->RemoveChildListenSocket(
+            channelz_listen_socket_node->uuid());
+      }
+      GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
+                        grpc_schedule_on_exec_ctx);
+      listener.listener->SetOnDestroyDone(&listener.destroy_done);
+      listeners_to_destroy.push_back(std::move(listener.listener));
+      listener.listener = nullptr;
     }
-    GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
-                      grpc_schedule_on_exec_ctx);
-    listener.listener->SetOnDestroyDone(&listener.destroy_done);
-    listener.listener.reset();
+  }
+  for (auto& listener : listeners_to_destroy) {
+    listener.reset();
   }
 }
 
@@ -1162,6 +1201,7 @@ void Server::SendGoaways() {
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
+    MutexLock listener_lock(&listener_mu_);
     GPR_ASSERT(ShutdownCalled() || listeners_.empty());
     GPR_ASSERT(listeners_destroyed_ == listeners_.size());
   }

@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
@@ -28,8 +30,8 @@ grpc_core::ListenerInterface* grpc_server_add_passive_listener(
     grpc_core::Server* server, grpc_server_credentials* credentials);
 
 // Called to add an endpoint to passive_listener.
-void grpc_server_accept_connected_endpoint(
-    grpc_core::ListenerInterface* core_listener,
+absl::Status grpc_server_accept_connected_endpoint(
+    grpc_core::Server* server, grpc_core::ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint);
 

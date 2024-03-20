@@ -63,6 +63,8 @@ class ExternalConnectionAcceptorImpl;
 class CallbackGenericService;
 
 namespace experimental {
+class PassiveListenerImpl;
+
 // EXPERIMENTAL API:
 // Interface for a grpc server to build transports with connections created out
 // of band.
@@ -383,10 +385,10 @@ class ServerBuilder {
   friend class grpc::testing::ServerBuilderPluginTest;
 
   struct UnstartedPassiveListener {
-    std::weak_ptr<experimental::PassiveListener> passive_listener;
+    std::weak_ptr<experimental::PassiveListenerImpl> passive_listener;
     std::shared_ptr<grpc::ServerCredentials> credentials;
     UnstartedPassiveListener(
-        std::weak_ptr<experimental::PassiveListener> listener,
+        std::weak_ptr<experimental::PassiveListenerImpl> listener,
         std::shared_ptr<grpc::ServerCredentials> creds)
         : passive_listener(std::move(listener)),
           credentials(std::move(creds)) {}

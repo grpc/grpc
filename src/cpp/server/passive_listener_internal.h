@@ -41,9 +41,6 @@ class PassiveListenerOwner final : public PassiveListener {
   }
 
  private:
-  void Initialize(grpc_core::Server* /* server */,
-                  grpc_core::ListenerInterface* /* listener */) override {}
-
   std::shared_ptr<PassiveListener> listener_;
 };
 
@@ -59,8 +56,7 @@ class PassiveListenerImpl final : public PassiveListener {
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
  private:
-  void Initialize(grpc_core::Server* server,
-                  grpc_core::ListenerInterface* listener) override;
+  friend class grpc::ServerBuilder;
 
   // Data members will be populated when initialized.
   grpc_core::RefCountedPtr<grpc_core::Server> server_;

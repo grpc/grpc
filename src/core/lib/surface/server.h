@@ -75,9 +75,7 @@
   "grpc.server.max_pending_requests_hard_limit"
 
 namespace grpc {
-namespace experimental {
-class PassiveListenerImpl;
-}  // namespace experimental
+class ServerBuilder;
 }  // namespace grpc
 
 namespace grpc_core {
@@ -180,6 +178,15 @@ class Server : public ServerInterface,
   // the listener.
   void AddListener(OrphanablePtr<ListenerInterface> listener);
 
+  /// Takes an Endpoint for an established connection, and treats it as if the
+  /// connection had been accepted by the server.
+  ///
+  /// The server must be started before endpoints can be accepted.
+  absl::Status AcceptConnectedEndpoint(
+      grpc_core::ListenerInterface* core_listener,
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint);
+
   // Starts listening for connections.
   void Start() ABSL_LOCKS_EXCLUDED(mu_global_);
 
@@ -229,7 +236,8 @@ class Server : public ServerInterface,
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
  private:
-  friend class grpc::experimental::PassiveListenerImpl;
+  friend class grpc::ServerBuilder;
+
   struct RequestedCall;
 
   class RequestMatcherInterface;
@@ -519,7 +527,8 @@ class Server : public ServerInterface,
 
   std::list<ChannelData*> channels_;
 
-  std::list<Listener> listeners_;
+  grpc_core::Mutex listener_mu_ ABSL_ACQUIRED_AFTER(mu_global_);
+  std::list<Listener> listeners_ ABSL_GUARDED_BY(listener_mu_);
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.

@@ -32,12 +32,8 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
-  grpc_core::ExecCtx exec_ctx;
-  if (server_->ShutdownCalled()) {
-    return absl::AbortedError("Server is shut down.");
-  }
-  grpc_server_accept_connected_endpoint(listener_, std::move(endpoint));
-  return absl::OkStatus();
+  return grpc_server_accept_connected_endpoint(server_.get(), listener_,
+                                               std::move(endpoint));
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
@@ -57,14 +53,6 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   auto endpoint = supports_fd->CreateEndpointFromFd(
       fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
   return AcceptConnectedEndpoint(std::move(endpoint));
-}
-
-void PassiveListenerImpl::Initialize(grpc_core::Server* server,
-                                     grpc_core::ListenerInterface* listener) {
-  GPR_ASSERT(server_.get() == nullptr);
-  GPR_ASSERT(listener_ == nullptr);
-  server_ = server->Ref();
-  listener_ = listener;
 }
 
 }  // namespace experimental

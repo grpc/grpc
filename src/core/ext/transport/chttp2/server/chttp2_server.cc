@@ -1188,12 +1188,12 @@ void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-void grpc_server_accept_connected_endpoint(
-    grpc_core::ListenerInterface* core_listener,
+absl::Status grpc_server_accept_connected_endpoint(
+    grpc_core::Server* server, grpc_core::ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   grpc_core::ExecCtx exec_ctx;
-  core_listener->AcceptConnectedEndpoint(std::move(endpoint));
+  return server->AcceptConnectedEndpoint(core_listener, std::move(endpoint));
 }
 
 grpc_core::ListenerInterface* grpc_server_add_passive_listener(
