@@ -589,6 +589,7 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   // Find all watchers for this channel.
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (auto& a : xds_client_->authority_state_map_) {  // authority
+    gpr_log(GPR_INFO, "%d", xds_client_->HasRequestedResources(a.second));
     if (a.second.xds_channels.back() != this ||
         !xds_client_->HasRequestedResources(a.second) ||
         xds_client_->TryFallbackLocked(a.first, a.second)) {
@@ -1652,6 +1653,7 @@ bool XdsClient::TryFallbackLocked(const std::string& authority,
               authority_state.xds_channels.back()->status().ToString().c_str());
     }
   }
+  gpr_log(GPR_INFO, "[xds_client %p] No fallback server", this);
   return false;
 }
 

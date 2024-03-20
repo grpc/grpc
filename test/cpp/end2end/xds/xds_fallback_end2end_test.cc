@@ -172,7 +172,7 @@ TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
 
-TEST_P(XdsFallbackTest, DISABLED_AuthorityServers) {
+TEST_P(XdsFallbackTest, PerAuthorityServers) {
   auto authority_xds2_fallback = CreateAndStartBalancer("Authority B Fallback");
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
