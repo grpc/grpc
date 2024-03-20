@@ -12,19 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# copybara: Import internal android_library rule here
-
 licenses(["notice"])
 
-android_library(
-    name = "connection_helper",
-    srcs = [
-        "GrpcBinderConnection.java",
-        "GrpcCppServerBuilder.java",
-        "NativeConnectionHelper.java",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        # copybara: Add proguard dependency here
-    ],
-)
+exports_files([
+    "evil.crl",
+    "invalid_content.crl",
+    "invalid_signature.crl",
+])

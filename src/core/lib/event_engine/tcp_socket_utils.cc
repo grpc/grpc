@@ -311,7 +311,7 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
   }
 }
 
-absl::optional<int> ResolvedAddressIsWildcard(
+absl::optional<int> MaybeGetWildcardPortFromAddress(
     const EventEngine::ResolvedAddress& addr) {
   const EventEngine::ResolvedAddress* resolved_addr = &addr;
   EventEngine::ResolvedAddress addr4_normalized;

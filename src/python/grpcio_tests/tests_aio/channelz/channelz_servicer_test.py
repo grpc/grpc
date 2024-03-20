@@ -94,7 +94,7 @@ class _ChannelServerPair:
             channelz_pb2.GetTopChannelsRequest(start_channel_id=0)
         )
         for channel in resp.channel:
-            if channel.data.target == self.address:
+            if channel.data.target == "dns:///" + self.address:
                 self.channel_ref_id = channel.ref.channel_id
 
         resp = await channelz_stub.GetServers(

@@ -310,8 +310,10 @@ class GlobalStatsPluginRegistry {
   };
 
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
-  // The following two functions can be invoked to get a StatsPluginGroup for
+
+  // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
+  static StatsPluginGroup GetAllStatsPlugins();
   static StatsPluginGroup GetStatsPluginsForChannel(
       const StatsPlugin::ChannelScope& scope);
   // TODO(yijiem): Implement this.
