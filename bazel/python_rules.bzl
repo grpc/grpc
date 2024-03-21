@@ -110,7 +110,7 @@ _gen_py_aspect = aspect(
     fragments = ["py"],
     attrs = {
         "_protoc": attr.label(
-            default = Label("//external:protocol_compiler"),
+            default = Label("@com_google_protobuf//:protoc"),
             providers = ["files_to_run"],
             executable = True,
             cfg = "exec",
@@ -166,7 +166,7 @@ py_proto_library = rule(
             aspects = [_gen_py_aspect],
         ),
         "_protoc": attr.label(
-            default = Label("//external:protocol_compiler"),
+            default = Label("@com_google_protobuf//:protoc"),
             providers = ["files_to_run"],
             executable = True,
             cfg = "exec",
@@ -259,7 +259,7 @@ _generate_pb2_grpc_src = rule(
             executable = True,
             providers = ["files_to_run"],
             cfg = "exec",
-            default = Label("//external:protocol_compiler"),
+            default = Label("@com_google_protobuf//:protoc"),
         ),
         "grpc_library": attr.label(
             default = Label("//src/python/grpcio/grpc:grpcio"),
