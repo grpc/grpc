@@ -25,7 +25,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
@@ -187,42 +187,53 @@ bool IsTestExperimentEnabled(size_t experiment_id) {
 }
 
 void PrintExperimentsList() {
-  size_t max_experiment_length = 0;
-  // Populate visitation order into a std::map so that iteration results in a
-  // lexical ordering of experiment names.
-  // The lexical ordering makes it nice and easy to find the experiment you're
-  // looking for in the output spam that we generate.
-  std::map<absl::string_view, size_t> visitation_order;
+  std::map<std::string, std::string> experiment_status;
+  std::set<std::string> defaulted_on_experiments;
   for (size_t i = 0; i < kNumExperiments; i++) {
-    max_experiment_length =
-        std::max(max_experiment_length, strlen(g_experiment_metadata[i].name));
-    visitation_order[g_experiment_metadata[i].name] = i;
+    const char* name = g_experiment_metadata[i].name;
+    const bool enabled = IsExperimentEnabled(i);
+    const bool default_enabled = g_experiment_metadata[i].default_value;
+    const bool forced = g_forced_experiments[i].forced;
+    if (!default_enabled && !enabled) continue;
+    if (default_enabled && enabled) {
+      defaulted_on_experiments.insert(name);
+      continue;
+    }
+    if (enabled) {
+      if (g_check_constraints_cb != nullptr &&
+          (*g_check_constraints_cb)(g_experiment_metadata[i])) {
+        experiment_status[name] = "on:constraints";
+        continue;
+      }
+      if (forced && g_forced_experiments[i].value) {
+        experiment_status[name] = "on:forced";
+        continue;
+      }
+      experiment_status[name] = "on";
+    } else {
+      if (forced && !g_forced_experiments[i].value) {
+        experiment_status[name] = "off:forced";
+        continue;
+      }
+      experiment_status[name] = "off";
+    }
   }
-  for (auto name_index : visitation_order) {
-    const size_t i = name_index.second;
-    gpr_log(
-        GPR_INFO, "%s",
-        absl::StrCat(
-            "gRPC EXPERIMENT ", g_experiment_metadata[i].name,
-            std::string(max_experiment_length -
-                            strlen(g_experiment_metadata[i].name) + 1,
-                        ' '),
-            IsExperimentEnabled(i) ? "ON " : "OFF",
-            " (default:", g_experiment_metadata[i].default_value ? "ON" : "OFF",
-            (g_check_constraints_cb != nullptr
-                 ? absl::StrCat(
-                       " + ", g_experiment_metadata[i].additional_constaints,
-                       " => ",
-                       (*g_check_constraints_cb)(g_experiment_metadata[i])
-                           ? "ON "
-                           : "OFF")
-                 : std::string()),
-            g_forced_experiments[i].forced
-                ? absl::StrCat(" force:",
-                               g_forced_experiments[i].value ? "ON" : "OFF")
-                : std::string(),
-            ")")
-            .c_str());
+  if (experiment_status.empty()) {
+    if (!defaulted_on_experiments.empty()) {
+      gpr_log(GPR_INFO, "gRPC experiments enabled: %s",
+              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
+    }
+  } else {
+    if (defaulted_on_experiments.empty()) {
+      gpr_log(GPR_INFO, "gRPC experiments: %s",
+              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
+                  .c_str());
+    } else {
+      gpr_log(GPR_INFO, "gRPC experiments: %s; default-enabled: %s",
+              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
+                  .c_str(),
+              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
+    }
   }
 }
 
