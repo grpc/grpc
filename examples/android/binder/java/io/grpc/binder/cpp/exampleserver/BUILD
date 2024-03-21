@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@build_bazel_rules_android//android:rules.bzl", "android_binary", "android_library")
-
 cc_library(
     name = "jni_lib",
     srcs = ["native.cc"],

@@ -36,7 +36,6 @@ build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
 
 build:dbg --compilation_mode=dbg
-build:dbg --copt=-Werror=return-stack-address
 
 # Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
 # https://github.com/bazelbuild/bazel/issues/9190
