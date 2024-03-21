@@ -136,10 +136,6 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     StartListening().IgnoreError();
   };
 
-  void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-      /* endpoint */) override {}
-
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
   }

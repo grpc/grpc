@@ -131,7 +131,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
   void AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) override;
+          endpoint);
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
@@ -962,6 +962,8 @@ void Chttp2ServerListener::Orphan() {
   if (tcp_server != nullptr) {
     grpc_tcp_server_shutdown_listeners(tcp_server);
     grpc_tcp_server_unref(tcp_server);
+  } else {
+    Unref();
   }
 }
 
@@ -1075,7 +1077,8 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
   ExecCtx exec_ctx;
-  listener_->AcceptConnectedEndpoint(std::move(endpoint));
+  listener_.TakeAsSubclass<Chttp2ServerListener>()->AcceptConnectedEndpoint(
+      (std::move(endpoint)));
   return absl::OkStatus();
 }
 

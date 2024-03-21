@@ -89,18 +89,13 @@ class Server : public ServerInterface,
   /// listening and initiate destruction of the listener.
   class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
    public:
+    ListenerInterface()
+        : InternallyRefCounted<ListenerInterface>(
+              "DO NOT SUBMIT listener interface") {}
     /// Starts listening. This listener may refer to the pollset object beyond
     /// this call, so it is a pointer rather than a reference.
     virtual void Start(Server* server,
                        const std::vector<grpc_pollset*>* pollsets) = 0;
-
-    /// Takes an Endpoint for an established connection, and treats it as if the
-    /// connection had been accepted by the server.
-    ///
-    /// The server must be started before endpoints can be accepted.
-    virtual void AcceptConnectedEndpoint(
-        std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-            endpoint) = 0;
 
     /// Returns the channelz node for the listen socket, or null if not
     /// supported.

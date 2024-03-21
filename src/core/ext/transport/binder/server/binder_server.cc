@@ -151,10 +151,6 @@ class BinderServerListener : public Server::ListenerInterface {
     grpc_add_endpoint_binder(addr_, endpoint_binder_);
   }
 
-  void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-      /* endpoint */) override {}
-
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return nullptr;
   }
