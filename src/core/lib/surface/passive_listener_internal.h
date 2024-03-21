@@ -17,7 +17,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/passive_listener.h>
-#include <grpc/passive_listener_injection.h>
 
 #include "src/core/lib/surface/server.h"
 
@@ -65,8 +64,6 @@ class PassiveListenerImpl final : public PassiveListener {
 
   // Data members will be populated when initialized.
   Server* server_ = nullptr;
-  // Not safe for this class to use directly -- only used within
-  // grpc_server_accept_connected_endpoint().
   RefCountedPtr<ListenerInterface> listener_;
 };
 

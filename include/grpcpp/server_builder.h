@@ -28,7 +28,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/passive_listener_injection.h>
+#include <grpc/passive_listener.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/workaround_list.h>
 #include <grpcpp/impl/channel_argument_option.h>

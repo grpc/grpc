@@ -56,8 +56,6 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
   }
 
  private:
-  bool IsInsecure() const override { return true; }
-
   grpc_server_credentials* c_creds() const override { return nullptr; }
 
   std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy_;

@@ -51,8 +51,6 @@ class InsecureServerCredentialsImpl final : public ServerCredentials {
   }
 
  private:
-  bool IsInsecure() const override { return true; }
-
   grpc_server_credentials* c_creds() const override { return creds_; }
 
   grpc_server_credentials* creds_;

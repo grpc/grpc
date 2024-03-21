@@ -43,7 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/passive_listener_injection.h>
+#include <grpc/passive_listener.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

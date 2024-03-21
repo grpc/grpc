@@ -2065,11 +2065,3 @@ void grpc_server_config_fetcher_destroy(
                  (server_config_fetcher));
   delete server_config_fetcher;
 }
-
-absl::Status grpc_server_accept_connected_endpoint(
-    grpc_core::Server* server, grpc_core::ListenerInterface* core_listener,
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint) {
-  grpc_core::ExecCtx exec_ctx;
-  return server->AcceptConnectedEndpoint(core_listener, std::move(endpoint));
-}

@@ -16,7 +16,7 @@
 #include "src/core/lib/surface/passive_listener_internal.h"
 
 #include <grpc/grpc.h>
-#include <grpc/passive_listener_injection.h>
+#include <grpc/passive_listener.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -32,8 +32,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
-  return grpc_server_accept_connected_endpoint(server_, listener_.get(),
-                                               std::move(endpoint));
+  return server_->AcceptConnectedEndpoint(listener_.get(), std::move(endpoint));
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {

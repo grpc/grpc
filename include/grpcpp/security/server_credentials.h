@@ -91,11 +91,6 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   // TODO(dgq): the "port" part seems to be a misnomer.
   virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
 
-  // TODO(yashykt): This is a hack since InsecureServerCredentials() cannot use
-  // grpc_insecure_server_credentials_create() and should be removed after
-  // insecure builds are removed from gRPC.
-  virtual bool IsInsecure() const { return false; }
-
   virtual grpc_server_credentials* c_creds() const = 0;
 };
 
