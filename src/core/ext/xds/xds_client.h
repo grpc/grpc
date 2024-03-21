@@ -31,7 +31,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "upb/reflection/def.hpp"
-#include "xds_bootstrap.h"
 
 #include <grpc/event_engine/event_engine.h>
 
