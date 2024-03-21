@@ -421,52 +421,44 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
             "mynamespace");
 }
 
-class MeshLabelsIterableTest : public ::testing::Test {
- protected:
-  MeshLabelsIterableTest()
-      : local_labels_({{"csm.workload_canonical_service", "canonical_service"},
-                       {"csm.mesh_id", "mesh"}}) {}
+// Creates a serialized slice with labels for metadata exchange based on \a
+// resource.
+grpc_core::Slice RemoteMetadataSliceFromResource(
+    const opentelemetry::sdk::resource::Resource& resource) {
+  return grpc::internal::ServiceMeshLabelsInjector(resource.GetAttributes())
+      .TestOnlySerializedLabels()
+      .Ref();
+}
 
-  // Creates a serialized slice with labels for metadata exchange based on \a
-  // resource.
-  static grpc_core::Slice RemoteMetadataSliceFromResource(
-      const opentelemetry::sdk::resource::Resource& resource) {
-    return grpc::internal::ServiceMeshLabelsInjector(resource.GetAttributes())
-        .TestOnlySerializedLabels()
-        .Ref();
+std::vector<std::pair<absl::string_view, absl::string_view>> LabelsFromIterable(
+    grpc::internal::MeshLabelsIterable* iterable) {
+  std::vector<std::pair<absl::string_view, absl::string_view>> labels;
+  while (true) {
+    auto label = iterable->Next();
+    if (!label.has_value()) break;
+    labels.push_back(*std::move(label));
   }
+  EXPECT_EQ(labels.size(), iterable->Size());
+  return labels;
+}
 
-  static std::vector<std::pair<absl::string_view, absl::string_view>>
-  LabelsFromIterable(grpc::internal::MeshLabelsIterable* iterable) {
-    std::vector<std::pair<absl::string_view, absl::string_view>> labels;
-    while (true) {
-      auto label = iterable->Next();
-      if (!label.has_value()) break;
-      labels.push_back(*std::move(label));
-    }
-    EXPECT_EQ(labels.size(), iterable->Size());
-    return labels;
+std::string PrettyPrintLabels(
+    const std::vector<std::pair<absl::string_view, absl::string_view>>&
+        labels) {
+  std::vector<std::string> strings;
+  strings.reserve(labels.size());
+  for (const auto& pair : labels) {
+    strings.push_back(
+        absl::StrFormat("{\"%s\" : \"%s\"}", pair.first, pair.second));
   }
+  return absl::StrJoin(strings, ", ");
+}
 
-  static std::string PrettyPrintLabels(
-      const std::vector<std::pair<absl::string_view, absl::string_view>>&
-          labels) {
-    std::string result;
-    std::vector<std::string> strings;
-    strings.reserve(labels.size());
-    for (const auto& pair : labels) {
-      strings.push_back(
-          absl::StrFormat("{\"%s\" : \"%s\"}", pair.first, pair.second));
-    }
-    return absl::StrJoin(strings, ", ");
-  }
-
-  std::vector<std::pair<absl::string_view, std::string>> local_labels_;
-};
-
-TEST_F(MeshLabelsIterableTest, NoRemoteMetadata) {
-  grpc::internal::MeshLabelsIterable iterable(local_labels_,
-                                              grpc_core::Slice());
+TEST(MeshLabelsIterableTest, NoRemoteMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(local_labels, grpc_core::Slice());
   auto labels = LabelsFromIterable(&iterable);
   EXPECT_FALSE(iterable.GotRemoteLabels());
   EXPECT_THAT(
@@ -478,9 +470,12 @@ TEST_F(MeshLabelsIterableTest, NoRemoteMetadata) {
       << PrettyPrintLabels(labels);
 }
 
-TEST_F(MeshLabelsIterableTest, RemoteGceTypeMetadata) {
+TEST(MeshLabelsIterableTest, RemoteGceTypeMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
   grpc::internal::MeshLabelsIterable iterable(
-      local_labels_, RemoteMetadataSliceFromResource(TestGceResource()));
+      local_labels, RemoteMetadataSliceFromResource(TestGceResource()));
   auto labels = LabelsFromIterable(&iterable);
   EXPECT_TRUE(iterable.GotRemoteLabels());
   EXPECT_THAT(
@@ -496,9 +491,12 @@ TEST_F(MeshLabelsIterableTest, RemoteGceTypeMetadata) {
       << PrettyPrintLabels(labels);
 }
 
-TEST_F(MeshLabelsIterableTest, RemoteGkeTypeMetadata) {
+TEST(MeshLabelsIterableTest, RemoteGkeTypeMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
   grpc::internal::MeshLabelsIterable iterable(
-      local_labels_, RemoteMetadataSliceFromResource(TestGkeResource()));
+      local_labels, RemoteMetadataSliceFromResource(TestGkeResource()));
   auto labels = LabelsFromIterable(&iterable);
   EXPECT_TRUE(iterable.GotRemoteLabels());
   EXPECT_THAT(
@@ -516,9 +514,12 @@ TEST_F(MeshLabelsIterableTest, RemoteGkeTypeMetadata) {
       << PrettyPrintLabels(labels);
 }
 
-TEST_F(MeshLabelsIterableTest, RemoteUnknownTypeMetadata) {
+TEST(MeshLabelsIterableTest, RemoteUnknownTypeMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
   grpc::internal::MeshLabelsIterable iterable(
-      local_labels_, RemoteMetadataSliceFromResource(TestUnknownResource()));
+      local_labels, RemoteMetadataSliceFromResource(TestUnknownResource()));
   auto labels = LabelsFromIterable(&iterable);
   EXPECT_TRUE(iterable.GotRemoteLabels());
   EXPECT_THAT(
@@ -531,9 +532,11 @@ TEST_F(MeshLabelsIterableTest, RemoteUnknownTypeMetadata) {
       << PrettyPrintLabels(labels);
 }
 
-TEST_F(MeshLabelsIterableTest, TestResetIteratorPosition) {
-  grpc::internal::MeshLabelsIterable iterable(local_labels_,
-                                              grpc_core::Slice());
+TEST(MeshLabelsIterableTest, TestResetIteratorPosition) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(local_labels, grpc_core::Slice());
   auto labels = LabelsFromIterable(&iterable);
   auto expected_labels_matcher = ElementsAre(
       Pair("csm.workload_canonical_service", "canonical_service"),
