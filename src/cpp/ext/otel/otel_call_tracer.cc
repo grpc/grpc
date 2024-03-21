@@ -72,7 +72,7 @@ OpenTelemetryPlugin::ClientCallTracer::OpenTelemetryCallAttemptTracer::
     : parent_(parent),
       arena_allocated_(arena_allocated),
       start_time_(absl::Now()) {
-  if (parent_->otel_plugin_->client().attempt.started != nullptr) {
+  if (parent_->otel_plugin_->client_.attempt.started != nullptr) {
     std::array<std::pair<absl::string_view, absl::string_view>, 2>
         additional_labels = {
             {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
@@ -80,7 +80,7 @@ OpenTelemetryPlugin::ClientCallTracer::OpenTelemetryCallAttemptTracer::
               parent_->scope_config_->filtered_target()}}};
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
-    parent_->otel_plugin_->client().attempt.started->Add(
+    parent_->otel_plugin_->client_.attempt.started->Add(
         1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr,
@@ -160,28 +160,26 @@ void OpenTelemetryPlugin::ClientCallTracer::OpenTelemetryCallAttemptTracer::
       injected_labels_from_plugin_options_, additional_labels,
       &parent_->scope_config_->active_plugin_options_view(),
       optional_labels_array_, /*is_client=*/true, parent_->otel_plugin_);
-  if (parent_->otel_plugin_->client().attempt.duration != nullptr) {
-    parent_->otel_plugin_->client().attempt.duration->Record(
+  if (parent_->otel_plugin_->client_.attempt.duration != nullptr) {
+    parent_->otel_plugin_->client_.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
         opentelemetry::context::Context{});
   }
-  if (parent_->otel_plugin_->client()
-          .attempt.sent_total_compressed_message_size != nullptr) {
-    parent_->otel_plugin_->client()
-        .attempt.sent_total_compressed_message_size->Record(
-            transport_stream_stats != nullptr
-                ? transport_stream_stats->outgoing.data_bytes
-                : 0,
-            labels, opentelemetry::context::Context{});
+  if (parent_->otel_plugin_->client_.attempt
+          .sent_total_compressed_message_size != nullptr) {
+    parent_->otel_plugin_->client_.attempt.sent_total_compressed_message_size
+        ->Record(transport_stream_stats != nullptr
+                     ? transport_stream_stats->outgoing.data_bytes
+                     : 0,
+                 labels, opentelemetry::context::Context{});
   }
-  if (parent_->otel_plugin_->client()
-          .attempt.rcvd_total_compressed_message_size != nullptr) {
-    parent_->otel_plugin_->client()
-        .attempt.rcvd_total_compressed_message_size->Record(
-            transport_stream_stats != nullptr
-                ? transport_stream_stats->incoming.data_bytes
-                : 0,
-            labels, opentelemetry::context::Context{});
+  if (parent_->otel_plugin_->client_.attempt
+          .rcvd_total_compressed_message_size != nullptr) {
+    parent_->otel_plugin_->client_.attempt.rcvd_total_compressed_message_size
+        ->Record(transport_stream_stats != nullptr
+                     ? transport_stream_stats->incoming.data_bytes
+                     : 0,
+                 labels, opentelemetry::context::Context{});
   }
 }
 

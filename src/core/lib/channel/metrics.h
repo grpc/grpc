@@ -134,14 +134,15 @@ class GlobalInstrumentsRegistry {
 
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
+  static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
+      GlobalInstrumentHandle handle);
 
  private:
   friend class GlobalInstrumentsRegistryTestPeer;
 
   GlobalInstrumentsRegistry() = delete;
 
-  static absl::flat_hash_map<
-      absl::string_view, GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+  static std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
   GetInstrumentList();
 };
 

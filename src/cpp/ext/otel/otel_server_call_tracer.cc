@@ -69,10 +69,10 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
           .value_or(nullptr) != nullptr;
   std::array<std::pair<absl::string_view, absl::string_view>, 1>
       additional_labels = {{{OpenTelemetryMethodKey(), MethodForStats()}}};
-  if (otel_plugin_->server().call.started != nullptr) {
+  if (otel_plugin_->server_.call.started != nullptr) {
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
-    otel_plugin_->server().call.started->Add(
+    otel_plugin_->server_.call.started->Add(
         1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr, {},
@@ -115,20 +115,20 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
       injected_labels_from_plugin_options_, additional_labels,
       /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
       /*is_client=*/false, otel_plugin_);
-  if (otel_plugin_->server().call.duration != nullptr) {
-    otel_plugin_->server().call.duration->Record(
+  if (otel_plugin_->server_.call.duration != nullptr) {
+    otel_plugin_->server_.call.duration->Record(
         absl::ToDoubleSeconds(elapsed_time_), labels,
         opentelemetry::context::Context{});
   }
-  if (otel_plugin_->server().call.sent_total_compressed_message_size !=
+  if (otel_plugin_->server_.call.sent_total_compressed_message_size !=
       nullptr) {
-    otel_plugin_->server().call.sent_total_compressed_message_size->Record(
+    otel_plugin_->server_.call.sent_total_compressed_message_size->Record(
         final_info->stats.transport_stream_stats.outgoing.data_bytes, labels,
         opentelemetry::context::Context{});
   }
-  if (otel_plugin_->server().call.rcvd_total_compressed_message_size !=
+  if (otel_plugin_->server_.call.rcvd_total_compressed_message_size !=
       nullptr) {
-    otel_plugin_->server().call.rcvd_total_compressed_message_size->Record(
+    otel_plugin_->server_.call.rcvd_total_compressed_message_size->Record(
         final_info->stats.transport_stream_stats.incoming.data_bytes, labels,
         opentelemetry::context::Context{});
   }

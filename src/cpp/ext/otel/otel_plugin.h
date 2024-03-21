@@ -303,7 +303,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     ActivePluginOptionsView active_plugin_options_view_;
   };
 
-  struct Client {
+  struct ClientMetrics {
     struct Attempt {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
       std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
@@ -313,7 +313,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
           rcvd_total_compressed_message_size;
     } attempt;
   };
-  struct Server {
+  struct ServerMetrics {
     struct Call {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
       std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
@@ -380,26 +380,17 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   plugin_options() const {
     return plugin_options_;
   }
-  Client& client() { return client_; }
-  Server& server() { return server_; }
 
   // Instruments for per-call metrics.
-  Client client_;
-  Server server_;
+  ClientMetrics client_;
+  ServerMetrics server_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
-  using InstrumentType = absl::variant<
+  using Instrument = absl::variant<
       Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
-  struct Instrument {
-    InstrumentType otel_instrument;
-    // Stores label keys and optional label keys for each instrument at
-    // construction time.
-    std::vector<absl::string_view> label_keys;
-    std::vector<absl::string_view> optional_label_keys;
-  };
   std::vector<Instrument> instruments_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
