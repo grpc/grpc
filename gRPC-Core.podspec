@@ -1910,7 +1910,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/legacy_channel.cc',
                       'src/core/lib/surface/legacy_channel.h',
                       'src/core/lib/surface/metadata_array.cc',
-                      'src/core/lib/surface/passive_listener_internal.cc',
                       'src/core/lib/surface/passive_listener_internal.h',
                       'src/core/lib/surface/server.cc',
                       'src/core/lib/surface/server.h',

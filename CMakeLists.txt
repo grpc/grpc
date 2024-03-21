@@ -2508,7 +2508,6 @@ add_library(grpc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/passive_listener_internal.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
@@ -3239,7 +3238,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/passive_listener_internal.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc

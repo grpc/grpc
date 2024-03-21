@@ -2968,9 +2968,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "passive_listener_internal",
-    srcs = [
-        "lib/surface/passive_listener_internal.cc",
-    ],
     hdrs = ["lib/surface/passive_listener_internal.h"],
     deps = [
         "channel_args",
@@ -6767,6 +6764,8 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
