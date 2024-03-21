@@ -20,8 +20,6 @@
 
 namespace grpc_core {
 
-class ServerBuilder;
-
 namespace experimental {
 
 /// -- EXPERIMENTAL API --
