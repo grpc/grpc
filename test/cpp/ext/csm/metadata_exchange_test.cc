@@ -423,27 +423,6 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
 
 class MeshLabelsIterableTest : public ::testing::Test {
  protected:
-// Returns the expected size of attributes on client/server metrics (other
-// than `grpc.client.attempt.started` and `grpc.server.call.started`). Use of
-// this method additionally tests `Size()` method on `MeshLabelsIterable`
-// which is unused by the OTel C++ library at present, but might be used in
-// the future.
-#if 0
-  size_t ExpectedAttributesSize(bool is_client) {
-    // Create a temporary ServiceMeshLabelsInjector and MeshLabelsIterable to
-    // get the expected size of the labels.
-    grpc::internal::ServiceMeshLabelsInjector labels_injector(
-        GetParam().GetTestResource().GetAttributes());
-    grpc::internal::MeshLabelsIterable labels_iterable(
-        labels_injector.TestOnlyLocalLabels(),
-        labels_injector.TestOnlySerializedLabels().Ref());
-    return is_client
-               ? labels_iterable.Size() + /*CSM service name and namespace*/ 2 +
-                     /*Base gRPC metric labels*/ 3
-               : labels_iterable.Size() + /*Base gRPC metric labels*/ 2;
-  }
-#endif
-
   MeshLabelsIterableTest()
       : local_labels_({{"csm.workload_canonical_service", "canonical_service"},
                        {"csm.mesh_id", "mesh"}}) {}
