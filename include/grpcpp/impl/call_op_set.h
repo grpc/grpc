@@ -43,6 +43,8 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/string_ref.h>
 
+#include "absl/log/log.h"
+
 namespace grpc {
 
 namespace internal {
@@ -972,8 +974,8 @@ class CallOpSet : public CallOpSetInterface,
       // A failure here indicates an API misuse; for example, doing a Write
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
-      gpr_log(GPR_ERROR, "API misuse of type %s observed",
-              grpc_call_error_to_string(err));
+      LOG(ERROR) << "API misuse of type " << grpc_call_error_to_string(err)
+                 << " observed";
       GPR_ASSERT(false);
     }
   }
