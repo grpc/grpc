@@ -1178,8 +1178,9 @@ absl::Status grpc_server_add_passive_listener(
         absl::StrCat("Unable to create secure server with credentials of type ",
                      credentials->type().name()));
   }
-  auto args =
-      server->channel_args().SetObject(credentials->Ref()).SetObject(sc);
+  auto args = server->channel_args()
+                  .SetObject(credentials->Ref())
+                  .SetObject(std::move(sc));
   auto listener =
       grpc_core::Chttp2ServerListener::CreateForPassiveListener(server, args);
   if (!listener.ok()) {
