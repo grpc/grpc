@@ -52,4 +52,4 @@ class PassiveListener {
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_PASSIVE_LISTENER_H
+#endif /* GRPC_PASSIVE_LISTENER_H */
