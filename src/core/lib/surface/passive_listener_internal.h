@@ -23,27 +23,6 @@
 namespace grpc_core {
 namespace experimental {
 
-// A PIMPL wrapper class that owns the only ref to the passive listener
-// implementation. This is returned to the application.
-class PassiveListenerOwner final : public PassiveListener {
- public:
-  explicit PassiveListenerOwner(std::shared_ptr<PassiveListener> listener)
-      : listener_(std::move(listener)) {}
-
-  absl::Status AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) override {
-    return listener_->AcceptConnectedEndpoint(std::move(endpoint));
-  }
-
-  absl::Status AcceptConnectedFd(int fd) override {
-    return listener_->AcceptConnectedFd(fd);
-  }
-
- private:
-  std::shared_ptr<PassiveListener> listener_;
-};
-
 // An implementation of the public C++ passive listener interface.
 // The server builder holds a weak_ptr to one of these objects, and the
 // application owns the instance.

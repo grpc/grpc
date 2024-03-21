@@ -52,6 +52,31 @@
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
 namespace grpc {
+namespace {
+
+// A PIMPL wrapper class that owns the only ref to the passive listener
+// implementation. This is returned to the application.
+class PassiveListenerOwner final
+    : public grpc_core::experimental::PassiveListener {
+ public:
+  explicit PassiveListenerOwner(std::shared_ptr<PassiveListener> listener)
+      : listener_(std::move(listener)) {}
+
+  absl::Status AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint) override {
+    return listener_->AcceptConnectedEndpoint(std::move(endpoint));
+  }
+
+  absl::Status AcceptConnectedFd(int fd) override {
+    return listener_->AcceptConnectedFd(fd);
+  }
+
+ private:
+  std::shared_ptr<PassiveListener> listener_;
+};
+
+}  // namespace
 
 static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
     g_plugin_factory_list;
@@ -233,8 +258,7 @@ ServerBuilder& ServerBuilder::AddPassiveListener(
   unstarted_passive_listeners_.emplace_back(core_passive_listener,
                                             std::move(creds));
   passive_listener =
-      std::make_unique<grpc_core::experimental::PassiveListenerOwner>(
-          std::move(core_passive_listener));
+      std::make_unique<PassiveListenerOwner>(std::move(core_passive_listener));
   return *this;
 }
 

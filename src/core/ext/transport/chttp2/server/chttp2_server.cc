@@ -127,6 +127,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Start(Server* server,
              const std::vector<grpc_pollset*>* pollsets) override;
 
+  void AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint) override;
+
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
   }
@@ -134,9 +138,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
 
   void Orphan() override;
-
-  void AcceptConnectedEndpoint(
-      std::unique_ptr<EventEngine::Endpoint> endpoint) override;
 
  private:
   class ConfigFetcherWatcher

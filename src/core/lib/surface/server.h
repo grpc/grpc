@@ -74,10 +74,6 @@
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
   "grpc.server.max_pending_requests_hard_limit"
 
-namespace grpc {
-class ServerBuilder;
-}  // namespace grpc
-
 namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
@@ -234,8 +230,6 @@ class Server : public ServerInterface,
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
  private:
-  friend class grpc::ServerBuilder;
-
   struct RequestedCall;
 
   class RequestMatcherInterface;
