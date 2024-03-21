@@ -47,12 +47,14 @@
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
+class OpenTelemetryPlugin::ClientCallTracer
+    : public grpc_core::ClientCallTracer {
  public:
   class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
    public:
-    OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
-                                   bool arena_allocated);
+    OpenTelemetryCallAttemptTracer(
+        const OpenTelemetryPlugin::ClientCallTracer* parent,
+        bool arena_allocated);
 
     std::string TraceId() override {
       // Not implemented
@@ -95,7 +97,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
                                optional_labels) override;
 
    private:
-    const OpenTelemetryCallTracer* parent_;
+    const ClientCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
@@ -108,11 +110,11 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
         injected_labels_from_plugin_options_;
   };
 
-  OpenTelemetryCallTracer(
+  ClientCallTracer(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
       bool registered_method, OpenTelemetryPlugin* otel_plugin,
       std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config);
-  ~OpenTelemetryCallTracer() override;
+  ~ClientCallTracer() override;
 
   std::string TraceId() override {
     // Not implemented

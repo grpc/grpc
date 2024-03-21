@@ -340,7 +340,7 @@ GlobalStatsPluginRegistry::GetAllStatsPlugins() {
   MutexLock lock(&*mutex_);
   StatsPluginGroup group;
   for (const auto& plugin : *plugins_) {
-    group.push_back(plugin);
+    group.AddStatsPlugin(plugin, nullptr);
   }
   return group;
 }

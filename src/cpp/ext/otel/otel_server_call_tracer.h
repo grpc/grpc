@@ -30,14 +30,17 @@
 namespace grpc {
 namespace internal {
 
-// OpenTelemetryServerCallTracer implementation
+// OpenTelemetryPlugin::ServerCallTracer implementation
 
-class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
+class OpenTelemetryPlugin::ServerCallTracer
+    : public grpc_core::ServerCallTracer {
  public:
-  OpenTelemetryServerCallTracer(
+  ServerCallTracer(
       OpenTelemetryPlugin* otel_plugin,
       std::shared_ptr<OpenTelemetryPlugin::ServerScopeConfig> scope_config)
       : start_time_(absl::Now()),
+        injected_labels_from_plugin_options_(
+            otel_plugin->plugin_options().size()),
         otel_plugin_(otel_plugin),
         scope_config_(std::move(scope_config)) {}
 
@@ -124,6 +127,8 @@ class OpenTelemetryServerCallTracer : public grpc_core::ServerCallTracer {
   absl::Duration elapsed_time_;
   grpc_core::Slice path_;
   bool registered_method_;
+  std::vector<std::unique_ptr<LabelsIterable>>
+      injected_labels_from_plugin_options_;
   OpenTelemetryPlugin* otel_plugin_;
   std::shared_ptr<OpenTelemetryPlugin::ServerScopeConfig> scope_config_;
 };

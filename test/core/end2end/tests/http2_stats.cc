@@ -178,6 +178,8 @@ class FakeServerCallTracer : public ServerCallTracer {
 
 grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
+// TODO(yijiem): figure out how to reuse grpc_core::FakeStatsPlugin instead of
+// inheriting and overriding it here.
 class FakeStatsPlugin : public grpc_core::FakeStatsPlugin {
  public:
   ClientCallTracer* GetClientCallTracer(

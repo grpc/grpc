@@ -279,7 +279,7 @@ class StatsPlugin {
 // function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
-  // A stats plugin group object is how the user code normally interacts with
+  // A stats plugin group object is how the code in gRPC normally interacts with
   // stats plugins. They got a stats plugin group which contains all the stats
   // plugins for a specific scope and all operations on the stats plugin group
   // will be applied to all the stats plugins within the group.

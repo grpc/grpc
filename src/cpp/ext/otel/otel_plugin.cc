@@ -337,30 +337,31 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
   grpc_core::GlobalInstrumentsRegistry::ForEach(
       [&, this](const grpc_core::GlobalInstrumentsRegistry::
                     GlobalInstrumentDescriptor& descriptor) {
-        for (int i = instruments_.size(); i < descriptor.index + 1; ++i) {
-          // Allocates since the index is not guaranteed to be incremental.
-          instruments_.push_back({});
-          label_keys_store_.push_back({});
+        if (instruments_.size() < descriptor.index + 1) {
+          instruments_.resize(descriptor.index + 1);
         }
         if (!metrics.contains(descriptor.name)) {
           return;
         }
-        label_keys_store_[descriptor.index] = {descriptor.label_keys,
-                                               descriptor.optional_label_keys};
+        instruments_[descriptor.index].label_keys = descriptor.label_keys;
+        instruments_[descriptor.index].optional_label_keys =
+            descriptor.optional_label_keys;
         switch (descriptor.instrument_type) {
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
-                instruments_[descriptor.index] = meter->CreateUInt64Counter(
-                    std::string(descriptor.name),
-                    std::string(descriptor.description),
-                    std::string(descriptor.unit));
+                instruments_[descriptor.index].otel_instrument =
+                    meter->CreateUInt64Counter(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
                 break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
-                instruments_[descriptor.index] = meter->CreateDoubleCounter(
-                    std::string(descriptor.name),
-                    std::string(descriptor.description),
-                    std::string(descriptor.unit));
+                instruments_[descriptor.index].otel_instrument =
+                    meter->CreateDoubleCounter(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
                 break;
               default:
                 grpc_core::Crash(
@@ -371,16 +372,18 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kHistogram:
             switch (descriptor.value_type) {
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
-                instruments_[descriptor.index] = meter->CreateUInt64Histogram(
-                    std::string(descriptor.name),
-                    std::string(descriptor.description),
-                    std::string(descriptor.unit));
+                instruments_[descriptor.index].otel_instrument =
+                    meter->CreateUInt64Histogram(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
                 break;
               case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
-                instruments_[descriptor.index] = meter->CreateDoubleHistogram(
-                    std::string(descriptor.name),
-                    std::string(descriptor.description),
-                    std::string(descriptor.unit));
+                instruments_[descriptor.index].otel_instrument =
+                    meter->CreateDoubleHistogram(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
                 break;
               default:
                 grpc_core::Crash(
@@ -444,95 +447,95 @@ void OpenTelemetryPlugin::AddCounter(
     uint64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
   const auto& instrument = instruments_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument)) {
+  if (absl::holds_alternative<Disabled>(instrument.otel_instrument)) {
     // This instrument is disabled.
     return;
   }
   GPR_ASSERT(absl::holds_alternative<
              std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
-      instrument));
-  const auto& label_keys = label_keys_store_.at(handle.index);
-  GPR_ASSERT(label_keys.first.size() == label_values.size());
-  GPR_ASSERT(label_keys.second.size() == optional_values.size());
+      instrument.otel_instrument));
+  GPR_ASSERT(instrument.label_keys.size() == label_values.size());
+  GPR_ASSERT(instrument.optional_label_keys.size() == optional_values.size());
   absl::get<std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
-      instrument)
-      ->Add(value, NPCMetricsKeyValueIterable(
-                       label_keys.first, label_values, label_keys.second,
-                       optional_values, optional_label_keys_));
+      instrument.otel_instrument)
+      ->Add(value,
+            NPCMetricsKeyValueIterable(instrument.label_keys, label_values,
+                                       instrument.optional_label_keys,
+                                       optional_values, optional_label_keys_));
 }
 void OpenTelemetryPlugin::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
   const auto& instrument = instruments_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument)) {
+  if (absl::holds_alternative<Disabled>(instrument.otel_instrument)) {
     // This instrument is disabled.
     return;
   }
   GPR_ASSERT(absl::holds_alternative<
              std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
-      instrument));
-  const auto& label_keys = label_keys_store_.at(handle.index);
-  GPR_ASSERT(label_keys.first.size() == label_values.size());
-  GPR_ASSERT(label_keys.second.size() == optional_values.size());
+      instrument.otel_instrument));
+  GPR_ASSERT(instrument.label_keys.size() == label_values.size());
+  GPR_ASSERT(instrument.optional_label_keys.size() == optional_values.size());
   absl::get<std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
-      instrument)
-      ->Add(value, NPCMetricsKeyValueIterable(
-                       label_keys.first, label_values, label_keys.second,
-                       optional_values, optional_label_keys_));
+      instrument.otel_instrument)
+      ->Add(value,
+            NPCMetricsKeyValueIterable(instrument.label_keys, label_values,
+                                       instrument.optional_label_keys,
+                                       optional_values, optional_label_keys_));
 }
 void OpenTelemetryPlugin::RecordHistogram(
     grpc_core::GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
     uint64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
   const auto& instrument = instruments_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument)) {
+  if (absl::holds_alternative<Disabled>(instrument.otel_instrument)) {
     // This instrument is disabled.
     return;
   }
   GPR_ASSERT(absl::holds_alternative<
              std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
-      instrument));
-  const auto& label_keys = label_keys_store_.at(handle.index);
-  GPR_ASSERT(label_keys.first.size() == label_values.size());
-  GPR_ASSERT(label_keys.second.size() == optional_values.size());
+      instrument.otel_instrument));
+  GPR_ASSERT(instrument.label_keys.size() == label_values.size());
+  GPR_ASSERT(instrument.optional_label_keys.size() == optional_values.size());
   absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
-      instrument)
-      ->Record(value,
-               NPCMetricsKeyValueIterable(label_keys.first, label_values,
-                                          label_keys.second, optional_values,
-                                          optional_label_keys_),
-               opentelemetry::context::Context{});
+      instrument.otel_instrument)
+      ->Record(
+          value,
+          NPCMetricsKeyValueIterable(instrument.label_keys, label_values,
+                                     instrument.optional_label_keys,
+                                     optional_values, optional_label_keys_),
+          opentelemetry::context::Context{});
 }
 void OpenTelemetryPlugin::RecordHistogram(
     grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
   const auto& instrument = instruments_.at(handle.index);
-  if (absl::holds_alternative<Disabled>(instrument)) {
+  if (absl::holds_alternative<Disabled>(instrument.otel_instrument)) {
     // This instrument is disabled.
     return;
   }
   GPR_ASSERT(absl::holds_alternative<
              std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
-      instrument));
-  const auto& label_keys = label_keys_store_.at(handle.index);
-  GPR_ASSERT(label_keys.first.size() == label_values.size());
-  GPR_ASSERT(label_keys.second.size() == optional_values.size());
+      instrument.otel_instrument));
+  GPR_ASSERT(instrument.label_keys.size() == label_values.size());
+  GPR_ASSERT(instrument.optional_label_keys.size() == optional_values.size());
   absl::get<std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
-      instrument)
-      ->Record(value,
-               NPCMetricsKeyValueIterable(label_keys.first, label_values,
-                                          label_keys.second, optional_values,
-                                          optional_label_keys_),
-               opentelemetry::context::Context{});
+      instrument.otel_instrument)
+      ->Record(
+          value,
+          NPCMetricsKeyValueIterable(instrument.label_keys, label_values,
+                                     instrument.optional_label_keys,
+                                     optional_values, optional_label_keys_),
+          opentelemetry::context::Context{});
 }
 
 grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
     const grpc_core::Slice& path, bool registered_method,
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   return grpc_core::GetContext<grpc_core::Arena>()
-      ->ManagedNew<OpenTelemetryCallTracer>(
+      ->ManagedNew<ClientCallTracer>(
           path, grpc_core::GetContext<grpc_core::Arena>(), registered_method,
           this,
           std::static_pointer_cast<OpenTelemetryPlugin::ClientScopeConfig>(
@@ -541,7 +544,7 @@ grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(
 grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   return grpc_core::GetContext<grpc_core::Arena>()
-      ->ManagedNew<grpc::internal::OpenTelemetryServerCallTracer>(
+      ->ManagedNew<ServerCallTracer>(
           this,
           std::static_pointer_cast<OpenTelemetryPlugin::ServerScopeConfig>(
               scope_config));

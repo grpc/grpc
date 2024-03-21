@@ -69,71 +69,45 @@ MATCHER_P4(AttributesEq, label_keys, label_values, optional_label_keys,
       arg.attributes.GetAttributes(), result_listener);
 }
 
+template <typename T>
+auto Equal(T result) {
+  return ::testing::Eq(result);
+}
+template <>
+auto Equal(double result) {
+  return ::testing::DoubleEq(result);
+}
+
 MATCHER_P(CounterResultEq, result, "") {
   return ::testing::ExplainMatchResult(
-             true,
-             opentelemetry::nostd::holds_alternative<
-                 opentelemetry::sdk::metrics::SumPointData>(arg.point_data),
-             result_listener) &&
-         ::testing::ExplainMatchResult(
-             result,
-             opentelemetry::nostd::get<std::remove_cv_t<decltype(result)>>(
-                 opentelemetry::nostd::get<
-                     opentelemetry::sdk::metrics::SumPointData>(arg.point_data)
-                     .value_),
-             result_listener);
-}
-
-template <typename ValueType>
-bool CompareSum(ValueType v, ValueType expectation) {
-  return v == expectation;
-}
-
-template <>
-bool CompareSum(double v, double expectation) {
-  return ::testing::Matches(::testing::DoubleEq(expectation))(v);
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::SumPointData::value_,
+              ::testing::VariantWith<std::remove_cv_t<decltype(result)>>(
+                  Equal(result)))),
+      arg.point_data, result_listener);
 }
 
 MATCHER_P4(HistogramResultEq, sum, min, max, count, "") {
   return ::testing::ExplainMatchResult(
-             true,
-             opentelemetry::nostd::holds_alternative<
-                 opentelemetry::sdk::metrics::HistogramPointData>(
-                 arg.point_data),
-             result_listener) &&
-         ::testing::ExplainMatchResult(
-             true,
-             CompareSum(
-                 opentelemetry::nostd::get<std::remove_cv_t<decltype(sum)>>(
-                     opentelemetry::nostd::get<
-                         opentelemetry::sdk::metrics::HistogramPointData>(
-                         arg.point_data)
-                         .sum_),
-                 sum),
-             result_listener) &&
-         ::testing::ExplainMatchResult(
-             min,
-             opentelemetry::nostd::get<std::remove_cv_t<decltype(min)>>(
-                 opentelemetry::nostd::get<
-                     opentelemetry::sdk::metrics::HistogramPointData>(
-                     arg.point_data)
-                     .min_),
-             result_listener) &&
-         ::testing::ExplainMatchResult(
-             max,
-             opentelemetry::nostd::get<std::remove_cv_t<decltype(max)>>(
-                 opentelemetry::nostd::get<
-                     opentelemetry::sdk::metrics::HistogramPointData>(
-                     arg.point_data)
-                     .max_),
-             result_listener) &&
-         ::testing::ExplainMatchResult(
-             count,
-             opentelemetry::nostd::get<
-                 opentelemetry::sdk::metrics::HistogramPointData>(
-                 arg.point_data)
-                 .count_,
-             result_listener);
+      ::testing::VariantWith<opentelemetry::sdk::metrics::HistogramPointData>(
+          ::testing::AllOf(
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::sum_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(sum)>>(
+                      Equal(sum))),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::min_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(min)>>(
+                      Equal(min))),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::max_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(max)>>(
+                      Equal(max))),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::count_,
+                  ::testing::Eq(count)))),
+      arg.point_data, result_listener);
 }
 
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
