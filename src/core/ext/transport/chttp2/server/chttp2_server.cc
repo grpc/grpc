@@ -1068,8 +1068,8 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
   ExecCtx exec_ctx;
-  listener_.TakeAsSubclass<Chttp2ServerListener>()->AcceptConnectedEndpoint(
-      (std::move(endpoint)));
+  static_cast<Chttp2ServerListener*>(listener_.get())
+      ->AcceptConnectedEndpoint((std::move(endpoint)));
   return absl::OkStatus();
 }
 
