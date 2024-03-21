@@ -22,7 +22,6 @@
 
 #include <inttypes.h>
 
-#include <initializer_list>
 #include <string>
 #include <utility>
 
@@ -31,7 +30,6 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -229,11 +227,3 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
 }
 
 }  // namespace grpc_core
-
-void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
-                                grpc_handshaker* handshaker) {
-  // This is a transition method to aid the API change for handshakers.
-  grpc_core::RefCountedPtr<grpc_core::Handshaker> refd_hs(
-      static_cast<grpc_core::Handshaker*>(handshaker));
-  mgr->Add(refd_hs);
-}

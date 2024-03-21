@@ -14,6 +14,9 @@
 
 #include "src/core/lib/promise/cancel_callback.h"
 
+#include <memory>
+#include <utility>
+
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"

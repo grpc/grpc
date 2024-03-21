@@ -24,6 +24,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
@@ -44,11 +45,12 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_core::Executor::SetThreadingAll(false);
 
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
-    grpc_transport* client_transport = grpc_create_binder_transport_client(
-        std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
-            input.incoming_parcels()),
-        std::make_shared<
-            grpc::experimental::binder::UntrustedSecurityPolicy>());
+    grpc_core::Transport* client_transport =
+        grpc_create_binder_transport_client(
+            std::make_unique<grpc_binder::fuzzing::BinderForFuzzing>(
+                input.incoming_parcels()),
+            std::make_shared<
+                grpc::experimental::binder::UntrustedSecurityPolicy>());
     grpc_arg authority_arg = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
         const_cast<char*>("test-authority"));
@@ -58,8 +60,8 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
                             .channel_args_preconditioning()
                             .PreconditionChannelArgs(args);
     auto channel =
-        grpc_core::Channel::Create("test-target", channel_args,
-                                   GRPC_CLIENT_DIRECT_CHANNEL, client_transport)
+        grpc_core::ChannelCreate("test-target", channel_args,
+                                 GRPC_CLIENT_DIRECT_CHANNEL, client_transport)
             ->release()
             ->c_ptr();
     grpc_channel_args_destroy(args);

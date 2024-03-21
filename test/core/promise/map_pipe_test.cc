@@ -14,9 +14,6 @@
 
 #include "src/core/lib/promise/map_pipe.h"
 
-#include <stdint.h>
-
-#include <initializer_list>
 #include <memory>
 #include <utility>
 
@@ -50,7 +47,7 @@ class Delayed {
   explicit Delayed(T x) : x_(x) {}
 
   Poll<T> operator()() {
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
     ++polls_;
     if (polls_ == 10) return std::move(x_);
     return Pending();

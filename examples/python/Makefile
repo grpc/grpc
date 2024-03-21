@@ -80,6 +80,14 @@ ARTIFACTS += lb_policies/helloworld_pb2.py
 ARTIFACTS += lb_policies/helloworld_pb2_grpc.py
 ARTIFACTS += lb_policies/helloworld_pb2.pyi
 
+ARTIFACTS += compression/helloworld_pb2.py
+ARTIFACTS += compression/helloworld_pb2_grpc.py
+ARTIFACTS += compression/helloworld_pb2.pyi
+
+ARTIFACTS += observability/helloworld_pb2.py
+ARTIFACTS += observability/helloworld_pb2_grpc.py
+ARTIFACTS += observability/helloworld_pb2.pyi
+
 .PHONY: all
 all: ${ARTIFACTS}
 
@@ -131,6 +139,9 @@ data_transmission/demo_pb2.py data_transmission/demo_pb2_grpc.py data_transmissi
 
 lb_policies/helloworld_pb2.py lb_policies/helloworld_pb2_grpc.py lb_policies/helloworld_pb2.pyi: ../protos/helloworld.proto
 	python3 -m grpc_tools.protoc --python_out=lb_policies --grpc_python_out=lb_policies --pyi_out=lb_policies -I ../protos ../protos/helloworld.proto
+
+compression/helloworld_pb2.py compression/helloworld_pb2_grpc.py compression/helloworld_pb2.pyi: ../protos/helloworld.proto
+	python3 -m grpc_tools.protoc --python_out=compression --grpc_python_out=compression --pyi_out=compression -I ../protos ../protos/helloworld.proto
 
 .PHONY: clean
 clean:

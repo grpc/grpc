@@ -32,18 +32,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/transport_fwd.h"
-#include "src/core/lib/transport/transport_impl.h"
-
-// Cronet transport object
-typedef struct cronet_transport {
-  grpc_transport base;  // must be first element in this structure
-  void* engine;
-  char* host;
-} cronet_transport;
-
-extern grpc_transport_vtable grpc_cronet_vtable;
+#include "src/core/lib/transport/transport.h"
 
 GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,
@@ -58,11 +49,11 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER, 1);
 
-  grpc_transport* ct = grpc_create_cronet_transport(
+  grpc_core::Transport* ct = grpc_create_cronet_transport(
       engine, target, channel_args.ToC().get(), reserved);
 
   grpc_core::ExecCtx exec_ctx;
-  auto channel = grpc_core::Channel::Create(target, channel_args,
-                                            GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  auto channel = grpc_core::ChannelCreate(target, channel_args,
+                                          GRPC_CLIENT_DIRECT_CHANNEL, ct);
   return channel.ok() ? channel->release()->c_ptr() : nullptr;
 }

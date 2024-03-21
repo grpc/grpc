@@ -21,7 +21,6 @@
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 
 #include <algorithm>
-#include <initializer_list>
 #include <map>
 #include <utility>
 

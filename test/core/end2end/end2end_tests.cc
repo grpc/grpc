@@ -319,12 +319,40 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
   }
 }
 
+CoreEnd2endTest::ServerRegisteredMethod::ServerRegisteredMethod(
+    CoreEnd2endTest* test, absl::string_view name,
+    grpc_server_register_method_payload_handling payload_handling) {
+  GPR_ASSERT(test->server_ == nullptr);
+  test->pre_server_start_ = [old = std::move(test->pre_server_start_),
+                             handle = handle_, name = std::string(name),
+                             payload_handling](grpc_server* server) mutable {
+    *handle = grpc_server_register_method(server, name.c_str(), nullptr,
+                                          payload_handling, 0);
+    old(server);
+  };
+}
+
 CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, int tag)
     : impl_(std::make_unique<Impl>(&test)) {
   test.ForceInitialized();
-  grpc_server_request_call(test.server(), impl_->call.call_ptr(),
-                           &impl_->call_details, &impl_->request_metadata,
-                           test.cq(), test.cq(), CqVerifier::tag(tag));
+  EXPECT_EQ(
+      grpc_server_request_call(test.server(), impl_->call.call_ptr(),
+                               &impl_->call_details, &impl_->request_metadata,
+                               test.cq(), test.cq(), CqVerifier::tag(tag)),
+      GRPC_CALL_OK);
+}
+
+CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, void* method,
+                                            IncomingMessage* message, int tag)
+    : impl_(std::make_unique<Impl>(&test)) {
+  test.ForceInitialized();
+  impl_->call_details.method = grpc_empty_slice();
+  EXPECT_EQ(grpc_server_request_registered_call(
+                test.server(), method, impl_->call.call_ptr(),
+                &impl_->call_details.deadline, &impl_->request_metadata,
+                message == nullptr ? nullptr : &message->payload_, test.cq(),
+                test.cq(), CqVerifier::tag(tag)),
+            GRPC_CALL_OK);
 }
 
 absl::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
@@ -378,8 +406,9 @@ std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
   }
   for (const auto& suite_configs : suites_) {
     if (suite_configs.second.empty()) {
-      CrashWithStdio(
-          absl::StrCat("Suite ", suite_configs.first, " has no tests"));
+      fprintf(
+          stderr, "%s\n",
+          absl::StrCat("Suite ", suite_configs.first, " has no tests").c_str());
     }
     for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
       for (const auto* config : suite_configs.second) {

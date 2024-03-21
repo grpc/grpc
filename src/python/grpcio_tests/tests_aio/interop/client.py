@@ -16,6 +16,7 @@ import argparse
 import asyncio
 import logging
 import os
+import sys
 
 import grpc
 from grpc.experimental import aio
@@ -53,7 +54,7 @@ def _test_case_from_arg(test_case_arg):
 
 
 async def test_interoperability():
-    args = interop_client_lib.parse_interop_client_args()
+    args = interop_client_lib.parse_interop_client_args(sys.argv)
     channel = _create_channel(args)
     stub = interop_client_lib.create_stub(channel, args)
     test_case = _test_case_from_arg(args.test_case)

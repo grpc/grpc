@@ -62,12 +62,12 @@ DNS](https://github.com/grpc/proposal/blob/master/A2-service-configs-in-dns.md).
 
 Here is an example service config in protobuf form:
 
-```
+```textproto
 {
-  // Use round_robin LB policy.
+  # Use round_robin LB policy.
   load_balancing_config: { round_robin: {} }
-  // This method config applies to method "foo/bar" and to all methods
-  // of service "baz".
+  # This method config applies to method "foo/bar" and to all methods
+  # of service "baz".
   method_config: {
     name: {
       service: "foo"
@@ -76,7 +76,7 @@ Here is an example service config in protobuf form:
     name: {
       service: "baz"
     }
-    // Default timeout for matching methods.
+    # Default timeout for matching methods.
     timeout: {
       seconds: 1
       nanos: 1
@@ -87,7 +87,7 @@ Here is an example service config in protobuf form:
 
 Here is the same example service config in JSON form:
 
-```
+```json
 {
   "loadBalancingConfig": [ { "round_robin": {} } ],
   "methodConfig": [

@@ -43,6 +43,7 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/xds/xds_client_fuzzer.pb.h"
+#include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
 
 namespace grpc_core {
@@ -57,14 +58,15 @@ class Fuzzer {
       // Leave xds_client_ unset, so Act() will be a no-op.
       return;
     }
-    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>();
+    auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
+        []() { Crash("Multiple concurrent reads"); });
     transport_factory->SetAutoCompleteMessagesFromClient(false);
     transport_factory->SetAbortOnUndrainedMessages(false);
     transport_factory_ = transport_factory.get();
     xds_client_ = MakeRefCounted<XdsClient>(
         std::move(*bootstrap), std::move(transport_factory),
-        grpc_event_engine::experimental::GetDefaultEventEngine(), "foo agent",
-        "foo version");
+        grpc_event_engine::experimental::GetDefaultEventEngine(),
+        /*metrics_reporter=*/nullptr, "foo agent", "foo version");
   }
 
   void Act(const xds_client_fuzzer::Action& action) {
@@ -112,7 +114,29 @@ class Fuzzer {
         }
         break;
       case xds_client_fuzzer::Action::kDumpCsdsData:
-        xds_client_->DumpClientConfigBinary();
+        testing::XdsClientTestPeer(xds_client_.get()).TestDumpClientConfig();
+        break;
+      case xds_client_fuzzer::Action::kReportResourceCounts:
+        testing::XdsClientTestPeer(xds_client_.get())
+            .TestReportResourceCounts(
+                [](const testing::XdsClientTestPeer::ResourceCountLabels&
+                       labels,
+                   uint64_t count) {
+                  gpr_log(GPR_INFO,
+                          "xds_authority=\"%s\", resource_type=\"%s\", "
+                          "cache_state=\"%s\" count=%" PRIu64,
+                          std::string(labels.xds_authority).c_str(),
+                          std::string(labels.resource_type).c_str(),
+                          std::string(labels.cache_state).c_str(), count);
+                });
+        break;
+      case xds_client_fuzzer::Action::kReportServerConnections:
+        testing::XdsClientTestPeer(xds_client_.get())
+            .TestReportServerConnections(
+                [](absl::string_view xds_server, bool connected) {
+                  gpr_log(GPR_INFO, "xds_server=\"%s\" connected=%d",
+                          std::string(xds_server).c_str(), connected);
+                });
         break;
       case xds_client_fuzzer::Action::kTriggerConnectionFailure:
         TriggerConnectionFailure(
@@ -147,20 +171,26 @@ class Fuzzer {
         : resource_name_(std::move(resource_name)) {}
 
     void OnResourceChanged(
-        std::shared_ptr<const typename ResourceType::ResourceType> resource)
+        std::shared_ptr<const typename ResourceType::ResourceType> resource,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
       gpr_log(GPR_INFO, "==> OnResourceChanged(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), resource->ToString().c_str());
     }
 
-    void OnError(absl::Status status) override {
+    void OnError(
+        absl::Status status,
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnError(%s %s): %s",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str(), status.ToString().c_str());
     }
 
-    void OnResourceDoesNotExist() override {
+    void OnResourceDoesNotExist(
+        RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
+        override {
       gpr_log(GPR_INFO, "==> OnResourceDoesNotExist(%s %s)",
               std::string(ResourceType::Get()->type_url()).c_str(),
               resource_name_.c_str());
@@ -209,13 +239,15 @@ class Fuzzer {
   const XdsBootstrap::XdsServer* GetServer(const std::string& authority) {
     const GrpcXdsBootstrap& bootstrap =
         static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap());
-    if (authority.empty()) return &bootstrap.server();
+    if (authority.empty()) return bootstrap.servers().front();
     const auto* authority_entry =
         static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
             bootstrap.LookupAuthority(authority));
     if (authority_entry == nullptr) return nullptr;
-    if (authority_entry->server() != nullptr) return authority_entry->server();
-    return &bootstrap.server();
+    if (!authority_entry->servers().empty()) {
+      return authority_entry->servers().front();
+    }
+    return bootstrap.servers().front();
   }
 
   void TriggerConnectionFailure(const std::string& authority,

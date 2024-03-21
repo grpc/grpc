@@ -138,6 +138,7 @@ grpc_cc_test(
     srcs = ["json_token_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -154,6 +155,7 @@ grpc_cc_test(
     srcs = ["jwt_verifier_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
+    tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -210,6 +212,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:load_file",
         "//src/core:slice",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
@@ -557,6 +560,34 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:grpc_audit_logging",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tls_crl_provider_test",
+    srcs = ["grpc_tls_crl_provider_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
+        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:iomgr_timer",
+        "//src/core:default_event_engine",
+        "//src/core:grpc_crl_provider",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+        "//test/core/tsi:transport_security_test_lib",
+        "//test/core/util:fuzz_config_vars_proto",
         "//test/core/util:grpc_test_util",
     ],
 )

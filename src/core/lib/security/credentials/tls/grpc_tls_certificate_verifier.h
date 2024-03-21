@@ -50,6 +50,8 @@ struct grpc_tls_certificate_verifier
                       absl::Status* sync_status) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
+  // TODO(roth): This needs to take an absl::Status argument so that we
+  // can pass the cancellation status through to the check_peer callback.
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
 
   // Compares this grpc_tls_certificate_verifier object with \a other.

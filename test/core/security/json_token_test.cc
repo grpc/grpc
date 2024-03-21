@@ -23,6 +23,8 @@
 #include <gtest/gtest.h>
 #include <openssl/evp.h>
 
+#include "absl/strings/escaping.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -32,7 +34,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
-#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
@@ -213,15 +214,10 @@ TEST(JsonTokenTest, ParseJsonKeyFailureNoPrivateKey) {
 
 static Json parse_json_part_from_jwt(const char* str, size_t len) {
   grpc_core::ExecCtx exec_ctx;
-  char* b64 = static_cast<char*>(gpr_malloc(len + 1));
-  strncpy(b64, str, len);
-  b64[len] = '\0';
-  grpc_slice slice = grpc_base64_decode(b64, 1);
-  gpr_free(b64);
-  EXPECT_FALSE(GRPC_SLICE_IS_EMPTY(slice));
-  absl::string_view string = grpc_core::StringViewFromSlice(slice);
-  auto json = grpc_core::JsonParse(string);
-  grpc_slice_unref(slice);
+  std::string decoded;
+  absl::WebSafeBase64Unescape(absl::string_view(str, len), &decoded);
+  EXPECT_FALSE(decoded.empty());
+  auto json = grpc_core::JsonParse(decoded);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             json.status().ToString().c_str());
@@ -293,9 +289,9 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
   EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
   EVP_PKEY* key = EVP_PKEY_new();
 
-  grpc_slice sig = grpc_base64_decode(b64_signature, 1);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(sig));
-  ASSERT_EQ(GRPC_SLICE_LENGTH(sig), 128);
+  std::string decoded;
+  absl::WebSafeBase64Unescape(b64_signature, &decoded);
+  ASSERT_EQ(decoded.size(), 128);
 
   ASSERT_NE(md_ctx, nullptr);
   ASSERT_NE(key, nullptr);
@@ -304,11 +300,11 @@ static void check_jwt_signature(const char* b64_signature, RSA* rsa_key,
   ASSERT_EQ(EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key),
             1);
   ASSERT_EQ(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size), 1);
-  ASSERT_EQ(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
-                                  GRPC_SLICE_LENGTH(sig)),
+  ASSERT_EQ(EVP_DigestVerifyFinal(
+                md_ctx, reinterpret_cast<const uint8_t*>(decoded.data()),
+                decoded.size()),
             1);
 
-  grpc_slice_unref(sig);
   if (key != nullptr) EVP_PKEY_free(key);
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
 }
@@ -319,18 +315,18 @@ static void check_jwt_signature(const char* b64_signature, EVP_PKEY* key,
   grpc_core::ExecCtx exec_ctx;
   EVP_MD_CTX* md_ctx = EVP_MD_CTX_create();
 
-  grpc_slice sig = grpc_base64_decode(b64_signature, 1);
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(sig));
-  ASSERT_EQ(GRPC_SLICE_LENGTH(sig), 128);
+  std::string decoded;
+  absl::WebSafeBase64Unescape(b64_signature, &decoded);
+  ASSERT_EQ(decoded.size(), 128);
 
   ASSERT_EQ(EVP_DigestVerifyInit(md_ctx, nullptr, EVP_sha256(), nullptr, key),
             1);
   ASSERT_EQ(EVP_DigestVerifyUpdate(md_ctx, signed_data, signed_data_size), 1);
-  ASSERT_EQ(EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(sig),
-                                  GRPC_SLICE_LENGTH(sig)),
+  ASSERT_EQ(EVP_DigestVerifyFinal(
+                md_ctx, reinterpret_cast<const unsigned char*>(decoded.data()),
+                decoded.size()),
             1);
 
-  grpc_slice_unref(sig);
   if (md_ctx != nullptr) EVP_MD_CTX_destroy(md_ctx);
 }
 #endif

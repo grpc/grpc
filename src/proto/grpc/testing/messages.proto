@@ -319,6 +319,12 @@ message TestOrcaReport {
   map<string, double> utilization = 4;
 }
 
+// Status that will be return to callers of the Hook method
+message SetReturnStatusRequest {
+  int32 grpc_code_to_return = 1;
+  string grpc_status_description = 2;
+}
+
 message HookRequest {
   enum HookRequestCommand {
     // Default value

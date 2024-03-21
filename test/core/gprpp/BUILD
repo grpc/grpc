@@ -21,6 +21,27 @@ licenses(["notice"])
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
+    name = "directory_reader_test",
+    srcs = ["directory_reader_test.cc"],
+    data = [
+        "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
+        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
+        "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:directory_reader",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],
     external_deps = [
@@ -111,6 +132,18 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:overload",
+    ],
+)
+
+grpc_cc_test(
+    name = "down_cast_test",
+    srcs = ["down_cast_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
     ],
 )
 
@@ -383,6 +416,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/util:grpc_test_util",
     ],
 )

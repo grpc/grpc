@@ -19,12 +19,11 @@
 
 #include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 
-#include <stdint.h>
-
 #include <functional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
 
@@ -32,7 +31,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -52,17 +50,21 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
+const NoInterceptor ChannelIdleFilter::Call::OnClientInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerInitialMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ChannelIdleFilter::Call::OnClientToServerMessage;
+const NoInterceptor ChannelIdleFilter::Call::OnServerToClientMessage;
+
 namespace {
 
-// TODO(ctiller): The idle filter was disabled in client channel by default
-// due to b/143502997. Now the bug is fixed enable the filter by default.
-const auto kDefaultIdleTimeout = Duration::Infinity();
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -127,8 +129,7 @@ struct MaxAgeFilter::Config {
         1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
     // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
     // will not be cast to int implicitly before the comparison.
-    return Config{args_max_age * multiplier,
-                  args_max_idle * (IsJitterMaxIdleEnabled() ? multiplier : 1.0),
+    return Config{args_max_age * multiplier, args_max_idle * multiplier,
                   args_max_age_grace};
   }
 };
@@ -221,17 +222,6 @@ void MaxAgeFilter::PostInit() {
   }
 }
 
-// Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> ChannelIdleFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  using Decrementer = std::unique_ptr<ChannelIdleFilter, CallCountDecreaser>;
-  IncreaseCallCount();
-  return ArenaPromise<ServerMetadataHandle>(
-      [decrementer = Decrementer(this),
-       next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
-}
-
 bool ChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
   // Catch the disconnect_with_error transport op.
   if (!op->disconnect_with_error.ok()) Shutdown();
@@ -298,25 +288,19 @@ const grpc_channel_filter MaxAgeFilter::kFilter =
     MakePromiseBasedFilter<MaxAgeFilter, FilterEndpoint::kServer>("max_age");
 
 void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  builder->channel_init()->RegisterStage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (!channel_args.WantMinimalStack() &&
-            GetClientIdleTimeout(channel_args) != Duration::Infinity()) {
-          builder->PrependFilter(&ClientIdleFilter::kFilter);
-        }
-        return true;
+  GPR_ASSERT(MaxAgeFilter::kFilter.init_call != nullptr);
+  if (!IsV3ChannelIdleFiltersEnabled()) return;
+  builder->channel_init()
+      ->RegisterFilter<ClientIdleFilter>(GRPC_CLIENT_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  builder->channel_init()->RegisterStage(
-      GRPC_SERVER_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      [](ChannelStackBuilder* builder) {
-        auto channel_args = builder->channel_args();
-        if (!channel_args.WantMinimalStack() &&
-            MaxAgeFilter::Config::FromChannelArgs(channel_args).enable()) {
-          builder->PrependFilter(&MaxAgeFilter::kFilter);
-        }
-        return true;
+  builder->channel_init()
+      ->RegisterFilter<MaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return MaxAgeFilter::Config::FromChannelArgs(channel_args).enable();
       });
 }
 

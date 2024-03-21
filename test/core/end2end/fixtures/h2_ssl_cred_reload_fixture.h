@@ -27,10 +27,10 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
+#include "test/core/util/tls_utils.h"
 
 class SslCredReloadFixture : public SecureFixture {
  public:
@@ -100,25 +100,13 @@ class SslCredReloadFixture : public SecureFixture {
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
     }
     if (!server_credential_reloaded_) {
-      grpc_slice ca_slice, cert_slice, key_slice;
-      GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                   grpc_load_file(CaCertPath(), 1, &ca_slice)));
-      GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                   grpc_load_file(CertPath(), 1, &cert_slice)));
-      GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
-                                   grpc_load_file(KeyPath(), 1, &key_slice)));
-      const char* ca_cert =
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
-      const char* server_cert =
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-      const char* server_key =
-          reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-      grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+      std::string ca_cert = grpc_core::testing::GetFileContents(CaCertPath());
+      std::string server_cert = grpc_core::testing::GetFileContents(CertPath());
+      std::string server_key = grpc_core::testing::GetFileContents(KeyPath());
+      grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                      server_cert.c_str()};
       *config = grpc_ssl_server_certificate_config_create(
-          ca_cert, &pem_key_cert_pair, 1);
-      grpc_slice_unref(cert_slice);
-      grpc_slice_unref(key_slice);
-      grpc_slice_unref(ca_slice);
+          ca_cert.c_str(), &pem_key_cert_pair, 1);
       server_credential_reloaded_ = true;
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
     } else {

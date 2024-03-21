@@ -18,7 +18,7 @@ FROM composer:1.8.6 as composer
 FROM grpc-php/base as grpc-base
 
 
-FROM php:7.4-buster
+FROM php:8.1-buster
 
 RUN apt-get -qq update && apt-get -qq install -y git
 

@@ -25,7 +25,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg key for xDS health status.
 // Value is an XdsHealthStatus::HealthStatus enum.
@@ -70,6 +70,8 @@ class XdsHealthStatusSet {
     return status_mask_ == other.status_mask_;
   }
 
+  bool Empty() const { return status_mask_ == 0; }
+
   void Clear() { status_mask_ = 0; }
 
   void Add(XdsHealthStatus status) { status_mask_ |= (0x1 << status.status()); }
@@ -78,11 +80,11 @@ class XdsHealthStatusSet {
     return status_mask_ & (0x1 << status.status());
   }
 
+  std::string ToString() const;
+
  private:
   int status_mask_ = 0;
 };
-
-bool operator<(const XdsHealthStatus& hs1, const XdsHealthStatus& hs2);
 
 }  // namespace grpc_core
 

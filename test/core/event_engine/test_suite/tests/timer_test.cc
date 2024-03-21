@@ -18,7 +18,6 @@
 #include <cstdint>
 #include <memory>
 #include <random>
-#include <ratio>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -35,6 +34,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
@@ -148,7 +148,10 @@ void EventEngineTimerTest::ScheduleCheckCB(
     std::chrono::steady_clock::time_point when, std::atomic<int>* call_count,
     std::atomic<int>* fail_count, int total_expected) {
   auto now = std::chrono::steady_clock::now();
-  EXPECT_LE(when, now);
+  EXPECT_LE(when, now) << "Callback was run "
+                       << grpc_event_engine::experimental::Milliseconds(when -
+                                                                        now)
+                       << " ms too early: ";
   if (when > now) ++(*fail_count);
   if (++(*call_count) == total_expected) {
     grpc_core::MutexLock lock(&mu_);

@@ -25,4 +25,8 @@ exports_files([
     "leaf_and_intermediate_chain.pem",
     "intermediate_ca.key",
     "intermediate_ca.pem",
+    "evil_ca.pem",
+    "evil_ca.key",
+    "ca_with_akid.pem",
+    "crl_with_akid.crl",
 ])

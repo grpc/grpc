@@ -21,7 +21,6 @@
 #include <array>
 #include <chrono>
 #include <memory>
-#include <ratio>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,19 +28,20 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "gtest/gtest.h"
 
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -49,7 +49,7 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
+class OutlierDetectionTest : public LoadBalancingPolicyTest {
  protected:
   class ConfigBuilder {
    public:
@@ -145,7 +145,12 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
   };
 
   OutlierDetectionTest()
-      : lb_policy_(MakeLbPolicy("outlier_detection_experimental")) {}
+      : LoadBalancingPolicyTest("outlier_detection_experimental") {}
+
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    SetExpectedTimerDuration(std::chrono::seconds(10));
+  }
 
   absl::optional<std::string> DoPickWithFailedCall(
       LoadBalancingPolicy::SubchannelPicker* picker) {
@@ -163,25 +168,13 @@ class OutlierDetectionTest : public TimeAwareLoadBalancingPolicyTest {
     }
     return address;
   }
-
-  void CheckExpectedTimerDuration(
-      grpc_event_engine::experimental::EventEngine::Duration duration)
-      override {
-    EXPECT_EQ(duration, expected_internal_)
-        << "Expected: " << expected_internal_.count() << "ns"
-        << "\n  Actual: " << duration.count() << "ns";
-  }
-
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  grpc_event_engine::experimental::EventEngine::Duration expected_internal_ =
-      std::chrono::seconds(10);
 };
 
 TEST_F(OutlierDetectionTest, Basic) {
   constexpr absl::string_view kAddressUri = "ipv4:127.0.0.1:443";
   // Send an update containing one address.
   absl::Status status = ApplyUpdate(
-      BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy_.get());
+      BuildUpdate({kAddressUri}, ConfigBuilder().Build()), lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the address.
   auto* subchannel = FindSubchannel(kAddressUri);
@@ -214,8 +207,10 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
                                   .SetFailurePercentageThreshold(1)
                                   .SetFailurePercentageMinimumHosts(1)
                                   .SetFailurePercentageRequestVolume(1)
+                                  .SetMaxEjectionTime(Duration::Seconds(1))
+                                  .SetBaseEjectionTime(Duration::Seconds(1))
                                   .Build()),
-      lb_policy_.get());
+      lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
@@ -226,18 +221,199 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection complete");
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
     if (addr != *address) remaining_addresses.push_back(addr);
   }
-  picker = WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+  WaitForRoundRobinListChange(kAddresses, remaining_addresses);
+  // Advance time and run the timer callback to trigger un-ejection.
+  IncrementTimeBy(Duration::Seconds(10));
+  gpr_log(GPR_INFO, "### un-ejection complete");
+  // Expect a picker update.
+  WaitForRoundRobinListChange(remaining_addresses, kAddresses);
+}
+
+TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in outlier_detection.
+  SetExpectedTimerDuration(absl::nullopt);
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  constexpr std::array<absl::string_view, 2> kEndpoint3Addresses = {
+      "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  const std::array<EndpointAddresses, 3> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses),
+      MakeEndpointAddresses(kEndpoint3Addresses)};
+  // Send initial update.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kEndpoints, ConfigBuilder()
+                                  .SetFailurePercentageThreshold(1)
+                                  .SetFailurePercentageMinimumHosts(1)
+                                  .SetFailurePercentageRequestVolume(1)
+                                  .SetMaxEjectionTime(Duration::Seconds(1))
+                                  .SetBaseEjectionTime(Duration::Seconds(1))
+                                  .Build()),
+      lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // Expect normal startup.
+  auto picker = ExpectRoundRobinStartup(kEndpoints);
+  ASSERT_NE(picker, nullptr);
+  gpr_log(GPR_INFO, "### RR startup complete");
+  // Do a pick and report a failed call.
+  auto address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  // Based on the address that the failed call went to, we determine
+  // which addresses to use in the subsequent steps.
+  absl::Span<const absl::string_view> ejected_endpoint_addresses;
+  absl::Span<const absl::string_view> sentinel_endpoint_addresses;
+  absl::string_view unmodified_endpoint_address;
+  std::vector<absl::string_view> final_addresses;
+  if (kEndpoint1Addresses[0] == *address) {
+    ejected_endpoint_addresses = kEndpoint1Addresses;
+    sentinel_endpoint_addresses = kEndpoint2Addresses;
+    unmodified_endpoint_address = kEndpoint3Addresses[0];
+    final_addresses = {kEndpoint1Addresses[1], kEndpoint2Addresses[1],
+                       kEndpoint3Addresses[0]};
+  } else if (kEndpoint2Addresses[0] == *address) {
+    ejected_endpoint_addresses = kEndpoint2Addresses;
+    sentinel_endpoint_addresses = kEndpoint1Addresses;
+    unmodified_endpoint_address = kEndpoint3Addresses[0];
+    final_addresses = {kEndpoint1Addresses[1], kEndpoint2Addresses[1],
+                       kEndpoint3Addresses[0]};
+  } else {
+    ejected_endpoint_addresses = kEndpoint3Addresses;
+    sentinel_endpoint_addresses = kEndpoint1Addresses;
+    unmodified_endpoint_address = kEndpoint2Addresses[0];
+    final_addresses = {kEndpoint1Addresses[1], kEndpoint2Addresses[0],
+                       kEndpoint3Addresses[1]};
+  }
+  // Advance time and run the timer callback to trigger ejection.
+  IncrementTimeBy(Duration::Seconds(10));
+  gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a picker that removes the ejected address.
+  WaitForRoundRobinListChange(
+      {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
+      {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
+  gpr_log(GPR_INFO, "### ejected endpoint removed");
+  // Cause the connection to the ejected endpoint to fail, and then
+  // have it reconnect to a different address.  The endpoint is still
+  // ejected, so the new address should not be used.
+  ExpectEndpointAddressChange(ejected_endpoint_addresses, 0, 1, nullptr);
+  // Need to drain the picker updates before calling
+  // ExpectEndpointAddressChange() again, since that will expect a
+  // re-resolution request in the queue.
+  DrainRoundRobinPickerUpdates(
+      {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
+  gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
+  // Do the same thing for the sentinel endpoint, so that we
+  // know that the LB policy has seen the address change for the ejected
+  // endpoint.
+  ExpectEndpointAddressChange(sentinel_endpoint_addresses, 0, 1, [&]() {
+    WaitForRoundRobinListChange(
+        {sentinel_endpoint_addresses[0], unmodified_endpoint_address},
+        {unmodified_endpoint_address});
+  });
+  WaitForRoundRobinListChange(
+      {unmodified_endpoint_address},
+      {sentinel_endpoint_addresses[1], unmodified_endpoint_address});
+  gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
+  // Advance time and run the timer callback to trigger un-ejection.
+  IncrementTimeBy(Duration::Seconds(10));
+  gpr_log(GPR_INFO, "### un-ejection complete");
+  // The ejected endpoint should come back using the new address.
+  WaitForRoundRobinListChange(
+      {sentinel_endpoint_addresses[1], unmodified_endpoint_address},
+      final_addresses);
+}
+
+TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in outlier_detection.
+  SetExpectedTimerDuration(absl::nullopt);
+  constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {
+      "ipv4:127.0.0.1:445", "ipv4:127.0.0.1:446"};
+  constexpr std::array<absl::string_view, 2> kEndpoint3Addresses = {
+      "ipv4:127.0.0.1:447", "ipv4:127.0.0.1:448"};
+  const std::array<EndpointAddresses, 3> kEndpoints = {
+      MakeEndpointAddresses(kEndpoint1Addresses),
+      MakeEndpointAddresses(kEndpoint2Addresses),
+      MakeEndpointAddresses(kEndpoint3Addresses)};
+  auto kConfig = ConfigBuilder()
+                     .SetFailurePercentageThreshold(1)
+                     .SetFailurePercentageMinimumHosts(1)
+                     .SetFailurePercentageRequestVolume(1)
+                     .SetMaxEjectionTime(Duration::Seconds(1))
+                     .SetBaseEjectionTime(Duration::Seconds(1))
+                     .Build();
+  // Send initial update.
+  absl::Status status =
+      ApplyUpdate(BuildUpdate(kEndpoints, kConfig), lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // Expect normal startup.
+  auto picker = ExpectRoundRobinStartup(kEndpoints);
+  ASSERT_NE(picker, nullptr);
+  gpr_log(GPR_INFO, "### RR startup complete");
+  // Do a pick and report a failed call.
+  auto ejected_address = DoPickWithFailedCall(picker.get());
+  ASSERT_TRUE(ejected_address.has_value());
+  gpr_log(GPR_INFO, "### failed RPC on %s", ejected_address->c_str());
+  // Based on the address that the failed call went to, we determine
+  // which addresses to use in the subsequent steps.
+  std::vector<absl::string_view> expected_round_robin_while_ejected;
+  std::vector<EndpointAddresses> new_endpoints;
+  if (kEndpoint1Addresses[0] == *ejected_address) {
+    expected_round_robin_while_ejected = {kEndpoint2Addresses[0],
+                                          kEndpoint3Addresses[0]};
+    new_endpoints = {MakeEndpointAddresses({kEndpoint1Addresses[0]}),
+                     MakeEndpointAddresses(kEndpoint2Addresses),
+                     MakeEndpointAddresses(kEndpoint3Addresses)};
+  } else if (kEndpoint2Addresses[0] == *ejected_address) {
+    expected_round_robin_while_ejected = {kEndpoint1Addresses[0],
+                                          kEndpoint3Addresses[0]};
+    new_endpoints = {MakeEndpointAddresses(kEndpoint1Addresses),
+                     MakeEndpointAddresses({kEndpoint2Addresses[0]}),
+                     MakeEndpointAddresses(kEndpoint3Addresses)};
+  } else {
+    expected_round_robin_while_ejected = {kEndpoint1Addresses[0],
+                                          kEndpoint2Addresses[0]};
+    new_endpoints = {MakeEndpointAddresses(kEndpoint1Addresses),
+                     MakeEndpointAddresses(kEndpoint2Addresses),
+                     MakeEndpointAddresses({kEndpoint3Addresses[0]})};
+  }
+  // Advance time and run the timer callback to trigger ejection.
+  IncrementTimeBy(Duration::Seconds(10));
+  gpr_log(GPR_INFO, "### ejection complete");
+  // Expect a picker that removes the ejected address.
+  WaitForRoundRobinListChange(
+      {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
+      expected_round_robin_while_ejected);
+  gpr_log(GPR_INFO, "### ejected endpoint removed");
+  // Send an update that removes the other address from the ejected endpoint.
+  status = ApplyUpdate(BuildUpdate(new_endpoints, kConfig), lb_policy_.get());
+  EXPECT_TRUE(status.ok()) << status;
+  // This should cause the address to start getting used again, since
+  // it's now associated with a different endpoint.
+  WaitForRoundRobinListChange(
+      expected_round_robin_while_ejected,
+      {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]});
 }
 
 TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
+  // Can't use timer duration expectation here, because the Happy
+  // Eyeballs timer inside pick_first will use a different duration than
+  // the timer in outlier_detection.
+  SetExpectedTimerDuration(absl::nullopt);
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
   // Send initial update.
@@ -249,7 +425,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
                       .SetFailurePercentageRequestVolume(1)
                       .SetChildPolicy({{"pick_first", Json::FromObject({})}})
                       .Build()),
-      lb_policy_.get());
+      lb_policy());
   EXPECT_TRUE(status.ok()) << status;
   // LB policy should have created a subchannel for the first address.
   auto* subchannel = FindSubchannel(kAddresses[0]);
@@ -277,8 +453,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   ASSERT_TRUE(address.has_value());
   gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
   // Advance time and run the timer callback to trigger ejection.
-  time_cache_.IncrementBy(Duration::Seconds(10));
-  RunTimerCallback();
+  IncrementTimeBy(Duration::Seconds(10));
   gpr_log(GPR_INFO, "### ejection timer pass complete");
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
@@ -293,8 +468,5 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
+  return RUN_ALL_TESTS();
 }

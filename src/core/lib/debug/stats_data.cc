@@ -27,6 +27,19 @@ union DblUint {
   uint64_t uint;
 };
 }  // namespace
+void HistogramCollector_100000_20::Collect(Histogram_100000_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_100000_20 operator-(const Histogram_100000_20& left,
+                              const Histogram_100000_20& right) {
+  Histogram_100000_20 result;
+  for (int i = 0; i < 20; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
 void HistogramCollector_65536_26::Collect(Histogram_65536_26* result) const {
   for (int i = 0; i < 26; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
@@ -36,6 +49,19 @@ Histogram_65536_26 operator-(const Histogram_65536_26& left,
                              const Histogram_65536_26& right) {
   Histogram_65536_26 result;
   for (int i = 0; i < 26; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
+void HistogramCollector_100_20::Collect(Histogram_100_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_100_20 operator-(const Histogram_100_20& left,
+                           const Histogram_100_20& right) {
+  Histogram_100_20 result;
+  for (int i = 0; i < 20; i++) {
     result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
   }
   return result;
@@ -54,19 +80,6 @@ Histogram_16777216_20 operator-(const Histogram_16777216_20& left,
   }
   return result;
 }
-void HistogramCollector_10000_20::Collect(Histogram_10000_20* result) const {
-  for (int i = 0; i < 20; i++) {
-    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
-  }
-}
-Histogram_10000_20 operator-(const Histogram_10000_20& left,
-                             const Histogram_10000_20& right) {
-  Histogram_10000_20 result;
-  for (int i = 0; i < 20; i++) {
-    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
-  }
-  return result;
-}
 void HistogramCollector_80_10::Collect(Histogram_80_10* result) const {
   for (int i = 0; i < 10; i++) {
     result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
@@ -76,6 +89,19 @@ Histogram_80_10 operator-(const Histogram_80_10& left,
                           const Histogram_80_10& right) {
   Histogram_80_10 result;
   for (int i = 0; i < 10; i++) {
+    result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
+  }
+  return result;
+}
+void HistogramCollector_10000_20::Collect(Histogram_10000_20* result) const {
+  for (int i = 0; i < 20; i++) {
+    result->buckets_[i] += buckets_[i].load(std::memory_order_relaxed);
+  }
+}
+Histogram_10000_20 operator-(const Histogram_10000_20& left,
+                             const Histogram_10000_20& right) {
+  Histogram_10000_20 result;
+  for (int i = 0; i < 20; i++) {
     result.buckets_[i] = left.buckets_[i] - right.buckets_[i];
   }
   return result;
@@ -101,6 +127,19 @@ const absl::string_view
         "cq_next_creates",
         "cq_callback_creates",
         "wrr_updates",
+        "work_serializer_items_enqueued",
+        "work_serializer_items_dequeued",
+        "econnaborted_count",
+        "econnreset_count",
+        "epipe_count",
+        "etimedout_count",
+        "econnrefused_count",
+        "enetunreach_count",
+        "enomsg_count",
+        "enotconn_count",
+        "enobufs_count",
+        "uncommon_io_error_count",
+        "msg_errqueue_error_count",
 };
 const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     Counter::COUNT)] = {
@@ -129,14 +168,50 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of completion queues created for cq_callback (indicates callback "
     "api usage)",
     "Number of wrr updates that have been received",
+    "Number of items enqueued onto work serializers",
+    "Number of items dequeued from work serializers",
+    "Number of ECONNABORTED errors",
+    "Number of ECONNRESET errors",
+    "Number of EPIPE errors",
+    "Number of ETIMEDOUT errors",
+    "Number of ECONNREFUSED errors",
+    "Number of ENETUNREACH errors",
+    "Number of ENOMSG errors",
+    "Number of ENOTCONN errors",
+    "Number of ENOBUFS errors",
+    "Number of uncommon io errors",
+    "Number of uncommon errors returned by MSG_ERRQUEUE",
 };
 const absl::string_view
     GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
-        "call_initial_size",        "tcp_write_size",
-        "tcp_write_iov_size",       "tcp_read_size",
-        "tcp_read_offer",           "tcp_read_offer_iov_size",
-        "http2_send_message_size",  "http2_metadata_size",
-        "wrr_subchannel_list_size", "wrr_subchannel_ready_size",
+        "call_initial_size",
+        "tcp_write_size",
+        "tcp_write_iov_size",
+        "tcp_read_size",
+        "tcp_read_offer",
+        "tcp_read_offer_iov_size",
+        "http2_send_message_size",
+        "http2_metadata_size",
+        "wrr_subchannel_list_size",
+        "wrr_subchannel_ready_size",
+        "work_serializer_run_time_ms",
+        "work_serializer_work_time_ms",
+        "work_serializer_work_time_per_item_ms",
+        "work_serializer_items_per_run",
+        "chaotic_good_sendmsgs_per_write_control",
+        "chaotic_good_recvmsgs_per_read_control",
+        "chaotic_good_sendmsgs_per_write_data",
+        "chaotic_good_recvmsgs_per_read_data",
+        "chaotic_good_thread_hops_per_write_control",
+        "chaotic_good_thread_hops_per_read_control",
+        "chaotic_good_thread_hops_per_write_data",
+        "chaotic_good_thread_hops_per_read_data",
+        "chaotic_good_tcp_read_size_data",
+        "chaotic_good_tcp_read_size_control",
+        "chaotic_good_tcp_read_offer_data",
+        "chaotic_good_tcp_read_offer_control",
+        "chaotic_good_tcp_write_size_data",
+        "chaotic_good_tcp_write_size_control",
 };
 const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     Histogram::COUNT)] = {
@@ -150,31 +225,79 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of bytes consumed by metadata, according to HPACK accounting rules",
     "Number of subchannels in a subchannel list at picker creation time",
     "Number of READY subchannels in a subchannel list at picker creation time",
+    "Number of milliseconds work serializers run for",
+    "When running, how many milliseconds are work serializers actually doing "
+    "work",
+    "How long do individual items take to process in work serializers",
+    "How many callbacks are executed when a work serializer runs",
+    "Number of sendmsgs per control channel endpoint write",
+    "Number of recvmsgs per control channel endpoint read",
+    "Number of sendmsgs per data channel endpoint write",
+    "Number of recvmsgs per data channel endpoint read",
+    "Number of thread hops per control channel endpoint write",
+    "Number of thread hops per control channel endpoint read",
+    "Number of thread hops per data channel endpoint write",
+    "Number of thread hops per data channel endpoint read",
+    "Number of bytes received by each syscall_read in the data channel",
+    "Number of bytes received by each syscall_read in the control channel",
+    "Number of bytes offered to each syscall_read in the data channel",
+    "Number of bytes offered to each syscall_read in the control channel",
+    "Number of bytes offered to each syscall_write in the data channel",
+    "Number of bytes offered to each syscall_write in the control channel",
 };
 namespace {
-const int kStatsTable0[27] = {0,    1,     2,     4,     7,     11,   17,
+const int kStatsTable0[21] = {0,    1,    2,    4,     8,     15,    27,
+                              49,   89,   160,  288,   517,   928,   1666,
+                              2991, 5369, 9637, 17297, 31045, 55719, 100000};
+const uint8_t kStatsTable1[30] = {3,  3,  4,  4,  5,  6,  6,  7,  7,  8,
+                                  9,  9,  10, 10, 11, 11, 12, 13, 13, 14,
+                                  15, 15, 16, 16, 17, 17, 18, 19, 19, 20};
+const int kStatsTable2[27] = {0,    1,     2,     4,     7,     11,   17,
                               26,   40,    61,    92,    139,   210,  317,
                               478,  721,   1087,  1638,  2468,  3719, 5604,
                               8443, 12721, 19166, 28875, 43502, 65536};
-const uint8_t kStatsTable1[29] = {3,  3,  4,  5,  6,  6,  7,  8,  9,  10,
+const uint8_t kStatsTable3[29] = {3,  3,  4,  5,  6,  6,  7,  8,  9,  10,
                                   11, 11, 12, 13, 14, 15, 16, 16, 17, 18,
                                   19, 20, 21, 21, 22, 23, 24, 25, 26};
-const int kStatsTable2[21] = {
+const int kStatsTable4[21] = {0,  1,  2,  3,  4,  5,  7,  9,  11, 14, 17,
+                              21, 25, 30, 36, 43, 51, 61, 72, 85, 100};
+const uint8_t kStatsTable5[16] = {6,  6,  7,  8,  9,  9,  10, 11,
+                                  12, 13, 14, 15, 16, 17, 18, 19};
+const int kStatsTable6[21] = {
     0,     1,      3,      8,       19,      45,      106,
     250,   588,    1383,   3252,    7646,    17976,   42262,
     99359, 233593, 549177, 1291113, 3035402, 7136218, 16777216};
-const uint8_t kStatsTable3[23] = {2,  3,  3,  4,  5,  6,  7,  8,
+const uint8_t kStatsTable7[23] = {2,  3,  3,  4,  5,  6,  7,  8,
                                   8,  9,  10, 11, 12, 12, 13, 14,
                                   15, 16, 16, 17, 18, 19, 20};
-const int kStatsTable4[21] = {0,   1,    2,    4,    7,    12,   19,
-                              30,  47,   74,   116,  182,  285,  445,
-                              695, 1084, 1691, 2637, 4113, 6414, 10000};
-const uint8_t kStatsTable5[23] = {3,  3,  4,  5,  5,  6,  7,  8,
-                                  9,  9,  10, 11, 12, 12, 13, 14,
-                                  15, 15, 16, 17, 18, 18, 19};
-const int kStatsTable6[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
-const uint8_t kStatsTable7[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
+const int kStatsTable8[11] = {0, 1, 2, 4, 7, 11, 17, 26, 38, 56, 80};
+const uint8_t kStatsTable9[9] = {3, 3, 4, 5, 6, 6, 7, 8, 9};
+const int kStatsTable10[21] = {0,   1,    2,    4,    7,    12,   19,
+                               30,  47,   74,   116,  182,  285,  445,
+                               695, 1084, 1691, 2637, 4113, 6414, 10000};
+const uint8_t kStatsTable11[23] = {3,  3,  4,  5,  5,  6,  7,  8,
+                                   9,  9,  10, 11, 12, 12, 13, 14,
+                                   15, 15, 16, 17, 18, 18, 19};
 }  // namespace
+int Histogram_100000_20::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 65537) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable1[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable0[bucket]);
+    } else {
+      return 19;
+    }
+  }
+}
 int Histogram_65536_26::BucketFor(int value) {
   if (value < 3) {
     if (value < 0) {
@@ -187,10 +310,33 @@ int Histogram_65536_26::BucketFor(int value) {
       DblUint val;
       val.dbl = value;
       const int bucket =
-          kStatsTable1[((val.uint - 4613937818241073152ull) >> 51)];
-      return bucket - (value < kStatsTable0[bucket]);
+          kStatsTable3[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable2[bucket]);
     } else {
       return 25;
+    }
+  }
+}
+int Histogram_100_20::BucketFor(int value) {
+  if (value < 6) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 81) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable5[((val.uint - 4618441417868443648ull) >> 50)];
+      return bucket - (value < kStatsTable4[bucket]);
+    } else {
+      if (value < 85) {
+        return 18;
+      } else {
+        return 19;
+      }
     }
   }
 }
@@ -206,33 +352,10 @@ int Histogram_16777216_20::BucketFor(int value) {
       DblUint val;
       val.dbl = value;
       const int bucket =
-          kStatsTable3[((val.uint - 4611686018427387904ull) >> 52)];
-      return bucket - (value < kStatsTable2[bucket]);
+          kStatsTable7[((val.uint - 4611686018427387904ull) >> 52)];
+      return bucket - (value < kStatsTable6[bucket]);
     } else {
       return 19;
-    }
-  }
-}
-int Histogram_10000_20::BucketFor(int value) {
-  if (value < 3) {
-    if (value < 0) {
-      return 0;
-    } else {
-      return value;
-    }
-  } else {
-    if (value < 6145) {
-      DblUint val;
-      val.dbl = value;
-      const int bucket =
-          kStatsTable5[((val.uint - 4613937818241073152ull) >> 51)];
-      return bucket - (value < kStatsTable4[bucket]);
-    } else {
-      if (value < 6414) {
-        return 18;
-      } else {
-        return 19;
-      }
     }
   }
 }
@@ -248,13 +371,36 @@ int Histogram_80_10::BucketFor(int value) {
       DblUint val;
       val.dbl = value;
       const int bucket =
-          kStatsTable7[((val.uint - 4613937818241073152ull) >> 51)];
-      return bucket - (value < kStatsTable6[bucket]);
+          kStatsTable9[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable8[bucket]);
     } else {
       if (value < 56) {
         return 8;
       } else {
         return 9;
+      }
+    }
+  }
+}
+int Histogram_10000_20::BucketFor(int value) {
+  if (value < 3) {
+    if (value < 0) {
+      return 0;
+    } else {
+      return value;
+    }
+  } else {
+    if (value < 6145) {
+      DblUint val;
+      val.dbl = value;
+      const int bucket =
+          kStatsTable11[((val.uint - 4613937818241073152ull) >> 51)];
+      return bucket - (value < kStatsTable10[bucket]);
+    } else {
+      if (value < 6414) {
+        return 18;
+      } else {
+        return 19;
       }
     }
   }
@@ -278,41 +424,109 @@ GlobalStats::GlobalStats()
       cq_pluck_creates{0},
       cq_next_creates{0},
       cq_callback_creates{0},
-      wrr_updates{0} {}
+      wrr_updates{0},
+      work_serializer_items_enqueued{0},
+      work_serializer_items_dequeued{0},
+      econnaborted_count{0},
+      econnreset_count{0},
+      epipe_count{0},
+      etimedout_count{0},
+      econnrefused_count{0},
+      enetunreach_count{0},
+      enomsg_count{0},
+      enotconn_count{0},
+      enobufs_count{0},
+      uncommon_io_error_count{0},
+      msg_errqueue_error_count{0} {}
 HistogramView GlobalStats::histogram(Histogram which) const {
   switch (which) {
     default:
       GPR_UNREACHABLE_CODE(return HistogramView());
     case Histogram::kCallInitialSize:
-      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
+      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable2, 26,
                            call_initial_size.buckets()};
     case Histogram::kTcpWriteSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
                            tcp_write_size.buckets()};
     case Histogram::kTcpWriteIovSize:
-      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable6, 10,
+      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable8, 10,
                            tcp_write_iov_size.buckets()};
     case Histogram::kTcpReadSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
                            tcp_read_size.buckets()};
     case Histogram::kTcpReadOffer:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
                            tcp_read_offer.buckets()};
     case Histogram::kTcpReadOfferIovSize:
-      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable6, 10,
+      return HistogramView{&Histogram_80_10::BucketFor, kStatsTable8, 10,
                            tcp_read_offer_iov_size.buckets()};
     case Histogram::kHttp2SendMessageSize:
-      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable2, 20,
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
                            http2_send_message_size.buckets()};
     case Histogram::kHttp2MetadataSize:
-      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable0, 26,
+      return HistogramView{&Histogram_65536_26::BucketFor, kStatsTable2, 26,
                            http2_metadata_size.buckets()};
     case Histogram::kWrrSubchannelListSize:
-      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable4, 20,
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable10, 20,
                            wrr_subchannel_list_size.buckets()};
     case Histogram::kWrrSubchannelReadySize:
-      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable4, 20,
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable10, 20,
                            wrr_subchannel_ready_size.buckets()};
+    case Histogram::kWorkSerializerRunTimeMs:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           work_serializer_run_time_ms.buckets()};
+    case Histogram::kWorkSerializerWorkTimeMs:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           work_serializer_work_time_ms.buckets()};
+    case Histogram::kWorkSerializerWorkTimePerItemMs:
+      return HistogramView{&Histogram_100000_20::BucketFor, kStatsTable0, 20,
+                           work_serializer_work_time_per_item_ms.buckets()};
+    case Histogram::kWorkSerializerItemsPerRun:
+      return HistogramView{&Histogram_10000_20::BucketFor, kStatsTable10, 20,
+                           work_serializer_items_per_run.buckets()};
+    case Histogram::kChaoticGoodSendmsgsPerWriteControl:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_sendmsgs_per_write_control.buckets()};
+    case Histogram::kChaoticGoodRecvmsgsPerReadControl:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_recvmsgs_per_read_control.buckets()};
+    case Histogram::kChaoticGoodSendmsgsPerWriteData:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_sendmsgs_per_write_data.buckets()};
+    case Histogram::kChaoticGoodRecvmsgsPerReadData:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_recvmsgs_per_read_data.buckets()};
+    case Histogram::kChaoticGoodThreadHopsPerWriteControl:
+      return HistogramView{
+          &Histogram_100_20::BucketFor, kStatsTable4, 20,
+          chaotic_good_thread_hops_per_write_control.buckets()};
+    case Histogram::kChaoticGoodThreadHopsPerReadControl:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_thread_hops_per_read_control.buckets()};
+    case Histogram::kChaoticGoodThreadHopsPerWriteData:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_thread_hops_per_write_data.buckets()};
+    case Histogram::kChaoticGoodThreadHopsPerReadData:
+      return HistogramView{&Histogram_100_20::BucketFor, kStatsTable4, 20,
+                           chaotic_good_thread_hops_per_read_data.buckets()};
+    case Histogram::kChaoticGoodTcpReadSizeData:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           chaotic_good_tcp_read_size_data.buckets()};
+    case Histogram::kChaoticGoodTcpReadSizeControl:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           chaotic_good_tcp_read_size_control.buckets()};
+    case Histogram::kChaoticGoodTcpReadOfferData:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           chaotic_good_tcp_read_offer_data.buckets()};
+    case Histogram::kChaoticGoodTcpReadOfferControl:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           chaotic_good_tcp_read_offer_control.buckets()};
+    case Histogram::kChaoticGoodTcpWriteSizeData:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           chaotic_good_tcp_write_size_data.buckets()};
+    case Histogram::kChaoticGoodTcpWriteSizeControl:
+      return HistogramView{&Histogram_16777216_20::BucketFor, kStatsTable6, 20,
+                           chaotic_good_tcp_write_size_control.buckets()};
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
@@ -353,6 +567,29 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     result->cq_callback_creates +=
         data.cq_callback_creates.load(std::memory_order_relaxed);
     result->wrr_updates += data.wrr_updates.load(std::memory_order_relaxed);
+    result->work_serializer_items_enqueued +=
+        data.work_serializer_items_enqueued.load(std::memory_order_relaxed);
+    result->work_serializer_items_dequeued +=
+        data.work_serializer_items_dequeued.load(std::memory_order_relaxed);
+    result->econnaborted_count +=
+        data.econnaborted_count.load(std::memory_order_relaxed);
+    result->econnreset_count +=
+        data.econnreset_count.load(std::memory_order_relaxed);
+    result->epipe_count += data.epipe_count.load(std::memory_order_relaxed);
+    result->etimedout_count +=
+        data.etimedout_count.load(std::memory_order_relaxed);
+    result->econnrefused_count +=
+        data.econnrefused_count.load(std::memory_order_relaxed);
+    result->enetunreach_count +=
+        data.enetunreach_count.load(std::memory_order_relaxed);
+    result->enomsg_count += data.enomsg_count.load(std::memory_order_relaxed);
+    result->enotconn_count +=
+        data.enotconn_count.load(std::memory_order_relaxed);
+    result->enobufs_count += data.enobufs_count.load(std::memory_order_relaxed);
+    result->uncommon_io_error_count +=
+        data.uncommon_io_error_count.load(std::memory_order_relaxed);
+    result->msg_errqueue_error_count +=
+        data.msg_errqueue_error_count.load(std::memory_order_relaxed);
     data.call_initial_size.Collect(&result->call_initial_size);
     data.tcp_write_size.Collect(&result->tcp_write_size);
     data.tcp_write_iov_size.Collect(&result->tcp_write_iov_size);
@@ -363,6 +600,42 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.http2_metadata_size.Collect(&result->http2_metadata_size);
     data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
     data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
+    data.work_serializer_run_time_ms.Collect(
+        &result->work_serializer_run_time_ms);
+    data.work_serializer_work_time_ms.Collect(
+        &result->work_serializer_work_time_ms);
+    data.work_serializer_work_time_per_item_ms.Collect(
+        &result->work_serializer_work_time_per_item_ms);
+    data.work_serializer_items_per_run.Collect(
+        &result->work_serializer_items_per_run);
+    data.chaotic_good_sendmsgs_per_write_control.Collect(
+        &result->chaotic_good_sendmsgs_per_write_control);
+    data.chaotic_good_recvmsgs_per_read_control.Collect(
+        &result->chaotic_good_recvmsgs_per_read_control);
+    data.chaotic_good_sendmsgs_per_write_data.Collect(
+        &result->chaotic_good_sendmsgs_per_write_data);
+    data.chaotic_good_recvmsgs_per_read_data.Collect(
+        &result->chaotic_good_recvmsgs_per_read_data);
+    data.chaotic_good_thread_hops_per_write_control.Collect(
+        &result->chaotic_good_thread_hops_per_write_control);
+    data.chaotic_good_thread_hops_per_read_control.Collect(
+        &result->chaotic_good_thread_hops_per_read_control);
+    data.chaotic_good_thread_hops_per_write_data.Collect(
+        &result->chaotic_good_thread_hops_per_write_data);
+    data.chaotic_good_thread_hops_per_read_data.Collect(
+        &result->chaotic_good_thread_hops_per_read_data);
+    data.chaotic_good_tcp_read_size_data.Collect(
+        &result->chaotic_good_tcp_read_size_data);
+    data.chaotic_good_tcp_read_size_control.Collect(
+        &result->chaotic_good_tcp_read_size_control);
+    data.chaotic_good_tcp_read_offer_data.Collect(
+        &result->chaotic_good_tcp_read_offer_data);
+    data.chaotic_good_tcp_read_offer_control.Collect(
+        &result->chaotic_good_tcp_read_offer_control);
+    data.chaotic_good_tcp_write_size_data.Collect(
+        &result->chaotic_good_tcp_write_size_data);
+    data.chaotic_good_tcp_write_size_control.Collect(
+        &result->chaotic_good_tcp_write_size_control);
   }
   return result;
 }
@@ -395,6 +668,23 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
   result->wrr_updates = wrr_updates - other.wrr_updates;
+  result->work_serializer_items_enqueued =
+      work_serializer_items_enqueued - other.work_serializer_items_enqueued;
+  result->work_serializer_items_dequeued =
+      work_serializer_items_dequeued - other.work_serializer_items_dequeued;
+  result->econnaborted_count = econnaborted_count - other.econnaborted_count;
+  result->econnreset_count = econnreset_count - other.econnreset_count;
+  result->epipe_count = epipe_count - other.epipe_count;
+  result->etimedout_count = etimedout_count - other.etimedout_count;
+  result->econnrefused_count = econnrefused_count - other.econnrefused_count;
+  result->enetunreach_count = enetunreach_count - other.enetunreach_count;
+  result->enomsg_count = enomsg_count - other.enomsg_count;
+  result->enotconn_count = enotconn_count - other.enotconn_count;
+  result->enobufs_count = enobufs_count - other.enobufs_count;
+  result->uncommon_io_error_count =
+      uncommon_io_error_count - other.uncommon_io_error_count;
+  result->msg_errqueue_error_count =
+      msg_errqueue_error_count - other.msg_errqueue_error_count;
   result->call_initial_size = call_initial_size - other.call_initial_size;
   result->tcp_write_size = tcp_write_size - other.tcp_write_size;
   result->tcp_write_iov_size = tcp_write_iov_size - other.tcp_write_iov_size;
@@ -409,6 +699,54 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       wrr_subchannel_list_size - other.wrr_subchannel_list_size;
   result->wrr_subchannel_ready_size =
       wrr_subchannel_ready_size - other.wrr_subchannel_ready_size;
+  result->work_serializer_run_time_ms =
+      work_serializer_run_time_ms - other.work_serializer_run_time_ms;
+  result->work_serializer_work_time_ms =
+      work_serializer_work_time_ms - other.work_serializer_work_time_ms;
+  result->work_serializer_work_time_per_item_ms =
+      work_serializer_work_time_per_item_ms -
+      other.work_serializer_work_time_per_item_ms;
+  result->work_serializer_items_per_run =
+      work_serializer_items_per_run - other.work_serializer_items_per_run;
+  result->chaotic_good_sendmsgs_per_write_control =
+      chaotic_good_sendmsgs_per_write_control -
+      other.chaotic_good_sendmsgs_per_write_control;
+  result->chaotic_good_recvmsgs_per_read_control =
+      chaotic_good_recvmsgs_per_read_control -
+      other.chaotic_good_recvmsgs_per_read_control;
+  result->chaotic_good_sendmsgs_per_write_data =
+      chaotic_good_sendmsgs_per_write_data -
+      other.chaotic_good_sendmsgs_per_write_data;
+  result->chaotic_good_recvmsgs_per_read_data =
+      chaotic_good_recvmsgs_per_read_data -
+      other.chaotic_good_recvmsgs_per_read_data;
+  result->chaotic_good_thread_hops_per_write_control =
+      chaotic_good_thread_hops_per_write_control -
+      other.chaotic_good_thread_hops_per_write_control;
+  result->chaotic_good_thread_hops_per_read_control =
+      chaotic_good_thread_hops_per_read_control -
+      other.chaotic_good_thread_hops_per_read_control;
+  result->chaotic_good_thread_hops_per_write_data =
+      chaotic_good_thread_hops_per_write_data -
+      other.chaotic_good_thread_hops_per_write_data;
+  result->chaotic_good_thread_hops_per_read_data =
+      chaotic_good_thread_hops_per_read_data -
+      other.chaotic_good_thread_hops_per_read_data;
+  result->chaotic_good_tcp_read_size_data =
+      chaotic_good_tcp_read_size_data - other.chaotic_good_tcp_read_size_data;
+  result->chaotic_good_tcp_read_size_control =
+      chaotic_good_tcp_read_size_control -
+      other.chaotic_good_tcp_read_size_control;
+  result->chaotic_good_tcp_read_offer_data =
+      chaotic_good_tcp_read_offer_data - other.chaotic_good_tcp_read_offer_data;
+  result->chaotic_good_tcp_read_offer_control =
+      chaotic_good_tcp_read_offer_control -
+      other.chaotic_good_tcp_read_offer_control;
+  result->chaotic_good_tcp_write_size_data =
+      chaotic_good_tcp_write_size_data - other.chaotic_good_tcp_write_size_data;
+  result->chaotic_good_tcp_write_size_control =
+      chaotic_good_tcp_write_size_control -
+      other.chaotic_good_tcp_write_size_control;
   return result;
 }
 }  // namespace grpc_core

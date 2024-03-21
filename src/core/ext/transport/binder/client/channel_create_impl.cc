@@ -28,6 +28,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 
 namespace {
 
@@ -47,7 +48,7 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
         security_policy) {
   grpc_core::ExecCtx exec_ctx;
 
-  grpc_transport* transport = grpc_create_binder_transport_client(
+  grpc_core::Transport* transport = grpc_create_binder_transport_client(
       std::move(endpoint_binder), security_policy);
   GPR_ASSERT(transport != nullptr);
 
@@ -56,15 +57,16 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
                           .PreconditionChannelArgs(args)
                           .Set(GRPC_ARG_DEFAULT_AUTHORITY, "binder.authority");
   auto channel =
-      grpc_core::Channel::Create("binder_target_placeholder", channel_args,
-                                 GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      grpc_core::ChannelCreate("binder_target_placeholder", channel_args,
+                               GRPC_CLIENT_DIRECT_CHANNEL, transport);
   // TODO(mingcl): Handle error properly
   GPR_ASSERT(channel.ok());
   grpc_channel_args_destroy(args);
   return channel->release()->c_ptr();
 }
 
-grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
+grpc_channel* CreateClientBinderChannelImpl(std::string target,
+                                            const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
 
   gpr_once_init(&g_factory_once, FactoryInit);
@@ -74,14 +76,12 @@ grpc_channel* CreateClientBinderChannelImpl(const grpc_channel_args* args) {
                           .PreconditionChannelArgs(args)
                           .SetObject(g_factory);
 
-  auto channel =
-      grpc_core::Channel::Create("binder_channel_target_placeholder",
-                                 channel_args, GRPC_CLIENT_CHANNEL, nullptr);
+  auto channel = grpc_core::ChannelCreate(target, channel_args,
+                                          GRPC_CLIENT_CHANNEL, nullptr);
 
   if (!channel.ok()) {
     return grpc_lame_client_channel_create(
-        "binder_channel_target_placeholder",
-        static_cast<grpc_status_code>(channel.status().code()),
+        target.c_str(), static_cast<grpc_status_code>(channel.status().code()),
         "Failed to create binder channel");
   }
 

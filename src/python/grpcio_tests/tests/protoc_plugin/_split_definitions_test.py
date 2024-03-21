@@ -26,7 +26,12 @@ import unittest
 
 import grpc
 from grpc_tools import protoc
-import pkg_resources
+
+if sys.version_info >= (3, 9, 0):
+    from importlib import resources
+else:
+    import pkg_resources
+
 
 from tests.unit import test_common
 
@@ -46,6 +51,22 @@ def _system_path(path_insertion):
     sys.path = sys.path[0:1] + path_insertion + sys.path[1:]
     yield
     sys.path = old_system_path
+
+
+def _get_resource_file_name(
+    package_or_requirement: str, resource_name: str
+) -> str:
+    """Obtain the filename for a resource on the file system."""
+    file_name = None
+    if sys.version_info >= (3, 9, 0):
+        file_name = (
+            resources.files(package_or_requirement) / resource_name
+        ).resolve()
+    else:
+        file_name = pkg_resources.resource_filename(
+            package_or_requirement, resource_name
+        )
+    return str(file_name)
 
 
 # NOTE(nathaniel): https://twitter.com/exoplaneteer/status/677259364256747520
@@ -367,7 +388,7 @@ class WellKnownTypesTest(unittest.TestCase):
     def testWellKnownTypes(self):
         os.chdir(_TEST_DIR)
         out_dir = tempfile.mkdtemp(suffix="wkt_test", dir=".")
-        well_known_protos_include = pkg_resources.resource_filename(
+        well_known_protos_include = _get_resource_file_name(
             "grpc_tools", "_proto"
         )
         args = [

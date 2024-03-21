@@ -19,9 +19,9 @@
 
 #include <utility>
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_final_info.h"
 
 namespace grpc_core {
 

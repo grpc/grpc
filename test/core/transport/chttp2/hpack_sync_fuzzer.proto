@@ -21,26 +21,27 @@ import "test/core/util/fuzz_config_vars.proto";
 message Empty {}
 
 message StringKeyValue {
-    string key = 1;
-    string value = 2;
+  string key = 1;
+  string value = 2;
 }
 
 message IndexedKeyValue {
-    uint32 index = 1;
-    string value = 2;
+  uint32 index = 1;
+  string value = 2;
 }
 
 message Header {
-    oneof ty {
-        uint32 indexed = 1;
-        StringKeyValue literal_inc_idx = 2;
-        StringKeyValue literal_not_idx = 3;
-        IndexedKeyValue literal_not_idx_from_idx = 4;
-    }
+  oneof ty {
+    uint32 indexed = 1;
+    StringKeyValue literal_inc_idx = 2;
+    StringKeyValue literal_not_idx = 3;
+    IndexedKeyValue literal_not_idx_from_idx = 4;
+  }
 }
 
 message Msg {
   bool use_true_binary_metadata = 1;
   repeated Header headers = 2;
   grpc.testing.FuzzConfigVars config_vars = 3;
+  repeated uint64 random_numbers = 4;
 }

@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -115,6 +116,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     grpc_slice* slices;
     size_t nslices;
     size_t i;
+    absl::BitGen bitgen;
 
     grpc_metadata_batch b(arena.get());
 
@@ -141,7 +143,8 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     for (i = 0; i < nslices; i++) {
       ExecCtx exec_ctx;
       auto err =
-          parser_->Parse(slices[i], i == nslices - 1, /*call_tracer=*/nullptr);
+          parser_->Parse(slices[i], i == nslices - 1, absl::BitGenRef(bitgen),
+                         /*call_tracer=*/nullptr);
       if (!err.ok() && (flags & kFailureIsConnectionError) == 0) {
         EXPECT_TRUE(IsStreamError(err)) << err;
       }

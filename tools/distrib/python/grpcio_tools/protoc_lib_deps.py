@@ -34,7 +34,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/crc/internal/crc.cc',
     'third_party/abseil-cpp/absl/crc/internal/crc_cord_state.cc',
     'third_party/abseil-cpp/absl/crc/internal/crc_memcpy_fallback.cc',
-    'third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_64.cc',
+    'third_party/abseil-cpp/absl/crc/internal/crc_memcpy_x86_arm_combined.cc',
     'third_party/abseil-cpp/absl/crc/internal/crc_non_temporal_memcpy.cc',
     'third_party/abseil-cpp/absl/crc/internal/crc_x86_arm_combined.cc',
     'third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc',
@@ -51,16 +51,19 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/log/initialize.cc',
     'third_party/abseil-cpp/absl/log/internal/check_op.cc',
     'third_party/abseil-cpp/absl/log/internal/conditions.cc',
+    'third_party/abseil-cpp/absl/log/internal/fnmatch.cc',
     'third_party/abseil-cpp/absl/log/internal/globals.cc',
     'third_party/abseil-cpp/absl/log/internal/log_format.cc',
     'third_party/abseil-cpp/absl/log/internal/log_message.cc',
     'third_party/abseil-cpp/absl/log/internal/log_sink_set.cc',
     'third_party/abseil-cpp/absl/log/internal/nullguard.cc',
     'third_party/abseil-cpp/absl/log/internal/proto.cc',
+    'third_party/abseil-cpp/absl/log/internal/vlog_config.cc',
     'third_party/abseil-cpp/absl/log/log_entry.cc',
     'third_party/abseil-cpp/absl/log/log_sink.cc',
     'third_party/abseil-cpp/absl/numeric/int128.cc',
     'third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc',
+    'third_party/abseil-cpp/absl/status/internal/status_internal.cc',
     'third_party/abseil-cpp/absl/status/status.cc',
     'third_party/abseil-cpp/absl/status/status_payload_printer.cc',
     'third_party/abseil-cpp/absl/status/statusor.cc',
@@ -78,7 +81,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/strings/internal/cord_rep_btree_reader.cc',
     'third_party/abseil-cpp/absl/strings/internal/cord_rep_consume.cc',
     'third_party/abseil-cpp/absl/strings/internal/cord_rep_crc.cc',
-    'third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc',
     'third_party/abseil-cpp/absl/strings/internal/cordz_functions.cc',
     'third_party/abseil-cpp/absl/strings/internal/cordz_handle.cc',
     'third_party/abseil-cpp/absl/strings/internal/cordz_info.cc',
@@ -193,6 +195,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/java/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/generator_factory.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/helpers.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/java/java_features.pb.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/kotlin_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/map_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/java/map_field_lite.cc',
@@ -239,12 +242,16 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/compiler/retention.cc',
     'third_party/protobuf/src/google/protobuf/compiler/ruby/ruby_generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/accessors.cc',
-    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_bytes.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_scalar.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/singular_string.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/accessors/unsupported_field.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/context.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/generator.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/message.cc',
     'third_party/protobuf/src/google/protobuf/compiler/rust/naming.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/oneof.cc',
+    'third_party/protobuf/src/google/protobuf/compiler/rust/relative_path.cc',
     'third_party/protobuf/src/google/protobuf/compiler/subprocess.cc',
     'third_party/protobuf/src/google/protobuf/compiler/zip_writer.cc',
     'third_party/protobuf/src/google/protobuf/cpp_features.pb.cc',
@@ -292,7 +299,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/unknown_field_set.cc',
     'third_party/protobuf/src/google/protobuf/wire_format.cc',
     'third_party/protobuf/src/google/protobuf/wire_format_lite.cc',
-    'third_party/utf8_range/utf8_validity.cc'
+    'third_party/protobuf/third_party/utf8_range/utf8_validity.cc'
 ]
 
 PROTO_FILES=[
@@ -311,8 +318,12 @@ PROTO_FILES=[
 ]
 
 CC_INCLUDES=[
- 'third_party/abseil-cpp', 'third_party/protobuf/src', 'third_party/utf8_range'
+    'third_party/abseil-cpp',
+    'third_party/protobuf',
+    'third_party/protobuf/src',
+    'third_party/protobuf/upb',
+    'third_party/protobuf/third_party/utf8_range'
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="b2b7a51158418f41cff0520894836c15b1738721"
+PROTOBUF_SUBMODULE_VERSION="7f94235e552599141950d7a4a3eaf93bc87d1b22"

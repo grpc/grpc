@@ -46,10 +46,7 @@ gcloud firebase test android run \
     --type instrumentation \
     --app app/build/outputs/apk/debug/app-debug.apk \
     --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk \
-    --device model=blueline,version=28,locale=en,orientation=portrait \
     --device model=a10,version=29,locale=en,orientation=portrait \
-    --device model=redfin,version=30,locale=en,orientation=portrait \
-    --device model=oriole,version=31,locale=en,orientation=portrait \
     --device model=oriole,version=32,locale=en,orientation=portrait
 
 # Build hello world example

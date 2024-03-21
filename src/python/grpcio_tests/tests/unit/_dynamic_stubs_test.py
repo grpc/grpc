@@ -29,7 +29,7 @@ _DATA_DIR = os.path.join("tests", "unit", "data")
 @contextlib.contextmanager
 def _grpc_tools_unimportable():
     original_sys_path = sys.path
-    sys.path = [path for path in sys.path if "grpcio_tools" not in path]
+    sys.path = [path for path in sys.path if "grpcio_tools" not in str(path)]
     try:
         import grpc_tools
     except ImportError:
@@ -131,8 +131,11 @@ def _test_grpc_tools_unimportable():
 
 # NOTE(rbellevi): multiprocessing.Process fails to pickle function objects
 # when they do not come from the "__main__" module, so this test passes
-# if run directly on Windows, but not if started by the test runner.
-@unittest.skipIf(os.name == "nt", "Windows multiprocessing unsupported")
+# if run directly on Windows or MacOS, but not if started by the test runner.
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Windows and MacOS multiprocessing unsupported",
+)
 class DynamicStubTest(unittest.TestCase):
     def test_sunny_day(self):
         _run_in_subprocess(_test_sunny_day)

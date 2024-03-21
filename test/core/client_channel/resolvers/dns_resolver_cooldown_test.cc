@@ -38,10 +38,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -56,11 +56,12 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/resolver/resolver.h"
-#include "src/core/lib/resolver/resolver_factory.h"
-#include "src/core/lib/resolver/resolver_registry.h"
-#include "src/core/lib/resolver/server_address.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/resolver/resolver_registry.h"
 #include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
@@ -72,7 +73,7 @@ static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 static grpc_ares_request* (*g_default_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms);
 
 // Counter incremented by TestDNSResolver::LookupHostname indicating the
@@ -177,7 +178,7 @@ class TestDNSResolver : public grpc_core::DNSResolver {
 static grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::EndpointAddressesList>* addresses,
     int query_timeout_ms) {
   // A records should suffice
   grpc_ares_request* result = g_default_dns_lookup_ares(
@@ -409,9 +410,18 @@ static void test_cooldown() {
 }
 
 TEST(DnsResolverCooldownTest, MainTest) {
+  // TODO(yijiem): This test tests the cooldown behavior of the PollingResolver
+  // interface. To do that, it overrides the grpc_dns_lookup_hostname_ares
+  // function and overrides the iomgr's g_dns_resolver system. We would need to
+  // rewrite this test for EventEngine using a custom EE DNSResolver or adding
+  // to the resolver_fuzzer.
+  if (grpc_core::IsEventEngineDnsEnabled()) {
+    GTEST_SKIP() << "Not with event engine dns";
+  }
   grpc_init();
 
-  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
+  auto work_serializer = std::make_shared<grpc_core::WorkSerializer>(
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   g_work_serializer = &work_serializer;
 
   g_default_dns_lookup_ares = grpc_dns_lookup_hostname_ares;

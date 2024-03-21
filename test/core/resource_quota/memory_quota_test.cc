@@ -82,7 +82,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
 
   MemoryQuota memory_quota("foo");
   memory_quota.SetSize(4096);
-  auto memory_allocator = memory_quota.CreateMemoryOwner("bar");
+  auto memory_allocator = memory_quota.CreateMemoryOwner();
   auto object = memory_allocator.MakeUnique<Sized<2048>>();
 
   auto checker1 = CallChecker::Make();
@@ -157,7 +157,7 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
 
   for (size_t i = 0; i < 10000; i++) {
     ExecCtx exec_ctx;
-    auto memory_owner = memory_quota.CreateMemoryOwner("bar");
+    auto memory_owner = memory_quota.CreateMemoryOwner();
     memory_owner.PostReclaimer(
         ReclamationPass::kDestructive,
         [&count_reclaimers_called](absl::optional<ReclamationSweep> sweep) {

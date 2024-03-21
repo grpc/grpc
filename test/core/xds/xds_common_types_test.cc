@@ -16,7 +16,6 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <utility>
@@ -34,8 +33,8 @@
 #include "google/protobuf/duration.upb.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 
@@ -73,7 +72,8 @@ class XdsCommonTypesTest : public ::testing::Test {
  protected:
   XdsCommonTypesTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
                         &xds_common_types_test_trace, upb_def_pool_.ptr(),
                         upb_arena_.ptr()} {}
 
@@ -104,7 +104,8 @@ class XdsCommonTypesTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 

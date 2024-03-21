@@ -26,6 +26,7 @@ from grpc.experimental import wrap_server_method_handler
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase
+from tests_aio.unit._test_server import TEST_CONTEXT_VAR
 from tests_aio.unit._test_server import start_test_server
 
 _NUM_STREAM_RESPONSES = 5
@@ -45,7 +46,28 @@ class _LoggingInterceptor(aio.ServerInterceptor):
         ],
         handler_call_details: grpc.HandlerCallDetails,
     ) -> grpc.RpcMethodHandler:
-        self.record.append(self.tag + ":intercept_service")
+        self.record.append(
+            self.tag + ":" + TEST_CONTEXT_VAR.get("intercept_service")
+        )
+        return await continuation(handler_call_details)
+
+
+class _ContextVarSettingInterceptor(aio.ServerInterceptor):
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    async def intercept_service(
+        self,
+        continuation: Callable[
+            [grpc.HandlerCallDetails], Awaitable[grpc.RpcMethodHandler]
+        ],
+        handler_call_details: grpc.HandlerCallDetails,
+    ) -> grpc.RpcMethodHandler:
+        new_value = self.value
+        old_value = TEST_CONTEXT_VAR.get("")
+        if old_value:
+            new_value = old_value + ":" + new_value
+        TEST_CONTEXT_VAR.set(new_value)
         return await continuation(handler_call_details)
 
 
@@ -138,13 +160,15 @@ class _CacheInterceptor(aio.ServerInterceptor):
 
 
 async def _create_server_stub_pair(
-    *interceptors: aio.ServerInterceptor,
+    record: list, *interceptors: aio.ServerInterceptor
 ) -> Tuple[aio.Server, test_pb2_grpc.TestServiceStub]:
-    """Creates a server-stub pair with given interceptors.
+    """Creates a server-stub pair with given record and interceptors.
 
     Returning the server object to protect it from being garbage collected.
     """
-    server_target, server = await start_test_server(interceptors=interceptors)
+    server_target, server = await start_test_server(
+        interceptors=interceptors, record=record
+    )
     channel = aio.insecure_channel(server_target)
     return server, test_pb2_grpc.TestServiceStub(channel)
 
@@ -162,10 +186,12 @@ class TestServerInterceptor(AioTestBase):
     async def test_executed_right_order(self):
         record = []
         server_target, _ = await start_test_server(
+            record=record,
             interceptors=(
                 _LoggingInterceptor("log1", record),
+                _ContextVarSettingInterceptor("context_var_value"),
                 _LoggingInterceptor("log2", record),
-            )
+            ),
         )
 
         async with aio.insecure_channel(server_target) as channel:
@@ -177,16 +203,53 @@ class TestServerInterceptor(AioTestBase):
             call = multicallable(messages_pb2.SimpleRequest())
             response = await call
 
-            # Check that all interceptors were executed, and were executed
-            # in the right order.
+            # Check that all interceptors were executed--and were executed
+            # in the right order--before calling the servicer.
             self.assertSequenceEqual(
                 [
                     "log1:intercept_service",
-                    "log2:intercept_service",
+                    "log2:context_var_value",
+                    "servicer:context_var_value",
                 ],
                 record,
             )
             self.assertIsInstance(response, messages_pb2.SimpleResponse)
+
+    async def test_unique_context_per_call(self):
+        record = []
+        server, stub = await _create_server_stub_pair(
+            record,
+            _LoggingInterceptor("log1", record),
+            _ContextVarSettingInterceptor("context_var_value"),
+            _LoggingInterceptor("log2", record),
+        )
+
+        response = await stub.UnaryCall(
+            messages_pb2.SimpleRequest(response_size=42)
+        )
+
+        self.assertSequenceEqual(
+            [
+                "log1:intercept_service",
+                "log2:context_var_value",
+                "servicer:context_var_value",
+            ],
+            record,
+        )
+        record.clear()
+
+        response = await stub.UnaryCall(
+            messages_pb2.SimpleRequest(response_size=42)
+        )
+
+        self.assertSequenceEqual(
+            [
+                "log1:intercept_service",
+                "log2:context_var_value",
+                "servicer:context_var_value",
+            ],
+            record,
+        )
 
     async def test_response_ok(self):
         record = []
@@ -270,7 +333,7 @@ class TestServerInterceptor(AioTestBase):
         )
 
         # Constructs a server with the cache interceptor
-        server, stub = await _create_server_stub_pair(interceptor)
+        server, stub = await _create_server_stub_pair([], interceptor)
 
         # Tests if the cache store is used
         response = await stub.UnaryCall(
@@ -293,7 +356,9 @@ class TestServerInterceptor(AioTestBase):
     async def test_interceptor_unary_stream(self):
         record = []
         server, stub = await _create_server_stub_pair(
-            _LoggingInterceptor("log_unary_stream", record)
+            record,
+            _ContextVarSettingInterceptor("context_var_value"),
+            _LoggingInterceptor("log_unary_stream", record),
         )
 
         # Prepares the request
@@ -315,7 +380,8 @@ class TestServerInterceptor(AioTestBase):
 
         self.assertSequenceEqual(
             [
-                "log_unary_stream:intercept_service",
+                "log_unary_stream:context_var_value",
+                "servicer:context_var_value",
             ],
             record,
         )
@@ -323,7 +389,9 @@ class TestServerInterceptor(AioTestBase):
     async def test_interceptor_stream_unary(self):
         record = []
         server, stub = await _create_server_stub_pair(
-            _LoggingInterceptor("log_stream_unary", record)
+            record,
+            _ContextVarSettingInterceptor("context_var_value"),
+            _LoggingInterceptor("log_stream_unary", record),
         )
 
         # Invokes the actual RPC
@@ -350,7 +418,8 @@ class TestServerInterceptor(AioTestBase):
 
         self.assertSequenceEqual(
             [
-                "log_stream_unary:intercept_service",
+                "log_stream_unary:context_var_value",
+                "servicer:context_var_value",
             ],
             record,
         )
@@ -358,7 +427,9 @@ class TestServerInterceptor(AioTestBase):
     async def test_interceptor_stream_stream(self):
         record = []
         server, stub = await _create_server_stub_pair(
-            _LoggingInterceptor("log_stream_stream", record)
+            record,
+            _ContextVarSettingInterceptor("context_var_value"),
+            _LoggingInterceptor("log_stream_stream", record),
         )
 
         # Prepares the request
@@ -384,7 +455,8 @@ class TestServerInterceptor(AioTestBase):
 
         self.assertSequenceEqual(
             [
-                "log_stream_stream:intercept_service",
+                "log_stream_stream:context_var_value",
+                "servicer:context_var_value",
             ],
             record,
         )

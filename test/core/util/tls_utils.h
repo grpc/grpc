@@ -57,7 +57,7 @@ class TmpFile {
 PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
                                     absl::string_view certs);
 
-std::string GetFileContents(const char* path);
+std::string GetFileContents(const std::string& path);
 
 // A synchronous external verifier implementation that simply returns
 // verification results based on users' inputs. Note that it will delete itself

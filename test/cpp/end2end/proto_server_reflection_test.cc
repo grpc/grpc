@@ -16,9 +16,11 @@
 //
 //
 
-#include <gtest/gtest.h>
+#include <memory>
+#include <vector>
 
-#include "absl/memory/memory.h"
+#include <gmock/gmock-matchers.h>
+#include <gtest/gtest.h>
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
@@ -31,10 +33,13 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
+#include "src/proto/grpc/reflection/v1/reflection.pb.h"
+#include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 
 namespace grpc {
@@ -56,10 +61,9 @@ class ProtoServerReflectionTest : public ::testing::Test {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    std::shared_ptr<Channel> channel =
-        grpc::CreateChannel(target, InsecureChannelCredentials());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel);
-    desc_db_ = std::make_unique<ProtoReflectionDescriptorDatabase>(channel);
+    channel_ = grpc::CreateChannel(target, InsecureChannelCredentials());
+    stub_ = grpc::testing::EchoTestService::NewStub(channel_);
+    desc_db_ = std::make_unique<ProtoReflectionDescriptorDatabase>(channel_);
     desc_pool_ = std::make_unique<protobuf::DescriptorPool>(desc_db_.get());
   }
 
@@ -117,8 +121,18 @@ class ProtoServerReflectionTest : public ::testing::Test {
     EXPECT_EQ(desc->DebugString(), ref_desc->DebugString());
   }
 
+  template <typename Response>
+  std::vector<std::string> ServicesFromResponse(const Response& response) {
+    std::vector<std::string> services;
+    for (const auto& service : response.list_services_response().service()) {
+      services.emplace_back(service.name());
+    }
+    return services;
+  }
+
  protected:
   std::unique_ptr<Server> server_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::unique_ptr<ProtoReflectionDescriptorDatabase> desc_db_;
   std::unique_ptr<protobuf::DescriptorPool> desc_pool_;
@@ -140,6 +154,58 @@ TEST_F(ProtoServerReflectionTest, CheckResponseWithLocalDescriptorPool) {
   for (auto it = services.begin(); it != services.end(); ++it) {
     CompareService(*it);
   }
+}
+
+TEST_F(ProtoServerReflectionTest, V1AlphaApiInstalled) {
+  ResetStub();
+  using Service = reflection::v1alpha::ServerReflection;
+  using Request = reflection::v1alpha::ServerReflectionRequest;
+  using Response = reflection::v1alpha::ServerReflectionResponse;
+  Service::Stub stub(channel_);
+  ClientContext context;
+  auto reader_writer = stub.ServerReflectionInfo(&context);
+  Request request;
+  request.set_list_services("*");
+  reader_writer->Write(request);
+  Response response;
+  ASSERT_EQ(reader_writer->Read(&response), true);
+  EXPECT_THAT(ServicesFromResponse(response),
+              ::testing::UnorderedElementsAre(
+                  reflection::v1alpha::ServerReflection::service_full_name(),
+                  reflection::v1::ServerReflection::service_full_name()));
+  request = Request::default_instance();
+  request.set_file_containing_symbol(Service::service_full_name());
+  reader_writer->WriteLast(request, WriteOptions());
+  response = Response::default_instance();
+  ASSERT_EQ(reader_writer->Read(&response), true);
+  EXPECT_EQ(response.file_descriptor_response().file_descriptor_proto_size(), 1)
+      << response.DebugString();
+}
+
+TEST_F(ProtoServerReflectionTest, V1ApiInstalled) {
+  ResetStub();
+  using Service = reflection::v1::ServerReflection;
+  using Request = reflection::v1::ServerReflectionRequest;
+  using Response = reflection::v1::ServerReflectionResponse;
+  Service::Stub stub(channel_);
+  ClientContext context;
+  auto reader_writer = stub.ServerReflectionInfo(&context);
+  Request request;
+  request.set_list_services("*");
+  reader_writer->Write(request);
+  Response response;
+  ASSERT_TRUE(reader_writer->Read(&response));
+  EXPECT_THAT(ServicesFromResponse(response),
+              ::testing::UnorderedElementsAre(
+                  reflection::v1alpha::ServerReflection::service_full_name(),
+                  reflection::v1::ServerReflection::service_full_name()));
+  request = Request::default_instance();
+  request.set_file_containing_symbol(Service::service_full_name());
+  reader_writer->WriteLast(request, WriteOptions());
+  response = Response::default_instance();
+  ASSERT_TRUE(reader_writer->Read(&response));
+  EXPECT_EQ(response.file_descriptor_response().file_descriptor_proto_size(), 1)
+      << response.DebugString();
 }
 
 }  // namespace testing

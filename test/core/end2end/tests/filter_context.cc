@@ -16,11 +16,8 @@
 //
 //
 
-#include <limits.h>
-
-#include <algorithm>
 #include <initializer_list>
-#include <vector>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
@@ -30,9 +27,9 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -85,38 +82,30 @@ grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
 void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter test_filter = {
-    start_transport_stream_op_batch,
-    nullptr,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
-    0,
-    init_channel_elem,
-    grpc_channel_stack_no_post_init,
-    destroy_channel_elem,
+    start_transport_stream_op_batch, nullptr, nullptr, grpc_channel_next_op,
+    sizeof(call_data), init_call_elem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set, destroy_call_elem, 0,
+    init_channel_elem, grpc_channel_stack_no_post_init, destroy_channel_elem,
     grpc_channel_next_get_info,
-    "filter_context"};
+    // Want to add the filter as close to the end as possible, to
+    // make sure that all of the filters work well together.
+    // However, we can't add it at the very end, because the
+    // connected channel filter must be the last one.
+    // Channel init code falls back to lexical ordering of filters if there are
+    // otherwise no dependencies, so we leverage that.
+    "zzzzzzz_filter_context"};
 
 // Simple request to test that filters see a consistent view of the
 // call context.
 CORE_END2END_TEST(CoreEnd2endTest, FilterContext) {
+  SKIP_IF_CHAOTIC_GOOD();
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     for (auto type : {GRPC_CLIENT_CHANNEL, GRPC_CLIENT_SUBCHANNEL,
                       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_SERVER_CHANNEL}) {
-      builder->channel_init()->RegisterStage(
-          type, INT_MAX, [](ChannelStackBuilder* builder) {
-            // Want to add the filter as close to the end as possible, to
-            // make sure that all of the filters work well together.
-            // However, we can't add it at the very end, because the
-            // connected channel filter must be the last one.  So we add it
-            // right before the last one.
-            auto it = builder->mutable_stack()->end();
-            --it;
-            builder->mutable_stack()->insert(it, &test_filter);
-            return true;
-          });
+      if (type == GRPC_SERVER_CHANNEL && IsPromiseBasedServerCallEnabled()) {
+        continue;
+      }
+      builder->channel_init()->RegisterFilter(type, &test_filter);
     }
   });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

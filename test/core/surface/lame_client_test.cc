@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include <memory>
+
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
@@ -56,8 +58,8 @@ void test_transport_op(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->start_connectivity_watch = grpc_core::MakeOrphanable<Watcher>();
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(
+      grpc_core::Channel::FromC(channel)->channel_stack(), 0);
   elem->filter->start_transport_op(elem, op);
 
   GRPC_CLOSURE_INIT(&transport_op_cb, do_nothing, nullptr,

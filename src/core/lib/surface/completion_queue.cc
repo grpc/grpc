@@ -24,7 +24,6 @@
 
 #include <algorithm>
 #include <atomic>
-#include <initializer_list>
 #include <new>
 #include <string>
 #include <utility>
@@ -886,12 +885,6 @@ void grpc_cq_end_op(grpc_completion_queue* cq, void* tag,
                     void (*done)(void* done_arg, grpc_cq_completion* storage),
                     void* done_arg, grpc_cq_completion* storage,
                     bool internal) {
-// TODO(hork): remove when the listener flake is identified
-#ifdef GPR_WINDOWS
-  if (grpc_core::IsEventEngineListenerEnabled()) {
-    gpr_log(GPR_ERROR, "cq_end_op called for tag %d (0x%p)", tag, tag);
-  }
-#endif
   cq->vtable->end_op(cq, tag, error, done, done_arg, storage, internal);
 }
 

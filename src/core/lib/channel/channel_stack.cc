@@ -28,12 +28,21 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/gpr/alloc.h"
+#include "src/core/lib/surface/channel_init.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
 grpc_core::TraceFlag grpc_trace_channel(false, "channel");
-grpc_core::TraceFlag grpc_trace_channel_stack(false, "channel_stack");
+
+static int register_get_name_fn = []() {
+  grpc_core::NameFromChannelFilter = [](const grpc_channel_filter* filter) {
+    return filter->name;
+  };
+  return 0;
+}();
 
 // Memory layouts.
 
@@ -120,6 +129,7 @@ grpc_error_handle grpc_channel_stack_init(
 
   stack->on_destroy.Init([]() {});
   stack->event_engine.Init(channel_args.GetObjectRef<EventEngine>());
+  stack->stats_plugin_group.Init();
 
   size_t call_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
@@ -179,6 +189,7 @@ void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   (*stack->on_destroy)();
   stack->on_destroy.Destroy();
   stack->event_engine.Destroy();
+  stack->stats_plugin_group.Destroy();
 }
 
 grpc_error_handle grpc_call_stack_init(
@@ -311,4 +322,37 @@ grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
 grpc_channel_stack::MakeServerCallPromise(grpc_core::CallArgs call_args) {
   return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
       std::move(call_args));
+}
+
+void grpc_channel_stack::InitClientCallSpine(
+    grpc_core::CallSpineInterface* call) {
+  for (size_t i = 0; i < count; i++) {
+    auto* elem = grpc_channel_stack_element(this, i);
+    if (elem->filter->init_call == nullptr) {
+      grpc_core::Crash(
+          absl::StrCat("Filter '", elem->filter->name,
+                       "' does not support the call-v3 interface"));
+    }
+    elem->filter->init_call(elem, call);
+  }
+}
+
+void grpc_channel_stack::InitServerCallSpine(
+    grpc_core::CallSpineInterface* call) {
+  for (size_t i = 0; i < count; i++) {
+    auto* elem = grpc_channel_stack_element(this, count - 1 - i);
+    if (elem->filter->init_call == nullptr) {
+      grpc_core::Crash(
+          absl::StrCat("Filter '", elem->filter->name,
+                       "' does not support the call-v3 interface"));
+    }
+    elem->filter->init_call(elem, call);
+  }
+}
+
+void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
+                      grpc_call_element* elem,
+                      grpc_transport_stream_op_batch* op) {
+  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem,
+          grpc_transport_stream_op_batch_string(op, false).c_str());
 }

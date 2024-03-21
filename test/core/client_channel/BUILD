@@ -28,6 +28,7 @@ grpc_cc_test(
     deps = [
         "//:grpc_client_channel",
         "//src/core:channel_args",
+        "//src/core:subchannel_pool_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -43,6 +44,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
     ],
 )
 

@@ -41,21 +41,19 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 namespace grpc {
 namespace testing {
 
 using ::envoy::config::core::v3::HealthStatus;
-using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-using ::envoy::config::listener::v3::Listener;
-using ::envoy::extensions::filters::network::http_connection_manager::v3::
-    HttpConnectionManager;
+using ::envoy::service::discovery::v3::DiscoveryRequest;
+using ::envoy::service::load_stats::v3::LoadStatsRequest;
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::IdentityKeyCertPair;
@@ -173,6 +171,16 @@ void XdsEnd2endTest::ServerThread::StopListeningAndSendGoaways() {
   gpr_log(GPR_INFO, "%s done sending GOAWAYs", Type());
 }
 
+void XdsEnd2endTest::ServerThread::StopListening() {
+  gpr_log(GPR_INFO, "%s about to stop listening", Type());
+  {
+    grpc_core::ExecCtx exec_ctx;
+    auto* server = grpc_core::Server::FromC(server_->c_server());
+    server->StopListening();
+  }
+  gpr_log(GPR_INFO, "%s stopped listening", Type());
+}
+
 void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
                                          grpc_core::CondVar* cond) {
   // We need to acquire the lock here in order to prevent the notify_one
@@ -230,9 +238,11 @@ XdsEnd2endTest::BackendServerThread::Credentials() {
       return XdsServerCredentials(InsecureServerCredentials());
     } else {
       // We are testing client's use of XdsCredentials
-      std::string root_cert = ReadFile(kCaCertPath);
-      std::string identity_cert = ReadFile(kServerCertPath);
-      std::string private_key = ReadFile(kServerKeyPath);
+      std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
+      std::string identity_cert =
+          grpc_core::testing::GetFileContents(kServerCertPath);
+      std::string private_key =
+          grpc_core::testing::GetFileContents(kServerKeyPath);
       std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
           {private_key, identity_cert}};
       auto certificate_provider =
@@ -279,10 +289,30 @@ void XdsEnd2endTest::BackendServerThread::ShutdownAllServices() {
 XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
-      ads_service_(new AdsServiceImpl()),
-      lrs_service_(
-          new LrsServiceImpl((GetParam().enable_load_reporting() ? 20 : 0),
-                             {kDefaultClusterName})) {}
+      ads_service_(new AdsServiceImpl(
+          // First request must have node set with the right client features.
+          [&](const DiscoveryRequest& request) {
+            EXPECT_TRUE(request.has_node());
+            EXPECT_THAT(request.node().client_features(),
+                        ::testing::UnorderedElementsAre(
+                            "envoy.lb.does_not_support_overprovisioning",
+                            "xds.config.resource-in-sotw"));
+          },
+          // NACKs must use the right status code.
+          [&](absl::StatusCode code) {
+            EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);
+          })),
+      lrs_service_(new LrsServiceImpl(
+          (GetParam().enable_load_reporting() ? 20 : 0), {kDefaultClusterName},
+          // Fail if load reporting is used when not enabled.
+          [&]() { EXPECT_TRUE(GetParam().enable_load_reporting()); },
+          // Make sure we send the client feature saying that we support
+          // send_all_clusters.
+          [&](const LoadStatsRequest& request) {
+            EXPECT_THAT(
+                request.node().client_features(),
+                ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
+          })) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -298,112 +328,6 @@ void XdsEnd2endTest::BalancerServerThread::StartAllServices() {
 void XdsEnd2endTest::BalancerServerThread::ShutdownAllServices() {
   ads_service_->Shutdown();
   lrs_service_->Shutdown();
-}
-
-//
-// XdsEnd2endTest::BootstrapBuilder
-//
-
-std::string XdsEnd2endTest::BootstrapBuilder::Build() {
-  std::vector<std::string> fields;
-  fields.push_back(MakeXdsServersText(top_server_));
-  if (!client_default_listener_resource_name_template_.empty()) {
-    fields.push_back(
-        absl::StrCat("  \"client_default_listener_resource_name_template\": \"",
-                     client_default_listener_resource_name_template_, "\""));
-  }
-  fields.push_back(MakeNodeText());
-  if (!server_listener_resource_name_template_.empty()) {
-    fields.push_back(
-        absl::StrCat("  \"server_listener_resource_name_template\": \"",
-                     server_listener_resource_name_template_, "\""));
-  }
-  fields.push_back(MakeCertificateProviderText());
-  fields.push_back(MakeAuthorityText());
-  return absl::StrCat("{", absl::StrJoin(fields, ",\n"), "}");
-}
-
-std::string XdsEnd2endTest::BootstrapBuilder::MakeXdsServersText(
-    absl::string_view server_uri) {
-  constexpr char kXdsServerTemplate[] =
-      "      \"xds_servers\": [\n"
-      "        {\n"
-      "          \"server_uri\": \"<SERVER_URI>\",\n"
-      "          \"channel_creds\": [\n"
-      "            {\n"
-      "              \"type\": \"fake\"\n"
-      "            }\n"
-      "          ],\n"
-      "          \"server_features\": [<SERVER_FEATURES>]\n"
-      "        }\n"
-      "      ]";
-  std::vector<std::string> server_features;
-  if (ignore_resource_deletion_) {
-    server_features.push_back("\"ignore_resource_deletion\"");
-  }
-  return absl::StrReplaceAll(
-      kXdsServerTemplate,
-      {{"<SERVER_URI>", server_uri},
-       {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}});
-}
-
-std::string XdsEnd2endTest::BootstrapBuilder::MakeNodeText() {
-  constexpr char kXdsNode[] =
-      "  \"node\": {\n"
-      "    \"id\": \"xds_end2end_test\",\n"
-      "    \"cluster\": \"test\",\n"
-      "    \"metadata\": {\n"
-      "      \"foo\": \"bar\"\n"
-      "    },\n"
-      "    \"locality\": {\n"
-      "      \"region\": \"corp\",\n"
-      "      \"zone\": \"svl\",\n"
-      "      \"sub_zone\": \"mp3\"\n"
-      "    }\n"
-      "  }";
-  return kXdsNode;
-}
-
-std::string XdsEnd2endTest::BootstrapBuilder::MakeCertificateProviderText() {
-  std::vector<std::string> entries;
-  for (const auto& p : plugins_) {
-    const std::string& key = p.first;
-    const PluginInfo& plugin_info = p.second;
-    std::vector<std::string> fields;
-    fields.push_back(absl::StrFormat("    \"%s\": {", key));
-    if (!plugin_info.plugin_config.empty()) {
-      fields.push_back(
-          absl::StrFormat("      \"plugin_name\": \"%s\",", plugin_info.name));
-      fields.push_back(absl::StrCat("      \"config\": {\n",
-                                    plugin_info.plugin_config, "\n      }"));
-    } else {
-      fields.push_back(
-          absl::StrFormat("      \"plugin_name\": \"%s\"", plugin_info.name));
-    }
-    fields.push_back("    }");
-    entries.push_back(absl::StrJoin(fields, "\n"));
-  }
-  return absl::StrCat("  \"certificate_providers\": {\n",
-                      absl::StrJoin(entries, ",\n"), "  \n}");
-}
-
-std::string XdsEnd2endTest::BootstrapBuilder::MakeAuthorityText() {
-  std::vector<std::string> entries;
-  for (const auto& p : authorities_) {
-    const std::string& name = p.first;
-    const AuthorityInfo& authority_info = p.second;
-    std::vector<std::string> fields = {
-        MakeXdsServersText(authority_info.server)};
-    if (!authority_info.client_listener_resource_name_template.empty()) {
-      fields.push_back(absl::StrCat(
-          "\"client_listener_resource_name_template\": \"",
-          authority_info.client_listener_resource_name_template, "\""));
-    }
-    entries.push_back(absl::StrCat(absl::StrFormat("\"%s\": {\n  ", name),
-                                   absl::StrJoin(fields, ",\n"), "\n}"));
-  }
-  return absl::StrCat("\"authorities\": {\n", absl::StrJoin(entries, ",\n"),
-                      "\n}");
 }
 
 //
@@ -437,23 +361,14 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (backend_metrics.has_value()) {
     *request->mutable_param()->mutable_backend_metrics() = *backend_metrics;
   }
+  if (server_notify_client_when_started) {
+    request->mutable_param()->set_server_notify_client_when_started(true);
+  }
 }
 
 //
 // XdsEnd2endTest
 //
-
-const char XdsEnd2endTest::kDefaultLocalityRegion[] =
-    "xds_default_locality_region";
-const char XdsEnd2endTest::kDefaultLocalityZone[] = "xds_default_locality_zone";
-
-const char XdsEnd2endTest::kServerName[] = "server.example.com";
-const char XdsEnd2endTest::kDefaultRouteConfigurationName[] =
-    "route_config_name";
-const char XdsEnd2endTest::kDefaultClusterName[] = "cluster_name";
-const char XdsEnd2endTest::kDefaultEdsServiceName[] = "eds_service_name";
-const char XdsEnd2endTest::kDefaultServerRouteConfigurationName[] =
-    "default_server_route_config_name";
 
 const char XdsEnd2endTest::kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 const char XdsEnd2endTest::kServerCertPath[] =
@@ -464,35 +379,10 @@ const char XdsEnd2endTest::kServerKeyPath[] =
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
-  bool localhost_resolves_to_ipv4 = false;
-  bool localhost_resolves_to_ipv6 = false;
-  grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
-                               &localhost_resolves_to_ipv6);
-  ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-  // Initialize default xDS resources.
-  // Construct LDS resource.
-  default_listener_.set_name(kServerName);
-  HttpConnectionManager http_connection_manager;
-  auto* filter = http_connection_manager.add_http_filters();
-  filter->set_name("router");
-  filter->mutable_typed_config()->PackFrom(
-      envoy::extensions::filters::http::router::v3::Router());
-  default_listener_.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  // Construct RDS resource.
-  default_route_config_.set_name(kDefaultRouteConfigurationName);
-  auto* virtual_host = default_route_config_.add_virtual_hosts();
-  virtual_host->add_domains("*");
-  auto* route = virtual_host->add_routes();
-  route->mutable_match()->set_prefix("");
-  route->mutable_route()->set_cluster(kDefaultClusterName);
-  // Construct CDS resource.
-  default_cluster_.set_name(kDefaultClusterName);
-  default_cluster_.set_type(Cluster::EDS);
-  auto* eds_config = default_cluster_.mutable_eds_cluster_config();
-  eds_config->mutable_eds_config()->mutable_self();
-  eds_config->set_service_name(kDefaultEdsServiceName);
-  default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
+  // Initialize default client-side xDS resources.
+  default_listener_ = XdsResourceUtils::DefaultListener();
+  default_route_config_ = XdsResourceUtils::DefaultRouteConfig();
+  default_cluster_ = XdsResourceUtils::DefaultCluster();
   if (GetParam().enable_load_reporting()) {
     default_cluster_.mutable_lrs_server()->mutable_self();
   }
@@ -500,21 +390,9 @@ XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
   SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
                                    default_route_config_);
   balancer_->ads_service()->SetCdsResource(default_cluster_);
-  // Construct a default server-side RDS resource for tests to use.
-  default_server_route_config_.set_name(kDefaultServerRouteConfigurationName);
-  virtual_host = default_server_route_config_.add_virtual_hosts();
-  virtual_host->add_domains("*");
-  route = virtual_host->add_routes();
-  route->mutable_match()->set_prefix("");
-  route->mutable_non_forwarding_action();
-  // Construct a default server-side Listener resource
-  default_server_listener_.mutable_address()
-      ->mutable_socket_address()
-      ->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-  default_server_listener_.mutable_default_filter_chain()
-      ->add_filters()
-      ->mutable_typed_config()
-      ->PackFrom(http_connection_manager);
+  // Initialize default server-side xDS resources.
+  default_server_route_config_ = XdsResourceUtils::DefaultServerRouteConfig();
+  default_server_listener_ = XdsResourceUtils::DefaultServerListener();
 }
 
 void XdsEnd2endTest::TearDown() {
@@ -539,83 +417,6 @@ XdsEnd2endTest::CreateAndStartBalancer() {
   return balancer;
 }
 
-std::string XdsEnd2endTest::GetServerListenerName(int port) {
-  return absl::StrCat("grpc/server?xds.resource.listening_address=",
-                      ipv6_only_ ? "[::1]:" : "127.0.0.1:", port);
-}
-
-Listener XdsEnd2endTest::PopulateServerListenerNameAndPort(
-    const Listener& listener_template, int port) {
-  Listener listener = listener_template;
-  listener.set_name(GetServerListenerName(port));
-  listener.mutable_address()->mutable_socket_address()->set_port_value(port);
-  return listener;
-}
-
-HttpConnectionManager XdsEnd2endTest::ClientHcmAccessor::Unpack(
-    const Listener& listener) const {
-  HttpConnectionManager http_connection_manager;
-  listener.api_listener().api_listener().UnpackTo(&http_connection_manager);
-  return http_connection_manager;
-}
-
-void XdsEnd2endTest::ClientHcmAccessor::Pack(const HttpConnectionManager& hcm,
-                                             Listener* listener) const {
-  auto* api_listener = listener->mutable_api_listener()->mutable_api_listener();
-  api_listener->PackFrom(hcm);
-}
-
-HttpConnectionManager XdsEnd2endTest::ServerHcmAccessor::Unpack(
-    const Listener& listener) const {
-  HttpConnectionManager http_connection_manager;
-  listener.default_filter_chain().filters().at(0).typed_config().UnpackTo(
-      &http_connection_manager);
-  return http_connection_manager;
-}
-
-void XdsEnd2endTest::ServerHcmAccessor::Pack(const HttpConnectionManager& hcm,
-                                             Listener* listener) const {
-  listener->mutable_default_filter_chain()
-      ->mutable_filters()
-      ->at(0)
-      .mutable_typed_config()
-      ->PackFrom(hcm);
-}
-
-void XdsEnd2endTest::SetListenerAndRouteConfiguration(
-    BalancerServerThread* balancer, Listener listener,
-    const RouteConfiguration& route_config, const HcmAccessor& hcm_accessor) {
-  HttpConnectionManager http_connection_manager = hcm_accessor.Unpack(listener);
-  if (GetParam().enable_rds_testing()) {
-    auto* rds = http_connection_manager.mutable_rds();
-    rds->set_route_config_name(route_config.name());
-    rds->mutable_config_source()->mutable_self();
-    balancer->ads_service()->SetRdsResource(route_config);
-  } else {
-    *http_connection_manager.mutable_route_config() = route_config;
-  }
-  hcm_accessor.Pack(http_connection_manager, &listener);
-  balancer->ads_service()->SetLdsResource(listener);
-}
-
-void XdsEnd2endTest::SetRouteConfiguration(
-    BalancerServerThread* balancer, const RouteConfiguration& route_config,
-    const Listener* listener_to_copy) {
-  if (GetParam().enable_rds_testing()) {
-    balancer->ads_service()->SetRdsResource(route_config);
-  } else {
-    Listener listener(listener_to_copy == nullptr ? default_listener_
-                                                  : *listener_to_copy);
-    HttpConnectionManager http_connection_manager;
-    listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-        &http_connection_manager);
-    *(http_connection_manager.mutable_route_config()) = route_config;
-    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-        http_connection_manager);
-    balancer->ads_service()->SetLdsResource(listener);
-  }
-}
-
 std::vector<XdsEnd2endTest::EdsResourceArgs::Endpoint>
 XdsEnd2endTest::CreateEndpointsForBackends(size_t start_index,
                                            size_t stop_index,
@@ -627,51 +428,6 @@ XdsEnd2endTest::CreateEndpointsForBackends(size_t start_index,
     endpoints.emplace_back(CreateEndpoint(i, health_status, lb_weight));
   }
   return endpoints;
-}
-
-ClusterLoadAssignment XdsEnd2endTest::BuildEdsResource(
-    const EdsResourceArgs& args, absl::string_view eds_service_name) {
-  ClusterLoadAssignment assignment;
-  assignment.set_cluster_name(eds_service_name);
-  for (const auto& locality : args.locality_list) {
-    auto* endpoints = assignment.add_endpoints();
-    endpoints->mutable_load_balancing_weight()->set_value(locality.lb_weight);
-    endpoints->set_priority(locality.priority);
-    endpoints->mutable_locality()->set_region(kDefaultLocalityRegion);
-    endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
-    endpoints->mutable_locality()->set_sub_zone(locality.sub_zone);
-    for (size_t i = 0; i < locality.endpoints.size(); ++i) {
-      const int& port = locality.endpoints[i].port;
-      auto* lb_endpoints = endpoints->add_lb_endpoints();
-      if (locality.endpoints.size() > i &&
-          locality.endpoints[i].health_status != HealthStatus::UNKNOWN) {
-        lb_endpoints->set_health_status(locality.endpoints[i].health_status);
-      }
-      if (locality.endpoints.size() > i &&
-          locality.endpoints[i].lb_weight >= 1) {
-        lb_endpoints->mutable_load_balancing_weight()->set_value(
-            locality.endpoints[i].lb_weight);
-      }
-      auto* endpoint = lb_endpoints->mutable_endpoint();
-      auto* address = endpoint->mutable_address();
-      auto* socket_address = address->mutable_socket_address();
-      socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
-      socket_address->set_port_value(port);
-    }
-  }
-  if (!args.drop_categories.empty()) {
-    auto* policy = assignment.mutable_policy();
-    for (const auto& p : args.drop_categories) {
-      const std::string& name = p.first;
-      const uint32_t parts_per_million = p.second;
-      auto* drop_overload = policy->add_drop_overloads();
-      drop_overload->set_category(name);
-      auto* drop_percentage = drop_overload->mutable_drop_percentage();
-      drop_percentage->set_numerator(parts_per_million);
-      drop_percentage->set_denominator(args.drop_denominator);
-    }
-  }
-  return assignment;
 }
 
 void XdsEnd2endTest::ResetBackendCounters(size_t start_index,
@@ -727,9 +483,12 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
   return backend_ports;
 }
 
-void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
+void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
                                 std::string lb_expected_authority,
                                 int xds_resource_does_not_exist_timeout_ms) {
+  if (!builder.has_value()) {
+    builder = MakeBootstrapBuilder();
+  }
   if (xds_resource_does_not_exist_timeout_ms > 0) {
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
@@ -747,10 +506,7 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
   }
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
-  // Initialize XdsClient state.
-  builder.SetDefaultServer(absl::StrCat("localhost:", balancer_->port()),
-                           /*ignore_if_set=*/true);
-  bootstrap_ = builder.Build();
+  bootstrap_ = builder->Build();
   if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromEnvVar) {
     grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap_.c_str());
   } else if (GetParam().bootstrap_source() == XdsTestType::kBootstrapFromFile) {
@@ -770,7 +526,7 @@ void XdsEnd2endTest::InitClient(BootstrapBuilder builder,
     // because it's not expecting the client to connect.  It also
     // ensures that each test can independently set the global channel
     // args for the xDS channel.
-    grpc_core::internal::UnsetGlobalXdsClientForTest();
+    grpc_core::internal::UnsetGlobalXdsClientsForTest();
   }
   // Create channel and stub.
   ResetStub();
@@ -805,7 +561,14 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
         GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
         &xds_channel_args_, &kChannelArgsArgVtable);
   }
-  std::string uri = absl::StrCat("xds://", xds_authority, "/", server_name);
+  std::vector<absl::string_view> parts = {"xds:"};
+  if (xds_authority != nullptr && xds_authority[0] != '\0') {
+    parts.emplace_back("//");
+    parts.emplace_back(xds_authority);
+    parts.emplace_back("/");
+  }
+  parts.emplace_back(server_name);
+  std::string uri = absl::StrJoin(parts, "");
   std::shared_ptr<ChannelCredentials> channel_creds =
       GetParam().use_xds_credentials()
           ? XdsCredentials(CreateTlsFallbackCredentials())
@@ -1056,30 +819,25 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "Socket closed|FD shutdown)");
 }
 
-std::string XdsEnd2endTest::ReadFile(const char* file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
-
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(
     const char* key_path, const char* cert_path) {
-  return grpc_core::PemKeyCertPairList{
-      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
+  return grpc_core::PemKeyCertPairList{grpc_core::PemKeyCertPair(
+      grpc_core::testing::GetFileContents(key_path),
+      grpc_core::testing::GetFileContents(cert_path))};
 }
 
 std::shared_ptr<ChannelCredentials>
 XdsEnd2endTest::CreateTlsFallbackCredentials() {
   IdentityKeyCertPair key_cert_pair;
-  key_cert_pair.private_key = ReadFile(kServerKeyPath);
-  key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
+  key_cert_pair.private_key =
+      grpc_core::testing::GetFileContents(kServerKeyPath);
+  key_cert_pair.certificate_chain =
+      grpc_core::testing::GetFileContents(kServerCertPath);
   std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
   identity_key_cert_pairs.emplace_back(key_cert_pair);
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-      ReadFile(kCaCertPath), identity_key_cert_pairs);
+      grpc_core::testing::GetFileContents(kCaCertPath),
+      identity_key_cert_pairs);
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(std::move(certificate_provider));
   options.watch_root_certs();

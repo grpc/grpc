@@ -23,7 +23,6 @@
 
 #include <atomic>
 #include <cstdint>
-#include <initializer_list>
 #include <map>
 #include <string>
 #include <utility>
@@ -38,7 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/server_address.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -64,7 +63,11 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
-        sub_zone_(std::move(sub_zone)) {}
+        sub_zone_(std::move(sub_zone)),
+        locality_labels_(
+            std::make_shared<std::map<std::string, std::string>>()) {
+    locality_labels_->emplace("grpc.lb.locality", AsHumanReadableString());
+  }
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
@@ -86,14 +89,13 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const std::string& region() const { return region_; }
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
+  std::shared_ptr<std::map<std::string, std::string>> locality_labels() const {
+    return locality_labels_;
+  }
 
-  const std::string& AsHumanReadableString() {
-    if (human_readable_string_.empty()) {
-      human_readable_string_ =
-          absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                          region_, zone_, sub_zone_);
-    }
-    return human_readable_string_;
+  std::string AsHumanReadableString() const {
+    return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                           region_, zone_, sub_zone_);
   }
 
   // Channel args traits.
@@ -109,7 +111,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
-  std::string human_readable_string_;
+  std::shared_ptr<std::map<std::string, std::string>> locality_labels_;
 };
 
 // Drop stats for an xds cluster.
@@ -142,7 +144,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
   };
 
   XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
-                      const XdsBootstrap::XdsServer& lrs_server,
+                      absl::string_view lrs_server,
                       absl::string_view cluster_name,
                       absl::string_view eds_service_name);
   ~XdsClusterDropStats() override;
@@ -155,7 +157,7 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 
  private:
   RefCountedPtr<XdsClient> xds_client_;
-  const XdsBootstrap::XdsServer& lrs_server_;
+  absl::string_view lrs_server_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   std::atomic<uint64_t> uncategorized_drops_{0};
@@ -216,7 +218,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   XdsClusterLocalityStats(RefCountedPtr<XdsClient> xds_client,
-                          const XdsBootstrap::XdsServer& lrs_server_,
+                          absl::string_view lrs_server,
                           absl::string_view cluster_name,
                           absl::string_view eds_service_name,
                           RefCountedPtr<XdsLocalityName> name);
@@ -228,6 +230,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   void AddCallStarted();
   void AddCallFinished(const std::map<absl::string_view, double>* named_metrics,
                        bool fail = false);
+
+  XdsLocalityName* locality_name() const { return name_.get(); }
 
  private:
   struct Stats {
@@ -245,7 +249,7 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   };
 
   RefCountedPtr<XdsClient> xds_client_;
-  const XdsBootstrap::XdsServer& lrs_server_;
+  absl::string_view lrs_server_;
   absl::string_view cluster_name_;
   absl::string_view eds_service_name_;
   RefCountedPtr<XdsLocalityName> name_;

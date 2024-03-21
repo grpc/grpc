@@ -28,8 +28,8 @@ REPORT_SUITE_NAME="$(echo ${TEST_TARGET} | sed 's|^.*[:/]||')"
 tar -xopf ${ARCHIVE_WITH_SUBMODULES}
 cd grpc
 
-# Remove the override the "do not detect toolchain" setting that was set
-# by the from .bazelrc configuration for the remote build.
+# Override the "do not detect toolchain" setting that was set
+# by the .bazelrc configuration for the remote build.
 # TODO(jtattermusch): find a better solution to avoid breaking toolchain detection.
 export BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0
 

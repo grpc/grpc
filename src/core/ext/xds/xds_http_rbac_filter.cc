@@ -40,7 +40,7 @@
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "envoy/type/v3/range.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 
 #include <grpc/support/json.h>
 
@@ -486,8 +486,10 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
           ValidationErrors::ScopedField field(errors, ".audit_condition");
           errors->AddError("invalid audit condition");
       }
-      if (envoy_config_rbac_v3_RBAC_AuditLoggingOptions_has_logger_configs(
-              audit_logging_options)) {
+      size_t size;
+      envoy_config_rbac_v3_RBAC_AuditLoggingOptions_logger_configs(
+          audit_logging_options, &size);
+      if (size != 0) {
         inner_rbac_json.emplace("audit_loggers",
                                 ParseAuditLoggerConfigsToJson(
                                     context, audit_logging_options, errors));

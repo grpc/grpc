@@ -16,8 +16,6 @@
 
 #include "src/core/ext/xds/xds_http_filters.h"
 
-#include <algorithm>
-#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,8 +29,8 @@
 #include "absl/strings/strip.h"
 #include "absl/types/variant.h"
 #include "gtest/gtest.h"
+#include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "upb/upb.hpp"
 
 #include <grpc/grpc.h>
 #include <grpc/status.h>
@@ -49,7 +47,6 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_writer.h"
@@ -120,7 +117,8 @@ class XdsHttpFilterTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 
@@ -1103,25 +1101,13 @@ TEST_P(XdsRbacFilterConfigTest, InvalidPermissionAndPrincipal) {
 // StatefulSession filter tests
 //
 
-using XdsStatefulSessionFilterDisabledTest = XdsHttpFilterTest;
-
-TEST_F(XdsStatefulSessionFilterDisabledTest, FilterNotRegistered) {
-  XdsExtension extension = MakeXdsExtension(StatefulSession());
-  EXPECT_EQ(GetFilter(extension.type), nullptr);
-}
-
 class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
  protected:
   void SetUp() override {
-    SetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST", "true");
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
     GPR_ASSERT(filter_ != nullptr);
-  }
-
-  void TearDown() override {
-    UnsetEnv("GRPC_EXPERIMENTAL_XDS_ENABLE_OVERRIDE_HOST");
   }
 
   const XdsHttpFilterImpl* filter_;

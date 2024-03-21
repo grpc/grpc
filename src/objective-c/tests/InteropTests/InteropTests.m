@@ -851,7 +851,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     [call setResponseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)];
     [call start];
   }
-  while (completedCallCount<kNumRpcs && [waitUntil timeIntervalSinceNow]> 0) {
+  while (completedCallCount < kNumRpcs && [waitUntil timeIntervalSinceNow] > 0) {
     [cv waitUntilDate:waitUntil];
   }
   [cv unlock];
@@ -958,7 +958,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                             //   https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/field_mask.proto
                             XCTAssertEqualObjects(
                                 error.localizedDescription,
-                                @"Received message larger than max (4194305 vs. 4194304)");
+                                @"CLIENT: Received message larger than max (4194305 vs. 4194304)");
                             [expectation fulfill];
                           }];
     waiterBlock(@[ expectation ], GRPCInteropTestTimeoutDefault);

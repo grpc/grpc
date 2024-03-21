@@ -23,7 +23,6 @@
 #include <math.h>
 #include <ruby/vm.h>
 #include <stdbool.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -468,6 +467,7 @@ void Init_grpc_c() {
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc = rb_struct_define(
       "NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
+  rb_global_variable(&grpc_rb_sStatus);
   grpc_rb_sStatus = rb_const_get(rb_cStruct, rb_intern("Status"));
   sym_code = ID2SYM(rb_intern("code"));
   sym_details = ID2SYM(rb_intern("details"));

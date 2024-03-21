@@ -27,19 +27,34 @@ custom_exec_properties(
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    name = "build_bazel_rules_android",
-    sha256 = "cd06d15dd8bb59926e4d65f9003bfc20f9da4b2519985c27e190cddc8b7a7806",
-    strip_prefix = "rules_android-0.1.1",
-    urls = ["https://github.com/bazelbuild/rules_android/archive/v0.1.1.zip"],
+    name = "platforms",
+    sha256 = "8150406605389ececb6da07cbcb509d5637a3ab9a24bc69b1101531367d89d74",
+    urls = ["https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz"],
 )
 
-load("//third_party/android:android_configure.bzl", "android_configure")
+RULES_ANDROID_NDK_COMMIT = "010f4f17dd13a8baaaacc28ba6c8c2c75f54c68b"
 
-android_configure(name = "local_config_android")
+RULES_ANDROID_NDK_SHA = "2ab6a97748772f289331d75caaaee0593825935d1d9d982231a437fb8ab5a14d"
 
-load("@local_config_android//:android_configure.bzl", "android_workspace")
+http_archive(
+    name = "rules_android_ndk",
+    sha256 = RULES_ANDROID_NDK_SHA,
+    strip_prefix = "rules_android_ndk-%s" % RULES_ANDROID_NDK_COMMIT,
+    url = "https://github.com/bazelbuild/rules_android_ndk/archive/%s.zip" % RULES_ANDROID_NDK_COMMIT,
+)
 
-android_workspace()
+android_sdk_repository(
+    name = "androidsdk",
+    build_tools_version = "34.0.0",
+)
+
+load("@rules_android_ndk//:rules.bzl", "android_ndk_repository")
+
+android_ndk_repository(name = "androidndk")
+
+# Note that we intentionally avoid calling `register_toolchains("@androidndk//:all")`
+# here, because the toolchain rule fails when $ANDROID_NDK_HOME is not set.
+# Use `--extra_toolchains=@androidndk//:all` to manually register it when building for Android.
 
 # Prevents bazel's '...' expansion from including the following folder.
 # This is required because the BUILD file in the following folder
@@ -48,7 +63,7 @@ android_workspace()
 # be invoked by binder transport implementation through JNI.
 local_repository(
     name = "binder_transport_android_helper",
-    path = "./src/core/ext/transport/binder/java",
+    path = "src/core/ext/transport/binder/java",
 )
 
 # Prevents bazel's '...' expansion from including the following folder.
@@ -59,27 +74,31 @@ local_repository(
     path = "third_party/utf8_range",
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_install")
+load("@rules_python//python:pip.bzl", "pip_parse")
 
-pip_install(
+pip_parse(
     name = "grpc_python_dependencies",
-    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+    requirements_lock = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
-load("@upb//bazel:system_python.bzl", "system_python")
+load("@grpc_python_dependencies//:requirements.bzl", "install_deps")
+
+install_deps()
+
+load("@com_google_protobuf//bazel:system_python.bzl", "system_python")
 
 system_python(
     name = "system_python",
     minimum_python_version = "3.7",
 )
 
-load("@system_python//:pip.bzl", "pip_parse")
+load("@system_python//:pip.bzl", system_pip_parse = "pip_parse")
 
-pip_parse(
+system_pip_parse(
     name = "pip_deps",
-    requirements = "@upb//python:requirements.txt",
+    requirements = "@com_google_protobuf//python:requirements.txt",
     requirements_overrides = {
-        "3.11": "@upb//python:requirements_311.txt",
+        "3.11": "@com_google_protobuf//python:requirements_311.txt",
     },
 )
 
@@ -88,6 +107,13 @@ http_archive(
     sha256 = "bf2861de6bf75115288468f340b0c4609cc99cc1ccc7668f0f71adfd853eedb3",
     url = "https://github.com/bazelbuild/rules_swift/releases/download/1.7.1/rules_swift.1.7.1.tar.gz",
 )
+
+load(
+    "@build_bazel_apple_support//lib:repositories.bzl",
+    "apple_support_dependencies",
+)
+
+apple_support_dependencies()
 
 load(
     "@build_bazel_rules_swift//swift:repositories.bzl",

@@ -52,6 +52,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 
 // IWYU pragma: no_include <type_traits>
@@ -91,12 +92,13 @@ constexpr Base64InverseTable kBase64InverseTable;
 class HPackParser::Input {
  public:
   Input(grpc_slice_refcount* current_slice_refcount, const uint8_t* begin,
-        const uint8_t* end, HpackParseResult& error)
+        const uint8_t* end, absl::BitGenRef bitsrc, HpackParseResult& error)
       : current_slice_refcount_(current_slice_refcount),
         begin_(begin),
         end_(end),
         frontier_(begin),
-        error_(error) {}
+        error_(error),
+        bitsrc_(bitsrc) {}
 
   // If input is backed by a slice, retrieve its refcount. If not, return
   // nullptr.
@@ -279,6 +281,9 @@ class HPackParser::Input {
   // Get the frontier - for buffering should we fail due to eof
   const uint8_t* frontier() const { return frontier_; }
 
+  // Access the rng
+  absl::BitGenRef bitsrc() { return bitsrc_; }
+
  private:
   // Helper to set the error to out of range for ParseVarint
   absl::optional<uint32_t> ParseVarintOutOfRange(uint32_t value,
@@ -324,6 +329,8 @@ class HPackParser::Input {
   // (We've failed parsing a request for whatever reason, but we're still
   // continuing the connection so we need to see future opcodes after this bit).
   size_t skip_bytes_ = 0;
+  // Random number generator
+  absl::BitGenRef bitsrc_;
 };
 
 absl::string_view HPackParser::String::string_view() const {
@@ -1070,55 +1077,6 @@ Slice HPackParser::String::Take() {
   GPR_UNREACHABLE_CODE(return Slice());
 }
 
-class HPackParser::MetadataSizeEncoder {
- public:
-  explicit MetadataSizeEncoder(std::string& summary) : summary_(summary) {}
-
-  void Encode(const Slice& key, const Slice& value) {
-    AddToSummary(key.as_string_view(), value.size());
-  }
-
-  template <typename Key, typename Value>
-  void Encode(Key, const Value& value) {
-    AddToSummary(Key::key(), EncodedSizeOfKey(Key(), value));
-  }
-
- private:
-  void AddToSummary(absl::string_view key,
-                    size_t value_length) GPR_ATTRIBUTE_NOINLINE {
-    absl::StrAppend(&summary_, key, ":",
-                    hpack_constants::SizeForEntry(key.size(), value_length),
-                    ",");
-  }
-  std::string& summary_;
-};
-
-class HPackParser::MetadataSizesAnnotation
-    : public CallTracerAnnotationInterface::Annotation {
- public:
-  MetadataSizesAnnotation(grpc_metadata_batch* metadata_buffer,
-                          uint64_t soft_limit, uint64_t hard_limit)
-      : CallTracerAnnotationInterface::Annotation(
-            CallTracerAnnotationInterface::AnnotationType::kMetadataSizes),
-        metadata_buffer_(metadata_buffer),
-        soft_limit_(soft_limit),
-        hard_limit_(hard_limit) {}
-
-  std::string ToString() const override {
-    std::string metadata_annotation =
-        absl::StrCat("gRPC metadata soft_limit:", soft_limit_,
-                     ",hard_limit:", hard_limit_, ",");
-    MetadataSizeEncoder encoder(metadata_annotation);
-    metadata_buffer_->Encode(&encoder);
-    return metadata_annotation;
-  }
-
- private:
-  grpc_metadata_batch* metadata_buffer_;
-  uint64_t soft_limit_;
-  uint64_t hard_limit_;
-};
-
 // PUBLIC INTERFACE
 
 HPackParser::HPackParser() = default;
@@ -1144,7 +1102,7 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
 }
 
 grpc_error_handle HPackParser::Parse(
-    const grpc_slice& slice, bool is_last,
+    const grpc_slice& slice, bool is_last, absl::BitGenRef bitsrc,
     CallTracerAnnotationInterface* call_tracer) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     unparsed_bytes_.insert(unparsed_bytes_.end(), GRPC_SLICE_START_PTR(slice),
@@ -1155,20 +1113,23 @@ grpc_error_handle HPackParser::Parse(
       return absl::OkStatus();
     }
     std::vector<uint8_t> buffer = std::move(unparsed_bytes_);
-    return ParseInput(Input(nullptr, buffer.data(),
-                            buffer.data() + buffer.size(), state_.frame_error),
-                      is_last, call_tracer);
+    return ParseInput(
+        Input(nullptr, buffer.data(), buffer.data() + buffer.size(), bitsrc,
+              state_.frame_error),
+        is_last, call_tracer);
   }
-  return ParseInput(Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
-                          GRPC_SLICE_END_PTR(slice), state_.frame_error),
-                    is_last, call_tracer);
+  return ParseInput(
+      Input(slice.refcount, GRPC_SLICE_START_PTR(slice),
+            GRPC_SLICE_END_PTR(slice), bitsrc, state_.frame_error),
+      is_last, call_tracer);
 }
 
 grpc_error_handle HPackParser::ParseInput(
     Input input, bool is_last, CallTracerAnnotationInterface* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
-    if (state_.metadata_early_detection.Reject(state_.frame_length)) {
+    if (state_.metadata_early_detection.Reject(state_.frame_length,
+                                               input.bitsrc())) {
       HandleMetadataSoftSizeLimitExceeded(&input);
     }
     global_stats().IncrementHttp2MetadataSize(state_.frame_length);

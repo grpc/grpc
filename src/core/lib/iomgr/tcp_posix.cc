@@ -18,6 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+
 #include <grpc/impl/grpc_types.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -58,6 +64,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -479,10 +486,7 @@ struct grpc_tcp {
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
-  // Used by the endpoint read function to distinguish the very first read call
-  // from the rest
-  bool is_first_read;
-  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
+  int inq;  // bytes pending on the socket from the last read.
   double target_length;
   double bytes_read_this_round;
   grpc_core::RefCount refcount;
@@ -490,15 +494,12 @@ struct grpc_tcp {
 
   int min_read_chunk_size;
   int max_read_chunk_size;
-  int set_rcvlowat = 0;
 
   // garbage after the last read
   grpc_slice_buffer last_read_buffer;
 
   grpc_core::Mutex read_mu;
   grpc_slice_buffer* incoming_buffer ABSL_GUARDED_BY(read_mu) = nullptr;
-  int inq;           // bytes pending on the socket from the last read.
-  bool inq_capable;  // cache whether kernel supports inq
 
   grpc_slice_buffer* outgoing_buffer;
   // byte within outgoing_buffer->slices[0] to write next
@@ -535,23 +536,70 @@ struct grpc_tcp {
   // options for collecting timestamps are set, and is incremented with each
   // byte sent.
   int bytes_counter;
-  bool socket_ts_enabled;  // True if timestamping options are set on the socket
-                           //
-  bool ts_capable;         // Cache whether we can set timestamping options
+
+  int min_progress_size;  // A hint from upper layers specifying the minimum
+                          // number of bytes that need to be read to make
+                          // meaningful progress
+
   gpr_atm stop_error_notification;  // Set to 1 if we do not want to be notified
                                     // on errors anymore
   TcpZerocopySendCtx tcp_zerocopy_send_ctx;
   TcpZerocopySendRecord* current_zerocopy_send = nullptr;
 
-  int min_progress_size;  // A hint from upper layers specifying the minimum
-                          // number of bytes that need to be read to make
-                          // meaningful progress
+  int set_rcvlowat = 0;
+
+  // Used by the endpoint read function to distinguish the very first read call
+  // from the rest
+  bool is_first_read;
+  bool has_posted_reclaimer ABSL_GUARDED_BY(read_mu) = false;
+  bool inq_capable;        // cache whether kernel supports inq
+  bool socket_ts_enabled;  // True if timestamping options are set on the socket
+                           //
+  bool ts_capable;         // Cache whether we can set timestamping options
 };
 
 struct backup_poller {
   gpr_mu* pollset_mu;
   grpc_closure run_poller;
 };
+
+void LogCommonIOErrors(absl::string_view prefix, int error_no) {
+  switch (error_no) {
+    case ECONNABORTED:
+      grpc_core::global_stats().IncrementEconnabortedCount();
+      return;
+    case ECONNRESET:
+      grpc_core::global_stats().IncrementEconnresetCount();
+      return;
+    case EPIPE:
+      grpc_core::global_stats().IncrementEpipeCount();
+      return;
+    case ETIMEDOUT:
+      grpc_core::global_stats().IncrementEtimedoutCount();
+      return;
+    case ECONNREFUSED:
+      grpc_core::global_stats().IncrementEconnrefusedCount();
+      return;
+    case ENETUNREACH:
+      grpc_core::global_stats().IncrementEnetunreachCount();
+      return;
+    case ENOMSG:
+      grpc_core::global_stats().IncrementEnomsgCount();
+      return;
+    case ENOTCONN:
+      grpc_core::global_stats().IncrementEnotconnCount();
+      return;
+    case ENOBUFS:
+      grpc_core::global_stats().IncrementEnobufsCount();
+      return;
+    default:
+      grpc_core::global_stats().IncrementUncommonIoErrorCount();
+      GRPC_LOG_EVERY_N_SEC(1, GPR_ERROR, "%s encountered uncommon error: %s",
+                           prefix.data(),
+                           grpc_core::StrError(error_no).c_str());
+      return;
+  }
+}
 
 }  // namespace
 
@@ -948,6 +996,9 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     // We have read something in previous reads. We need to deliver those
     // bytes to the upper layer.
     if (read_bytes <= 0 && total_read_bytes >= 1) {
+      if (read_bytes < 0) {
+        LogCommonIOErrors("recvmsg", errno);
+      }
       tcp->inq = 1;
       break;
     }
@@ -1405,6 +1456,8 @@ static bool process_errors(grpc_tcp* tcp) {
       return processed_err;  // No more errors to process
     }
     if (r == -1) {
+      LogCommonIOErrors("recvmsg(MSG_ERRQUEUE)", saved_errno);
+      grpc_core::global_stats().IncrementMsgErrqueueErrorCount();
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
@@ -1605,6 +1658,9 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       grpc_fd_set_writable(tcp->em_fd);
     }
     if (sent_length < 0) {
+      if (saved_errno != EAGAIN) {
+        LogCommonIOErrors("sendmsg", saved_errno);
+      }
       // If this particular send failed, drop ref taken earlier in this method.
       tcp->tcp_zerocopy_send_ctx.UndoSend();
       if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
@@ -1935,7 +1991,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   GPR_ASSERT(options.resource_quota != nullptr);
   tcp->memory_owner =
-      options.resource_quota->memory_quota()->CreateMemoryOwner(peer_string);
+      options.resource_quota->memory_quota()->CreateMemoryOwner();
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
   grpc_resolved_address resolved_local_addr;
   memset(&resolved_local_addr, 0, sizeof(resolved_local_addr));

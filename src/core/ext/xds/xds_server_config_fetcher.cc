@@ -52,6 +52,7 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
+#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -81,15 +82,17 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 namespace grpc_core {
 namespace {
+
+using ReadDelayHandle = XdsClient::ReadDelayHandle;
 
 TraceFlag grpc_xds_server_config_fetcher_trace(false,
                                                "xds_server_config_fetcher");
@@ -151,11 +154,14 @@ class XdsServerConfigFetcher::ListenerWatcher
   }
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsListenerResource> listener) override;
+      std::shared_ptr<const XdsListenerResource> listener,
+      RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
 
-  void OnError(absl::Status status) override;
+  void OnError(absl::Status status,
+               RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
 
-  void OnResourceDoesNotExist() override;
+  void OnResourceDoesNotExist(
+      RefCountedPtr<ReadDelayHandle> read_delay_handle) override;
 
   const std::string& listening_address() const { return listening_address_; }
 
@@ -225,15 +231,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   }
 
  private:
-  struct CertificateProviders {
-    // We need to save our own refs to the root and instance certificate
-    // providers since the xds certificate provider just stores a ref to their
-    // distributors.
-    RefCountedPtr<grpc_tls_certificate_provider> root;
-    RefCountedPtr<grpc_tls_certificate_provider> instance;
-    RefCountedPtr<XdsCertificateProvider> xds;
-  };
-
   class RouteConfigWatcher;
   struct RdsUpdateState {
     RouteConfigWatcher* watcher;
@@ -271,7 +268,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   size_t rds_resources_yet_to_fetch_ ABSL_GUARDED_BY(mu_) = 0;
   std::map<std::string /* resource_name */, RdsUpdateState> rds_map_
       ABSL_GUARDED_BY(mu_);
-  std::map<const XdsListenerResource::FilterChainData*, CertificateProviders>
+  std::map<const XdsListenerResource::FilterChainData*,
+           RefCountedPtr<XdsCertificateProvider>>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -292,16 +290,20 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         filter_chain_match_manager_(std::move(filter_chain_match_manager)) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsRouteConfigResource> route_config) override {
+      std::shared_ptr<const XdsRouteConfigResource> route_config,
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
     filter_chain_match_manager_->OnRouteConfigChanged(resource_name_,
                                                       std::move(route_config));
   }
 
-  void OnError(absl::Status status) override {
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
     filter_chain_match_manager_->OnError(resource_name_, status);
   }
 
-  void OnResourceDoesNotExist() override {
+  void OnResourceDoesNotExist(
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
     filter_chain_match_manager_->OnResourceDoesNotExist(resource_name_);
   }
 
@@ -488,13 +490,21 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       : parent_(std::move(parent)) {}
 
   void OnResourceChanged(
-      std::shared_ptr<const XdsRouteConfigResource> route_config) override {
+      std::shared_ptr<const XdsRouteConfigResource> route_config,
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
     parent_->OnRouteConfigChanged(std::move(route_config));
   }
 
-  void OnError(absl::Status status) override { parent_->OnError(status); }
+  void OnError(
+      absl::Status status,
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
+    parent_->OnError(status);
+  }
 
-  void OnResourceDoesNotExist() override { parent_->OnResourceDoesNotExist(); }
+  void OnResourceDoesNotExist(
+      RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) override {
+    parent_->OnResourceDoesNotExist();
+  }
 
  private:
   WeakRefCountedPtr<DynamicXdsServerConfigSelectorProvider> parent_;
@@ -527,7 +537,7 @@ void XdsServerConfigFetcher::StartWatch(
     std::unique_ptr<grpc_server_config_fetcher::WatcherInterface> watcher) {
   grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
   auto listener_watcher = MakeRefCounted<ListenerWatcher>(
-      xds_client_->Ref(DEBUG_LOCATION, "ListenerWatcher"), std::move(watcher),
+      xds_client_.Ref(DEBUG_LOCATION, "ListenerWatcher"), std::move(watcher),
       serving_status_notifier_, listening_address);
   auto* listener_watcher_ptr = listener_watcher.get();
   XdsListenerResourceType::StartWatch(
@@ -574,7 +584,8 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
       listening_address_(std::move(listening_address)) {}
 
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
-    std::shared_ptr<const XdsListenerResource> listener) {
+    std::shared_ptr<const XdsListenerResource> listener,
+    RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_server_config_fetcher_trace)) {
     gpr_log(GPR_INFO,
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
@@ -595,7 +606,7 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     return;
   }
   auto new_filter_chain_match_manager = MakeRefCounted<FilterChainMatchManager>(
-      xds_client_->Ref(DEBUG_LOCATION, "FilterChainMatchManager"),
+      xds_client_.Ref(DEBUG_LOCATION, "FilterChainMatchManager"),
       tcp_listener->filter_chain_map, tcp_listener->default_filter_chain);
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ == nullptr ||
@@ -605,11 +616,14 @@ void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
             filter_chain_match_manager_->default_filter_chain())) {
     pending_filter_chain_match_manager_ =
         std::move(new_filter_chain_match_manager);
-    pending_filter_chain_match_manager_->StartRdsWatch(Ref());
+    pending_filter_chain_match_manager_->StartRdsWatch(
+        RefAsSubclass<ListenerWatcher>());
   }
 }
 
-void XdsServerConfigFetcher::ListenerWatcher::OnError(absl::Status status) {
+void XdsServerConfigFetcher::ListenerWatcher::OnError(
+    absl::Status status,
+    RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   MutexLock lock(&mu_);
   if (filter_chain_match_manager_ != nullptr ||
       pending_filter_chain_match_manager_ != nullptr) {
@@ -652,7 +666,8 @@ void XdsServerConfigFetcher::ListenerWatcher::OnFatalError(
   }
 }
 
-void XdsServerConfigFetcher::ListenerWatcher::OnResourceDoesNotExist() {
+void XdsServerConfigFetcher::ListenerWatcher::OnResourceDoesNotExist(
+    RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
   MutexLock lock(&mu_);
   OnFatalError(absl::NotFoundError("Requested listener does not exist"));
 }
@@ -743,8 +758,8 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     MutexLock lock(&mu_);
     for (const auto& resource_name : resource_names) {
       ++rds_resources_yet_to_fetch_;
-      auto route_config_watcher =
-          MakeRefCounted<RouteConfigWatcher>(resource_name, WeakRef());
+      auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(
+          resource_name, WeakRefAsSubclass<FilterChainMatchManager>());
       rds_map_.emplace(resource_name, RdsUpdateState{route_config_watcher.get(),
                                                      absl::nullopt});
       watchers_to_start.push_back(
@@ -786,10 +801,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         const XdsListenerResource::FilterChainData* filter_chain) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(filter_chain);
-  if (it != certificate_providers_map_.end()) {
-    return it->second.xds;
-  }
-  CertificateProviders certificate_providers;
+  if (it != certificate_providers_map_.end()) return it->second;
   // Configure root cert.
   absl::string_view root_provider_instance_name =
       filter_chain->downstream_tls_context.common_tls_context
@@ -799,11 +811,12 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       filter_chain->downstream_tls_context.common_tls_context
           .certificate_validation_context.ca_certificate_provider_instance
           .certificate_name;
+  RefCountedPtr<grpc_tls_certificate_provider> root_cert_provider;
   if (!root_provider_instance_name.empty()) {
-    certificate_providers.root =
+    root_cert_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(root_provider_instance_name);
-    if (certificate_providers.root == nullptr) {
+    if (root_cert_provider == nullptr) {
       return absl::NotFoundError(
           absl::StrCat("Certificate provider instance name: \"",
                        root_provider_instance_name, "\" not recognized."));
@@ -816,33 +829,23 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::string_view identity_provider_cert_name =
       filter_chain->downstream_tls_context.common_tls_context
           .tls_certificate_provider_instance.certificate_name;
+  RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider;
   if (!identity_provider_instance_name.empty()) {
-    certificate_providers.instance =
+    identity_cert_provider =
         xds_client_->certificate_provider_store()
             .CreateOrGetCertificateProvider(identity_provider_instance_name);
-    if (certificate_providers.instance == nullptr) {
+    if (identity_cert_provider == nullptr) {
       return absl::NotFoundError(
           absl::StrCat("Certificate provider instance name: \"",
                        identity_provider_instance_name, "\" not recognized."));
     }
   }
-  certificate_providers.xds = MakeRefCounted<XdsCertificateProvider>();
-  certificate_providers.xds->UpdateRootCertNameAndDistributor(
-      "", root_provider_cert_name,
-      certificate_providers.root == nullptr
-          ? nullptr
-          : certificate_providers.root->distributor());
-  certificate_providers.xds->UpdateIdentityCertNameAndDistributor(
-      "", identity_provider_cert_name,
-      certificate_providers.instance == nullptr
-          ? nullptr
-          : certificate_providers.instance->distributor());
-  certificate_providers.xds->UpdateRequireClientCertificate(
-      "", filter_chain->downstream_tls_context.require_client_certificate);
-  auto xds_certificate_provider = certificate_providers.xds;
-  certificate_providers_map_.emplace(filter_chain,
-                                     std::move(certificate_providers));
-  return xds_certificate_provider;
+  auto xds_cert_provider = MakeRefCounted<XdsCertificateProvider>(
+      std::move(root_cert_provider), root_provider_cert_name,
+      std::move(identity_cert_provider), identity_provider_cert_name,
+      filter_chain->downstream_tls_context.require_client_certificate);
+  certificate_providers_map_.emplace(filter_chain, xds_cert_provider);
+  return xds_cert_provider;
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
@@ -1122,8 +1125,8 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
         }
         server_config_selector_provider =
             MakeRefCounted<DynamicXdsServerConfigSelectorProvider>(
-                xds_client_->Ref(DEBUG_LOCATION,
-                                 "DynamicXdsServerConfigSelectorProvider"),
+                xds_client_.Ref(DEBUG_LOCATION,
+                                "DynamicXdsServerConfigSelectorProvider"),
                 rds_name, std::move(initial_resource),
                 filter_chain->http_connection_manager.http_filters);
       },
@@ -1131,8 +1134,8 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
       [&](const std::shared_ptr<const XdsRouteConfigResource>& route_config) {
         server_config_selector_provider =
             MakeRefCounted<StaticXdsServerConfigSelectorProvider>(
-                xds_client_->Ref(DEBUG_LOCATION,
-                                 "StaticXdsServerConfigSelectorProvider"),
+                xds_client_.Ref(DEBUG_LOCATION,
+                                "StaticXdsServerConfigSelectorProvider"),
                 route_config,
                 filter_chain->http_connection_manager.http_filters);
       });
@@ -1270,7 +1273,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   // RouteConfigWatcher is being created here instead of in Watch() to avoid
   // deadlocks from invoking XdsRouteConfigResourceType::StartWatch whilst in a
   // critical region.
-  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(WeakRef());
+  auto route_config_watcher = MakeRefCounted<RouteConfigWatcher>(
+      WeakRefAsSubclass<DynamicXdsServerConfigSelectorProvider>());
   route_config_watcher_ = route_config_watcher.get();
   XdsRouteConfigResourceType::StartWatch(xds_client_.get(), resource_name_,
                                          std::move(route_config_watcher));
@@ -1368,7 +1372,8 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       "update=%p, user_data=%p}, args=%p)",
       3, (notifier.on_serving_status_update, notifier.user_data, args));
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      channel_args, "XdsServerConfigFetcher");
+      grpc_core::GrpcXdsClient::kServerKey, channel_args,
+      "XdsServerConfigFetcher");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             xds_client.status().ToString().c_str());

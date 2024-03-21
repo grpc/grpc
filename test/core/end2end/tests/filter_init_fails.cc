@@ -16,11 +16,8 @@
 //
 //
 
-#include <limits.h>
-
-#include <algorithm>
 #include <memory>
-#include <vector>
+#include <utility>
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
@@ -32,7 +29,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
@@ -41,6 +37,7 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -83,37 +80,28 @@ const grpc_channel_filter test_filter = {
       return Immediate(ServerMetadataFromStatus(
           absl::PermissionDeniedError("access denied")));
     },
-    grpc_channel_next_op,
-    0,
-    init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
-    0,
-    init_channel_elem,
-    grpc_channel_stack_no_post_init,
-    destroy_channel_elem,
+    nullptr, grpc_channel_next_op, 0, init_call_elem,
+    grpc_call_stack_ignore_set_pollset_or_pollset_set, destroy_call_elem, 0,
+    init_channel_elem, grpc_channel_stack_no_post_init, destroy_channel_elem,
     grpc_channel_next_get_info,
-    "filter_init_fails"};
+    // Want to add the filter as close to the end as possible,
+    // to make sure that all of the filters work well together.
+    // However, we can't add it at the very end, because either the
+    // client_channel filter or connected_channel filter must be the
+    // last one.
+    // Filter ordering code falls back to lexical ordering in the absense of
+    // other dependencies, so name this appropriately.
+    "zzzzzz_filter_init_fails"};
 
 void RegisterFilter(grpc_channel_stack_type type) {
   CoreConfiguration::RegisterBuilder(
       [type](CoreConfiguration::Builder* builder) {
-        builder->channel_init()->RegisterStage(
-            type, INT_MAX, [](ChannelStackBuilder* builder) {
-              // Want to add the filter as close to the end as possible,
-              // to make sure that all of the filters work well together.
-              // However, we can't add it at the very end, because either the
-              // client_channel filter or connected_channel filter must be the
-              // last one.  So we add it right before the last one.
-              auto it = builder->mutable_stack()->end();
-              --it;
-              builder->mutable_stack()->insert(it, &test_filter);
-              return true;
-            });
+        builder->channel_init()->RegisterFilter(type, &test_filter);
       });
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
+  SKIP_IF_CHAOTIC_GOOD();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
   InitServer(ChannelArgs().Set("channel_init_fails", true));
@@ -139,6 +127,7 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
 
 CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
   SKIP_IF_FUZZING();
+  SKIP_IF_CHAOTIC_GOOD();
 
   RegisterFilter(GRPC_SERVER_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -158,6 +147,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
+  SKIP_IF_CHAOTIC_GOOD();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   InitServer(ChannelArgs());
@@ -177,6 +167,7 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
+  SKIP_IF_CHAOTIC_GOOD();
   SKIP_IF_FUZZING();
 
   RegisterFilter(GRPC_CLIENT_CHANNEL);
@@ -199,6 +190,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
 
 CORE_END2END_TEST(CoreClientChannelTest,
                   DISABLED_SubchannelFilterChannelInitFails) {
+  SKIP_IF_CHAOTIC_GOOD();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
@@ -234,6 +226,7 @@ CORE_END2END_TEST(CoreClientChannelTest,
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
+  SKIP_IF_CHAOTIC_GOOD();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   CoreEnd2endTest::IncomingStatusOnClient server_status;

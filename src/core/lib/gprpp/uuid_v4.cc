@@ -20,8 +20,6 @@
 
 #include "src/core/lib/gprpp/uuid_v4.h"
 
-#include <initializer_list>
-
 #include "absl/strings/str_format.h"
 
 namespace grpc_core {
