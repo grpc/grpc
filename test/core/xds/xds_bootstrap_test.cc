@@ -49,6 +49,7 @@
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -163,8 +164,7 @@ TEST(XdsBootstrapTest, Basic) {
   ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
   auto bootstrap = std::move(*bootstrap_or);
   EXPECT_THAT(bootstrap->servers(),
-              ::testing::ElementsAre(EqXdsServer("fake:///lb1", "fake"),
-                                     EqXdsServer("fake:///lb2", "fake")));
+              ::testing::ElementsAre(EqXdsServer("fake:///lb1", "fake")));
   EXPECT_EQ(bootstrap->authorities().size(), 2);
   auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example.com"));
@@ -172,10 +172,8 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(authority->client_listener_resource_name_template(),
             "xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/"
             "server/%s");
-  EXPECT_THAT(
-      authority->servers(),
-      ::testing::ElementsAre(EqXdsServer("fake:///xds_server", "fake"),
-                             EqXdsServer("fake:///xds_server2", "fake")));
+  EXPECT_THAT(authority->servers(), ::testing::ElementsAre(EqXdsServer(
+                                        "fake:///xds_server", "fake")));
   authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
       bootstrap->LookupAuthority("xds.example2.com"));
   ASSERT_NE(authority, nullptr);
@@ -724,6 +722,92 @@ TEST(XdsBootstrapTest, XdsServerToJsonAndParse) {
       LoadFromJson<GrpcXdsBootstrap::GrpcXdsServer>(output);
   ASSERT_TRUE(output_xds_server.ok()) << output_xds_server.status();
   EXPECT_EQ(*xds_server, *output_xds_server);
+}
+
+TEST(XdsBootstrapTest, NoXdsServersEnvVar) {
+  ScopedEnvVar fallback_enabled("GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
+  const char* json_str =
+      "{"
+      "  \"xds_servers\": ["
+      "    {"
+      "      \"server_uri\": \"fake:///lb1\","
+      "      \"channel_creds\": ["
+      "        {"
+      "          \"type\": \"fake\","
+      "          \"ignore\": 0"
+      "        }"
+      "      ],"
+      "      \"ignore\": 0"
+      "    },"
+      "    {"
+      "      \"server_uri\": \"fake:///lb2\","
+      "      \"channel_creds\": ["
+      "        {"
+      "          \"type\": \"fake\","
+      "          \"ignore\": 0"
+      "        }"
+      "      ],"
+      "      \"ignore\": 0"
+      "    }"
+      "  ],"
+      "  \"authorities\": {"
+      "    \"xds.example.com\": {"
+      "      \"client_listener_resource_name_template\": "
+      "\"xdstp://xds.example.com/envoy.config.listener.v3.Listener/grpc/server/"
+      "%s\","
+      "      \"xds_servers\": ["
+      "        {"
+      "          \"server_uri\": \"fake:///xds_server\","
+      "          \"channel_creds\": ["
+      "            {"
+      "              \"type\": \"fake\""
+      "            }"
+      "          ],"
+      "          \"server_features\": [\"xds_v3\"]"
+      "        },"
+      "        {"
+      "          \"server_uri\": \"fake:///xds_server2\","
+      "          \"channel_creds\": ["
+      "            {"
+      "              \"type\": \"fake\""
+      "            }"
+      "          ],"
+      "          \"server_features\": [\"xds_v3\"]"
+      "        }"
+      "      ]"
+      "    }"
+      "  },"
+      "  \"node\": {"
+      "    \"id\": \"foo\","
+      "    \"cluster\": \"bar\","
+      "    \"locality\": {"
+      "      \"region\": \"milky_way\","
+      "      \"zone\": \"sol_system\","
+      "      \"sub_zone\": \"earth\","
+      "      \"ignore\": {}"
+      "    },"
+      "    \"metadata\": {"
+      "      \"foo\": 1,"
+      "      \"bar\": 2"
+      "    },"
+      "    \"ignore\": \"whee\""
+      "  },"
+      "  \"server_listener_resource_name_template\": \"example/resource\","
+      "  \"ignore\": {}"
+      "}";
+  auto bootstrap_or = GrpcXdsBootstrap::Create(json_str);
+  ASSERT_TRUE(bootstrap_or.ok()) << bootstrap_or.status();
+  auto bootstrap = std::move(*bootstrap_or);
+  EXPECT_THAT(bootstrap->servers(),
+              ::testing::ElementsAre(EqXdsServer("fake:///lb1", "fake"),
+                                     EqXdsServer("fake:///lb2", "fake")));
+  auto* authority = static_cast<const GrpcXdsBootstrap::GrpcAuthority*>(
+      bootstrap->LookupAuthority("xds.example.com"));
+  ASSERT_NE(authority, nullptr);
+  EXPECT_THAT(
+      authority->servers(),
+      ::testing::ElementsAre(EqXdsServer("fake:///xds_server", "fake"),
+                             EqXdsServer("fake:///xds_server2", "fake")));
 }
 
 }  // namespace

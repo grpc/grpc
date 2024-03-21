@@ -5061,6 +5061,7 @@ grpc_cc_library(
         "load_file",
         "match",
         "metadata_batch",
+        "metrics",
         "pollset_set",
         "protobuf_any_upb",
         "protobuf_duration_upb",
