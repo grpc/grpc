@@ -64,7 +64,7 @@ class PassiveListenerImpl final : public PassiveListener {
 
   // Data members will be populated when initialized.
   Server* server_ = nullptr;
-  RefCountedPtr<ListenerInterface> listener_;
+  RefCountedPtr<Server::ListenerInterface> listener_;
 };
 
 }  // namespace experimental

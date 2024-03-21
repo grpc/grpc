@@ -50,7 +50,7 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodServerListener final : public ListenerInterface {
+class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
     return [bitgen = absl::BitGen()]() mutable {

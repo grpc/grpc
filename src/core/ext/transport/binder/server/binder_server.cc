@@ -131,7 +131,7 @@ void* grpc_get_endpoint_binder(const std::string& service) {
 
 namespace grpc_core {
 
-class BinderServerListener : public ListenerInterface {
+class BinderServerListener : public Server::ListenerInterface {
  public:
   BinderServerListener(
       Server* server, std::string addr, BinderTxReceiverFactory factory,

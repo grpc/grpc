@@ -104,7 +104,7 @@ const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 const char kVSockUriPrefix[] = "vsock:";
 
-class Chttp2ServerListener : public ListenerInterface {
+class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error_handle Create(Server* server, grpc_resolved_address* addr,
                                   const ChannelArgs& args,
@@ -769,7 +769,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   return absl::OkStatus();
 }
 
-absl::StatusOr<RefCountedPtr<ListenerInterface>>
+absl::StatusOr<RefCountedPtr<Server::ListenerInterface>>
 Chttp2ServerListener::CreateForPassiveListener(Server* server,
                                                const ChannelArgs& args) {
   auto listener = MakeRefCounted<Chttp2ServerListener>(
