@@ -58,11 +58,11 @@ class PassiveListenerImpl final : public PassiveListener {
 
  private:
   friend absl::Status(::grpc_server_add_passive_listener)(
-      grpc_core::Server* server, grpc_server_credentials* credentials,
+      Server* server, grpc_server_credentials* credentials,
       PassiveListenerImpl& passive_listener);
 
   // Data members will be populated when initialized.
-  grpc_core::Server* server_ = nullptr;
+  Server* server_ = nullptr;
   // Not safe for this class to use directly -- only used within
   // grpc_server_accept_connected_endpoint().
   RefCountedPtr<ListenerInterface> listener_;
