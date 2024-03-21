@@ -57,8 +57,10 @@ class PassiveListenerImpl final : public PassiveListener {
   absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
 
  private:
+  // note: the grpc_core::Server redundant namespace qualification is required
+  // for older gcc versions.
   friend absl::Status(::grpc_server_add_passive_listener)(
-      Server* server, grpc_server_credentials* credentials,
+      grpc_core::Server* server, grpc_server_credentials* credentials,
       PassiveListenerImpl& passive_listener);
 
   // Data members will be populated when initialized.
