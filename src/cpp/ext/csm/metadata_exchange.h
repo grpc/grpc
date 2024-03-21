@@ -102,18 +102,12 @@ class MeshLabelsIterable : public LabelsIterable {
 
   // Returns true if the peer sent a non-empty base64 encoded
   // "x-envoy-peer-metadata" metadata.
-  bool GotRemoteLabels() const { return metadata_.struct_pb != nullptr; }
+  bool GotRemoteLabels() const { return struct_pb_ != nullptr; }
 
  private:
-  struct StructPb {
-    upb::Arena arena;
-    google_protobuf_Struct* struct_pb = nullptr;
-  };
-
-  static StructPb DecodeMetadata(grpc_core::Slice slice);
-
+  upb::Arena arena_;
+  google_protobuf_Struct* struct_pb_ = nullptr;
   const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
-  StructPb metadata_;
   GcpResourceType remote_type_ = GcpResourceType::kUnknown;
   uint32_t pos_ = 0;
 };
