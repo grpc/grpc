@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
