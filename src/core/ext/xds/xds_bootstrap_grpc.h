@@ -118,6 +118,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
 
    private:
     std::vector<GrpcXdsServer> servers_;

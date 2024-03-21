@@ -1098,6 +1098,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.cc" role="src" />
