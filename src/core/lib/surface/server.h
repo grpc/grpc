@@ -90,8 +90,7 @@ class Server;
 class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
  public:
   ListenerInterface()
-      : grpc_core::InternallyRefCounted<ListenerInterface>(
-            "listener_interface") {}
+      : InternallyRefCounted<ListenerInterface>("listener_interface") {}
   /// Starts listening. This listener may refer to the pollset object beyond
   /// this call, so it is a pointer rather than a reference.
   virtual void Start(Server* server,
@@ -184,7 +183,7 @@ class Server : public ServerInterface,
   ///
   /// The server must be started before endpoints can be accepted.
   absl::Status AcceptConnectedEndpoint(
-      grpc_core::ListenerInterface* core_listener,
+      ListenerInterface* core_listener,
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint);
 

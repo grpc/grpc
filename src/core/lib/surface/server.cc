@@ -861,7 +861,7 @@ void Server::AddListener(RefCountedPtr<ListenerInterface> listener) {
 }
 
 absl::Status Server::AcceptConnectedEndpoint(
-    grpc_core::ListenerInterface* core_listener,
+    ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   // search the listener list for this listener to ensure it's owned and

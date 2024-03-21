@@ -38,7 +38,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   GPR_ASSERT(server_ != nullptr);
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   auto& args = server_->channel_args();
   auto engine =
       args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
