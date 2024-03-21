@@ -195,6 +195,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/passive_listener_injection.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -1132,6 +1133,7 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
+  - src/core/lib/surface/passive_listener_internal.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
@@ -1938,6 +1940,7 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/passive_listener_internal.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
@@ -2187,6 +2190,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/passive_listener_injection.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -2605,6 +2609,7 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
+  - src/core/lib/surface/passive_listener_internal.h
   - src/core/lib/surface/server.h
   - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
@@ -3031,6 +3036,7 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/passive_listener_internal.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
@@ -3874,7 +3880,6 @@ libs:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -3931,7 +3936,6 @@ libs:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -4276,7 +4280,6 @@ libs:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
@@ -4306,7 +4309,6 @@ libs:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
@@ -4375,6 +4377,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/passive_listener_injection.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
@@ -6182,7 +6185,6 @@ targets:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -6239,7 +6241,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -8847,7 +8848,6 @@ targets:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -8904,7 +8904,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -9343,7 +9342,6 @@ targets:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -9400,7 +9398,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -19409,7 +19406,6 @@ targets:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -19465,7 +19461,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -19784,7 +19779,6 @@ targets:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -19841,7 +19835,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc
@@ -19893,7 +19886,6 @@ targets:
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
-  - src/cpp/server/passive_listener_internal.h
   - src/cpp/server/secure_server_credentials.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
@@ -19950,7 +19942,6 @@ targets:
   - src/cpp/server/health/health_check_service.cc
   - src/cpp/server/health/health_check_service_server_builder_option.cc
   - src/cpp/server/insecure_server_credentials.cc
-  - src/cpp/server/passive_listener_internal.cc
   - src/cpp/server/secure_server_credentials.cc
   - src/cpp/server/server_builder.cc
   - src/cpp/server/server_callback.cc

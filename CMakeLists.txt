@@ -2508,6 +2508,7 @@ add_library(grpc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/passive_listener_internal.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
@@ -2740,6 +2741,7 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
+  include/grpc/passive_listener.h
   include/grpc/passive_listener_injection.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -3238,6 +3240,7 @@ add_library(grpc_unsecure
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/passive_listener_internal.cc
   src/core/lib/surface/server.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
@@ -3446,6 +3449,7 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
+  include/grpc/passive_listener.h
   include/grpc/passive_listener_injection.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -4087,7 +4091,6 @@ add_library(grpc++
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -4829,7 +4832,6 @@ add_library(grpc++_unsecure
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -5509,6 +5511,7 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
+  include/grpc/passive_listener.h
   include/grpc/passive_listener_injection.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
@@ -8245,7 +8248,6 @@ add_executable(binder_transport_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -12747,7 +12749,6 @@ add_executable(endpoint_binder_pool_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -13605,7 +13606,6 @@ add_executable(fake_binder_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -31377,7 +31377,6 @@ add_executable(transport_stream_receiver_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -32210,7 +32209,6 @@ add_executable(wire_reader_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
@@ -32317,7 +32315,6 @@ add_executable(wire_writer_test
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/passive_listener_internal.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc

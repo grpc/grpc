@@ -1405,6 +1405,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/passive_listener_internal.cc \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
@@ -1777,6 +1778,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/propagation_bits.h \
     include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
+    include/grpc/passive_listener.h \
     include/grpc/passive_listener_injection.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
