@@ -699,13 +699,13 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry() {
 grpc_error_handle Chttp2ServerListener::Create(
     Server* server, grpc_resolved_address* addr, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier, int* port_num) {
-  RefCountedPtr<Chttp2ServerListener> listener;
+  OrphanablePtr<Chttp2ServerListener> listener;
   // The bulk of this method is inside of a lambda to make cleanup
   // easier without using goto.
   grpc_error_handle error = [&]() {
     grpc_error_handle error;
     // Create Chttp2ServerListener.
-    listener = MakeRefCounted<Chttp2ServerListener>(server, args, args_modifier,
+    listener = MakeOrphanable<Chttp2ServerListener>(server, args, args_modifier,
                                                     server->config_fetcher());
     error = grpc_tcp_server_create(
         &listener->tcp_server_shutdown_complete_,
@@ -751,7 +751,7 @@ grpc_error_handle Chttp2ServerListener::Create(
 grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Server* server, const char* name, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier) {
-  auto listener = MakeRefCounted<Chttp2ServerListener>(
+  auto listener = MakeOrphanable<Chttp2ServerListener>(
       server, args, args_modifier, server->config_fetcher());
 
   grpc_error_handle error = grpc_tcp_server_create(
@@ -773,12 +773,13 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
 absl::StatusOr<RefCountedPtr<Server::ListenerInterface>>
 Chttp2ServerListener::CreateForPassiveListener(Server* server,
                                                const ChannelArgs& args) {
-  auto listener = MakeRefCounted<Chttp2ServerListener>(
+  auto listener = MakeOrphanable<Chttp2ServerListener>(
       server, args, /*args_modifier=*/
       [](const ChannelArgs& args, grpc_error_handle*) { return args; },
       nullptr);
-  server->AddListener(listener);
-  return std::move(listener);
+  auto listener_ref = listener->Ref();
+  server->AddListener(std::move(listener));
+  return std::move(listener_ref);
 }
 
 Chttp2ServerListener::Chttp2ServerListener(

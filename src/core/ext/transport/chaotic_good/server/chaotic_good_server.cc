@@ -462,6 +462,7 @@ void ChaoticGoodServerListener::Orphan() {
     shutdown_ = true;
   }
   ee_listener_.reset();
+  Unref();
 };
 
 }  // namespace chaotic_good
@@ -480,7 +481,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   }
   int port_num = 0;
   for (const auto& resolved_addr : resolved_or.value()) {
-    auto listener = grpc_core::MakeRefCounted<
+    auto listener = grpc_core::MakeOrphanable<
         grpc_core::chaotic_good::ChaoticGoodServerListener>(
         core_server, core_server->channel_args());
     const auto ee_addr =

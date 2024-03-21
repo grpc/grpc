@@ -850,7 +850,7 @@ Server::~Server() {
   }
 }
 
-void Server::AddListener(RefCountedPtr<ListenerInterface> listener) {
+void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
   if (listen_socket_node != nullptr && channelz_node_ != nullptr) {
@@ -1155,7 +1155,6 @@ void Server::StopListening() {
     GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
                       grpc_schedule_on_exec_ctx);
     listener.listener->SetOnDestroyDone(&listener.destroy_done);
-    listener.listener->Orphan();
     listener.listener.reset();
   }
 }

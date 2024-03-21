@@ -163,7 +163,7 @@ class BinderServerListener : public Server::ListenerInterface {
     on_destroy_done_ = on_destroy_done;
   }
 
-  void Orphan() override {}
+  void Orphan() override { Unref(); }
 
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
@@ -243,7 +243,7 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   }
   std::string conn_id = addr.substr(kBinderUriScheme.size());
   Server* core_server = Server::FromC(server);
-  core_server->AddListener(MakeRefCounted<BinderServerListener>(
+  core_server->AddListener(MakeOrphanable<BinderServerListener>(
       core_server, conn_id, std::move(factory), security_policy));
   return true;
 }

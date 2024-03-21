@@ -170,7 +170,7 @@ class Server : public ServerInterface,
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
   // the listener.
-  void AddListener(RefCountedPtr<ListenerInterface> listener);
+  void AddListener(OrphanablePtr<ListenerInterface> listener);
 
   /// Takes an Endpoint for an established connection, and treats it as if the
   /// connection had been accepted by the server.
@@ -377,9 +377,9 @@ class Server : public ServerInterface,
   };
 
   struct Listener {
-    explicit Listener(RefCountedPtr<ListenerInterface> l)
+    explicit Listener(OrphanablePtr<ListenerInterface> l)
         : listener(std::move(l)) {}
-    RefCountedPtr<ListenerInterface> listener;
+    OrphanablePtr<ListenerInterface> listener;
     grpc_closure destroy_done;
   };
 
