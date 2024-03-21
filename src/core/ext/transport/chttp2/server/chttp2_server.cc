@@ -927,7 +927,6 @@ void Chttp2ServerListener::TcpServerShutdownComplete(
     void* arg, grpc_error_handle /*error*/) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
   self->channelz_listen_socket_.reset();
-  // reclaim the tcp_server
   self->Unref();
 }
 

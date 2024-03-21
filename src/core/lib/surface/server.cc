@@ -864,8 +864,7 @@ absl::Status Server::AcceptConnectedEndpoint(
     ListenerInterface* core_listener,
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
-  // search the listener list for this listener to ensure it's owned and
-  // alive.
+  // search through known listeners_ to ensure this listener is owned and alive.
   bool found = false;
   for (const auto& listener : listeners_) {
     if (listener.listener.get() == core_listener) {
