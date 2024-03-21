@@ -1145,8 +1145,6 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 }
 
 void Server::StopListening() {
-  // Listeners cannot be destroyed when the listener_mu lobck is held.
-  std::list<RefCountedPtr<ListenerInterface>> listeners_to_destroy;
   for (auto& listener : listeners_) {
     if (listener.listener == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
@@ -1158,8 +1156,8 @@ void Server::StopListening() {
     GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
                       grpc_schedule_on_exec_ctx);
     listener.listener->SetOnDestroyDone(&listener.destroy_done);
-    listeners_to_destroy.push_back(std::move(listener.listener));
-    listener.listener = nullptr;
+    listener.listener->Orphan();
+    listener.listener.reset();
   }
 }
 

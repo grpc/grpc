@@ -423,7 +423,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
       }
       auto success = grpc_server_add_passive_listener(core_server, creds,
                                                       *passive_listener);
-      if (success.ok()) {
+      if (!success.ok()) {
         gpr_log(GPR_ERROR, "Failed to create a passive listener: %s",
                 success.ToString().c_str());
         return nullptr;

@@ -741,7 +741,6 @@ grpc_error_handle Chttp2ServerListener::Create(
   }();
   if (!error.ok()) {
     if (listener != nullptr && listener->tcp_server_ != nullptr) {
-      // listener is deleted when tcp_server_ is shutdown.
       grpc_tcp_server_unref(listener->tcp_server_);
     }
   }
@@ -777,8 +776,7 @@ Chttp2ServerListener::CreateForPassiveListener(Server* server,
       server, args, /*args_modifier=*/
       [](const ChannelArgs& args, grpc_error_handle*) { return args; },
       nullptr);
-  // Held until TcpServerShutdownComplete
-  server->AddListener(listener->Ref());
+  server->AddListener(listener);
   return std::move(listener);
 }
 
@@ -833,7 +831,9 @@ void Chttp2ServerListener::Start(
 }
 
 void Chttp2ServerListener::StartListening() {
-  grpc_tcp_server_start(tcp_server_, &server_->pollsets());
+  if (tcp_server_ != nullptr) {
+    grpc_tcp_server_start(tcp_server_, &server_->pollsets());
+  }
 }
 
 void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
@@ -934,7 +934,6 @@ void Chttp2ServerListener::TcpServerShutdownComplete(
 // Server callback: destroy the tcp listener (so we don't generate further
 // callbacks)
 void Chttp2ServerListener::Orphan() {
-  gpr_log(GPR_ERROR, "DO NOT SUBMIT: orphaning");
   // Cancel the watch before shutting down so as to avoid holding a ref to the
   // listener in the watcher.
   if (config_fetcher_watcher_ != nullptr) {
@@ -957,8 +956,10 @@ void Chttp2ServerListener::Orphan() {
     }
     tcp_server = tcp_server_;
   }
-  grpc_tcp_server_shutdown_listeners(tcp_server);
-  grpc_tcp_server_unref(tcp_server);
+  if (tcp_server != nullptr) {
+    grpc_tcp_server_shutdown_listeners(tcp_server);
+    grpc_tcp_server_unref(tcp_server);
+  }
 }
 
 }  // namespace
@@ -1185,7 +1186,7 @@ absl::Status grpc_server_add_passive_listener(
     gpr_log(GPR_ERROR, "%s",
             grpc_core::StatusToString(listener.status()).c_str());
   }
-  passive_listener.listener_ = *listener;
+  passive_listener.listener_ = std::move(*listener);
   passive_listener.server_ = server;
   return absl::OkStatus();
 }

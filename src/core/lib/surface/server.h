@@ -89,6 +89,9 @@ class Server;
 /// listening and initiate destruction of the listener.
 class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
  public:
+  ListenerInterface()
+      : grpc_core::InternallyRefCounted<ListenerInterface>(
+            "listener_interface") {}
   /// Starts listening. This listener may refer to the pollset object beyond
   /// this call, so it is a pointer rather than a reference.
   virtual void Start(Server* server,
