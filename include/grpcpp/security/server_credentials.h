@@ -96,7 +96,7 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   // insecure builds are removed from gRPC.
   virtual bool IsInsecure() const { return false; }
 
-  virtual grpc_server_credentials* c_creds() = 0;
+  virtual grpc_server_credentials* c_creds() const = 0;
 };
 
 /// Builds SSL ServerCredentials given SSL specific options

@@ -36,7 +36,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
         GPR_ASSERT(port.ok());
         GPR_ASSERT(port.value() == port_num);
         grpc_core::Server::FromC(server)->AddListener(
-            grpc_core::OrphanablePtr<
+            grpc_core::RefCountedPtr<
                 grpc_core::chaotic_good::ChaoticGoodServerListener>(listener));
       });
 }

@@ -64,6 +64,9 @@ class ChaoticGoodInsecureServerCredentialsImpl final
       const std::shared_ptr<AuthMetadataProcessor>&) override {
     grpc_core::Crash("Not supported on insecure server credentials");
   }
+
+ private:
+  grpc_server_credentials* c_creds() const override { return nullptr; }
 };
 
 }  // namespace

@@ -102,8 +102,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
             str.ok() ? str->c_str() : str.status().ToString().c_str());
   }
   EventEngine::Listener::AcceptCallback accept_cb =
-      [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
-                     MemoryAllocator) {
+      [self = RefAsSubclass<ChaoticGoodServerListener>()](
+          std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
         ExecCtx exec_ctx;
         MutexLock lock(&self->mu_);
         if (self->shutdown_) return;
@@ -480,7 +480,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   }
   int port_num = 0;
   for (const auto& resolved_addr : resolved_or.value()) {
-    auto listener = grpc_core::MakeOrphanable<
+    auto listener = grpc_core::MakeRefCounted<
         grpc_core::chaotic_good::ChaoticGoodServerListener>(
         core_server, core_server->channel_args());
     const auto ee_addr =
