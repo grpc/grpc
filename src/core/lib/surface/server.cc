@@ -860,25 +860,6 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   listeners_.emplace_back(std::move(listener));
 }
 
-absl::Status Server::AcceptConnectedEndpoint(
-    ListenerInterface* core_listener,
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint) {
-  // search through known listeners_ to ensure this listener is owned and alive.
-  bool found = false;
-  for (const auto& listener : listeners_) {
-    if (listener.listener.get() == core_listener) {
-      found = true;
-      break;
-    }
-  }
-  if (!found) {
-    return absl::NotFoundError("Listener is not owned by this server");
-  }
-  core_listener->AcceptConnectedEndpoint(std::move(endpoint));
-  return absl::OkStatus();
-}
-
 void Server::Start() {
   auto make_real_request_matcher =
       [this]() -> std::unique_ptr<RequestMatcherInterface> {

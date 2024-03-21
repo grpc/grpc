@@ -172,15 +172,6 @@ class Server : public ServerInterface,
   // the listener.
   void AddListener(OrphanablePtr<ListenerInterface> listener);
 
-  /// Takes an Endpoint for an established connection, and treats it as if the
-  /// connection had been accepted by the server.
-  ///
-  /// The server must be started before endpoints can be accepted.
-  absl::Status AcceptConnectedEndpoint(
-      ListenerInterface* core_listener,
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint);
-
   // Starts listening for connections.
   void Start() ABSL_LOCKS_EXCLUDED(mu_global_);
 

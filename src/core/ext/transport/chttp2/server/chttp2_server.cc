@@ -98,37 +98,6 @@
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
-namespace experimental {
-
-absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint) {
-  GPR_ASSERT(server_ != nullptr);
-  ExecCtx exec_ctx;
-  return server_->AcceptConnectedEndpoint(listener_.get(), std::move(endpoint));
-}
-
-absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  GPR_ASSERT(server_ != nullptr);
-  ExecCtx exec_ctx;
-  auto& args = server_->channel_args();
-  auto engine =
-      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-  auto* supports_fd = grpc_event_engine::experimental::QueryExtension<
-      grpc_event_engine::experimental::EventEngineSupportsFdExtension>(
-      engine.get());
-  if (supports_fd == nullptr) {
-    return absl::UnimplementedError(
-        "The server's EventEngine does not support adding endpoints from "
-        "connected file descriptors.");
-  }
-  auto endpoint = supports_fd->CreateEndpointFromFd(
-      fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
-  return AcceptConnectedEndpoint(std::move(endpoint));
-}
-
-}  // namespace experimental
-
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -1098,6 +1067,38 @@ ChannelArgs ModifyArgsForConnection(const ChannelArgs& args,
 }
 
 }  // namespace
+
+namespace experimental {
+
+absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint) {
+  GPR_ASSERT(server_ != nullptr);
+  ExecCtx exec_ctx;
+  listener_->AcceptConnectedEndpoint(std::move(endpoint));
+  return absl::OkStatus();
+}
+
+absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
+  GPR_ASSERT(server_ != nullptr);
+  ExecCtx exec_ctx;
+  auto& args = server_->channel_args();
+  auto engine =
+      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+  auto* supports_fd = grpc_event_engine::experimental::QueryExtension<
+      grpc_event_engine::experimental::EventEngineSupportsFdExtension>(
+      engine.get());
+  if (supports_fd == nullptr) {
+    return absl::UnimplementedError(
+        "The server's EventEngine does not support adding endpoints from "
+        "connected file descriptors.");
+  }
+  auto endpoint = supports_fd->CreateEndpointFromFd(
+      fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
+  return AcceptConnectedEndpoint(std::move(endpoint));
+}
+
+}  // namespace experimental
 }  // namespace grpc_core
 
 int grpc_server_add_http2_port(grpc_server* server, const char* addr,
