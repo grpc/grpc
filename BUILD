@@ -4012,6 +4012,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:json",
         "//src/core:load_file",
+        "//src/core:slice",
         "//src/core:useful",
     ],
 )
