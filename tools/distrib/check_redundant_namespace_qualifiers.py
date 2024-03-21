@@ -21,7 +21,6 @@ import os
 import re
 import sys
 
-
 IGNORED_FILES = [
     # the grpc_core::Server redundant namespace qualification is required for older gcc versions.
     "src/core/lib/surface/passive_listener_internal.h",
@@ -94,7 +93,11 @@ def update_file(contents, namespaces):
         contents = contents[m.end() :]
         end = find_closing_mustache(contents, 1)
         if end is None:
-            print("Failed to find closing mustache for namespace {}".format(m.group(1)))
+            print(
+                "Failed to find closing mustache for namespace {}".format(
+                    m.group(1)
+                )
+            )
             print("Remaining text:")
             print(contents)
             sys.exit(1)
@@ -148,7 +151,11 @@ if output != _TEST_EXPECTED:
     import difflib
 
     print("FAILED: self check")
-    print("\n".join(difflib.ndiff(_TEST_EXPECTED.splitlines(1), output.splitlines(1))))
+    print(
+        "\n".join(
+            difflib.ndiff(_TEST_EXPECTED.splitlines(1), output.splitlines(1))
+        )
+    )
     sys.exit(1)
 
 # Main loop.
