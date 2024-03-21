@@ -163,7 +163,7 @@ class BinderServerListener : public ListenerInterface {
     on_destroy_done_ = on_destroy_done;
   }
 
-  void Orphan() override { delete this; }
+  void Orphan() override {}
 
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
