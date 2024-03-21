@@ -76,14 +76,12 @@ class AdsServiceImpl
   explicit AdsServiceImpl(
       std::function<void(const DiscoveryRequest& request)> check_first_request =
           nullptr,
-      absl::string_view debug_label = "",
-      std::function<void(absl::StatusCode)> check_nack_status_code = nullptr)
-      : debug_label_(debug_label),
-        check_first_request_(std::move(check_first_request)),
-        check_nack_status_code_(std::move(check_nack_status_code)) {
-    debug_label_ = absl::StrFormat(
-        "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label_);
-  }
+      std::function<void(absl::StatusCode)> check_nack_status_code = nullptr,
+      absl::string_view debug_label = "")
+      : check_first_request_(std::move(check_first_request)),
+        check_nack_status_code_(std::move(check_nack_status_code)),
+        debug_label_(absl::StrFormat(
+            "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label_)) {}
 
   void set_wrap_resources(bool wrap_resources) {
     grpc_core::MutexLock lock(&ads_mu_);
@@ -581,9 +579,9 @@ class AdsServiceImpl
     clients_.erase(client);
   }
 
-  std::string debug_label_;
   std::function<void(const DiscoveryRequest& request)> check_first_request_;
   std::function<void(absl::StatusCode)> check_nack_status_code_;
+  std::string debug_label_;
 
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
@@ -716,20 +714,19 @@ class LrsServiceImpl
     std::map<std::string, uint64_t> dropped_requests_;
   };
 
-  LrsServiceImpl(absl::string_view debug_label,
-                 int client_load_reporting_interval_seconds,
+  LrsServiceImpl(int client_load_reporting_interval_seconds,
                  std::set<std::string> cluster_names,
                  std::function<void()> stream_started_callback = nullptr,
                  std::function<void(const LoadStatsRequest& request)>
-                     check_first_request = nullptr)
+                     check_first_request = nullptr,
+                 absl::string_view debug_label = "")
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_(std::move(cluster_names)),
         stream_started_callback_(std::move(stream_started_callback)),
-        check_first_request_(std::move(check_first_request)) {
-    debug_label_ = absl::StrFormat("%p%s%s", this,
-                                   debug_label.empty() ? "" : ":", debug_label);
-  }
+        check_first_request_(std::move(check_first_request)),
+        debug_label_(absl::StrFormat(
+            "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label)) {}
 
   // Must be called before the LRS call is started.
   void set_send_all_clusters(bool send_all_clusters) {
@@ -802,12 +799,12 @@ class LrsServiceImpl
     return Status::OK;
   }
 
-  std::string debug_label_;
   const int client_load_reporting_interval_seconds_;
   bool send_all_clusters_ = false;
   std::set<std::string> cluster_names_;
   std::function<void()> stream_started_callback_;
   std::function<void(const LoadStatsRequest& request)> check_first_request_;
+  std::string debug_label_;
 
   grpc_core::CondVar lrs_cv_;
   grpc_core::Mutex lrs_mu_;

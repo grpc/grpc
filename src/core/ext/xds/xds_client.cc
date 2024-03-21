@@ -336,10 +336,6 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
   std::vector<std::string> ResourceNamesForRequest(const XdsResourceType* type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-  void FallForwardForAuthorityLocked(
-      std::vector<RefCountedPtr<XdsChannel>>* channels)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-
   // The owning RetryableCall<>.
   RefCountedPtr<RetryableCall<AdsCall>> retryable_call_;
 
@@ -559,6 +555,28 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
   }
 }
 
+void XdsClient::XdsChannel::SetHealthyLocked() {
+  status_ = absl::OkStatus();
+  // Make this channel active iff:
+  // 1. Channel is on the list of authority channels
+  // 2. Channel is not the last channel on the list (i.e. not the active
+  // channel)
+  for (auto& authority : xds_client_->authority_state_map_) {
+    auto& channels = authority.second.xds_channels;
+    if (channels.empty()) continue;
+    // Skip if channel is active.
+    if (channels.back() == this) continue;
+    auto channel_it = std::find(channels.begin(), channels.end(), this);
+    // Skip if this is not on the list
+    if (channel_it != channels.end()) {
+      gpr_log(GPR_INFO, "[xds_client %p] Falling forward to %s", this,
+              server_.server_uri().c_str());
+      // Lower priority channels are no longer needed, connection is back!
+      channels.erase(channel_it + 1, channels.end());
+    }
+  }
+}
+
 void XdsClient::XdsChannel::OnConnectivityFailure(absl::Status status) {
   {
     MutexLock lock(&xds_client_->mu_);
@@ -590,7 +608,7 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (auto& a : xds_client_->authority_state_map_) {  // authority
     if (a.second.xds_channels.back() != this ||
-        xds_client_->TryFallbackLocked(a.first, a.second)) {
+        xds_client_->MaybeFallbackLocked(a.first, a.second)) {
       continue;
     }
     for (const auto& t : a.second.resource_map) {  // type
@@ -986,30 +1004,6 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
   streaming_call_->StartRecvMessage();
 }
 
-// Make this channel active iff:
-// 1. Channel is on the list of authority channels
-// 2. Channel is not the last channel on the list (i.e. not the active channel)
-void XdsClient::XdsChannel::AdsCall::FallForwardForAuthorityLocked(
-    std::vector<RefCountedPtr<XdsChannel>>* channels) {
-  if (channels->empty()) {
-    return;
-  }
-  // Skip if channel is active.
-  if (channels->back() == xds_channel()) {
-    return;
-  }
-  auto channel_it =
-      std::find(channels->begin(), channels->end(), xds_channel());
-  // Skip if channel is not on the list
-  if (channel_it == channels->end()) {
-    return;
-  }
-  gpr_log(GPR_INFO, "[xds_client %p] Falling forward to %s", this,
-          xds_channel()->server_.server_uri().c_str());
-  // Lower priority channels are no longer needed, connection is back!
-  channels->erase(channel_it + 1, channels->end());
-}
-
 void XdsClient::XdsChannel::AdsCall::Orphan() {
   state_map_.clear();
   // Note that the initial ref is held by the StreamEventHandler, which
@@ -1133,10 +1127,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
               status.ToString().c_str());
     } else {
       seen_response_ = true;
-      xds_channel()->status_ = absl::OkStatus();
-      for (auto& a : xds_client()->authority_state_map_) {
-        FallForwardForAuthorityLocked(&a.second.xds_channels);
-      }
+      xds_channel()->SetHealthyLocked();
       // Update nonce.
       auto& state = state_map_[result.type];
       state.nonce = result.nonce;
@@ -1608,7 +1599,7 @@ RefCountedPtr<XdsClient::XdsChannel> XdsClient::GetOrCreateXdsChannelLocked(
   return xds_channel;
 }
 
-bool XdsClient::HasRequestedResources(const AuthorityState& authority_state) {
+bool XdsClient::HasUncachedResources(const AuthorityState& authority_state) {
   for (const auto& type_resource : authority_state.resource_map) {
     for (const auto& key_state : type_resource.second) {
       if (key_state.second.meta.client_status ==
@@ -1620,9 +1611,9 @@ bool XdsClient::HasRequestedResources(const AuthorityState& authority_state) {
   return false;
 }
 
-bool XdsClient::TryFallbackLocked(const std::string& authority,
-                                  AuthorityState& authority_state) {
-  if (!HasRequestedResources(authority_state)) {
+bool XdsClient::MaybeFallbackLocked(const std::string& authority,
+                                    AuthorityState& authority_state) {
+  if (!HasUncachedResources(authority_state)) {
     return false;
   }
   std::vector<const XdsBootstrap::XdsServer*> xds_servers;

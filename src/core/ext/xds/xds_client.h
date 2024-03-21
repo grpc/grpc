@@ -31,6 +31,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "upb/reflection/def.hpp"
+#include "xds_bootstrap.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -246,6 +247,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
+    void SetHealthyLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void OnConnectivityFailure(absl::Status status);
 
     // Enqueues error notifications to watchers.  Caller must drain
@@ -339,16 +341,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
       const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   RefCountedPtr<XdsChannel> GetOrCreateXdsChannelLocked(
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  bool HasRequestedResources(const AuthorityState& authority_state);
+  bool HasUncachedResources(const AuthorityState& authority_state);
 
   // Attempts to find a suitable Xds fallback server. Returns true if
   // a connection to a suitable server had been established.
-  bool TryFallbackLocked(const std::string& authority,
-                         AuthorityState& authority_state)
+  bool MaybeFallbackLocked(const std::string& authority,
+                           AuthorityState& authority_state)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;

@@ -290,7 +290,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
     XdsEnd2endTest* test_obj, absl::string_view debug_label)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl(
-          // First request must have node set with the right client features.
+          // First request must have node set with the right client
+          // features.
           [&](const DiscoveryRequest& request) {
             EXPECT_TRUE(request.has_node());
             EXPECT_THAT(request.node().client_features(),
@@ -298,14 +299,14 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
                             "envoy.lb.does_not_support_overprovisioning",
                             "xds.config.resource-in-sotw"));
           },
-          debug_label,
+
           // NACKs must use the right status code.
           [&](absl::StatusCode code) {
             EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);
-          })),
+          },
+          debug_label)),
       lrs_service_(new LrsServiceImpl(
-          debug_label, (GetParam().enable_load_reporting() ? 20 : 0),
-          {kDefaultClusterName},
+          (GetParam().enable_load_reporting() ? 20 : 0), {kDefaultClusterName},
           // Fail if load reporting is used when not enabled.
           [&]() { EXPECT_TRUE(GetParam().enable_load_reporting()); },
           // Make sure we send the client feature saying that we support
@@ -314,7 +315,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
             EXPECT_THAT(
                 request.node().client_features(),
                 ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
-          })) {}
+          },
+          debug_label)) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {

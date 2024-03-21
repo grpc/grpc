@@ -60,9 +60,11 @@ class XdsBootstrapBuilder {
     return *this;
   }
   XdsBootstrapBuilder& AddAuthority(
-      const std::string& authority, const std::string& servers = "",
+      const std::string& authority, const std::string& server = "",
       const std::string& client_listener_resource_name_template = "") {
-    return AddAuthority(authority, std::vector<std::string>({servers}),
+    return AddAuthority(authority,
+                        server.empty() ? std::vector<std::string>()
+                                       : std::vector<std::string>({server}),
                         client_listener_resource_name_template);
   }
   XdsBootstrapBuilder& AddAuthority(
