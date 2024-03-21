@@ -552,6 +552,21 @@ TEST_F(MeshLabelsIterableTest, RemoteUnknownTypeMetadata) {
       << PrettyPrintLabels(labels);
 }
 
+TEST_F(MeshLabelsIterableTest, TestResetIteratorPosition) {
+  grpc::internal::MeshLabelsIterable iterable(local_labels_,
+                                              grpc_core::Slice());
+  auto labels = LabelsFromIterable(&iterable);
+  auto expected_labels_matcher = ElementsAre(
+      Pair("csm.workload_canonical_service", "canonical_service"),
+      Pair("csm.mesh_id", "mesh"), Pair("csm.remote_workload_type", "unknown"),
+      Pair("csm.remote_workload_canonical_service", "unknown"));
+  EXPECT_THAT(labels, expected_labels_matcher) << PrettyPrintLabels(labels);
+  // Resetting the iterable should return the entire list again.
+  iterable.ResetIteratorPosition();
+  labels = LabelsFromIterable(&iterable);
+  EXPECT_THAT(labels, expected_labels_matcher) << PrettyPrintLabels(labels);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     MetadataExchange, MetadataExchangeTest,
     ::testing::Values(
