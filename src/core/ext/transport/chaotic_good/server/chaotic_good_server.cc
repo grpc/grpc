@@ -148,7 +148,8 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : memory_allocator_(listener->memory_allocator_), listener_(listener) {
+    : memory_allocator_(listener->memory_allocator_),
+      listener_(std::move(listener)) {
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
@@ -461,7 +462,6 @@ void ChaoticGoodServerListener::Orphan() {
     shutdown_ = true;
   }
   ee_listener_.reset();
-  Unref();
 };
 
 }  // namespace chaotic_good
