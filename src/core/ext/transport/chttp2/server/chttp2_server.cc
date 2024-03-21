@@ -712,12 +712,8 @@ grpc_error_handle Chttp2ServerListener::Create(
     error = grpc_tcp_server_create(
         &listener->tcp_server_shutdown_complete_,
         grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-        OnAccept, listener->Ref().release(), &listener->tcp_server_);
-    if (!error.ok()) {
-      // Reclaim ref passed to grpc_tcp_server_create
-      listener->Unref();
-      return error;
-    }
+        OnAccept, listener.get(), &listener->tcp_server_);
+    if (!error.ok()) return error;
     if (listener->config_fetcher_ != nullptr) {
       listener->resolved_address_ = *addr;
       // TODO(yashykt): Consider binding so as to be able to return the port
@@ -755,16 +751,11 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
     Chttp2ServerArgsModifier args_modifier) {
   auto listener = MakeOrphanable<Chttp2ServerListener>(
       server, args, args_modifier, server->config_fetcher());
-
   grpc_error_handle error = grpc_tcp_server_create(
       &listener->tcp_server_shutdown_complete_,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-      OnAccept, listener->Ref().release(), &listener->tcp_server_);
-  if (!error.ok()) {
-    // Reclaim ref passed to grpc_tcp_server_create
-    listener->Unref();
-    return error;
-  }
+      OnAccept, listener.get(), &listener->tcp_server_);
+  if (!error.ok()) return error;
   // TODO(yangg) channelz
   TcpServerFdHandler** arg_val = args.GetPointer<TcpServerFdHandler*>(name);
   *arg_val = grpc_tcp_server_create_fd_handler(listener->tcp_server_);
