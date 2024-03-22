@@ -78,31 +78,10 @@ namespace grpc_core {
 
 extern TraceFlag grpc_server_channel_trace;
 
-class Server;
-
 class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
                public CppImplOf<Server, grpc_server> {
  public:
-  /// Interface for listeners.
-  /// Implementations must override the Orphan() method, which should stop
-  /// listening and initiate destruction of the listener.
-  class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
-   public:
-    /// Starts listening. This listener may refer to the pollset object beyond
-    /// this call, so it is a pointer rather than a reference.
-    virtual void Start(Server* server,
-                       const std::vector<grpc_pollset*>* pollsets) = 0;
-
-    /// Returns the channelz node for the listen socket, or null if not
-    /// supported.
-    virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
-
-    /// Sets a closure to be invoked by the listener when its destruction
-    /// is complete.
-    virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
-  };
-
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
 
@@ -129,6 +108,27 @@ class Server : public ServerInterface,
     gpr_timespec* deadline;
     grpc_byte_buffer** optional_payload;
     grpc_completion_queue* cq;
+  };
+
+  /// Interface for listeners.
+  /// Implementations must override the Orphan() method, which should stop
+  /// listening and initiate destruction of the listener.
+  class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
+   public:
+    ~ListenerInterface() override = default;
+
+    /// Starts listening. This listener may refer to the pollset object beyond
+    /// this call, so it is a pointer rather than a reference.
+    virtual void Start(Server* server,
+                       const std::vector<grpc_pollset*>* pollsets) = 0;
+
+    /// Returns the channelz node for the listen socket, or null if not
+    /// supported.
+    virtual channelz::ListenSocketNode* channelz_listen_socket_node() const = 0;
+
+    /// Sets a closure to be invoked by the listener when its destruction
+    /// is complete.
+    virtual void SetOnDestroyDone(grpc_closure* on_destroy_done) = 0;
   };
 
   explicit Server(const ChannelArgs& args);
