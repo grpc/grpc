@@ -7535,6 +7535,7 @@ grpc_cc_library(
         "//:api_trace",
         "//:channel",
         "//:channel_create",
+        "//:config",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
