@@ -446,8 +446,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
         gpr_log(GPR_ERROR, "Credentials missing for PassiveListener");
         return nullptr;
       }
-      auto success = grpc_server_add_passive_listener(core_server, creds,
-                                                      *passive_listener);
+      auto success = grpc_server_add_passive_listener(
+          core_server, creds, std::move(passive_listener));
       if (!success.ok()) {
         gpr_log(GPR_ERROR, "Failed to create a passive listener: %s",
                 success.ToString().c_str());

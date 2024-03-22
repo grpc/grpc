@@ -95,8 +95,6 @@ TEST_F(ServerBuilderTest, AddPassiveListener) {
           .experimental()
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
-  // The listener must be released before the server can shut down.
-  passive_listener.reset();
   server->Shutdown();
 }
 
@@ -120,8 +118,6 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
   auto accept_status = passive_listener->AcceptConnectedFd(fd);
   ASSERT_FALSE(accept_status.ok()) << accept_status;
 #endif
-  // The listener must be released before the server can shut down.
-  passive_listener.reset();
   server->Shutdown();
 }
 
@@ -139,8 +135,6 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
   ASSERT_TRUE(success.ok())
       << "AcceptConnectedEndpoint failure: " << success.ToString();
   endpoint_destroyed.WaitForNotification();
-  // The listener must be released before the server can shut down.
-  passive_listener.reset();
   server->Shutdown();
 }
 

@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
@@ -55,6 +57,7 @@ class PassiveListener {
 
 absl::Status grpc_server_add_passive_listener(
     grpc_core::Server* server, grpc_server_credentials* credentials,
-    grpc_core::experimental::PassiveListenerImpl& passive_listener);
+    std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
+        passive_listener);
 
 #endif /* GRPC_PASSIVE_LISTENER_H */

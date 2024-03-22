@@ -97,7 +97,6 @@
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 namespace grpc_core {
-namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -116,13 +115,16 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       Server* server, const char* name, const ChannelArgs& args,
       Chttp2ServerArgsModifier args_modifier);
 
-  static RefCountedPtr<ListenerInterface> CreateForPassiveListener(
-      Server* server, const ChannelArgs& args);
+  static Chttp2ServerListener* CreateForPassiveListener(
+      Server* server, const ChannelArgs& args,
+      std::shared_ptr<experimental::PassiveListenerImpl> passive_listener);
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
                        Chttp2ServerArgsModifier args_modifier,
-                       grpc_server_config_fetcher* config_fetcher);
+                       grpc_server_config_fetcher* config_fetcher,
+                       std::shared_ptr<experimental::PassiveListenerImpl>
+                           passive_listener = nullptr);
   ~Chttp2ServerListener() override;
 
   void Start(Server* server,
@@ -141,6 +143,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Orphan() override;
 
  private:
+  friend class experimental::PassiveListenerImpl;
+
   class ConfigFetcherWatcher
       : public grpc_server_config_fetcher::WatcherInterface {
    public:
@@ -272,6 +276,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   MemoryQuotaRefPtr memory_quota_;
   ConnectionQuotaRefPtr connection_quota_;
   grpc_server_config_fetcher* config_fetcher_ = nullptr;
+  std::shared_ptr<experimental::PassiveListenerImpl> passive_listener_;
 };
 
 //
@@ -753,29 +758,31 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   return absl::OkStatus();
 }
 
-RefCountedPtr<Server::ListenerInterface>
-Chttp2ServerListener::CreateForPassiveListener(Server* server,
-                                               const ChannelArgs& args) {
+Chttp2ServerListener* Chttp2ServerListener::CreateForPassiveListener(
+    Server* server, const ChannelArgs& args,
+    std::shared_ptr<experimental::PassiveListenerImpl> passive_listener) {
   // TODO(hork): figure out how to handle channelz in this case
   auto listener = MakeOrphanable<Chttp2ServerListener>(
       server, args, /*args_modifier=*/
-      [](const ChannelArgs& args, grpc_error_handle*) { return args; },
-      nullptr);
-  auto listener_ref = listener->Ref();
+      [](const ChannelArgs& args, grpc_error_handle*) { return args; }, nullptr,
+      std::move(passive_listener));
+  auto listener_ptr = listener.get();
   server->AddListener(std::move(listener));
-  return listener_ref;
+  return listener_ptr;
 }
 
 Chttp2ServerListener::Chttp2ServerListener(
     Server* server, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier,
-    grpc_server_config_fetcher* config_fetcher)
+    grpc_server_config_fetcher* config_fetcher,
+    std::shared_ptr<experimental::PassiveListenerImpl> passive_listener)
     : server_(server),
       args_modifier_(args_modifier),
       args_(args),
       memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
       connection_quota_(MakeRefCounted<ConnectionQuota>()),
-      config_fetcher_(config_fetcher) {
+      config_fetcher_(config_fetcher),
+      passive_listener_(passive_listener) {
   auto max_allowed_incoming_connections =
       args.GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
   if (max_allowed_incoming_connections.has_value()) {
@@ -790,6 +797,9 @@ Chttp2ServerListener::~Chttp2ServerListener() {
   // Flush queued work before destroying handshaker factory, since that
   // may do a synchronous unref.
   ExecCtx::Get()->Flush();
+  if (passive_listener_ != nullptr) {
+    passive_listener_->ListenerDestroyed();
+  }
   if (on_destroy_done_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, absl::OkStatus());
     ExecCtx::Get()->Flush();
@@ -949,8 +959,6 @@ void Chttp2ServerListener::Orphan() {
   }
 }
 
-}  // namespace
-
 //
 // Chttp2ServerAddPort()
 //
@@ -1058,9 +1066,20 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint) {
   GPR_ASSERT(server_ != nullptr);
+  RefCountedPtr<Chttp2ServerListener> listener;
+  {
+    MutexLock lock(&mu_);
+    if (listener_ != nullptr) {
+      listener =
+          listener_->RefIfNonZero().TakeAsSubclass<Chttp2ServerListener>();
+    }
+  }
+  if (listener == nullptr) {
+    return absl::UnavailableError("passive listener already shut down");
+  }
+
   ExecCtx exec_ctx;
-  static_cast<Chttp2ServerListener*>(listener_.get())
-      ->AcceptConnectedEndpoint(std::move(endpoint));
+  listener->AcceptConnectedEndpoint(std::move(endpoint));
   return absl::OkStatus();
 }
 
@@ -1081,6 +1100,11 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   auto endpoint = supports_fd->CreateEndpointFromFd(
       fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
   return AcceptConnectedEndpoint(std::move(endpoint));
+}
+
+void PassiveListenerImpl::ListenerDestroyed() {
+  MutexLock lock(&mu_);
+  listener_ = nullptr;
 }
 
 }  // namespace experimental
@@ -1184,7 +1208,8 @@ void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
 
 absl::Status grpc_server_add_passive_listener(
     grpc_core::Server* server, grpc_server_credentials* credentials,
-    grpc_core::experimental::PassiveListenerImpl& passive_listener) {
+    std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
+        passive_listener) {
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_add_passive_listener(server=%p, credentials=%p)",
                  2, (server, credentials));
@@ -1201,8 +1226,10 @@ absl::Status grpc_server_add_passive_listener(
   auto args = server->channel_args()
                   .SetObject(credentials->Ref())
                   .SetObject(std::move(sc));
-  passive_listener.listener_ =
-      grpc_core::Chttp2ServerListener::CreateForPassiveListener(server, args);
-  passive_listener.server_ = server;
+  passive_listener->listener_ =
+      grpc_core::Chttp2ServerListener::CreateForPassiveListener(
+          server, args, passive_listener);
+  passive_listener->server_ = server;
+
   return absl::OkStatus();
 }

@@ -44,6 +44,7 @@ grpc_error_handle Chttp2ServerAddPort(
     Server* server, const char* addr, const ChannelArgs& args,
     Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
 
+class Chttp2ServerListener;
 namespace experimental {
 
 // An implementation of the public C++ passive listener interface.
@@ -53,20 +54,24 @@ class PassiveListenerImpl final : public PassiveListener {
  public:
   absl::Status AcceptConnectedEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint) override;
+          endpoint) override ABSL_LOCKS_EXCLUDED(mu_);
 
-  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
+  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override
+      ABSL_LOCKS_EXCLUDED(mu_);
+
+  void ListenerDestroyed() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
-  // note: the grpc_core::Server redundant namespace qualification is required
-  // for older gcc versions.
+  // note: the grpc_core::Server redundant namespace qualification is
+  // required for older gcc versions.
   friend absl::Status(::grpc_server_add_passive_listener)(
       grpc_core::Server* server, grpc_server_credentials* credentials,
-      PassiveListenerImpl& passive_listener);
+      std::shared_ptr<PassiveListenerImpl> passive_listener);
 
+  Mutex mu_;
   // Data members will be populated when initialized.
   Server* server_ = nullptr;
-  RefCountedPtr<Server::ListenerInterface> listener_;
+  Chttp2ServerListener* listener_;
 };
 
 }  // namespace experimental
