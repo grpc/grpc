@@ -78,9 +78,7 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   friend class Server;
   friend class ServerBuilder;
 
-  // We need this friend declaration for access to c_creds(). When these two
-  // functions are no longer necessary, this friend declaration can be removed
-  // too.
+  // We need this friend declaration for access to c_creds().
   friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
