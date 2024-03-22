@@ -1192,6 +1192,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
@@ -1794,7 +1795,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_destination.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
@@ -1816,6 +1816,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http_connect_handshaker.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/message.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/message.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />
