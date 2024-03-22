@@ -80,8 +80,9 @@ class TestFilter {
     static const NoInterceptor OnFinalize;
   };
 
-  static absl::StatusOr<TestFilter<I>> Create(const ChannelArgs& args, Empty) {
-    return TestFilter<I>{};
+  static absl::StatusOr<std::unique_ptr<TestFilter<I>>> Create(
+      const ChannelArgs& args) {
+    return std::make_unique<TestFilter<I>>();
   }
 
  private:
@@ -115,8 +116,8 @@ class FailsToInstantiateFilter {
     static const NoInterceptor OnFinalize;
   };
 
-  static absl::StatusOr<FailsToInstantiateFilter<I>> Create(
-      const ChannelArgs& args, Empty) {
+  static absl::StatusOr<std::unique_ptr<FailsToInstantiateFilter<I>>> Create(
+      const ChannelArgs& args) {
     return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
   }
 };
@@ -145,9 +146,9 @@ class TestConsumingInterceptor final : public Interceptor {
         .Cancel(ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
   }
   void Orphan() override {}
-  static absl::StatusOr<TestConsumingInterceptor<I>> Create(
-      const ChannelArgs& args, Empty) {
-    return TestConsumingInterceptor<I>{};
+  static absl::StatusOr<RefCountedPtr<TestConsumingInterceptor<I>>> Create(
+      const ChannelArgs& args) {
+    return MakeRefCounted<TestConsumingInterceptor<I>>();
   }
 };
 
@@ -161,8 +162,8 @@ class TestFailingInterceptor final : public Interceptor {
     Crash("unreachable");
   }
   void Orphan() override {}
-  static absl::StatusOr<TestFailingInterceptor<I>> Create(
-      const ChannelArgs& args, Empty) {
+  static absl::StatusOr<RefCountedPtr<TestFailingInterceptor<I>>> Create(
+      const ChannelArgs& args) {
     return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
   }
 };
@@ -186,9 +187,9 @@ class TestHijackingInterceptor final : public Interceptor {
         });
   }
   void Orphan() override {}
-  static absl::StatusOr<TestHijackingInterceptor<I>> Create(
-      const ChannelArgs& args, Empty) {
-    return TestHijackingInterceptor<I>{};
+  static absl::StatusOr<RefCountedPtr<TestHijackingInterceptor<I>>> Create(
+      const ChannelArgs& args) {
+    return MakeRefCounted<TestHijackingInterceptor<I>>();
   }
 };
 
@@ -261,7 +262,7 @@ class InterceptionChainTest : public ::testing::Test {
 // Tests begin
 
 TEST_F(InterceptionChainTest, Empty) {
-  auto r = InterceptionChain::Builder(destination()).Build(ChannelArgs());
+  auto r = InterceptionChainBuilder(ChannelArgs()).Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -273,9 +274,9 @@ TEST_F(InterceptionChainTest, Empty) {
 }
 
 TEST_F(InterceptionChainTest, Consumed) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<TestConsumingInterceptor<1>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -287,9 +288,9 @@ TEST_F(InterceptionChainTest, Consumed) {
 }
 
 TEST_F(InterceptionChainTest, Hijacked) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<TestHijackingInterceptor<1>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -301,10 +302,10 @@ TEST_F(InterceptionChainTest, Hijacked) {
 }
 
 TEST_F(InterceptionChainTest, FiltersThenHijacked) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<TestFilter<1>>()
                .Add<TestHijackingInterceptor<2>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -320,38 +321,38 @@ TEST_F(InterceptionChainTest, FiltersThenHijacked) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<TestFailingInterceptor<1>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(r.status().message(), "👊 failed to instantiate 1");
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<TestFilter<1>>()
                .Add<TestFailingInterceptor<2>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(r.status().message(), "👊 failed to instantiate 2");
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<FailsToInstantiateFilter<1>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(r.status().message(), "👊 failed to instantiate 1");
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
-  auto r = InterceptionChain::Builder(destination())
+  auto r = InterceptionChainBuilder(ChannelArgs())
                .Add<TestFilter<1>>()
                .Add<FailsToInstantiateFilter<2>>()
-               .Build(ChannelArgs());
+               .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(r.status().message(), "👊 failed to instantiate 2");
