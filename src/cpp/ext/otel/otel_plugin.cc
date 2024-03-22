@@ -437,14 +437,6 @@ OpenTelemetryPlugin::IsEnabledForServer(
   }
   return {false, nullptr};
 }
-std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
-OpenTelemetryPlugin::IsEnabledForServersByDefault() const {
-  if (server_selector_ == nullptr) {
-    return {true, std::make_shared<ServerScopeConfig>(
-                      this, grpc_core::ChannelArgs())};
-  }
-  return {false, nullptr};
-}
 
 void OpenTelemetryPlugin::AddCounter(
     grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,

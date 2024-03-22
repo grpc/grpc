@@ -373,21 +373,6 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
 }
 
 GlobalStatsPluginRegistry::StatsPluginGroup
-GlobalStatsPluginRegistry::GetStatsPluginsEnabledForServersByDefault() {
-  MutexLock lock(&*mutex_);
-  StatsPluginGroup group;
-  for (const auto& plugin : *plugins_) {
-    bool is_enabled = false;
-    std::shared_ptr<StatsPlugin::ScopeConfig> config;
-    std::tie(is_enabled, config) = plugin->IsEnabledForServersByDefault();
-    if (is_enabled) {
-      group.AddStatsPlugin(plugin, config);
-    }
-  }
-  return group;
-}
-
-GlobalStatsPluginRegistry::StatsPluginGroup
 GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
     const StatsPlugin::ChannelScope& scope) {
   MutexLock lock(&*mutex_);

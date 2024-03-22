@@ -330,8 +330,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   IsEnabledForChannel(const ChannelScope& scope) const override;
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForServer(const grpc_core::ChannelArgs& args) const override;
-  std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServersByDefault()
-      const override;
   void AddCounter(
       grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,

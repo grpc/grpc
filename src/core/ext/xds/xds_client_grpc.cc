@@ -268,7 +268,7 @@ namespace {
 GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
     absl::string_view key) {
   if (key == GrpcXdsClient::kServerKey) {
-    return GlobalStatsPluginRegistry::GetAllStatsPlugins();
+    return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
   }
   // TODO(roth): How do we set the authority here?
   StatsPlugin::ChannelScope scope(key, "");

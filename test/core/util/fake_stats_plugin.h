@@ -275,7 +275,6 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     return {false, nullptr};
   }
-
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
