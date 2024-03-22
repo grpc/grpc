@@ -839,6 +839,25 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
+    // TODO(yijiem): OpenCensus and internal Census is still using this way to
+    // set server call tracer. We need to refactor them to stats plugins
+    // (including removing the client channel filters).
+    if (args->server != nullptr &&
+        args->server->server_call_tracer_factory() != nullptr) {
+      auto* server_call_tracer =
+          args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
+              arena, args->server->channel_args());
+      if (server_call_tracer != nullptr) {
+        // Note that we are setting both
+        // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
+        // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
+        // promise-based world, we would just a single tracer object for each
+        // stack (call, subchannel_call, server_call.)
+        call->ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
+                         server_call_tracer, nullptr);
+        call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+      }
+    }
     channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
   }
 
@@ -3391,6 +3410,25 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   // collecting from when the call is created at the transport. The idea is that
   // the transport would create the call tracer and pass it in as part of the
   // metadata.
+  // TODO(yijiem): OpenCensus and internal Census is still using this way to
+  // set server call tracer. We need to refactor them to stats plugins
+  // (including removing the client channel filters).
+  if (args->server != nullptr &&
+      args->server->server_call_tracer_factory() != nullptr) {
+    auto* server_call_tracer =
+        args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
+            arena, args->server->channel_args());
+    if (server_call_tracer != nullptr) {
+      // Note that we are setting both
+      // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
+      // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
+      // promise-based world, we would just a single tracer object for each
+      // stack (call, subchannel_call, server_call.)
+      ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
+                 server_call_tracer, nullptr);
+      ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+    }
+  }
   args->channel->channel_stack()->stats_plugin_group->AddServerCallTracers(
       context());
   Spawn("server_promise",
