@@ -204,6 +204,8 @@ std::string MakeLabelString(
 
 class FakeStatsPlugin : public StatsPlugin {
  public:
+  class ScopeConfig : public StatsPlugin::ScopeConfig {};
+
   explicit FakeStatsPlugin(
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
           channel_filter = nullptr,
@@ -266,13 +268,13 @@ class FakeStatsPlugin : public StatsPlugin {
         });
   }
 
-  std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
-      const ChannelScope& scope) const override {
+  std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+  IsEnabledForChannel(const ChannelScope& scope) const override {
     return {true, nullptr};
   }
 
-  std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
-      const ChannelArgs& /*args*/) const override {
+  std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+  IsEnabledForServer(const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
   }
 
@@ -385,11 +387,13 @@ class FakeStatsPlugin : public StatsPlugin {
 
   ClientCallTracer* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
-      std::shared_ptr<ScopeConfig> scope_config) override {
+      std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
+      override {
     return nullptr;
   }
   ServerCallTracer* GetServerCallTracer(
-      std::shared_ptr<ScopeConfig> scope_config) override {
+      std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
+      override {
     return nullptr;
   }
 
