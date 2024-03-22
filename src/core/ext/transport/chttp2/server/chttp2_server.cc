@@ -116,8 +116,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       Server* server, const char* name, const ChannelArgs& args,
       Chttp2ServerArgsModifier args_modifier);
 
-  static absl::StatusOr<RefCountedPtr<ListenerInterface>>
-  CreateForPassiveListener(Server* server, const ChannelArgs& args);
+  static RefCountedPtr<ListenerInterface> CreateForPassiveListener(
+      Server* server, const ChannelArgs& args);
 
   // Do not instantiate directly.  Use one of the factory methods above.
   Chttp2ServerListener(Server* server, const ChannelArgs& args,
@@ -753,9 +753,10 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   return absl::OkStatus();
 }
 
-absl::StatusOr<RefCountedPtr<Server::ListenerInterface>>
+RefCountedPtr<Server::ListenerInterface>
 Chttp2ServerListener::CreateForPassiveListener(Server* server,
                                                const ChannelArgs& args) {
+  // TODO(hork): figure out how to handle channelz in this case
   auto listener = MakeOrphanable<Chttp2ServerListener>(
       server, args, /*args_modifier=*/
       [](const ChannelArgs& args, grpc_error_handle*) { return args; },
@@ -1059,7 +1060,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
   GPR_ASSERT(server_ != nullptr);
   ExecCtx exec_ctx;
   static_cast<Chttp2ServerListener*>(listener_.get())
-      ->AcceptConnectedEndpoint((std::move(endpoint)));
+      ->AcceptConnectedEndpoint(std::move(endpoint));
   return absl::OkStatus();
 }
 
@@ -1200,13 +1201,8 @@ absl::Status grpc_server_add_passive_listener(
   auto args = server->channel_args()
                   .SetObject(credentials->Ref())
                   .SetObject(std::move(sc));
-  auto listener =
+  passive_listener.listener_ =
       grpc_core::Chttp2ServerListener::CreateForPassiveListener(server, args);
-  if (!listener.ok()) {
-    gpr_log(GPR_ERROR, "%s",
-            grpc_core::StatusToString(listener.status()).c_str());
-  }
-  passive_listener.listener_ = std::move(*listener);
   passive_listener.server_ = server;
   return absl::OkStatus();
 }
