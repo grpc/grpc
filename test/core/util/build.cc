@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "test/core/util/build.h"
+
 bool BuiltUnderValgrind() {
 #ifdef RUNNING_ON_VALGRIND
   return true;
