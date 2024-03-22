@@ -5700,7 +5700,7 @@ endif()
 if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
 
 add_library(grpcpp_otel_plugin
-  src/cpp/ext/otel/otel_call_tracer.cc
+  src/cpp/ext/otel/otel_client_call_tracer.cc
   src/cpp/ext/otel/otel_plugin.cc
   src/cpp/ext/otel/otel_server_call_tracer.cc
 )
@@ -20674,7 +20674,7 @@ add_executable(otel_plugin_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-  src/cpp/ext/otel/otel_call_tracer.cc
+  src/cpp/ext/otel/otel_client_call_tracer.cc
   src/cpp/ext/otel/otel_plugin.cc
   src/cpp/ext/otel/otel_server_call_tracer.cc
   test/core/util/fake_stats_plugin.cc
