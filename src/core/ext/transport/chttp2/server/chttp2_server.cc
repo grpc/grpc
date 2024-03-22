@@ -738,11 +738,8 @@ grpc_error_handle Chttp2ServerListener::Create(
     server->AddListener(std::move(listener));
     return absl::OkStatus();
   }();
-  if (!error.ok()) {
-    if (listener != nullptr && listener->tcp_server_ != nullptr) {
-      grpc_tcp_server_unref(listener->tcp_server_);
-    }
-  }
+  // The tcp_server will be unreffed if the listener was not added to the
+  // server's set of listeners.
   return error;
 }
 
