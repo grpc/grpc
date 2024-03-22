@@ -608,8 +608,7 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (auto& a : xds_client_->authority_state_map_) {  // authority
     gpr_log(GPR_ERROR, "%ld %p", a.second.xds_channels.size(), this);
-    if (a.second.xds_channels.empty() ||
-        a.second.xds_channels.back() != this ||
+    if (a.second.xds_channels.empty() || a.second.xds_channels.back() != this ||
         xds_client_->MaybeFallbackLocked(a.first, a.second)) {
       continue;
     }
