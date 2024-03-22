@@ -268,7 +268,7 @@ class FakeStatsPlugin : public StatsPlugin {
         });
   }
 
-  std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+  std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
   IsEnabledForChannel(const ChannelScope& scope) const override {
     if (channel_filter_ == nullptr || channel_filter_(scope)) {
       return {true, nullptr};
@@ -276,8 +276,8 @@ class FakeStatsPlugin : public StatsPlugin {
     return {false, nullptr};
   }
 
-  std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
-  IsEnabledForServer(const ChannelArgs& /*args*/) const override {
+  std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
   }
 
@@ -390,13 +390,11 @@ class FakeStatsPlugin : public StatsPlugin {
 
   ClientCallTracer* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
-      std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
-      override {
+      std::shared_ptr<StatsPlugin::ScopeConfig> scope_config) override {
     return nullptr;
   }
   ServerCallTracer* GetServerCallTracer(
-      std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
-      override {
+      std::shared_ptr<StatsPlugin::ScopeConfig> scope_config) override {
     return nullptr;
   }
 
