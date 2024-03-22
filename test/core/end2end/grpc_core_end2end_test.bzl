@@ -171,6 +171,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "//src/core:time",
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+            "//test/core/util:fake_stats_plugin",
             "//test/core/util:fuzz_config_vars",
             "//test/core/util:fuzz_config_vars_proto",
             "//test/core/util:grpc_test_util",
