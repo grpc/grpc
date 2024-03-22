@@ -701,46 +701,40 @@ void Chttp2ServerListener::ActiveConnection::OnDrainGraceTimeExpiry() {
 grpc_error_handle Chttp2ServerListener::Create(
     Server* server, grpc_resolved_address* addr, const ChannelArgs& args,
     Chttp2ServerArgsModifier args_modifier, int* port_num) {
-  OrphanablePtr<Chttp2ServerListener> listener;
-  // The bulk of this method is inside of a lambda to make cleanup
-  // easier without using goto.
-  grpc_error_handle error = [&]() {
-    grpc_error_handle error;
-    // Create Chttp2ServerListener.
-    listener = MakeOrphanable<Chttp2ServerListener>(server, args, args_modifier,
-                                                    server->config_fetcher());
-    error = grpc_tcp_server_create(
-        &listener->tcp_server_shutdown_complete_,
-        grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
-        OnAccept, listener.get(), &listener->tcp_server_);
-    if (!error.ok()) return error;
-    if (listener->config_fetcher_ != nullptr) {
-      listener->resolved_address_ = *addr;
-      // TODO(yashykt): Consider binding so as to be able to return the port
-      // number.
-    } else {
-      error = grpc_tcp_server_add_port(listener->tcp_server_, addr, port_num);
-      if (!error.ok()) return error;
-    }
-    // Create channelz node.
-    if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-            .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-      auto string_address = grpc_sockaddr_to_uri(addr);
-      if (!string_address.ok()) {
-        return GRPC_ERROR_CREATE(string_address.status().ToString());
-      }
-      listener->channelz_listen_socket_ =
-          MakeRefCounted<channelz::ListenSocketNode>(
-              *string_address,
-              absl::StrCat("chttp2 listener ", *string_address));
-    }
-    // Register with the server only upon success
-    server->AddListener(std::move(listener));
-    return absl::OkStatus();
-  }();
-  // The tcp_server will be unreffed if the listener was not added to the
+  // Create Chttp2ServerListener.
+  OrphanablePtr<Chttp2ServerListener> listener =
+      MakeOrphanable<Chttp2ServerListener>(server, args, args_modifier,
+                                           server->config_fetcher());
+  // The tcp_server will be unreffed when the listener is orphaned, which could
+  // be at the end of this function if the listener was not added to the
   // server's set of listeners.
-  return error;
+  grpc_error_handle error = grpc_tcp_server_create(
+      &listener->tcp_server_shutdown_complete_,
+      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      OnAccept, listener.get(), &listener->tcp_server_);
+  if (!error.ok()) return error;
+  if (listener->config_fetcher_ != nullptr) {
+    listener->resolved_address_ = *addr;
+    // TODO(yashykt): Consider binding so as to be able to return the port
+    // number.
+  } else {
+    error = grpc_tcp_server_add_port(listener->tcp_server_, addr, port_num);
+    if (!error.ok()) return error;
+  }
+  // Create channelz node.
+  if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    auto string_address = grpc_sockaddr_to_uri(addr);
+    if (!string_address.ok()) {
+      return GRPC_ERROR_CREATE(string_address.status().ToString());
+    }
+    listener->channelz_listen_socket_ =
+        MakeRefCounted<channelz::ListenSocketNode>(
+            *string_address, absl::StrCat("chttp2 listener ", *string_address));
+  }
+  // Register with the server only upon success
+  server->AddListener(std::move(listener));
+  return absl::OkStatus();
 }
 
 grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
