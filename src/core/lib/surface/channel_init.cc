@@ -104,9 +104,11 @@ ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, const grpc_channel_filter* filter,
-    const ChannelFilterVtable* vtable, SourceLocation registration_source) {
+    void (*add_to_interception_chain_builder)(
+        InterceptionChain::Builder& builder),
+    SourceLocation registration_source) {
   filters_[type].emplace_back(std::make_unique<FilterRegistration>(
-      filter, vtable, registration_source));
+      filter, add_to_interception_chain_builder, registration_source));
   return *filters_[type].back();
 }
 

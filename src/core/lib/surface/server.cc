@@ -943,16 +943,23 @@ grpc_error_handle Server::SetupTransport(
     return absl::OkStatus();
   }
   if (transport->server_transport() != nullptr) {
-    auto stack_segment =
-        CoreConfiguration::Get().channel_init().CreateStackSegment(
-            GRPC_SERVER_CHANNEL, channel_args_);
-    if (!stack_segment.ok()) return stack_segment.status();
-    CallFilters::StackBuilder builder;
-    stack_segment->AddToCallFilterStack(builder);
-    auto server_channel = MakeRefCounted<Connection>(
-        this, builder.Build(), OrphanablePtr<Transport>(transport), cq_idx);
-    MutexLock lock(&mu_global_);
-    channels_.insert(std::move(server_channel));
+    InterceptionChain::Builder builder(
+        std::static_pointer_cast<CallDestination>(
+            std::make_shared<CallPublisher>()));
+    CoreConfiguration::Get().channel_init().AddToInterceptionChain(
+        GRPC_SERVER_CHANNEL, args, builder);
+    {
+      MutexLock lock(&mu_global_);
+      const uint64_t connection_id = next_connection_id_;
+      ++next_connection_id_;
+      transport->StartConnectivityWatch(
+          MakeOrphanable<ConnectivityWatcher>(this, connection_id));
+      channels_.insert(connection_id, transport);
+    }
+    transport->server_transport()->SetCallDestination(
+        std::shared_ptr<UnstartedCallDestination> destination);
+    auto server_channel = std::make_shared<Connection>(
+        this, builder.Build(args), OrphanablePtr<Transport>(transport), cq_idx);
     return absl::OkStatus();
   }
   return absl::InvalidArgumentError("bad transport");
@@ -1082,7 +1089,7 @@ Server::ChannelSet Server::GetChannelsLocked() const {
     channels.ye_olde_channels.push_back(chand->channel()->Ref());
   }
   channels.channels.reserve(channels_.size());
-  for (const RefCountedPtr<Connection>& channel : channels_) {
+  for (const std::shared_ptr<Connection>& channel : channels_) {
     channels.channels.emplace_back(channel);
   }
   return channels;
@@ -1821,11 +1828,20 @@ void Server::CallData::StartTransportStreamOpBatch(
 // Server::ServerChannel::ConnectivityWatcher
 //
 
-class Server::Connection::ConnectivityWatcher
+class Server::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  explicit ConnectivityWatcher(WeakRefCountedPtr<Connection> channel)
-      : channel_(std::move(channel)) {}
+  explicit ConnectivityWatcher(Server* server, uint64_t connection_id)
+      : server_(server), connection_id_(connection_id) {
+    server_->num_channels_.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  ~ConnectivityWatcher() override {
+    if (1 == server_->num_channels_.fetch_sub(1, std::memory_order_relaxed)) {
+      MutexLock lock(&server_->mu_global_);
+      server_->MaybeFinishShutdown();
+    }
+  }
 
   void Orphan() override { Remove(); }
 
@@ -1839,45 +1855,24 @@ class Server::Connection::ConnectivityWatcher
   }
 
   void Remove() {
-    auto server = channel_->server_;
-    RefCountedPtr<Connection> channel;
-    MutexLock lock(&server->mu_global_);
-    auto x = server->channels_.extract(channel_);
-    if (!x.empty()) channel = std::move(x.value());
+    OrphanablePtr<Transport> transport;
+    MutexLock lock(&server_->mu_global_);
+    auto e = server_->channels_.extract(connection_id_);
+    if (!e.empty()) transport = std::move(e.mapped());
   }
 
-  WeakRefCountedPtr<Connection> channel_;
+  Server* const server_;
+  const uint64_t connection_id_;
 };
 
 //
 // Server::Connection
 //
 
-Server::Connection::Connection(Server* server,
-                               RefCountedPtr<CallFilters::Stack> filter_stack,
-                               OrphanablePtr<Transport> transport,
-                               size_t cq_idx)
-    : CallFactory(server->channel_args_),
-      transport_(std::move(transport)),
-      filter_stack_(std::move(filter_stack)),
-      server_(server),
-      cq_idx_(cq_idx) {
-  server_->num_channels_.fetch_add(1, std::memory_order_relaxed);
-  transport_->StartConnectivityWatch(
-      MakeOrphanable<ConnectivityWatcher>(WeakRefAsSubclass<Connection>()));
-}
-
-Server::Connection::~Connection() {
-  if (1 == server_->num_channels_.fetch_sub(1, std::memory_order_relaxed)) {
-    MutexLock lock(&server_->mu_global_);
-    server_->MaybeFinishShutdown();
-  }
-}
-
 CallInitiator Server::Connection::CreateCall(
     ClientMetadataHandle client_initial_metadata, Arena* arena) {
   server_->SetRegisteredMethodOnMetadata(*client_initial_metadata);
-  auto call = MakeCall(server_->event_engine_.get(), arena);
+  auto call = MakeCallPair(server_->event_engine_.get(), arena);
   server_->MatchThenPublish(std::move(call.handler), cq_idx_);
   return std::move(call.initiator);
 }

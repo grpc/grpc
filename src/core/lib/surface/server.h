@@ -67,6 +67,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server_interface.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -84,25 +85,6 @@ class Server : public ServerInterface,
  public:
   // Filter vtable.
   static const grpc_channel_filter kServerTopFilter;
-
-  class Connection final : public CallFactory {
-   public:
-    Connection(Server* server, RefCountedPtr<CallFilters::Stack> filter_stack,
-               OrphanablePtr<Transport> transport, size_t cq_idx);
-    ~Connection() override;
-    CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
-                             Arena* arena) override;
-    void Orphan() override;
-    Transport& transport() { return *transport_; }
-
-   private:
-    class ConnectivityWatcher;
-
-    OrphanablePtr<Transport> transport_;
-    const RefCountedPtr<CallFilters::Stack> filter_stack_;
-    RefCountedPtr<Server> const server_;
-    const size_t cq_idx_;
-  };
 
   // Opaque type used for registered methods.
   struct RegisteredMethod;
@@ -401,7 +383,13 @@ class Server : public ServerInterface,
     std::vector<RefCountedPtr<Connection>> channels;
   };
 
+  class CallPublisher final : public CallDestination {
+   public:
+    void HandleCall(CallHandler handler) override { Crash("unimplemented"); }
+  };
+
   class ChannelBroadcaster;
+  class ConnectivityWatcher;
 
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
@@ -525,10 +513,10 @@ class Server : public ServerInterface,
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> ye_olde_channels_ ABSL_GUARDED_BY(mu_global_);
-  using ServerChannelSet = absl::flat_hash_set<RefCountedPtr<Connection>,
-                                               RefCountedPtrHash<Connection>,
-                                               RefCountedPtrEq<Connection>>;
-  ServerChannelSet channels_ ABSL_GUARDED_BY(mu_global_);
+  using ServerConnectionSet =
+      absl::flat_hash_map<uint64_t, OrphanablePtr<Transport>>;
+  uint64_t next_connection_id_ ABSL_GUARDED_BY(mu_global_) = 0;
+  ServerConnectionSet channels_ ABSL_GUARDED_BY(mu_global_);
   std::atomic<size_t> num_channels_{0};
 
   std::list<Listener> listeners_;

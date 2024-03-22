@@ -2014,6 +2014,7 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:atomic_utils",
         "//src/core:bitset",
+        "//src/core:call_destination",
         "//src/core:call_filters",
         "//src/core:call_final_info",
         "//src/core:call_finalization",

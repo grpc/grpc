@@ -183,9 +183,10 @@ class ChannelInit {
     template <typename Filter>
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFilter(type, &Filter::kFilter,
-                            VtableForType<Filter>::vtable(),
-                            registration_source);
+      return RegisterFilter(
+          type, &Filter::kFilter,
+          [](InterceptionChain::Builder& builder) { builder.Add<Filter>(); },
+          registration_source);
     }
 
     // Register a post processor for the builder.
