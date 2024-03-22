@@ -28,7 +28,8 @@ namespace grpc_core {
 // Examples of UnstartedCallDestinations include:
 // - a load-balanced call in the client channel
 // - a hijacking filter (see Interceptor)
-class UnstartedCallDestination {
+class UnstartedCallDestination
+    : public DualRefCounted<UnstartedCallDestination> {
  public:
   virtual ~UnstartedCallDestination() = default;
   // Start a call. The UnstartedCallHandler will be consumed by the Destination
@@ -45,7 +46,7 @@ class UnstartedCallDestination {
 // Examples of CallDestinations include:
 // - a client transport
 // - the server API
-class CallDestination {
+class CallDestination : public DualRefCounted<CallDestination> {
  public:
   virtual void HandleCall(CallHandler unstarted_call_handler) = 0;
 };

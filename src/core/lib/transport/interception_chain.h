@@ -36,9 +36,10 @@ class ChainAllocator;
 class HijackedCall {
  public:
   HijackedCall(ClientMetadataHandle metadata,
-               UnstartedCallDestination* destination, CallHandler call_handler)
+               RefCountedPtr<UnstartedCallDestination> destination,
+               CallHandler call_handler)
       : metadata_(std::move(metadata)),
-        destination_(destination),
+        destination_(std::move(destination)),
         call_handler_(std::move(call_handler)) {}
 
   CallInitiator MakeCall();
@@ -52,22 +53,23 @@ class HijackedCall {
   CallInitiator MakeCallWithMetadata(ClientMetadataHandle metadata);
 
   ClientMetadataHandle metadata_;
-  UnstartedCallDestination* destination_;
+  RefCountedPtr<UnstartedCallDestination> destination_;
   CallHandler call_handler_;
 };
 
 inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
-                       UnstartedCallDestination* destination,
+                       RefCountedPtr<UnstartedCallDestination> destination,
                        RefCountedPtr<CallFilters::Stack> stack) {
   auto call_handler = unstarted_call_handler.StartCall(stack);
-  return Map(call_handler.PullClientInitialMetadata(),
-             [call_handler, destination](
-                 ValueOrFailure<ClientMetadataHandle> metadata) mutable
-             -> ValueOrFailure<HijackedCall> {
-               if (!metadata.ok()) return Failure{};
-               return HijackedCall(std::move(metadata.value()), destination,
-                                   std::move(call_handler));
-             });
+  return Map(
+      call_handler.PullClientInitialMetadata(),
+      [call_handler,
+       destination](ValueOrFailure<ClientMetadataHandle> metadata) mutable
+      -> ValueOrFailure<HijackedCall> {
+        if (!metadata.ok()) return Failure{};
+        return HijackedCall(std::move(metadata.value()), std::move(destination),
+                            std::move(call_handler));
+      });
 }
 
 }  // namespace interception_chain_detail
@@ -97,7 +99,7 @@ class Interceptor : public UnstartedCallDestination {
   friend class InterceptionChain;
   friend class interception_chain_detail::ChainAllocator;
 
-  UnstartedCallDestination* wrapped_destination_;
+  RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
 };
 
@@ -131,38 +133,18 @@ struct FilterDef {
 
 struct InterceptorDef {
   InterceptorDef(Footprint footprint, std::vector<FilterDef> filters,
-                 absl::StatusOr<Interceptor*> (*init)(void* interceptor,
-                                                      const ChannelArgs& args))
+                 absl::StatusOr<RefCountedPtr<Interceptor>> (*init)(
+                     void* interceptor, const ChannelArgs& args))
       : footprint(footprint), filters(std::move(filters)), init(init) {}
   Footprint footprint;
   std::vector<FilterDef> filters;
-  absl::StatusOr<Interceptor*> (*init)(void* interceptor,
-                                       const ChannelArgs& args);
+  absl::StatusOr<RefCountedPtr<Interceptor>> (*init)(void* interceptor,
+                                                     const ChannelArgs& args);
 };
 
 struct Destructor {
   void (*destroy)(void* p);
   size_t offset;
-};
-
-struct Chain : public RefCounted<Chain> {
-  Chain(UnstartedCallDestination* first_destination,
-        std::vector<Destructor> destructors, void* chain_data,
-        std::shared_ptr<UnstartedCallDestination> final_destination)
-      : first_destination(first_destination),
-        destructors(std::move(destructors)),
-        chain_data(chain_data),
-        final_destination(std::move(final_destination)) {
-    GPR_ASSERT(this->final_destination != nullptr);
-    if (this->first_destination == nullptr) {
-      this->first_destination = this->final_destination.get();
-    }
-  }
-  ~Chain() override;
-  UnstartedCallDestination* first_destination;
-  std::vector<Destructor> destructors;
-  void* chain_data;
-  std::shared_ptr<UnstartedCallDestination> final_destination;
 };
 
 class ChainAllocator {
@@ -188,10 +170,15 @@ class ChainAllocator {
   RefCountedPtr<CallFilters::Stack> MakeFilterStack(
       absl::Span<const FilterDef> filters);
 
-  Interceptor* interceptor(size_t i) { return interceptors_[i]; }
+  Interceptor* interceptor(size_t i) { return interceptors_[i].get(); }
 
-  // Phase 3: Build the finalized chain.
-  RefCountedPtr<Chain> Build(std::shared_ptr<UnstartedCallDestination> final);
+  // Finalize internal interceptor data structures; returns the first call
+  // destination in the chain.
+  RefCountedPtr<UnstartedCallDestination> LinkDestinations(
+      RefCountedPtr<UnstartedCallDestination> final_destination);
+
+  void* TakeChainData() { return std::exchange(chain_data_, nullptr); }
+  std::vector<Destructor> TakeDestructors() { return std::move(destructors_); }
 
  private:
   void Append(Footprint& footprint);
@@ -201,15 +188,14 @@ class ChainAllocator {
   std::vector<Destructor> destructors_;
   std::vector<FilterDef*> filter_defs_;
   std::vector<InterceptorDef*> interceptor_defs_;
-  std::vector<Interceptor*> interceptors_;
+  std::vector<RefCountedPtr<Interceptor>> interceptors_;
   size_t instantiated_filters_ = 0;
   size_t instantiated_interceptors_ = 0;
   void* chain_data_ = nullptr;
 };
 }  // namespace interception_chain_detail
 
-class InterceptionChain final : public RefCounted<InterceptionChain>,
-                                public UnstartedCallDestination {
+class InterceptionChain final : public UnstartedCallDestination {
  public:
   class Builder {
    public:
@@ -231,8 +217,8 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
     // Instead, we declare a relatively closed set of destinations here, and
     // hide the adaptors inside the builder at build time.
     using FinalDestination =
-        absl::variant<std::shared_ptr<UnstartedCallDestination>,
-                      std::shared_ptr<CallDestination>>;
+        absl::variant<RefCountedPtr<UnstartedCallDestination>,
+                      RefCountedPtr<CallDestination>>;
 
     explicit Builder(FinalDestination final_destination)
         : final_destination_(std::move(final_destination)) {}
@@ -299,16 +285,22 @@ class InterceptionChain final : public RefCounted<InterceptionChain>,
 
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == unstarted_call_handler.party());
-    chain_->first_destination->StartCall(std::move(unstarted_call_handler));
+    first_destination_->StartCall(std::move(unstarted_call_handler));
   }
 
- public:
-  explicit InterceptionChain(
-      RefCountedPtr<interception_chain_detail::Chain> chain)
-      : chain_(std::move(chain)) {}
+  void Orphan() override;
+
+  ~InterceptionChain() override;
+
+  InterceptionChain(
+      RefCountedPtr<UnstartedCallDestination> first_destination,
+      std::vector<interception_chain_detail::Destructor> destructors,
+      void* chain_data);
 
  private:
-  const RefCountedPtr<interception_chain_detail::Chain> chain_;
+  RefCountedPtr<UnstartedCallDestination> first_destination_;
+  const std::vector<interception_chain_detail::Destructor> destructors_;
+  void* const chain_data_;
 };
 
 }  // namespace grpc_core

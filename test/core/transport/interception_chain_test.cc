@@ -144,6 +144,7 @@ class TestConsumingInterceptor final : public Interceptor {
     Consume(std::move(unstarted_call_handler))
         .Cancel(ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
   }
+  void Orphan() override {}
   static absl::StatusOr<TestConsumingInterceptor<I>> Create(
       const ChannelArgs& args, Empty) {
     return TestConsumingInterceptor<I>{};
@@ -159,6 +160,7 @@ class TestFailingInterceptor final : public Interceptor {
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
     Crash("unreachable");
   }
+  void Orphan() override {}
   static absl::StatusOr<TestFailingInterceptor<I>> Create(
       const ChannelArgs& args, Empty) {
     return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
@@ -183,6 +185,7 @@ class TestHijackingInterceptor final : public Interceptor {
                      });
         });
   }
+  void Orphan() override {}
   static absl::StatusOr<TestHijackingInterceptor<I>> Create(
       const ChannelArgs& args, Empty) {
     return TestHijackingInterceptor<I>{};
@@ -197,9 +200,7 @@ class InterceptionChainTest : public ::testing::Test {
   InterceptionChainTest() {}
   ~InterceptionChainTest() override {}
 
-  std::shared_ptr<UnstartedCallDestination> destination() {
-    return destination_;
-  }
+  RefCountedPtr<UnstartedCallDestination> destination() { return destination_; }
 
   struct FinishedCall {
     CallInitiator call;
@@ -244,12 +245,14 @@ class InterceptionChainTest : public ::testing::Test {
           ServerMetadataFromStatus(absl::InternalError("👊 cancelled")));
     }
 
+    void Orphan() override {}
+
     ClientMetadataHandle TakeMetadata() { return std::move(metadata_); }
 
    private:
     ClientMetadataHandle metadata_;
   };
-  std::shared_ptr<Destination> destination_ = std::make_shared<Destination>();
+  RefCountedPtr<Destination> destination_ = MakeRefCounted<Destination>();
   MemoryAllocator memory_allocator_ = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
 };

@@ -948,18 +948,13 @@ grpc_error_handle Server::SetupTransport(
             std::make_shared<CallPublisher>()));
     CoreConfiguration::Get().channel_init().AddToInterceptionChain(
         GRPC_SERVER_CHANNEL, args, builder);
-    {
-      MutexLock lock(&mu_global_);
-      const uint64_t connection_id = next_connection_id_;
-      ++next_connection_id_;
-      transport->StartConnectivityWatch(
-          MakeOrphanable<ConnectivityWatcher>(this, connection_id));
-      channels_.insert(connection_id, transport);
-    }
-    transport->server_transport()->SetCallDestination(
-        std::shared_ptr<UnstartedCallDestination> destination);
-    auto server_channel = std::make_shared<Connection>(
-        this, builder.Build(args), OrphanablePtr<Transport>(transport), cq_idx);
+    transport->server_transport()->SetCallDestination(builder.Build(args));
+    MutexLock lock(&mu_global_);
+    const uint64_t connection_id = next_connection_id_;
+    ++next_connection_id_;
+    transport->StartConnectivityWatch(
+        MakeOrphanable<ConnectivityWatcher>(this, connection_id));
+    channels_.insert(connection_id, transport);
     return absl::OkStatus();
   }
   return absl::InvalidArgumentError("bad transport");

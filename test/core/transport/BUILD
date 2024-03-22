@@ -46,6 +46,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:interception_chain",
+        "//src/core:resource_quota",
     ],
 )
 

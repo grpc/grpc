@@ -554,7 +554,7 @@ class ServerTransport {
  public:
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(
-      std::shared_ptr<UnstartedCallDestination> destination) = 0;
+      RefCountedPtr<UnstartedCallDestination> destination) = 0;
 
  protected:
   ~ServerTransport() = default;

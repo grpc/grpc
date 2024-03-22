@@ -225,7 +225,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
     auto* registration = filter_to_registration[filter];
-    filters.emplace_back(filter, registration->vtable_,
+    filters.emplace_back(filter,
+                         registration->add_to_interception_chain_builder_,
                          std::move(registration->predicates_),
                          registration->registration_source_);
     for (auto& p : dependencies) {
