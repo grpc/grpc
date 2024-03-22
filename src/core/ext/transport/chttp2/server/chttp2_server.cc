@@ -763,7 +763,7 @@ Chttp2ServerListener::CreateForPassiveListener(Server* server,
       nullptr);
   auto listener_ref = listener->Ref();
   server->AddListener(std::move(listener));
-  return std::move(listener_ref);
+  return listener_ref;
 }
 
 Chttp2ServerListener::Chttp2ServerListener(
