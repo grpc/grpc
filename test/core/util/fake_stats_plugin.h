@@ -270,7 +270,10 @@ class FakeStatsPlugin : public StatsPlugin {
 
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForChannel(const ChannelScope& scope) const override {
-    return {true, nullptr};
+    if (channel_filter_ == nullptr || channel_filter_(scope)) {
+      return {true, nullptr};
+    }
+    return {false, nullptr};
   }
 
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
