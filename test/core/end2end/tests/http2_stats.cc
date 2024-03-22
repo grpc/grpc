@@ -180,7 +180,7 @@ grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
 // TODO(yijiem): figure out how to reuse FakeStatsPlugin instead of
 // inheriting and overriding it here.
-class FakeStatsPlugin : public grpc_core::FakeStatsPlugin {
+class NewFakeStatsPlugin : public FakeStatsPlugin {
  public:
   ClientCallTracer* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
@@ -202,7 +202,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_client_call_ended_notify = new Notification();
   g_server_call_ended_notify = new Notification();
   GlobalStatsPluginRegistry::RegisterStatsPlugin(
-      std::make_shared<FakeStatsPlugin>());
+      std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
   auto send_from_server = RandomSlice(20);
   CoreEnd2endTest::IncomingStatusOnClient server_status;
