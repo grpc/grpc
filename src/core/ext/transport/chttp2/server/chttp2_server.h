@@ -70,7 +70,7 @@ class PassiveListenerImpl final : public PassiveListener {
 
   Mutex mu_;
   // Data members will be populated when initialized.
-  Server* server_ = nullptr;
+  RefCountedPtr<Server> server_;
   Chttp2ServerListener* listener_;
 };
 
