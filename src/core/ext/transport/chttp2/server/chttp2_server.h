@@ -23,6 +23,8 @@
 
 #include <functional>
 
+#include <grpc/passive_listener.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/surface/server.h"
@@ -42,6 +44,32 @@ grpc_error_handle Chttp2ServerAddPort(
     Server* server, const char* addr, const ChannelArgs& args,
     Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
 
+namespace experimental {
+
+// An implementation of the public C++ passive listener interface.
+// The server builder holds a weak_ptr to one of these objects, and the
+// application owns the instance.
+class PassiveListenerImpl final : public PassiveListener {
+ public:
+  absl::Status AcceptConnectedEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint) override;
+
+  absl::Status AcceptConnectedFd(GRPC_UNUSED int fd) override;
+
+ private:
+  // note: the grpc_core::Server redundant namespace qualification is required
+  // for older gcc versions.
+  friend absl::Status(::grpc_server_add_passive_listener)(
+      grpc_core::Server* server, grpc_server_credentials* credentials,
+      PassiveListenerImpl& passive_listener);
+
+  // Data members will be populated when initialized.
+  Server* server_ = nullptr;
+  RefCountedPtr<Server::ListenerInterface> listener_;
+};
+
+}  // namespace experimental
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H

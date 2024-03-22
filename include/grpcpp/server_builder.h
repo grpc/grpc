@@ -43,11 +43,6 @@
 
 struct grpc_resource_quota;
 
-namespace grpc_core {
-namespace experimental {
-class PassiveListenerImpl;
-}  // namespace experimental
-}  // namespace grpc_core
 namespace grpc {
 
 class CompletionQueue;
@@ -302,6 +297,18 @@ class ServerBuilder {
     void EnableCallMetricRecording(
         experimental::ServerMetricRecorder* server_metric_recorder = nullptr);
 
+    // Creates a passive listener for Server Endpoint injection.
+    ///
+    /// \a PasiveListener lets applications provide pre-established connections
+    /// to gRPC Servers. The server will behave as if it accepted the onnection
+    /// itself on its own listening addresses.
+    ///
+    /// This can be called multiple times to create passive listeners with
+    /// different server credentials.
+    ServerBuilder& AddPassiveListener(
+        std::shared_ptr<grpc::ServerCredentials> creds,
+        std::unique_ptr<grpc::experimental::PassiveListener>& passive_listener);
+
    private:
     ServerBuilder* builder_;
   };
@@ -322,19 +329,6 @@ class ServerBuilder {
   /// to the experimental components of this class. It may be changed or removed
   /// at any time.
   experimental_type experimental() { return experimental_type(this); }
-
-  /// -- EXPERIMENTAL API --
-  // Creates a passive listener for Server Endpoint injection.
-  ///
-  /// \a PasiveListener lets applications provide pre-established connections to
-  /// gRPC Servers. The server will behave as if it accepted the onnection
-  /// itself on its own listening addresses.
-  ///
-  /// This can be called multiple times to create passive listeners with
-  /// different server credentials.
-  ServerBuilder& AddPassiveListener(
-      std::shared_ptr<grpc::ServerCredentials> creds,
-      std::unique_ptr<grpc::experimental::PassiveListener>& passive_listener);
 
  protected:
   /// Experimental, to be deprecated

@@ -46,9 +46,10 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/server_interceptor.h>
 
+#include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/surface/passive_listener_internal.h"
+#include "src/core/lib/surface/server.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
 namespace grpc {
@@ -250,16 +251,16 @@ ServerBuilder& ServerBuilder::SetResourceQuota(
   return *this;
 }
 
-ServerBuilder& ServerBuilder::AddPassiveListener(
+ServerBuilder& ServerBuilder::experimental_type::AddPassiveListener(
     std::shared_ptr<grpc::ServerCredentials> creds,
     std::unique_ptr<experimental::PassiveListener>& passive_listener) {
   auto core_passive_listener =
       std::make_shared<grpc_core::experimental::PassiveListenerImpl>();
-  unstarted_passive_listeners_.emplace_back(core_passive_listener,
-                                            std::move(creds));
+  builder_->unstarted_passive_listeners_.emplace_back(core_passive_listener,
+                                                      std::move(creds));
   passive_listener =
       std::make_unique<PassiveListenerOwner>(std::move(core_passive_listener));
-  return *this;
+  return *builder_;
 }
 
 ServerBuilder& ServerBuilder::AddListeningPort(

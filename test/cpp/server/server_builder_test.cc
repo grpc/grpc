@@ -92,6 +92,7 @@ TEST_F(ServerBuilderTest, AddPassiveListener) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
       ServerBuilder()
+          .experimental()
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   // The listener must be released before the server can shut down.
@@ -106,6 +107,7 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedFd) {
   // TODO(hork): why is the service necessary? Queue isn't drained otherwise.
   auto server =
       builder.RegisterService(&g_service)
+          .experimental()
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   ASSERT_NE(server.get(), nullptr);
@@ -127,6 +129,7 @@ TEST_F(ServerBuilderTest, PassiveListenerAcceptConnectedEndpoint) {
   std::unique_ptr<experimental::PassiveListener> passive_listener;
   auto server =
       ServerBuilder()
+          .experimental()
           .AddPassiveListener(InsecureServerCredentials(), passive_listener)
           .BuildAndStart();
   grpc_core::Notification endpoint_destroyed;
