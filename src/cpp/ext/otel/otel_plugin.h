@@ -192,8 +192,7 @@ class OpenTelemetryPluginBuilderImpl {
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
  public:
   // Creates a convenience wrapper to help iterate over only those plugin
-  // options
-  // that are active over a given channel/server.
+  // options that are active over a given channel/server.
   class ActivePluginOptionsView {
    public:
     static ActivePluginOptionsView MakeForClient(
@@ -391,7 +390,11 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
-  std::vector<Instrument> instruments_;
+  struct InstrumentData {
+    Instrument instrument;
+    std::bitset<64> optional_labels_bits;
+  };
+  std::vector<InstrumentData> instruments_data_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
@@ -403,7 +406,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       generic_method_attribute_filter_;
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
-  std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
 };
 
 }  // namespace internal

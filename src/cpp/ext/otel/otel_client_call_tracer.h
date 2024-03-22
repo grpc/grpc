@@ -50,11 +50,11 @@ namespace internal {
 class OpenTelemetryPlugin::ClientCallTracer
     : public grpc_core::ClientCallTracer {
  public:
-  class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
+  class CallAttemptTracer
+      : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
-    OpenTelemetryCallAttemptTracer(
-        const OpenTelemetryPlugin::ClientCallTracer* parent,
-        bool arena_allocated);
+    CallAttemptTracer(const OpenTelemetryPlugin::ClientCallTracer* parent,
+                      bool arena_allocated);
 
     std::string TraceId() override {
       // Not implemented
@@ -131,8 +131,7 @@ class OpenTelemetryPlugin::ClientCallTracer
     return false;
   }
 
-  OpenTelemetryCallAttemptTracer* StartNewAttempt(
-      bool is_transparent_retry) override;
+  CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view /*annotation*/) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
