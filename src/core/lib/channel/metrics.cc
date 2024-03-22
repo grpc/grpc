@@ -22,6 +22,8 @@
 
 namespace grpc_core {
 
+constexpr int kOptionalLabelKeysSizeLimit = 64;
+
 // Uses the Construct-on-First-Use idiom to avoid the static initialization
 // order fiasco.
 std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
@@ -38,6 +40,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -70,6 +73,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -102,6 +106,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -134,6 +139,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -166,6 +172,7 @@ GlobalInstrumentsRegistry::RegisterInt64Gauge(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -198,6 +205,7 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -230,6 +238,7 @@ GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -262,6 +271,7 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
+  GPR_ASSERT(optional_label_keys.size() <= kOptionalLabelKeysSizeLimit);
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -363,11 +373,16 @@ void GlobalStatsPluginRegistry::RegisterStatsPlugin(
 }
 
 GlobalStatsPluginRegistry::StatsPluginGroup
-GlobalStatsPluginRegistry::GetAllStatsPlugins() {
+GlobalStatsPluginRegistry::GetStatsPluginsEnabledForServersByDefault() {
   MutexLock lock(&*mutex_);
   StatsPluginGroup group;
   for (const auto& plugin : *plugins_) {
-    group.AddStatsPlugin(plugin, nullptr);
+    bool is_enabled = false;
+    std::shared_ptr<StatsPlugin::ScopeConfig> config;
+    std::tie(is_enabled, config) = plugin->IsEnabledForServersByDefault();
+    if (is_enabled) {
+      group.AddStatsPlugin(plugin, config);
+    }
   }
   return group;
 }

@@ -191,6 +191,28 @@ class OpenTelemetryPluginBuilderImpl {
 
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
  public:
+  OpenTelemetryPlugin(
+      const absl::flat_hash_set<std::string>& metrics,
+      opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
+          meter_provider,
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_selector,
+      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
+          target_attribute_filter,
+      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
+          generic_method_attribute_filter,
+      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
+          server_selector,
+      std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
+          plugin_options,
+      std::shared_ptr<std::set<absl::string_view>> optional_label_keys);
+
+ private:
+  class ClientCallTracer;
+  class KeyValueIterable;
+  class NPCMetricsKeyValueIterable;
+  class ServerCallTracer;
+
   // Creates a convenience wrapper to help iterate over only those plugin
   // options that are active over a given channel/server.
   class ActivePluginOptionsView {
@@ -241,26 +263,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
 
     std::bitset<64> active_mask_;
   };
-
-  OpenTelemetryPlugin(
-      const absl::flat_hash_set<std::string>& metrics,
-      opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
-          meter_provider,
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector,
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_attribute_filter,
-      absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
-          generic_method_attribute_filter,
-      absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
-          server_selector,
-      std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
-          plugin_options,
-      std::shared_ptr<std::set<absl::string_view>> optional_label_keys);
-
- private:
-  class ClientCallTracer;
-  class ServerCallTracer;
 
   class ClientScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
    public:
@@ -328,6 +330,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   IsEnabledForChannel(const ChannelScope& scope) const override;
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForServer(const grpc_core::ChannelArgs& args) const override;
+  std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServersByDefault()
+      const override;
   void AddCounter(
       grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
@@ -390,9 +394,10 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
+  using OptionalLabelsBitSet = std::bitset<64>;
   struct InstrumentData {
     Instrument instrument;
-    std::bitset<64> optional_labels_bits;
+    OptionalLabelsBitSet optional_labels_bits;
   };
   std::vector<InstrumentData> instruments_data_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>

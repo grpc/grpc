@@ -82,8 +82,9 @@ absl::flat_hash_set<std::string> BaseMetrics() {
       });
   return base_metrics;
 }
+}  // namespace
 
-class NPCMetricsKeyValueIterable
+class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
     : public opentelemetry::common::KeyValueIterable {
  public:
   NPCMetricsKeyValueIterable(
@@ -91,7 +92,7 @@ class NPCMetricsKeyValueIterable
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_keys,
       absl::Span<const absl::string_view> optional_label_values,
-      const std::bitset<64>& optional_labels_bits)
+      const OptionalLabelsBitSet& optional_labels_bits)
       : label_keys_(label_keys),
         label_values_(label_values),
         optional_label_keys_(optional_label_keys),
@@ -108,7 +109,7 @@ class NPCMetricsKeyValueIterable
         return false;
       }
     }
-    for (int i = 0; i < optional_label_keys_.size(); i++) {
+    for (int i = 0; i < optional_label_keys_.size(); ++i) {
       if (!optional_labels_bits_.test(i)) {
         continue;
       }
@@ -130,9 +131,8 @@ class NPCMetricsKeyValueIterable
   absl::Span<const absl::string_view> label_values_;
   absl::Span<const absl::string_view> optional_label_keys_;
   absl::Span<const absl::string_view> optional_label_values_;
-  const std::bitset<64>& optional_labels_bits_;
+  const OptionalLabelsBitSet& optional_labels_bits_;
 };
-}  // namespace
 
 //
 // OpenTelemetryPluginBuilderImpl
@@ -434,6 +434,14 @@ OpenTelemetryPlugin::IsEnabledForServer(
   // selector returns true.
   if (server_selector_ == nullptr || server_selector_(args)) {
     return {true, std::make_shared<ServerScopeConfig>(this, args)};
+  }
+  return {false, nullptr};
+}
+std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+OpenTelemetryPlugin::IsEnabledForServersByDefault() const {
+  if (server_selector_ == nullptr) {
+    return {true, std::make_shared<ServerScopeConfig>(
+                      this, grpc_core::ChannelArgs())};
   }
   return {false, nullptr};
 }

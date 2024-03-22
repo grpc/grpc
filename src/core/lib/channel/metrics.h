@@ -199,6 +199,9 @@ class StatsPlugin {
   // configure the ServerCallTracer in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
+  // Whether this stats plugin is enabled for gRPC servers by default.
+  virtual std::pair<bool, std::shared_ptr<ScopeConfig>>
+  IsEnabledForServersByDefault() const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
@@ -364,7 +367,7 @@ class GlobalStatsPluginRegistry {
 
   // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetAllStatsPlugins();
+  static StatsPluginGroup GetStatsPluginsEnabledForServersByDefault();
   static StatsPluginGroup GetStatsPluginsForChannel(
       const StatsPlugin::ChannelScope& scope);
   static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);

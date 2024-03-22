@@ -79,11 +79,11 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
     // We might not have all the injected labels that we want at this point, so
     // avoid recording a subset of injected labels here.
     parent_->otel_plugin_->client_.attempt.started->Add(
-        1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
-                            additional_labels,
-                            /*active_plugin_options_view=*/nullptr,
-                            /*optional_labels_span=*/{}, /*is_client=*/true,
-                            parent_->otel_plugin_));
+        1, KeyValueIterable(
+               /*injected_labels_from_plugin_options=*/{}, additional_labels,
+               /*active_plugin_options_view=*/nullptr,
+               /*optional_labels_span=*/{}, /*is_client=*/true,
+               parent_->otel_plugin_));
   }
 }
 
