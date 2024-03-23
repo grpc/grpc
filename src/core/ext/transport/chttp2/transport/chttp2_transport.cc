@@ -790,8 +790,7 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
-                                       const void* server_data,
-                                       grpc_core::Arena* arena)
+                                       const void* server_data)
     : t(t->Ref()),
       refcount([refcount]() {
 // We reserve one 'active stream' that's dropped when the stream is
@@ -805,8 +804,6 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 #endif
         return refcount;
       }()),
-      initial_metadata_buffer(arena),
-      trailing_metadata_buffer(arena),
       flow_control(&t->flow_control) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
@@ -864,8 +861,8 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 void grpc_chttp2_transport::InitStream(grpc_stream* gs,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
-                                       grpc_core::Arena* arena) {
-  new (gs) grpc_chttp2_stream(this, refcount, server_data, arena);
+                                       grpc_core::Arena*) {
+  new (gs) grpc_chttp2_stream(this, refcount, server_data);
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {

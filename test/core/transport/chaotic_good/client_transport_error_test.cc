@@ -119,8 +119,7 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
 }
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+  auto md = GetContext<Arena>()->MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/test"));
   return md;
 }

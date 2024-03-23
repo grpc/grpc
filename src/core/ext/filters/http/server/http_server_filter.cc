@@ -67,7 +67,7 @@ void FilterOutgoingMetadata(ServerMetadata* md) {
 
 ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
   auto* arena = GetContext<Arena>();
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  auto hdl = arena->MakePooled<ServerMetadata>();
   hdl->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
   hdl->Set(GrpcMessageMetadata(), Slice::FromStaticString(explanation));
   hdl->Set(GrpcTarPit(), Empty());

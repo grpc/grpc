@@ -465,7 +465,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
   // Start a promise to receive server initial metadata and then forward it up
   // through the receiving pipe.
   auto server_initial_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+      GetContext<Arena>()->MakePooled<ServerMetadata>();
   party->Spawn(
       "recv_initial_metadata",
       TrySeq(GetContext<BatchBuilder>()->ReceiveServerInitialMetadata(
@@ -503,15 +503,14 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
   // If this fails, we massage the error into metadata that we can report
   // upwards.
   auto server_trailing_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+      GetContext<Arena>()->MakePooled<ServerMetadata>();
   auto recv_trailing_metadata =
       Map(GetContext<BatchBuilder>()->ReceiveServerTrailingMetadata(
               stream->batch_target()),
           [](absl::StatusOr<ServerMetadataHandle> status) mutable {
             if (!status.ok()) {
               auto server_trailing_metadata =
-                  GetContext<Arena>()->MakePooled<ServerMetadata>(
-                      GetContext<Arena>());
+                  GetContext<Arena>()->MakePooled<ServerMetadata>();
               grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
               std::string message;
               grpc_error_get_status(status.status(), Timestamp::InfFuture(),
@@ -787,8 +786,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
               trailing_metadata = std::move(*status);
             } else {
               trailing_metadata =
-                  GetContext<Arena>()->MakePooled<ClientMetadata>(
-                      GetContext<Arena>());
+                  GetContext<Arena>()->MakePooled<ClientMetadata>();
               grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
               std::string message;
               grpc_error_get_status(status.status(), Timestamp::InfFuture(),
@@ -898,8 +896,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
                  md->Set(GrpcStatusFromWire(), true);
                  return md;
                }
-               auto m = GetContext<Arena>()->MakePooled<ServerMetadata>(
-                   GetContext<Arena>());
+               auto m = GetContext<Arena>()->MakePooled<ServerMetadata>();
                m->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
                m->Set(GrpcCallWasCancelled(), true);
                return m;

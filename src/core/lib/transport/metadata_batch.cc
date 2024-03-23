@@ -96,14 +96,15 @@ bool DebugStringBuilder::IsAllowListed(const absl::string_view key) const {
 }
 
 void UnknownMap::Append(absl::string_view key, Slice value) {
-  unknown_.EmplaceBack(Slice::FromCopiedString(key), value.Ref());
+  unknown_.emplace_back(Slice::FromCopiedString(key), value.Ref());
 }
 
 void UnknownMap::Remove(absl::string_view key) {
-  unknown_.SetEnd(std::remove_if(unknown_.begin(), unknown_.end(),
-                                 [key](const std::pair<Slice, Slice>& p) {
-                                   return p.first.as_string_view() == key;
-                                 }));
+  unknown_.erase(std::remove_if(unknown_.begin(), unknown_.end(),
+                                [key](const std::pair<Slice, Slice>& p) {
+                                  return p.first.as_string_view() == key;
+                                }),
+                 unknown_.end());
 }
 
 absl::optional<absl::string_view> UnknownMap::GetStringValue(

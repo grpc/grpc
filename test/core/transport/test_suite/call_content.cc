@@ -72,7 +72,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
   SpawnTestSeq(
       initiator, "initiator",
       [&]() {
-        auto md = Arena::MakePooled<ClientMetadata>(GetContext<Arena>());
+        auto md = Arena::MakePooled<ClientMetadata>();
         FillMetadata(client_initial_metadata, *md);
         return initiator.PushClientInitialMetadata(std::move(md));
       },
@@ -126,7 +126,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
       [&](NextResult<MessageHandle> msg) {
         EXPECT_FALSE(msg.has_value());
         EXPECT_FALSE(msg.cancelled());
-        auto md = Arena::MakePooled<ServerMetadata>(GetContext<Arena>());
+        auto md = Arena::MakePooled<ServerMetadata>();
         FillMetadata(server_initial_metadata, *md);
         return handler.PushServerInitialMetadata(std::move(md));
       },
@@ -137,7 +137,7 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>(GetContext<Arena>());
+        auto md = Arena::MakePooled<ServerMetadata>();
         FillMetadata(server_trailing_metadata, *md);
         return handler.PushServerTrailingMetadata(std::move(md));
       },

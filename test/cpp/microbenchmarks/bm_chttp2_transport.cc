@@ -333,7 +333,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   Metadata::Prepare(&b);
 
   f.FlushExecCtx();

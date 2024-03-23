@@ -22,7 +22,7 @@ namespace grpc_core {
 
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
                                               Arena* arena) {
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  auto hdl = arena->MakePooled<ServerMetadata>();
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,

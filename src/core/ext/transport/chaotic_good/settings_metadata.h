@@ -35,7 +35,7 @@ struct SettingsMetadata {
   absl::optional<std::string> connection_id;
   absl::optional<uint32_t> alignment;
 
-  Arena::PoolPtr<grpc_metadata_batch> ToMetadataBatch(Arena* arena);
+  Arena::PoolPtr<grpc_metadata_batch> ToMetadataBatch();
   static absl::StatusOr<SettingsMetadata> FromMetadataBatch(
       const grpc_metadata_batch& batch);
 };

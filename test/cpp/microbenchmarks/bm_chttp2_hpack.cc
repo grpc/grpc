@@ -75,7 +75,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   b.Set(grpc_core::GrpcTimeoutMetadata(),
         saved_now + grpc_core::Duration::Seconds(30));
 
@@ -111,7 +111,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   Fixture::Prepare(&b);
 
   grpc_core::HPackCompressor c;
@@ -351,7 +351,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
                                      ->CreateMemoryAllocator("test"));
   auto* arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
-  b.Init(arena);
+  b.Init();
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
@@ -377,7 +377,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       b.Destroy();
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
-      b.Init(arena);
+      b.Init();
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
@@ -410,7 +410,7 @@ class FromEncoderFixture {
                                        ->memory_quota()
                                        ->CreateMemoryAllocator("test"));
     auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
     EncoderFixture::Prepare(&b);
 
     grpc_core::HPackCompressor c;

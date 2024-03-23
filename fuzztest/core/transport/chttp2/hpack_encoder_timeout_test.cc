@@ -14,23 +14,20 @@
 
 // Test to verify Fuzztest integration
 
-#include <grpc/event_engine/memory_allocator.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <vector>
+
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "absl/random/random.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
+
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -43,9 +40,6 @@ void EncodeTimeouts(std::vector<uint32_t> timeouts) {
   hpack_encoder_detail::TimeoutCompressorImpl timeout_compressor;
   HPackCompressor compressor;
   HPackParser parser;
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
   for (size_t i = 0; i < timeouts.size(); i++) {
     SliceBuffer encoded;
     hpack_encoder_detail::Encoder encoder(&compressor, false, encoded);
@@ -53,7 +47,7 @@ void EncodeTimeouts(std::vector<uint32_t> timeouts) {
         "grpc-timeout",
         Timestamp::ProcessEpoch() + Duration::Milliseconds(timeouts[i]),
         &encoder);
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
     const uint32_t kMetadataSizeLimit = 3u * 1024 * 1024 * 1024;
     parser.BeginFrame(
         &b, kMetadataSizeLimit, kMetadataSizeLimit, HPackParser::Boundary::None,
