@@ -347,16 +347,18 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
   void SetGauge(
-      grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
-      int64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
+      grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle /*handle*/,
+      int64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void SetGauge(
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override {}
+      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   // TODO(yashkt, yijiem): implement async instrument.
-  void AddCallback(grpc_core::RegisteredMetricCallback* callback) override {}
-  void RemoveCallback(grpc_core::RegisteredMetricCallback* callback) override {}
+  void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/) override {
+  }
+  void RemoveCallback(
+      grpc_core::RegisteredMetricCallback* /*callback*/) override {}
   grpc_core::ClientCallTracer* GetClientCallTracer(
       const grpc_core::Slice& path, bool registered_method,
       std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
