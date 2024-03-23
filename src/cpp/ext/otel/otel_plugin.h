@@ -392,7 +392,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
-  using OptionalLabelsBitSet = std::bitset<64>;
+  static constexpr int kOptionalLabelsSizeLimit = 64;
+  using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;

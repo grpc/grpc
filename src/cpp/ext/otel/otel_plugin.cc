@@ -330,6 +330,8 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
   grpc_core::GlobalInstrumentsRegistry::ForEach(
       [&, this](const grpc_core::GlobalInstrumentsRegistry::
                     GlobalInstrumentDescriptor& descriptor) {
+        GPR_ASSERT(descriptor.optional_label_keys.size() <=
+                   kOptionalLabelsSizeLimit);
         if (instruments_data_.size() < descriptor.index + 1) {
           instruments_data_.resize(descriptor.index + 1);
         }
