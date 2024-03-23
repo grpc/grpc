@@ -103,13 +103,13 @@ class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
                            callback) const noexcept override {
-    for (int i = 0; i < label_keys_.size(); i++) {
+    for (size_t i = 0; i < label_keys_.size(); i++) {
       if (!callback(AbslStrViewToOpenTelemetryStrView(label_keys_[i]),
                     AbslStrViewToOpenTelemetryStrView(label_values_[i]))) {
         return false;
       }
     }
-    for (int i = 0; i < optional_label_keys_.size(); ++i) {
+    for (size_t i = 0; i < optional_label_keys_.size(); ++i) {
       if (!optional_labels_bits_.test(i)) {
         continue;
       }
@@ -413,7 +413,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
             grpc_core::Crash(absl::StrFormat("Unknown instrument_type: %d",
                                              descriptor.instrument_type));
         }
-        for (int i = 0; i < descriptor.optional_label_keys.size(); ++i) {
+        for (size_t i = 0; i < descriptor.optional_label_keys.size(); ++i) {
           if (optional_label_keys->find(descriptor.optional_label_keys[i]) !=
               optional_label_keys->end()) {
             instruments_data_[descriptor.index].optional_labels_bits.set(i);
