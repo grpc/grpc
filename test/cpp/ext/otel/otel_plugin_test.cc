@@ -52,7 +52,7 @@ void PopulateLabelMap(
     std::unordered_map<std::string,
                        opentelemetry::sdk::common::OwnedAttributeValue>*
         label_maps) {
-  for (int i = 0; i < label_keys.size(); ++i) {
+  for (size_t i = 0; i < label_keys.size(); ++i) {
     (*label_maps)[std::string(label_keys[i])] = std::string(label_values[i]);
   }
 }
