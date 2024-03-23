@@ -105,7 +105,7 @@ ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, const grpc_channel_filter* filter,
     void (*add_to_interception_chain_builder)(
-        InterceptionChain::Builder& builder),
+        InterceptionChainBuilder& builder),
     SourceLocation registration_source) {
   filters_[type].emplace_back(std::make_unique<FilterRegistration>(
       filter, add_to_interception_chain_builder, registration_source));
@@ -410,12 +410,11 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
 }
 
 void ChannelInit::AddToInterceptionChain(
-    grpc_channel_stack_type type, const ChannelArgs& channel_args,
-    InterceptionChain::Builder& builder) const {
+    grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
   const auto& stack_config = stack_configs_[type];
   // Based on predicates build a list of filters to include in this segment.
   for (const auto& filter : stack_config.filters) {
-    if (!filter.CheckPredicates(channel_args)) continue;
+    if (!filter.CheckPredicates(builder.channel_args())) continue;
     if (filter.add_to_interception_chain_builder == nullptr) {
       Crash(absl::StrCat("Filter ", NameFromChannelFilter(filter.filter),
                          " has no v3-callstack vtable"));

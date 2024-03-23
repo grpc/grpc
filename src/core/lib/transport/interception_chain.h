@@ -161,6 +161,8 @@ class InterceptionChainBuilder final {
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> Build(
       FinalDestination final_destination);
 
+  const ChannelArgs& channel_args() const { return args_; }
+
  private:
   CallFilters::StackBuilder& stack_builder() {
     if (!stack_builder_.has_value()) stack_builder_.emplace();

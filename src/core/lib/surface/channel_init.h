@@ -84,7 +84,7 @@ class ChannelInit {
     // deprecated (once filter stack is removed).
     explicit FilterRegistration(
         const grpc_channel_filter* filter,
-        void (*add_to_interception_chain_builder)(InterceptionChain::Builder&),
+        void (*add_to_interception_chain_builder)(InterceptionChainBuilder&),
         SourceLocation registration_source)
         : filter_(filter),
           add_to_interception_chain_builder_(add_to_interception_chain_builder),
@@ -158,7 +158,7 @@ class ChannelInit {
    private:
     friend class ChannelInit;
     const grpc_channel_filter* const filter_;
-    void (*add_to_interception_chain_builder_)(InterceptionChain::Builder&);
+    void (*add_to_interception_chain_builder_)(InterceptionChainBuilder&);
     std::vector<const grpc_channel_filter*> after_;
     std::vector<const grpc_channel_filter*> before_;
     std::vector<InclusionPredicate> predicates_;
@@ -178,14 +178,15 @@ class ChannelInit {
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, const grpc_channel_filter* filter,
         void (*add_to_interception_chain_builder)(
-            InterceptionChain::Builder& builder) = nullptr,
+            InterceptionChainBuilder& builder) = nullptr,
         SourceLocation registration_source = {});
+
     template <typename Filter>
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
       return RegisterFilter(
           type, &Filter::kFilter,
-          [](InterceptionChain::Builder& builder) { builder.Add<Filter>(); },
+          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
           registration_source);
     }
 
@@ -218,22 +219,20 @@ class ChannelInit {
   bool CreateStack(ChannelStackBuilder* builder) const;
 
   void AddToInterceptionChain(grpc_channel_stack_type type,
-                              const ChannelArgs& channel_args,
-                              InterceptionChain::Builder& builder) const;
+                              InterceptionChainBuilder& builder) const;
 
  private:
   struct Filter {
-    Filter(
-        const grpc_channel_filter* filter,
-        void (*add_to_interception_chain_builder)(InterceptionChain::Builder&),
-        std::vector<InclusionPredicate> predicates,
-        SourceLocation registration_source)
+    Filter(const grpc_channel_filter* filter,
+           void (*add_to_interception_chain_builder)(InterceptionChainBuilder&),
+           std::vector<InclusionPredicate> predicates,
+           SourceLocation registration_source)
         : filter(filter),
           add_to_interception_chain_builder(add_to_interception_chain_builder),
           predicates(std::move(predicates)),
           registration_source(registration_source) {}
     const grpc_channel_filter* filter;
-    void (*add_to_interception_chain_builder)(InterceptionChain::Builder&);
+    void (*add_to_interception_chain_builder)(InterceptionChainBuilder&);
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
     bool CheckPredicates(const ChannelArgs& args) const;
