@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_format.h"
 
 #include <grpcpp/create_channel.h>
@@ -31,6 +32,7 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
@@ -90,18 +92,32 @@ class XdsFallbackTest : public XdsEnd2endTest {
         cluster.eds_cluster_config().service_name()));
   }
 
-  void ConfigureAuthority(const std::string& eds_server_name,
-                          const std::string& cluster_name,
-                          const std::string& route_config_name,
-                          const std::string& listener_name,
-                          const EdsResourceArgs& args) {
-    fallback_balancer_->ads_service()->SetEdsResource(
-        BuildEdsResource(args, eds_server_name));
+  void ConfigureAuthority(BalancerServerThread* balancer,
+                          absl::string_view authority,
+                          absl::string_view server_name, int backend) {
+    std::string listener_name = absl::StrFormat(
+        "xdstp://%s/envoy.config.listener.v3.Listener/"
+        "whee%%25/%s",
+        authority, server_name);
+    std::string cluster_name = absl::StrFormat(
+        "xdstp://%s/envoy.config.cluster.v3.Cluster/cluster_name_%d", authority,
+        backend);
+    std::string route_config_name = absl::StrFormat(
+        "xdstp://%s/envoy.config.route.v3.RouteConfiguration/"
+        "new_route_config_name_%d",
+        authority, backend);
+    std::string eds_server_name = absl::StrFormat(
+        "xdstp://%s/envoy.config.endpoint.v3.ClusterLoadAssignment/eds_%d",
+        authority, backend);
+    balancer->ads_service()->SetEdsResource(BuildEdsResource(
+        EdsResourceArgs(
+            {{"locality0", CreateEndpointsForBackends(backend, backend + 1)}}),
+        eds_server_name));
     // New cluster
     Cluster new_cluster = default_cluster_;
     new_cluster.set_name(cluster_name);
     new_cluster.mutable_eds_cluster_config()->set_service_name(eds_server_name);
-    fallback_balancer_->ads_service()->SetCdsResource(new_cluster);
+    balancer->ads_service()->SetCdsResource(new_cluster);
     // New Route
     RouteConfiguration new_route_config = default_route_config_;
     new_route_config.set_name(route_config_name);
@@ -112,8 +128,22 @@ class XdsFallbackTest : public XdsEnd2endTest {
     // New Listener
     Listener listener = default_listener_;
     listener.set_name(listener_name);
-    SetListenerAndRouteConfiguration(fallback_balancer_.get(), listener,
-                                     new_route_config);
+    SetListenerAndRouteConfiguration(balancer, listener, new_route_config);
+  }
+
+  void ExpectBackendCall(EchoTestService::Stub* stub, int backend,
+                         grpc_core::DebugLocation location) {
+    ClientContext context;
+    EchoRequest request;
+    EchoResponse response;
+    RpcOptions().SetupRpc(&context, &request);
+    Status status = stub->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message() << "\n"
+                             << location.file() << ':' << location.line();
+    EXPECT_EQ(1U, backends_[backend]->backend_service()->request_count())
+        << "\n"
+        << location.file() << ':' << location.line();
   }
 
  protected:
@@ -127,9 +157,9 @@ TEST_P(XdsFallbackTest, FallbackAndRecover) {
   broken_balancer->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   InitClient(XdsBootstrapBuilder().SetServers({
-      absl::StrCat("localhost:", balancer_->port()),
-      absl::StrCat("localhost:", broken_balancer->port()),
-      absl::StrCat("localhost:", fallback_balancer_->port()),
+      balancer_->address(),
+      broken_balancer->address(),
+      fallback_balancer_->address(),
   }));
   // Primary xDS server has backends_[0] configured and fallback server has
   // backends_[1]
@@ -149,13 +179,33 @@ TEST_P(XdsFallbackTest, FallbackAndRecover) {
   broken_balancer->Shutdown();
 }
 
+TEST_P(XdsFallbackTest, EnvVarNotSet) {
+  InitClient(XdsBootstrapBuilder().SetServers({
+      balancer_->address(),
+      fallback_balancer_->address(),
+  }));
+  // Primary xDS server has backends_[0] configured and fallback server has
+  // backends_[1]
+  CreateAndStartBackends(2);
+  SetXdsResourcesForTarget(balancer_.get(), 0);
+  SetXdsResourcesForTarget(fallback_balancer_.get(), 1);
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
+  // Primary server down, failure should be reported
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrFormat("server.example.com: UNAVAILABLE: xDS channel for server "
+                      "localhost:%d: xDS call failed with no responses "
+                      "received; status: RESOURCE_EXHAUSTED: test forced ADS "
+                      "stream failure \\(node ID:xds_end2end_test\\)",
+                      balancer_->port()));
+}
+
 TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
   grpc_core::testing::ScopedEnvVar fallback_enabled(
       "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
-  InitClient(XdsBootstrapBuilder().SetServers({
-      absl::StrCat("localhost:", balancer_->port()),
-      absl::StrCat("localhost:", fallback_balancer_->port()),
-  }));
+  InitClient(XdsBootstrapBuilder().SetServers(
+      {balancer_->address(), fallback_balancer_->address()}));
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   fallback_balancer_->ads_service()->ForceADSFailure(
@@ -174,10 +224,8 @@ TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   constexpr absl::string_view kServerName2 = "server2.example.com";
   grpc_core::testing::ScopedEnvVar fallback_enabled(
       "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
-  InitClient(XdsBootstrapBuilder().SetServers({
-      absl::StrCat("localhost:", balancer_->port()),
-      absl::StrCat("localhost:", fallback_balancer_->port()),
-  }));
+  InitClient(XdsBootstrapBuilder().SetServers(
+      {balancer_->address(), fallback_balancer_->address()}));
   // 4 backends - cross product of two data plane targets and two balancers
   CreateAndStartBackends(4);
   SetXdsResourcesForTarget(balancer_.get(), 0);
@@ -190,86 +238,76 @@ TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   auto channel = CreateChannel(0, std::string(kServerName2).c_str());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
-  ClientContext context;
-  EchoRequest request;
-  EchoResponse response;
   // server2.example.com is configured from the fallback server
-  Status status = stub->Echo(&context, request, &response);
-  ASSERT_TRUE(status.ok()) << status.error_message();
-  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 0);
-  EXPECT_EQ(backends_[3]->backend_service()->request_count(), 1);
+  ExpectBackendCall(stub.get(), 3, DEBUG_LOCATION);
   // Calling server.example.com still uses cached value
   CheckRpcSendOk(DEBUG_LOCATION);
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 2);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
 }
 
-TEST_P(XdsFallbackTest, DISABLED_PerAuthorityFallback) {
+TEST_P(XdsFallbackTest, PerAuthorityFallback) {
+  auto fallback_balancer2 = CreateAndStartBalancer("Fallback for Authority2");
+  // Use cleanup in case test assertion fails
+  auto balancer2_cleanup =
+      absl::MakeCleanup([&]() { fallback_balancer2->Shutdown(); });
   grpc_core::testing::ScopedEnvVar fallback_enabled(
       "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
   grpc_core::testing::ScopedExperimentalEnvVar env_var(
       "GRPC_EXPERIMENTAL_XDS_FEDERATION");
-  const char* kAuthority = "xds.example.com";
-  const char* kNewServerName = "whee%/server.example.com";
-  const char* kNewListenerName =
-      "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
-      "whee%25/server.example.com";
-  const char* kNewRouteConfigName =
-      "xdstp://xds.example.com/envoy.config.route.v3.RouteConfiguration/"
-      "new_route_config_name";
-  const char* kNewClusterName =
-      "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
-      "cluster_name";
-  const char* kNewEdsServiceName =
-      "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
-      "edsservice_name";
-
-  std::string xds_server =
-      absl::StrCat("localhost:", fallback_balancer_->port());
+  const char* kAuthority1 = "xds1.example.com";
+  const char* kAuthority2 = "xds2.example.com";
+  constexpr absl::string_view kServer1Name = "server1.example.com";
+  constexpr absl::string_view kServer2Name = "server2.example.com";
+  // Authority1 uses balancer_ and fallback_balancer_
+  // Authority2 uses balancer_ and fallback_balancer2
   XdsBootstrapBuilder builder;
-  builder.SetServers({xds_server});
-  builder.AddAuthority(kAuthority, xds_server);
+  builder.SetServers({balancer_->address()});
+  builder.AddAuthority(kAuthority1,
+                       {balancer_->address(), fallback_balancer_->address()});
+  builder.AddAuthority(kAuthority2,
+                       {balancer_->address(), fallback_balancer2->address()});
   InitClient(builder);
-  CreateAndStartBackends(1);
-
-  ConfigureAuthority(
-      kNewEdsServiceName, kNewClusterName, kNewRouteConfigName,
-      kNewListenerName,
-      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}}));
-
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  fallback_balancer_->ads_service()->SetEdsResource(
-      BuildEdsResource(args, kNewEdsServiceName));
-  // New cluster
-  Cluster new_cluster = default_cluster_;
-  new_cluster.set_name(kNewClusterName);
-  new_cluster.mutable_eds_cluster_config()->set_service_name(
-      kNewEdsServiceName);
-  fallback_balancer_->ads_service()->SetCdsResource(new_cluster);
-  // New Route
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.set_name(kNewRouteConfigName);
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->set_cluster(kNewClusterName);
-  // New Listener
-  Listener listener = default_listener_;
-  listener.set_name(kNewListenerName);
-  SetListenerAndRouteConfiguration(fallback_balancer_.get(), listener,
-                                   new_route_config);
+  CreateAndStartBackends(4);
+  ConfigureAuthority(fallback_balancer_.get(), kAuthority1, kServer1Name, 0);
+  ConfigureAuthority(fallback_balancer2.get(), kAuthority2, kServer2Name, 1);
+  ConfigureAuthority(balancer_.get(), kAuthority1, kServer1Name, 2);
+  ConfigureAuthority(balancer_.get(), kAuthority2, kServer2Name, 3);
+  // Primary balancer is down, using the fallback servers
+  balancer_->ads_service()->ForceADSFailure(
+      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   // Create second channel to new target URI and send 1 RPC.
-  auto channel2 =
-      CreateChannel(/*failover_timeout_ms=*/0, kNewServerName, kAuthority);
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  RpcOptions().SetupRpc(&context, &request);
-  EchoResponse response;
-  grpc::Status status = stub2->Echo(&context, request, &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(1U, backends_[0]->backend_service()->request_count());
+  auto authority1_stub = grpc::testing::EchoTestService::NewStub(CreateChannel(
+      /*failover_timeout_ms=*/0,
+      absl::StrFormat("whee%%/%s", kServer1Name).c_str(), kAuthority1));
+  auto authority2_stub = grpc::testing::EchoTestService::NewStub(CreateChannel(
+      /*failover_timeout_ms=*/0,
+      absl::StrFormat("whee%%/%s", kServer2Name).c_str(), kAuthority2));
+  ExpectBackendCall(authority1_stub.get(), 0, DEBUG_LOCATION);
+  ExpectBackendCall(authority2_stub.get(), 1, DEBUG_LOCATION);
+  // Primary balancer is up, its data will be used now.
+  balancer_->ads_service()->ClearADSFailure();
+  auto deadline = absl::Now() + absl::Seconds(5);
+  while (absl::Now() < deadline &&
+         (backends_[2]->backend_service()->request_count() == 0 ||
+          backends_[3]->backend_service()->request_count() == 0)) {
+    ClientContext context;
+    EchoRequest request;
+    EchoResponse response;
+    RpcOptions().SetupRpc(&context, &request);
+    Status status = authority1_stub->Echo(&context, request, &response);
+    EXPECT_TRUE(status.ok()) << "Code: " << status.error_code()
+                             << ", message: " << status.error_message();
+    ClientContext context2;
+    EchoRequest request2;
+    EchoResponse response2;
+    RpcOptions().SetupRpc(&context2, &request2);
+    status = authority2_stub->Echo(&context2, request2, &response2);
+    EXPECT_TRUE(status.ok()) << "Code: " << status.error_code()
+                             << ", message: " << status.error_message();
+  }
+  ASSERT_LE(1U, backends_[2]->backend_service()->request_count());
+  ASSERT_LE(1U, backends_[3]->backend_service()->request_count());
 }
 
 TEST_P(XdsFallbackTest, DISABLED_FallbackAfterSetup) {

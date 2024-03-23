@@ -81,7 +81,7 @@ class AdsServiceImpl
       : check_first_request_(std::move(check_first_request)),
         check_nack_status_code_(std::move(check_nack_status_code)),
         debug_label_(absl::StrFormat(
-            "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label_)) {}
+            "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label)) {}
 
   void set_wrap_resources(bool wrap_resources) {
     grpc_core::MutexLock lock(&ads_mu_);
