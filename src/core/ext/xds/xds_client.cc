@@ -555,6 +555,40 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
   }
 }
 
+bool XdsClient::XdsChannel::MaybeFallbackLocked(
+    const std::string& authority, AuthorityState& authority_state) {
+  if (!xds_client_->HasUncachedResources(authority_state)) {
+    return false;
+  }
+  std::vector<const XdsBootstrap::XdsServer*> xds_servers;
+  if (authority != kOldStyleAuthority) {
+    xds_servers =
+        xds_client_->bootstrap().LookupAuthority(authority)->servers();
+  }
+  if (xds_servers.empty()) xds_servers = xds_client_->bootstrap().servers();
+  for (size_t i = authority_state.xds_channels.size(); i < xds_servers.size();
+       ++i) {
+    authority_state.xds_channels.emplace_back(
+        xds_client_->GetOrCreateXdsChannelLocked(*xds_servers[i], "fallback"));
+    for (const auto& type_resource : authority_state.resource_map) {
+      for (const auto& key_state : type_resource.second) {
+        authority_state.xds_channels.back()->SubscribeLocked(
+            type_resource.first, {authority, key_state.first});
+      }
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] authority %s: added fallback server %s (%s)",
+              this, authority.c_str(), xds_servers[i]->server_uri().c_str(),
+              authority_state.xds_channels.back()->status().ToString().c_str());
+    }
+    if (authority_state.xds_channels.back()->status().ok()) return true;
+  }
+  gpr_log(GPR_INFO, "[xds_client %p] authority %s: No fallback server", this,
+          authority.c_str());
+  return false;
+}
+
 void XdsClient::XdsChannel::SetHealthyLocked() {
   status_ = absl::OkStatus();
   // Make this channel active iff:
@@ -563,7 +597,6 @@ void XdsClient::XdsChannel::SetHealthyLocked() {
   // channel)
   for (auto& authority : xds_client_->authority_state_map_) {
     auto& channels = authority.second.xds_channels;
-    if (channels.empty()) continue;
     // Skip if channel is active.
     if (channels.back() == this) continue;
     auto channel_it = std::find(channels.begin(), channels.end(), this);
@@ -608,7 +641,7 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
   for (auto& a : xds_client_->authority_state_map_) {  // authority
     if (a.second.xds_channels.empty() || a.second.xds_channels.back() != this ||
-        xds_client_->MaybeFallbackLocked(a.first, a.second)) {
+        MaybeFallbackLocked(a.first, a.second)) {
       continue;
     }
     for (const auto& t : a.second.resource_map) {  // type
@@ -1608,44 +1641,6 @@ bool XdsClient::HasUncachedResources(const AuthorityState& authority_state) {
       }
     }
   }
-  return false;
-}
-
-bool XdsClient::MaybeFallbackLocked(const std::string& authority,
-                                    AuthorityState& authority_state) {
-  if (!HasUncachedResources(authority_state)) {
-    return false;
-  }
-  std::vector<const XdsBootstrap::XdsServer*> xds_servers;
-  if (authority != kOldStyleAuthority) {
-    xds_servers = bootstrap().LookupAuthority(authority)->servers();
-  }
-  if (xds_servers.empty()) xds_servers = bootstrap().servers();
-  for (size_t i = authority_state.xds_channels.size(); i < xds_servers.size();
-       ++i) {
-    authority_state.xds_channels.emplace_back(
-        GetOrCreateXdsChannelLocked(*xds_servers[i], "fallback"));
-    for (const auto& type_resource : authority_state.resource_map) {
-      for (const auto& key_state : type_resource.second) {
-        gpr_log(GPR_INFO, "[xds_client %p] xds server %s, subscribing to %s %s",
-                this, xds_servers[i]->server_uri().c_str(),
-                std::string(type_resource.first->type_url()).c_str(),
-                key_state.first.id.c_str());
-        authority_state.xds_channels.back()->SubscribeLocked(
-            type_resource.first, {authority, key_state.first});
-      }
-    }
-    if (authority_state.xds_channels.back()->status().ok()) {
-      gpr_log(GPR_INFO, "[xds_client %p] Performed fallback to %s", this,
-              xds_servers[i]->server_uri().c_str());
-      return true;
-    } else {
-      gpr_log(GPR_ERROR, "Fallback channel %s is in state %s",
-              xds_servers[i]->server_uri().c_str(),
-              authority_state.xds_channels.back()->status().ToString().c_str());
-    }
-  }
-  gpr_log(GPR_INFO, "[xds_client %p] No fallback server", this);
   return false;
 }
 

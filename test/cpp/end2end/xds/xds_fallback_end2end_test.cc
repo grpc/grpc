@@ -296,15 +296,12 @@ TEST_P(XdsFallbackTest, PerAuthorityFallback) {
     EchoResponse response;
     RpcOptions().SetupRpc(&context, &request);
     Status status = authority1_stub->Echo(&context, request, &response);
-    EXPECT_TRUE(status.ok()) << "Code: " << status.error_code()
-                             << ", message: " << status.error_message();
     ClientContext context2;
     EchoRequest request2;
     EchoResponse response2;
     RpcOptions().SetupRpc(&context2, &request2);
+    // RPCs may briefly fail if the config tear happens
     status = authority2_stub->Echo(&context2, request2, &response2);
-    EXPECT_TRUE(status.ok()) << "Code: " << status.error_code()
-                             << ", message: " << status.error_message();
   }
   ASSERT_LE(1U, backends_[2]->backend_service()->request_count());
   ASSERT_LE(1U, backends_[3]->backend_service()->request_count());

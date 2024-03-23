@@ -201,6 +201,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     }
   };
 
+  struct AuthorityState;
+
   struct XdsResourceName {
     std::string authority;
     XdsResourceKey key;
@@ -246,6 +248,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
+    // Attempts to find a suitable Xds fallback server. Returns true if
+    // a connection to a suitable server had been established.
+    bool MaybeFallbackLocked(const std::string& authority,
+                             XdsClient::AuthorityState& authority_state)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void SetHealthyLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     void OnConnectivityFailure(absl::Status status);
 
@@ -344,12 +351,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   bool HasUncachedResources(const AuthorityState& authority_state);
-
-  // Attempts to find a suitable Xds fallback server. Returns true if
-  // a connection to a suitable server had been established.
-  bool MaybeFallbackLocked(const std::string& authority,
-                           AuthorityState& authority_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<XdsTransportFactory> transport_factory_;
