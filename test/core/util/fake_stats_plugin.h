@@ -389,11 +389,11 @@ class FakeStatsPlugin : public StatsPlugin {
 
   ClientCallTracer* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
-      std::shared_ptr<StatsPlugin::ScopeConfig> scope_config) override {
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }
   ServerCallTracer* GetServerCallTracer(
-      std::shared_ptr<StatsPlugin::ScopeConfig> scope_config) override {
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }
 
