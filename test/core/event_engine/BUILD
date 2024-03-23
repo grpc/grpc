@@ -161,6 +161,7 @@ grpc_cc_library(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc",
     ],
 )
 
@@ -174,7 +175,7 @@ grpc_cc_library(
         "absl/status:statusor",
         "gtest",
     ],
-    deps = ["//:event_engine_base_hdrs"],
+    deps = ["//:event_engine_base_hdrs", "//:grpc",],
 )
 
 grpc_cc_test(
