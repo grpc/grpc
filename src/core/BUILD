@@ -4468,6 +4468,456 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise_based_filter",
+    srcs = [
+        "lib/channel/promise_based_filter.cc",
+    ],
+    hdrs = [
+        "lib/channel/promise_based_filter.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/container:inlined_vector",
+        "absl/functional:function_ref",
+        "absl/meta:type_traits",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "activity",
+        "arena",
+        "arena_promise",
+        "call",
+        "call_filters",
+        "call_finalization",
+        "channel_args",
+        "channel_fwd",
+        "closure",
+        "context",
+        "default_event_engine",
+        "error",
+        "error_utils",
+        "event_engine_context",
+        "gpr_manual_constructor",
+        "legacy_channel_stack",
+        "metadata_batch",
+        "pipe",
+        "poll",
+        "race",
+        "seq",
+        "slice",
+        "slice_buffer",
+        "status_helper",
+        "time",
+        "transport",
+        "try_seq",
+        "//:call_combiner",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:legacy_context",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
+    name = "call",
+    srcs = [
+        "lib/surface/call.cc",
+        "lib/surface/call_log_batch.cc",
+    ],
+    hdrs = [
+        "lib/surface/call.h",
+        "lib/surface/call_test_only.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "activity",
+        "arena",
+        "call_spine",
+        "channel_fwd",
+        "closure",
+        "completion_queue",
+        "compression",
+        "context",
+        "error",
+        "error_utils",
+        "experiments",
+        "gpr_atm",
+        "iomgr_fwd",
+        "legacy_channel_stack",
+        "metadata_batch",
+        "pipe",
+        "poll",
+        "ref_counted",
+        "server_interface",
+        "slice",
+        "slice_buffer",
+        "stats_data",
+        "status_flag",
+        "status_helper",
+        "time",
+        "transport",
+        "validate_metadata",
+        "wait_for_cq_end_op",
+        "//:api_trace",
+        "//:call_combiner",
+        "//:call_tracer",
+        "//:channel",
+        "//:channelz",
+        "//:cpp_impl_of",
+        "//:debug_location",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:legacy_context",
+        "//:ref_counted_ptr",
+        "//:stats",
+    ],
+)
+
+grpc_cc_library(
+    name = "validate_metadata",
+    srcs = [
+        "lib/surface/validate_metadata.cc",
+    ],
+    hdrs = [
+        "lib/surface/validate_metadata.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "bitset",
+        "error",
+        "slice",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "completion_queue",
+    srcs = [
+        "//src/core:lib/surface/completion_queue.cc",
+        "//src/core:lib/surface/completion_queue_factory.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/surface/completion_queue.h",
+        "//src/core:lib/surface/completion_queue_factory.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "atomic_utils",
+        "closure",
+        "error",
+        "event_string",
+        "experiments",
+        "gpr_atm",
+        "gpr_manual_constructor",
+        "gpr_spinlock",
+        "iomgr_fwd",
+        "ref_counted",
+        "stats_data",
+        "status_helper",
+        "time",
+        "//:api_trace",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:stats",
+    ],
+)
+
+grpc_cc_library(
+    name = "status_util",
+    srcs = [
+        "lib/channel/status_util.cc",
+    ],
+    hdrs = [
+        "lib/channel/status_util.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+    ],
+    deps = [
+        "useful",
+        "//:gpr_platform",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_stack_builder_impl",
+    srcs = [
+        "lib/channel/channel_stack_builder_impl.cc",
+    ],
+    hdrs = [
+        "lib/channel/channel_stack_builder_impl.h",
+    ],
+    external_deps = ["absl/status:statusor"],
+    deps = [
+        "channel_fwd",
+        "error",
+        "error_utils",
+        "legacy_channel_stack",
+        "//:channel_stack_builder",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "connected_channel",
+    srcs = [
+        "lib/channel/connected_channel.cc",
+    ],
+    hdrs = [
+        "lib/channel/connected_channel.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+    ],
+    deps = [
+        "1999",
+        "activity",
+        "arena",
+        "arena_promise",
+        "call",
+        "call_finalization",
+        "channel_args",
+        "channel_fwd",
+        "channel_stack_type",
+        "closure",
+        "context",
+        "error",
+        "error_utils",
+        "experiments",
+        "for_each",
+        "if",
+        "latch",
+        "legacy_channel_stack",
+        "loop",
+        "map",
+        "metadata_batch",
+        "pipe",
+        "poll",
+        "promise_status",
+        "race",
+        "seq",
+        "slice",
+        "slice_buffer",
+        "time",
+        "transport",
+        "try_seq",
+        "//:call_combiner",
+        "//:call_trace",
+        "//:channel_stack_builder",
+        "//:config",
+        "//:debug_location",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:orphanable",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "b64",
+    srcs = [
+        "lib/slice/b64.cc",
+    ],
+    hdrs = [
+        "lib/slice/b64.h",
+    ],
+    deps = [
+        "slice",
+        "useful",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "event_string",
+    srcs = [
+        "lib/surface/event_string.cc",
+    ],
+    hdrs = [
+        "lib/surface/event_string.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    tags = [
+        "nofixdeps",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "wait_for_cq_end_op",
+    srcs = [
+        "lib/surface/wait_for_cq_end_op.cc",
+    ],
+    hdrs = [
+        "lib/surface/wait_for_cq_end_op.h",
+    ],
+    deps = [
+        "activity",
+        "completion_queue",
+        "match",
+        "promise_trace",
+        "//:exec_ctx",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_details",
+    srcs = [
+        "lib/surface/call_details.cc",
+    ],
+    deps = [
+        "slice",
+        "//:api_trace",
+        "//:exec_ctx",
+        "//:gpr_platform",
+        "//:grpc_trace",
+        "//:grpc_unsecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "version",
+    srcs = [
+        "lib/surface/version.cc",
+    ],
+    deps = [
+        "//:gpr_platform",
+        "//:grpc",
+    ],
+)
+
+grpc_cc_library(
+    name = "transport",
+    srcs = [
+        "lib/transport/transport.cc",
+        "lib/transport/transport_op_string.cc",
+    ],
+    hdrs = [
+        "lib/transport/transport.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/types:optional",
+    ],
+    deps = [
+        "arena",
+        "arena_promise",
+        "call_destination",
+        "call_final_info",
+        "call_spine",
+        "channel_fwd",
+        "closure",
+        "connectivity_state",
+        "context",
+        "default_event_engine",
+        "error",
+        "error_utils",
+        "for_each",
+        "iomgr_fwd",
+        "latch",
+        "message",
+        "metadata",
+        "metadata_batch",
+        "pipe",
+        "ref_counted",
+        "slice",
+        "slice_buffer",
+        "status_helper",
+        "time",
+        "transport_fwd",
+        "try_seq",
+        "//:call_combiner",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:legacy_context",
+        "//:orphanable",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
+    name = "legacy_channel_stack",
+    srcs = [
+        "lib/channel/channel_stack.cc",
+    ],
+    hdrs = [
+        "lib/channel/channel_stack.h",
+    ],
+    deps = [
+        "arena",
+        "arena_promise",
+        "call_final_info",
+        "channel_args",
+        "channel_fwd",
+        "channel_init",
+        "channel_stack_trace",
+        "closure",
+        "error",
+        "gpr_manual_constructor",
+        "metrics",
+        "time",
+        "transport",
+        "//:call_combiner",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+        "//:grpc_trace",
+        "//:iomgr",
+        "//:legacy_context",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_deadline_filter",
     srcs = [
         "ext/filters/deadline/deadline_filter.cc",
@@ -4562,17 +5012,19 @@ grpc_cc_library(
         "json_args",
         "json_object_loader",
         "latch",
+        "legacy_channel_stack",
         "metadata_batch",
+        "promise_based_filter",
         "race",
         "service_config_parser",
         "slice",
         "slice_buffer",
+        "transport",
         "validation_errors",
         "//:call_trace",
         "//:channel_arg_names",
         "//:config",
         "//:gpr",
-        "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//:legacy_context",

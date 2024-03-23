@@ -22,36 +22,15 @@
 
 #include <string.h>
 
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <string>
-#include <utility>
 #include <vector>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/poll.h"
-#include "src/core/lib/surface/call_trace.h"
-#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 

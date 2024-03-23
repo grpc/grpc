@@ -39,7 +39,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_finalization.h"

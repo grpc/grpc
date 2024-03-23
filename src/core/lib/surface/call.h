@@ -24,8 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -35,23 +33,19 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server_interface.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/call_spine.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
