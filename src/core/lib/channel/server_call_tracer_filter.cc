@@ -16,6 +16,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/server_call_tracer_filter.h"
+
 #include <functional>
 #include <utility>
 

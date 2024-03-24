@@ -1160,6 +1160,7 @@ let package = Package(
         "src/core/lib/channel/promise_based_filter.cc",
         "src/core/lib/channel/promise_based_filter.h",
         "src/core/lib/channel/server_call_tracer_filter.cc",
+        "src/core/lib/channel/server_call_tracer_filter.h",
         "src/core/lib/channel/status_util.cc",
         "src/core/lib/channel/status_util.h",
         "src/core/lib/channel/tcp_tracer.h",

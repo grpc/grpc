@@ -114,6 +114,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
+    Options& add_optional_label(absl::string_view optional_label_key) {
+      optional_label_keys.emplace(optional_label_key);
+      return *this;
+    }
+
     absl::flat_hash_set<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
@@ -135,6 +140,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::vector<
         std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
         plugin_options;
+    absl::flat_hash_set<absl::string_view> optional_label_keys;
   };
 
   // Note that we can't use SetUp() here since we want to send in parameters.
@@ -147,6 +153,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   void SendRPC();
   void SendGenericRPC();
 
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
+  BuildAndRegisterOpenTelemetryPlugin(
+      OpenTelemetryPluginEnd2EndTest::Options options);
+
   absl::flat_hash_map<
       std::string,
       std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
@@ -155,7 +165,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
           bool(const absl::flat_hash_map<
                std::string,
                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
-          continue_predicate);
+          continue_predicate,
+      opentelemetry::sdk::metrics::MetricReader* reader = nullptr);
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
