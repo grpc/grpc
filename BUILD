@@ -1695,7 +1695,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
-        "config",
         "gpr",
         "legacy_context",
         "tcp_tracer",
