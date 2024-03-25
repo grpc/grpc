@@ -1229,7 +1229,7 @@ absl::Status grpc_server_add_passive_listener(
   passive_listener->listener_ =
       grpc_core::Chttp2ServerListener::CreateForPassiveListener(
           server, args, passive_listener);
-  passive_listener->server_ = server;
+  passive_listener->server_ = server->Ref();
 
   return absl::OkStatus();
 }
