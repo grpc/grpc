@@ -89,12 +89,17 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
             status.ToString().c_str());
     return status;
   }
-  // TODO(roth): Figure out how to populate authority here.
-  // Or maybe just don't worry about this if no one needs it until after
-  // the call v3 stack lands.
-  StatsPlugin::ChannelScope scope(builder.target(), "");
-  *(*r)->stats_plugin_group =
-      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+    *(*r)->stats_plugin_group =
+        GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  } else {
+    // TODO(roth): Figure out how to populate authority here.
+    // Or maybe just don't worry about this if no one needs it until after
+    // the call v3 stack lands.
+    StatsPlugin::ChannelScope scope(target, "");
+    *(*r)->stats_plugin_group =
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+  }
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
       builder.IsPromising(), std::move(target), args, std::move(*r));

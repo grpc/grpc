@@ -1084,7 +1084,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   const absl::string_view kOptionalLabelValues[] = {kLocalityName};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>(
       nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.push_back(stats_plugin);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};

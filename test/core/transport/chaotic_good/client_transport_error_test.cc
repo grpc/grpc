@@ -37,6 +37,7 @@
 #include <grpc/status.h>
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"

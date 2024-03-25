@@ -204,6 +204,8 @@ std::string MakeLabelString(
 
 class FakeStatsPlugin : public StatsPlugin {
  public:
+  class ScopeConfig : public StatsPlugin::ScopeConfig {};
+
   explicit FakeStatsPlugin(
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
           channel_filter = nullptr,
@@ -266,13 +268,16 @@ class FakeStatsPlugin : public StatsPlugin {
         });
   }
 
-  bool IsEnabledForChannel(const ChannelScope& scope) const override {
-    if (channel_filter_ == nullptr) return true;
-    return channel_filter_(scope);
+  std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
+  IsEnabledForChannel(const ChannelScope& scope) const override {
+    if (channel_filter_ == nullptr || channel_filter_(scope)) {
+      return {true, nullptr};
+    }
+    return {false, nullptr};
   }
-
-  bool IsEnabledForServer(const ChannelArgs& /*args*/) const override {
-    return false;
+  std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& /*args*/) const override {
+    return {true, nullptr};
   }
 
   void AddCounter(
@@ -380,6 +385,16 @@ class FakeStatsPlugin : public StatsPlugin {
     gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::RemoveCallback(%p)", this,
             callback);
     callbacks_.erase(callback);
+  }
+
+  ClientCallTracer* GetClientCallTracer(
+      const Slice& /*path*/, bool /*registered_method*/,
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return nullptr;
+  }
+  ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return nullptr;
   }
 
   absl::optional<uint64_t> GetCounterValue(

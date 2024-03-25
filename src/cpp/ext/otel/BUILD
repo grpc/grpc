@@ -31,14 +31,13 @@ package(
 grpc_cc_library(
     name = "otel_plugin",
     srcs = [
-        "otel_client_filter.cc",
+        "otel_client_call_tracer.cc",
         "otel_plugin.cc",
         "otel_server_call_tracer.cc",
     ],
     hdrs = [
         "key_value_iterable.h",
-        "otel_call_tracer.h",
-        "otel_client_filter.h",
+        "otel_client_call_tracer.h",
         "otel_plugin.h",
         "otel_server_call_tracer.h",
         "//:include/grpcpp/ext/otel_plugin.h",
@@ -77,6 +76,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:metadata_batch",
+        "//src/core:metrics",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],

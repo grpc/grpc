@@ -122,17 +122,17 @@ namespace {
 
 template <typename HandleType>
 absl::optional<HandleType> FindInstrument(
-    const absl::flat_hash_map<
-        absl::string_view,
-        GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>& instruments,
+    const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+        instruments,
     absl::string_view name, GlobalInstrumentsRegistry::ValueType value_type,
     GlobalInstrumentsRegistry::InstrumentType instrument_type) {
-  auto it = instruments.find(name);
-  if (it != instruments.end() && it->second.value_type == value_type &&
-      it->second.instrument_type == instrument_type) {
-    HandleType handle;
-    handle.index = it->second.index;
-    return handle;
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name && descriptor.value_type == value_type &&
+        descriptor.instrument_type == instrument_type) {
+      HandleType handle;
+      handle.index = descriptor.index;
+      return handle;
+    }
   }
   return absl::nullopt;
 }
@@ -216,9 +216,11 @@ GlobalInstrumentsRegistryTestPeer::FindCallbackDoubleGaugeHandleByName(
 GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
 GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
     absl::string_view name) {
-  auto& instruments = GlobalInstrumentsRegistry::GetInstrumentList();
-  auto it = instruments.find(name);
-  if (it != instruments.end()) return &it->second;
+  for (auto& descriptor : GlobalInstrumentsRegistry::GetInstrumentList()) {
+    if (descriptor.name == name) {
+      return &descriptor;
+    }
+  }
   return nullptr;
 }
 
