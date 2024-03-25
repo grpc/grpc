@@ -119,6 +119,9 @@ grpc_cc_library(
     srcs = [
         "lib/channel/server_call_tracer_filter.cc",
     ],
+    hdrs = [
+        "lib/channel/server_call_tracer_filter.h",
+    ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
@@ -592,7 +595,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "context",
-        "default_event_engine",
+        "event_engine_context",
         "poll",
         "time",
         "//:event_engine_base_hdrs",
@@ -906,6 +909,7 @@ grpc_cc_library(
         "atomic_utils",
         "construct_destruct",
         "context",
+        "event_engine_context",
         "no_destruct",
         "poll",
         "promise_factory",
@@ -2609,6 +2613,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "event_engine_context",
+    hdrs = [
+        "lib/event_engine/event_engine_context.h",
+    ],
+    visibility = [
+        "@grpc:alt_grpc_base_legacy",
+    ],
+    deps = [
+        "context",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "default_event_engine",
     srcs = [
         "lib/event_engine/default_event_engine.cc",
@@ -2622,7 +2641,6 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "context",
         "default_event_engine_factory",
         "event_engine_trace",
         "no_destruct",
@@ -3549,6 +3567,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "event_engine_context",
         "grpc_server_config_selector",
         "grpc_service_config",
         "metadata_batch",
@@ -5060,6 +5079,7 @@ grpc_cc_library(
         "load_file",
         "match",
         "metadata_batch",
+        "metrics",
         "pollset_set",
         "protobuf_any_upb",
         "protobuf_duration_upb",
@@ -7442,10 +7462,10 @@ grpc_cc_library(
         "chaotic_good_settings_metadata",
         "closure",
         "context",
-        "default_event_engine",
         "error",
         "error_utils",
         "event_engine_common",
+        "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
@@ -7531,6 +7551,7 @@ grpc_cc_library(
         "//:api_trace",
         "//:channel",
         "//:channel_create",
+        "//:config",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
@@ -7562,10 +7583,14 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "arena",
         "channel_args",
         "no_destruct",
+        "slice",
         "time",
+        "//:call_tracer",
         "//:gpr",
+        "//:legacy_context",
     ],
 )
 

@@ -16,7 +16,7 @@
 
 #include "src/core/lib/channel/metrics.h"
 
-#include "absl/container/flat_hash_map.h"
+#include <memory>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -24,11 +24,10 @@ namespace grpc_core {
 
 // Uses the Construct-on-First-Use idiom to avoid the static initialization
 // order fiasco.
-absl::flat_hash_map<absl::string_view,
-                    GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
 GlobalInstrumentsRegistry::GetInstrumentList() {
-  static NoDestruct<absl::flat_hash_map<
-      absl::string_view, GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>>
+  static NoDestruct<
+      std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>>
       instruments;
   return *instruments;
 }
@@ -40,8 +39,11 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -56,7 +58,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalUInt64CounterHandle handle;
   handle.index = index;
   return handle;
@@ -69,8 +71,11 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -85,7 +90,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalDoubleCounterHandle handle;
   handle.index = index;
   return handle;
@@ -98,8 +103,11 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -114,7 +122,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalUInt64HistogramHandle handle;
   handle.index = index;
   return handle;
@@ -127,8 +135,11 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -143,7 +154,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalDoubleHistogramHandle handle;
   handle.index = index;
   return handle;
@@ -156,8 +167,11 @@ GlobalInstrumentsRegistry::RegisterInt64Gauge(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -172,7 +186,7 @@ GlobalInstrumentsRegistry::RegisterInt64Gauge(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalInt64GaugeHandle handle;
   handle.index = index;
   return handle;
@@ -185,8 +199,11 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -201,7 +218,7 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalDoubleGaugeHandle handle;
   handle.index = index;
   return handle;
@@ -214,8 +231,11 @@ GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -230,7 +250,7 @@ GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalCallbackInt64GaugeHandle handle;
   handle.index = index;
   return handle;
@@ -243,8 +263,11 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
     absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
-  if (instruments.find(name) != instruments.end()) {
-    Crash(absl::StrFormat("Metric name %s has already been registered.", name));
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      Crash(
+          absl::StrFormat("Metric name %s has already been registered.", name));
+    }
   }
   uint32_t index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
@@ -259,7 +282,7 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
   descriptor.label_keys = {label_keys.begin(), label_keys.end()};
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
-  instruments.emplace(name, std::move(descriptor));
+  instruments.push_back(std::move(descriptor));
   GlobalCallbackDoubleGaugeHandle handle;
   handle.index = index;
   return handle;
@@ -268,8 +291,14 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
 void GlobalInstrumentsRegistry::ForEach(
     absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f) {
   for (const auto& instrument : GetInstrumentList()) {
-    f(instrument.second);
+    f(instrument);
   }
+}
+
+const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
+GlobalInstrumentsRegistry::GetInstrumentDescriptor(
+    GlobalInstrumentHandle handle) {
+  return GetInstrumentList().at(handle.index);
 }
 
 RegisteredMetricCallback::RegisteredMetricCallback(
@@ -281,14 +310,14 @@ RegisteredMetricCallback::RegisteredMetricCallback(
       callback_(std::move(callback)),
       metrics_(std::move(metrics)),
       min_interval_(min_interval) {
-  for (auto& plugin : stats_plugin_group_.plugins_) {
-    plugin->AddCallback(this);
+  for (auto& state : stats_plugin_group_.plugins_state_) {
+    state.plugin->AddCallback(this);
   }
 }
 
 RegisteredMetricCallback::~RegisteredMetricCallback() {
-  for (auto& plugin : stats_plugin_group_.plugins_) {
-    plugin->RemoveCallback(this);
+  for (auto& state : stats_plugin_group_.plugins_state_) {
+    state.plugin->RemoveCallback(this);
   }
 }
 
@@ -299,6 +328,28 @@ GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
     Duration min_interval) {
   return std::make_unique<RegisteredMetricCallback>(
       *this, std::move(callback), std::move(metrics), min_interval);
+}
+
+void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
+    const Slice& path, bool registered_method,
+    grpc_call_context_element* call_context) {
+  for (auto& state : plugins_state_) {
+    auto* call_tracer = state.plugin->GetClientCallTracer(
+        path, registered_method, state.scope_config);
+    if (call_tracer != nullptr) {
+      AddClientCallTracerToContext(call_context, call_tracer);
+    }
+  }
+}
+
+void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
+    grpc_call_context_element* call_context) {
+  for (auto& state : plugins_state_) {
+    auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
+    if (call_tracer != nullptr) {
+      AddServerCallTracerToContext(call_context, call_tracer);
+    }
+  }
 }
 
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;
@@ -317,8 +368,26 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
   MutexLock lock(&*mutex_);
   StatsPluginGroup group;
   for (const auto& plugin : *plugins_) {
-    if (plugin->IsEnabledForChannel(scope)) {
-      group.push_back(plugin);
+    bool is_enabled = false;
+    std::shared_ptr<StatsPlugin::ScopeConfig> config;
+    std::tie(is_enabled, config) = plugin->IsEnabledForChannel(scope);
+    if (is_enabled) {
+      group.AddStatsPlugin(plugin, std::move(config));
+    }
+  }
+  return group;
+}
+
+GlobalStatsPluginRegistry::StatsPluginGroup
+GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
+  MutexLock lock(&*mutex_);
+  StatsPluginGroup group;
+  for (const auto& plugin : *plugins_) {
+    bool is_enabled = false;
+    std::shared_ptr<StatsPlugin::ScopeConfig> config;
+    std::tie(is_enabled, config) = plugin->IsEnabledForServer(args);
+    if (is_enabled) {
+      group.AddStatsPlugin(plugin, std::move(config));
     }
   }
   return group;
