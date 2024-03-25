@@ -40,6 +40,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
@@ -519,6 +520,7 @@ class Server : public ServerInterface,
   uint64_t next_connection_id_ ABSL_GUARDED_BY(mu_global_) = 0;
   ServerConnectionSet channels_ ABSL_GUARDED_BY(mu_global_);
   std::atomic<size_t> num_channels_{0};
+  const grpc_compression_options compression_options_;
 
   std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;

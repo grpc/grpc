@@ -4545,6 +4545,7 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "all_ok",
         "arena",
         "call_spine",
         "channel_fwd",

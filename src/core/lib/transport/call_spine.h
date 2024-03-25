@@ -325,6 +325,8 @@ class CallHandler {
     return spine_->legacy_context(index);
   }
 
+  std::string DebugTag() { return spine_->DebugTag(); }
+
  private:
   RefCountedPtr<CallSpine> spine_;
 };

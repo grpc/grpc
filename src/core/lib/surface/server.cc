@@ -1496,7 +1496,7 @@ void Server::MatchThenPublish(CallHandler call_handler, size_t cq_idx) {
           *rc->call = call;
           grpc_call_ref(*rc->call);
           grpc_call_set_completion_queue(call, rc->cq_bound_to_call);
-          call_context->server_call_context()->PublishInitialMetadata(
+          GetContext<ServerCallContext>()->PublishInitialMetadata(
               std::move(md), rc->initial_metadata);
           // TODO(ctiller): publish metadata
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),

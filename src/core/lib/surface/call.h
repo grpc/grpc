@@ -72,15 +72,140 @@ typedef struct grpc_call_create_args {
 
 namespace grpc_core {
 
-class CallContext {
+class Call : public CppImplOf<Call, grpc_call> {
  public:
+  grpc_compression_algorithm test_only_compression_algorithm() {
+    return incoming_compression_algorithm();
+  }
+  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+
+  virtual Arena* arena() = 0;
+  virtual void ContextSet(grpc_context_index elem, void* value,
+                          void (*destroy)(void* value)) = 0;
+  virtual void* ContextGet(grpc_context_index elem) const = 0;
+  virtual bool Completed() = 0;
+  void CancelWithStatus(grpc_status_code status, const char* description);
+  virtual void CancelWithError(grpc_error_handle error) = 0;
+  virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
+  virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
+                                     void* notify_tag,
+                                     bool is_notify_tag_closure) = 0;
+  virtual bool failed_before_recv_message() const = 0;
+  virtual bool is_trailers_only() const = 0;
+  virtual absl::string_view GetServerAuthority() const = 0;
+  virtual void ExternalRef() = 0;
+  virtual void ExternalUnref() = 0;
+  virtual void InternalRef(const char* reason) = 0;
+  virtual void InternalUnref(const char* reason) = 0;
+  virtual char* GetPeer() = 0;
+
+  // Return the EventEngine used for this call's async execution.
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
+
+  CompressionAlgorithmSet encodings_accepted_by_peer() {
+    return encodings_accepted_by_peer_;
+  }
+
+ protected:
+  void NoteLastMessageFlags(uint32_t flags) {
+    test_only_last_message_flags_ = flags;
+  }
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+  void set_incoming_compression_algorithm(
+      grpc_compression_algorithm algorithm) {
+    incoming_compression_algorithm_ = algorithm;
+  }
+  void set_encodings_accepted_by_peer(CompressionAlgorithmSet encodings) {
+    encodings_accepted_by_peer_ = encodings;
+  }
+  CompressionAlgorithmSet encodings_accepted_by_peer() const {
+    return encodings_accepted_by_peer_;
+  }
+
+  void PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                      const grpc_compression_options& copt,
+                                      grpc_metadata_batch& md);
+
  private:
+  // Compression algorithm for *incoming* data
+  grpc_compression_algorithm incoming_compression_algorithm_ =
+      GRPC_COMPRESS_NONE;
+  // Supported encodings (compression algorithms), a bitset.
+  // Always support no compression.
+  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
+  uint32_t test_only_last_message_flags_ = 0;
+};
+
+class ClientCall : public Call {};
+
+class ServerCall final : public Call {
+ public:
+  static ServerCall* MakeServerCall(CallHandler call_handler,
+                                    ServerInterface* server);
+
+  Arena* arena() override { return call_handler_.arena(); }
+  void ContextSet(grpc_context_index elem, void* value,
+                  void (*destroy)(void* value)) override {
+    call_handler_.legacy_context(elem) =
+        grpc_call_context_element{value, destroy};
+  }
+  void* ContextGet(grpc_context_index elem) const override {
+    return call_handler_.legacy_context(elem).value;
+  }
+  bool Completed() override;
+  void CancelWithError(grpc_error_handle error) override;
+  void SetCompletionQueue(grpc_completion_queue* cq) override { cq_ = cq; }
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+  bool failed_before_recv_message() const override;
+  bool is_trailers_only() const override;
+  absl::string_view GetServerAuthority() const override;
+  void ExternalRef() override { ref_count_.Ref(); }
+  void ExternalUnref() override {
+    if (ref_count_.Unref()) delete this;
+  }
+  void InternalRef(const char*) override { ExternalRef(); }
+  void InternalUnref(const char*) override { ExternalUnref(); }
+  char* GetPeer() override { Crash("Not implemented"); }
+
+  // Return the EventEngine used for this call's async execution.
+  grpc_event_engine::experimental::EventEngine* event_engine() const override;
+
+  void PublishInitialMetadata(ClientMetadataHandle md,
+                              grpc_metadata_array* md_array);
+
+ private:
+  ServerCall(CallHandler call_handler, ServerInterface* server);
+
+  static grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops);
+  void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                   bool is_notify_tag_closure);
+  StatusFlag FinishRecvMessage(CallFilters::NextMessage result);
+  std::string DebugTag() { return call_handler_.DebugTag(); }
+
+  ServerInterface* const server_;
+  grpc_byte_buffer** recv_message_ = nullptr;
+  ClientMetadataHandle client_initial_metadata_stored_;
+  CallHandler call_handler_;
+  RefCount ref_count_;
+  grpc_completion_queue* cq_;
 };
 
 template <>
-struct ContextType<CallContext> {};
+struct ContextType<Call> {};
 
-grpc_call* MakeServerCall(CallHandler handler);
+template <>
+struct ContextSubclass<ServerCall> {
+  using Base = Call;
+};
+
+template <>
+struct ContextSubclass<ClientCall> {
+  using Base = Call;
+};
 
 }  // namespace grpc_core
 
