@@ -295,12 +295,20 @@ TEST_P(XdsFallbackTest, PerAuthorityFallback) {
     EchoResponse response;
     RpcOptions().SetupRpc(&context, &request);
     Status status = authority1_stub->Echo(&context, request, &response);
+    if (!status.ok()) {
+      gpr_log(GPR_ERROR, "RPC failed, may be caused by a config tear: %s",
+              status.error_message().c_str());
+    }
     ClientContext context2;
     EchoRequest request2;
     EchoResponse response2;
     RpcOptions().SetupRpc(&context2, &request2);
     // RPCs may briefly fail if the config tear happens
     status = authority2_stub->Echo(&context2, request2, &response2);
+    if (!status.ok()) {
+      gpr_log(GPR_ERROR, "RPC failed, may be caused by a config tear: %s",
+              status.error_message().c_str());
+    }
   }
   ASSERT_LE(1U, backends_[2]->backend_service()->request_count());
   ASSERT_LE(1U, backends_[3]->backend_service()->request_count());
