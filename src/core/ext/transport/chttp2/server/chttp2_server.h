@@ -62,8 +62,10 @@ class PassiveListenerImpl final : public PassiveListener {
   void ListenerDestroyed() ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
+  // note: the grpc_core::Server redundant namespace qualification is
+  // required for older gcc versions.
   friend absl::Status(::grpc_server_add_passive_listener)(
-      Server* server, grpc_server_credentials* credentials,
+      grpc_core::Server* server, grpc_server_credentials* credentials,
       std::shared_ptr<PassiveListenerImpl> passive_listener);
 
   Mutex mu_;

@@ -21,7 +21,10 @@ import os
 import re
 import sys
 
-IGNORED_FILES = []
+IGNORED_FILES = [
+    "src/core/ext/transport/chttp2/server/chttp2_server.h",
+    "src/core/lib/surface/server.h",
+]
 
 
 def find_closing_mustache(contents, initial_depth):
