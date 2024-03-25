@@ -75,10 +75,9 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
 
  private:
+  // We need these friend declarations for access to c_creds().
   friend class Server;
   friend class ServerBuilder;
-
-  // We need this friend declaration for access to c_creds().
   friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);
 

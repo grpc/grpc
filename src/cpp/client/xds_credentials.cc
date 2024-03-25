@@ -33,7 +33,7 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
   auto* secure_creds = fallback_creds->AsSecureCredentials();
   if (secure_creds != nullptr) {
     return internal::WrapChannelCredentials(
-        grpc_xds_credentials_create(secure_creds->GetRawCreds()));
+        grpc_xds_credentials_create(secure_creds->c_creds()));
   }
   return internal::WrapChannelCredentials(
       grpc_xds_credentials_create(fallback_creds->c_creds()));

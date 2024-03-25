@@ -71,7 +71,7 @@ std::string GetOauth2AccessToken() {
   SecureCallCredentials* secure_creds =
       dynamic_cast<SecureCallCredentials*>(creds.get());
   GPR_ASSERT(secure_creds != nullptr);
-  grpc_call_credentials* c_creds = secure_creds->GetRawCreds();
+  grpc_call_credentials* c_creds = secure_creds->c_creds();
   char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
   GPR_ASSERT(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);

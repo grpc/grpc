@@ -367,8 +367,7 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   if (s_channel_creds && s_call_creds) {
     return internal::WrapChannelCredentials(
         grpc_composite_channel_credentials_create(
-            s_channel_creds->GetRawCreds(), s_call_creds->GetRawCreds(),
-            nullptr));
+            s_channel_creds->c_creds(), s_call_creds->c_creds(), nullptr));
   }
   return nullptr;
 }
@@ -380,7 +379,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
   SecureCallCredentials* s_creds2 = creds2->AsSecureCredentials();
   if (s_creds1 != nullptr && s_creds2 != nullptr) {
     return WrapCallCredentials(grpc_composite_call_credentials_create(
-        s_creds1->GetRawCreds(), s_creds2->GetRawCreds(), nullptr));
+        s_creds1->c_creds(), s_creds2->c_creds(), nullptr));
   }
   return nullptr;
 }
