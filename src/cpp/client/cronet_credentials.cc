@@ -61,6 +61,9 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
                                           &channel_args, nullptr),
         std::move(interceptor_creators));
   }
+
+  grpc_channel_credentials* c_creds() const override { return nullptr; };
+
   void* engine_;
 };
 
