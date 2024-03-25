@@ -30,11 +30,7 @@ namespace grpc {
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
   GPR_ASSERT(fallback_creds != nullptr);
-  auto* secure_creds = fallback_creds->AsSecureCredentials();
-  if (secure_creds != nullptr) {
-    return internal::WrapChannelCredentials(
-        grpc_xds_credentials_create(secure_creds->c_creds()));
-  }
+  GPR_ASSERT(fallback_creds->c_creds() != nullptr);
   return internal::WrapChannelCredentials(
       grpc_xds_credentials_create(fallback_creds->c_creds()));
 }
