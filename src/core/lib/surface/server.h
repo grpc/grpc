@@ -219,6 +219,8 @@ class Server : public ServerInterface,
  private:
   // note: the grpc_core::Server redundant namespace qualification is
   // required for older gcc versions.
+  // TODO(yashykt): eliminate this friend statement as part of your upcoming
+  // server listener refactoring.
   friend absl::Status(::grpc_server_add_passive_listener)(
       grpc_core::Server* server, grpc_server_credentials* credentials,
       std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>

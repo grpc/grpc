@@ -277,6 +277,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   MemoryQuotaRefPtr memory_quota_;
   ConnectionQuotaRefPtr connection_quota_;
   grpc_server_config_fetcher* config_fetcher_ = nullptr;
+  // TODO(yashykt): consider using absl::variant<> to minimize memory usage for
+  // disjoint cases where different fields are used.
   std::shared_ptr<experimental::PassiveListenerImpl> passive_listener_;
 };
 
@@ -781,7 +783,7 @@ Chttp2ServerListener::Chttp2ServerListener(
       memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
       connection_quota_(MakeRefCounted<ConnectionQuota>()),
       config_fetcher_(config_fetcher),
-      passive_listener_(passive_listener) {
+      passive_listener_(std::move(passive_listener)) {
   auto max_allowed_incoming_connections =
       args.GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
   if (max_allowed_incoming_connections.has_value()) {
