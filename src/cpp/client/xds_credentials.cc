@@ -30,17 +30,13 @@ namespace grpc {
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
   GPR_ASSERT(fallback_creds != nullptr);
-  if (fallback_creds->IsInsecure()) {
-    grpc_channel_credentials* insecure_creds =
-        grpc_insecure_credentials_create();
-    auto xds_creds = internal::WrapChannelCredentials(
-        grpc_xds_credentials_create(insecure_creds));
-    grpc_channel_credentials_release(insecure_creds);
-    return xds_creds;
-  } else {
-    return internal::WrapChannelCredentials(grpc_xds_credentials_create(
-        fallback_creds->AsSecureCredentials()->GetRawCreds()));
+  auto* secure_creds = fallback_creds->AsSecureCredentials();
+  if (secure_creds != nullptr) {
+    return internal::WrapChannelCredentials(
+        grpc_xds_credentials_create(secure_creds->GetRawCreds()));
   }
+  return internal::WrapChannelCredentials(
+      grpc_xds_credentials_create(fallback_creds->c_creds()));
 }
 
 namespace experimental {

@@ -50,7 +50,7 @@ class ChaoticGoodInsecureChannelCredentialsImpl final
   SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
 
  private:
-  bool IsInsecure() const override { return true; }
+  grpc_channel_credentials* c_creds() const override { return nullptr; }
 };
 
 class ChaoticGoodInsecureServerCredentialsImpl final

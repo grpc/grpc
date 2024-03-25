@@ -64,6 +64,9 @@ class SecureChannelCredentials final : public ChannelCredentials {
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
+
+  grpc_channel_credentials* c_creds() const override { return c_creds_; }
+
   grpc_channel_credentials* const c_creds_;
 };
 
