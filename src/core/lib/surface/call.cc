@@ -1965,80 +1965,7 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array,
 }  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
-// CallSpine based Server Call
-
-class ServerCall final : public Call {
- public:
-  explicit ServerCall(CallHandler call_handler);
-
-  Arena* arena() override { return call_handler_.arena(); }
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void* value)) override {
-    call_handler_.legacy_context(elem) =
-        grpc_call_context_element{value, destroy};
-  }
-  void* ContextGet(grpc_context_index elem) const override {
-    return call_handler_.legacy_context(elem).value;
-  }
-  bool Completed() override;
-  void CancelWithError(grpc_error_handle error) override;
-  void SetCompletionQueue(grpc_completion_queue* cq) override;
-  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
-                             bool is_notify_tag_closure) override;
-  bool failed_before_recv_message() const override;
-  bool is_trailers_only() const override;
-  absl::string_view GetServerAuthority() const override;
-  void ExternalRef() override { ref_count_.Ref(); }
-  void ExternalUnref() override {
-    if (ref_count_.Unref()) delete this;
-  }
-  void InternalRef(const char*) override { ExternalRef(); }
-  void InternalUnref(const char*) override { ExternalUnref(); }
-
-  // Return the EventEngine used for this call's async execution.
-  grpc_event_engine::experimental::EventEngine* event_engine() const override;
-
- private:
-  void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
-                   bool is_notify_tag_closure);
-  StatusFlag FinishRecvMessage(NextResult<MessageHandle> result);
-
-  grpc_byte_buffer** recv_message_ = nullptr;
-  ClientMetadataHandle client_initial_metadata_stored_;
-  CallHandler call_handler_;
-  RefCount ref_count_;
-};
-
-ServerCall::ServerCall(CallHandler call_handler)
-    : call_handler_(std::move(call_handler)) {
-  global_stats().IncrementServerCallsCreated();
-}
-
-void ServerCall::PublishInitialMetadata(
-    ClientMetadataHandle metadata,
-    grpc_metadata_array* publish_initial_metadata) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO, "%s[call] PublishInitialMetadata: %s", DebugTag().c_str(),
-            metadata->DebugString().c_str());
-  }
-  PublishMetadataArray(metadata.get(), publish_initial_metadata, false);
-  client_initial_metadata_stored_ = std::move(metadata);
-}
-
-grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
-                                       void* notify_tag,
-                                       bool is_notify_tag_closure) {
-  if (nops == 0) {
-    EndOpImmediately(cq(), notify_tag, is_notify_tag_closure);
-    return GRPC_CALL_OK;
-  }
-  const grpc_call_error validation_result = ValidateServerBatch(ops, nops);
-  if (validation_result != GRPC_CALL_OK) {
-    return validation_result;
-  }
-  CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
-  return GRPC_CALL_OK;
-}
+// Helper types for call spine based calls
 
 namespace {
 template <typename SetupFn>
@@ -2175,6 +2102,82 @@ PollBatchLogger<F> LogPollBatch(void* tag, F f) {
   return PollBatchLogger<F>(tag, std::move(f));
 }
 }  // namespace
+
+///////////////////////////////////////////////////////////////////////////////
+// CallSpine based Server Call
+
+class ServerCall final : public Call {
+ public:
+  explicit ServerCall(CallHandler call_handler);
+
+  Arena* arena() override { return call_handler_.arena(); }
+  void ContextSet(grpc_context_index elem, void* value,
+                  void (*destroy)(void* value)) override {
+    call_handler_.legacy_context(elem) =
+        grpc_call_context_element{value, destroy};
+  }
+  void* ContextGet(grpc_context_index elem) const override {
+    return call_handler_.legacy_context(elem).value;
+  }
+  bool Completed() override;
+  void CancelWithError(grpc_error_handle error) override;
+  void SetCompletionQueue(grpc_completion_queue* cq) override;
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+  bool failed_before_recv_message() const override;
+  bool is_trailers_only() const override;
+  absl::string_view GetServerAuthority() const override;
+  void ExternalRef() override { ref_count_.Ref(); }
+  void ExternalUnref() override {
+    if (ref_count_.Unref()) delete this;
+  }
+  void InternalRef(const char*) override { ExternalRef(); }
+  void InternalUnref(const char*) override { ExternalUnref(); }
+
+  // Return the EventEngine used for this call's async execution.
+  grpc_event_engine::experimental::EventEngine* event_engine() const override;
+
+ private:
+  void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                   bool is_notify_tag_closure);
+  StatusFlag FinishRecvMessage(NextResult<MessageHandle> result);
+
+  grpc_byte_buffer** recv_message_ = nullptr;
+  ClientMetadataHandle client_initial_metadata_stored_;
+  CallHandler call_handler_;
+  RefCount ref_count_;
+};
+
+ServerCall::ServerCall(CallHandler call_handler)
+    : call_handler_(std::move(call_handler)) {
+  global_stats().IncrementServerCallsCreated();
+}
+
+void ServerCall::PublishInitialMetadata(
+    ClientMetadataHandle metadata,
+    grpc_metadata_array* publish_initial_metadata) {
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_INFO, "%s[call] PublishInitialMetadata: %s", DebugTag().c_str(),
+            metadata->DebugString().c_str());
+  }
+  PublishMetadataArray(metadata.get(), publish_initial_metadata, false);
+  client_initial_metadata_stored_ = std::move(metadata);
+}
+
+grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
+                                       void* notify_tag,
+                                       bool is_notify_tag_closure) {
+  if (nops == 0) {
+    EndOpImmediately(cq(), notify_tag, is_notify_tag_closure);
+    return GRPC_CALL_OK;
+  }
+  const grpc_call_error validation_result = ValidateServerBatch(ops, nops);
+  if (validation_result != GRPC_CALL_OK) {
+    return validation_result;
+  }
+  CommitBatch(ops, nops, notify_tag, is_notify_tag_closure);
+  return GRPC_CALL_OK;
+}
 
 StatusFlag ServerCallSpine::FinishRecvMessage(
     NextResult<MessageHandle> result) {
