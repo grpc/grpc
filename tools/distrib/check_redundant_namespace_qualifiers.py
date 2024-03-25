@@ -21,10 +21,7 @@ import os
 import re
 import sys
 
-IGNORED_FILES = [
-    # the grpc_core::Server redundant namespace qualification is required for older gcc versions.
-    "src/core/lib/surface/passive_listener_internal.h",
-]
+IGNORED_FILES = []
 
 
 def find_closing_mustache(contents, initial_depth):
