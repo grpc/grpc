@@ -1168,7 +1168,7 @@ TEST_F(PickFirstTest, MetricValues) {
   const absl::string_view kLabelValues[] = {target_};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>(
       nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.push_back(stats_plugin);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};

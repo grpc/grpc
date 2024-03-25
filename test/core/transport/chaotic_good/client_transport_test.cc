@@ -36,6 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"

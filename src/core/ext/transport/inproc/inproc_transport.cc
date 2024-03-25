@@ -22,6 +22,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
