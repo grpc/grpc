@@ -129,7 +129,7 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   void PrepareOutgoingInitialMetadata(const grpc_op& op,
                                       const grpc_compression_options& copt,
-                                      grpc_metadata_batch& md);
+                                      bool is_client, grpc_metadata_batch& md);
 
  private:
   // Compression algorithm for *incoming* data

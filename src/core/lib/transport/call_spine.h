@@ -300,6 +300,11 @@ class CallHandler {
     return spine_->CancelIfFails(std::move(promise));
   }
 
+  auto WasCancelled() {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
+    return spine_->call_filters().WasCancelled();
+  }
+
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuarded(name, std::move(promise_factory));

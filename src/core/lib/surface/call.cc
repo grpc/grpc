@@ -361,6 +361,7 @@ void ChannelBasedCall::DeleteThis() {
 
 void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
                                           const grpc_compression_options& copts,
+                                          bool is_client,
                                           grpc_metadata_batch& md) {
   // TODO(juanlishen): If the user has already specified a compression
   // algorithm by setting the initial metadata with key of
@@ -380,7 +381,7 @@ void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
     }
   }
   // Currently, only server side supports compression level setting.
-  if (level_set && !is_client()) {
+  if (level_set && !is_client) {
     const grpc_compression_algorithm calgo =
         encodings_accepted_by_peer().CompressionAlgorithmForLevel(
             effective_compression_level);
@@ -1531,7 +1532,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
           goto done_with_error;
         }
         PrepareOutgoingInitialMetadata(*op, channel()->compression_options(),
-                                       send_initial_metadata_);
+                                       is_client(), send_initial_metadata_);
         // TODO(ctiller): just make these the same variable?
         if (is_client() && send_deadline() != Timestamp::InfFuture()) {
           send_initial_metadata_.Set(GrpcTimeoutMetadata(), send_deadline());
@@ -2205,7 +2206,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
       ops, got_ops[GRPC_OP_SEND_INITIAL_METADATA], [this](const grpc_op& op) {
         auto metadata = arena()->MakePooled<ServerMetadata>();
         PrepareOutgoingInitialMetadata(op, server_->compression_options(),
-                                       *metadata);
+                                       false, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
         if (grpc_call_trace.enabled()) {
@@ -2265,7 +2266,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     auto recv_trailing_metadata = MaybeOp(
         ops, got_ops[GRPC_OP_RECV_CLOSE_ON_SERVER], [this](const grpc_op& op) {
           return [this, cancelled = op.data.recv_close_on_server.cancelled]() {
-            return Map(server_trailing_metadata_.receiver.AwaitClosed(),
+            return Map(call_handler_.WasCancelled(),
                        [cancelled, this](bool result) -> Success {
                          ResetDeadline();
                          *cancelled = result ? 1 : 0;
