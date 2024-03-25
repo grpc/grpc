@@ -33,8 +33,10 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -129,6 +131,14 @@ auto ChaoticGoodConnector::WaitForDataEndpointSetup(
                            std::exchange(self->notify_, nullptr),
                            GRPC_ERROR_CREATE("connect endpoint failed"));
               return;
+            }
+            auto* chaotic_good_ext =
+                grpc_event_engine::experimental::QueryExtension<
+                    grpc_event_engine::experimental::ChaoticGoodExtension>(
+                    endpoint.value().get());
+            if (chaotic_good_ext != nullptr) {
+              chaotic_good_ext->EnableStatsCollection(
+                  /*is_control_channel=*/false);
             }
             self->data_endpoint_ =
                 PromiseEndpoint(std::move(endpoint.value()), SliceBuffer());
@@ -241,6 +251,13 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
           return;
         }
         auto* p = self.release();
+        auto* chaotic_good_ext =
+            grpc_event_engine::experimental::QueryExtension<
+                grpc_event_engine::experimental::ChaoticGoodExtension>(
+                endpoint.value().get());
+        if (chaotic_good_ext != nullptr) {
+          chaotic_good_ext->EnableStatsCollection(/*is_control_channel=*/true);
+        }
         p->handshake_mgr_->DoHandshake(
             grpc_event_engine_endpoint_create(std::move(endpoint.value())),
             p->args_.channel_args, p->args_.deadline, nullptr /* acceptor */,
@@ -353,15 +370,11 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
   grpc_channel* channel = nullptr;
   grpc_error_handle error;
   // Create channel.
-  std::string canonical_target = grpc_core::CoreConfiguration::Get()
-                                     .resolver_registry()
-                                     .AddDefaultPrefixIfNeeded(target);
   auto r = grpc_core::ChannelCreate(
       target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .Set(GRPC_ARG_SERVER_URI, canonical_target)
           .SetObject(
               grpc_core::NoDestructSingleton<
                   grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get()),

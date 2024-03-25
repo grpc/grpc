@@ -40,7 +40,6 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
@@ -511,7 +510,6 @@ TEST_F(XdsOverrideHostTest, OverrideHostStatus) {
 }
 
 TEST_F(XdsOverrideHostTest, MultipleAddressesPerEndpoint) {
-  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {

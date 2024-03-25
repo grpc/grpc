@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 #define GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -151,6 +153,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   void SendRPC();
   void SendGenericRPC();
 
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
+  BuildAndRegisterOpenTelemetryPlugin(
+      OpenTelemetryPluginEnd2EndTest::Options options);
+
   absl::flat_hash_map<
       std::string,
       std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
@@ -159,7 +165,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
           bool(const absl::flat_hash_map<
                std::string,
                std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
-          continue_predicate);
+          continue_predicate,
+      opentelemetry::sdk::metrics::MetricReader* reader = nullptr);
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";

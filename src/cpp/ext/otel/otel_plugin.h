@@ -191,31 +191,8 @@ class OpenTelemetryPluginBuilderImpl {
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
 };
 
-class OpenTelemetryCallTracer;
-
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
  public:
-  struct Client {
-    struct Attempt {
-      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          sent_total_compressed_message_size;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          rcvd_total_compressed_message_size;
-    } attempt;
-  };
-  struct Server {
-    struct Call {
-      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          sent_total_compressed_message_size;
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
-          rcvd_total_compressed_message_size;
-    } call;
-  };
-
   OpenTelemetryPlugin(
       const absl::flat_hash_set<std::string>& metrics,
       opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
@@ -232,9 +209,129 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
           plugin_options,
       std::shared_ptr<std::set<absl::string_view>> optional_label_keys);
 
+ private:
+  class ClientCallTracer;
+  class KeyValueIterable;
+  class NPCMetricsKeyValueIterable;
+  class ServerCallTracer;
+
+  // Creates a convenience wrapper to help iterate over only those plugin
+  // options that are active over a given channel/server.
+  class ActivePluginOptionsView {
+   public:
+    static ActivePluginOptionsView MakeForClient(
+        absl::string_view target, const OpenTelemetryPlugin* otel_plugin) {
+      return ActivePluginOptionsView(
+          [target](const InternalOpenTelemetryPluginOption& plugin_option) {
+            return plugin_option.IsActiveOnClientChannel(target);
+          },
+          otel_plugin);
+    }
+
+    static ActivePluginOptionsView MakeForServer(
+        const grpc_core::ChannelArgs& args,
+        const OpenTelemetryPlugin* otel_plugin) {
+      return ActivePluginOptionsView(
+          [&args](const InternalOpenTelemetryPluginOption& plugin_option) {
+            return plugin_option.IsActiveOnServer(args);
+          },
+          otel_plugin);
+    }
+
+    bool ForEach(absl::FunctionRef<
+                     bool(const InternalOpenTelemetryPluginOption&, size_t)>
+                     func,
+                 const OpenTelemetryPlugin* otel_plugin) const {
+      for (size_t i = 0; i < otel_plugin->plugin_options().size(); ++i) {
+        const auto& plugin_option = otel_plugin->plugin_options()[i];
+        if (active_mask_[i] && !func(*plugin_option, i)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+   private:
+    explicit ActivePluginOptionsView(
+        absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&)> func,
+        const OpenTelemetryPlugin* otel_plugin) {
+      for (size_t i = 0; i < otel_plugin->plugin_options().size(); ++i) {
+        const auto& plugin_option = otel_plugin->plugin_options()[i];
+        if (plugin_option != nullptr && func(*plugin_option)) {
+          active_mask_.set(i);
+        }
+      }
+    }
+
+    std::bitset<64> active_mask_;
+  };
+
+  class ClientScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
+   public:
+    ClientScopeConfig(const OpenTelemetryPlugin* otel_plugin,
+                      const ChannelScope& scope)
+        : active_plugin_options_view_(ActivePluginOptionsView::MakeForClient(
+              scope.target(), otel_plugin)),
+          filtered_target_(
+              // Use the original target string only if a filter on the
+              // attribute is not registered or if the filter returns true,
+              // otherwise use "other".
+              otel_plugin->target_attribute_filter() == nullptr ||
+                      otel_plugin->target_attribute_filter()(scope.target())
+                  ? scope.target()
+                  : "other") {}
+
+    const ActivePluginOptionsView& active_plugin_options_view() const {
+      return active_plugin_options_view_;
+    }
+
+    absl::string_view filtered_target() const { return filtered_target_; }
+
+   private:
+    ActivePluginOptionsView active_plugin_options_view_;
+    std::string filtered_target_;
+  };
+  class ServerScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
+   public:
+    ServerScopeConfig(const OpenTelemetryPlugin* otel_plugin,
+                      const grpc_core::ChannelArgs& args)
+        : active_plugin_options_view_(
+              ActivePluginOptionsView::MakeForServer(args, otel_plugin)) {}
+
+    const ActivePluginOptionsView& active_plugin_options_view() const {
+      return active_plugin_options_view_;
+    }
+
+   private:
+    ActivePluginOptionsView active_plugin_options_view_;
+  };
+
+  struct ClientMetrics {
+    struct Attempt {
+      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          sent_total_compressed_message_size;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          rcvd_total_compressed_message_size;
+    } attempt;
+  };
+  struct ServerMetrics {
+    struct Call {
+      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          sent_total_compressed_message_size;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          rcvd_total_compressed_message_size;
+    } call;
+  };
+
   // StatsPlugin:
-  bool IsEnabledForChannel(const ChannelScope& scope) const override;
-  bool IsEnabledForServer(const grpc_core::ChannelArgs& args) const override;
+  std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+  IsEnabledForChannel(const ChannelScope& scope) const override;
+  std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
+  IsEnabledForServer(const grpc_core::ChannelArgs& args) const override;
   void AddCounter(
       grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
@@ -252,20 +349,24 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
   void SetGauge(
-      grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
-      int64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override;
+      grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle /*handle*/,
+      int64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override;
   void SetGauge(
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) override;
-  void AddCallback(grpc_core::RegisteredMetricCallback* callback) override;
-  void RemoveCallback(grpc_core::RegisteredMetricCallback* callback) override;
+      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
+      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
+      absl::Span<const absl::string_view> /*optional_values*/) override;
+  // TODO(yashkt, yijiem): implement async instrument.
+  void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/) override;
+  void RemoveCallback(
+      grpc_core::RegisteredMetricCallback* /*callback*/) override;
   grpc_core::ClientCallTracer* GetClientCallTracer(
-      absl::string_view canonical_target, grpc_core::Slice path,
-      grpc_core::Arena* arena, bool registered_method) override;
-  grpc_core::ServerCallTracerFactory* GetServerCallTracerFactory(
-      grpc_core::Arena* arena) override;
+      const grpc_core::Slice& path, bool registered_method,
+      std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
+      override;
+  grpc_core::ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
+      override;
 
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {
@@ -283,10 +384,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   plugin_options() const {
     return plugin_options_;
   }
-  Client& client() { return client_; }
-  Server& server() { return server_; }
 
- private:
   using LabelKeys = std::vector<absl::string_view>;
   using OptionalLabelKeys = std::vector<absl::string_view>;
 
@@ -330,24 +428,22 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
                                  void* arg);
 
   // Instruments for per-call metrics.
-  Client client_;
-  Server server_;
+  ClientMetrics client_;
+  ServerMetrics server_;
   // Instruments for non-per-call metrics.
-  absl::flat_hash_map<
-      grpc_core::GlobalInstrumentsRegistry::UID,
-      std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>
-      uint64_counters_;
-  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      std::unique_ptr<opentelemetry::metrics::Counter<double>>>
-      double_counters_;
-  absl::flat_hash_map<
-      grpc_core::GlobalInstrumentsRegistry::UID,
-      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>
-      uint64_histograms_;
-  absl::flat_hash_map<
-      grpc_core::GlobalInstrumentsRegistry::UID,
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>>>
-      double_histograms_;
+  struct Disabled {};
+  using Instrument = absl::variant<
+      Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Counter<double>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
+  static constexpr int kOptionalLabelsSizeLimit = 64;
+  using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
+  struct InstrumentData {
+    Instrument instrument;
+    OptionalLabelsBitSet optional_labels_bits;
+  };
+  std::vector<InstrumentData> instruments_data_;
   absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
                       std::unique_ptr<ObservableState<int64_t>>>
       int64_observable_instruments_;
@@ -369,63 +465,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       generic_method_attribute_filter_;
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
-  // Stores label keys and optional label keys for each instrument at
-  // construction time.
-  std::shared_ptr<absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                                      std::pair<LabelKeys, OptionalLabelKeys>>>
-      label_keys_map_;
-  std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
-};
-
-// Creates a convenience wrapper to help iterate over only those plugin options
-// that are active over a given channel/server.
-class ActivePluginOptionsView {
- public:
-  static ActivePluginOptionsView MakeForClient(
-      absl::string_view target, OpenTelemetryPlugin* otel_plugin) {
-    return ActivePluginOptionsView(
-        [target](const InternalOpenTelemetryPluginOption& plugin_option) {
-          return plugin_option.IsActiveOnClientChannel(target);
-        },
-        otel_plugin);
-  }
-
-  static ActivePluginOptionsView MakeForServer(
-      const grpc_core::ChannelArgs& args, OpenTelemetryPlugin* otel_plugin) {
-    return ActivePluginOptionsView(
-        [&args](const InternalOpenTelemetryPluginOption& plugin_option) {
-          return plugin_option.IsActiveOnServer(args);
-        },
-        otel_plugin);
-  }
-
-  bool ForEach(
-      absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&, size_t)>
-          func) const {
-    for (size_t i = 0; i < otel_plugin_->plugin_options().size(); ++i) {
-      const auto& plugin_option = otel_plugin_->plugin_options()[i];
-      if (active_mask_[i] && !func(*plugin_option, i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
- private:
-  explicit ActivePluginOptionsView(
-      absl::FunctionRef<bool(const InternalOpenTelemetryPluginOption&)> func,
-      OpenTelemetryPlugin* otel_plugin)
-      : otel_plugin_(otel_plugin) {
-    for (size_t i = 0; i < otel_plugin_->plugin_options().size(); ++i) {
-      const auto& plugin_option = otel_plugin_->plugin_options()[i];
-      if (plugin_option != nullptr && func(*plugin_option)) {
-        active_mask_.set(i);
-      }
-    }
-  }
-
-  OpenTelemetryPlugin* otel_plugin_;
-  std::bitset<64> active_mask_;
 };
 
 }  // namespace internal

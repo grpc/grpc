@@ -71,11 +71,6 @@
   owner: ctiller@google.com
   requires: [promise_based_client_call, promise_based_server_call]
   test_tags: [core_end2end_test]
-- name: client_idleness
-  description: If enabled, client channel idleness is enabled by default.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: []
 - name: client_privacy
   description:
     If set, client privacy
@@ -85,21 +80,21 @@
   allow_in_fuzzing_config: false
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: yijiem@google.com
   test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
   uses_polling: true
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
@@ -160,12 +155,6 @@
   expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: []
-- name: pick_first_happy_eyeballs
-  description:
-    Use Happy Eyeballs in pick_first.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -195,13 +184,6 @@
   expiry: 2024/03/31
   owner: yashkt@google.com
   test_tags: ["surface_registered_method_lookup"]
-- name: round_robin_delegate_to_pick_first
-  description:
-    Change round_robin code to delegate to pick_first as per dualstack
-    backend design.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
@@ -282,10 +264,3 @@
   expiry: 2024/03/31
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
-- name: wrr_delegate_to_pick_first
-  description:
-    Change WRR code to delegate to pick_first as per dualstack
-    backend design.
-  expiry: 2024/03/15
-  owner: roth@google.com
-  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]

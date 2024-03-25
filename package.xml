@@ -1098,6 +1098,7 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.cc" role="src" />
@@ -1147,6 +1148,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/server_call_tracer_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/server_call_tracer_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/tcp_tracer.h" role="src" />
@@ -1189,7 +1191,9 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
@@ -1596,6 +1600,8 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/connection_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/connection_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/memory_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.cc" role="src" />
@@ -1877,7 +1883,6 @@
     <file baseinstalldir="/" name="src/core/load_balancing/rls/rls.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/subchannel_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/load_balancing/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc" role="src" />
@@ -2124,6 +2129,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/demangle.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_aarch64-inl.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_arm-inl.inc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/stacktrace_config.h" role="src" />
@@ -2181,6 +2188,40 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_vlog_is_on.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/append_truncated.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/conditions.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/conditions.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/config.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/fnmatch.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/fnmatch.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/globals.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/globals.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_format.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_format.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_impl.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_message.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_message.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_sink_set.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/log_sink_set.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/nullguard.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/nullguard.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/nullstream.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/proto.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/proto.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/strip.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/vlog_config.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/vlog_config.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/voidify.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_entry.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_entry.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_sink.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_sink.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/log_sink_registry.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/vlog_is_on.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/memory/memory.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/meta/type_traits.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/numeric/bits.h" role="src" />
@@ -2846,6 +2887,8 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs12.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs7.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pkcs8.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pki/certificate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pki/signature_verify_cache.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/poly1305.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/pool.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/posix_time.h" role="src" />

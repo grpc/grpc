@@ -21,7 +21,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
@@ -29,11 +28,12 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
@@ -60,11 +60,11 @@ class GlobalInstrumentsRegistry {
     kGauge,
     kCallbackGauge,
   };
-  using UID = uint32_t;
+  using InstrumentID = uint32_t;
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
     InstrumentType instrument_type;
-    UID index;
+    InstrumentID index;
     bool enable_by_default;
     absl::string_view name;
     absl::string_view description;
@@ -77,7 +77,7 @@ class GlobalInstrumentsRegistry {
     // StatsPlugins can use to uniquely identify an instrument in the current
     // process. Though this is not guaranteed to be stable between different
     // runs or between different versions.
-    UID index;
+    InstrumentID index;
   };
   struct GlobalUInt64CounterHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleCounterHandle : public GlobalInstrumentHandle {};
@@ -134,14 +134,15 @@ class GlobalInstrumentsRegistry {
 
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
+  static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
+      GlobalInstrumentHandle handle);
 
  private:
   friend class GlobalInstrumentsRegistryTestPeer;
 
   GlobalInstrumentsRegistry() = delete;
 
-  static absl::flat_hash_map<
-      absl::string_view, GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+  static std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
   GetInstrumentList();
 };
 
@@ -169,6 +170,7 @@ class ServerCallTracerFactory;
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
+  // Configuration (scope) for a specific client channel.
   class ChannelScope {
    public:
     ChannelScope(absl::string_view target, absl::string_view authority)
@@ -181,36 +183,74 @@ class StatsPlugin {
     absl::string_view target_;
     absl::string_view authority_;
   };
+  // A general-purpose way for stats plugin to store per-channel or per-server
+  // state.
+  class ScopeConfig {
+   public:
+    virtual ~ScopeConfig() = default;
+  };
 
   virtual ~StatsPlugin() = default;
 
-  virtual bool IsEnabledForChannel(const ChannelScope& scope) const = 0;
-  virtual bool IsEnabledForServer(const ChannelArgs& args) const = 0;
+  // Whether this stats plugin is enabled for the channel specified by \a
+  // scope. Returns true and a channel-specific ScopeConfig which may then be
+  // used to configure the ClientCallTracer in GetClientCallTracer().
+  virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
+      const ChannelScope& scope) const = 0;
+  // Whether this stats plugin is enabled for the server specified by \a args.
+  // Returns true and a server-specific ScopeConfig which may then be used to
+  // configure the ServerCallTracer in GetServerCallTracer().
+  virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& args) const = 0;
 
+  // Adds \a value to the uint64 counter specified by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterUInt64Counter().
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Adds \a value to the double counter specified by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterDoubleCounter().
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Records a uint64 \a value to the histogram specified by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterUInt64Histogram().
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Records a double \a value to the histogram specified by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterDoubleHistogram().
   virtual void RecordHistogram(
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Sets an int64 \a value to the gauge specifed by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterInt64Gauge().
   virtual void SetGauge(
       GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle, int64_t value,
       absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
+  // Sets a double \a value to the gauge specifed by \a handle. \a
+  // label_values and \a optional_label_values specify attributes that are
+  // associated with this measurement and must match with their corresponding
+  // keys in GlobalInstrumentsRegistry::RegisterDoubleGauge().
   virtual void SetGauge(
       GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
+      absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
@@ -218,58 +258,75 @@ class StatsPlugin {
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
+  // Gets a ClientCallTracer associated with this stats plugin which can be
+  // used in a call.
   virtual ClientCallTracer* GetClientCallTracer(
-      absl::string_view canonical_target, Slice path, Arena* arena,
-      bool registered_method) = 0;
-  virtual ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) = 0;
+      const Slice& path, bool registered_method,
+      std::shared_ptr<ScopeConfig> scope_config) = 0;
+  // Gets a ServerCallTracer associated with this stats plugin which can be
+  // used in a call.
+  virtual ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<ScopeConfig> scope_config) = 0;
 
-  // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
-  // representation of the label_values and use it multiple times. We would
-  // change AddCounter and RecordHistogram to take RefCountedPtr<LabelValueSet>
-  // and also change the StatsPluginsGroup to support this.
-  // Use the StatsPlugin to get a representation of label values that can be
-  // saved for multiple uses later.
-  // virtual RefCountedPtr<LabelValueSet> MakeLabelValueSet(
+  // TODO(yijiem): This is an optimization for the StatsPlugin to create its
+  // own representation of the label_values and use it multiple times. We
+  // would change AddCounter and RecordHistogram to take
+  // RefCountedPtr<LabelValueSet> and also change the StatsPluginsGroup to
+  // support this. Use the StatsPlugin to get a representation of label values
+  // that can be saved for multiple uses later. virtual
+  // RefCountedPtr<LabelValueSet> MakeLabelValueSet(
   //     absl::Span<absl::string_view> label_values) = 0;
 };
 
-// A global registry of StatsPlugins. It has shared ownership to the registered
-// StatsPlugins. This API is supposed to be used during runtime after the main
-// function begins. This API is thread-safe.
+// A global registry of stats plugins. It has shared ownership to the
+// registered stats plugins. This API is supposed to be used during runtime
+// after the main function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
-  class StatsPluginGroup : public std::vector<std::shared_ptr<StatsPlugin>> {
+  // A stats plugin group object is how the code in gRPC normally interacts
+  // with stats plugins. They got a stats plugin group which contains all the
+  // stats plugins for a specific scope and all operations on the stats plugin
+  // group will be applied to all the stats plugins within the group.
+  class StatsPluginGroup {
    public:
-    StatsPluginGroup() : std::vector<std::shared_ptr<StatsPlugin>>() {}
-
-    void ForEach(absl::FunctionRef<void(std::shared_ptr<StatsPlugin>)> f) {
-      for (auto& plugin : *this) {
-        f(plugin);
-      }
+    // Adds a stats plugin and a scope config (per-channel or per-server) to
+    // the group.
+    void AddStatsPlugin(std::shared_ptr<StatsPlugin> plugin,
+                        std::shared_ptr<StatsPlugin::ScopeConfig> config) {
+      PluginState plugin_state;
+      plugin_state.plugin = std::move(plugin);
+      plugin_state.scope_config = std::move(config);
+      plugins_state_.push_back(std::move(plugin_state));
     }
-
+    // Adds a counter in all stats plugins within the group. See the
+    // StatsPlugin interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void AddCounter(HandleType handle, ValueType value,
                     absl::Span<const absl::string_view> label_values,
                     absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : *this) {
-        plugin->AddCounter(handle, value, label_values, optional_values);
+      for (auto& state : plugins_state_) {
+        state.plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
+    // Records a value to a histogram in all stats plugins within the group.
+    // See the StatsPlugin interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void RecordHistogram(HandleType handle, ValueType value,
                          absl::Span<const absl::string_view> label_values,
                          absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : *this) {
-        plugin->RecordHistogram(handle, value, label_values, optional_values);
+      for (auto& state : plugins_state_) {
+        state.plugin->RecordHistogram(handle, value, label_values,
+                                      optional_values);
       }
     }
+    // Sets a value to a gauge in all stats plugins within the group. See the
+    // StatsPlugin interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void SetGauge(HandleType handle, ValueType value,
                   absl::Span<const absl::string_view> label_values,
                   absl::Span<const absl::string_view> optional_values) {
-      for (auto& plugin : *this) {
-        plugin->SetGauge(handle, value, label_values, optional_values);
+      for (auto& state : plugins_state_) {
+        state.plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
 
@@ -285,10 +342,30 @@ class GlobalStatsPluginRegistry {
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
+
+    // Adds all available client call tracers associated with the stats
+    // plugins within the group to \a call_context.
+    void AddClientCallTracers(const Slice& path, bool registered_method,
+                              grpc_call_context_element* call_context);
+    // Adds all available server call tracers associated with the stats
+    // plugins within the group to \a call_context.
+    void AddServerCallTracers(grpc_call_context_element* call_context);
+
+   private:
+    friend class RegisteredMetricCallback;
+
+    struct PluginState {
+      std::shared_ptr<StatsPlugin::ScopeConfig> scope_config;
+      std::shared_ptr<StatsPlugin> plugin;
+    };
+
+    std::vector<PluginState> plugins_state_;
   };
 
+  // Registers a stats plugin with the global stats plugin registry.
   static void RegisterStatsPlugin(std::shared_ptr<StatsPlugin> plugin);
-  // The following two functions can be invoked to get a StatsPluginGroup for
+
+  // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
   static StatsPluginGroup GetStatsPluginsForChannel(
       const StatsPlugin::ChannelScope& scope);

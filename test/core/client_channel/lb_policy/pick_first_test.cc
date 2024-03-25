@@ -38,7 +38,6 @@
 #include <grpc/support/json.h>
 
 #include "src/core/lib/channel/metrics.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -513,7 +512,6 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
 }
 
 TEST_F(PickFirstTest, HappyEyeballs) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing three addresses.
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
@@ -568,7 +566,6 @@ TEST_F(PickFirstTest, HappyEyeballs) {
 }
 
 TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing three addresses.
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
@@ -689,7 +686,6 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
 
 TEST_F(PickFirstTest,
        HappyEyeballsLastSubchannelFailsWhileAnotherIsStillPending) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing three addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -758,7 +754,6 @@ TEST_F(PickFirstTest,
 }
 
 TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing four IPv4 addresses followed by two
   // IPv6 addresses.
   constexpr std::array<absl::string_view, 6> kAddresses = {
@@ -851,7 +846,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
 
 TEST_F(PickFirstTest,
        HappyEyeballsAddressInterleavingSecondFamilyHasMoreAddresses) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing two IPv6 addresses followed by four IPv4
   // addresses.
   constexpr std::array<absl::string_view, 6> kAddresses = {
@@ -1174,7 +1168,7 @@ TEST_F(PickFirstTest, MetricValues) {
   const absl::string_view kLabelValues[] = {target_};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>(
       nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.push_back(stats_plugin);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
   // Send an update containing two addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};

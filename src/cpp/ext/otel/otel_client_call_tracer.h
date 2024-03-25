@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H
-#define GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H
+#ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
+#define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -47,13 +47,14 @@
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
+class OpenTelemetryPlugin::ClientCallTracer
+    : public grpc_core::ClientCallTracer {
  public:
-  class OpenTelemetryCallAttemptTracer : public CallAttemptTracer {
+  class CallAttemptTracer
+      : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
-    OpenTelemetryCallAttemptTracer(const OpenTelemetryCallTracer* parent,
-                                   bool arena_allocated,
-                                   OpenTelemetryPlugin* otel_plugin);
+    CallAttemptTracer(const OpenTelemetryPlugin::ClientCallTracer* parent,
+                      bool arena_allocated);
 
     std::string TraceId() override {
       // Not implemented
@@ -96,7 +97,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
                                optional_labels) override;
 
    private:
-    const OpenTelemetryCallTracer* parent_;
+    const ClientCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
@@ -111,10 +112,11 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     ActivePluginOptionsView active_plugin_options_view_;
   };
 
-  OpenTelemetryCallTracer(absl::string_view target, grpc_core::Slice path,
-                          grpc_core::Arena* arena, bool registered_method,
-                          OpenTelemetryPlugin* otel_plugin);
-  ~OpenTelemetryCallTracer() override;
+  ClientCallTracer(
+      const grpc_core::Slice& path, grpc_core::Arena* arena,
+      bool registered_method, OpenTelemetryPlugin* otel_plugin,
+      std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config);
+  ~ClientCallTracer() override;
 
   std::string TraceId() override {
     // Not implemented
@@ -131,8 +133,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
     return false;
   }
 
-  OpenTelemetryCallAttemptTracer* StartNewAttempt(
-      bool is_transparent_retry) override;
+  CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view /*annotation*/) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
@@ -147,6 +148,7 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
   grpc_core::Arena* arena_;
   const bool registered_method_;
   OpenTelemetryPlugin* otel_plugin_;
+  std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
@@ -157,4 +159,4 @@ class OpenTelemetryCallTracer : public grpc_core::ClientCallTracer {
 }  // namespace internal
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CPP_EXT_OTEL_OTEL_CALL_TRACER_H
+#endif  // GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H

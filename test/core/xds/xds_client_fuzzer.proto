@@ -59,6 +59,10 @@ message StopWatch {
 
 message DumpCsdsData {}
 
+message ReportResourceCounts {}
+
+message ReportServerConnections {}
+
 //
 // interactions with fake transport
 //
@@ -96,12 +100,15 @@ message SendStatusToClient {
   Status status = 2;
 }
 
+// Next free field: 10
 message Action {
   oneof action_type {
     // interactions with XdsClient API
     StartWatch start_watch = 1;
     StopWatch stop_watch = 2;
     DumpCsdsData dump_csds_data = 3;
+    ReportResourceCounts report_resource_counts = 8;
+    ReportServerConnections report_server_connections = 9;
     // interactions with fake transport
     TriggerConnectionFailure trigger_connection_failure = 4;
     ReadMessageFromClient read_message_from_client = 5;

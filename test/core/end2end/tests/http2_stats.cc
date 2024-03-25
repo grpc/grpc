@@ -51,6 +51,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/util/fake_stats_plugin.h"
 
 namespace grpc_core {
 namespace {
@@ -177,54 +178,18 @@ class FakeServerCallTracer : public ServerCallTracer {
 
 grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
-class FakeServerCallTracerFactory : public ServerCallTracerFactory {
+// TODO(yijiem): figure out how to reuse FakeStatsPlugin instead of
+// inheriting and overriding it here.
+class NewFakeStatsPlugin : public FakeStatsPlugin {
  public:
-  ServerCallTracer* CreateNewServerCallTracer(
-      Arena* arena, const ChannelArgs& /*args*/) override {
-    return arena->ManagedNew<FakeServerCallTracer>();
+  ClientCallTracer* GetClientCallTracer(
+      const Slice& /*path*/, bool /*registered_method*/,
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return GetContext<Arena>()->ManagedNew<FakeCallTracer>();
   }
-};
-
-class FakeStatsPlugin : public grpc_core::StatsPlugin {
-  bool IsEnabledForChannel(const ChannelScope& /*scope*/) const override {
-    return true;
-  }
-  bool IsEnabledForServer(const ChannelArgs& /*args*/) const override {
-    return true;
-  }
-  void AddCounter(
-      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle /*handle*/,
-      uint64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void AddCounter(
-      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle /*handle*/,
-      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle /*handle*/,
-      uint64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle /*handle*/,
-      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void SetGauge(
-      GlobalInstrumentsRegistry::GlobalInt64GaugeHandle /*handle*/,
-      int64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void SetGauge(
-      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
-      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void AddCallback(RegisteredMetricCallback* /*callback*/) override {}
-  void RemoveCallback(RegisteredMetricCallback* /*callback*/) override {}
-  ClientCallTracer* GetClientCallTracer(absl::string_view /*canonical_target*/,
-                                        Slice /*path*/, Arena* arena,
-                                        bool /*registered_method*/) override {
-    return arena->ManagedNew<FakeCallTracer>();
-  }
-  ServerCallTracerFactory* GetServerCallTracerFactory(Arena* arena) override {
-    return arena->ManagedNew<FakeServerCallTracerFactory>();
+  ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return GetContext<Arena>()->ManagedNew<FakeServerCallTracer>();
   }
 };
 
@@ -236,8 +201,8 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
   g_client_call_ended_notify = new Notification();
   g_server_call_ended_notify = new Notification();
-  grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
-      std::make_shared<FakeStatsPlugin>());
+  GlobalStatsPluginRegistry::RegisterStatsPlugin(
+      std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
   auto send_from_server = RandomSlice(20);
   CoreEnd2endTest::IncomingStatusOnClient server_status;

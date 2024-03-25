@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -37,6 +38,8 @@
 #include <grpc/support/json.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -45,6 +48,17 @@
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
+
+namespace {
+bool IsFallbackExperimentEnabled() {
+  auto fallback_enabled = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK");
+  bool enabled = false;
+  return gpr_parse_bool_value(fallback_enabled.value_or("0").c_str(),
+                              &enabled) &&
+         enabled;
+}
+
+}  // namespace
 
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
@@ -218,6 +232,16 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
   return loader;
 }
 
+void GrpcXdsBootstrap::GrpcAuthority::JsonPostLoad(
+    const Json& /*json*/, const JsonArgs& /*args*/,
+    ValidationErrors* /*errors*/) {
+  if (!IsFallbackExperimentEnabled()) {
+    if (servers_.size() > 1) {
+      servers_.resize(1);
+    }
+  }
+}
+
 //
 // GrpcXdsBootstrap
 //
@@ -292,6 +316,11 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
       }
     }
   }
+  if (!IsFallbackExperimentEnabled()) {
+    if (servers_.size() > 1) {
+      servers_.resize(1);
+    }
+  }
 }
 
 std::string GrpcXdsBootstrap::ToString() const {
@@ -330,11 +359,14 @@ std::string GrpcXdsBootstrap::ToString() const {
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         entry.second.client_listener_resource_name_template()));
-    if (entry.second.server() != nullptr) {
-      parts.push_back(absl::StrFormat(
-          "    servers=[\n%s\n],\n",
-          JsonDump(static_cast<const GrpcXdsServer*>(entry.second.server())
-                       ->ToJson())));
+    std::vector<std::string> server_jsons;
+    for (const XdsServer* server : entry.second.servers()) {
+      server_jsons.emplace_back(
+          JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
+    }
+    if (!server_jsons.empty()) {
+      parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                      absl::StrJoin(server_jsons, ",\n")));
     }
     parts.push_back("      },\n");
   }

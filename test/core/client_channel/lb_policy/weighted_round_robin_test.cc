@@ -40,7 +40,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -858,7 +857,6 @@ TEST_F(WeightedRoundRobinTest, ZeroErrorUtilPenalty) {
 }
 
 TEST_F(WeightedRoundRobinTest, MultipleAddressesPerEndpoint) {
-  if (!IsWrrDelegateToPickFirstEnabled()) return;
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in WRR.
@@ -1066,7 +1064,6 @@ TEST_F(WeightedRoundRobinTest, MetricDefinitionEndpointWeights) {
 }
 
 TEST_F(WeightedRoundRobinTest, MetricValues) {
-  if (!IsWrrDelegateToPickFirstEnabled()) return;
   const auto kRrFallback =
       GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
           "grpc.lb.wrr.rr_fallback")
@@ -1087,7 +1084,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
   const absl::string_view kOptionalLabelValues[] = {kLocalityName};
   auto stats_plugin = std::make_shared<FakeStatsPlugin>(
       nullptr, /*use_disabled_by_default_metrics=*/true);
-  stats_plugin_group_.push_back(stats_plugin);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
   // Send address list to LB policy.
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
