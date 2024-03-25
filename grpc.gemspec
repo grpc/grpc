@@ -1801,7 +1801,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/surface/legacy_channel.cc )
   s.files += %w( src/core/lib/surface/legacy_channel.h )
   s.files += %w( src/core/lib/surface/metadata_array.cc )
-  s.files += %w( src/core/lib/surface/passive_listener_internal.h )
   s.files += %w( src/core/lib/surface/server.cc )
   s.files += %w( src/core/lib/surface/server.h )
   s.files += %w( src/core/lib/surface/server_interface.h )
