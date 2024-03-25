@@ -22,6 +22,8 @@ import re
 import sys
 
 IGNORED_FILES = [
+    # note: the grpc_core::Server redundant namespace qualification is required
+    # for older gcc versions.
     "src/core/ext/transport/chttp2/server/chttp2_server.h",
     "src/core/lib/surface/server.h",
 ]

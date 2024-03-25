@@ -77,9 +77,10 @@ IGNORED_FILES = [
     "src/core/lib/gprpp/global_config_env.h",
     "src/core/lib/profiling/timers.h",
     "src/core/lib/gprpp/crash.h",
-    # full qualification is needed to make friends with a globally-scoped
-    # function.
-    "src/core/lib/surface/passive_listener_internal.h",
+    # The grpc_core::Server redundant namespace qualification is required for
+    # older gcc versions.
+    "src/core/ext/transport/chttp2/server/chttp2_server.h",
+    "src/core/lib/surface/server.h",
 ]
 
 # find our home
