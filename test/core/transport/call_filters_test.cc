@@ -119,7 +119,7 @@ namespace filters_detail {
 
 TEST(StackDataTest, Empty) {
   StackData d;
-  EXPECT_EQ(d.call_data_alignment, 0u);
+  EXPECT_EQ(d.call_data_alignment, 1u);
   EXPECT_EQ(d.call_data_size, 0u);
 }
 
@@ -1405,7 +1405,7 @@ TEST(CallFiltersTest, UnaryCall) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  CallFilters filters(Arena::MakePooled<ClientMetadata>(arena.get()));
+  CallFilters filters(Arena::MakePooled<ClientMetadata>());
   filters.SetStack(builder.Build());
   promise_detail::Context<Arena> ctx(arena.get());
   StrictMock<MockActivity> activity;

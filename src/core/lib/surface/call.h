@@ -99,6 +99,8 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual void InternalUnref(const char* reason) = 0;
   virtual char* GetPeer() = 0;
 
+  void ResetDeadline();
+
   // Return the EventEngine used for this call's async execution.
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;
