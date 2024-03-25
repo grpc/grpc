@@ -584,8 +584,10 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     }
     if (authority_state.xds_channels.back()->status().ok()) return true;
   }
-  gpr_log(GPR_INFO, "[xds_client %p] authority %s: No fallback server", this,
-          authority.c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] authority %s: No fallback server", this,
+            authority.c_str());
+  }
   return false;
 }
 
@@ -602,8 +604,10 @@ void XdsClient::XdsChannel::SetHealthyLocked() {
     auto channel_it = std::find(channels.begin(), channels.end(), this);
     // Skip if this is not on the list
     if (channel_it != channels.end()) {
-      gpr_log(GPR_INFO, "[xds_client %p] Falling forward to %s", this,
-              server_.server_uri().c_str());
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO, "[xds_client %p] authority %s: Falling forward to %s",
+                this, authority.first.c_str(), server_.server_uri().c_str());
+      }
       // Lower priority channels are no longer needed, connection is back!
       channels.erase(channel_it + 1, channels.end());
     }

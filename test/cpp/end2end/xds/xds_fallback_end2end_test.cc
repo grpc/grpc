@@ -65,7 +65,6 @@ class XdsFallbackTest : public XdsEnd2endTest {
     XdsEnd2endTest::TearDown();
   }
 
-  // Sets resources and returns target name
   void SetXdsResourcesForTarget(BalancerServerThread* balancer, size_t backend,
                                 absl::string_view target = "") {
     Listener listener = default_listener_;

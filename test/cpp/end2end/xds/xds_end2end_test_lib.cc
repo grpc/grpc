@@ -299,7 +299,6 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
                             "envoy.lb.does_not_support_overprovisioning",
                             "xds.config.resource-in-sotw"));
           },
-
           // NACKs must use the right status code.
           [&](absl::StatusCode code) {
             EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);
@@ -382,7 +381,8 @@ const char XdsEnd2endTest::kServerKeyPath[] =
 
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
-XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
+XdsEnd2endTest::XdsEnd2endTest()
+    : balancer_(CreateAndStartBalancer("Default Balancer")) {
   // Initialize default client-side xDS resources.
   default_listener_ = XdsResourceUtils::DefaultListener();
   default_route_config_ = XdsResourceUtils::DefaultRouteConfig();
