@@ -98,7 +98,10 @@
 
 namespace grpc_core {
 
-using ::grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::EventEngineSupportsFdExtension;
+using grpc_event_engine::experimental::QueryExtension;
 
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
@@ -130,9 +133,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void Start(Server* server,
              const std::vector<grpc_pollset*>* pollsets) override;
 
-  void AcceptConnectedEndpoint(
-      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          endpoint);
+  void AcceptConnectedEndpoint(std::unique_ptr<EventEngine::Endpoint> endpoint);
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
     return channelz_listen_socket_.get();
@@ -713,8 +714,7 @@ grpc_error_handle Chttp2ServerListener::Create(
   // be at the end of this function if the listener was not added to the
   // server's set of listeners.
   grpc_error_handle error = grpc_tcp_server_create(
-      &listener->tcp_server_shutdown_complete_,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &listener->tcp_server_shutdown_complete_, ChannelArgsEndpointConfig(args),
       OnAccept, listener.get(), &listener->tcp_server_);
   if (!error.ok()) return error;
   if (listener->config_fetcher_ != nullptr) {
@@ -747,8 +747,7 @@ grpc_error_handle Chttp2ServerListener::CreateWithAcceptor(
   auto listener = MakeOrphanable<Chttp2ServerListener>(
       server, args, args_modifier, server->config_fetcher());
   grpc_error_handle error = grpc_tcp_server_create(
-      &listener->tcp_server_shutdown_complete_,
-      grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
+      &listener->tcp_server_shutdown_complete_, ChannelArgsEndpointConfig(args),
       OnAccept, listener.get(), &listener->tcp_server_);
   if (!error.ok()) return error;
   // TODO(yangg) channelz
@@ -839,8 +838,8 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
 
 void Chttp2ServerListener::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  auto* c_endpoint = grpc_event_engine_endpoint_create(std::move(endpoint));
-  OnAccept(this, c_endpoint, nullptr, nullptr);
+  OnAccept(this, grpc_event_engine_endpoint_create(std::move(endpoint)),
+           /*accepting_pollset=*/nullptr, /*acceptor=*/nullptr);
 }
 
 void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
@@ -1063,8 +1062,7 @@ ChannelArgs ModifyArgsForConnection(const ChannelArgs& args,
 namespace experimental {
 
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint) {
+    std::unique_ptr<EventEngine::Endpoint> endpoint) {
   GPR_ASSERT(server_ != nullptr);
   RefCountedPtr<Chttp2ServerListener> listener;
   {
@@ -1077,7 +1075,6 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
   if (listener == nullptr) {
     return absl::UnavailableError("passive listener already shut down");
   }
-
   ExecCtx exec_ctx;
   listener->AcceptConnectedEndpoint(std::move(endpoint));
   return absl::OkStatus();
@@ -1087,18 +1084,15 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   GPR_ASSERT(server_ != nullptr);
   ExecCtx exec_ctx;
   auto& args = server_->channel_args();
-  auto engine =
-      args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-  auto* supports_fd = grpc_event_engine::experimental::QueryExtension<
-      grpc_event_engine::experimental::EventEngineSupportsFdExtension>(
-      engine.get());
+  auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
+      /*engine=*/args.GetObjectRef<EventEngine>().get());
   if (supports_fd == nullptr) {
     return absl::UnimplementedError(
         "The server's EventEngine does not support adding endpoints from "
         "connected file descriptors.");
   }
-  auto endpoint = supports_fd->CreateEndpointFromFd(
-      fd, grpc_event_engine::experimental::ChannelArgsEndpointConfig(args));
+  auto endpoint =
+      supports_fd->CreateEndpointFromFd(fd, ChannelArgsEndpointConfig(args));
   return AcceptConnectedEndpoint(std::move(endpoint));
 }
 
