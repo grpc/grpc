@@ -47,8 +47,6 @@ class ChaoticGoodInsecureChannelCredentialsImpl final
     return channel;
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
-
  private:
   grpc_channel_credentials* c_creds() const override { return nullptr; }
 };

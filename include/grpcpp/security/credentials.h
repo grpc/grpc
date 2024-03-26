@@ -69,18 +69,15 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
  protected:
+  // TODO(yashykt): We need these friend declaration mainly for access to
+  // c_creds(). Once we are able to remove insecure builds from gRPC (and also
+  // internal dependencies on the indirect method of creating a channel through
+  // credentials), we would be able to remove this.
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
-
-  // TODO(yashykt): We need this friend declaration mainly for access to
-  // AsSecureCredentials(). Once we are able to remove insecure builds from gRPC
-  // (and also internal dependencies on the indirect method of creating a
-  // channel through credentials), we would be able to remove this.
   friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
       const std::shared_ptr<ChannelCredentials>& fallback_creds);
-
-  virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
@@ -134,7 +131,7 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
       const std::shared_ptr<CallCredentials>& creds1,
       const std::shared_ptr<CallCredentials>& creds2);
 
-  virtual SecureCallCredentials* AsSecureCredentials() = 0;
+  virtual grpc_call_credentials* c_creds() = 0;
 };
 
 /// Options used to build SslCredentials.

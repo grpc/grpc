@@ -45,8 +45,6 @@ class CronetChannelCredentialsImpl final : public ChannelCredentials {
             experimental::ClientInterceptorFactoryInterface>>());
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
-
  private:
   std::shared_ptr<grpc::Channel> CreateChannelWithInterceptors(
       const string& target, const grpc::ChannelArguments& args,

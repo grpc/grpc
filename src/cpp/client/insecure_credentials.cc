@@ -62,8 +62,6 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
     return channel;
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
-
  private:
   grpc_channel_credentials* c_creds() const override { return insecure_creds_; }
 

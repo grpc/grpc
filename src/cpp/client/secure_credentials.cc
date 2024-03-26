@@ -361,13 +361,10 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   // here. This is OK because the underlying C objects (i.e., channel_creds and
   // call_creds) into grpc_composite_credentials_create will see their refcounts
   // incremented.
-  SecureChannelCredentials* s_channel_creds =
-      channel_creds->AsSecureCredentials();
-  SecureCallCredentials* s_call_creds = call_creds->AsSecureCredentials();
-  if (s_channel_creds && s_call_creds) {
+  if (channel_creds->c_creds() != nullptr && call_creds->c_creds() != nullptr) {
     return internal::WrapChannelCredentials(
         grpc_composite_channel_credentials_create(
-            s_channel_creds->c_creds(), s_call_creds->c_creds(), nullptr));
+            channel_creds->c_creds(), call_creds->c_creds(), nullptr));
   }
   return nullptr;
 }
@@ -375,11 +372,9 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
 std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2) {
-  SecureCallCredentials* s_creds1 = creds1->AsSecureCredentials();
-  SecureCallCredentials* s_creds2 = creds2->AsSecureCredentials();
-  if (s_creds1 != nullptr && s_creds2 != nullptr) {
+  if (creds1->c_creds() != nullptr && creds2->c_creds() != nullptr) {
     return WrapCallCredentials(grpc_composite_call_credentials_create(
-        s_creds1->c_creds(), s_creds2->c_creds(), nullptr));
+        creds1->c_creds(), creds2->c_creds(), nullptr));
   }
   return nullptr;
 }

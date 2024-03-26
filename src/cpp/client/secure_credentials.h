@@ -55,8 +55,6 @@ class SecureChannelCredentials final : public ChannelCredentials {
   std::shared_ptr<Channel> CreateChannelImpl(
       const std::string& target, const ChannelArguments& args) override;
 
-  SecureChannelCredentials* AsSecureCredentials() override { return this; }
-
   // Promoted to a public API for internal use
   grpc_channel_credentials* c_creds() const override { return c_creds_; }
 
@@ -78,10 +76,9 @@ class SecureCallCredentials final : public CallCredentials {
     if (c_creds_ != nullptr) c_creds_->Unref();
   }
 
-  grpc_call_credentials* c_creds() { return c_creds_; }
+  grpc_call_credentials* c_creds() override { return c_creds_; }
 
   bool ApplyToCall(grpc_call* call) override;
-  SecureCallCredentials* AsSecureCredentials() override { return this; }
   std::string DebugString() override {
     return absl::StrCat("SecureCallCredentials{",
                         std::string(c_creds_->debug_string()), "}");
