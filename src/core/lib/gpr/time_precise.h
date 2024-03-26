@@ -27,8 +27,10 @@
 // low as a usec. Use other clock sources or gpr_precise_clock_now(),
 // where you need high resolution clocks.
 //
-// Using gpr_get_cycle_counter() is preferred to using Timestamp::Now()
-// whenever possible.
+// Use gpr_get_cycle_counter() only for stats latency calculation, and not for
+// any other reason such as checking for deadlines. There's currently a
+// discrepancy when mixing gpr_cycle_counter and gpr_timespec. Prefer to use
+// gpr_timespec or grpc_core::Timestamp::Now() for regular gRPC functionality.
 
 #if GPR_CYCLE_COUNTER_CUSTOM
 typedef int64_t gpr_cycle_counter;

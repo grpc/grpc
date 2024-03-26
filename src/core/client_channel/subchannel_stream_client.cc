@@ -206,8 +206,8 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       subchannel_stream_client_->connected_subchannel_,
       &pollent_,
       Slice::FromStaticString("/grpc.health.v1.Health/Watch"),
-      gpr_get_cycle_counter(),  // start_time
-      Timestamp::InfFuture(),   // deadline
+      Timestamp::Now(),        // start_time
+      Timestamp::InfFuture(),  // deadline
       arena_.get(),
       context_,
       &call_combiner_,

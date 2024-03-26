@@ -129,7 +129,7 @@ class CallContext {
 
   grpc_call_stats* call_stats() { return &call_stats_; }
   gpr_atm* peer_string_atm_ptr();
-  gpr_cycle_counter call_start_time() { return start_time_; }
+  gpr_timespec call_start_time() { return start_time_; }
 
   ServerCallContext* server_call_context();
 
@@ -151,7 +151,7 @@ class CallContext {
   // TODO(ctiller): remove this once transport APIs are promise based and we
   // don't need refcounting here.
   BasicPromiseBasedCall* const call_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+  gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   // Is this call traced?
   bool traced_ = false;
 };

@@ -51,7 +51,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       RefCountedPtr<DynamicFilters> channel_stack;
       grpc_polling_entity* pollent;
       grpc_slice path;
-      gpr_cycle_counter start_time;
+      Timestamp start_time;
       Timestamp deadline;
       Arena* arena;
       grpc_call_context_element* context;
