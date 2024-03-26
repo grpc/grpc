@@ -71,7 +71,7 @@ class PromiseLike<void>;
 
 template <typename F>
 class PromiseLike<F, absl::enable_if_t<!std::is_void<
-                         typename std::result_of<F()>::type>::value>> {
+                         typename absl::type_traits_internal::result_of<F()>::type>::value>> {
  private:
   GPR_NO_UNIQUE_ADDRESS F f_;
 
