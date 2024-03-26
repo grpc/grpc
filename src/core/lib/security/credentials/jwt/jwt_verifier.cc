@@ -53,7 +53,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -114,19 +113,9 @@ static const EVP_MD* evp_md_from_alg(const char* alg) {
 
 static Json parse_json_part_from_jwt(const char* str, size_t len) {
   std::string string;
-  if (!grpc_core::IsAbslBase64Enabled()) {
-    grpc_slice slice = grpc_base64_decode_with_len(str, len, 1);
-    if (GRPC_SLICE_IS_EMPTY(slice)) {
-      gpr_log(GPR_ERROR, "Invalid base64.");
-      return Json();  // JSON null
-    }
-    string = std::string(grpc_core::StringViewFromSlice(slice));
-    grpc_core::CSliceUnref(slice);
-  } else {
-    if (!absl::WebSafeBase64Unescape(absl::string_view(str, len), &string)) {
-      gpr_log(GPR_ERROR, "Invalid base64.");
-      return Json();  // JSON null
-    }
+  if (!absl::WebSafeBase64Unescape(absl::string_view(str, len), &string)) {
+    gpr_log(GPR_ERROR, "Invalid base64.");
+    return Json();  // JSON null
   }
   auto json = grpc_core::JsonParse(string);
   if (!json.ok()) {
@@ -491,18 +480,6 @@ end:
 
 static BIGNUM* bignum_from_base64(const char* b64) {
   if (b64 == nullptr) return nullptr;
-  if (!grpc_core::IsAbslBase64Enabled()) {
-    grpc_slice bin = grpc_base64_decode(b64, 1);
-    if (GRPC_SLICE_IS_EMPTY(bin)) {
-      gpr_log(GPR_ERROR, "Invalid base64 for big num.");
-      return nullptr;
-    }
-    BIGNUM* result =
-        BN_bin2bn(GRPC_SLICE_START_PTR(bin),
-                  TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
-    grpc_core::CSliceUnref(bin);
-    return result;
-  }
   std::string string;
   if (!absl::WebSafeBase64Unescape(b64, &string)) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
@@ -969,14 +946,9 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   signed_jwt_len = static_cast<size_t>(dot - jwt);
   cur = dot + 1;
 
-  if (!grpc_core::IsAbslBase64Enabled()) {
-    signature = grpc_base64_decode(cur, 1);
-    if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
-  } else {
-    std::string signature_str;
-    if (!absl::WebSafeBase64Unescape(cur, &signature_str)) goto error;
-    signature = grpc_slice_from_cpp_string(std::move(signature_str));
-  }
+  std::string signature_str;
+  if (!absl::WebSafeBase64Unescape(cur, &signature_str)) goto error;
+  signature = grpc_slice_from_cpp_string(std::move(signature_str));
   retrieve_key_and_verify(
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
                              signature, jwt, signed_jwt_len, user_data, cb));
