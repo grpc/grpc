@@ -108,8 +108,6 @@ class OpenTelemetryPlugin::ClientCallTracer
         optional_labels_array_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
-    OpenTelemetryPlugin* otel_plugin_;
-    ActivePluginOptionsView active_plugin_options_view_;
   };
 
   ClientCallTracer(
@@ -137,13 +135,10 @@ class OpenTelemetryPlugin::ClientCallTracer
   void RecordAnnotation(absl::string_view /*annotation*/) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
-  absl::string_view target() const;
-
  private:
   absl::string_view MethodForStats() const;
 
   // Client method.
-  absl::string_view target_;
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;

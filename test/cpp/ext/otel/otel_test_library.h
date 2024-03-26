@@ -178,28 +178,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
   std::unique_ptr<grpc::Server> server_;
   std::unique_ptr<EchoTestService::Stub> stub_;
   std::unique_ptr<grpc::GenericStub> generic_stub_;
-
- public:
-  friend void ConfigureOpenTelemetryPluginBuilderWithOptions(
-      OpenTelemetryPluginEnd2EndTest::Options options,
-      grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder,
-      std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>* reader);
 };
-
-absl::flat_hash_map<
-    std::string, std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
-ReadCurrentMetricsData(
-    std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader,
-    absl::AnyInvocable<
-        bool(const absl::flat_hash_map<
-             std::string,
-             std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
-        continue_predicate);
-
-void ConfigureOpenTelemetryPluginBuilderWithOptions(
-    OpenTelemetryPluginEnd2EndTest::Options options,
-    grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder,
-    std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>* reader);
 
 }  // namespace testing
 }  // namespace grpc

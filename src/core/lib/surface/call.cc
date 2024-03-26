@@ -2742,7 +2742,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
         *args->path, args->registered_method, this->context());
     send_initial_metadata_ =
         GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
-    Slice path = args->path->Ref();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),

@@ -57,7 +57,7 @@ class CallTracerTest : public ::testing::Test {
 
 TEST_F(CallTracerTest, BasicClientCallTracer) {
   FakeClientCallTracer client_call_tracer(&annotation_logger_);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer);
+  AddClientCallTracerToContext(context_, &client_call_tracer);
   static_cast<CallTracerAnnotationInterface*>(
       context_[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value)
       ->RecordAnnotation("Test");
@@ -69,9 +69,9 @@ TEST_F(CallTracerTest, MultipleClientCallTracers) {
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer1);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer2);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer3);
+  AddClientCallTracerToContext(context_, &client_call_tracer1);
+  AddClientCallTracerToContext(context_, &client_call_tracer2);
+  AddClientCallTracerToContext(context_, &client_call_tracer3);
   static_cast<CallTracerAnnotationInterface*>(
       context_[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value)
       ->RecordAnnotation("Test");
@@ -84,9 +84,9 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer1);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer2);
-  AddClientCallTracerToContext(arena_, context_, &client_call_tracer3);
+  AddClientCallTracerToContext(context_, &client_call_tracer1);
+  AddClientCallTracerToContext(context_, &client_call_tracer2);
+  AddClientCallTracerToContext(context_, &client_call_tracer3);
   auto* attempt_tracer =
       static_cast<ClientCallTracer*>(
           context_[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value)
@@ -98,7 +98,7 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
 
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {
   FakeServerCallTracer server_call_tracer(&annotation_logger_);
-  AddServerCallTracerToContext(arena_, context_, &server_call_tracer);
+  AddServerCallTracerToContext(context_, &server_call_tracer);
   static_cast<CallTracerAnnotationInterface*>(
       context_[GRPC_CONTEXT_CALL_TRACER].value)
       ->RecordAnnotation("Test");
@@ -113,9 +113,9 @@ TEST_F(CallTracerTest, MultipleServerCallTracers) {
   FakeServerCallTracer server_call_tracer1(&annotation_logger_);
   FakeServerCallTracer server_call_tracer2(&annotation_logger_);
   FakeServerCallTracer server_call_tracer3(&annotation_logger_);
-  AddServerCallTracerToContext(arena_, context_, &server_call_tracer1);
-  AddServerCallTracerToContext(arena_, context_, &server_call_tracer2);
-  AddServerCallTracerToContext(arena_, context_, &server_call_tracer3);
+  AddServerCallTracerToContext(context_, &server_call_tracer1);
+  AddServerCallTracerToContext(context_, &server_call_tracer2);
+  AddServerCallTracerToContext(context_, &server_call_tracer3);
   static_cast<CallTracerAnnotationInterface*>(
       context_[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value)
       ->RecordAnnotation("Test");

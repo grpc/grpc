@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
@@ -164,9 +165,6 @@ class CallbackMetricReporter {
 
 class RegisteredMetricCallback;
 
-class ClientCallTracer;
-class ServerCallTracerFactory;
-
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
@@ -192,9 +190,9 @@ class StatsPlugin {
 
   virtual ~StatsPlugin() = default;
 
-  // Whether this stats plugin is enabled for the channel specified by \a
-  // scope. Returns true and a channel-specific ScopeConfig which may then be
-  // used to configure the ClientCallTracer in GetClientCallTracer().
+  // Whether this stats plugin is enabled for the channel specified by \a scope.
+  // Returns true and a channel-specific ScopeConfig which may then be used to
+  // configure the ClientCallTracer in GetClientCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
       const ChannelScope& scope) const = 0;
   // Whether this stats plugin is enabled for the server specified by \a args.
@@ -203,18 +201,18 @@ class StatsPlugin {
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
 
-  // Adds \a value to the uint64 counter specified by \a handle. \a
-  // label_values and \a optional_label_values specify attributes that are
-  // associated with this measurement and must match with their corresponding
-  // keys in GlobalInstrumentsRegistry::RegisterUInt64Counter().
+  // Adds \a value to the uint64 counter specified by \a handle. \a label_values
+  // and \a optional_label_values specify attributes that are associated with
+  // this measurement and must match with their corresponding keys in
+  // GlobalInstrumentsRegistry::RegisterUInt64Counter().
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
-  // Adds \a value to the double counter specified by \a handle. \a
-  // label_values and \a optional_label_values specify attributes that are
-  // associated with this measurement and must match with their corresponding
-  // keys in GlobalInstrumentsRegistry::RegisterDoubleCounter().
+  // Adds \a value to the double counter specified by \a handle. \a label_values
+  // and \a optional_label_values specify attributes that are associated with
+  // this measurement and must match with their corresponding keys in
+  // GlobalInstrumentsRegistry::RegisterDoubleCounter().
   virtual void AddCounter(
       GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
@@ -258,39 +256,39 @@ class StatsPlugin {
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
 
-  // Gets a ClientCallTracer associated with this stats plugin which can be
-  // used in a call.
+  // Gets a ClientCallTracer associated with this stats plugin which can be used
+  // in a call.
   virtual ClientCallTracer* GetClientCallTracer(
       const Slice& path, bool registered_method,
       std::shared_ptr<ScopeConfig> scope_config) = 0;
-  // Gets a ServerCallTracer associated with this stats plugin which can be
-  // used in a call.
+  // Gets a ServerCallTracer associated with this stats plugin which can be used
+  // in a call.
   virtual ServerCallTracer* GetServerCallTracer(
       std::shared_ptr<ScopeConfig> scope_config) = 0;
 
-  // TODO(yijiem): This is an optimization for the StatsPlugin to create its
-  // own representation of the label_values and use it multiple times. We
-  // would change AddCounter and RecordHistogram to take
-  // RefCountedPtr<LabelValueSet> and also change the StatsPluginsGroup to
-  // support this. Use the StatsPlugin to get a representation of label values
-  // that can be saved for multiple uses later. virtual
-  // RefCountedPtr<LabelValueSet> MakeLabelValueSet(
+  // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
+  // representation of the label_values and use it multiple times. We would
+  // change AddCounter and RecordHistogram to take RefCountedPtr<LabelValueSet>
+  // and also change the StatsPluginsGroup to support this.
+  // Use the StatsPlugin to get a representation of label values that can be
+  // saved for multiple uses later.
+  // virtual RefCountedPtr<LabelValueSet> MakeLabelValueSet(
   //     absl::Span<absl::string_view> label_values) = 0;
 };
 
-// A global registry of stats plugins. It has shared ownership to the
-// registered stats plugins. This API is supposed to be used during runtime
-// after the main function begins. This API is thread-safe.
+// A global registry of stats plugins. It has shared ownership to the registered
+// stats plugins. This API is supposed to be used during runtime after the main
+// function begins. This API is thread-safe.
 class GlobalStatsPluginRegistry {
  public:
-  // A stats plugin group object is how the code in gRPC normally interacts
-  // with stats plugins. They got a stats plugin group which contains all the
-  // stats plugins for a specific scope and all operations on the stats plugin
-  // group will be applied to all the stats plugins within the group.
+  // A stats plugin group object is how the code in gRPC normally interacts with
+  // stats plugins. They got a stats plugin group which contains all the stats
+  // plugins for a specific scope and all operations on the stats plugin group
+  // will be applied to all the stats plugins within the group.
   class StatsPluginGroup {
    public:
-    // Adds a stats plugin and a scope config (per-channel or per-server) to
-    // the group.
+    // Adds a stats plugin and a scope config (per-channel or per-server) to the
+    // group.
     void AddStatsPlugin(std::shared_ptr<StatsPlugin> plugin,
                         std::shared_ptr<StatsPlugin::ScopeConfig> config) {
       PluginState plugin_state;
@@ -298,8 +296,8 @@ class GlobalStatsPluginRegistry {
       plugin_state.scope_config = std::move(config);
       plugins_state_.push_back(std::move(plugin_state));
     }
-    // Adds a counter in all stats plugins within the group. See the
-    // StatsPlugin interface for more documentation and valid types.
+    // Adds a counter in all stats plugins within the group. See the StatsPlugin
+    // interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void AddCounter(HandleType handle, ValueType value,
                     absl::Span<const absl::string_view> label_values,
@@ -308,8 +306,8 @@ class GlobalStatsPluginRegistry {
         state.plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
-    // Records a value to a histogram in all stats plugins within the group.
-    // See the StatsPlugin interface for more documentation and valid types.
+    // Records a value to a histogram in all stats plugins within the group. See
+    // the StatsPlugin interface for more documentation and valid types.
     template <class HandleType, class ValueType>
     void RecordHistogram(HandleType handle, ValueType value,
                          absl::Span<const absl::string_view> label_values,
@@ -343,12 +341,12 @@ class GlobalStatsPluginRegistry {
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
 
-    // Adds all available client call tracers associated with the stats
-    // plugins within the group to \a call_context.
+    // Adds all available client call tracers associated with the stats plugins
+    // within the group to \a call_context.
     void AddClientCallTracers(const Slice& path, bool registered_method,
                               grpc_call_context_element* call_context);
-    // Adds all available server call tracers associated with the stats
-    // plugins within the group to \a call_context.
+    // Adds all available server call tracers associated with the stats plugins
+    // within the group to \a call_context.
     void AddServerCallTracers(grpc_call_context_element* call_context);
 
    private:
