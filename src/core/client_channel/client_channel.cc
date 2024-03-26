@@ -703,9 +703,10 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
         }
       }
       if (tracer != nullptr) {
-        tracer->RecordReceivedTrailingMetadata(
-            status, &metadata,
-            &GetContext<CallContext>()->call_stats()->transport_stream_stats);
+        tracer->RecordReceivedTrailingMetadata(status, &metadata,
+                                               &GetContext<grpc_core::Call>()
+                                                    ->call_stats()
+                                                    ->transport_stream_stats);
       }
       if (call_tracker != nullptr && *call_tracker != nullptr) {
         LbMetadata lb_metadata(&metadata);
@@ -788,7 +789,7 @@ class ClientChannel::LoadBalancedCallDestination
       RefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
-  void Orphan() {}
+  void Orphan() override {}
 
   void StartCall(UnstartedCallHandler unstarted_handler) override {
     // If there is a call tracer, create a call attempt tracer.
@@ -881,12 +882,19 @@ ClientChannelServiceConfigCallData* GetServiceConfigCallDataFromContext() {
 
 namespace {
 
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
+
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const ChannelArgs& args) {
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
   return GlobalSubchannelPool::instance();
+}
+
+Duration GetClientIdleTimeout(const ChannelArgs& args) {
+  return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
+      .value_or(kDefaultIdleTimeout);
 }
 
 }  // namespace
@@ -1624,16 +1632,14 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
   // Construct filter stack.
-  InterceptionChain::Builder builder(
-      std::make_shared<LoadBalancedCallDestination>(
-          RefAsSubclass<ClientChannel>()));
+  InterceptionChainBuilder builder(channel_args_);
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
     });
   }
   CoreConfiguration::Get().channel_init().AddToInterceptionChain(
-      GRPC_CLIENT_CHANNEL, channel_args_, builder);
+      GRPC_CLIENT_CHANNEL, builder);
 // FIXME: add filters registered for CLIENT_CHANNEL plus filters returned
 // by config selector
 #if 0
@@ -1653,10 +1659,15 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
     // more generic)
     Crash("call v3 stack does not yet support retries");
   }
-  auto filter_stack = builder.Build(channel_args_);
+  auto filter_stack = builder.Build(MakeRefCounted<LoadBalancedCallDestination>(
+      RefAsSubclass<ClientChannel>()));
   // Send result to data plane.
-  resolver_data_for_calls_.Set(ResolverDataForCalls{std::move(config_selector),
-                                                    std::move(filter_stack)});
+  if (filter_stack.ok()) {
+    resolver_data_for_calls_.Set(ResolverDataForCalls{
+        std::move(config_selector), std::move(filter_stack.value())});
+  } else {
+    resolver_data_for_calls_.Set(filter_stack.status());
+  }
 }
 
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
@@ -1722,7 +1733,7 @@ void ClientChannel::StartIdleTimer() {
 
 absl::Status ClientChannel::ApplyServiceConfigToCall(
     ConfigSelector& config_selector,
-    ClientMetadataHandle& client_initial_metadata) const {
+    ClientMetadata& client_initial_metadata) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: %sapplying service config to call",
             this, GetContext<Activity>()->DebugTag().c_str());
@@ -1737,7 +1748,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
           GetContext<Arena>(), GetContext<grpc_call_context_element>());
   // Use the ConfigSelector to determine the config for the call.
   absl::Status call_config_status = config_selector.GetCallConfig(
-      {client_initial_metadata.get(), GetContext<Arena>(),
+      {&client_initial_metadata, GetContext<Arena>(),
        service_config_call_data});
   if (!call_config_status.ok()) {
     return MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector");
@@ -1750,16 +1761,13 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
     // If the service config specifies a deadline, update the call's
     // deadline timer.
     if (method_params->timeout() != Duration::Zero()) {
-      CallContext* call_context = GetContext<CallContext>();
-      const Timestamp per_method_deadline =
-          Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
-          method_params->timeout();
-      call_context->UpdateDeadline(per_method_deadline);
+      auto* call = GetContext<Call>();
+      call->UpdateDeadline(call->start_time() + method_params->timeout());
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
     auto* wait_for_ready =
-        client_initial_metadata->GetOrCreatePointer(WaitForReady());
+        client_initial_metadata.GetOrCreatePointer(WaitForReady());
     if (method_params->wait_for_ready().has_value() &&
         !wait_for_ready->explicitly_set) {
       wait_for_ready->value = method_params->wait_for_ready().value();
@@ -1798,12 +1806,12 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
   auto& client_initial_metadata =
       unstarted_handler.UnprocessedClientInitialMetadata();
   LoadBalancingPolicy::PickArgs pick_args;
-  Slice* path = client_initial_metadata->get_pointer(HttpPathMetadata());
+  Slice* path = client_initial_metadata.get_pointer(HttpPathMetadata());
   GPR_ASSERT(path != nullptr);
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state;
   pick_args.call_state = &lb_call_state;
-  LbMetadata initial_metadata(client_initial_metadata.get());
+  LbMetadata initial_metadata(&client_initial_metadata);
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker.Pick(pick_args);
   // Handle result.
@@ -1868,7 +1876,7 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         // If wait_for_ready is false, then the error indicates the RPC
         // attempt's final status.
         if (!unstarted_handler.UnprocessedClientInitialMetadata()
-                 ->GetOrCreatePointer(WaitForReady())
+                 .GetOrCreatePointer(WaitForReady())
                  ->value) {
           return MaybeRewriteIllegalStatusCode(std::move(fail_pick->status),
                                                "LB pick");

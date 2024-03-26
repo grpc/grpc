@@ -101,6 +101,10 @@ class Call : public CppImplOf<Call, grpc_call> {
 
   void ResetDeadline();
 
+  virtual grpc_call_stats* call_stats() { Crash("not implemented"); }
+  virtual Timestamp start_time() { Crash("not implemented"); }
+  virtual void UpdateDeadline(Timestamp deadline) { Crash("not implemented"); }
+
   // Return the EventEngine used for this call's async execution.
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;

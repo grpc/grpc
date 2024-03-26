@@ -154,7 +154,7 @@ class ClientChannel : public Channel {
   // May modify call context and client_initial_metadata.
   absl::Status ApplyServiceConfigToCall(
       ConfigSelector& config_selector,
-      ClientMetadataHandle& client_initial_metadata) const;
+      ClientMetadata& client_initial_metadata) const;
 
   // Does an LB pick for a call.  Returns one of the following things:
   // - Continue{}, meaning to queue the pick
