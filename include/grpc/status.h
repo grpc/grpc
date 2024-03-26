@@ -84,7 +84,6 @@ typedef enum {
      between FAILED_PRECONDITION, ABORTED, and UNAVAILABLE:
       (a) Use UNAVAILABLE if the client can retry just the failing call.
       (b) Use ABORTED if the client should retry at a higher-level
-          (e.g., restarting a read-modify-write sequence).
       (c) Use FAILED_PRECONDITION if the client should not retry until
           the system state has been explicitly fixed.  E.g., if an "rmdir"
           fails because the directory is non-empty, FAILED_PRECONDITION
