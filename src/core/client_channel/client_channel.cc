@@ -60,7 +60,6 @@
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
-#include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
