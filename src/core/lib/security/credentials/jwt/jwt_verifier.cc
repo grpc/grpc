@@ -67,7 +67,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
-#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
