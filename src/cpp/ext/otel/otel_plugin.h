@@ -29,6 +29,7 @@
 #include <string>
 #include <utility>
 
+// #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
@@ -385,9 +386,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     return plugin_options_;
   }
 
-  using LabelKeys = std::vector<absl::string_view>;
-  using OptionalLabelKeys = std::vector<absl::string_view>;
-
   struct RegisteredMetricCallbackState {
     grpc_core::Timestamp last_update_time;
   };
@@ -395,17 +393,10 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   template <typename ValueType>
   struct ObservableState
       : public grpc_core::RefCounted<ObservableState<ValueType>> {
-    grpc_core::GlobalInstrumentsRegistry::UID id;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
         instrument;
     bool callback_registered = false;
-    // Views.
-    std::shared_ptr<
-        absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                            std::pair<LabelKeys, OptionalLabelKeys>>>
-        label_keys_map;
-    std::shared_ptr<std::set<absl::string_view>> optional_label_keys;
     // We only support one Observable to one RegisteredMetricCallback and one
     // RegisteredMetricCallback to multiple Observables relationship for now.
     grpc_core::RegisteredMetricCallback* registered_metric_callback = nullptr;
@@ -418,11 +409,15 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     // Per-plugin mutex to synchronize to shared registered metric callback
     // state.
     absl::Mutex* per_plugin_mu;
-    std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-                                        RegisteredMetricCallbackState>>
-        registered_metric_callback_state_map;
+    // std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
+    //                                     RegisteredMetricCallbackState>>
+    //     registered_metric_callback_state_map;
   };
 
+  struct ObservableCallbackArgs {
+    grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
+    OpenTelemetryPlugin* self;
+  };
   template <typename T>
   static void ObservableCallback(opentelemetry::metrics::ObserverResult result,
                                  void* arg);
@@ -436,7 +431,9 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
-      std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
+      std::unique_ptr<ObservableState<int64_t>>,
+      std::unique_ptr<ObservableState<double>>>;
   static constexpr int kOptionalLabelsSizeLimit = 64;
   using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
   struct InstrumentData {
@@ -444,16 +441,10 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     OptionalLabelsBitSet optional_labels_bits;
   };
   std::vector<InstrumentData> instruments_data_;
-  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      std::unique_ptr<ObservableState<int64_t>>>
-      int64_observable_instruments_;
-  absl::flat_hash_map<grpc_core::GlobalInstrumentsRegistry::UID,
-                      std::unique_ptr<ObservableState<double>>>
-      double_observable_instruments_;
   absl::Mutex mu_;
-  std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-                                      RegisteredMetricCallbackState>>
-      registered_metric_callback_state_map_;
+  // std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
+  //                                     RegisteredMetricCallbackState>>
+  //     registered_metric_callback_state_map_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;

@@ -2765,18 +2765,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       }
       PublishToParent(parent);
     }
-    StatsPlugin::ChannelScope scope(args->channel->target(),
-                                    /*authority=*/"");
-    GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope).ForEach(
-        [&, this](std::shared_ptr<StatsPlugin> stats_plugin) {
-          if (stats_plugin->IsEnabledForChannel(scope)) {
-            AddClientCallTracerToContext(
-                arena, this->context(),
-                stats_plugin->GetClientCallTracer(args->channel->target(),
-                                                  std::move(path), arena,
-                                                  args->registered_method));
-          }
-        });
   }
 
   void OrphanCall() override { MaybeUnpublishFromParent(); }

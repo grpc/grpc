@@ -393,16 +393,4 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
   return group;
 }
 
-GlobalStatsPluginRegistry::StatsPluginGroup
-GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
-  MutexLock lock(&*mutex_);
-  StatsPluginGroup group;
-  for (const auto& plugin : *plugins_) {
-    if (plugin->IsEnabledForServer(args)) {
-      group.push_back(plugin);
-    }
-  }
-  return group;
-}
-
 }  // namespace grpc_core
