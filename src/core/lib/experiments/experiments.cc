@@ -137,18 +137,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 const char* const description_v3_backend_metric_filter =
     "Use the backend metric filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_backend_metric_filter = "{}";
-<<<<<<< HEAD
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
-=======
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
->>>>>>> chan3-no-push
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -244,15 +232,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"v3_backend_metric_filter", description_v3_backend_metric_filter,
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-<<<<<<< HEAD
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
-=======
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
->>>>>>> chan3-no-push
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -381,18 +360,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 const char* const description_v3_backend_metric_filter =
     "Use the backend metric filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_backend_metric_filter = "{}";
-<<<<<<< HEAD
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
-=======
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
->>>>>>> chan3-no-push
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -488,15 +455,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"v3_backend_metric_filter", description_v3_backend_metric_filter,
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-<<<<<<< HEAD
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
-=======
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
->>>>>>> chan3-no-push
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -625,18 +583,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 const char* const description_v3_backend_metric_filter =
     "Use the backend metric filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_backend_metric_filter = "{}";
-<<<<<<< HEAD
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
-=======
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
->>>>>>> chan3-no-push
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -732,15 +678,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"v3_backend_metric_filter", description_v3_backend_metric_filter,
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-<<<<<<< HEAD
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
-=======
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
->>>>>>> chan3-no-push
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,

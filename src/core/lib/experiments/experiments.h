@@ -99,12 +99,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3BackendMetricFilterEnabled() { return false; }
-<<<<<<< HEAD
-inline bool IsV3CompressionFilterEnabled() { return false; }
-inline bool IsV3ServerAuthFilterEnabled() { return false; }
-=======
-inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
->>>>>>> chan3-no-push
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -154,12 +148,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3BackendMetricFilterEnabled() { return false; }
-<<<<<<< HEAD
-inline bool IsV3CompressionFilterEnabled() { return false; }
-inline bool IsV3ServerAuthFilterEnabled() { return false; }
-=======
-inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
->>>>>>> chan3-no-push
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
@@ -210,12 +198,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3BackendMetricFilterEnabled() { return false; }
-<<<<<<< HEAD
-inline bool IsV3CompressionFilterEnabled() { return false; }
-inline bool IsV3ServerAuthFilterEnabled() { return false; }
-=======
-inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
->>>>>>> chan3-no-push
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
@@ -253,12 +235,6 @@ enum ExperimentIds {
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdV3BackendMetricFilter,
-<<<<<<< HEAD
-  kExperimentIdV3CompressionFilter,
-  kExperimentIdV3ServerAuthFilter,
-=======
-  kExperimentIdV3ChannelIdleFilters,
->>>>>>> chan3-no-push
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
   kExperimentIdCallV3,
@@ -375,20 +351,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_BACKEND_METRIC_FILTER
 inline bool IsV3BackendMetricFilterEnabled() {
   return IsExperimentEnabled(kExperimentIdV3BackendMetricFilter);
-}
-<<<<<<< HEAD
-#define GRPC_EXPERIMENT_IS_INCLUDED_V3_COMPRESSION_FILTER
-inline bool IsV3CompressionFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3CompressionFilter);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_V3_SERVER_AUTH_FILTER
-inline bool IsV3ServerAuthFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3ServerAuthFilter);
-=======
-#define GRPC_EXPERIMENT_IS_INCLUDED_V3_CHANNEL_IDLE_FILTERS
-inline bool IsV3ChannelIdleFiltersEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3ChannelIdleFilters);
->>>>>>> chan3-no-push
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {
