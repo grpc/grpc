@@ -253,7 +253,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
           grpc_fake_transport_security_server_credentials_create());
     }
 
-    std::string address() const { return absl::StrCat("localhost:", port_); }
+    std::string target() const { return absl::StrCat("localhost:", port_); }
 
     int port() const { return port_; }
 

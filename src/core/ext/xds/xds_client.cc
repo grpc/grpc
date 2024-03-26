@@ -579,14 +579,15 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
               "[xds_client %p] authority %s: added fallback server %s (%s)",
-              this, authority.c_str(), xds_servers[i]->server_uri().c_str(),
+              xds_client_.get(), authority.c_str(),
+              xds_servers[i]->server_uri().c_str(),
               authority_state.xds_channels.back()->status().ToString().c_str());
     }
     if (authority_state.xds_channels.back()->status().ok()) return true;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] authority %s: No fallback server", this,
-            authority.c_str());
+    gpr_log(GPR_INFO, "[xds_client %p] authority %s: No fallback server",
+            xds_client_.get(), authority.c_str());
   }
   return false;
 }
@@ -606,7 +607,8 @@ void XdsClient::XdsChannel::SetHealthyLocked() {
     if (channel_it != channels.end()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO, "[xds_client %p] authority %s: Falling forward to %s",
-                this, authority.first.c_str(), server_.server_uri().c_str());
+                xds_client_.get(), authority.first.c_str(),
+                server_.server_uri().c_str());
       }
       // Lower priority channels are no longer needed, connection is back!
       channels.erase(channel_it + 1, channels.end());
