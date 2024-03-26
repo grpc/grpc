@@ -44,7 +44,7 @@ class WrappedChannelCredentials final : public ChannelCredentials {
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) override;
 
-  grpc_channel_credentials* const c_creds_;
+  grpc_channel_credentials* const c_creds_ = nullptr;
 };
 
 // Creates a shared WrappedChannelCredentials if creds is non-null.
