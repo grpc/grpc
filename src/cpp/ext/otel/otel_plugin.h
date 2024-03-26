@@ -391,8 +391,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   };
 
   template <typename ValueType>
-  struct ObservableState
-      : public grpc_core::RefCounted<ObservableState<ValueType>> {
+  struct ObservableState {
+    grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
         instrument;
@@ -406,17 +406,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     ValueType value;
     std::unique_ptr<std::vector<absl::string_view>> label_values;
     std::unique_ptr<std::vector<absl::string_view>> optional_label_values;
-    // Per-plugin mutex to synchronize to shared registered metric callback
-    // state.
-    absl::Mutex* per_plugin_mu;
-    // std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-    //                                     RegisteredMetricCallbackState>>
-    //     registered_metric_callback_state_map;
-  };
-
-  struct ObservableCallbackArgs {
-    grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
-    OpenTelemetryPlugin* self;
+    OpenTelemetryPlugin* parent;
   };
   template <typename T>
   static void ObservableCallback(opentelemetry::metrics::ObserverResult result,

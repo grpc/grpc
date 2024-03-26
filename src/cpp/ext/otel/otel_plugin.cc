@@ -84,62 +84,6 @@ absl::flat_hash_set<std::string> BaseMetrics() {
       });
   return base_metrics;
 }
-
-class NPCMetricsKeyValueIterable
-    : public opentelemetry::common::KeyValueIterable {
- public:
-  NPCMetricsKeyValueIterable(
-      absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_label_keys,
-      absl::Span<const absl::string_view> optional_label_values,
-      std::shared_ptr<std::set<absl::string_view>> enabled_optional_label_keys)
-      : label_keys_(label_keys),
-        label_values_(label_values),
-        optional_label_keys_(optional_label_keys),
-        optional_label_values_(optional_label_values),
-        enabled_optional_label_keys_(std::move(enabled_optional_label_keys)) {}
-
-  bool ForEachKeyValue(opentelemetry::nostd::function_ref<
-                       bool(opentelemetry::nostd::string_view,
-                            opentelemetry::common::AttributeValue)>
-                           callback) const noexcept override {
-    for (int i = 0; i < label_keys_.size(); ++i) {
-      if (!callback(AbslStrViewToOpenTelemetryStrView(label_keys_[i]),
-                    AbslStrViewToOpenTelemetryStrView(label_values_[i]))) {
-        return false;
-      }
-    }
-    if (enabled_optional_label_keys_ == nullptr) {
-      return true;
-    }
-    // Note that if there is duplicated enabled keys we will send them
-    // multiple times.
-    for (int i = 0; i < optional_label_keys_.size(); ++i) {
-      if (enabled_optional_label_keys_->find(optional_label_keys_[i]) ==
-          enabled_optional_label_keys_->end()) {
-        continue;
-      }
-      if (!callback(
-              AbslStrViewToOpenTelemetryStrView(optional_label_keys_[i]),
-              AbslStrViewToOpenTelemetryStrView(optional_label_values_[i]))) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  size_t size() const noexcept override {
-    return label_keys_.size() + enabled_optional_label_keys_->size();
-  }
-
- private:
-  absl::Span<const absl::string_view> label_keys_;
-  absl::Span<const absl::string_view> label_values_;
-  absl::Span<const absl::string_view> optional_label_keys_;
-  absl::Span<const absl::string_view> optional_label_values_;
-  std::shared_ptr<std::set<absl::string_view>> enabled_optional_label_keys_;
-};
 }  // namespace
 
 class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
@@ -305,10 +249,10 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
     std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
         plugin_options,
     std::shared_ptr<std::set<absl::string_view>> optional_label_keys)
-    : registered_metric_callback_state_map_(
-          std::make_shared<
-              absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-                                  RegisteredMetricCallbackState>>()),
+    :  // registered_metric_callback_state_map_(
+       //     std::make_shared<
+       //         absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
+       //                             RegisteredMetricCallbackState>>()),
       meter_provider_(std::move(meter_provider)),
       target_selector_(std::move(target_selector)),
       server_selector_(std::move(server_selector)),
@@ -451,6 +395,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                 auto observable_state =
                     std::make_unique<ObservableState<int64_t>>();
                 observable_state->id = descriptor.index;
+                observable_state->parent = this;
                 observable_state->instrument =
                     meter->CreateInt64ObservableGauge(
                         std::string(descriptor.name),
@@ -464,6 +409,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                 auto observable_state =
                     std::make_unique<ObservableState<double>>();
                 observable_state->id = descriptor.index;
+                observable_state->parent = this;
                 observable_state->instrument =
                     meter->CreateDoubleObservableGauge(
                         std::string(descriptor.name),
@@ -486,13 +432,14 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                 auto observable_state =
                     std::make_unique<ObservableState<int64_t>>();
                 observable_state->id = descriptor.index;
+                observable_state->parent = this;
                 observable_state->instrument =
                     meter->CreateInt64ObservableGauge(
                         std::string(descriptor.name),
                         std::string(descriptor.description),
                         std::string(descriptor.unit));
-                observable_state->registered_metric_callback_state_map =
-                    registered_metric_callback_state_map_;
+                // observable_state->registered_metric_callback_state_map =
+                //     registered_metric_callback_state_map_;
                 instruments_data_[descriptor.index].instrument =
                     std::move(observable_state);
                 break;
@@ -501,13 +448,14 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                 auto observable_state =
                     std::make_unique<ObservableState<double>>();
                 observable_state->id = descriptor.index;
+                observable_state->parent = this;
                 observable_state->instrument =
                     meter->CreateDoubleObservableGauge(
                         std::string(descriptor.name),
                         std::string(descriptor.description),
                         std::string(descriptor.unit));
-                observable_state->registered_metric_callback_state_map =
-                    registered_metric_callback_state_map_;
+                // observable_state->registered_metric_callback_state_map =
+                //     registered_metric_callback_state_map_;
                 instruments_data_[descriptor.index].instrument =
                     std::move(observable_state);
                 break;
@@ -757,22 +705,18 @@ void OpenTelemetryPlugin::RemoveCallback(
 template <typename T>
 void OpenTelemetryPlugin::ObservableCallback(
     opentelemetry::metrics::ObserverResult result, void* arg) {
-  auto* callback_args = static_cast<ObservableCallbackArgs*>(arg);
-  auto& instrument_data =
-      callback_args->self->instruments_data_.at(callback_args->id);
-  GPR_ASSERT(absl::holds_alternative<std::unique_ptr<ObservableState<T>>>(
-      instrument_data.instrument));
-  auto& observable_state = absl::get<std::unique_ptr<ObservableState<T>>>(
-      instrument_data.instrument);
+  auto* observable_state = static_cast<ObservableState<T>*>(arg);
   if (observable_state->registered_metric_callback == nullptr) {
     const auto& descriptor =
         grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(
-            {callback_args->id});
+            {observable_state->id});
     absl::MutexLock l{&observable_state->mu};
     GPR_ASSERT(descriptor.label_keys.size() ==
                observable_state->label_values->size());
     GPR_ASSERT(descriptor.optional_label_keys.size() ==
                observable_state->optional_label_values->size());
+    auto& instrument_data =
+        observable_state->parent->instruments_data_.at(observable_state->id);
     opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObserverResultT<T>>>(result)
         ->Observe(observable_state->value,
