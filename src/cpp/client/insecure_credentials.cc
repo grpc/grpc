@@ -32,8 +32,7 @@
 namespace grpc {
 
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
-  return std::make_shared<WrappedChannelCredentials>(
-      grpc_insecure_credentials_create());
+  return WrapChannelCredentials(grpc_insecure_credentials_create());
 }
 
 }  // namespace grpc

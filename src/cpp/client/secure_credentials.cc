@@ -73,7 +73,7 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return std::make_shared<WrappedChannelCredentials>(
+  return WrapChannelCredentials(
       grpc_google_default_credentials_create(nullptr));
 }
 
@@ -95,7 +95,7 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
       nullptr);
-  return std::make_shared<WrappedChannelCredentials>(c_creds);
+  return WrapChannelCredentials(c_creds);
 }
 
 namespace experimental {
@@ -246,21 +246,20 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   }
   grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
   grpc_alts_credentials_options_destroy(c_options);
-  return std::make_shared<WrappedChannelCredentials>(c_creds);
+  return WrapChannelCredentials(c_creds);
 }
 
 // Builds Local Credentials
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return std::make_shared<WrappedChannelCredentials>(
-      grpc_local_credentials_create(type));
+  return WrapChannelCredentials(grpc_local_credentials_create(type));
 }
 
 // Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsChannelCredentialsOptions& options) {
-  return std::make_shared<WrappedChannelCredentials>(
+  return WrapChannelCredentials(
       grpc_tls_credentials_create(options.c_credentials_options()));
 }
 
@@ -323,9 +322,8 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   // call_creds) into grpc_composite_credentials_create will see their refcounts
   // incremented.
   if (channel_creds->c_creds() != nullptr && call_creds->c_creds() != nullptr) {
-    return std::make_shared<WrappedChannelCredentials>(
-        grpc_composite_channel_credentials_create(
-            channel_creds->c_creds(), call_creds->c_creds(), nullptr));
+    return WrapChannelCredentials(grpc_composite_channel_credentials_create(
+        channel_creds->c_creds(), call_creds->c_creds(), nullptr));
   }
   return nullptr;
 }

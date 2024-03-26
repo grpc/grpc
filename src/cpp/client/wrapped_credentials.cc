@@ -31,7 +31,9 @@ namespace grpc {
 
 WrappedChannelCredentials::WrappedChannelCredentials(
     grpc_channel_credentials* c_creds)
-    : c_creds_(c_creds) {}
+    : c_creds_(c_creds) {
+  GPR_ASSERT(c_creds != nullptr);
+}
 
 WrappedChannelCredentials::~WrappedChannelCredentials() {
   grpc_core::ExecCtx exec_ctx;
@@ -58,6 +60,12 @@ WrappedChannelCredentials::CreateChannelWithInterceptors(
       args.GetSslTargetNameOverride(),
       grpc_channel_create(target.c_str(), c_creds_, &channel_args),
       std::move(interceptor_creators));
+}
+
+std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
+    grpc_channel_credentials* creds) {
+  if (creds == nullptr) return nullptr;
+  return std::make_shared<WrappedChannelCredentials>(creds);
 }
 
 }  // namespace grpc

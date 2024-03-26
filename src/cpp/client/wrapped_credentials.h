@@ -47,6 +47,11 @@ class WrappedChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* const c_creds_;
 };
 
+// Creates a shared WrappedChannelCredentials if creds is non-null.
+// Otherwise returns nullptr.
+std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
+    grpc_channel_credentials* creds);
+
 }  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H

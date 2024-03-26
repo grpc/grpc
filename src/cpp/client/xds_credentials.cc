@@ -31,7 +31,7 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
   GPR_ASSERT(fallback_creds != nullptr);
   GPR_ASSERT(fallback_creds->c_creds() != nullptr);
-  return std::make_shared<WrappedChannelCredentials>(
+  return WrapChannelCredentials(
       grpc_xds_credentials_create(fallback_creds->c_creds()));
 }
 
