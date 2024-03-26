@@ -35,6 +35,7 @@ namespace grpc {
 class Server;
 class ServerCredentials;
 class SecureServerCredentials;
+
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
   /// \warning Deprecated
@@ -74,11 +75,8 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
 
  private:
+  // We need these friend declarations for access to c_creds().
   friend class Server;
-
-  // We need this friend declaration for access to Insecure() and
-  // AsSecureServerCredentials(). When these two functions are no longer
-  // necessary, this friend declaration can be removed too.
   friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);
 
@@ -89,16 +87,7 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   // TODO(dgq): the "port" part seems to be a misnomer.
   virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
 
-  // TODO(yashykt): This is a hack since InsecureServerCredentials() cannot use
-  // grpc_insecure_server_credentials_create() and should be removed after
-  // insecure builds are removed from gRPC.
-  virtual bool IsInsecure() const { return false; }
-
-  // TODO(yashkt): This is a hack that should be removed once we remove insecure
-  // builds and the indirect method of adding ports to a server.
-  virtual SecureServerCredentials* AsSecureServerCredentials() {
-    return nullptr;
-  }
+  virtual grpc_server_credentials* c_creds() const = 0;
 };
 
 /// Builds SSL ServerCredentials given SSL specific options

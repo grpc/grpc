@@ -34,6 +34,11 @@ namespace grpc {
 namespace {
 class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
+  InsecureChannelCredentialsImpl()
+      : insecure_creds_(grpc_insecure_credentials_create()) {}
+  ~InsecureChannelCredentialsImpl() override {
+    grpc_channel_credentials_release(insecure_creds_);
+  }
   std::shared_ptr<Channel> CreateChannelImpl(
       const std::string& target, const ChannelArguments& args) override {
     return CreateChannelWithInterceptors(
@@ -60,7 +65,9 @@ class InsecureChannelCredentialsImpl final : public ChannelCredentials {
   SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
 
  private:
-  bool IsInsecure() const override { return true; }
+  grpc_channel_credentials* c_creds() const override { return insecure_creds_; }
+
+  grpc_channel_credentials* insecure_creds_;
 };
 }  // namespace
 
