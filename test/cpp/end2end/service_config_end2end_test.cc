@@ -60,6 +60,7 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/client/wrapped_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -119,7 +120,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   ServiceConfigEnd2endTest()
       : server_host_("localhost"),
         kRequestMessage_("Live long and prosper."),
-        creds_(new SecureChannelCredentials(
+        creds_(std::make_shared<WrappedChannelCredentials>(
             grpc_fake_transport_security_credentials_create())) {}
 
   static void SetUpTestSuite() {

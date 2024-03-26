@@ -15,25 +15,17 @@
 // limitations under the License.
 //
 //
-#include <memory>
+
 #include <string>
-#include <utility>
-#include <vector>
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/security/credentials.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/client_interceptor.h>
-
-#include "src/cpp/client/wrapped_credentials.h"
 
 namespace grpc {
 
-std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
-  return std::make_shared<WrappedChannelCredentials>(
-      grpc_insecure_credentials_create());
-}
+void ChannelArguments::SetSslTargetNameOverride(const std::string&) {}
+
+std::string ChannelArguments::GetSslTargetNameOverride() const { return ""; }
 
 }  // namespace grpc

@@ -20,7 +20,6 @@
 
 #include <string.h>
 
-#include <algorithm>
 #include <map>
 #include <utility>
 
@@ -47,41 +46,13 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/cpp/client/create_channel_internal.h"
+#include "src/cpp/client/wrapped_credentials.h"
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
-
-SecureChannelCredentials::SecureChannelCredentials(
-    grpc_channel_credentials* c_creds)
-    : c_creds_(c_creds) {}
-
-std::shared_ptr<Channel> SecureChannelCredentials::CreateChannelImpl(
-    const std::string& target, const ChannelArguments& args) {
-  return CreateChannelWithInterceptors(
-      target, args,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>());
-}
-
-std::shared_ptr<Channel>
-SecureChannelCredentials::CreateChannelWithInterceptors(
-    const std::string& target, const ChannelArguments& args,
-    std::vector<
-        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators) {
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
-  return grpc::CreateChannelInternal(
-      args.GetSslTargetNameOverride(),
-      grpc_channel_create(target.c_str(), c_creds_, &channel_args),
-      std::move(interceptor_creators));
-}
 
 SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
     : c_creds_(c_creds) {}
@@ -89,17 +60,6 @@ SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
 bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
   return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
 }
-
-namespace internal {
-
-std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
-    grpc_channel_credentials* creds) {
-  return creds == nullptr ? nullptr
-                          : std::shared_ptr<ChannelCredentials>(
-                                new SecureChannelCredentials(creds));
-}
-
-}  // namespace internal
 
 namespace {
 
@@ -113,7 +73,7 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return internal::WrapChannelCredentials(
+  return std::make_shared<WrappedChannelCredentials>(
       grpc_google_default_credentials_create(nullptr));
 }
 
@@ -135,7 +95,7 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
       nullptr);
-  return internal::WrapChannelCredentials(c_creds);
+  return std::make_shared<WrappedChannelCredentials>(c_creds);
 }
 
 namespace experimental {
@@ -286,20 +246,21 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   }
   grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
   grpc_alts_credentials_options_destroy(c_options);
-  return internal::WrapChannelCredentials(c_creds);
+  return std::make_shared<WrappedChannelCredentials>(c_creds);
 }
 
 // Builds Local Credentials
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return internal::WrapChannelCredentials(grpc_local_credentials_create(type));
+  return std::make_shared<WrappedChannelCredentials>(
+      grpc_local_credentials_create(type));
 }
 
 // Builds TLS Credentials given TLS options.
 std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsChannelCredentialsOptions& options) {
-  return internal::WrapChannelCredentials(
+  return std::make_shared<WrappedChannelCredentials>(
       grpc_tls_credentials_create(options.c_credentials_options()));
 }
 
@@ -362,7 +323,7 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   // call_creds) into grpc_composite_credentials_create will see their refcounts
   // incremented.
   if (channel_creds->c_creds() != nullptr && call_creds->c_creds() != nullptr) {
-    return internal::WrapChannelCredentials(
+    return std::make_shared<WrappedChannelCredentials>(
         grpc_composite_channel_credentials_create(
             channel_creds->c_creds(), call_creds->c_creds(), nullptr));
   }

@@ -37,8 +37,6 @@ struct grpc_call;
 
 namespace grpc {
 class CallCredentials;
-class SecureCallCredentials;
-class SecureChannelCredentials;
 class ChannelCredentials;
 
 std::shared_ptr<Channel> CreateCustomChannel(

@@ -23,7 +23,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "absl/strings/str_cat.h"
 
@@ -41,32 +40,6 @@
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
-
-class Channel;
-
-class SecureChannelCredentials final : public ChannelCredentials {
- public:
-  explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
-  ~SecureChannelCredentials() override {
-    grpc_core::ExecCtx exec_ctx;
-    if (c_creds_ != nullptr) c_creds_->Unref();
-  }
-
-  std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override;
-
-  // Promoted to a public API for internal use
-  grpc_channel_credentials* c_creds() const override { return c_creds_; }
-
- private:
-  std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const std::string& target, const ChannelArguments& args,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators) override;
-
-  grpc_channel_credentials* const c_creds_;
-};
 
 class SecureCallCredentials final : public CallCredentials {
  public:
@@ -87,13 +60,6 @@ class SecureCallCredentials final : public CallCredentials {
  private:
   grpc_call_credentials* const c_creds_;
 };
-
-namespace internal {
-
-std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
-    grpc_channel_credentials* creds);
-
-}  // namespace internal
 
 namespace experimental {
 

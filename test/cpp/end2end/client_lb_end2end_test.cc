@@ -71,6 +71,7 @@
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/client/wrapped_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -262,7 +263,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
       : server_host_("localhost"),
-        creds_(new SecureChannelCredentials(
+        creds_(std::make_shared<WrappedChannelCredentials>(
             grpc_fake_transport_security_credentials_create())) {}
 
   void SetUp() override { grpc_init(); }

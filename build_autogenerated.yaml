@@ -3870,6 +3870,7 @@ libs:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3905,6 +3906,7 @@ libs:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/client/xds_credentials.cc
@@ -6167,6 +6169,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -6203,6 +6206,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -8862,6 +8866,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -8898,6 +8903,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -9357,6 +9363,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -9393,6 +9400,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -19573,6 +19581,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -19608,6 +19617,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -19947,6 +19957,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -19983,6 +19994,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
@@ -20054,6 +20066,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -20090,6 +20103,7 @@ targets:
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/alarm.cc
