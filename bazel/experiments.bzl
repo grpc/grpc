@@ -17,7 +17,6 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
-    "absl_base64": "absl_base64",
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
@@ -47,8 +46,6 @@ EXPERIMENT_ENABLES = {
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "v3_backend_metric_filter": "v3_backend_metric_filter",
     "v3_channel_idle_filters": "v3_channel_idle_filters",
-    "v3_compression_filter": "v3_compression_filter",
-    "v3_server_auth_filter": "v3_server_auth_filter",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
 }
@@ -64,9 +61,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "compression_test": [
-                "v3_compression_filter",
-            ],
             "core_end2end_test": [
                 "promise_based_server_call",
             ],
@@ -98,9 +92,6 @@ EXPERIMENTS = {
         "on": {
             "core_end2end_test": [
                 "event_engine_listener",
-            ],
-            "credential_token_tests": [
-                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -114,9 +105,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "compression_test": [
-                "v3_compression_filter",
-            ],
             "core_end2end_test": [
                 "promise_based_server_call",
             ],
@@ -146,9 +134,6 @@ EXPERIMENTS = {
             ],
         },
         "on": {
-            "credential_token_tests": [
-                "absl_base64",
-            ],
             "surface_registered_method_lookup": [
                 "registered_method_lookup_in_transport",
             ],
@@ -158,9 +143,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "compression_test": [
-                "v3_compression_filter",
-            ],
             "core_end2end_test": [
                 "chaotic_good",
                 "event_engine_client",
@@ -208,9 +190,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
-            ],
-            "credential_token_tests": [
-                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

@@ -24,8 +24,6 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_absl_base64 = "Use abseil base64 functions.";
-const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -142,12 +140,6 @@ const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_v3_channel_idle_filters =
     "Use the v3 filter API version of the idle filters.";
 const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -169,8 +161,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
-     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -241,10 +231,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"v3_channel_idle_filters", description_v3_channel_idle_filters,
      additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -258,8 +244,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_absl_base64 = "Use abseil base64 functions.";
-const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -376,12 +360,6 @@ const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_v3_channel_idle_filters =
     "Use the v3 filter API version of the idle filters.";
 const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -403,8 +381,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
-     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -475,10 +451,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"v3_channel_idle_filters", description_v3_channel_idle_filters,
      additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -492,8 +464,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
-const char* const description_absl_base64 = "Use abseil base64 functions.";
-const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -610,12 +580,6 @@ const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_v3_channel_idle_filters =
     "Use the v3 filter API version of the idle filters.";
 const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -637,8 +601,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
-     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -709,10 +671,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"v3_channel_idle_filters", description_v3_channel_idle_filters,
      additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,

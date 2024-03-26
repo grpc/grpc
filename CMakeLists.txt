@@ -930,7 +930,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx authorization_policy_provider_test)
   add_dependencies(buildtests_cxx avl_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
-  add_dependencies(buildtests_cxx b64_test)
   add_dependencies(buildtests_cxx backend_metrics_lb_policy_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_ping_test)
@@ -1844,7 +1843,6 @@ add_library(grpc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/compression_filter.cc
-  src/core/ext/filters/http/message_compress/legacy_compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/rbac/rbac_filter.cc
@@ -2478,13 +2476,11 @@ add_library(grpc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/legacy_server_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -2943,7 +2939,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/compression_filter.cc
-  src/core/ext/filters/http/message_compress/legacy_compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -3207,13 +3202,11 @@ add_library(grpc_unsecure
   src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/legacy_server_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -5318,13 +5311,11 @@ add_library(grpc_authorization_provider
   src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/legacy_server_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
-  src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -7390,48 +7381,6 @@ target_include_directories(aws_request_signer_test
 )
 
 target_link_libraries(aws_request_signer_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(b64_test
-  test/core/slice/b64_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(b64_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(b64_test PUBLIC cxx_std_14)
-target_include_directories(b64_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(b64_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
