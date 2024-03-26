@@ -24,7 +24,7 @@ load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_dep
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@rules_python//python:repositories.bzl", "py_repositories")
 
-def grpc_extra_deps(ignore_version_differences = False):
+def grpc_extra_deps(ignore_version_differences = False, go_version="1.18"):
     """Loads the extra dependencies.
 
     These are necessary for using the external repositories defined in
@@ -46,13 +46,16 @@ def grpc_extra_deps(ignore_version_differences = False):
     Args:
       ignore_version_differences: Plumbed directly to the invocation of
         apple_rules_dependencies.
+      go_version: Version of go toolchains to use.
+        If set to host, it will let Bazel provide it's own version.
+        It avoids providing multiple versions.
     """
     protobuf_deps()
 
     api_dependencies()
 
     go_rules_dependencies()
-    go_register_toolchains(version = "1.18")
+    go_register_toolchains(version = go_version if go_version != "host" else None)
     gazelle_dependencies()
 
     # Pull-in the go 3rd party dependencies for protoc_gen_validate, which is
