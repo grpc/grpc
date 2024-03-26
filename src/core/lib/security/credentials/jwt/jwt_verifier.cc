@@ -924,6 +924,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   size_t signed_jwt_len;
   const char* cur = jwt;
   Json json;
+  std::string signature_str;
 
   GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
              cb != nullptr);
@@ -945,7 +946,6 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   signed_jwt_len = static_cast<size_t>(dot - jwt);
   cur = dot + 1;
 
-  std::string signature_str;
   if (!absl::WebSafeBase64Unescape(cur, &signature_str)) goto error;
   signature = grpc_slice_from_cpp_string(std::move(signature_str));
   retrieve_key_and_verify(
