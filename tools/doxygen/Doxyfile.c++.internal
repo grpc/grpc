@@ -1125,8 +1125,6 @@ src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
 src/core/ext/filters/backend_metrics/backend_metric_filter.h \
 src/core/ext/filters/backend_metrics/backend_metric_provider.h \
 src/core/ext/filters/census/grpc_context.cc \
-src/core/ext/filters/channel_idle/channel_idle_filter.cc \
-src/core/ext/filters/channel_idle/channel_idle_filter.h \
 src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
@@ -2157,8 +2155,6 @@ src/core/lib/channel/channelz.cc \
 src/core/lib/channel/channelz.h \
 src/core/lib/channel/channelz_registry.cc \
 src/core/lib/channel/channelz_registry.h \
-src/core/lib/channel/connected_channel.cc \
-src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/metrics.cc \
 src/core/lib/channel/metrics.h \
@@ -2772,7 +2768,6 @@ src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
 src/core/lib/surface/call.h \
-src/core/lib/surface/call_details.cc \
 src/core/lib/surface/call_log_batch.cc \
 src/core/lib/surface/call_test_only.h \
 src/core/lib/surface/call_trace.h \
@@ -2804,7 +2799,6 @@ src/core/lib/surface/server.h \
 src/core/lib/surface/server_interface.h \
 src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
-src/core/lib/surface/version.cc \
 src/core/lib/surface/wait_for_cq_end_op.cc \
 src/core/lib/surface/wait_for_cq_end_op.h \
 src/core/lib/transport/bdp_estimator.cc \

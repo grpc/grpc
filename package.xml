@@ -147,8 +147,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/backend_metrics/backend_metric_provider.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/census/grpc_context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/channel_idle_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/idle_filter_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc" role="src" />
@@ -1140,8 +1138,6 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channelz_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/metrics.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/metrics.h" role="src" />
@@ -1755,7 +1751,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/call_details.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_trace.h" role="src" />
@@ -1787,7 +1782,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/server_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />

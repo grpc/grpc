@@ -199,6 +199,7 @@ libs:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
@@ -241,7 +242,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/backend_metrics/backend_metric_filter.h
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
-  - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -824,7 +824,6 @@ libs:
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
-  - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
@@ -1267,7 +1266,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
-  - src/core/ext/filters/channel_idle/channel_idle_filter.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
@@ -1677,7 +1675,6 @@ libs:
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
-  - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
@@ -1925,7 +1922,6 @@ libs:
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
-  - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_create.cc
@@ -1941,7 +1937,6 @@ libs:
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
-  - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/call_filters.cc
@@ -2191,6 +2186,7 @@ libs:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
@@ -2233,7 +2229,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/backend_metrics/backend_metric_filter.h
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
-  - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -2333,7 +2328,6 @@ libs:
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
-  - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
@@ -2730,7 +2724,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
-  - src/core/ext/filters/channel_idle/channel_idle_filter.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
@@ -2809,7 +2802,6 @@ libs:
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
-  - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/server_call_tracer_filter.cc
@@ -3018,7 +3010,6 @@ libs:
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
-  - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_create.cc
@@ -3034,7 +3025,6 @@ libs:
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
-  - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/call_filters.cc
@@ -4373,6 +4363,7 @@ libs:
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
   - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
@@ -4414,12 +4405,10 @@ libs:
   - src/core/lib/channel/channel_fwd.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
-  - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/channel_trace.h
   - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
-  - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
@@ -4662,7 +4651,6 @@ libs:
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -4762,12 +4750,10 @@ libs:
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
-  - src/core/lib/channel/channel_stack_builder_impl.cc
   - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/channel_trace.cc
   - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
-  - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -4963,7 +4949,6 @@ libs:
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
@@ -4973,7 +4958,6 @@ libs:
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
-  - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
@@ -4985,7 +4969,6 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/validate_metadata.cc
-  - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -10221,6 +10204,7 @@ targets:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_args_preconditioning.h
   - src/core/lib/channel/channel_fwd.h
@@ -10228,6 +10212,7 @@ targets:
   - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
+  - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/histogram_view.h
@@ -10455,6 +10440,7 @@ targets:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
+  - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
   - src/core/lib/channel/channel_stack_builder.cc
