@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
-#define GRPC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
+#ifndef GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
+#define GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -49,4 +49,4 @@ class WrappedChannelCredentials final : public ChannelCredentials {
 
 }  // namespace grpc
 
-#endif  // GRPC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
+#endif  // GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
