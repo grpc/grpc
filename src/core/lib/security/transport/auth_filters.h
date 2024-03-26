@@ -44,7 +44,7 @@ class ClientAuthFilter final : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientAuthFilter> Create(const ChannelArgs& args,
-                                                 ChannelFilter::Args);
+                                                 ChannelFilter::Args = {});
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -66,8 +66,8 @@ class LegacyServerAuthFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<LegacyServerAuthFilter> Create(const ChannelArgs& args,
-                                                       ChannelFilter::Args);
+  static absl::StatusOr<LegacyServerAuthFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args = {});
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -125,7 +125,7 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerAuthFilter> Create(const ChannelArgs& args,
-                                                 ChannelFilter::Args);
+                                                 ChannelFilter::Args = {});
 
   class Call {
    public:

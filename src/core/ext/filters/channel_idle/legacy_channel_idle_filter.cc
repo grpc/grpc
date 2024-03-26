@@ -128,18 +128,17 @@ struct LegacyMaxAgeFilter::Config {
   }
 };
 
-absl::StatusOr<LegacyClientIdleFilter> LegacyClientIdleFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyClientIdleFilter filter(filter_args.channel_stack(),
-                                GetClientIdleTimeout(args));
-  return absl::StatusOr<LegacyClientIdleFilter>(std::move(filter));
+absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>>
+LegacyClientIdleFilter::Create(const ChannelArgs& args,
+                               ChannelFilter::Args filter_args) {
+  return std::make_unique<LegacyClientIdleFilter>(filter_args.channel_stack(),
+                                                  GetClientIdleTimeout(args));
 }
 
-absl::StatusOr<LegacyMaxAgeFilter> LegacyMaxAgeFilter::Create(
+absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> LegacyMaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyMaxAgeFilter filter(filter_args.channel_stack(),
-                            Config::FromChannelArgs(args));
-  return absl::StatusOr<LegacyMaxAgeFilter>(std::move(filter));
+  return std::make_unique<LegacyMaxAgeFilter>(filter_args.channel_stack(),
+                                              Config::FromChannelArgs(args));
 }
 
 void LegacyMaxAgeFilter::Shutdown() {
@@ -295,15 +294,14 @@ const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
         "max_age");
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
-      ->RegisterFilter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
+      ->RegisterV2Filter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
   builder->channel_init()
-      ->RegisterFilter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)

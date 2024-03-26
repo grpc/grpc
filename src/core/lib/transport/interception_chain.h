@@ -131,7 +131,8 @@ class InterceptionChainBuilder final {
   // Call class must be one compatible with the filters described in
   // call_filters.h.
   template <typename T>
-  absl::enable_if_t<sizeof(typename T::Call), InterceptionChainBuilder&> Add() {
+  absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
+  Add() {
     if (!status_.ok()) return *this;
     auto filter = T::Create(args_);
     if (!filter.ok()) {

@@ -104,7 +104,7 @@ BaseCallData::BaseCallData(
               ? arena_->New<ReceiveMessage>(this, make_recv_interceptor())
               : nullptr),
       event_engine_(
-          static_cast<ChannelFilter*>(elem->channel_data)
+          (*static_cast<ChannelFilter**>(elem->channel_data))
               ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
 }
 
@@ -1564,7 +1564,7 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
 // metadata and return some trailing metadata.
 void ClientCallData::StartPromise(Flusher* flusher) {
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = *static_cast<ChannelFilter**>(elem()->channel_data);
 
   // Construct the promise.
   PollContext ctx(this, flusher);
@@ -2361,7 +2361,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   // Start the promise.
   ScopedContext context(this);
   // Construct the promise.
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = *static_cast<ChannelFilter**>(elem()->channel_data);
   FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),

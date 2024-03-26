@@ -36,7 +36,7 @@ class HttpClientFilter : public ImplementChannelFilter<HttpClientFilter> {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<HttpClientFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:

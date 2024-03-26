@@ -42,8 +42,8 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   // and enforces the RBAC policy.
   static const grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<RbacFilter> Create(const ChannelArgs& args,
-                                           ChannelFilter::Args filter_args);
+  static absl::StatusOr<RbacFilter> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:

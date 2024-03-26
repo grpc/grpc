@@ -111,7 +111,7 @@ class ClientCompressionFilter final
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientCompressionFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
   class Call {
@@ -147,7 +147,7 @@ class ServerCompressionFilter final
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerCompressionFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
   class Call {

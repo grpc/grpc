@@ -35,7 +35,7 @@ class ClientLoadReportingFilter : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientLoadReportingFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(

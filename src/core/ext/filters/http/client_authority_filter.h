@@ -40,7 +40,7 @@ class ClientAuthorityFilter final
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientAuthorityFilter> Create(const ChannelArgs& args,
-                                                      ChannelFilter::Args);
+                                                      ChannelFilter::Args = {});
 
   class Call {
    public:

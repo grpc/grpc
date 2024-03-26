@@ -48,16 +48,16 @@ class LameClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<LameClientFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+  explicit LameClientFilter(absl::Status error);
+
+  static absl::StatusOr<std::unique_ptr<LameClientFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
   bool StartTransportOp(grpc_transport_op*) override;
   bool GetChannelInfo(const grpc_channel_info*) override;
 
  private:
-  explicit LameClientFilter(absl::Status error);
-
   absl::Status error_;
   struct State {
     State();

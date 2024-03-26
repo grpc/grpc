@@ -783,16 +783,6 @@ static constexpr uint8_t kFilterExaminesInboundMessages = 8;
 
 namespace promise_filter_detail {
 
-// Proxy channel filter for initialization failure, since we must leave a
-// valid filter in place.
-class InvalidChannelFilter : public ChannelFilter {
- public:
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs, NextPromiseFactory) override {
-    abort();
-  }
-};
-
 // Call data shared between all implementations of promise-based filters.
 class BaseCallData : public Activity, private Wakeable {
  protected:
@@ -1470,6 +1460,9 @@ struct BaseCallDataMethods {
   }
 };
 
+template <typename T>
+using CreatedType = typename decltype(T::Create(ChannelArgs()))::value_type;
+
 template <typename CallData, uint8_t kFlags>
 struct CallDataFilterWithFlagsMethods {
   static absl::Status InitCallElem(grpc_call_element* elem,
@@ -1493,7 +1486,7 @@ struct CallDataFilterWithFlagsMethods {
 struct ChannelFilterMethods {
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
-    if (!static_cast<ChannelFilter*>(elem->channel_data)
+    if (!(*static_cast<ChannelFilter**>(elem->channel_data))
              ->StartTransportOp(op)) {
       grpc_channel_next_op(elem, op);
     }
@@ -1501,16 +1494,12 @@ struct ChannelFilterMethods {
 
   static void PostInitChannelElem(grpc_channel_stack*,
                                   grpc_channel_element* elem) {
-    static_cast<ChannelFilter*>(elem->channel_data)->PostInit();
-  }
-
-  static void DestroyChannelElem(grpc_channel_element* elem) {
-    static_cast<ChannelFilter*>(elem->channel_data)->~ChannelFilter();
+    (*static_cast<ChannelFilter**>(elem->channel_data))->PostInit();
   }
 
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info) {
-    if (!static_cast<ChannelFilter*>(elem->channel_data)
+    if (!(*static_cast<ChannelFilter**>(elem->channel_data))
              ->GetChannelInfo(info)) {
       grpc_channel_next_get_info(elem, info);
     }
@@ -1525,14 +1514,15 @@ struct ChannelFilterWithFlagsMethods {
     auto status = F::Create(args->channel_args,
                             ChannelFilter::Args(args->channel_stack, elem));
     if (!status.ok()) {
-      static_assert(
-          sizeof(promise_filter_detail::InvalidChannelFilter) <= sizeof(F),
-          "InvalidChannelFilter must fit in F");
-      new (elem->channel_data) promise_filter_detail::InvalidChannelFilter();
+      new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());
     }
-    new (elem->channel_data) F(std::move(*status));
+    new (elem->channel_data) F*(status->release());
     return absl::OkStatus();
+  }
+
+  static void DestroyChannelElem(grpc_channel_element* elem) {
+    CreatedType<F> channel_elem(static_cast<F*>(elem->channel_data));
   }
 };
 
@@ -1542,7 +1532,7 @@ struct ChannelFilterWithFlagsMethods {
 // class SomeChannelFilter : public ChannelFilter {
 //  public:
 //   static absl::StatusOr<SomeChannelFilter> Create(
-//       ChannelArgs channel_args, ChannelFilter::Args filter_args);
+//       ChannelArgs channel_args, ChannelFilter::Args filter_args={});
 // };
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
@@ -1567,14 +1557,15 @@ MakePromiseBasedFilter(const char* name) {
       promise_filter_detail::CallDataFilterWithFlagsMethods<
           CallData, kFlags>::DestroyCallElem,
       // sizeof_channel_data
-      sizeof(F),
+      sizeof(F*),
       // init_channel_elem
       promise_filter_detail::ChannelFilterWithFlagsMethods<
           F, kFlags>::InitChannelElem,
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name
@@ -1604,14 +1595,15 @@ MakePromiseBasedFilter(const char* name) {
       promise_filter_detail::CallDataFilterWithFlagsMethods<
           CallData, kFlags>::DestroyCallElem,
       // sizeof_channel_data
-      sizeof(F),
+      sizeof(F*),
       // init_channel_elem
       promise_filter_detail::ChannelFilterWithFlagsMethods<
           F, kFlags>::InitChannelElem,
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name

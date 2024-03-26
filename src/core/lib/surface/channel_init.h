@@ -154,6 +154,10 @@ class ChannelInit {
     // Add a predicate that ensures this filter does not appear in the minimal
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
+    FilterRegistration& SkipV3() {
+      skip_v3_ = true;
+      return *this;
+    }
 
    private:
     friend class ChannelInit;
@@ -164,6 +168,7 @@ class ChannelInit {
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
+    bool skip_v3_ = false;
     SourceLocation registration_source_;
   };
 
@@ -188,6 +193,15 @@ class ChannelInit {
           type, &Filter::kFilter,
           [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
           registration_source);
+    }
+
+    // Filter does not participate in v3
+    template <typename Filter>
+    FilterRegistration& RegisterV2Filter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(type, &Filter::kFilter, nullptr,
+                            registration_source)
+          .SkipV3();
     }
 
     // Register a post processor for the builder.
@@ -225,17 +239,19 @@ class ChannelInit {
   struct Filter {
     Filter(const grpc_channel_filter* filter,
            void (*add_to_interception_chain_builder)(InterceptionChainBuilder&),
-           std::vector<InclusionPredicate> predicates,
+           std::vector<InclusionPredicate> predicates, bool skip_v3,
            SourceLocation registration_source)
         : filter(filter),
           add_to_interception_chain_builder(add_to_interception_chain_builder),
           predicates(std::move(predicates)),
-          registration_source(registration_source) {}
+          registration_source(registration_source),
+          skip_v3(skip_v3) {}
     const grpc_channel_filter* filter;
     void (*add_to_interception_chain_builder)(InterceptionChainBuilder&);
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
     bool CheckPredicates(const ChannelArgs& args) const;
+    bool skip_v3 = false;
   };
   struct StackConfig {
     std::vector<Filter> filters;

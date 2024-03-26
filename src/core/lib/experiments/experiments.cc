@@ -137,9 +137,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 const char* const description_v3_backend_metric_filter =
     "Use the backend metric filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
 const char* const description_v3_compression_filter =
     "Use the compression filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_compression_filter = "{}";
@@ -241,8 +238,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"v3_backend_metric_filter", description_v3_backend_metric_filter,
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
     {"v3_compression_filter", description_v3_compression_filter,
      additional_constraints_v3_compression_filter, nullptr, 0, false, true},
     {"v3_server_auth_filter", description_v3_server_auth_filter,
@@ -375,9 +370,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 const char* const description_v3_backend_metric_filter =
     "Use the backend metric filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
 const char* const description_v3_compression_filter =
     "Use the compression filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_compression_filter = "{}";
@@ -479,8 +471,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"v3_backend_metric_filter", description_v3_backend_metric_filter,
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
     {"v3_compression_filter", description_v3_compression_filter,
      additional_constraints_v3_compression_filter, nullptr, 0, false, true},
     {"v3_server_auth_filter", description_v3_server_auth_filter,
@@ -613,9 +603,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 const char* const description_v3_backend_metric_filter =
     "Use the backend metric filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
 const char* const description_v3_compression_filter =
     "Use the compression filter utilizing the v3 filter api";
 const char* const additional_constraints_v3_compression_filter = "{}";
@@ -717,8 +704,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false, true},
     {"v3_backend_metric_filter", description_v3_backend_metric_filter,
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
     {"v3_compression_filter", description_v3_compression_filter,
      additional_constraints_v3_compression_filter, nullptr, 0, false, true},
     {"v3_server_auth_filter", description_v3_server_auth_filter,

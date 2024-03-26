@@ -60,7 +60,7 @@ class ServerConfigSelectorFilter final
   ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
 
   static absl::StatusOr<ServerConfigSelectorFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
+      const ChannelArgs& args, ChannelFilter::Args = {});
 
   class Call {
    public:

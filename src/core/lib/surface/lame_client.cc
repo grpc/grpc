@@ -60,9 +60,9 @@ const grpc_channel_filter LameClientFilter::kFilter =
     MakePromiseBasedFilter<LameClientFilter, FilterEndpoint::kClient,
                            kFilterIsLast>("lame-client");
 
-absl::StatusOr<LameClientFilter> LameClientFilter::Create(
+absl::StatusOr<std::unique_ptr<LameClientFilter>> LameClientFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
-  return LameClientFilter(
+  return std::make_unique<LameClientFilter>(
       *args.GetPointer<absl::Status>(GRPC_ARG_LAME_FILTER_ERROR));
 }
 

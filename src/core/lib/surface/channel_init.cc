@@ -143,9 +143,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       GPR_ASSERT(registration->after_.empty());
       GPR_ASSERT(registration->before_.empty());
       GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(registration->filter_, nullptr,
-                                    std::move(registration->predicates_),
-                                    registration->registration_source_);
+      terminal_filters.emplace_back(
+          registration->filter_, nullptr, std::move(registration->predicates_),
+          registration->skip_v3_, registration->registration_source_);
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
@@ -225,10 +225,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
     auto* registration = filter_to_registration[filter];
-    filters.emplace_back(filter,
-                         registration->add_to_interception_chain_builder_,
-                         std::move(registration->predicates_),
-                         registration->registration_source_);
+    filters.emplace_back(
+        filter, registration->add_to_interception_chain_builder_,
+        std::move(registration->predicates_), registration->skip_v3_,
+        registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
@@ -414,6 +414,7 @@ void ChannelInit::AddToInterceptionChain(
   const auto& stack_config = stack_configs_[type];
   // Based on predicates build a list of filters to include in this segment.
   for (const auto& filter : stack_config.filters) {
+    if (filter.skip_v3) continue;
     if (!filter.CheckPredicates(builder.channel_args())) continue;
     if (filter.add_to_interception_chain_builder == nullptr) {
       Crash(absl::StrCat("Filter ", NameFromChannelFilter(filter.filter),

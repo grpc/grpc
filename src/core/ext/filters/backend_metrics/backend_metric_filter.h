@@ -36,7 +36,7 @@ class LegacyBackendMetricFilter : public ChannelFilter {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<LegacyBackendMetricFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
+      const ChannelArgs& args, ChannelFilter::Args = {});
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
@@ -48,7 +48,7 @@ class BackendMetricFilter : public ImplementChannelFilter<BackendMetricFilter> {
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<BackendMetricFilter> Create(const ChannelArgs& args,
-                                                    ChannelFilter::Args);
+                                                    ChannelFilter::Args = {});
 
   class Call {
    public:

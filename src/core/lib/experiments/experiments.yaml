@@ -233,12 +233,6 @@
   expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: []
-- name: v3_channel_idle_filters
-  description:
-    Use the v3 filter API version of the idle filters.
-  expiry: 2024/04/04
-  owner: ctiller@google.com
-  test_tags: []
 - name: v3_compression_filter
   description:
     Use the compression filter utilizing the v3 filter api
