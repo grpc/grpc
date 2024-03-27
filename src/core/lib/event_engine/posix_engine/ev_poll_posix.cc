@@ -38,6 +38,7 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_systemd.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
 
@@ -82,6 +83,8 @@ class PollEventHandle : public EventHandle {
         poller_(std::move(poller)),
         is_orphaned_(false),
         is_shutdown_(false),
+        is_preallocated_(
+            IsSystemdPreallocatedFdOrLogErrorsWithFalseFallback(fd)),
         closed_(false),
         released_(false),
         pollhup_(false),
@@ -120,7 +123,13 @@ class PollEventHandle : public EventHandle {
   void CloseFd() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (!released_ && !closed_) {
       closed_ = true;
-      close(fd_);
+      // If the fd was provided through systemd socket activation,
+      // we should not call close() on it as the  fcntl() functions
+      // called by sd_listen_fds() would fail, and Systemd sets
+      // CLOEXEC anyway, and fd are closed upon exit anyway too.
+      if (!is_preallocated_) {
+        close(fd_);
+      }
     }
   }
   bool IsPollhup() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return pollhup_; }
@@ -212,6 +221,7 @@ class PollEventHandle : public EventHandle {
   std::shared_ptr<PollPoller> poller_;
   bool is_orphaned_;
   bool is_shutdown_;
+  bool is_preallocated_;
   bool closed_;
   bool released_;
   bool pollhup_;
@@ -375,7 +385,15 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
     }
     // signal read/write closed to OS so that future operations fail.
     if (!released_) {
-      shutdown(fd_, SHUT_RDWR);
+      // If the fd was provided through systemd socket activation,
+      // we should not call shutdown on it, as systemd is managing
+      // it for the service, even inbetween activations.
+      // If we do call shutdown on it, systemd logs to journald :
+      //   "Got POLLHUP on a listening socket. The service probably
+      //    invoked shutdown() on it, and should better not do that."
+      if (!is_preallocated_) {
+        shutdown(fd_, SHUT_RDWR);
+      }
     }
     if (!IsWatched()) {
       CloseFd();

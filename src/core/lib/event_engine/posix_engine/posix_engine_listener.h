@@ -46,6 +46,8 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #endif
 
+#include "src/core/lib/event_engine/posix_engine/posix_engine_systemd.h"
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -111,7 +113,12 @@ class PosixEngineListenerImpl
     ListenerSocketsContainer::ListenerSocket& Socket() { return socket_; }
     ~AsyncConnectionAcceptor() {
       // If uds socket, unlink it so that the corresponding file is deleted.
-      UnlinkIfUnixDomainSocket(*socket_.sock.LocalAddress());
+      // But keep it if the file descriptor was preallocated by systemd, which
+      // manages the listening sockets, even inbetween service activations.
+      if (!IsSystemdPreallocatedFdOrLogErrorsWithFalseFallback(
+              socket_.sock.Fd())) {
+        UnlinkIfUnixDomainSocket(*socket_.sock.LocalAddress());
+      }
       handle_->OrphanHandle(nullptr, nullptr, "");
       delete notify_on_accept_;
     }

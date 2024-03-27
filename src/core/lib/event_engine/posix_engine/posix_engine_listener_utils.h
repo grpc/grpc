@@ -56,14 +56,19 @@ class ListenerSocketsContainer {
 };
 
 // Creates and configures a socket to be used by the EventEngine Listener. The
-// type of the socket to create is determined by the by the passed address. The
-// socket configuration is specified by passed tcp options. If successful, it
+// type of the socket to create is determined by the passed address. The socket
+// configuration is specified by passed tcp options. The optional
+// sd_preallocated_fd designs an existing file descriptor to build the
+// ListenerSocket around, instead of creating it from scratch. This is useful
+// for example when the program is started by systemd socket activation system,
+// which provides already-setup listening file descriptors. If successful, it
 // returns a ListenerSocketsContainer::ListenerSocket type which holds the
 // socket fd and its dsmode. If unsuccessful, it returns a Not-OK status.
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(
     const PosixTcpOptions& options,
-    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr);
+    const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
+    absl::optional<int> sd_preallocated_fd);
 
 // Instead of creating and adding a socket bound to specific address, this
 // function creates and adds a socket bound to the wildcard address on the

@@ -30,6 +30,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_systemd.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
@@ -62,6 +63,8 @@ class Epoll1EventHandle : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
       : fd_(fd),
+        is_preallocated_(
+            IsSystemdPreallocatedFdOrLogErrorsWithFalseFallback(fd)),
         list_(this),
         poller_(poller),
         read_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
@@ -146,6 +149,7 @@ class Epoll1EventHandle : public EventHandle {
   // required.
   grpc_core::Mutex mu_;
   int fd_;
+  bool is_preallocated_;
   // See Epoll1Poller::SetPendingActions for explanation on why pending_<***>_
   // need to be atomic.
   std::atomic<bool> pending_read_{false};
@@ -303,8 +307,19 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     }
     *release_fd = fd_;
   } else {
-    shutdown(fd_, SHUT_RDWR);
-    close(fd_);
+    // If the fd was provided through systemd socket activation,
+    // we should not call shutdown on it, as systemd is managing
+    // it for the service, even inbetween activations.
+    // If we do call shutdown on it, systemd logs to journald :
+    //   "Got POLLHUP on a listening socket. The service probably
+    //    invoked shutdown() on it, and should better not do that."
+    // And so that the fcntl() functions called by sd_listen_fds()
+    // do not to fail, do not close the file descriptor, which
+    // will be closed upon exit anyway.
+    if (!is_preallocated_) {
+      shutdown(fd_, SHUT_RDWR);
+      close(fd_);
+    }
   }
 
   ForkFdListRemoveHandle(this);

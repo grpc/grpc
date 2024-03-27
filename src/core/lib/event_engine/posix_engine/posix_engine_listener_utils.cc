@@ -31,6 +31,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/posix_engine/posix_engine_systemd.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
@@ -135,7 +136,8 @@ int GetMaxAcceptQueueSize() {
 
 // Prepare a recently-created socket for listening.
 absl::Status PrepareSocket(const PosixTcpOptions& options,
-                           ListenerSocket& socket) {
+                           ListenerSocket& socket, bool skip_bind,
+                           bool skip_listen) {
   ResolvedAddress sockname_temp;
   int fd = socket.sock.Fd();
   GPR_ASSERT(fd >= 0);
@@ -176,7 +178,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   GRPC_RETURN_IF_ERROR(socket.sock.ApplySocketMutatorInOptions(
       GRPC_FD_SERVER_LISTENER_USAGE, options));
 
-  if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
+  if (!skip_bind && bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
     auto sockaddr_str = ResolvedAddressToString(socket.addr);
     if (!sockaddr_str.ok()) {
       gpr_log(GPR_ERROR, "Could not convert sockaddr to string: %s",
@@ -189,7 +191,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
                      "': ", std::strerror(errno)));
   }
 
-  if (listen(fd, GetMaxAcceptQueueSize()) < 0) {
+  if (!skip_listen && listen(fd, GetMaxAcceptQueueSize()) < 0) {
     return absl::FailedPreconditionError(
         absl::StrCat("Error in listen: ", std::strerror(errno)));
   }
@@ -211,22 +213,54 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
 }  // namespace
 
 absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
-    const PosixTcpOptions& options, const ResolvedAddress& addr) {
+    const PosixTcpOptions& options, const ResolvedAddress& addr,
+    absl::optional<int> sd_preallocated_fd) {
   ResolvedAddress addr4_copy;
   ListenerSocket socket;
-  auto result = PosixSocketWrapper::CreateDualStackSocket(
-      nullptr, addr, SOCK_STREAM, 0, socket.dsmode);
-  if (!result.ok()) {
-    return result.status();
+  // If systemd provided a socket during activation
+  if (sd_preallocated_fd.has_value()) {
+    // Build the listener from it instead of the provided 'addr'
+    socket.sock = PosixSocketWrapper(sd_preallocated_fd.value());
+    auto preallocated_addr = socket.sock.LocalAddress();
+    if (!preallocated_addr.ok()) {
+      return preallocated_addr.status();
+    }
+    // Sets dsmode according to the family of the preallocated fd
+    auto sd_family = preallocated_addr.value().address()->sa_family;
+    if (sd_family == AF_INET6) {
+      // check if systemd preallocated socket is ipv6 only
+      int ipv6_only = 0;
+      socklen_t len = sizeof(ipv6_only);
+      if (0 == getsockopt(socket.sock.Fd(), IPPROTO_IPV6, IPV6_V6ONLY,
+                          &ipv6_only, &len) &&
+          ipv6_only) {
+        socket.dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV6;
+      } else {
+        socket.dsmode = PosixSocketWrapper::DSMode::DSMODE_DUALSTACK;
+      }
+    } else if (sd_family == AF_INET) {
+      socket.dsmode = PosixSocketWrapper::DSMode::DSMODE_IPV4;
+    } else {
+      socket.dsmode = PosixSocketWrapper::DSMode::DSMODE_NONE;
+    }
+  } else {
+    // Create a new socket if no preallocated fd was provided by systemd
+    auto result = PosixSocketWrapper::CreateDualStackSocket(
+        nullptr, addr, SOCK_STREAM, 0, socket.dsmode);
+    if (!result.ok()) {
+      return result.status();
+    }
+    socket.sock = *result;
   }
-  socket.sock = *result;
   if (socket.dsmode == PosixSocketWrapper::DSMODE_IPV4 &&
       ResolvedAddressIsV4Mapped(addr, &addr4_copy)) {
     socket.addr = addr4_copy;
   } else {
     socket.addr = addr;
   }
-  GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
+  GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket,
+                                     sd_preallocated_fd.has_value(),
+                                     sd_preallocated_fd.has_value()));
   GPR_ASSERT(socket.port > 0);
   return socket;
 }
@@ -286,7 +320,13 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
               addr_str.c_str(), ifa_name);
       continue;
     }
-    auto result = CreateAndPrepareListenerSocket(options, addr);
+
+    // Check if there was a preallocated socket for this interface address
+    auto result_sd = MaybeGetSystemdPreallocatedFdFromAddr(addr);
+    GRPC_RETURN_IF_ERROR(result_sd.status());
+    auto sd_fd = result_sd.value();
+
+    auto result = CreateAndPrepareListenerSocket(options, addr, sd_fd);
     if (!result.ok()) {
       op_status = absl::FailedPreconditionError(
           absl::StrCat("Failed to add listener: ", addr_str,
@@ -327,8 +367,13 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
                                                  requested_port);
   }
 
+  // Check if there was a preallocated socket for this wildcard
+  auto result = MaybeGetSystemdPreallocatedFdFromAddr(wild6);
+  GRPC_RETURN_IF_ERROR(result.status());
+  auto sd_fd_wc6 = result.value();
+
   // Try listening on IPv6 first.
-  v6_sock = CreateAndPrepareListenerSocket(options, wild6);
+  v6_sock = CreateAndPrepareListenerSocket(options, wild6, sd_fd_wc6);
   if (v6_sock.ok()) {
     listener_sockets.Append(*v6_sock);
     requested_port = v6_sock->port;
@@ -340,7 +385,13 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   // If we got a v6-only socket or nothing, try adding 0.0.0.0.
   ResolvedAddressSetPort(wild4, requested_port);
-  v4_sock = CreateAndPrepareListenerSocket(options, wild4);
+
+  // Check if there was a preallocated socket for this wildcard
+  result = MaybeGetSystemdPreallocatedFdFromAddr(wild4);
+  GRPC_RETURN_IF_ERROR(result.status());
+  auto sd_fd_wc4 = result.value();
+
+  v4_sock = CreateAndPrepareListenerSocket(options, wild4, sd_fd_wc4);
   if (v4_sock.ok()) {
     assigned_port = v4_sock->port;
     listener_sockets.Append(*v4_sock);
@@ -373,7 +424,8 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
 absl::StatusOr<ListenerSocketsContainer::ListenerSocket>
 CreateAndPrepareListenerSocket(const PosixTcpOptions& /*options*/,
                                const grpc_event_engine::experimental::
-                                   EventEngine::ResolvedAddress& /*addr*/) {
+                                   EventEngine::ResolvedAddress& /*addr*/,
+                               absl::optional<int> /*sd_preallocated_fd*/) {
   grpc_core::Crash(
       "CreateAndPrepareListenerSocket is not supported on this platform");
 }

@@ -2013,6 +2013,7 @@ grpc_cc_library(
         "posix_event_engine_event_poller",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_lockfree_event",
+        "posix_event_engine_systemd",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2048,6 +2049,7 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_systemd",
         "posix_event_engine_wakeup_fd_posix",
         "posix_event_engine_wakeup_fd_posix_default",
         "status_helper",
@@ -2223,6 +2225,7 @@ grpc_cc_library(
     deps = [
         "event_engine_tcp_socket_utils",
         "iomgr_port",
+        "posix_event_engine_systemd",
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
@@ -2256,6 +2259,7 @@ grpc_cc_library(
         "posix_event_engine_endpoint",
         "posix_event_engine_event_poller",
         "posix_event_engine_listener_utils",
+        "posix_event_engine_systemd",
         "posix_event_engine_tcp_socket_utils",
         "socket_mutator",
         "status_helper",
@@ -2264,6 +2268,27 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_event_engine_systemd",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_engine_systemd.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_engine_systemd.h",
+    ],
+    defines = select({
+        "//:systemd": ["HAVE_LIBSYSTEMD"],
+        "//conditions:default": [],
+    }),
+    external_deps = [
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "iomgr_port",
+        "status_helper",
     ],
 )
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -46,6 +47,11 @@ class GreeterClient {
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
+    // Shorter timeout, more time will not give it a better chance of success
+    std::chrono::time_point<std::chrono::system_clock> deadline =
+        std::chrono::system_clock::now() + std::chrono::milliseconds(1000);
+    context.set_deadline(deadline);
+
     // The actual RPC.
     Status status = stub_->SayHello(&context, request, &reply);
 
@@ -63,12 +69,22 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-int main(int argc, char** argv) {
+void RunClient(std::string target_str) {
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
   // We indicate that the channel isn't authenticated (use of
   // InsecureChannelCredentials()).
+  std::cout << "Greeting " << target_str << " ..." << std::endl;
+  GreeterClient greeter(
+      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
+  std::string user("world");
+  std::string reply(greeter.SayHello(user));
+  std::cout << "Greeter received: " << reply << std::endl;
+}
+
+int main(int argc, char** argv) {
+  // The only expected argument is "--target=", which designate the endpoint
   std::string target_str;
   std::string arg_str("--target");
   if (argc > 1) {
@@ -90,11 +106,8 @@ int main(int argc, char** argv) {
   } else {
     target_str = "unix:/tmp/server";
   }
-  GreeterClient greeter(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-  std::string user("world");
-  std::string reply(greeter.SayHello(user));
-  std::cout << "Greeter received: " << reply << std::endl;
+
+  RunClient(target_str);
 
   return 0;
 }
