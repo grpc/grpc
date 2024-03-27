@@ -30,17 +30,9 @@ namespace grpc {
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
-  if (fallback_credentials->IsInsecure()) {
-    grpc_server_credentials* insecure_creds =
-        grpc_insecure_server_credentials_create();
-    auto xds_creds = std::make_shared<SecureServerCredentials>(
-        grpc_xds_server_credentials_create(insecure_creds));
-    grpc_server_credentials_release(insecure_creds);
-    return xds_creds;
-  }
+  GPR_ASSERT(fallback_credentials->c_creds() != nullptr);
   return std::make_shared<SecureServerCredentials>(
-      grpc_xds_server_credentials_create(
-          fallback_credentials->AsSecureServerCredentials()->c_creds()));
+      grpc_xds_server_credentials_create(fallback_credentials->c_creds()));
 }
 
 namespace experimental {

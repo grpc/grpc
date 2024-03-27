@@ -110,10 +110,7 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
     return nullptr;
   }
 
-  // TODO(yashkt): This is a hack that is needed since InsecureCredentials can
-  // not use grpc_channel_credentials internally and should be removed after
-  // insecure builds are removed from gRPC.
-  virtual bool IsInsecure() const { return false; }
+  virtual grpc_channel_credentials* c_creds() const = 0;
 };
 
 /// A call credentials object encapsulates the state needed by a client to
