@@ -287,10 +287,11 @@ void XdsEnd2endTest::BackendServerThread::ShutdownAllServices() {
 //
 
 XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
-    XdsEnd2endTest* test_obj)
+    XdsEnd2endTest* test_obj, absl::string_view debug_label)
     : ServerThread(test_obj, /*use_xds_enabled_server=*/false),
       ads_service_(new AdsServiceImpl(
-          // First request must have node set with the right client features.
+          // First request must have node set with the right client
+          // features.
           [&](const DiscoveryRequest& request) {
             EXPECT_TRUE(request.has_node());
             EXPECT_THAT(request.node().client_features(),
@@ -301,7 +302,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
           // NACKs must use the right status code.
           [&](absl::StatusCode code) {
             EXPECT_EQ(code, absl::StatusCode::kInvalidArgument);
-          })),
+          },
+          debug_label)),
       lrs_service_(new LrsServiceImpl(
           (GetParam().enable_load_reporting() ? 20 : 0), {kDefaultClusterName},
           // Fail if load reporting is used when not enabled.
@@ -312,7 +314,8 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
             EXPECT_THAT(
                 request.node().client_features(),
                 ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
-          })) {}
+          },
+          debug_label)) {}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -378,7 +381,8 @@ const char XdsEnd2endTest::kServerKeyPath[] =
 
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
-XdsEnd2endTest::XdsEnd2endTest() : balancer_(CreateAndStartBalancer()) {
+XdsEnd2endTest::XdsEnd2endTest()
+    : balancer_(CreateAndStartBalancer("Default Balancer")) {
   // Initialize default client-side xDS resources.
   default_listener_ = XdsResourceUtils::DefaultListener();
   default_route_config_ = XdsResourceUtils::DefaultRouteConfig();
@@ -410,9 +414,9 @@ void XdsEnd2endTest::TearDown() {
 }
 
 std::unique_ptr<XdsEnd2endTest::BalancerServerThread>
-XdsEnd2endTest::CreateAndStartBalancer() {
+XdsEnd2endTest::CreateAndStartBalancer(absl::string_view debug_label) {
   std::unique_ptr<BalancerServerThread> balancer =
-      std::make_unique<BalancerServerThread>(this);
+      std::make_unique<BalancerServerThread>(this, debug_label);
   balancer->Start();
   return balancer;
 }

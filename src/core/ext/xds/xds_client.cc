@@ -24,7 +24,9 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/match.h"
@@ -553,6 +555,67 @@ void XdsClient::XdsChannel::UnsubscribeLocked(const XdsResourceType* type,
   }
 }
 
+bool XdsClient::XdsChannel::MaybeFallbackLocked(
+    const std::string& authority, AuthorityState& authority_state) {
+  if (!xds_client_->HasUncachedResources(authority_state)) {
+    return false;
+  }
+  std::vector<const XdsBootstrap::XdsServer*> xds_servers;
+  if (authority != kOldStyleAuthority) {
+    xds_servers =
+        xds_client_->bootstrap().LookupAuthority(authority)->servers();
+  }
+  if (xds_servers.empty()) xds_servers = xds_client_->bootstrap().servers();
+  for (size_t i = authority_state.xds_channels.size(); i < xds_servers.size();
+       ++i) {
+    authority_state.xds_channels.emplace_back(
+        xds_client_->GetOrCreateXdsChannelLocked(*xds_servers[i], "fallback"));
+    for (const auto& type_resource : authority_state.resource_map) {
+      for (const auto& key_state : type_resource.second) {
+        authority_state.xds_channels.back()->SubscribeLocked(
+            type_resource.first, {authority, key_state.first});
+      }
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] authority %s: added fallback server %s (%s)",
+              xds_client_.get(), authority.c_str(),
+              xds_servers[i]->server_uri().c_str(),
+              authority_state.xds_channels.back()->status().ToString().c_str());
+    }
+    if (authority_state.xds_channels.back()->status().ok()) return true;
+  }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p] authority %s: No fallback server",
+            xds_client_.get(), authority.c_str());
+  }
+  return false;
+}
+
+void XdsClient::XdsChannel::SetHealthyLocked() {
+  status_ = absl::OkStatus();
+  // Make this channel active iff:
+  // 1. Channel is on the list of authority channels
+  // 2. Channel is not the last channel on the list (i.e. not the active
+  // channel)
+  for (auto& authority : xds_client_->authority_state_map_) {
+    auto& channels = authority.second.xds_channels;
+    // Skip if channel is active.
+    if (channels.back() == this) continue;
+    auto channel_it = std::find(channels.begin(), channels.end(), this);
+    // Skip if this is not on the list
+    if (channel_it != channels.end()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO, "[xds_client %p] authority %s: Falling forward to %s",
+                xds_client_.get(), authority.first.c_str(),
+                server_.server_uri().c_str());
+      }
+      // Lower priority channels are no longer needed, connection is back!
+      channels.erase(channel_it + 1, channels.end());
+    }
+  }
+}
+
 void XdsClient::XdsChannel::OnConnectivityFailure(absl::Status status) {
   {
     MutexLock lock(&xds_client_->mu_);
@@ -582,8 +645,11 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
   status_ = status;
   // Find all watchers for this channel.
   std::set<RefCountedPtr<ResourceWatcherInterface>> watchers;
-  for (const auto& a : xds_client_->authority_state_map_) {  // authority
-    if (a.second.xds_channel != this) continue;
+  for (auto& a : xds_client_->authority_state_map_) {  // authority
+    if (a.second.xds_channels.empty() || a.second.xds_channels.back() != this ||
+        MaybeFallbackLocked(a.first, a.second)) {
+      continue;
+    }
     for (const auto& t : a.second.resource_map) {  // type
       for (const auto& r : t.second) {             // resource id
         for (const auto& w : r.second.watchers) {  // watchers
@@ -592,15 +658,17 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
       }
     }
   }
-  // Enqueue notification for the watchers.
-  xds_client_->work_serializer_.Schedule(
-      [watchers = std::move(watchers), status = std::move(status)]()
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(xds_client_->work_serializer_) {
-            for (const auto& watcher : watchers) {
-              watcher->OnError(status, ReadDelayHandle::NoWait());
-            }
-          },
-      DEBUG_LOCATION);
+  if (!watchers.empty()) {
+    // Enqueue notification for the watchers.
+    xds_client_->work_serializer_.Schedule(
+        [watchers = std::move(watchers), status = std::move(status)]()
+            ABSL_EXCLUSIVE_LOCKS_REQUIRED(xds_client_->work_serializer_) {
+              for (const auto& watcher : watchers) {
+                watcher->OnError(status, ReadDelayHandle::NoWait());
+              }
+            },
+        DEBUG_LOCATION);
+  }
 }
 
 //
@@ -953,10 +1021,13 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
   }
   // If this is a reconnect, add any necessary subscriptions from what's
   // already in the cache.
-  for (const auto& a : xds_client()->authority_state_map_) {
+  for (auto& a : xds_client()->authority_state_map_) {
     const std::string& authority = a.first;
-    // Skip authorities that are not using this xDS channel.
-    if (a.second.xds_channel != xds_channel()) continue;
+    auto it = std::find(a.second.xds_channels.begin(),
+                        a.second.xds_channels.end(), xds_channel());
+    // Skip authorities that are not using this xDS channel. The channel can be
+    // anywhere in the list.
+    if (it == a.second.xds_channels.end()) continue;
     for (const auto& t : a.second.resource_map) {
       const XdsResourceType* type = t.first;
       for (const auto& r : t.second) {
@@ -1095,7 +1166,7 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
               status.ToString().c_str());
     } else {
       seen_response_ = true;
-      xds_channel()->status_ = absl::OkStatus();
+      xds_channel()->SetHealthyLocked();
       // Update nonce.
       auto& state = state_map_[result.type];
       state.nonce = result.nonce;
@@ -1118,7 +1189,9 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
           const std::string& authority = a.first;
           AuthorityState& authority_state = a.second;
           // Skip authorities that are not using this xDS channel.
-          if (authority_state.xds_channel != xds_channel()) continue;
+          if (authority_state.xds_channels.back() != xds_channel()) {
+            continue;
+          }
           auto seen_authority_it = result.resources_seen.find(authority);
           // Find this resource type.
           auto type_it = authority_state.resource_map.find(result.type);
@@ -1565,6 +1638,18 @@ RefCountedPtr<XdsClient::XdsChannel> XdsClient::GetOrCreateXdsChannelLocked(
   return xds_channel;
 }
 
+bool XdsClient::HasUncachedResources(const AuthorityState& authority_state) {
+  for (const auto& type_resource : authority_state.resource_map) {
+    for (const auto& key_state : type_resource.second) {
+      if (key_state.second.meta.client_status ==
+          XdsApi::ResourceMetadata::REQUESTED) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void XdsClient::WatchResource(const XdsResourceType* type,
                               absl::string_view name,
                               RefCountedPtr<ResourceWatcherInterface> watcher) {
@@ -1590,7 +1675,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     return;
   }
   // Find server to use.
-  const XdsBootstrap::XdsServer* xds_server = nullptr;
+  std::vector<const XdsBootstrap::XdsServer*> xds_servers;
   if (resource_name->authority != kOldStyleAuthority) {
     auto* authority =
         bootstrap_->LookupAuthority(std::string(resource_name->authority));
@@ -1600,10 +1685,9 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                        "\" not present in bootstrap config")));
       return;
     }
-    xds_server =
-        authority->servers().empty() ? nullptr : authority->servers().front();
+    xds_servers = authority->servers();
   }
-  if (xds_server == nullptr) xds_server = bootstrap_->servers().front();
+  if (xds_servers.empty()) xds_servers = bootstrap_->servers();
   {
     MutexLock lock(&mu_);
     MaybeRegisterResourceTypeLocked(type);
@@ -1662,13 +1746,22 @@ void XdsClient::WatchResource(const XdsResourceType* type,
               },
           DEBUG_LOCATION);
     }
-    // If the authority doesn't yet have a channel, set it, creating it if
-    // needed.
-    if (authority_state.xds_channel == nullptr) {
-      authority_state.xds_channel =
-          GetOrCreateXdsChannelLocked(*xds_server, "start watch");
+    // If this is the first watcher for this authority, add channels.
+    // Note that a channel might have already triggered fallback
+    // due to being used in a different authority.
+    if (authority_state.xds_channels.empty()) {
+      for (const auto& server : xds_servers) {
+        authority_state.xds_channels.emplace_back(
+            GetOrCreateXdsChannelLocked(*server, "start watch"));
+        if (authority_state.xds_channels.back()->status().ok()) {
+          break;
+        }
+      }
     }
-    absl::Status channel_status = authority_state.xds_channel->status();
+    for (const auto& channel : authority_state.xds_channels) {
+      channel->SubscribeLocked(type, *resource_name);
+    }
+    absl::Status channel_status = authority_state.xds_channels.back()->status();
     if (!channel_status.ok()) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
         gpr_log(GPR_INFO,
@@ -1683,7 +1776,6 @@ void XdsClient::WatchResource(const XdsResourceType* type,
               },
           DEBUG_LOCATION);
     }
-    authority_state.xds_channel->SubscribeLocked(type, *resource_name);
   }
   work_serializer_.DrainQueue();
 }
@@ -1721,13 +1813,15 @@ void XdsClient::CancelResourceWatch(const XdsResourceType* type,
               this, std::string(type->type_url()).c_str(),
               std::string(name).c_str());
     }
-    authority_state.xds_channel->UnsubscribeLocked(type, *resource_name,
-                                                   delay_unsubscription);
+    for (const auto& xds_channel : authority_state.xds_channels) {
+      xds_channel->UnsubscribeLocked(type, *resource_name,
+                                     delay_unsubscription);
+    }
     type_map.erase(resource_it);
     if (type_map.empty()) {
       authority_state.resource_map.erase(type_it);
       if (authority_state.resource_map.empty()) {
-        authority_state.xds_channel.reset();
+        authority_state.xds_channels.clear();
       }
     }
   }

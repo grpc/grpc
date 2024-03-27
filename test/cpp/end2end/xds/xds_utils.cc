@@ -151,7 +151,7 @@ std::string XdsBootstrapBuilder::MakeAuthorityText() {
     const std::string& name = p.first;
     const AuthorityInfo& authority_info = p.second;
     std::vector<std::string> fields = {
-        MakeXdsServersText({authority_info.server})};
+        MakeXdsServersText(authority_info.servers)};
     if (!authority_info.client_listener_resource_name_template.empty()) {
       fields.push_back(absl::StrCat(
           "\"client_listener_resource_name_template\": \"",
