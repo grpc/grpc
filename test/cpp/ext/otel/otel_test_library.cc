@@ -199,9 +199,7 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
       std::make_shared<grpc::testing::MockMetricReader>();
   meter_provider->AddMetricReader(reader);
   ot_builder.DisableAllMetrics();
-  for (const auto& metric_name : options.metric_names) {
-    ot_builder.EnableMetric(metric_name);
-  }
+  ot_builder.EnableMetrics(options.metric_names);
   if (options.use_meter_provider) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
