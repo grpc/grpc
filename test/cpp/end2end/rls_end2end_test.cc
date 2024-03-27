@@ -205,7 +205,7 @@ class RlsEnd2endTest : public ::testing::Test {
     call_creds->Unref();
     channel_creds->Unref();
     target_uri_ = absl::StrCat("fake:///", kServerName);
-    channel_ = grpc::CreateCustomChannel(target_uri_, std::move(creds), args);
+    channel_ = grpc::CreateCustomChannel(target_uri_, creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
