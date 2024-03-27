@@ -3512,7 +3512,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "b64",
         "channel_args",
         "env",
         "experiments",
@@ -4764,21 +4763,6 @@ grpc_cc_library(
         "//:orphanable",
         "//:promise",
         "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "b64",
-    srcs = [
-        "lib/slice/b64.cc",
-    ],
-    hdrs = [
-        "lib/slice/b64.h",
-    ],
-    deps = [
-        "slice",
-        "useful",
-        "//:gpr",
     ],
 )
 
