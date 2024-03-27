@@ -573,7 +573,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   std::shared_ptr<ChannelCredentials> channel_creds =
       GetParam().use_xds_credentials()
           ? XdsCredentials(CreateTlsFallbackCredentials())
-          : std::make_shared<WrappedChannelCredentials>(
+          : WrapChannelCredentials(
                 grpc_fake_transport_security_credentials_create());
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
 }

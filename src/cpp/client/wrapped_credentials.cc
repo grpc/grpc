@@ -29,71 +29,84 @@
 
 namespace grpc {
 
-// ---- WrappedChannelCredentials ----
+class WrappedChannelCredentials final : public ChannelCredentials {
+ public:
+  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds)
+      : c_creds_(c_creds) {
+    GPR_ASSERT(c_creds != nullptr);
+  }
 
-WrappedChannelCredentials::WrappedChannelCredentials(
-    grpc_channel_credentials* c_creds)
-    : c_creds_(c_creds) {
-  GPR_ASSERT(c_creds != nullptr);
-}
+  ~WrappedChannelCredentials() override {
+    grpc_core::ExecCtx exec_ctx;
+    if (c_creds_ != nullptr) c_creds_->Unref();
+  }
 
-WrappedChannelCredentials::~WrappedChannelCredentials() {
-  grpc_core::ExecCtx exec_ctx;
-  if (c_creds_ != nullptr) c_creds_->Unref();
-}
+  std::shared_ptr<Channel> CreateChannelImpl(
+      const std::string& target, const ChannelArguments& args) override {
+    return CreateChannelWithInterceptors(
+        target, args,
+        std::vector<std::unique_ptr<
+            grpc::experimental::ClientInterceptorFactoryInterface>>());
+  }
 
-std::shared_ptr<Channel> WrappedChannelCredentials::CreateChannelImpl(
-    const std::string& target, const ChannelArguments& args) {
-  return CreateChannelWithInterceptors(
-      target, args,
+  // Promoted to a public API for internal use
+  grpc_channel_credentials* c_creds() const override { return c_creds_; }
+
+ private:
+  std::shared_ptr<Channel> CreateChannelWithInterceptors(
+      const std::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>());
-}
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          interceptor_creators) override {
+    grpc_channel_args channel_args;
+    args.SetChannelArgs(&channel_args);
+    return grpc::CreateChannelInternal(
+        args.GetSslTargetNameOverride(),
+        grpc_channel_create(target.c_str(), c_creds_, &channel_args),
+        std::move(interceptor_creators));
+  }
 
-std::shared_ptr<Channel>
-WrappedChannelCredentials::CreateChannelWithInterceptors(
-    const std::string& target, const ChannelArguments& args,
-    std::vector<
-        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
-        interceptor_creators) {
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
-  return grpc::CreateChannelInternal(
-      args.GetSslTargetNameOverride(),
-      grpc_channel_create(target.c_str(), c_creds_, &channel_args),
-      std::move(interceptor_creators));
-}
+  grpc_channel_credentials* const c_creds_ = nullptr;
+};
 
 // ---- WrappedCallCredentials ----
 
-WrappedCallCredentials::WrappedCallCredentials(grpc_call_credentials* c_creds)
-    : c_creds_(c_creds) {
-  GPR_ASSERT(c_creds != nullptr);
-}
+class WrappedCallCredentials final : public CallCredentials {
+ public:
+  explicit WrappedCallCredentials(grpc_call_credentials* c_creds)
+      : c_creds_(c_creds) {
+    GPR_ASSERT(c_creds != nullptr);
+  }
 
-WrappedCallCredentials::~WrappedCallCredentials() {
-  grpc_core::ExecCtx exec_ctx;
-  if (c_creds_ != nullptr) c_creds_->Unref();
-}
+  ~WrappedCallCredentials() override {
+    grpc_core::ExecCtx exec_ctx;
+    if (c_creds_ != nullptr) c_creds_->Unref();
+  }
 
-bool WrappedCallCredentials::ApplyToCall(grpc_call* call) {
-  return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
-}
+  grpc_call_credentials* c_creds() override { return c_creds_; }
 
-std::string WrappedCallCredentials::DebugString() {
-  return absl::StrCat("WrappedCallCredentials{",
-                      std::string(c_creds_->debug_string()), "}");
-}
+  bool ApplyToCall(grpc_call* call) override {
+    return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
+  }
+
+  std::string DebugString() override {
+    return absl::StrCat("WrappedCallCredentials{",
+                        std::string(c_creds_->debug_string()), "}");
+  }
+
+ private:
+  grpc_call_credentials* const c_creds_;
+};
 
 // ---- HelperMethods ----
 
-std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
+std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {
   if (creds == nullptr) return nullptr;
   return std::make_shared<WrappedChannelCredentials>(creds);
 }
 
-std::shared_ptr<WrappedCallCredentials> WrapCallCredentials(
+std::shared_ptr<CallCredentials> WrapCallCredentials(
     grpc_call_credentials* creds) {
   if (creds == nullptr) return nullptr;
   return std::make_shared<WrappedCallCredentials>(creds);

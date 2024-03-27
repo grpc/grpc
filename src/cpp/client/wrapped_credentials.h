@@ -18,7 +18,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,48 +25,14 @@
 
 namespace grpc {
 
-class WrappedChannelCredentials final : public ChannelCredentials {
- public:
-  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds);
-  ~WrappedChannelCredentials() override;
-
-  std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override;
-
-  // Promoted to a public API for internal use
-  grpc_channel_credentials* c_creds() const override { return c_creds_; }
-
- private:
-  std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const std::string& target, const ChannelArguments& args,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators) override;
-
-  grpc_channel_credentials* const c_creds_ = nullptr;
-};
-
-class WrappedCallCredentials final : public CallCredentials {
- public:
-  explicit WrappedCallCredentials(grpc_call_credentials* c_creds);
-  ~WrappedCallCredentials() override;
-
-  grpc_call_credentials* c_creds() override { return c_creds_; }
-  bool ApplyToCall(grpc_call* call) override;
-  std::string DebugString() override;
-
- private:
-  grpc_call_credentials* const c_creds_;
-};
-
 // Creates a shared WrappedChannelCredentials if creds is non-null.
 // Otherwise returns nullptr.
-std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
+std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds);
 
 // Creates a shared WrappedCallCredentials if creds is non-null.
 // Otherwise returns nullptr.
-std::shared_ptr<WrappedCallCredentials> WrapCallCredentials(
+std::shared_ptr<CallCredentials> WrapCallCredentials(
     grpc_call_credentials* creds);
 
 }  // namespace grpc

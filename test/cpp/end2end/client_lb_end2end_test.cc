@@ -263,7 +263,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
       : server_host_("localhost"),
-        creds_(std::make_shared<WrappedChannelCredentials>(
+        creds_(WrapChannelCredentials(
             grpc_fake_transport_security_credentials_create())) {}
 
   void SetUp() override { grpc_init(); }

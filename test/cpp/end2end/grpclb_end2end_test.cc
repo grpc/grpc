@@ -606,9 +606,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
         kCallCredsMdKey, kCallCredsMdValue);
-    auto creds = std::make_shared<WrappedChannelCredentials>(
-        grpc_composite_channel_credentials_create(channel_creds, call_creds,
-                                                  nullptr));
+    auto creds =
+        WrapChannelCredentials(grpc_composite_channel_credentials_create(
+            channel_creds, call_creds, nullptr));
     call_creds->Unref();
     channel_creds->Unref();
     channel_ = grpc::CreateCustomChannel(
