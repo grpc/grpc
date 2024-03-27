@@ -195,7 +195,7 @@ class ChannelBasedCall : public Call {
   void HandleCompressionAlgorithmNotAccepted(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
 
-  gpr_cycle_counter start_time() const { return start_time_; }
+  gpr_cycle_counter start_time_cycles() const { return start_time_; }
 
  private:
   RefCountedPtr<Channel> channel_;
@@ -813,11 +813,14 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                args->propagation_mask)));
   }
   // initial refcount dropped by grpc_call_unref
-  grpc_call_element_args call_args = {
-      call->call_stack(), args->server_transport_data,
-      call->context_,     path,
-      call->start_time(), call->send_deadline(),
-      call->arena(),      &call->call_combiner_};
+  grpc_call_element_args call_args = {call->call_stack(),
+                                      args->server_transport_data,
+                                      call->context_,
+                                      path,
+                                      call->start_time_cycles(),
+                                      call->send_deadline(),
+                                      call->arena(),
+                                      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
@@ -898,7 +901,7 @@ void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
                         &(c->final_info_.error_string));
   c->status_error_.set(absl::OkStatus());
   c->final_info_.stats.latency =
-      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time());
+      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time_cycles());
   grpc_call_stack_destroy(c->call_stack(), &c->final_info_,
                           GRPC_CLOSURE_INIT(&c->release_call_, ReleaseCall, c,
                                             grpc_schedule_on_exec_ctx));

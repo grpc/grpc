@@ -110,7 +110,10 @@ class ClientCompressionFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientCompressionFilter> Create(
+  explicit ClientCompressionFilter(const ChannelArgs& args)
+      : compression_engine_(args) {}
+
+  static absl::StatusOr<std::unique_ptr<ClientCompressionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
@@ -135,9 +138,6 @@ class ClientCompressionFilter final
   };
 
  private:
-  explicit ClientCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
-
   ChannelCompression compression_engine_;
 };
 
@@ -146,7 +146,10 @@ class ServerCompressionFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerCompressionFilter> Create(
+  explicit ServerCompressionFilter(const ChannelArgs& args)
+      : compression_engine_(args) {}
+
+  static absl::StatusOr<std::unique_ptr<ServerCompressionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
@@ -171,9 +174,6 @@ class ServerCompressionFilter final
   };
 
  private:
-  explicit ServerCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
-
   ChannelCompression compression_engine_;
 };
 
