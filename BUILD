@@ -913,7 +913,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++",
     hdrs = [
+        "src/cpp/client/call_credentials.cc",
         "src/cpp/client/secure_credentials.h",
+        "src/cpp/client/wrapped_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
@@ -1176,6 +1178,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
+        "src/cpp/client/wrapped_credentials.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -1216,9 +1219,19 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [
+        "src/cpp/client/call_credentials.cc",
         "src/cpp/client/insecure_credentials.cc",
+        "src/cpp/client/wrapped_credentials.cc",
+        "src/cpp/common/insecure_channel_arguments.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/server_credentials.cc",
+    ],
+    hdrs = [
+        "src/cpp/client/wrapped_credentials.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
     language = "c++",
     tags = [
@@ -1227,10 +1240,13 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
+        "exec_ctx",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
         "grpc_public_hdrs",
+        "grpc_security_base",
         "grpc_unsecure",
         "//src/core:grpc_insecure_credentials",
     ],
@@ -2366,8 +2382,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_base",
     srcs = GRPCXX_SRCS + [
+        "src/cpp/client/call_credentials.cc",
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
+        "src/cpp/client/wrapped_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
         "src/cpp/common/secure_channel_arguments.cc",
@@ -2377,9 +2395,11 @@ grpc_cc_library(
         "src/cpp/common/tls_credentials_options.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
+        "src/cpp/server/server_credentials.cc",
     ],
     hdrs = GRPCXX_HDRS + [
         "src/cpp/client/secure_credentials.h",
+        "src/cpp/client/wrapped_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
     ],

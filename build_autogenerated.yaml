@@ -3860,6 +3860,7 @@ libs:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3887,6 +3888,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -3897,6 +3899,7 @@ libs:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/client/xds_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
@@ -3926,6 +3929,7 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/server/xds_server_builder.cc
   - src/cpp/server/xds_server_credentials.cc
@@ -4260,6 +4264,7 @@ libs:
   headers:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -4267,6 +4272,7 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -4276,9 +4282,11 @@ libs:
   - src/cpp/client/create_channel_internal.cc
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/insecure_channel_arguments.cc
   - src/cpp/common/insecure_create_auth_context.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -4297,6 +4305,7 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -6143,6 +6152,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -6171,6 +6181,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6181,6 +6192,7 @@ targets:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
@@ -6209,6 +6221,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -8838,6 +8851,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -8866,6 +8880,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -8876,6 +8891,7 @@ targets:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
@@ -8904,6 +8920,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -9333,6 +9350,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -9361,6 +9379,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -9371,6 +9390,7 @@ targets:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
@@ -9399,6 +9419,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19549,6 +19570,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -19576,6 +19598,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -19586,6 +19609,7 @@ targets:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
@@ -19614,6 +19638,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19923,6 +19948,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -19951,6 +19977,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -19961,6 +19988,7 @@ targets:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
@@ -19989,6 +20017,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -20030,6 +20059,7 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
+  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -20058,6 +20088,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -20068,6 +20099,7 @@ targets:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/client/secure_credentials.cc
+  - src/cpp/client/wrapped_credentials.cc
   - src/cpp/common/alarm.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/channel_arguments.cc
@@ -20096,6 +20128,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc

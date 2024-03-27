@@ -38,6 +38,8 @@ namespace {
 
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
+  BinderServerCredentialsImpl() : ServerCredentials(nullptr) {}
+
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
         addr, server,
@@ -56,7 +58,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
   }
 
  private:
-  bool IsInsecure() const override { return true; }
+  grpc_server_credentials* c_creds() const override { return nullptr; }
 };
 
 }  // namespace

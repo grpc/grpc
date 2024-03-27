@@ -47,22 +47,17 @@ class ChaoticGoodInsecureChannelCredentialsImpl final
     return channel;
   }
 
-  SecureChannelCredentials* AsSecureCredentials() override { return nullptr; }
-
  private:
-  bool IsInsecure() const override { return true; }
+  grpc_channel_credentials* c_creds() const override { return nullptr; }
 };
 
 class ChaoticGoodInsecureServerCredentialsImpl final
     : public ServerCredentials {
  public:
+  ChaoticGoodInsecureServerCredentialsImpl() : ServerCredentials(nullptr) {}
+
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_server_add_chaotic_good_port(server, addr.c_str());
-  }
-
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>&) override {
-    grpc_core::Crash("Not supported on insecure server credentials");
   }
 };
 

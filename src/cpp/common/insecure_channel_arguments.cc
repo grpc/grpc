@@ -16,18 +16,16 @@
 //
 //
 
-#include <memory>
+#include <string>
 
 #include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-#include <grpcpp/security/auth_metadata_processor.h>
-#include <grpcpp/security/server_credentials.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 
-std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
-  return std::shared_ptr<ServerCredentials>(new ServerCredentials(nullptr));
-}
+void ChannelArguments::SetSslTargetNameOverride(const std::string&) {}
+
+std::string ChannelArguments::GetSslTargetNameOverride() const { return ""; }
 
 }  // namespace grpc

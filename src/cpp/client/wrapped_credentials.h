@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2020 gRPC authors.
+// Copyright 2024 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,34 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+#ifndef GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
+#define GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
+
+#include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
-
-#include "src/cpp/client/wrapped_credentials.h"
 
 namespace grpc {
 
-std::shared_ptr<ChannelCredentials> XdsCredentials(
-    const std::shared_ptr<ChannelCredentials>& fallback_creds) {
-  GPR_ASSERT(fallback_creds != nullptr);
-  GPR_ASSERT(fallback_creds->c_creds() != nullptr);
-  return WrapChannelCredentials(
-      grpc_xds_credentials_create(fallback_creds->c_creds()));
-}
+// Creates a shared WrappedChannelCredentials if creds is non-null.
+// Otherwise returns nullptr.
+std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
+    grpc_channel_credentials* creds);
 
-namespace experimental {
+// Creates a shared CallCredentials if creds is non-null.
+// Otherwise returns nullptr.
+std::shared_ptr<CallCredentials> MakeCallCredentials(
+    grpc_call_credentials* creds);
 
-std::shared_ptr<ChannelCredentials> XdsCredentials(
-    const std::shared_ptr<ChannelCredentials>& fallback_creds) {
-  return grpc::XdsCredentials(fallback_creds);
-}
-
-}  // namespace experimental
 }  // namespace grpc
+
+#endif  // GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H
