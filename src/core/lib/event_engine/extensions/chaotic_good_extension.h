@@ -37,6 +37,9 @@ class ChaoticGoodExtension {
   /// Otherwise they are grouped into histograms and counters specific to the
   /// chaotic good data channel.
   virtual void EnableStatsCollection(bool is_control_channel) = 0;
+  /// If invoked, the endpoint tries to preserve proper order and alignment of
+  /// any memory that maybe shared across reads.
+  virtual void EnforceRxMemoryAlignment() = 0;
 };
 
 }  // namespace experimental
