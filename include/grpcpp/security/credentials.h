@@ -68,24 +68,11 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 ///
 /// \see https://grpc.io/docs/guides/auth.html
 class ChannelCredentials : private grpc::internal::GrpcLibrary {
- public:
- protected:
-  // TODO(yashykt): We need these friend declaration mainly for access to
-  // c_creds(). Once we are able to remove insecure builds from gRPC (and also
-  // internal dependencies on the indirect method of creating a channel through
-  // credentials), we would be able to remove this.
-  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
-      const std::shared_ptr<ChannelCredentials>& channel_creds,
-      const std::shared_ptr<CallCredentials>& call_creds);
-  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
-      const std::shared_ptr<ChannelCredentials>& fallback_creds);
-
  private:
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<grpc::ChannelCredentials>& creds,
       const grpc::ChannelArguments& args);
-
   friend std::shared_ptr<grpc::Channel>
   grpc::experimental::CreateCustomChannelWithInterceptors(
       const grpc::string& target,
@@ -94,6 +81,11 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
+  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+      const std::shared_ptr<ChannelCredentials>& channel_creds,
+      const std::shared_ptr<CallCredentials>& call_creds);
+  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
+      const std::shared_ptr<ChannelCredentials>& fallback_creds);
 
   virtual std::shared_ptr<Channel> CreateChannelImpl(
       const grpc::string& target, const ChannelArguments& args) = 0;
