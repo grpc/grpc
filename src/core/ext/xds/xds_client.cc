@@ -1591,7 +1591,9 @@ XdsClient::XdsClient(
       engine_(std::move(engine)),
       metrics_reporter_(std::move(metrics_reporter)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
+    gpr_log(GPR_INFO,
+            "[xds_client %p] creating xds client with %ld xDS servers", this,
+            bootstrap_->servers().size());
   }
   GPR_ASSERT(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
@@ -1749,7 +1751,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     // If this is the first watcher for this authority, add channels.
     // Note that a channel might have already triggered fallback
     // due to being used in a different authority.
-    if (authority_state.xds_channels.empty()) {
+    if (authority_state.xds_channels.empty() ||
+        !authority_state.xds_channels.back()->status().ok()) {
       for (const auto& server : xds_servers) {
         authority_state.xds_channels.emplace_back(
             GetOrCreateXdsChannelLocked(*server, "start watch"));

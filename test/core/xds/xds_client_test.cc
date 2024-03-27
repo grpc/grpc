@@ -26,6 +26,7 @@
 #include <deque>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -49,6 +50,7 @@
 #include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
@@ -75,6 +77,8 @@ using envoy::service::discovery::v3::DiscoveryResponse;
 namespace grpc_core {
 namespace testing {
 namespace {
+
+constexpr absl::string_view kDefaultXdsServerUrl = "default_xds_server";
 
 class XdsClientTest : public ::testing::Test {
  protected:
@@ -124,6 +128,11 @@ class XdsClientTest : public ::testing::Test {
 
     class FakeXdsServer : public XdsServer {
      public:
+      explicit FakeXdsServer(
+          absl::string_view server_uri = kDefaultXdsServerUrl,
+          bool ignore_resource_deletion = false)
+          : server_uri_(server_uri),
+            ignore_resource_deletion_(ignore_resource_deletion) {}
       const std::string& server_uri() const override { return server_uri_; }
       bool IgnoreResourceDeletion() const override {
         return ignore_resource_deletion_;
@@ -137,15 +146,8 @@ class XdsClientTest : public ::testing::Test {
         return absl::StrCat(server_uri_, "#", ignore_resource_deletion_);
       }
 
-      void set_server_uri(std::string server_uri) {
-        server_uri_ = std::move(server_uri);
-      }
-      void set_ignore_resource_deletion(bool ignore_resource_deletion) {
-        ignore_resource_deletion_ = ignore_resource_deletion;
-      }
-
      private:
-      std::string server_uri_ = "default_xds_server";
+      std::string server_uri_;
       bool ignore_resource_deletion_ = false;
     };
 
@@ -169,8 +171,7 @@ class XdsClientTest : public ::testing::Test {
 
     class Builder {
      public:
-      Builder() { node_.emplace(); }
-
+      explicit Builder() { node_.emplace(); }
       Builder& set_node_id(std::string id) {
         if (!node_.has_value()) node_.emplace();
         node_->set_id(std::move(id));
@@ -180,20 +181,20 @@ class XdsClientTest : public ::testing::Test {
         authorities_[std::move(name)] = std::move(authority);
         return *this;
       }
-      Builder& set_ignore_resource_deletion(bool ignore_resource_deletion) {
-        server_.set_ignore_resource_deletion(ignore_resource_deletion);
+      Builder& AddServer(const FakeXdsServer& server = FakeXdsServer()) {
+        servers_.emplace_back(server);
         return *this;
       }
       std::unique_ptr<XdsBootstrap> Build() {
         auto bootstrap = std::make_unique<FakeXdsBootstrap>();
-        bootstrap->server_ = std::move(server_);
+        bootstrap->servers_ = std::move(servers_);
         bootstrap->node_ = std::move(node_);
         bootstrap->authorities_ = std::move(authorities_);
         return bootstrap;
       }
 
      private:
-      FakeXdsServer server_;
+      std::vector<FakeXdsServer> servers_;
       absl::optional<FakeNode> node_;
       std::map<std::string, FakeAuthority> authorities_;
     };
@@ -201,7 +202,12 @@ class XdsClientTest : public ::testing::Test {
     std::string ToString() const override { return "<fake>"; }
 
     std::vector<const XdsServer*> servers() const override {
-      return {&server_};
+      std::vector<const XdsServer*> result;
+      result.reserve(servers_.size());
+      for (size_t i = 0; i < servers_.size(); ++i) {
+        result.emplace_back(&servers_[i]);
+      }
+      return result;
     }
 
     const Node* node() const override {
@@ -214,7 +220,7 @@ class XdsClientTest : public ::testing::Test {
     }
 
    private:
-    FakeXdsServer server_;
+    std::vector<FakeXdsServer> servers_;
     absl::optional<FakeNode> node_;
     std::map<std::string, FakeAuthority> authorities_;
   };
@@ -246,6 +252,24 @@ class XdsClientTest : public ::testing::Test {
                                             all_resources_required_in_sotw>,
                         ResourceStruct>::WatcherInterface {
      public:
+      ~Watcher() override {
+        MutexLock lock(&mu_);
+        EXPECT_THAT(queue_, ::testing::IsEmpty())
+            << this << " "
+            << grpc_core::Match(
+                   queue_[0],
+                   [&](const ResourceAndReadDelayHandle& resource) {
+                     return absl::StrFormat("Resource %s",
+                                            resource.resource->name);
+                   },
+                   [&](const absl::Status& status) {
+                     return status.ToString();
+                   },
+                   [&](const DoesNotExist& /* tag */) -> std::string {
+                     return "<Does not exist>";
+                   });
+      }
+
       // Returns true if no event is received during the timeout period.
       bool ExpectNoEvent(absl::Duration timeout) {
         MutexLock lock(&mu_);
@@ -657,7 +681,8 @@ class XdsClientTest : public ::testing::Test {
   // Sets transport_factory_ and initializes xds_client_ with the
   // specified bootstrap config.
   void InitXdsClient(
-      FakeXdsBootstrap::Builder bootstrap_builder = FakeXdsBootstrap::Builder(),
+      FakeXdsBootstrap::Builder bootstrap_builder =
+          FakeXdsBootstrap::Builder().AddServer(),
       Duration resource_request_timeout = Duration::Seconds(15)) {
     auto transport_factory = MakeOrphanable<FakeXdsTransportFactory>(
         []() { FAIL() << "Multiple concurrent reads"; });
@@ -2039,7 +2064,8 @@ TEST_F(XdsClientTest, ResourceDeletion) {
 // This tests that when we ignore resource deletions from the server
 // when configured to do so.
 TEST_F(XdsClientTest, ResourceDeletionIgnoredWhenConfigured) {
-  InitXdsClient(FakeXdsBootstrap::Builder().set_ignore_resource_deletion(true));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(
+      FakeXdsBootstrap::FakeXdsServer(kDefaultXdsServerUrl, true)));
   // Start a watch for "wc1".
   auto watcher = StartWildcardCapableWatch("wc1");
   // Watcher should initially not see any resource reported.
@@ -2348,7 +2374,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
 TEST_F(XdsClientTest, ConnectionFails) {
   // Lower resources-does-not-exist timeout, to make sure that we're not
   // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(), Duration::Seconds(3));
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2438,7 +2464,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
 }
 
 TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(), Duration::Seconds(1));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -2528,7 +2554,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistUponTimeout) {
 
 TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
   // Lower resources-does-not-exist timeout so test finishes faster.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(), Duration::Seconds(3));
   // Metrics should initially be empty.
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre());
@@ -2649,7 +2675,7 @@ TEST_F(XdsClientTest, ResourceDoesNotExistAfterStreamRestart) {
 TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
   // Lower resources-does-not-exist timeout, to make sure that we're not
   // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(), Duration::Seconds(3));
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2732,7 +2758,7 @@ TEST_F(XdsClientTest, DoesNotExistTimerNotStartedUntilSendCompletes) {
 // update containing that resource.
 TEST_F(XdsClientTest,
        ResourceDoesNotExistUnsubscribeAndResubscribeWhileSendMessagePending) {
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(1));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(), Duration::Seconds(1));
   // Tell transport to let us manually trigger completion of the
   // send_message ops to XdsClient.
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
@@ -2885,7 +2911,7 @@ TEST_F(XdsClientTest,
 TEST_F(XdsClientTest, DoNotSendDoesNotExistForCachedResource) {
   // Lower resources-does-not-exist timeout, to make sure that we're not
   // triggering that here.
-  InitXdsClient(FakeXdsBootstrap::Builder(), Duration::Seconds(3));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer(), Duration::Seconds(3));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -3182,12 +3208,11 @@ TEST_F(XdsClientTest, Federation) {
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
-  FakeXdsBootstrap::FakeXdsServer authority_server;
-  authority_server.set_server_uri("other_xds_server");
+  FakeXdsBootstrap::FakeXdsServer authority_server("other_xds_server");
   FakeXdsBootstrap::FakeAuthority authority;
   authority.set_server(authority_server);
-  InitXdsClient(
-      FakeXdsBootstrap::Builder().AddAuthority(kAuthority, authority));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer().AddAuthority(
+      kAuthority, authority));
   // Metrics should initially be empty.
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre());
@@ -3339,8 +3364,9 @@ TEST_F(XdsClientTest, FederationAuthorityDefaultsToTopLevelXdsServer) {
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
   // Authority does not specify any xDS servers, so XdsClient will use
   // the top-level xDS server in the bootstrap config for this authority.
-  InitXdsClient(FakeXdsBootstrap::Builder().AddAuthority(
-      kAuthority, FakeXdsBootstrap::FakeAuthority()));
+  InitXdsClient(FakeXdsBootstrap::Builder()
+                    .AddAuthority(kAuthority, FakeXdsBootstrap::FakeAuthority())
+                    .AddServer());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -3542,12 +3568,11 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo2");
-  FakeXdsBootstrap::FakeXdsServer authority_server;
-  authority_server.set_server_uri("other_xds_server");
+  FakeXdsBootstrap::FakeXdsServer authority_server("other_xds_server");
   FakeXdsBootstrap::FakeAuthority authority;
   authority.set_server(authority_server);
-  InitXdsClient(
-      FakeXdsBootstrap::Builder().AddAuthority(kAuthority, authority));
+  InitXdsClient(FakeXdsBootstrap::Builder().AddServer().AddAuthority(
+      kAuthority, authority));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Watcher should initially not see any resource reported.
@@ -3777,6 +3802,199 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
                /*resource_names=*/{"foo2"});
   CancelFooWatch(watcher2.get(), "foo2");
   EXPECT_TRUE(stream->Orphaned());
+}
+
+TEST_F(XdsClientTest, Fallback) {
+  FakeXdsBootstrap::FakeXdsServer default_server(kDefaultXdsServerUrl);
+  FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
+  // Regular operation
+  InitXdsClient(FakeXdsBootstrap::Builder()
+                    .AddServer(default_server)
+                    .AddServer(fallback_server));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  TriggerConnectionFailure(default_server,
+                           absl::UnavailableError("Server down"));
+  // Uses cached data
+  auto watcher_cached = StartFooWatch("foo1");
+  resource = watcher_cached->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  CancelFooWatch(watcher_cached.get(), "foo1");
+  // XdsClient should have sent a subscription request on the ADS stream.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->message(),
+            "xDS channel for server default_xds_server: Server down (node "
+            "ID:xds_client_test)");
+  // Fallback happens now
+  auto watcher2 = StartFooWatch("foo2");
+  // Requested on stream1
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  auto stream2 = WaitForAdsStream(fallback_server);
+  ASSERT_TRUE(stream2 != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  stream2->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("5")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 20))
+          .Serialize());
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 20);
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"5", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  stream2->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("15")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource("foo2", 30))
+          .Serialize());
+  resource = watcher2->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 30);
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"15", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+}
+
+TEST_F(XdsClientTest, FallbackReportsError) {
+  FakeXdsBootstrap::FakeXdsServer default_server(kDefaultXdsServerUrl);
+  FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
+  // Regular operation
+  InitXdsClient(FakeXdsBootstrap::Builder()
+                    .AddServer(default_server)
+                    .AddServer(fallback_server));
+  // Start a watch for "foo1".
+  auto watcher = StartFooWatch("foo1");
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
+  EXPECT_THAT(GetResourceCounts(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                        XdsFooResourceType::Get()->type_url(),
+                                        "requested"),
+                  1)));
+  // XdsClient should have created an ADS stream.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  // Send a response.
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("1")
+          .set_nonce("A")
+          .AddFooResource(XdsFooResource("foo1", 6))
+          .Serialize());
+  // XdsClient should have delivered the response to the watcher.
+  auto resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 6);
+  TriggerConnectionFailure(default_server,
+                           absl::UnavailableError("Server down"));
+  // XdsClient should have sent a subscription request on the ADS stream.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->message(),
+            "xDS channel for server default_xds_server: Server down (node "
+            "ID:xds_client_test)");
+  // Fallback happens now
+  auto watcher2 = StartFooWatch("foo2");
+  // Requested on stream1
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"1", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  auto stream2 = WaitForAdsStream(fallback_server);
+  TriggerConnectionFailure(fallback_server,
+                           absl::UnavailableError("Another server down"));
+  ASSERT_TRUE(stream2 != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  error = watcher->WaitForNextError();
+  ASSERT_NE(error, absl::nullopt);
+  EXPECT_THAT(error->message(),
+              ::testing::ContainsRegex("Another server down"));
+  error = watcher2->WaitForNextError();
+  ASSERT_NE(error, absl::nullopt);
+  EXPECT_THAT(error->message(),
+              ::testing::ContainsRegex("Another server down"));
 }
 
 }  // namespace
