@@ -56,7 +56,6 @@
 namespace grpc {
 namespace {
 
-
 void UnrefMetadata(const std::vector<grpc_metadata>& md) {
   for (const auto& metadatum : md) {
     grpc_slice_unref(metadatum.key);
