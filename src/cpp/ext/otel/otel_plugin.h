@@ -328,7 +328,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     } call;
   };
 
-  // This object is used inline.
+  // This object should be used inline.
   class CallbackMetricReporter : public grpc_core::CallbackMetricReporter {
    public:
     explicit CallbackMetricReporter(OpenTelemetryPlugin* parent)
@@ -421,7 +421,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     // RegisteredMetricCallback to multiple Observables relationship for now.
     grpc_core::RegisteredMetricCallback* registered_metric_callback = nullptr;
     // Per-instrument mutex to synchronize accesses to caches.
-    absl::Mutex mu ABSL_ACQUIRED_AFTER(OpenTelemetryPlugin::mu_);
+    grpc_core::Mutex mu ABSL_ACQUIRED_AFTER(OpenTelemetryPlugin::mu_);
     // Caches.
     ValueType value ABSL_GUARDED_BY(mu);
     std::vector<absl::string_view> label_values ABSL_GUARDED_BY(mu);
@@ -451,7 +451,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     OptionalLabelsBitSet optional_labels_bits;
   };
   std::vector<InstrumentData> instruments_data_;
-  absl::Mutex mu_;
+  grpc_core::Mutex mu_;
   struct RegisteredMetricCallbackState {
     grpc_core::Timestamp last_update_time;
   };
