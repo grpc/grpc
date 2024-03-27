@@ -25,6 +25,7 @@ grpc_cc_library(
     name = "xds_server",
     srcs = ["xds_server.cc"],
     hdrs = ["xds_server.h"],
+    visibility = ["@grpc:xds_end2end_test_lib"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,6 +46,7 @@ grpc_cc_library(
     name = "xds_utils",
     srcs = ["xds_utils.cc"],
     hdrs = ["xds_utils.h"],
+    visibility = ["@grpc:xds_end2end_test_lib"],
     deps = [
         ":xds_server",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
