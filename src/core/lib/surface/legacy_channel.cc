@@ -93,10 +93,8 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {
-    // TODO(roth): Figure out how to populate authority here.
-    // Or maybe just don't worry about this if no one needs it until after
-    // the call v3 stack lands.
-    StatsPlugin::ChannelScope scope(target, "");
+    StatsPlugin::ChannelScope scope(
+        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY).value_or(""));
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }

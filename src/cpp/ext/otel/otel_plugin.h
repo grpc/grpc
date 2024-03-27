@@ -138,11 +138,6 @@ class OpenTelemetryPluginBuilderImpl {
   OpenTelemetryPluginBuilderImpl& EnableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilderImpl& DisableMetric(absl::string_view metric_name);
   OpenTelemetryPluginBuilderImpl& DisableAllMetrics();
-  // If set, \a target_selector is called per channel to decide whether to
-  // collect metrics on that target or not.
-  OpenTelemetryPluginBuilderImpl& SetTargetSelector(
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector);
   // If set, \a server_selector is called per incoming call on the server
   // to decide whether to collect metrics on that call or not.
   // TODO(yashkt): We should only need to do this per server connection or even
@@ -171,6 +166,12 @@ class OpenTelemetryPluginBuilderImpl {
   // Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilderImpl& AddOptionalLabel(
       absl::string_view optional_label_key);
+  // Set scope filter to choose which channels are recorded by this plugin.
+  // Server-side recording remains unaffected.
+  OpenTelemetryPluginBuilderImpl& SetChannelScopeFilter(
+      absl::AnyInvocable<
+          bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+          channel_scope_filter);
   absl::Status BuildAndRegisterGlobal();
 
  private:
@@ -179,7 +180,6 @@ class OpenTelemetryPluginBuilderImpl {
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
       target_attribute_filter_;
   absl::flat_hash_set<std::string> metrics_;
-  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
   absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
       generic_method_attribute_filter_;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
@@ -187,6 +187,9 @@ class OpenTelemetryPluginBuilderImpl {
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
   std::shared_ptr<std::set<absl::string_view>> optional_label_keys_;
+  absl::AnyInvocable<bool(
+      const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+      channel_scope_filter_;
 };
 
 class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
@@ -196,8 +199,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
           meter_provider,
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-          target_selector,
-      absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter,
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter,
@@ -205,7 +206,10 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
           server_selector,
       std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
           plugin_options,
-      std::shared_ptr<std::set<absl::string_view>> optional_label_keys);
+      std::shared_ptr<std::set<absl::string_view>> optional_label_keys,
+      absl::AnyInvocable<
+          bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+          channel_scope_filter);
 
  private:
   class ClientCallTracer;
@@ -403,7 +407,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   std::vector<InstrumentData> instruments_data_;
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
-  absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
   absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>
       server_selector_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const>
@@ -412,6 +415,9 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       generic_method_attribute_filter_;
   std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
       plugin_options_;
+  absl::AnyInvocable<bool(
+      const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+      channel_scope_filter_;
 };
 
 }  // namespace internal
