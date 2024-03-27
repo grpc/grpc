@@ -84,53 +84,53 @@ const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 const char kFakeToken[] = "fake_token";
 const char kFakeSelector[] = "fake_selector";
 const char kExpectedFakeCredsDebugString[] =
-    "WrappedCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector}}";
 
 const char kWrongToken[] = "wrong_token";
 const char kWrongSelector[] = "wrong_selector";
 const char kExpectedWrongCredsDebugString[] =
-    "WrappedCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:wrong_selector}}";
 
 const char kFakeToken1[] = "fake_token1";
 const char kFakeSelector1[] = "fake_selector1";
 const char kExpectedFakeCreds1DebugString[] =
-    "WrappedCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector1}}";
 
 const char kFakeToken2[] = "fake_token2";
 const char kFakeSelector2[] = "fake_selector2";
 const char kExpectedFakeCreds2DebugString[] =
-    "WrappedCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector2}}";
 
 const char kExpectedAuthMetadataPluginKeyFailureCredsDebugString[] =
-    "WrappedCallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
+    "CallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
     "value:Does not matter, will fail the key is invalid.}}";
 const char kExpectedAuthMetadataPluginValueFailureCredsDebugString[] =
-    "WrappedCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:With illegal \n value.}}";
 const char kExpectedAuthMetadataPluginWithDeadlineCredsDebugString[] =
-    "WrappedCallCredentials{TestMetadataCredentials{key:meta_key,value:Does "
+    "CallCredentials{TestMetadataCredentials{key:meta_key,value:Does "
     "not "
     "matter}}";
 const char kExpectedNonBlockingAuthMetadataPluginFailureCredsDebugString[] =
-    "WrappedCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:Does not matter, will fail anyway (see 3rd param)}}";
 const char
     kExpectedNonBlockingAuthMetadataPluginAndProcessorSuccessCredsDebugString
-        [] = "WrappedCallCredentials{TestMetadataCredentials{key:test-plugin-"
+        [] = "CallCredentials{TestMetadataCredentials{key:test-plugin-"
              "metadata,value:Dr Jekyll}}";
 const char
     kExpectedNonBlockingAuthMetadataPluginAndProcessorFailureCredsDebugString
-        [] = "WrappedCallCredentials{TestMetadataCredentials{key:test-plugin-"
+        [] = "CallCredentials{TestMetadataCredentials{key:test-plugin-"
              "metadata,value:Mr Hyde}}";
 const char kExpectedBlockingAuthMetadataPluginFailureCredsDebugString[] =
-    "WrappedCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:Does not matter, will fail anyway (see 3rd param)}}";
 const char kExpectedCompositeCallCredsDebugString[] =
-    "WrappedCallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
+    "CallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
     "key:call-creds-key1,value:call-creds-val1},TestMetadataCredentials{key:"
     "call-creds-key2,value:call-creds-val2}}}";
 

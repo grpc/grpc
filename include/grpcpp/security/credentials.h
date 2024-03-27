@@ -109,11 +109,12 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
 /// \see https://grpc.io/docs/guides/auth.html
 class CallCredentials : private grpc::internal::GrpcLibrary {
  public:
+  ~CallCredentials() override;
+
   /// Apply this instance's credentials to \a call.
-  virtual bool ApplyToCall(grpc_call* call) = 0;
-  virtual grpc::string DebugString() {
-    return "CallCredentials did not provide a debug string";
-  }
+  virtual bool ApplyToCall(grpc_call* call);
+
+  virtual grpc::string DebugString();
 
  protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
@@ -123,8 +124,14 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
       const std::shared_ptr<CallCredentials>& creds1,
       const std::shared_ptr<CallCredentials>& creds2);
   friend std::string grpc::testing::GetOauth2AccessToken();
+  friend std::shared_ptr<CallCredentials> MakeCallCredentials(
+      grpc_call_credentials* creds);
 
-  virtual grpc_call_credentials* c_creds() = 0;
+  explicit CallCredentials(grpc_call_credentials* creds);
+
+  virtual grpc_call_credentials* c_creds();
+
+  grpc_call_credentials* c_creds_ = nullptr;
 };
 
 /// Options used to build SslCredentials.

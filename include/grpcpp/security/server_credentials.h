@@ -34,7 +34,6 @@ namespace grpc {
 
 class Server;
 class ServerCredentials;
-class SecureServerCredentials;
 
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {

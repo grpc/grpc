@@ -30,9 +30,9 @@ namespace grpc {
 std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds);
 
-// Creates a shared WrappedCallCredentials if creds is non-null.
+// Creates a shared CallCredentials if creds is non-null.
 // Otherwise returns nullptr.
-std::shared_ptr<CallCredentials> WrapCallCredentials(
+std::shared_ptr<CallCredentials> MakeCallCredentials(
     grpc_call_credentials* creds);
 
 }  // namespace grpc

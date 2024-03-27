@@ -64,7 +64,7 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(grpc_external_account_credentials_create(
+  return MakeCallCredentials(grpc_external_account_credentials_create(
       json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
 
@@ -200,7 +200,7 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options) {
   auto opts = StsCredentialsCppToCoreOptions(options);
-  return WrapCallCredentials(grpc_sts_credentials_create(&opts, nullptr));
+  return MakeCallCredentials(grpc_sts_credentials_create(&opts, nullptr));
 }
 
 // Builds ALTS Credentials given ALTS specific options
@@ -237,7 +237,7 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
 // Builds credentials for use when running in GCE
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(
+  return MakeCallCredentials(
       grpc_google_compute_engine_credentials_create(nullptr));
 }
 
@@ -248,11 +248,11 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
-    return WrapCallCredentials(nullptr);
+    return MakeCallCredentials(nullptr);
   }
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
-  return WrapCallCredentials(grpc_service_account_jwt_access_credentials_create(
+  return MakeCallCredentials(grpc_service_account_jwt_access_credentials_create(
       json_key.c_str(), lifetime, nullptr));
 }
 
@@ -260,7 +260,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
 std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
     const std::string& json_refresh_token) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(grpc_google_refresh_token_credentials_create(
+  return MakeCallCredentials(grpc_google_refresh_token_credentials_create(
       json_refresh_token.c_str(), nullptr));
 }
 
@@ -268,7 +268,7 @@ std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
 std::shared_ptr<CallCredentials> AccessTokenCredentials(
     const std::string& access_token) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(
+  return MakeCallCredentials(
       grpc_access_token_credentials_create(access_token.c_str(), nullptr));
 }
 
@@ -277,7 +277,7 @@ std::shared_ptr<CallCredentials> GoogleIAMCredentials(
     const std::string& authorization_token,
     const std::string& authority_selector) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(grpc_google_iam_credentials_create(
+  return MakeCallCredentials(grpc_google_iam_credentials_create(
       authorization_token.c_str(), authority_selector.c_str(), nullptr));
 }
 
@@ -301,7 +301,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2) {
   if (creds1->c_creds() != nullptr && creds2->c_creds() != nullptr) {
-    return WrapCallCredentials(grpc_composite_call_credentials_create(
+    return MakeCallCredentials(grpc_composite_call_credentials_create(
         creds1->c_creds(), creds2->c_creds(), nullptr));
   }
   return nullptr;
@@ -445,7 +445,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       MetadataCredentialsPluginWrapper::GetMetadata,
       MetadataCredentialsPluginWrapper::DebugString,
       MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
-  return WrapCallCredentials(grpc_metadata_credentials_create_from_plugin(
+  return MakeCallCredentials(grpc_metadata_credentials_create_from_plugin(
       c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
 }
 

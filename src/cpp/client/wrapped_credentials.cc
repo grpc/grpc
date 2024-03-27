@@ -24,7 +24,6 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 namespace grpc {
@@ -37,8 +36,7 @@ class WrappedChannelCredentials final : public ChannelCredentials {
   }
 
   ~WrappedChannelCredentials() override {
-    grpc_core::ExecCtx exec_ctx;
-    if (c_creds_ != nullptr) c_creds_->Unref();
+    grpc_channel_credentials_release(c_creds_);
   }
 
   std::shared_ptr<Channel> CreateChannelImpl(
@@ -69,35 +67,6 @@ class WrappedChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* const c_creds_ = nullptr;
 };
 
-// ---- WrappedCallCredentials ----
-
-class WrappedCallCredentials final : public CallCredentials {
- public:
-  explicit WrappedCallCredentials(grpc_call_credentials* c_creds)
-      : c_creds_(c_creds) {
-    GPR_ASSERT(c_creds != nullptr);
-  }
-
-  ~WrappedCallCredentials() override {
-    grpc_core::ExecCtx exec_ctx;
-    if (c_creds_ != nullptr) c_creds_->Unref();
-  }
-
-  grpc_call_credentials* c_creds() override { return c_creds_; }
-
-  bool ApplyToCall(grpc_call* call) override {
-    return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
-  }
-
-  std::string DebugString() override {
-    return absl::StrCat("WrappedCallCredentials{",
-                        std::string(c_creds_->debug_string()), "}");
-  }
-
- private:
-  grpc_call_credentials* const c_creds_;
-};
-
 // ---- HelperMethods ----
 
 std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
@@ -106,10 +75,10 @@ std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
   return std::make_shared<WrappedChannelCredentials>(creds);
 }
 
-std::shared_ptr<CallCredentials> WrapCallCredentials(
+std::shared_ptr<CallCredentials> MakeCallCredentials(
     grpc_call_credentials* creds) {
   if (creds == nullptr) return nullptr;
-  return std::make_shared<WrappedCallCredentials>(creds);
+  return std::shared_ptr<CallCredentials>(new CallCredentials(creds));
 }
 
 }  // namespace grpc
