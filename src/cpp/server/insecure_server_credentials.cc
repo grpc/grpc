@@ -17,7 +17,6 @@
 //
 
 #include <memory>
-#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,35 +25,9 @@
 #include <grpcpp/security/server_credentials.h>
 
 namespace grpc {
-namespace {
-class InsecureServerCredentialsImpl final : public ServerCredentials {
- public:
-  InsecureServerCredentialsImpl()
-      : creds_(grpc_insecure_server_credentials_create()) {}
-
-  ~InsecureServerCredentialsImpl() override {
-    grpc_server_credentials_release(creds_);
-  }
-
-  int AddPortToServer(const std::string& addr, grpc_server* server) override {
-    return grpc_server_add_http2_port(server, addr.c_str(), creds_);
-  }
-
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override {
-    (void)processor;
-    GPR_ASSERT(0);  // Should not be called on InsecureServerCredentials.
-  }
-
- private:
-  grpc_server_credentials* c_creds() const override { return creds_; }
-
-  grpc_server_credentials* creds_;
-};
-}  // namespace
 
 std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
-  return std::make_shared<InsecureServerCredentialsImpl>();
+  return std::shared_ptr<ServerCredentials>(new ServerCredentials(nullptr));
 }
 
 }  // namespace grpc

@@ -32,7 +32,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
   explicit BinderServerCredentialsImpl(
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy)
-      : security_policy_(security_policy) {}
+      : ServerCredentials(nullptr), security_policy_(security_policy) {}
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
@@ -50,14 +50,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
   }
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    grpc_core::Crash("unreachable");
-  }
-
  private:
-  grpc_server_credentials* c_creds() const override { return nullptr; }
-
   std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy_;
 };
 

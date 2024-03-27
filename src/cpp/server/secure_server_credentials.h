@@ -19,10 +19,7 @@
 #ifndef GRPC_SRC_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 #define GRPC_SRC_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 
-#include <stddef.h>
-
 #include <memory>
-#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -32,9 +29,6 @@
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
-
-class SecureServerCredentials;
-
 class AuthMetadataProcessorAsyncWrapper final {
  public:
   static void Destroy(void* wrapper);
@@ -61,21 +55,12 @@ class AuthMetadataProcessorAsyncWrapper final {
 
 class SecureServerCredentials final : public ServerCredentials {
  public:
-  explicit SecureServerCredentials(grpc_server_credentials* creds)
-      : creds_(creds) {}
-  ~SecureServerCredentials() override {
-    grpc_server_credentials_release(creds_);
-  }
-
-  int AddPortToServer(const std::string& addr, grpc_server* server) override;
+  explicit SecureServerCredentials(grpc_server_credentials* creds);
 
   void SetAuthMetadataProcessor(
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override;
 
  private:
-  grpc_server_credentials* c_creds() const override { return creds_; }
-
-  grpc_server_credentials* creds_;
   std::unique_ptr<grpc::AuthMetadataProcessorAsyncWrapper> processor_;
 };
 

@@ -1225,8 +1225,14 @@ grpc_cc_library(
         "src/cpp/common/insecure_channel_arguments.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
+        "src/cpp/server/server_credentials.cc",
     ],
-    hdrs = ["src/cpp/client/wrapped_credentials.h"],
+    hdrs = [
+        "src/cpp/client/wrapped_credentials.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     tags = [
         "avoid_dep",
@@ -2389,6 +2395,7 @@ grpc_cc_library(
         "src/cpp/common/tls_credentials_options.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
+        "src/cpp/server/server_credentials.cc",
     ],
     hdrs = GRPCXX_HDRS + [
         "src/cpp/client/secure_credentials.h",
