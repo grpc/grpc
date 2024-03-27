@@ -126,7 +126,7 @@ namespace Grpc.Tools
                                                         "javanano", "js", "objc",
                                                         "php", "python", "ruby" };
 
-        static readonly TimeSpan s_regexTimeout = TimeSpan.FromMilliseconds(100);
+        static readonly TimeSpan s_regexTimeout = TimeSpan.FromSeconds(1);
 
         static readonly List<ErrorListFilter> s_errorListFilters = new List<ErrorListFilter>()
         {
@@ -591,12 +591,18 @@ namespace Grpc.Tools
         {
             foreach (ErrorListFilter filter in s_errorListFilters)
             {
-                Match match = filter.Pattern.Match(singleLine);
-
-                if (match.Success)
+                try
                 {
-                    filter.LogAction(Log, match);
-                    return;
+                    Match match = filter.Pattern.Match(singleLine);
+
+                    if (match.Success)
+                    {
+                        filter.LogAction(Log, match);
+                        return;
+                    }
+                } catch (RegexMatchTimeoutException)
+                {
+                    Log.LogWarning("Unable to parse output from protoc. Regex timeout.");
                 }
             }
 
