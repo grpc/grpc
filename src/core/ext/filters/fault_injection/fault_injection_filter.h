@@ -45,7 +45,9 @@ class FaultInjectionFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<FaultInjectionFilter> Create(
+  explicit FaultInjectionFilter(ChannelFilter::Args filter_args = {});
+
+  static absl::StatusOr<std::unique_ptr<FaultInjectionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
@@ -61,8 +63,6 @@ class FaultInjectionFilter
   };
 
  private:
-  explicit FaultInjectionFilter(ChannelFilter::Args filter_args = {});
-
   class InjectionDecision;
   InjectionDecision MakeInjectionDecision(
       const ClientMetadata& initial_metadata);
