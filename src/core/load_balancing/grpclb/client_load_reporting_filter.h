@@ -34,7 +34,21 @@ class ClientLoadReportingFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientLoadReportingFilter> Create(
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& client_initial_metadata);
+    void OnServerInitialMetadata(ServerMetadata& server_initial_metadata);
+    void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata);
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnFinalize;
+
+   private:
+    RefCountedPtr<GrpcLbClientStats> client_stats_;
+    bool saw_initial_metadata_ = false;
+  };
+
+  static absl::StatusOr<std::unique_ptr<ClientLoadReportingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   // Construct a promise for one call.
