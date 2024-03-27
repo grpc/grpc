@@ -249,11 +249,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
     std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
         plugin_options,
     std::shared_ptr<std::set<absl::string_view>> optional_label_keys)
-    :  // registered_metric_callback_state_map_(
-       //     std::make_shared<
-       //         absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-       //                             RegisteredMetricCallbackState>>()),
-      meter_provider_(std::move(meter_provider)),
+    : meter_provider_(std::move(meter_provider)),
       target_selector_(std::move(target_selector)),
       server_selector_(std::move(server_selector)),
       target_attribute_filter_(std::move(target_attribute_filter)),
@@ -438,8 +434,6 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                         std::string(descriptor.name),
                         std::string(descriptor.description),
                         std::string(descriptor.unit));
-                // observable_state->registered_metric_callback_state_map =
-                //     registered_metric_callback_state_map_;
                 instruments_data_[descriptor.index].instrument =
                     std::move(observable_state);
                 break;
@@ -454,8 +448,6 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                         std::string(descriptor.name),
                         std::string(descriptor.description),
                         std::string(descriptor.unit));
-                // observable_state->registered_metric_callback_state_map =
-                //     registered_metric_callback_state_map_;
                 instruments_data_[descriptor.index].instrument =
                     std::move(observable_state);
                 break;
@@ -495,11 +487,9 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
   absl::MutexLock l{&observable_state->mu};
   observable_state->value = value;
   observable_state->label_values =
-      std::make_unique<std::vector<absl::string_view>>(label_values.begin(),
-                                                       label_values.end());
-  observable_state->optional_label_values =
-      std::make_unique<std::vector<absl::string_view>>(optional_values.begin(),
-                                                       optional_values.end());
+      std::vector<absl::string_view>(label_values.begin(), label_values.end());
+  observable_state->optional_label_values = std::vector<absl::string_view>(
+      optional_values.begin(), optional_values.end());
 }
 void OpenTelemetryPlugin::CallbackMetricReporter::Report(
     grpc_core::GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle
@@ -518,11 +508,9 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
   absl::MutexLock l{&observable_state->mu};
   observable_state->value = value;
   observable_state->label_values =
-      std::make_unique<std::vector<absl::string_view>>(label_values.begin(),
-                                                       label_values.end());
-  observable_state->optional_label_values =
-      std::make_unique<std::vector<absl::string_view>>(optional_values.begin(),
-                                                       optional_values.end());
+      std::vector<absl::string_view>(label_values.begin(), label_values.end());
+  observable_state->optional_label_values = std::vector<absl::string_view>(
+      optional_values.begin(), optional_values.end());
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
@@ -535,8 +523,8 @@ OpenTelemetryPlugin::IsEnabledForChannel(const ChannelScope& scope) const {
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
 OpenTelemetryPlugin::IsEnabledForServer(
     const grpc_core::ChannelArgs& args) const {
-  // Return true only if there is no server selector registered or if the
-  // server selector returns true.
+  // Return true only if there is no server selector registered or if the server
+  // selector returns true.
   if (server_selector_ == nullptr || server_selector_(args)) {
     return {true, std::make_shared<ServerScopeConfig>(this, args)};
   }
@@ -659,11 +647,9 @@ void OpenTelemetryPlugin::SetGauge(
   absl::MutexLock l{&observable_state->mu};
   observable_state->value = value;
   observable_state->label_values =
-      std::make_unique<std::vector<absl::string_view>>(label_values.begin(),
-                                                       label_values.end());
-  observable_state->optional_label_values =
-      std::make_unique<std::vector<absl::string_view>>(optional_values.begin(),
-                                                       optional_values.end());
+      std::vector<absl::string_view>(label_values.begin(), label_values.end());
+  observable_state->optional_label_values = std::vector<absl::string_view>(
+      optional_values.begin(), optional_values.end());
   if (!std::exchange(observable_state->callback_registered, true)) {
     observable_state->instrument->AddCallback(&ObservableCallback<int64_t>,
                                               observable_state.get());
@@ -689,11 +675,9 @@ void OpenTelemetryPlugin::SetGauge(
   absl::MutexLock l{&observable_state->mu};
   observable_state->value = value;
   observable_state->label_values =
-      std::make_unique<std::vector<absl::string_view>>(label_values.begin(),
-                                                       label_values.end());
-  observable_state->optional_label_values =
-      std::make_unique<std::vector<absl::string_view>>(optional_values.begin(),
-                                                       optional_values.end());
+      std::vector<absl::string_view>(label_values.begin(), label_values.end());
+  observable_state->optional_label_values = std::vector<absl::string_view>(
+      optional_values.begin(), optional_values.end());
   if (!std::exchange(observable_state->callback_registered, true)) {
     observable_state->instrument->AddCallback(&ObservableCallback<double>,
                                               observable_state.get());
@@ -803,16 +787,16 @@ void OpenTelemetryPlugin::ObservableState<ValueType>::Observe(
   const auto& descriptor =
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor({id});
   absl::MutexLock l{&mu};
-  GPR_ASSERT(descriptor.label_keys.size() == label_values->size());
+  GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
   GPR_ASSERT(descriptor.optional_label_keys.size() ==
-             optional_label_values->size());
+             optional_label_values.size());
   auto& instrument_data = parent->instruments_data_.at(id);
   opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
       opentelemetry::metrics::ObserverResultT<ValueType>>>(result)
       ->Observe(value,
                 NPCMetricsKeyValueIterable(
-                    descriptor.label_keys, *label_values,
-                    descriptor.optional_label_keys, *optional_label_values,
+                    descriptor.label_keys, label_values,
+                    descriptor.optional_label_keys, optional_label_values,
                     instrument_data.optional_labels_bits));
 }
 

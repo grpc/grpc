@@ -424,10 +424,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     absl::Mutex mu ABSL_ACQUIRED_AFTER(OpenTelemetryPlugin::mu_);
     // Caches.
     ValueType value ABSL_GUARDED_BY(mu);
-    std::unique_ptr<std::vector<absl::string_view>> label_values
-        ABSL_GUARDED_BY(mu);
-    std::unique_ptr<std::vector<absl::string_view>> optional_label_values
-        ABSL_GUARDED_BY(mu);
+    std::vector<absl::string_view> label_values ABSL_GUARDED_BY(mu);
+    std::vector<absl::string_view> optional_label_values ABSL_GUARDED_BY(mu);
     OpenTelemetryPlugin* parent;
   };
   template <typename T>
