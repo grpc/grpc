@@ -98,18 +98,12 @@ const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -205,14 +199,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good", description_chaotic_good,
      additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
      false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -322,18 +312,12 @@ const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -429,14 +413,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good", description_chaotic_good,
      additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
      false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -546,18 +526,12 @@ const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -653,14 +627,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good", description_chaotic_good,
      additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
      false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
