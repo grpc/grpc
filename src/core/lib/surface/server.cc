@@ -1751,7 +1751,6 @@ void Server::CallData::KillZombie() {
 
 // If this changes, change MakeCallPromise too.
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
     state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     KillZombie();
