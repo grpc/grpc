@@ -175,6 +175,10 @@ class OpenTelemetryPluginBuilderImpl {
       absl::string_view optional_label_key);
   absl::Status BuildAndRegisterGlobal();
 
+  const absl::flat_hash_set<std::string>& TestOnlyEnabledMetrics() {
+    return metrics_;
+  }
+
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
   std::unique_ptr<LabelsInjector> labels_injector_;
