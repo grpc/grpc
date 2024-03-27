@@ -52,8 +52,8 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       per_channel_evaluate_args_(auth_context_.get(), endpoint),
       provider_(std::move(provider)) {}
 
-absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>>
+GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   auto* provider = args.GetObject<grpc_authorization_policy_provider>();
   if (provider == nullptr) {
@@ -62,7 +62,7 @@ absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
   // grpc_endpoint isn't needed because the current gRPC authorization policy
   // does not support any rules that requires looking for source or destination
   // addresses.
-  return GrpcServerAuthzFilter(
+  return std::make_unique<GrpcServerAuthzFilter>(
       auth_context != nullptr ? auth_context->Ref() : nullptr,
       /*endpoint=*/nullptr, provider->Ref());
 }

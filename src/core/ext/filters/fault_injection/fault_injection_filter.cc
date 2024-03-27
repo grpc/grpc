@@ -135,9 +135,10 @@ class FaultInjectionFilter::InjectionDecision {
   FaultHandle active_fault_{false};
 };
 
-absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args filter_args) {
-  return FaultInjectionFilter(filter_args);
+absl::StatusOr<std::unique_ptr<FaultInjectionFilter>>
+FaultInjectionFilter::Create(const ChannelArgs&,
+                             ChannelFilter::Args filter_args) {
+  return std::make_unique<FaultInjectionFilter>(filter_args);
 }
 
 FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)

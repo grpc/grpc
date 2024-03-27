@@ -40,6 +40,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
@@ -67,6 +68,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server_interface.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -222,7 +224,7 @@ class Server : public ServerInterface,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ChannelData final : public ServerTransport::Acceptor {
+  class ChannelData final {
    public:
     ChannelData() = default;
     ~ChannelData();
@@ -235,26 +237,18 @@ class Server : public ServerInterface,
     Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
-    RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
-                                          const absl::string_view& path);
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
     static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
         grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
-    void InitCall(RefCountedPtr<CallSpineInterface> call);
-
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;
 
     static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
-    void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
@@ -385,6 +379,20 @@ class Server : public ServerInterface,
     using is_transparent = void;
   };
 
+  struct ChannelSet {
+    std::vector<RefCountedPtr<Channel>> ye_olde_channels;
+    std::vector<RefCountedPtr<Connection>> channels;
+  };
+
+  class CallPublisher final : public CallDestination {
+   public:
+    void HandleCall(CallHandler handler) override { Crash("unimplemented"); }
+    void Orphan() override { Unref(); }
+  };
+
+  class ChannelBroadcaster;
+  class ConnectivityWatcher;
+
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
@@ -410,7 +418,8 @@ class Server : public ServerInterface,
       size_t* cq_idx, grpc_completion_queue* cq_for_notification, void* tag,
       grpc_byte_buffer** optional_payload, RegisteredMethod* rm);
 
-  std::vector<RefCountedPtr<Channel>> GetChannelsLocked() const;
+  ChannelSet GetChannelsLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_);
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has not been called.
@@ -445,6 +454,11 @@ class Server : public ServerInterface,
   bool ShutdownReady() const {
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
+
+  void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
+  RegisteredMethod* GetRegisteredMethod(absl::string_view host,
+                                        absl::string_view path);
+  void MatchThenPublish(CallHandler handler, size_t cq_idx);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
@@ -500,13 +514,22 @@ class Server : public ServerInterface,
   const Duration max_time_in_pending_queue_;
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
-  std::list<ChannelData*> channels_;
+  std::list<ChannelData*> ye_olde_channels_ ABSL_GUARDED_BY(mu_global_);
+  using ServerConnectionSet =
+      absl::flat_hash_map<uint64_t, OrphanablePtr<Transport>>;
+  uint64_t next_connection_id_ ABSL_GUARDED_BY(mu_global_) = 0;
+  ServerConnectionSet channels_ ABSL_GUARDED_BY(mu_global_);
+  std::atomic<size_t> num_channels_{0};
+  const grpc_compression_options compression_options_;
 
   std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;
 
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
+
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
 };
 
 }  // namespace grpc_core

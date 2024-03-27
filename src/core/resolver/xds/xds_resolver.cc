@@ -79,20 +79,20 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/resolver.h"
-#include "src/core/resolver/resolver_factory.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/resolver/xds/xds_resolver_trace.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 namespace grpc_core {
 
@@ -317,9 +317,12 @@ class XdsResolver : public Resolver {
    public:
     const static grpc_channel_filter kFilter;
 
-    static absl::StatusOr<ClusterSelectionFilter> Create(
-        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args) {
-      return ClusterSelectionFilter(filter_args);
+    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
+        : filter_args_(filter_args) {}
+
+    static absl::StatusOr<std::unique_ptr<ClusterSelectionFilter>> Create(
+        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args = {}) {
+      return std::make_unique<ClusterSelectionFilter>(filter_args);
     }
 
     // Construct a promise for one call.
@@ -334,9 +337,6 @@ class XdsResolver : public Resolver {
     };
 
    private:
-    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
-        : filter_args_(filter_args) {}
-
     ChannelFilter::Args filter_args_;
   };
 

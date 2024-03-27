@@ -172,11 +172,7 @@ SubchannelStreamClient::CallState::CallState(
       arena_(Arena::Create(subchannel_stream_client_->connected_subchannel_
                                ->GetInitialCallSizeEstimate(),
                            &subchannel_stream_client_->call_allocator_)),
-      payload_(context_),
-      send_initial_metadata_(arena_.get()),
-      send_trailing_metadata_(arena_.get()),
-      recv_initial_metadata_(arena_.get()),
-      recv_trailing_metadata_(arena_.get()) {}
+      payload_(context_) {}
 
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {

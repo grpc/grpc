@@ -40,7 +40,7 @@ class ServerLoadReportingFilter
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ServerLoadReportingFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
+      const ChannelArgs& args, ChannelFilter::Args = {});
 
   // Getters.
   const char* peer_identity() { return peer_identity_.c_str(); }

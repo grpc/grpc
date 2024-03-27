@@ -39,7 +39,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -56,11 +55,6 @@ class LegacyChannel : public Channel {
                 RefCountedPtr<grpc_channel_stack> channel_stack);
 
   void Orphan() override;
-
-  Arena* CreateArena() override { return call_factory_->CreateArena(); }
-  void DestroyArena(Arena* arena) override {
-    return call_factory_->DestroyArena(arena);
-  }
 
   bool IsLame() const override;
 
@@ -110,7 +104,6 @@ class LegacyChannel : public Channel {
   const bool is_client_;
   const bool is_promising_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
-  const RefCountedPtr<CallFactory> call_factory_;
 };
 
 }  // namespace grpc_core

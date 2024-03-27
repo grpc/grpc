@@ -354,7 +354,7 @@ Arena* FilterTestBase::Call::arena() { return impl_->arena(); }
 ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
-  auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
+  auto md = impl_->arena()->MakePooled<ClientMetadata>();
   for (auto& p : init) {
     auto parsed = ClientMetadata::Parse(
         p.first, Slice::FromCopiedString(p.second), false,
@@ -371,7 +371,7 @@ ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
 ServerMetadataHandle FilterTestBase::Call::NewServerMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
-  auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
+  auto md = impl_->arena()->MakePooled<ClientMetadata>();
   for (auto& p : init) {
     auto parsed = ServerMetadata::Parse(
         p.first, Slice::FromCopiedString(p.second), false,

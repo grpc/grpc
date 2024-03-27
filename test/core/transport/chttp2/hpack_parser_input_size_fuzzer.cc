@@ -90,7 +90,7 @@ absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
   size_t nslices;
   size_t i;
 
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
 
   HPackParser parser;
   parser.BeginFrame(

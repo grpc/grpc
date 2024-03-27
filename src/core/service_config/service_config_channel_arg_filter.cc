@@ -42,13 +42,13 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/service_config/service_config_parser.h"
-#include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -59,9 +59,9 @@ class ServiceConfigChannelArgFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args) {
-    return ServiceConfigChannelArgFilter(args);
+  static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args = {}) {
+    return std::make_unique<ServiceConfigChannelArgFilter>(args);
   }
 
   explicit ServiceConfigChannelArgFilter(const ChannelArgs& args) {

@@ -75,7 +75,7 @@ class StatefulSessionFilter
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<StatefulSessionFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:
@@ -97,7 +97,7 @@ class StatefulSessionFilter
   };
 
  private:
-  explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
+  explicit StatefulSessionFilter(ChannelFilter::Args filter_args = {});
   // The relative index of instances of the same filter.
   const size_t index_;
   // Index of the service config parser.

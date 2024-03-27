@@ -24,8 +24,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -35,23 +33,19 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server_interface.h"
-#include "src/core/lib/transport/transport.h"
+#include "src/core/lib/transport/call_spine.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
@@ -77,91 +71,147 @@ typedef struct grpc_call_create_args {
 } grpc_call_create_args;
 
 namespace grpc_core {
-class BasicPromiseBasedCall;
-class ServerPromiseBasedCall;
 
-class ServerCallContext {
+class Call : public CppImplOf<Call, grpc_call> {
  public:
-  virtual void PublishInitialMetadata(
-      ClientMetadataHandle metadata,
-      grpc_metadata_array* publish_initial_metadata) = 0;
+  grpc_compression_algorithm test_only_compression_algorithm() {
+    return incoming_compression_algorithm();
+  }
+  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
 
-  // Construct the top of the server call promise for the v2 filter stack.
-  // TODO(ctiller): delete when v3 is available.
-  virtual ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
-      CallArgs call_args, grpc_completion_queue* cq,
-      absl::FunctionRef<void(grpc_call* call)> publish) = 0;
+  virtual Arena* arena() = 0;
+  virtual void ContextSet(grpc_context_index elem, void* value,
+                          void (*destroy)(void* value)) = 0;
+  virtual void* ContextGet(grpc_context_index elem) const = 0;
+  virtual bool Completed() = 0;
+  void CancelWithStatus(grpc_status_code status, const char* description);
+  virtual void CancelWithError(grpc_error_handle error) = 0;
+  virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
+  virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
+                                     void* notify_tag,
+                                     bool is_notify_tag_closure) = 0;
+  virtual bool failed_before_recv_message() const = 0;
+  virtual bool is_trailers_only() const = 0;
+  virtual absl::string_view GetServerAuthority() const = 0;
+  virtual void ExternalRef() = 0;
+  virtual void ExternalUnref() = 0;
+  virtual void InternalRef(const char* reason) = 0;
+  virtual void InternalUnref(const char* reason) = 0;
+  virtual char* GetPeer() = 0;
 
-  // Server stream data as supplied by the transport (so we can link the
-  // transport stream up with the call again).
-  // TODO(ctiller): legacy API - once we move transports to promises we'll
-  // create the promise directly and not need to pass around this token.
-  virtual const void* server_stream_data() = 0;
+  void ResetDeadline();
 
- protected:
-  ~ServerCallContext() = default;
-};
+  virtual grpc_call_stats* call_stats() { Crash("not implemented"); }
+  virtual Timestamp start_time() { Crash("not implemented"); }
+  virtual void UpdateDeadline(Timestamp deadline) { Crash("not implemented"); }
 
-// TODO(ctiller): move more call things into this type
-class CallContext {
- public:
-  explicit CallContext(BasicPromiseBasedCall* call) : call_(call) {}
+  // Return the EventEngine used for this call's async execution.
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
 
-  // Update the deadline (if deadline < the current deadline).
-  void UpdateDeadline(Timestamp deadline);
-  Timestamp deadline() const;
-
-  // Run some action in the call activity context. This is needed to adapt some
-  // legacy systems to promises, and will likely disappear once that conversion
-  // is complete.
-  void RunInContext(absl::AnyInvocable<void()> fn);
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  void IncrementRefCount(const char* reason = "call_context");
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  void Unref(const char* reason = "call_context");
-
-  RefCountedPtr<CallContext> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<CallContext>(this);
+  CompressionAlgorithmSet encodings_accepted_by_peer() {
+    return encodings_accepted_by_peer_;
   }
 
-  grpc_call_stats* call_stats() { return &call_stats_; }
-  gpr_atm* peer_string_atm_ptr();
-  gpr_cycle_counter call_start_time() { return start_time_; }
+ protected:
+  void NoteLastMessageFlags(uint32_t flags) {
+    test_only_last_message_flags_ = flags;
+  }
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+  void set_incoming_compression_algorithm(
+      grpc_compression_algorithm algorithm) {
+    incoming_compression_algorithm_ = algorithm;
+  }
+  void set_encodings_accepted_by_peer(CompressionAlgorithmSet encodings) {
+    encodings_accepted_by_peer_ = encodings;
+  }
+  CompressionAlgorithmSet encodings_accepted_by_peer() const {
+    return encodings_accepted_by_peer_;
+  }
 
-  ServerCallContext* server_call_context();
-
-  void set_traced(bool traced) { traced_ = traced; }
-  bool traced() const { return traced_; }
-
-  // TEMPORARY HACK
-  // Create a call spine object for this call.
-  // Said object should only be created once.
-  // Allows interop between the v2 call stack and the v3 (which is required by
-  // transports).
-  RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs call_args);
-  grpc_call* c_call();
+  void PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                      const grpc_compression_options& copt,
+                                      bool is_client, grpc_metadata_batch& md);
 
  private:
-  friend class PromiseBasedCall;
-  // Call final info.
-  grpc_call_stats call_stats_;
-  // TODO(ctiller): remove this once transport APIs are promise based and we
-  // don't need refcounting here.
-  BasicPromiseBasedCall* const call_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
-  // Is this call traced?
-  bool traced_ = false;
+  // Compression algorithm for *incoming* data
+  grpc_compression_algorithm incoming_compression_algorithm_ =
+      GRPC_COMPRESS_NONE;
+  // Supported encodings (compression algorithms), a bitset.
+  // Always support no compression.
+  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
+  uint32_t test_only_last_message_flags_ = 0;
+};
+
+class ClientCall : public Call {};
+
+class ServerCall final : public Call {
+ public:
+  static ServerCall* MakeServerCall(CallHandler call_handler,
+                                    ServerInterface* server);
+
+  Arena* arena() override { return call_handler_.arena(); }
+  void ContextSet(grpc_context_index elem, void* value,
+                  void (*destroy)(void* value)) override {
+    call_handler_.legacy_context(elem) =
+        grpc_call_context_element{value, destroy};
+  }
+  void* ContextGet(grpc_context_index elem) const override {
+    return call_handler_.legacy_context(elem).value;
+  }
+  bool Completed() override;
+  void CancelWithError(grpc_error_handle error) override;
+  void SetCompletionQueue(grpc_completion_queue* cq) override { cq_ = cq; }
+  grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                             bool is_notify_tag_closure) override;
+  bool failed_before_recv_message() const override;
+  bool is_trailers_only() const override;
+  absl::string_view GetServerAuthority() const override;
+  void ExternalRef() override { ref_count_.Ref(); }
+  void ExternalUnref() override {
+    if (ref_count_.Unref()) delete this;
+  }
+  void InternalRef(const char*) override { ExternalRef(); }
+  void InternalUnref(const char*) override { ExternalUnref(); }
+  char* GetPeer() override { Crash("Not implemented"); }
+
+  // Return the EventEngine used for this call's async execution.
+  grpc_event_engine::experimental::EventEngine* event_engine() const override;
+
+  void PublishInitialMetadata(ClientMetadataHandle md,
+                              grpc_metadata_array* md_array);
+
+ private:
+  ServerCall(CallHandler call_handler, ServerInterface* server);
+
+  static grpc_call_error ValidateBatch(const grpc_op* ops, size_t nops);
+  void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
+                   bool is_notify_tag_closure);
+  StatusFlag FinishRecvMessage(CallFilters::NextMessage result);
+  std::string DebugTag() { return call_handler_.DebugTag(); }
+
+  ServerInterface* const server_;
+  grpc_byte_buffer** recv_message_ = nullptr;
+  ClientMetadataHandle client_initial_metadata_stored_;
+  CallHandler call_handler_;
+  RefCount ref_count_;
+  grpc_completion_queue* cq_;
 };
 
 template <>
-struct ContextType<CallContext> {};
+struct ContextType<Call> {};
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface* server,
-                                                 Channel* channel,
-                                                 Arena* arena);
+template <>
+struct ContextSubclass<ServerCall> {
+  using Base = Call;
+};
+
+template <>
+struct ContextSubclass<ClientCall> {
+  using Base = Call;
+};
 
 }  // namespace grpc_core
 

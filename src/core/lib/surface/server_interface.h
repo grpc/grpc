@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/compression.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channelz.h"
 
@@ -36,6 +38,7 @@ class ServerInterface {
   virtual const ChannelArgs& channel_args() const = 0;
   virtual channelz::ServerNode* channelz_node() const = 0;
   virtual ServerCallTracerFactory* server_call_tracer_factory() const = 0;
+  virtual const grpc_compression_options& compression_options() const = 0;
 };
 
 }  // namespace grpc_core

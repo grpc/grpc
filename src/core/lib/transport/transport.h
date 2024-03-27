@@ -56,6 +56,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -540,6 +541,7 @@ class FilterStackTransport {
   ~FilterStackTransport() = default;
 };
 
+// FIXME: should this just be an alias for CallDestination?
 class ClientTransport {
  public:
   virtual void StartCall(CallHandler call_handler) = 0;
@@ -550,24 +552,9 @@ class ClientTransport {
 
 class ServerTransport {
  public:
-  // Acceptor helps transports create calls.
-  class Acceptor {
-   public:
-    // Returns an arena that can be used to allocate memory for initial metadata
-    // parsing, and later passed to CreateCall() as the underlying arena for
-    // that call.
-    virtual Arena* CreateArena() = 0;
-    // Create a call at the server (or fail)
-    // arena must have been previously allocated by CreateArena()
-    virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
-
-   protected:
-    ~Acceptor() = default;
-  };
-
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetAcceptor(Acceptor* acceptor) = 0;
+  virtual void SetCallDestination(
+      RefCountedPtr<UnstartedCallDestination> destination) = 0;
 
  protected:
   ~ServerTransport() = default;
@@ -597,6 +584,12 @@ class Transport : public Orphanable {
 
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  // Wrappers around PerformOp (we'll make these first class virtuals at some
+  // point)
+  void SendGoaway(absl::string_view message);
+  void StartConnectivityWatch(
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // implementation of grpc_transport_get_endpoint
   virtual grpc_endpoint* GetEndpoint() = 0;

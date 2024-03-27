@@ -23,6 +23,8 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/transport/call_final_info.h"
@@ -783,7 +785,7 @@ struct ChannelDataDestructor {
 // in-flight calls.
 struct StackData {
   // Overall size and alignment of the call data for this stack.
-  size_t call_data_alignment = 0;
+  size_t call_data_alignment = 1;
   size_t call_data_size = 0;
   // A complete list of filters for this call, so that we can construct the
   // call data for each filter.
@@ -1093,6 +1095,9 @@ class InfallibleOperationExecutor {
 // augment it to provide all the functionality that we must.
 class PipeState {
  public:
+  struct StartPushed {};
+  PipeState() = default;
+  explicit PipeState(StartPushed) : state_(ValueState::kQueued) {}
   // Start the pipe: allows pulls to proceed
   void Start();
   // A push operation is beginning
@@ -1101,13 +1106,24 @@ class PipeState {
   void DropPush();
   // Poll for push completion: occurs after the corresponding Pull()
   Poll<StatusFlag> PollPush();
-  Poll<StatusFlag> PollPull();
+  // Poll for pull completion; returns Failure{} if closed with error,
+  // true if a value is available, or false if the pipe was closed without
+  // error.
+  Poll<ValueOrFailure<bool>> PollPull();
   // A pulled value has been consumed: we can unblock the push
   void AckPull();
   // A previously started pull operation has completed
   void DropPull();
+  // Close sending
+  void CloseSending();
+  // Close sending with error
+  void CloseWithError();
+  // Poll for closedness - if true, closed with error
+  Poll<bool> PollClosed();
 
   bool holds_error() const { return state_ == ValueState::kError; }
+
+  std::string DebugString() const;
 
  private:
   enum class ValueState : uint8_t {
@@ -1245,8 +1261,45 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
-  CallFilters();
-  explicit CallFilters(RefCountedPtr<Stack> stack);
+  class NextMessage {
+   public:
+    NextMessage() : has_value_(false), cancelled_(false) {}
+    explicit NextMessage(MessageHandle value)
+        : has_value_(true), value_(std::move(value)) {}
+    explicit NextMessage(bool cancelled)
+        : has_value_(false), cancelled_(cancelled) {}
+    NextMessage(const NextMessage&) = delete;
+    NextMessage& operator=(const NextMessage&) = delete;
+    NextMessage(NextMessage&& other) noexcept = default;
+    NextMessage& operator=(NextMessage&& other) = default;
+
+    using value_type = MessageHandle;
+
+    void reset() {
+      has_value_ = false;
+      cancelled_ = false;
+      value_.reset();
+    }
+    bool has_value() const { return has_value_; }
+    const MessageHandle& value() const {
+      GPR_DEBUG_ASSERT(has_value_);
+      return value_;
+    }
+    MessageHandle& value() {
+      GPR_DEBUG_ASSERT(has_value_);
+      return value_;
+    }
+    const MessageHandle& operator*() const { return value(); }
+    MessageHandle& operator*() { return value(); }
+    bool cancelled() const { return !has_value_ && cancelled_; }
+
+   private:
+    bool has_value_;
+    bool cancelled_;
+    MessageHandle value_;
+  };
+
+  explicit CallFilters(ClientMetadataHandle client_initial_metadata);
   ~CallFilters();
 
   CallFilters(const CallFilters&) = delete;
@@ -1256,22 +1309,28 @@ class CallFilters {
 
   void SetStack(RefCountedPtr<Stack> stack);
 
-  GRPC_MUST_USE_RESULT auto PushClientInitialMetadata(ClientMetadataHandle md);
+  ClientMetadata* unprocessed_client_initial_metadata() {
+    return client_initial_metadata_.get();
+  }
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata();
+  void NoServerInitialMetadata() {
+    server_initial_metadata_state_.CloseSending();
+  }
   GRPC_MUST_USE_RESULT auto PushServerInitialMetadata(ServerMetadataHandle md);
   GRPC_MUST_USE_RESULT auto PullServerInitialMetadata();
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message);
+  void FinishClientToServerSends() {
+    client_to_server_message_state_.CloseSending();
+  }
   GRPC_MUST_USE_RESULT auto PullClientToServerMessage();
   GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message);
   GRPC_MUST_USE_RESULT auto PullServerToClientMessage();
-  void PushServerTrailingMetadata(ServerMetadataHandle md) {
-    GPR_ASSERT(md != nullptr);
-    if (server_trailing_metadata_ != nullptr) return;
-    server_trailing_metadata_ = std::move(md);
-    server_trailing_metadata_waiter_.Wake();
-  }
+  void PushServerTrailingMetadata(ServerMetadataHandle md);
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata();
+  GRPC_MUST_USE_RESULT auto WasCancelled();
   void Finalize(const grpc_call_final_info* final_info);
+
+  std::string DebugString() const;
 
  private:
   template <filters_detail::PipeState(CallFilters::*state_ptr),
@@ -1311,6 +1370,10 @@ class CallFilters {
 
       T TakeValue() { return std::move(value_); }
 
+      absl::string_view DebugString() const {
+        return value_ != nullptr ? " (not pulled)" : "";
+      }
+
      private:
       filters_detail::PipeState& state() { return filters_->*state_ptr; }
       void*& push_slot() { return filters_->*push_ptr; }
@@ -1319,24 +1382,36 @@ class CallFilters {
       T value_;
     };
 
-    class Pull {
+    static std::string DebugString(absl::string_view name,
+                                   const CallFilters* filters) {
+      auto* push = static_cast<Push*>(filters->*push_ptr);
+      return absl::StrCat(name, ":", (filters->*state_ptr).DebugString(),
+                          push == nullptr ? "" : push->DebugString());
+    }
+
+    class PullMaybe {
      public:
-      explicit Pull(CallFilters* filters) : filters_(filters) {}
-      ~Pull() {
+      explicit PullMaybe(CallFilters* filters) : filters_(filters) {}
+      ~PullMaybe() {
         if (filters_ != nullptr) {
           state().DropPull();
         }
       }
 
-      Pull(const Pull&) = delete;
-      Pull& operator=(const Pull&) = delete;
-      Pull(Pull&& other) noexcept
+      PullMaybe(const PullMaybe&) = delete;
+      PullMaybe& operator=(const PullMaybe&) = delete;
+      PullMaybe(PullMaybe&& other) noexcept
           : filters_(std::exchange(other.filters_, nullptr)),
             executor_(std::move(other.executor_)) {}
-      Pull& operator=(Pull&&) = delete;
+      PullMaybe& operator=(PullMaybe&&) = delete;
 
-      Poll<ValueOrFailure<T>> operator()() {
+      Poll<ValueOrFailure<absl::optional<T>>> operator()() {
         if (executor_.IsRunning()) {
+          auto c = state().PollClosed();
+          if (c.ready() && c.value()) {
+            filters_->CancelDueToFailedPipeOperation();
+            return Failure{};
+          }
           return FinishOperationExecutor(executor_.Step(filters_->call_data_));
         }
         auto p = state().PollPull();
@@ -1346,6 +1421,7 @@ class CallFilters {
           filters_->CancelDueToFailedPipeOperation();
           return Failure{};
         }
+        if (!**r) return absl::nullopt;
         return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
@@ -1358,7 +1434,7 @@ class CallFilters {
         return &(filters_->stack_->data_.*layout_ptr);
       }
 
-      Poll<ValueOrFailure<T>> FinishOperationExecutor(
+      Poll<ValueOrFailure<absl::optional<T>>> FinishOperationExecutor(
           Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
@@ -1372,6 +1448,123 @@ class CallFilters {
       CallFilters* filters_;
       filters_detail::OperationExecutor<T> executor_;
     };
+
+    class PullMessage {
+     public:
+      explicit PullMessage(CallFilters* filters) : filters_(filters) {}
+      ~PullMessage() {
+        if (filters_ != nullptr) {
+          state().DropPull();
+        }
+      }
+
+      PullMessage(const PullMessage&) = delete;
+      PullMessage& operator=(const PullMessage&) = delete;
+      PullMessage(PullMessage&& other) noexcept
+          : filters_(std::exchange(other.filters_, nullptr)),
+            executor_(std::move(other.executor_)) {}
+      PullMessage& operator=(PullMessage&&) = delete;
+
+      Poll<NextMessage> operator()() {
+        if (executor_.IsRunning()) {
+          auto c = state().PollClosed();
+          if (c.ready() && c.value()) {
+            filters_->CancelDueToFailedPipeOperation();
+            return NextMessage(true);
+          }
+          return FinishOperationExecutor(executor_.Step(filters_->call_data_));
+        }
+        auto p = state().PollPull();
+        auto* r = p.value_if_ready();
+        if (r == nullptr) return Pending{};
+        if (!r->ok()) {
+          filters_->CancelDueToFailedPipeOperation();
+          return NextMessage(true);
+        }
+        if (!**r) return NextMessage(false);
+        return FinishOperationExecutor(executor_.Start(
+            layout(), push()->TakeValue(), filters_->call_data_));
+      }
+
+     private:
+      filters_detail::PipeState& state() { return filters_->*state_ptr; }
+      Push* push() { return static_cast<Push*>(filters_->*push_ptr); }
+      const filters_detail::Layout<filters_detail::FallibleOperator<T>>*
+      layout() {
+        return &(filters_->stack_->data_.*layout_ptr);
+      }
+
+      Poll<NextMessage> FinishOperationExecutor(
+          Poll<filters_detail::ResultOr<T>> p) {
+        auto* r = p.value_if_ready();
+        if (r == nullptr) return Pending{};
+        GPR_DEBUG_ASSERT(!executor_.IsRunning());
+        state().AckPull();
+        if (r->ok != nullptr) return NextMessage(std::move(r->ok));
+        filters_->PushServerTrailingMetadata(std::move(r->error));
+        return NextMessage(true);
+      }
+
+      CallFilters* filters_;
+      filters_detail::OperationExecutor<T> executor_;
+    };
+  };
+
+  class PullClientInitialMetadataPromise {
+   public:
+    explicit PullClientInitialMetadataPromise(CallFilters* filters)
+        : filters_(filters) {}
+
+    PullClientInitialMetadataPromise(const PullClientInitialMetadataPromise&) =
+        delete;
+    PullClientInitialMetadataPromise& operator=(
+        const PullClientInitialMetadataPromise&) = delete;
+    PullClientInitialMetadataPromise(
+        PullClientInitialMetadataPromise&& other) noexcept
+        : filters_(std::exchange(other.filters_, nullptr)),
+          executor_(std::move(other.executor_)) {}
+    PullClientInitialMetadataPromise& operator=(
+        PullClientInitialMetadataPromise&&) = delete;
+
+    Poll<ValueOrFailure<ClientMetadataHandle>> operator()() {
+      if (executor_.IsRunning()) {
+        return FinishOperationExecutor(executor_.Step(filters_->call_data_));
+      }
+      auto p = state().PollPull();
+      auto* r = p.value_if_ready();
+      gpr_log(GPR_INFO, "%s",
+              r == nullptr
+                  ? "PENDING"
+                  : (r->ok() ? (r->value() ? "TRUE" : "FALSE") : "FAILURE"));
+      if (r == nullptr) return Pending{};
+      if (!r->ok()) {
+        filters_->CancelDueToFailedPipeOperation();
+        return Failure{};
+      }
+      GPR_ASSERT(filters_->client_initial_metadata_ != nullptr);
+      return FinishOperationExecutor(executor_.Start(
+          &filters_->stack_->data_.client_initial_metadata,
+          std::move(filters_->client_initial_metadata_), filters_->call_data_));
+    }
+
+   private:
+    filters_detail::PipeState& state() {
+      return filters_->client_initial_metadata_state_;
+    }
+
+    Poll<ValueOrFailure<ClientMetadataHandle>> FinishOperationExecutor(
+        Poll<filters_detail::ResultOr<ClientMetadataHandle>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      GPR_DEBUG_ASSERT(!executor_.IsRunning());
+      state().AckPull();
+      if (r->ok != nullptr) return std::move(r->ok);
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<ClientMetadataHandle> executor_;
   };
 
   class PullServerTrailingMetadataPromise {
@@ -1392,11 +1585,33 @@ class CallFilters {
 
     Poll<ServerMetadataHandle> operator()() {
       if (executor_.IsRunning()) {
-        return executor_.Step(filters_->call_data_);
+        auto r = executor_.Step(filters_->call_data_);
+        if (r.pending()) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        } else {
+          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_,
+                  r.value()->DebugString().c_str());
+        }
+        return r;
       }
       if (filters_->server_trailing_metadata_ == nullptr) {
+        gpr_log(GPR_INFO,
+                "%s PullServerTrailingMetadata[%p]: Pending(not pushed)",
+                GetContext<Activity>()->DebugTag().c_str(), filters_);
         return filters_->server_trailing_metadata_waiter_.pending();
       }
+      // If no stack has been set, we can just return the result of the call
+      if (filters_->stack_ == nullptr) {
+        gpr_log(GPR_INFO,
+                "%s PullServerTrailingMetadata[%p]: Ready(no-stack): %s",
+                GetContext<Activity>()->DebugTag().c_str(), filters_,
+                filters_->server_trailing_metadata_->DebugString().c_str());
+        return std::move(filters_->server_trailing_metadata_);
+      }
+      // Otherwise we need to process it through all the filters.
       return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
                              std::move(filters_->server_trailing_metadata_),
                              filters_->call_data_);
@@ -1407,35 +1622,32 @@ class CallFilters {
     filters_detail::InfallibleOperationExecutor<ServerMetadataHandle> executor_;
   };
 
-  void CancelDueToFailedPipeOperation();
+  void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
   RefCountedPtr<Stack> stack_;
 
-  filters_detail::PipeState client_initial_metadata_state_;
+  filters_detail::PipeState client_initial_metadata_state_{
+      filters_detail::PipeState::StartPushed{}};
   filters_detail::PipeState server_initial_metadata_state_;
   filters_detail::PipeState client_to_server_message_state_;
   filters_detail::PipeState server_to_client_message_state_;
   IntraActivityWaiter server_trailing_metadata_waiter_;
+  Latch<bool> cancelled_;
 
   void* call_data_;
+  ClientMetadataHandle client_initial_metadata_;
 
   // The following void*'s are pointers to a `Push` object (from above).
   // They are used to track the current push operation for each pipe.
   // It would be lovely for them to be typed pointers, but that would require
   // a recursive type definition since the location of this field needs to be
   // a template argument to the `Push` object itself.
-  void* client_initial_metadata_push_ = nullptr;
   void* server_initial_metadata_push_ = nullptr;
   void* client_to_server_message_push_ = nullptr;
   void* server_to_client_message_push_ = nullptr;
 
   ServerMetadataHandle server_trailing_metadata_;
 
-  using ClientInitialMetadataPromises =
-      PipePromise<&CallFilters::client_initial_metadata_state_,
-                  &CallFilters::client_initial_metadata_push_,
-                  ClientMetadataHandle,
-                  &filters_detail::StackData::client_initial_metadata>;
   using ServerInitialMetadataPromises =
       PipePromise<&CallFilters::server_initial_metadata_state_,
                   &CallFilters::server_initial_metadata_push_,
@@ -1451,14 +1663,8 @@ class CallFilters {
                   &filters_detail::StackData::server_to_client_messages>;
 };
 
-inline auto CallFilters::PushClientInitialMetadata(ClientMetadataHandle md) {
-  GPR_ASSERT(md != nullptr);
-  return [p = ClientInitialMetadataPromises::Push{
-              this, std::move(md)}]() mutable { return p(); };
-}
-
 inline auto CallFilters::PullClientInitialMetadata() {
-  return ClientInitialMetadataPromises::Pull{this};
+  return PullClientInitialMetadataPromise(this);
 }
 
 inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
@@ -1468,7 +1674,7 @@ inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
 }
 
 inline auto CallFilters::PullServerInitialMetadata() {
-  return ServerInitialMetadataPromises::Pull{this};
+  return ServerInitialMetadataPromises::PullMaybe{this};
 }
 
 inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
@@ -1478,7 +1684,7 @@ inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
 }
 
 inline auto CallFilters::PullClientToServerMessage() {
-  return ClientToServerMessagePromises::Pull{this};
+  return ClientToServerMessagePromises::PullMessage{this};
 }
 
 inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
@@ -1488,12 +1694,18 @@ inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
 }
 
 inline auto CallFilters::PullServerToClientMessage() {
-  return ServerToClientMessagePromises::Pull{this};
+  return ServerToClientMessagePromises::PullMessage{this};
 }
 
 inline auto CallFilters::PullServerTrailingMetadata() {
-  return PullServerTrailingMetadataPromise(this);
+  return Map(PullServerTrailingMetadataPromise(this),
+             [this](ServerMetadataHandle h) {
+               cancelled_.Set(h->get(GrpcCallWasCancelled()).value_or(false));
+               return h;
+             });
 }
+
+inline auto CallFilters::WasCancelled() { return cancelled_.Wait(); }
 
 }  // namespace grpc_core
 

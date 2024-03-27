@@ -16,18 +16,13 @@
 
 #include "src/core/lib/transport/call_spine.h"
 
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_seq.h"
+
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata) {
-  // Send initial metadata.
-  call_initiator.SpawnGuarded(
-      "send_initial_metadata",
-      [client_initial_metadata = std::move(client_initial_metadata),
-       call_initiator]() mutable {
-        return call_initiator.PushClientInitialMetadata(
-            std::move(client_initial_metadata));
-      });
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   // Read messages from handler into initiator.
   call_handler.SpawnGuarded("read_messages", [call_handler,
                                               call_initiator]() mutable {
@@ -98,10 +93,24 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
   });
 }
 
-CallInitiatorAndHandler MakeCall(
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
-  auto spine = CallSpine::Create(event_engine, arena);
-  return {CallInitiator(spine), CallHandler(spine)};
+ClientMetadata& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
+  return *spine_->call_filters().unprocessed_client_initial_metadata();
+}
+
+CallHandler UnstartedCallHandler::StartCall(
+    RefCountedPtr<CallFilters::Stack> stack) {
+  GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
+  spine_->call_filters().SetStack(std::move(stack));
+  return CallHandler(std::move(spine_));
+}
+
+CallInitiatorAndUnstartedHandler MakeCallPair(
+    ClientMetadataHandle client_initial_metadata,
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+    bool arena_is_owned) {
+  auto spine = CallSpine::Create(std::move(client_initial_metadata),
+                                 event_engine, arena, arena_is_owned, nullptr);
+  return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 
 }  // namespace grpc_core

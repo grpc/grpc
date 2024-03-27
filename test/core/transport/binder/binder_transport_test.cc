@@ -240,7 +240,7 @@ struct MakeSendInitialMetadata {
                                      ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch grpc_initial_metadata{arena.get()};
+  grpc_metadata_batch grpc_initial_metadata;
 };
 
 struct MakeSendMessage {
@@ -271,7 +271,7 @@ struct MakeSendTrailingMetadata {
                                      ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch grpc_trailing_metadata{arena.get()};
+  grpc_metadata_batch grpc_trailing_metadata;
 };
 
 struct MakeRecvInitialMetadata {
@@ -299,7 +299,7 @@ struct MakeRecvInitialMetadata {
                                      ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch grpc_initial_metadata{arena.get()};
+  grpc_metadata_batch grpc_initial_metadata;
   grpc_core::Notification notification;
 };
 
@@ -347,7 +347,7 @@ struct MakeRecvTrailingMetadata {
                                      ->CreateMemoryAllocator("test"));
   grpc_core::ScopedArenaPtr arena =
       grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch grpc_trailing_metadata{arena.get()};
+  grpc_metadata_batch grpc_trailing_metadata;
   grpc_core::Notification notification;
 };
 

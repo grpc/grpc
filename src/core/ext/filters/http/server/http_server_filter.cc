@@ -67,7 +67,7 @@ void FilterOutgoingMetadata(ServerMetadata* md) {
 
 ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
   auto* arena = GetContext<Arena>();
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  auto hdl = arena->MakePooled<ServerMetadata>();
   hdl->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
   hdl->Set(GrpcMessageMetadata(), Slice::FromStaticString(explanation));
   hdl->Set(GrpcTarPit(), Empty());
@@ -152,9 +152,9 @@ void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   FilterOutgoingMetadata(&md);
 }
 
-absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(
+absl::StatusOr<std::unique_ptr<HttpServerFilter>> HttpServerFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
-  return HttpServerFilter(
+  return std::make_unique<HttpServerFilter>(
       args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
       args.GetBool(
               GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS)

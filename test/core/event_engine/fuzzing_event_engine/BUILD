@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_proto_library")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_library",
+    "grpc_cc_test",
+    "grpc_package",
+    "grpc_proto_library",
+)
 
 licenses(["notice"])
 
@@ -31,7 +37,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:native_posix_dns_resolver",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
     ],
 )
 

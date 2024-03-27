@@ -29,8 +29,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -134,12 +132,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -151,6 +143,12 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
+const uint8_t required_experiments_call_v3[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -165,8 +163,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -227,10 +223,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -238,6 +230,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3,
+     required_experiments_call_v3, 3, false, true},
 };
 
 }  // namespace grpc_core
@@ -249,8 +243,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -354,12 +346,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -371,6 +357,12 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
+const uint8_t required_experiments_call_v3[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -385,8 +377,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -447,10 +437,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -458,6 +444,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3,
+     required_experiments_call_v3, 3, false, true},
 };
 
 }  // namespace grpc_core
@@ -469,8 +457,6 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
@@ -574,12 +560,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -591,6 +571,12 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
+const uint8_t required_experiments_call_v3[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -605,8 +591,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -667,10 +651,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -678,6 +658,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3,
+     required_experiments_call_v3, 3, false, true},
 };
 
 }  // namespace grpc_core

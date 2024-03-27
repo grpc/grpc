@@ -519,7 +519,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
   MemoryAllocator memory_allocator_ = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
-  grpc_metadata_batch md_{arena_.get()};
+  grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
   grpc_polling_entity pollent_;
   ActivityPtr activity_;

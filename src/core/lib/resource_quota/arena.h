@@ -138,6 +138,8 @@ class Arena {
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static Arena* Create(size_t initial_size, MemoryAllocator* memory_allocator);
 
+  MemoryAllocator* memory_allocator() { return memory_allocator_; }
+
   // Create an arena, with \a initial_size bytes in the first allocated buffer,
   // and return both a void pointer to the returned arena and a void* with the
   // first allocation.

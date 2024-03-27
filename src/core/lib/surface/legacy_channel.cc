@@ -55,7 +55,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -101,21 +100,9 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }
   return MakeOrphanable<LegacyChannel>(
-      grpc_channel_stack_type_is_client(builder.channel_stack_type()),
-      builder.IsPromising(), std::move(target), args, std::move(*r));
+      grpc_channel_stack_type_is_client(builder.channel_stack_type()), false,
+      std::move(target), args, std::move(*r));
 }
-
-namespace {
-
-class NotReallyACallFactory final : public CallFactory {
- public:
-  using CallFactory::CallFactory;
-  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
-    Crash("NotReallyACallFactory::CreateCall should never be called");
-  }
-};
-
-}  // namespace
 
 LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
@@ -124,8 +111,7 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
-      channel_stack_(std::move(channel_stack)),
-      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
+      channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -413,8 +399,7 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
 ClientChannelFilter* LegacyChannel::GetClientChannelFilter() const {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel_stack_.get());
-  if (elem->filter != &ClientChannelFilter::kFilterVtableWithPromises &&
-      elem->filter != &ClientChannelFilter::kFilterVtableWithoutPromises) {
+  if (elem->filter != &ClientChannelFilter::kFilter) {
     return nullptr;
   }
   return static_cast<ClientChannelFilter*>(elem->channel_data);

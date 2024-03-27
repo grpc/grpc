@@ -38,8 +38,8 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                                     public Transport,
                                     public ServerTransport {
  public:
-  void SetAcceptor(Acceptor* acceptor) override {
-    acceptor_ = acceptor;
+  void SetCallFactory(WeakRefCountedPtr<CallFactory> call_factory) override {
+    call_factory_ = std::move(call_factory);
     ConnectionState expect = ConnectionState::kInitial;
     state_.compare_exchange_strong(expect, ConnectionState::kReady,
                                    std::memory_order_acq_rel,
@@ -84,17 +84,19 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                             "inproc transport disconnected");
   }
 
-  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadata& md) {
+  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadataHandle md) {
     switch (state_.load(std::memory_order_acquire)) {
       case ConnectionState::kInitial:
-        return absl::InternalError(
-            "inproc transport hasn't started accepting calls");
+        return MakeFailedCall(absl::InternalError(
+            "inproc transport hasn't started accepting calls"));
       case ConnectionState::kDisconnected:
-        return absl::UnavailableError("inproc transport is disconnected");
+        return MakeFailedCall(
+            absl::UnavailableError("inproc transport is disconnected"));
       case ConnectionState::kReady:
         break;
     }
-    return acceptor_->CreateCall(md, acceptor_->CreateArena());
+    return call_factory_->CreateCall(std::move(md),
+                                     call_factory_->CreateArena());
   }
 
  private:
@@ -102,7 +104,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
   std::atomic<bool> disconnecting_{false};
-  Acceptor* acceptor_;
+  WeakRefCountedPtr<CallFactory> call_factory_;
   absl::Status disconnect_error_;
   Mutex state_tracker_mu_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
@@ -117,10 +119,10 @@ class InprocClientTransport final : public Transport, public ClientTransport {
         TrySeq(call_handler.PullClientInitialMetadata(),
                [server_transport = server_transport_,
                 call_handler](ClientMetadataHandle md) {
-                 auto call_initiator = server_transport->AcceptCall(*md);
+                 auto call_initiator =
+                     server_transport->AcceptCall(std::move(md));
                  if (!call_initiator.ok()) return call_initiator.status();
-                 ForwardCall(call_handler, std::move(*call_initiator),
-                             std::move(md));
+                 ForwardCall(call_handler, std::move(*call_initiator));
                  return absl::OkStatus();
                }));
   }

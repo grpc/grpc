@@ -90,9 +90,6 @@ BaseCallData::BaseCallData(
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
-      call_context_(flags & kFilterExaminesCallContext
-                        ? arena_->New<CallContext>(nullptr)
-                        : nullptr),
       context_(args->context),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
@@ -107,7 +104,7 @@ BaseCallData::BaseCallData(
               ? arena_->New<ReceiveMessage>(this, make_recv_interceptor())
               : nullptr),
       event_engine_(
-          static_cast<ChannelFilter*>(elem->channel_data)
+          (*static_cast<ChannelFilter**>(elem->channel_data))
               ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
 }
 
@@ -281,9 +278,6 @@ BaseCallData::Flusher::~Flusher() {
   };
   for (size_t i = 1; i < release_.size(); i++) {
     auto* batch = release_[i];
-    if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
-      batch->is_traced = true;
-    }
     if (grpc_trace_channel.enabled()) {
       gpr_log(
           GPR_INFO, "FLUSHER:queue batch to forward in closure: %s",
@@ -300,9 +294,6 @@ BaseCallData::Flusher::~Flusher() {
   if (grpc_trace_channel.enabled()) {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
             grpc_transport_stream_op_batch_string(release_[0], false).c_str());
-  }
-  if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
-    release_[0]->is_traced = true;
   }
   grpc_call_next_op(call_->elem(), release_[0]);
   GRPC_CALL_STACK_UNREF(call_->call_stack(), "flusher");
@@ -1573,7 +1564,7 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
 // metadata and return some trailing metadata.
 void ClientCallData::StartPromise(Flusher* flusher) {
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = *static_cast<ChannelFilter**>(elem()->channel_data);
 
   // Construct the promise.
   PollContext ctx(this, flusher);
@@ -2370,7 +2361,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   // Start the promise.
   ScopedContext context(this);
   // Construct the promise.
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = *static_cast<ChannelFilter**>(elem()->channel_data);
   FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),

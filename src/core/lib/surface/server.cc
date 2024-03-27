@@ -75,9 +75,9 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -233,8 +233,9 @@ struct Server::RequestedCall {
     data.registered.optional_payload = optional_payload;
   }
 
-  void Complete(NextResult<MessageHandle> payload, ClientMetadata& md) {
-    Timestamp deadline = GetContext<CallContext>()->deadline();
+  template <typename NextMessage>
+  void Complete(NextMessage payload, ClientMetadata& md) {
+    Timestamp deadline = GetContext<HasContext>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
         GPR_ASSERT(!payload.has_value());
@@ -727,25 +728,31 @@ class Server::AllocatingRequestMatcherRegistered
 // ChannelBroadcaster
 //
 
-namespace {
-
-class ChannelBroadcaster {
+class Server::ChannelBroadcaster {
  public:
   // This can have an empty constructor and destructor since we want to control
   // when the actual setup and shutdown broadcast take place.
 
   // Copies over the channels from the locked server.
-  void FillChannelsLocked(std::vector<RefCountedPtr<Channel>> channels) {
-    GPR_DEBUG_ASSERT(channels_.empty());
+  void FillChannelsLocked(ChannelSet channels) {
+    GPR_DEBUG_ASSERT(channels_.ye_olde_channels.empty());
+    GPR_DEBUG_ASSERT(channels_.channels.empty());
     channels_ = std::move(channels);
   }
 
   // Broadcasts a shutdown on each channel.
   void BroadcastShutdown(bool send_goaway, grpc_error_handle force_disconnect) {
-    for (const RefCountedPtr<Channel>& channel : channels_) {
+    for (const RefCountedPtr<Channel>& channel : channels_.ye_olde_channels) {
       SendShutdown(channel.get(), send_goaway, force_disconnect);
     }
-    channels_.clear();  // just for safety against double broadcast
+    if (send_goaway) {
+      for (const RefCountedPtr<Connection>& channel : channels_.channels) {
+        channel->transport().SendGoaway("Server shutdown");
+      }
+    }
+    // just for safety against double broadcast
+    channels_.ye_olde_channels.clear();
+    channels_.channels.clear();
   }
 
  private:
@@ -778,10 +785,8 @@ class ChannelBroadcaster {
     elem->filter->start_transport_op(elem, op);
   }
 
-  std::vector<RefCountedPtr<Channel>> channels_;
+  ChannelSet channels_;
 };
-
-}  // namespace
 
 //
 // Server
@@ -789,10 +794,6 @@ class ChannelBroadcaster {
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
-    Server::ChannelData::MakeCallPromise,
-    [](grpc_channel_element*, CallSpineInterface*) {
-      // TODO(ctiller): remove the server filter when call-v3 is finalized
-    },
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -910,15 +911,6 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
-  // Create channel.
-  global_stats().IncrementServerChannelsCreated();
-  absl::StatusOr<OrphanablePtr<Channel>> channel =
-      LegacyChannel::Create("", args.SetObject(transport), GRPC_SERVER_CHANNEL);
-  if (!channel.ok()) {
-    return absl_status_to_grpc_error(channel.status());
-  }
-  ChannelData* chand = static_cast<ChannelData*>(
-      grpc_channel_stack_element((*channel)->channel_stack(), 0)->channel_data);
   // Set up CQs.
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
@@ -934,15 +926,44 @@ grpc_error_handle Server::SetupTransport(
     channelz_socket_uuid = socket_node->uuid();
     channelz_node_->AddChildSocket(socket_node);
   }
-  // Initialize chand.
-  chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
-                       channelz_socket_uuid);
-  return absl::OkStatus();
+  if (transport->filter_stack_transport() != nullptr) {
+    GPR_ASSERT(transport->server_transport() == nullptr);
+    // Create channel.
+    absl::StatusOr<OrphanablePtr<Channel>> channel =
+        ChannelCreate(nullptr, args, GRPC_SERVER_CHANNEL, transport);
+    if (!channel.ok()) {
+      return absl_status_to_grpc_error(channel.status());
+    }
+    ChannelData* chand = static_cast<ChannelData*>(
+        grpc_channel_stack_element((*channel)->channel_stack(), 0)
+            ->channel_data);
+    // Initialize chand.
+    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
+                         channelz_socket_uuid);
+    return absl::OkStatus();
+  }
+  if (transport->server_transport() != nullptr) {
+    InterceptionChain::Builder builder(
+        std::static_pointer_cast<CallDestination>(
+            std::make_shared<CallPublisher>()));
+    CoreConfiguration::Get().channel_init().AddToInterceptionChain(
+        GRPC_SERVER_CHANNEL, args, builder);
+    transport->server_transport()->SetCallDestination(builder.Build(args));
+    MutexLock lock(&mu_global_);
+    const uint64_t connection_id = next_connection_id_;
+    ++next_connection_id_;
+    transport->StartConnectivityWatch(
+        MakeOrphanable<ConnectivityWatcher>(this, connection_id));
+    channels_.insert(connection_id, transport);
+    return absl::OkStatus();
+  }
+  return absl::InvalidArgumentError("bad transport");
 }
 
 bool Server::HasOpenConnections() {
   MutexLock lock(&mu_global_);
-  return !channels_.empty();
+  return !channels_.empty() &&
+         num_channels_.load(std::memory_order_relaxed) == 0;
 }
 
 void Server::SetRegisteredMethodAllocator(
@@ -1022,7 +1043,9 @@ void Server::MaybeFinishShutdown() {
     MutexLock lock(&mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
-  if (!channels_.empty() || listeners_destroyed_ < listeners_.size()) {
+  if (!ye_olde_channels_.empty() ||
+      num_channels_.load(std::memory_order_relaxed) > 0 ||
+      listeners_destroyed_ < listeners_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
@@ -1030,8 +1053,8 @@ void Server::MaybeFinishShutdown() {
       gpr_log(GPR_DEBUG,
               "Waiting for %" PRIuPTR " channels and %" PRIuPTR "/%" PRIuPTR
               " listeners to be destroyed before shutting down server",
-              channels_.size(), listeners_.size() - listeners_destroyed_,
-              listeners_.size());
+              ye_olde_channels_.size(),
+              listeners_.size() - listeners_destroyed_, listeners_.size());
     }
     return;
   }
@@ -1054,11 +1077,15 @@ void Server::KillPendingWorkLocked(grpc_error_handle error) {
   }
 }
 
-std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
-  std::vector<RefCountedPtr<Channel>> channels;
-  channels.reserve(channels_.size());
-  for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel()->Ref());
+Server::ChannelSet Server::GetChannelsLocked() const {
+  ChannelSet channels;
+  channels.ye_olde_channels.reserve(ye_olde_channels_.size());
+  for (const ChannelData* chand : ye_olde_channels_) {
+    channels.ye_olde_channels.push_back(chand->channel()->Ref());
+  }
+  channels.channels.reserve(channels_.size());
+  for (const std::shared_ptr<Connection>& channel : channels_) {
+    channels.channels.emplace_back(channel);
   }
   return channels;
 }
@@ -1142,8 +1169,12 @@ void Server::StopListening() {
 
 void Server::CancelAllCalls() {
   ChannelBroadcaster broadcaster;
+  ServerChannelSet channels;
   {
     MutexLock lock(&mu_global_);
+    // New style semantics: we just drop the channels we no longer care about.
+    channels = std::move(channels_);
+    channels_.clear();
     broadcaster.FillChannelsLocked(GetChannelsLocked());
   }
   broadcaster.BroadcastShutdown(
@@ -1291,22 +1322,12 @@ Server::ChannelData::~ChannelData() {
     {
       MutexLock lock(&server_->mu_global_);
       if (list_position_.has_value()) {
-        server_->channels_.erase(*list_position_);
+        server_->ye_olde_channels_.erase(*list_position_);
         list_position_.reset();
       }
       server_->MaybeFinishShutdown();
     }
   }
-}
-
-Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
-
-absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
-    ClientMetadata& client_initial_metadata, Arena* arena) {
-  SetRegisteredMethodOnMetadata(client_initial_metadata);
-  auto call = MakeServerCall(server_.get(), channel_.get(), arena);
-  InitCall(call);
-  return CallInitiator(std::move(call));
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
@@ -1320,30 +1341,23 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   // Publish channel.
   {
     MutexLock lock(&server_->mu_global_);
-    server_->channels_.push_front(this);
-    list_position_ = server_->channels_.begin();
+    server_->ye_olde_channels_.push_front(this);
+    list_position_ = server_->ye_olde_channels_.begin();
   }
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  int accept_stream_types = 0;
-  if (transport->filter_stack_transport() != nullptr) {
-    ++accept_stream_types;
-    op->set_accept_stream = true;
-    op->set_accept_stream_fn = AcceptStream;
-    if (IsRegisteredMethodLookupInTransportEnabled()) {
-      op->set_registered_method_matcher_fn = [](void* arg,
-                                                ClientMetadata* metadata) {
-        static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(
-            *metadata);
-      };
-    }
-    op->set_accept_stream_user_data = this;
+  GPR_ASSERT(transport->server_transport() == nullptr);
+  GPR_ASSERT(transport->filter_stack_transport() != nullptr);
+  op->set_accept_stream = true;
+  op->set_accept_stream_fn = AcceptStream;
+  if (IsRegisteredMethodLookupInTransportEnabled()) {
+    op->set_registered_method_matcher_fn = [](void* arg,
+                                              ClientMetadata* metadata) {
+      static_cast<ChannelData*>(arg)->server_->SetRegisteredMethodOnMetadata(
+          *metadata);
+    };
   }
-  if (transport->server_transport() != nullptr) {
-    ++accept_stream_types;
-    transport->server_transport()->SetAcceptor(this);
-  }
-  GPR_ASSERT(accept_stream_types == 1);
+  op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
   if (server_->ShutdownCalled()) {
     op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");
@@ -1351,24 +1365,23 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   transport->PerformOp(op);
 }
 
-Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
-    const absl::string_view& host, const absl::string_view& path) {
-  if (server_->registered_methods_.empty()) return nullptr;
+Server::RegisteredMethod* Server::GetRegisteredMethod(absl::string_view host,
+                                                      absl::string_view path) {
+  if (registered_methods_.empty()) return nullptr;
   // check for an exact match with host
-  auto it = server_->registered_methods_.find(std::make_pair(host, path));
-  if (it != server_->registered_methods_.end()) {
+  auto it = registered_methods_.find(std::make_pair(host, path));
+  if (it != registered_methods_.end()) {
     return it->second.get();
   }
   // check for wildcard method definition (no host set)
-  it = server_->registered_methods_.find(std::make_pair("", path));
-  if (it != server_->registered_methods_.end()) {
+  it = registered_methods_.find(std::make_pair("", path));
+  if (it != registered_methods_.end()) {
     return it->second.get();
   }
   return nullptr;
 }
 
-void Server::ChannelData::SetRegisteredMethodOnMetadata(
-    ClientMetadata& metadata) {
+void Server::SetRegisteredMethodOnMetadata(ClientMetadata& metadata) {
   auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
   if (authority == nullptr) {
     authority = metadata.get_pointer(HostMetadata());
@@ -1427,70 +1440,63 @@ auto CancelledDueToServerShutdown() {
 }
 }  // namespace
 
-void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
-  call->SpawnGuarded("request_matcher", [this, call]() {
+void Server::MatchThenPublish(CallHandler call_handler, size_t cq_idx) {
+  call_handler.SpawnGuarded("request_matcher", [this, call_handler,
+                                                cq_idx]() mutable {
     return TrySeq(
         // Wait for initial metadata to pass through all filters
-        Map(call->client_initial_metadata().receiver.Next(),
-            [](NextResult<ClientMetadataHandle> md)
-                -> absl::StatusOr<ClientMetadataHandle> {
-              if (!md.has_value()) {
-                return absl::InternalError("Missing metadata");
-              }
-              if (!md.value()->get_pointer(HttpPathMetadata())) {
-                return absl::InternalError("Missing :path header");
-              }
-              if (!md.value()->get_pointer(HttpAuthorityMetadata())) {
-                return absl::InternalError("Missing :authority header");
-              }
-              return std::move(*md);
-            }),
+        call_handler.PullClientInitialMetadata(),
+        [](ClientMetadataHandle md) -> absl::StatusOr<ClientMetadataHandle> {
+          if (!md->get_pointer(HttpPathMetadata())) {
+            return absl::InternalError("Missing :path header");
+          }
+          if (!md->get_pointer(HttpAuthorityMetadata())) {
+            return absl::InternalError("Missing :authority header");
+          }
+          return std::move(md);
+        },
         // Match request with requested call
-        [this, call](ClientMetadataHandle md) {
+        [this, call_handler, cq_idx](ClientMetadataHandle md) {
           auto* registered_method = static_cast<RegisteredMethod*>(
               md->get(GrpcRegisteredMethod()).value_or(nullptr));
           RequestMatcherInterface* rm;
           grpc_server_register_method_payload_handling payload_handling =
               GRPC_SRM_PAYLOAD_NONE;
           if (registered_method == nullptr) {
-            rm = server_->unregistered_request_matcher_.get();
+            rm = unregistered_request_matcher_.get();
           } else {
             payload_handling = registered_method->payload_handling;
             rm = registered_method->matcher.get();
           }
           auto maybe_read_first_message = If(
               payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call]() {
-                return call->client_to_server_messages().receiver.Next();
-              },
-              []() -> NextResult<MessageHandle> {
-                return NextResult<MessageHandle>();
-              });
+              [call_handler]() mutable { return call_handler.PullMessage(); },
+              []() { return [] { return CallFilters::NextMessage(false); }; });
           return TryJoin<absl::StatusOr>(
               Map(std::move(maybe_read_first_message),
-                  [](NextResult<MessageHandle> n) {
-                    return ValueOrFailure<NextResult<MessageHandle>>{
+                  [](CallFilters::NextMessage n)
+                      -> ValueOrFailure<CallFilters::NextMessage> {
+                    return ValueOrFailure<CallFilters::NextMessage>{
                         std::move(n)};
                   }),
-              rm->MatchRequest(cq_idx()), [md = std::move(md)]() mutable {
+              rm->MatchRequest(cq_idx), [md = std::move(md)]() mutable {
                 return ValueOrFailure<ClientMetadataHandle>(std::move(md));
               });
         },
         // Publish call to cq
-        [](std::tuple<NextResult<MessageHandle>,
-                      RequestMatcherInterface::MatchResult,
-                      ClientMetadataHandle>
-               r) {
+        [call_handler](std::tuple<CallFilters::NextMessage,
+                                  RequestMatcherInterface::MatchResult,
+                                  ClientMetadataHandle>
+                           r) mutable {
           RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
-          auto* call_context = GetContext<CallContext>();
-          *rc->call = call_context->c_call();
+          grpc_call* call = MakeServerCall(std::move(call_handler));
+          *rc->call = call;
           grpc_call_ref(*rc->call);
-          grpc_call_set_completion_queue(call_context->c_call(),
-                                         rc->cq_bound_to_call);
-          call_context->server_call_context()->PublishInitialMetadata(
+          grpc_call_set_completion_queue(call, rc->cq_bound_to_call);
+          GetContext<ServerCallContext>()->PublishInitialMetadata(
               std::move(md), rc->initial_metadata);
           // TODO(ctiller): publish metadata
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
@@ -1499,100 +1505,6 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
                      });
         });
   });
-}
-
-ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
-    grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
-  auto* chand = static_cast<Server::ChannelData*>(elem->channel_data);
-  auto* server = chand->server_.get();
-  if (server->ShutdownCalled()) return CancelledDueToServerShutdown();
-  auto cleanup_ref =
-      absl::MakeCleanup([server] { server->ShutdownUnrefOnRequest(); });
-  if (!server->ShutdownRefOnRequest()) return CancelledDueToServerShutdown();
-  auto path_ptr =
-      call_args.client_initial_metadata->get_pointer(HttpPathMetadata());
-  if (path_ptr == nullptr) {
-    return [] {
-      return ServerMetadataFromStatus(
-          absl::InternalError("Missing :path header"));
-    };
-  }
-  auto host_ptr =
-      call_args.client_initial_metadata->get_pointer(HttpAuthorityMetadata());
-  if (host_ptr == nullptr) {
-    return [] {
-      return ServerMetadataFromStatus(
-          absl::InternalError("Missing :authority header"));
-    };
-  }
-  // Find request matcher.
-  RequestMatcherInterface* matcher;
-  RegisteredMethod* rm = nullptr;
-  if (IsRegisteredMethodLookupInTransportEnabled()) {
-    rm = static_cast<RegisteredMethod*>(
-        call_args.client_initial_metadata->get(GrpcRegisteredMethod())
-            .value_or(nullptr));
-  } else {
-    rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
-                                    path_ptr->as_string_view());
-  }
-  ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
-      maybe_read_first_message([] { return NextResult<MessageHandle>(); });
-  if (rm != nullptr) {
-    matcher = rm->matcher.get();
-    switch (rm->payload_handling) {
-      case GRPC_SRM_PAYLOAD_NONE:
-        break;
-      case GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER:
-        maybe_read_first_message =
-            Map(call_args.client_to_server_messages->Next(),
-                [](NextResult<MessageHandle> msg)
-                    -> absl::StatusOr<NextResult<MessageHandle>> {
-                  return std::move(msg);
-                });
-    }
-  } else {
-    matcher = server->unregistered_request_matcher_.get();
-  }
-  return TrySeq(
-      std::move(maybe_read_first_message),
-      [cleanup_ref = std::move(cleanup_ref), matcher,
-       chand](NextResult<MessageHandle> payload) mutable {
-        return Map(
-            [cleanup_ref = std::move(cleanup_ref),
-             mr = matcher->MatchRequest(chand->cq_idx())]() mutable {
-              return mr();
-            },
-            [payload = std::move(payload)](
-                absl::StatusOr<RequestMatcherInterface::MatchResult> mr) mutable
-            -> absl::StatusOr<std::pair<RequestMatcherInterface::MatchResult,
-                                        NextResult<MessageHandle>>> {
-              if (!mr.ok()) return mr.status();
-              return std::make_pair(std::move(*mr), std::move(payload));
-            });
-      },
-      [call_args =
-           std::move(call_args)](std::pair<RequestMatcherInterface::MatchResult,
-                                           NextResult<MessageHandle>>
-                                     r) mutable {
-        auto& mr = r.first;
-        auto& payload = r.second;
-        auto* rc = mr.TakeCall();
-        auto* cq_for_new_request = mr.cq();
-        auto* server_call_context =
-            GetContext<CallContext>()->server_call_context();
-        rc->Complete(std::move(payload), *call_args.client_initial_metadata);
-        server_call_context->PublishInitialMetadata(
-            std::move(call_args.client_initial_metadata), rc->initial_metadata);
-        return server_call_context->MakeTopOfServerCallPromise(
-            std::move(call_args), rc->cq_bound_to_call,
-            [rc, cq_for_new_request](grpc_call* call) {
-              *rc->call = call;
-              grpc_cq_end_op(cq_for_new_request, rc->tag, absl::OkStatus(),
-                             Server::DoneRequestEvent, rc, &rc->completion,
-                             true);
-            });
-      });
 }
 
 void Server::ChannelData::FinishDestroy(void* arg,
@@ -1608,7 +1520,7 @@ void Server::ChannelData::FinishDestroy(void* arg,
 void Server::ChannelData::Destroy() {
   if (!list_position_.has_value()) return;
   GPR_ASSERT(server_ != nullptr);
-  server_->channels_.erase(*list_position_);
+  server_->ye_olde_channels_.erase(*list_position_);
   list_position_.reset();
   server_->Ref().release();
   server_->MaybeFinishShutdown();
@@ -1760,7 +1672,6 @@ void Server::CallData::KillZombie() {
 
 // If this changes, change MakeCallPromise too.
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
     state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     KillZombie();
@@ -1777,8 +1688,8 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
           recv_initial_metadata_->get(GrpcRegisteredMethod())
               .value_or(nullptr));
     } else {
-      rm = chand->GetRegisteredMethod(host_->as_string_view(),
-                                      path_->as_string_view());
+      rm = server_->GetRegisteredMethod(host_->as_string_view(),
+                                        path_->as_string_view());
     }
     if (rm != nullptr) {
       matcher_ = rm->matcher.get();
@@ -1906,6 +1817,59 @@ void Server::CallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   calld->StartTransportStreamOpBatchImpl(elem, batch);
+}
+
+//
+// Server::ServerChannel::ConnectivityWatcher
+//
+
+class Server::ConnectivityWatcher
+    : public AsyncConnectivityStateWatcherInterface {
+ public:
+  explicit ConnectivityWatcher(Server* server, uint64_t connection_id)
+      : server_(server), connection_id_(connection_id) {
+    server_->num_channels_.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  ~ConnectivityWatcher() override {
+    if (1 == server_->num_channels_.fetch_sub(1, std::memory_order_relaxed)) {
+      MutexLock lock(&server_->mu_global_);
+      server_->MaybeFinishShutdown();
+    }
+  }
+
+  void Orphan() override { Remove(); }
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                 const absl::Status& /*status*/) override {
+    // Don't do anything until we are being shut down.
+    if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
+    // Shut down channel.
+    Remove();
+  }
+
+  void Remove() {
+    OrphanablePtr<Transport> transport;
+    MutexLock lock(&server_->mu_global_);
+    auto e = server_->channels_.extract(connection_id_);
+    if (!e.empty()) transport = std::move(e.mapped());
+  }
+
+  Server* const server_;
+  const uint64_t connection_id_;
+};
+
+//
+// Server::Connection
+//
+
+CallInitiator Server::Connection::CreateCall(
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  server_->SetRegisteredMethodOnMetadata(*client_initial_metadata);
+  auto call = MakeCallPair(server_->event_engine_.get(), arena);
+  server_->MatchThenPublish(std::move(call.handler), cq_idx_);
+  return std::move(call.initiator);
 }
 
 }  // namespace grpc_core
