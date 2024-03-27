@@ -19,13 +19,6 @@
 #ifndef GRPC_SRC_CPP_CLIENT_SECURE_CREDENTIALS_H
 #define GRPC_SRC_CPP_CLIENT_SECURE_CREDENTIALS_H
 
-#include <stddef.h>
-
-#include <memory>
-#include <string>
-
-#include "absl/strings/str_cat.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
@@ -34,32 +27,8 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
-// TODO(yashykt): We shouldn't be including "src/core" headers.
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
-
-class SecureCallCredentials final : public CallCredentials {
- public:
-  explicit SecureCallCredentials(grpc_call_credentials* c_creds);
-  ~SecureCallCredentials() override {
-    grpc_core::ExecCtx exec_ctx;
-    if (c_creds_ != nullptr) c_creds_->Unref();
-  }
-
-  grpc_call_credentials* c_creds() override { return c_creds_; }
-
-  bool ApplyToCall(grpc_call* call) override;
-  std::string DebugString() override {
-    return absl::StrCat("SecureCallCredentials{",
-                        std::string(c_creds_->debug_string()), "}");
-  }
-
- private:
-  grpc_call_credentials* const c_creds_;
-};
 
 namespace experimental {
 
@@ -70,31 +39,6 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
     const StsCredentialsOptions& options);
 
 }  // namespace experimental
-
-class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
- public:
-  static void Destroy(void* wrapper);
-  static int GetMetadata(
-      void* wrapper, grpc_auth_metadata_context context,
-      grpc_credentials_plugin_metadata_cb cb, void* user_data,
-      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-      size_t* num_creds_md, grpc_status_code* status,
-      const char** error_details);
-  static char* DebugString(void* wrapper);
-
-  explicit MetadataCredentialsPluginWrapper(
-      std::unique_ptr<MetadataCredentialsPlugin> plugin);
-
- private:
-  void InvokePlugin(
-      grpc_auth_metadata_context context,
-      grpc_credentials_plugin_metadata_cb cb, void* user_data,
-      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-      size_t* num_creds_md, grpc_status_code* status_code,
-      const char** error_details);
-  std::unique_ptr<ThreadPoolInterface> thread_pool_;
-  std::unique_ptr<MetadataCredentialsPlugin> plugin_;
-};
 
 }  // namespace grpc
 

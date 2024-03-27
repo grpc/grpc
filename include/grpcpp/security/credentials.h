@@ -38,6 +38,9 @@ struct grpc_call;
 namespace grpc {
 class CallCredentials;
 class ChannelCredentials;
+namespace testing {
+std::string GetOauth2AccessToken();
+}
 
 std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
@@ -124,10 +127,10 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
-
   friend std::shared_ptr<CallCredentials> CompositeCallCredentials(
       const std::shared_ptr<CallCredentials>& creds1,
       const std::shared_ptr<CallCredentials>& creds2);
+  friend std::string grpc::testing::GetOauth2AccessToken();
 
   virtual grpc_call_credentials* c_creds() = 0;
 };

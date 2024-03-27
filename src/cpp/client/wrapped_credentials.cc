@@ -29,6 +29,8 @@
 
 namespace grpc {
 
+// ---- WrappedChannelCredentials ----
+
 WrappedChannelCredentials::WrappedChannelCredentials(
     grpc_channel_credentials* c_creds)
     : c_creds_(c_creds) {
@@ -62,10 +64,39 @@ WrappedChannelCredentials::CreateChannelWithInterceptors(
       std::move(interceptor_creators));
 }
 
+// ---- WrappedCallCredentials ----
+
+WrappedCallCredentials::WrappedCallCredentials(grpc_call_credentials* c_creds)
+    : c_creds_(c_creds) {
+  GPR_ASSERT(c_creds != nullptr);
+}
+
+WrappedCallCredentials::~WrappedCallCredentials() {
+  grpc_core::ExecCtx exec_ctx;
+  if (c_creds_ != nullptr) c_creds_->Unref();
+}
+
+bool WrappedCallCredentials::ApplyToCall(grpc_call* call) {
+  return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
+}
+
+std::string WrappedCallCredentials::DebugString() {
+  return absl::StrCat("WrappedCallCredentials{",
+                      std::string(c_creds_->debug_string()), "}");
+}
+
+// ---- HelperMethods ----
+
 std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {
   if (creds == nullptr) return nullptr;
   return std::make_shared<WrappedChannelCredentials>(creds);
+}
+
+std::shared_ptr<WrappedCallCredentials> WrapCallCredentials(
+    grpc_call_credentials* creds) {
+  if (creds == nullptr) return nullptr;
+  return std::make_shared<WrappedCallCredentials>(creds);
 }
 
 }  // namespace grpc

@@ -51,24 +51,93 @@
 #include "src/core/lib/security/util/json_util.h"
 #include "src/cpp/client/wrapped_credentials.h"
 #include "src/cpp/common/secure_auth_context.h"
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
-
-SecureCallCredentials::SecureCallCredentials(grpc_call_credentials* c_creds)
-    : c_creds_(c_creds) {}
-
-bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
-  return grpc_call_set_credentials(call, c_creds_) == GRPC_CALL_OK;
-}
-
 namespace {
 
-std::shared_ptr<CallCredentials> WrapCallCredentials(
-    grpc_call_credentials* creds) {
-  return creds == nullptr ? nullptr
-                          : std::shared_ptr<CallCredentials>(
-                                new SecureCallCredentials(creds));
+
+void UnrefMetadata(const std::vector<grpc_metadata>& md) {
+  for (const auto& metadatum : md) {
+    grpc_slice_unref(metadatum.key);
+    grpc_slice_unref(metadatum.value);
+  }
 }
+
+class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
+ public:
+  static void Destroy(void* wrapper);
+  static int GetMetadata(
+      void* wrapper, grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void* user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t* num_creds_md, grpc_status_code* status,
+      const char** error_details);
+  static char* DebugString(void* wrapper);
+
+  explicit MetadataCredentialsPluginWrapper(
+      std::unique_ptr<MetadataCredentialsPlugin> plugin)
+      : plugin_(std::move(plugin)) {
+    if (plugin_->IsBlocking()) {
+      thread_pool_.reset(CreateDefaultThreadPool());
+    }
+  }
+
+ private:
+  void InvokePlugin(
+      grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void* user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t* num_creds_md, grpc_status_code* status_code,
+      const char** error_details) {
+    std::multimap<std::string, std::string> metadata;
+
+    // const_cast is safe since the SecureAuthContext only inc/dec the refcount
+    // and the object is passed as a const ref to plugin_->GetMetadata.
+    SecureAuthContext cpp_channel_auth_context(
+        const_cast<grpc_auth_context*>(context.channel_auth_context));
+
+    Status status =
+        plugin_->GetMetadata(context.service_url, context.method_name,
+                             cpp_channel_auth_context, &metadata);
+    std::vector<grpc_metadata> md;
+    for (auto& metadatum : metadata) {
+      grpc_metadata md_entry;
+      md_entry.key = SliceFromCopiedString(metadatum.first);
+      md_entry.value = SliceFromCopiedString(metadatum.second);
+      md.push_back(md_entry);
+    }
+    if (creds_md != nullptr) {
+      // Synchronous return.
+      if (md.size() > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) {
+        *num_creds_md = 0;
+        *status_code = GRPC_STATUS_INTERNAL;
+        *error_details = gpr_strdup(
+            "blocking plugin credentials returned too many metadata keys");
+        UnrefMetadata(md);
+      } else {
+        for (const auto& elem : md) {
+          creds_md[*num_creds_md].key = elem.key;
+          creds_md[*num_creds_md].value = elem.value;
+          ++(*num_creds_md);
+        }
+        *status_code = static_cast<grpc_status_code>(status.error_code());
+        *error_details =
+            status.ok() ? nullptr : gpr_strdup(status.error_message().c_str());
+      }
+    } else {
+      // Asynchronous return.
+      cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
+         static_cast<grpc_status_code>(status.error_code()),
+         status.error_message().c_str());
+      UnrefMetadata(md);
+    }
+  }
+
+  std::unique_ptr<ThreadPoolInterface> thread_pool_;
+  std::unique_ptr<MetadataCredentialsPlugin> plugin_;
+};
+
 }  // namespace
 
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
@@ -400,72 +469,6 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     w->InvokePlugin(context, cb, user_data, creds_md, num_creds_md, status,
                     error_details);
     return 1;
-  }
-}
-
-namespace {
-
-void UnrefMetadata(const std::vector<grpc_metadata>& md) {
-  for (const auto& metadatum : md) {
-    grpc_slice_unref(metadatum.key);
-    grpc_slice_unref(metadatum.value);
-  }
-}
-
-}  // namespace
-
-void MetadataCredentialsPluginWrapper::InvokePlugin(
-    grpc_auth_metadata_context context, grpc_credentials_plugin_metadata_cb cb,
-    void* user_data, grpc_metadata creds_md[4], size_t* num_creds_md,
-    grpc_status_code* status_code, const char** error_details) {
-  std::multimap<std::string, std::string> metadata;
-
-  // const_cast is safe since the SecureAuthContext only inc/dec the refcount
-  // and the object is passed as a const ref to plugin_->GetMetadata.
-  SecureAuthContext cpp_channel_auth_context(
-      const_cast<grpc_auth_context*>(context.channel_auth_context));
-
-  Status status = plugin_->GetMetadata(context.service_url, context.method_name,
-                                       cpp_channel_auth_context, &metadata);
-  std::vector<grpc_metadata> md;
-  for (auto& metadatum : metadata) {
-    grpc_metadata md_entry;
-    md_entry.key = SliceFromCopiedString(metadatum.first);
-    md_entry.value = SliceFromCopiedString(metadatum.second);
-    md.push_back(md_entry);
-  }
-  if (creds_md != nullptr) {
-    // Synchronous return.
-    if (md.size() > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) {
-      *num_creds_md = 0;
-      *status_code = GRPC_STATUS_INTERNAL;
-      *error_details = gpr_strdup(
-          "blocking plugin credentials returned too many metadata keys");
-      UnrefMetadata(md);
-    } else {
-      for (const auto& elem : md) {
-        creds_md[*num_creds_md].key = elem.key;
-        creds_md[*num_creds_md].value = elem.value;
-        ++(*num_creds_md);
-      }
-      *status_code = static_cast<grpc_status_code>(status.error_code());
-      *error_details =
-          status.ok() ? nullptr : gpr_strdup(status.error_message().c_str());
-    }
-  } else {
-    // Asynchronous return.
-    cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
-       static_cast<grpc_status_code>(status.error_code()),
-       status.error_message().c_str());
-    UnrefMetadata(md);
-  }
-}
-
-MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
-    std::unique_ptr<MetadataCredentialsPlugin> plugin)
-    : plugin_(std::move(plugin)) {
-  if (plugin_->IsBlocking()) {
-    thread_pool_.reset(CreateDefaultThreadPool());
   }
 }
 

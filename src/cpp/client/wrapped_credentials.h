@@ -47,10 +47,28 @@ class WrappedChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* const c_creds_ = nullptr;
 };
 
+class WrappedCallCredentials final : public CallCredentials {
+ public:
+  explicit WrappedCallCredentials(grpc_call_credentials* c_creds);
+  ~WrappedCallCredentials() override;
+
+  grpc_call_credentials* c_creds() override { return c_creds_; }
+  bool ApplyToCall(grpc_call* call) override;
+  std::string DebugString() override;
+
+ private:
+  grpc_call_credentials* const c_creds_;
+};
+
 // Creates a shared WrappedChannelCredentials if creds is non-null.
 // Otherwise returns nullptr.
 std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds);
+
+// Creates a shared WrappedCallCredentials if creds is non-null.
+// Otherwise returns nullptr.
+std::shared_ptr<WrappedCallCredentials> WrapCallCredentials(
+    grpc_call_credentials* creds);
 
 }  // namespace grpc
 
