@@ -103,9 +103,9 @@ class OpenTelemetryPluginBuilder {
   // Methods to manipulate which instruments are enabled in the OpenTelemetry
   // Stats Plugin.
   OpenTelemetryPluginBuilder& EnableMetrics(
-      const std::vector<absl::string_view>& metric_names);
+      absl::Span<const absl::string_view> metric_names);
   OpenTelemetryPluginBuilder& DisableMetrics(
-      const std::vector<absl::string_view>& metric_names);
+      absl::Span<const absl::string_view> metric_names);
   OpenTelemetryPluginBuilder& DisableAllMetrics();
   /// Add a plugin option to add to the opentelemetry plugin being built. At
   /// present, this type is an opaque type. Ownership of \a option is

@@ -136,9 +136,9 @@ class OpenTelemetryPluginBuilderImpl {
   // grpc.server.call.sent_total_compressed_message_size
   // grpc.server.call.rcvd_total_compressed_message_size
   OpenTelemetryPluginBuilderImpl& EnableMetrics(
-      const std::vector<absl::string_view>& metric_name);
+      absl::Span<const absl::string_view> metric_names);
   OpenTelemetryPluginBuilderImpl& DisableMetrics(
-      const std::vector<absl::string_view>& metric_name);
+      absl::Span<const absl::string_view> metric_names);
   OpenTelemetryPluginBuilderImpl& DisableAllMetrics();
   // If set, \a target_selector is called per channel to decide whether to
   // collect metrics on that target or not.
