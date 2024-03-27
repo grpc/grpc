@@ -37,11 +37,7 @@ class InsecureServerCredentialsImpl final : public ServerCredentials {
   }
 
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
-    grpc_server_credentials* server_creds =
-        grpc_insecure_server_credentials_create();
-    int result = grpc_server_add_http2_port(server, addr.c_str(), server_creds);
-    grpc_server_credentials_release(server_creds);
-    return result;
+    return grpc_server_add_http2_port(server, addr.c_str(), creds_);
   }
 
   void SetAuthMetadataProcessor(
