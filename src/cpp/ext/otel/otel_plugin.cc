@@ -150,15 +150,19 @@ OpenTelemetryPluginBuilderImpl::SetMeterProvider(
   return *this;
 }
 
-OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::EnableMetric(
-    absl::string_view metric_name) {
-  metrics_.emplace(metric_name);
+OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::EnableMetrics(
+    const std::vector<absl::string_view>& metric_names) {
+  for (const auto& metric_name : metric_names) {
+    metrics_.emplace(metric_name);
+  }
   return *this;
 }
 
-OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::DisableMetric(
-    absl::string_view metric_name) {
-  metrics_.erase(metric_name);
+OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::DisableMetrics(
+    const std::vector<absl::string_view>& metric_names) {
+  for (const auto& metric_name : metric_names) {
+    metrics_.erase(metric_name);
+  }
   return *this;
 }
 
@@ -604,6 +608,23 @@ OpenTelemetryPluginBuilder::SetGenericMethodAttributeFilter(
         generic_method_attribute_filter) {
   impl_->SetGenericMethodAttributeFilter(
       std::move(generic_method_attribute_filter));
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::EnableMetrics(
+    const std::vector<absl::string_view>& metric_names) {
+  impl_->EnableMetrics(metric_names);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableMetrics(
+    const std::vector<absl::string_view>& metric_names) {
+  impl_->DisableMetrics(metric_names);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::DisableAllMetrics() {
+  impl_->DisableAllMetrics();
   return *this;
 }
 
