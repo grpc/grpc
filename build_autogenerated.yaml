@@ -3888,6 +3888,7 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -3928,6 +3929,7 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/server/xds_server_builder.cc
   - src/cpp/server/xds_server_credentials.cc
@@ -4270,6 +4272,7 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -4302,6 +4305,7 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -6177,6 +6181,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -6216,6 +6221,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -8874,6 +8880,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -8913,6 +8920,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -9371,6 +9379,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -9410,6 +9419,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19588,6 +19598,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -19627,6 +19638,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19965,6 +19977,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -20004,6 +20017,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -20074,6 +20088,7 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -20113,6 +20128,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
