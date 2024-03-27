@@ -40,11 +40,6 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: absl_base64
-  description: Use abseil base64 functions.
-  expiry: 2024/06/01
-  owner: roth@google.com
-  test_tags: ["credential_token_tests"]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with
@@ -243,6 +238,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/03/31
+  expiry: 2024/06/30
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]

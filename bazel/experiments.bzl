@@ -17,7 +17,6 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
-    "absl_base64": "absl_base64",
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
@@ -93,9 +92,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "event_engine_listener",
             ],
-            "credential_token_tests": [
-                "absl_base64",
-            ],
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
@@ -131,11 +127,6 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "promise_based_server_call",
-            ],
-        },
-        "on": {
-            "credential_token_tests": [
-                "absl_base64",
             ],
         },
     },
@@ -190,9 +181,6 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "work_serializer_dispatch",
-            ],
-            "credential_token_tests": [
-                "absl_base64",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

@@ -57,8 +57,6 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -104,8 +102,6 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -152,8 +148,6 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #else
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -204,7 +198,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #else
 enum ExperimentIds {
-  kExperimentIdAbslBase64,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
@@ -237,10 +230,6 @@ enum ExperimentIds {
   kExperimentIdWorkSerializerDispatch,
   kNumExperiments
 };
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() {
-  return IsExperimentEnabled(kExperimentIdAbslBase64);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
