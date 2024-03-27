@@ -328,6 +328,27 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     } call;
   };
 
+  // This object is used inline.
+  class CallbackMetricReporter : public grpc_core::CallbackMetricReporter {
+   public:
+    explicit CallbackMetricReporter(OpenTelemetryPlugin* parent)
+        : parent_(parent) {}
+
+    void Report(
+        grpc_core::GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle
+            handle,
+        int64_t value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) override;
+    void Report(
+        grpc_core::GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle
+            handle,
+        double value, absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) override;
+
+   private:
+    OpenTelemetryPlugin* parent_;
+  };
+
   // StatsPlugin:
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForChannel(const ChannelScope& scope) const override;
@@ -386,12 +407,11 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     return plugin_options_;
   }
 
-  struct RegisteredMetricCallbackState {
-    grpc_core::Timestamp last_update_time;
-  };
-
   template <typename ValueType>
   struct ObservableState {
+    void Observe(opentelemetry::metrics::ObserverResult& result)
+        ABSL_LOCKS_EXCLUDED(mu);
+
     grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
@@ -401,11 +421,13 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     // RegisteredMetricCallback to multiple Observables relationship for now.
     grpc_core::RegisteredMetricCallback* registered_metric_callback = nullptr;
     // Per-instrument mutex to synchronize accesses to caches.
-    absl::Mutex mu;
+    absl::Mutex mu ABSL_ACQUIRED_AFTER(OpenTelemetryPlugin::mu_);
     // Caches.
-    ValueType value;
-    std::unique_ptr<std::vector<absl::string_view>> label_values;
-    std::unique_ptr<std::vector<absl::string_view>> optional_label_values;
+    ValueType value ABSL_GUARDED_BY(mu);
+    std::unique_ptr<std::vector<absl::string_view>> label_values
+        ABSL_GUARDED_BY(mu);
+    std::unique_ptr<std::vector<absl::string_view>> optional_label_values
+        ABSL_GUARDED_BY(mu);
     OpenTelemetryPlugin* parent;
   };
   template <typename T>
@@ -432,9 +454,12 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   };
   std::vector<InstrumentData> instruments_data_;
   absl::Mutex mu_;
-  // std::shared_ptr<absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-  //                                     RegisteredMetricCallbackState>>
-  //     registered_metric_callback_state_map_;
+  struct RegisteredMetricCallbackState {
+    grpc_core::Timestamp last_update_time;
+  };
+  absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
+                      RegisteredMetricCallbackState>
+      callback_states_ ABSL_GUARDED_BY(mu_);
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;

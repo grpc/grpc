@@ -1511,12 +1511,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
 // observable callback) from a separate thread.
 TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
   constexpr absl::string_view kMetricName = "yet_another_int64_gauge";
-  constexpr absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  constexpr absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                      "optional_label_key_2"};
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterInt64Gauge(
       kMetricName, "A simple int64 gauge.", "unit", kLabelKeys,
@@ -1552,11 +1553,91 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
-  constexpr int kIteration = 1000000;
-  for (int i = 0; i < kIteration; i++) {
+  constexpr int kIterations = 1000000;
+  for (int i = 0; i < kIterations; ++i) {
     stats_plugins.SetGauge(handle, i, kLabelValues, kOptionalLabelValues);
   }
   finished = true;
+  t.join();
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, Callback) {
+  constexpr absl::string_view kInt64CallbackGaugeMetric =
+      "int64_callback_gauge";
+  constexpr absl::string_view kDoubleCallbackGaugeMetric =
+      "double_callback_gauge";
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto integer_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+          kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
+          kLabelKeys, kOptionalLabelKeys,
+          /*enable_by_default=*/true);
+  auto double_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+          kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
+          kLabelKeys, kOptionalLabelKeys,
+          /*enable_by_default=*/true);
+  Init(std::move(Options()
+                     .set_metric_names({kInt64CallbackGaugeMetric,
+                                        kDoubleCallbackGaugeMetric})
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  int64_t int_value = 0;
+  double double_value = 0.5;
+  auto registered_metric_callback = stats_plugins.RegisterCallback(
+      [&](grpc_core::CallbackMetricReporter& reporter) {
+        reporter.Report(integer_gauge_handle, int_value++, kLabelValues,
+                        kOptionalLabelValues);
+        reporter.Report(double_gauge_handle, double_value++, kLabelValues,
+                        kOptionalLabelValues);
+      },
+      {integer_gauge_handle, double_gauge_handle},
+      grpc_core::Duration::Milliseconds(10));
+  std::thread t([&, this]() {
+    constexpr int kIterations = 10;
+    int64_t expected_int_value = 0;
+    double expected_double_value = 0.5;
+    for (int i = 0; i < kIterations; ++i) {
+      // With 10ms collect interval, we should expect to get incremental result
+      // everytime we collect.
+      auto data = ReadCurrentMetricsData(
+          [&](const absl::flat_hash_map<
+              std::string,
+              std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                  data) {
+            return !data.contains(kInt64CallbackGaugeMetric) ||
+                   !data.contains(kDoubleCallbackGaugeMetric);
+          });
+      EXPECT_THAT(
+          data,
+          ::testing::UnorderedElementsAre(
+              ::testing::Pair(
+                  kInt64CallbackGaugeMetric,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      GaugeResultEq(expected_int_value++,
+                                    std::chrono::nanoseconds(0))))),
+              ::testing::Pair(
+                  kDoubleCallbackGaugeMetric,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      GaugeResultEq(expected_double_value++,
+                                    std::chrono::nanoseconds(0)))))));
+      absl::SleepFor(absl::Milliseconds(100));
+    }
+  });
   t.join();
 }
 

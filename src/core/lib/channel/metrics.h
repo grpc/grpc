@@ -336,7 +336,8 @@ class GlobalStatsPluginRegistry {
     // the lifetime of the callback; when the returned object is
     // destroyed, the callback is de-registered.  The returned object
     // must not outlive the StatsPluginGroup object that created it.
-    std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
+    GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
+    RegisterCallback(
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
