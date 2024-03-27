@@ -165,7 +165,7 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
-  requires: [promise_based_client_call, promise_based_server_call, registered_method_lookup_in_transport]
+  requires: [promise_based_client_call, promise_based_server_call]
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -173,12 +173,6 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
-- name: registered_method_lookup_in_transport
-  description:
-    Change registered method's lookup point to transport
-  expiry: 2024/03/31
-  owner: yashkt@google.com
-  test_tags: ["surface_registered_method_lookup"]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
