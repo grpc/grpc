@@ -1093,6 +1093,9 @@ class InfallibleOperationExecutor {
 // augment it to provide all the functionality that we must.
 class PipeState {
  public:
+  struct StartPushed {};
+  PipeState() = default;
+  explicit PipeState(StartPushed) : state_(ValueState::kQueued) {}
   // Start the pipe: allows pulls to proceed
   void Start();
   // A push operation is beginning
@@ -1245,8 +1248,7 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
-  CallFilters();
-  explicit CallFilters(RefCountedPtr<Stack> stack);
+  explicit CallFilters(ClientMetadataHandle client_initial_metadata);
   ~CallFilters();
 
   CallFilters(const CallFilters&) = delete;
@@ -1256,7 +1258,9 @@ class CallFilters {
 
   void SetStack(RefCountedPtr<Stack> stack);
 
-  GRPC_MUST_USE_RESULT auto PushClientInitialMetadata(ClientMetadataHandle md);
+  ClientMetadata* unprocessed_client_initial_metadata() {
+    return client_initial_metadata_.get();
+  }
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata();
   GRPC_MUST_USE_RESULT auto PushServerInitialMetadata(ServerMetadataHandle md);
   GRPC_MUST_USE_RESULT auto PullServerInitialMetadata();
@@ -1374,6 +1378,60 @@ class CallFilters {
     };
   };
 
+  class PullClientInitialMetadataPromise {
+   public:
+    explicit PullClientInitialMetadataPromise(CallFilters* filters)
+        : filters_(filters) {}
+
+    PullClientInitialMetadataPromise(const PullClientInitialMetadataPromise&) =
+        delete;
+    PullClientInitialMetadataPromise& operator=(
+        const PullClientInitialMetadataPromise&) = delete;
+    PullClientInitialMetadataPromise(
+        PullClientInitialMetadataPromise&& other) noexcept
+        : filters_(std::exchange(other.filters_, nullptr)),
+          executor_(std::move(other.executor_)) {}
+    PullClientInitialMetadataPromise& operator=(
+        PullClientInitialMetadataPromise&&) = delete;
+
+    Poll<ValueOrFailure<ClientMetadataHandle>> operator()() {
+      if (executor_.IsRunning()) {
+        return FinishOperationExecutor(executor_.Step(filters_->call_data_));
+      }
+      auto p = state().PollPull();
+      auto* r = p.value_if_ready();
+      gpr_log(GPR_INFO, "%s", r == nullptr ? "PENDING" : r->ToString().c_str());
+      if (r == nullptr) return Pending{};
+      if (!r->ok()) {
+        filters_->CancelDueToFailedPipeOperation();
+        return Failure{};
+      }
+      GPR_ASSERT(filters_->client_initial_metadata_ != nullptr);
+      return FinishOperationExecutor(executor_.Start(
+          &filters_->stack_->data_.client_initial_metadata,
+          std::move(filters_->client_initial_metadata_), filters_->call_data_));
+    }
+
+   private:
+    filters_detail::PipeState& state() {
+      return filters_->client_initial_metadata_state_;
+    }
+
+    Poll<ValueOrFailure<ClientMetadataHandle>> FinishOperationExecutor(
+        Poll<filters_detail::ResultOr<ClientMetadataHandle>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      GPR_DEBUG_ASSERT(!executor_.IsRunning());
+      state().AckPull();
+      if (r->ok != nullptr) return std::move(r->ok);
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<ClientMetadataHandle> executor_;
+  };
+
   class PullServerTrailingMetadataPromise {
    public:
     explicit PullServerTrailingMetadataPromise(CallFilters* filters)
@@ -1411,31 +1469,27 @@ class CallFilters {
 
   RefCountedPtr<Stack> stack_;
 
-  filters_detail::PipeState client_initial_metadata_state_;
+  filters_detail::PipeState client_initial_metadata_state_{
+      filters_detail::PipeState::StartPushed{}};
   filters_detail::PipeState server_initial_metadata_state_;
   filters_detail::PipeState client_to_server_message_state_;
   filters_detail::PipeState server_to_client_message_state_;
   IntraActivityWaiter server_trailing_metadata_waiter_;
 
   void* call_data_;
+  ClientMetadataHandle client_initial_metadata_;
 
   // The following void*'s are pointers to a `Push` object (from above).
   // They are used to track the current push operation for each pipe.
   // It would be lovely for them to be typed pointers, but that would require
   // a recursive type definition since the location of this field needs to be
   // a template argument to the `Push` object itself.
-  void* client_initial_metadata_push_ = nullptr;
   void* server_initial_metadata_push_ = nullptr;
   void* client_to_server_message_push_ = nullptr;
   void* server_to_client_message_push_ = nullptr;
 
   ServerMetadataHandle server_trailing_metadata_;
 
-  using ClientInitialMetadataPromises =
-      PipePromise<&CallFilters::client_initial_metadata_state_,
-                  &CallFilters::client_initial_metadata_push_,
-                  ClientMetadataHandle,
-                  &filters_detail::StackData::client_initial_metadata>;
   using ServerInitialMetadataPromises =
       PipePromise<&CallFilters::server_initial_metadata_state_,
                   &CallFilters::server_initial_metadata_push_,
@@ -1451,14 +1505,8 @@ class CallFilters {
                   &filters_detail::StackData::server_to_client_messages>;
 };
 
-inline auto CallFilters::PushClientInitialMetadata(ClientMetadataHandle md) {
-  GPR_ASSERT(md != nullptr);
-  return [p = ClientInitialMetadataPromises::Push{
-              this, std::move(md)}]() mutable { return p(); };
-}
-
 inline auto CallFilters::PullClientInitialMetadata() {
-  return ClientInitialMetadataPromises::Pull{this};
+  return PullClientInitialMetadataPromise(this);
 }
 
 inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
