@@ -311,12 +311,18 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   return nullptr;
 }
 
+class CompositeCallCredentialsImpl : public CallCredentials {
+ public:
+  CompositeCallCredentialsImpl(const std::shared_ptr<CallCredentials>& creds1,
+                               const std::shared_ptr<CallCredentials>& creds2)
+      : CallCredentials(grpc_composite_call_credentials_create(
+            creds1->c_creds_, creds2->c_creds_, nullptr)) {}
+};
+
 std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2) {
-  return std::make_shared<WrappedCallCredentials>(
-      grpc_composite_call_credentials_create(creds1->c_creds_, creds2->c_creds_,
-                                             nullptr));
+  return std::make_shared<CompositeCallCredentialsImpl>(creds1, creds2);
 }
 
 namespace {

@@ -123,9 +123,7 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
-  friend std::shared_ptr<CallCredentials> CompositeCallCredentials(
-      const std::shared_ptr<CallCredentials>& creds1,
-      const std::shared_ptr<CallCredentials>& creds2);
+  friend class CompositeCallCredentialsImpl;
   friend std::string grpc::testing::GetOauth2AccessToken();
 
   grpc_call_credentials* c_creds_ = nullptr;
