@@ -25,11 +25,17 @@
 
 namespace grpc {
 
-// Creates a shared WrappedChannelCredentials if creds is non-null.
-// Otherwise returns nullptr.
-std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
-    grpc_channel_credentials* creds);
+class WrappedChannelCredentials final : public ChannelCredentials {
+ public:
+  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds);
 
+ private:
+  std::shared_ptr<Channel> CreateChannelWithInterceptors(
+      const std::string& target, const ChannelArguments& args,
+      std::vector<std::unique_ptr<
+          grpc::experimental::ClientInterceptorFactoryInterface>>
+          interceptor_creators) override;
+};
 }  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_CLIENT_WRAPPED_CREDENTIALS_H

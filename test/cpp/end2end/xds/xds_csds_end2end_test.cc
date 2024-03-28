@@ -247,7 +247,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
         grpc_core::LocalIpAndPort(admin_server_thread_->port());
     admin_channel_ = grpc::CreateChannel(
         admin_server_address,
-        WrapChannelCredentials(
+        std::make_shared<WrappedChannelCredentials>(
             grpc_fake_transport_security_credentials_create()));
     csds_stub_ =
         envoy::service::status::v3::ClientStatusDiscoveryService::NewStub(

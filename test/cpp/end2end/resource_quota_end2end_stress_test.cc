@@ -187,7 +187,7 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
 
     return EchoTestService::NewStub(CreateCustomChannel(
         connect_address_,
-        WrapChannelCredentials(
+        std::make_shared<WrappedChannelCredentials>(
             grpc_fake_transport_security_credentials_create()),
         args));
   }

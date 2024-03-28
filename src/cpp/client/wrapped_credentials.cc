@@ -26,51 +26,24 @@
 
 namespace grpc {
 
-class WrappedChannelCredentials final : public ChannelCredentials {
- public:
-  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds)
-      : c_creds_(c_creds) {
-    GPR_ASSERT(c_creds != nullptr);
-  }
+WrappedChannelCredentials::WrappedChannelCredentials(
+    grpc_channel_credentials* c_creds)
+    : ChannelCredentials(c_creds) {
+  GPR_ASSERT(c_creds != nullptr);
+}
 
-  ~WrappedChannelCredentials() override {
-    grpc_channel_credentials_release(c_creds_);
-  }
-
-  std::shared_ptr<Channel> CreateChannelImpl(
-      const std::string& target, const ChannelArguments& args) override {
-    return CreateChannelWithInterceptors(
-        target, args,
-        std::vector<std::unique_ptr<
-            grpc::experimental::ClientInterceptorFactoryInterface>>());
-  }
-
-  // Promoted to a public API for internal use
-  grpc_channel_credentials* c_creds() const override { return c_creds_; }
-
- private:
-  std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const std::string& target, const ChannelArguments& args,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators) override {
-    grpc_channel_args channel_args;
-    args.SetChannelArgs(&channel_args);
-    return grpc::CreateChannelInternal(
-        args.GetSslTargetNameOverride(),
-        grpc_channel_create(target.c_str(), c_creds_, &channel_args),
-        std::move(interceptor_creators));
-  }
-
-  grpc_channel_credentials* const c_creds_ = nullptr;
-};
-
-// ---- HelperMethods ----
-
-std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
-    grpc_channel_credentials* creds) {
-  if (creds == nullptr) return nullptr;
-  return std::make_shared<WrappedChannelCredentials>(creds);
+std::shared_ptr<Channel>
+WrappedChannelCredentials::CreateChannelWithInterceptors(
+    const std::string& target, const ChannelArguments& args,
+    std::vector<
+        std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
+  return grpc::CreateChannelInternal(
+      args.GetSslTargetNameOverride(),
+      grpc_channel_create(target.c_str(), c_creds(), &channel_args),
+      std::move(interceptor_creators));
 }
 
 }  // namespace grpc

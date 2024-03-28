@@ -120,7 +120,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
   ServiceConfigEnd2endTest()
       : server_host_("localhost"),
         kRequestMessage_("Live long and prosper."),
-        creds_(WrapChannelCredentials(
+        creds_(std::make_shared<WrappedChannelCredentials>(
             grpc_fake_transport_security_credentials_create())) {}
 
   static void SetUpTestSuite() {

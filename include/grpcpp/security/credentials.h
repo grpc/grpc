@@ -68,6 +68,15 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 ///
 /// \see https://grpc.io/docs/guides/auth.html
 class ChannelCredentials : private grpc::internal::GrpcLibrary {
+ public:
+  ~ChannelCredentials() override { grpc_channel_credentials_release(c_creds_); }
+
+ protected:
+  explicit ChannelCredentials(grpc_channel_credentials* creds)
+      : c_creds_(creds) {}
+
+  grpc_channel_credentials* c_creds() const { return c_creds_; };
+
  private:
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
@@ -84,11 +93,12 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
-  friend std::shared_ptr<ChannelCredentials> grpc::XdsCredentials(
-      const std::shared_ptr<ChannelCredentials>& fallback_creds);
+  friend class XdsChannelCredentialsImpl;
 
   virtual std::shared_ptr<Channel> CreateChannelImpl(
-      const grpc::string& target, const ChannelArguments& args) = 0;
+      const grpc::string& target, const ChannelArguments& args) {
+    return CreateChannelWithInterceptors(target, args, {});
+  }
 
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
@@ -100,7 +110,7 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
     return nullptr;
   }
 
-  virtual grpc_channel_credentials* c_creds() const = 0;
+  grpc_channel_credentials* const c_creds_;
 };
 
 /// A call credentials object encapsulates the state needed by a client to
