@@ -1221,8 +1221,8 @@ grpc_cc_library(
         "src/cpp/client/call_credentials.cc",
         "src/cpp/client/channel_credentials.cc",
         "src/cpp/client/insecure_credentials.cc",
-        "src/cpp/common/insecure_channel_arguments.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
+        "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server_credentials.cc",
     ],
@@ -1240,7 +1240,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "channel_arg_names",
-        "exec_ctx",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",

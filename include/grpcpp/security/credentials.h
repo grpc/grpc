@@ -74,6 +74,8 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
  protected:
   explicit ChannelCredentials(grpc_channel_credentials* creds);
 
+  grpc_channel_credentials* c_creds() { return c_creds_; }
+
  private:
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
