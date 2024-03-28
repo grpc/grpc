@@ -96,8 +96,6 @@
     posix: false
 - name: promise_based_server_call
   default: false
-- name: registered_method_lookup_in_transport
-  default: true
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write
