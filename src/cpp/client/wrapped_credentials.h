@@ -27,14 +27,8 @@ namespace grpc {
 
 class WrappedChannelCredentials final : public ChannelCredentials {
  public:
-  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds);
-
- private:
-  std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const std::string& target, const ChannelArguments& args,
-      std::vector<std::unique_ptr<
-          grpc::experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators) override;
+  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds)
+      : ChannelCredentials(c_creds) {}
 };
 }  // namespace grpc
 

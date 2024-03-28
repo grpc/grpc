@@ -69,11 +69,10 @@ std::shared_ptr<ChannelCredentials> XdsCredentials(
 /// \see https://grpc.io/docs/guides/auth.html
 class ChannelCredentials : private grpc::internal::GrpcLibrary {
  public:
-  ~ChannelCredentials() override { grpc_channel_credentials_release(c_creds_); }
+  ~ChannelCredentials() override;
 
  protected:
-  explicit ChannelCredentials(grpc_channel_credentials* creds)
-      : c_creds_(creds) {}
+  explicit ChannelCredentials(grpc_channel_credentials* creds);
 
   grpc_channel_credentials* c_creds() const { return c_creds_; };
 
@@ -100,15 +99,11 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
     return CreateChannelWithInterceptors(target, args, {});
   }
 
-  // This function should have been a pure virtual function, but it is
-  // implemented as a virtual function so that it does not break API.
   virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const grpc::string& /*target*/, const ChannelArguments& /*args*/,
+      const grpc::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
-      /*interceptor_creators*/) {
-    return nullptr;
-  }
+          interceptor_creators);
 
   grpc_channel_credentials* const c_creds_;
 };

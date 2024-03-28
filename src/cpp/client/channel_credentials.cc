@@ -13,8 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/client/wrapped_credentials.h"
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -26,14 +24,14 @@
 
 namespace grpc {
 
-WrappedChannelCredentials::WrappedChannelCredentials(
-    grpc_channel_credentials* c_creds)
-    : ChannelCredentials(c_creds) {
-  GPR_ASSERT(c_creds != nullptr);
+ChannelCredentials::ChannelCredentials(grpc_channel_credentials* c_creds)
+    : c_creds_(c_creds) {}
+
+ChannelCredentials::~ChannelCredentials() {
+  grpc_channel_credentials_release(c_creds_);
 }
 
-std::shared_ptr<Channel>
-WrappedChannelCredentials::CreateChannelWithInterceptors(
+std::shared_ptr<Channel> ChannelCredentials::CreateChannelWithInterceptors(
     const std::string& target, const ChannelArguments& args,
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
