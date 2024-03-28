@@ -120,6 +120,7 @@ def _update_visibility(visibility):
         "tsi": PRIVATE,
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
+        "xds_end2end_test_utils": PRIVATE,
         "grpc_python_observability": PRIVATE,
         "event_engine_base_hdrs": PRIVATE,
         "useful": PRIVATE,
