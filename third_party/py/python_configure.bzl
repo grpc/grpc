@@ -369,16 +369,3 @@ python_configure = repository_rule(
         ),
     },
 )
-"""Detects and configures the local Python.
-
-It expects the system have a working Python 3 installation.
-
-Add the following to your WORKSPACE FILE:
-
-```python
-python_configure(name = "local_config_python")
-```
-
-Args:
-  name: A unique name for this workspace rule.
-"""
