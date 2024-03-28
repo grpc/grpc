@@ -18,6 +18,8 @@
 
 #include "test/cpp/ext/otel/otel_test_library.h"
 
+#include <atomic>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -82,6 +84,53 @@ const grpc_channel_filter AddServiceLabelsFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<AddServiceLabelsFilter,
                                       grpc_core::FilterEndpoint::kClient>(
         "add_service_labels_filter");
+
+OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::
+    ThreadedMetricsCollector(
+        OpenTelemetryPluginEnd2EndTest* test, grpc_core::Duration interval,
+        int iterations,
+        std::function<bool(
+            const absl::flat_hash_map<std::string,
+                                      std::vector<opentelemetry::sdk::metrics::
+                                                      PointDataAttributes>>&)>
+            predicate)
+    : test_(test),
+      interval_(interval),
+      iterations_(iterations),
+      predicate_(std::move(predicate)),
+      thread_(&ThreadedMetricsCollector::Run, this) {}
+
+OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::
+    ~ThreadedMetricsCollector() {
+  if (!finished_) {
+    thread_.join();
+  }
+}
+
+void OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::Run() {
+  int i = 0;
+  while (i++ < iterations_ || (iterations_ == -1 && !finished_)) {
+    auto data_points = test_->ReadCurrentMetricsData(predicate_);
+    for (auto data : data_points) {
+      auto iter = data_points_.find(data.first);
+      if (iter == data_points_.end()) {
+        data_points_[data.first] = std::move(data.second);
+      } else {
+        for (auto point : data.second) {
+          iter->second.push_back(std::move(point));
+        }
+      }
+    }
+    absl::SleepFor(absl::Milliseconds(interval_.millis()));
+  }
+}
+
+const OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::ResultType&
+OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::Stop() {
+  finished_ = true;
+  thread_.join();
+  return data_points_;
+}
 
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   grpc_core::CoreConfiguration::Reset();

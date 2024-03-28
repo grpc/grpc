@@ -114,7 +114,7 @@ MATCHER_P4(HistogramResultEq, sum, min, max, count, "") {
       arg.point_data, result_listener);
 }
 
-MATCHER_P2(GaugeResultEq, value, prev_timestamp, "") {
+MATCHER_P(GaugeResultEq, value, "") {
   return ::testing::ExplainMatchResult(
       ::testing::VariantWith<opentelemetry::sdk::metrics::LastValuePointData>(
           ::testing::AllOf(
@@ -124,13 +124,47 @@ MATCHER_P2(GaugeResultEq, value, prev_timestamp, "") {
                       IntOrDoubleEq(value))),
               ::testing::Field(&opentelemetry::sdk::metrics::
                                    LastValuePointData::is_lastvalue_valid_,
-                               ::testing::IsTrue()),
-              // This check might subject to system clock adjustment.
+                               ::testing::IsTrue()))),
+      arg.point_data, result_listener);
+}
+
+// This check might subject to system clock adjustment.
+MATCHER_P(GaugeResultLaterThan, prev_timestamp, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::LastValuePointData>(
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::LastValuePointData::sample_ts_,
+              ::testing::Property(
+                  &opentelemetry::common::SystemTimestamp::time_since_epoch,
+                  ::testing::Gt(prev_timestamp.time_since_epoch())))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P(GaugeResultGe, value, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::LastValuePointData>(
+          ::testing::AllOf(
               ::testing::Field(
-                  &opentelemetry::sdk::metrics::LastValuePointData::sample_ts_,
-                  ::testing::Property(
-                      &opentelemetry::common::SystemTimestamp::time_since_epoch,
-                      ::testing::Gt(prev_timestamp))))),
+                  &opentelemetry::sdk::metrics::LastValuePointData::value_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(value)>>(
+                      ::testing::Ge(value))),
+              ::testing::Field(&opentelemetry::sdk::metrics::
+                                   LastValuePointData::is_lastvalue_valid_,
+                               ::testing::IsTrue()))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P(GaugeResultGt, value, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::LastValuePointData>(
+          ::testing::AllOf(
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::LastValuePointData::value_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(value)>>(
+                      ::testing::Gt(value))),
+              ::testing::Field(&opentelemetry::sdk::metrics::
+                                   LastValuePointData::is_lastvalue_valid_,
+                               ::testing::IsTrue()))),
       arg.point_data, result_listener);
 }
 
@@ -1411,14 +1445,12 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  EXPECT_THAT(
-      data,
-      ::testing::ElementsAre(::testing::Pair(
-          kMetricName,
-          ::testing::ElementsAre(::testing::AllOf(
-              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
-                           kOptionalLabelValues),
-              GaugeResultEq(kInitialValue, std::chrono::nanoseconds(0)))))));
+  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
+                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
+                                         AttributesEq(kLabelKeys, kLabelValues,
+                                                      kOptionalLabelKeys,
+                                                      kOptionalLabelValues),
+                                         GaugeResultEq(kInitialValue))))));
   auto initial_timestamp = opentelemetry::nostd::get<
                                opentelemetry::sdk::metrics::LastValuePointData>(
                                data[kMetricName][0].point_data)
@@ -1438,8 +1470,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {
                   ::testing::ElementsAre(::testing::AllOf(
                       AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
                                    kOptionalLabelValues),
-                      GaugeResultEq(kFinalValue,
-                                    initial_timestamp.time_since_epoch()))))));
+                      GaugeResultEq(kFinalValue),
+                      GaugeResultLaterThan(initial_timestamp))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
@@ -1476,14 +1508,12 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  EXPECT_THAT(
-      data,
-      ::testing::ElementsAre(::testing::Pair(
-          kMetricName,
-          ::testing::ElementsAre(::testing::AllOf(
-              AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
-                           kOptionalLabelValues),
-              GaugeResultEq(kInitialValue, std::chrono::nanoseconds(0)))))));
+  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
+                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
+                                         AttributesEq(kLabelKeys, kLabelValues,
+                                                      kOptionalLabelKeys,
+                                                      kOptionalLabelValues),
+                                         GaugeResultEq(kInitialValue))))));
   auto initial_timestamp = opentelemetry::nostd::get<
                                opentelemetry::sdk::metrics::LastValuePointData>(
                                data[kMetricName][0].point_data)
@@ -1503,8 +1533,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
                   ::testing::ElementsAre(::testing::AllOf(
                       AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
                                    kOptionalLabelValues),
-                      GaugeResultEq(kFinalValue,
-                                    initial_timestamp.time_since_epoch()))))));
+                      GaugeResultEq(kFinalValue),
+                      GaugeResultLaterThan(initial_timestamp))))));
 }
 
 // Makes sure it doesn't crash when collecting metrics data (thus triggering the
@@ -1527,29 +1557,12 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
                      .set_metric_names({kMetricName})
                      .add_optional_label(kOptionalLabelKeys[0])
                      .add_optional_label(kOptionalLabelKeys[1])));
-  std::atomic_bool finished{false};
-  std::thread t([&, this]() {
-    int64_t prev_value = -1;
-    while (!finished) {
-      auto data = ReadCurrentMetricsData(
-          [&](const absl::flat_hash_map<
-              std::string,
-              std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                  data) { return !data.contains(kMetricName); });
-      ASSERT_EQ(data[kMetricName].size(), 1);
-      int64_t value = opentelemetry::nostd::get<int64_t>(
-          opentelemetry::nostd::get<
-              opentelemetry::sdk::metrics::LastValuePointData>(
-              data[kMetricName][0].point_data)
-              .value_);
-      EXPECT_GE(value, prev_value);
-      EXPECT_TRUE(opentelemetry::nostd::get<
-                      opentelemetry::sdk::metrics::LastValuePointData>(
-                      data[kMetricName][0].point_data)
-                      .is_lastvalue_valid_);
-      prev_value = value;
-    }
-  });
+  ThreadedMetricsCollector collector{
+      this, grpc_core::Duration::Zero(), -1,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); }};
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
@@ -1557,11 +1570,35 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
   for (int i = 0; i < kIterations; ++i) {
     stats_plugins.SetGauge(handle, i, kLabelValues, kOptionalLabelValues);
   }
-  finished = true;
-  t.join();
+  auto data = collector.Stop();
+  for (int i = 1; i < data[kMetricName].size(); ++i) {
+    EXPECT_THAT(data[kMetricName][i],
+                ::testing::AllOf(
+                    GaugeResultGe(opentelemetry::nostd::get<int64_t>(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kMetricName][i - 1].point_data)
+                            .value_)),
+                    GaugeResultLaterThan(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kMetricName][i - 1].point_data)
+                            .sample_ts_)));
+  }
+  // Verify labels.
+  EXPECT_THAT(data,
+              ::testing::UnorderedElementsAre(::testing::Pair(
+                  kMetricName, ::testing::Each(AttributesEq(
+                                   kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues)))));
 }
 
-TEST_F(OpenTelemetryPluginNPCMetricsTest, Callback) {
+using OpenTelemetryPluginCallbackMetricsTest = OpenTelemetryPluginEnd2EndTest;
+
+// The report duration is longer than the collect duration, so we expect to
+// collect duplicated (cached) values.
+TEST_F(OpenTelemetryPluginCallbackMetricsTest,
+       ReportDurationLongerThanCollectDuration) {
   constexpr absl::string_view kInt64CallbackGaugeMetric =
       "int64_callback_gauge";
   constexpr absl::string_view kDoubleCallbackGaugeMetric =
@@ -1602,43 +1639,162 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, Callback) {
                         kOptionalLabelValues);
       },
       {integer_gauge_handle, double_gauge_handle},
+      grpc_core::Duration::Milliseconds(100));
+  ThreadedMetricsCollector collector{
+      this, grpc_core::Duration::Milliseconds(10), 100,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(kInt64CallbackGaugeMetric) ||
+               !data.contains(kDoubleCallbackGaugeMetric);
+      }};
+  absl::flat_hash_map<
+      std::string,
+      std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
+      data = collector.Stop();
+  // Verify that data is incremental with duplications (cached values).
+  EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
+            data[kDoubleCallbackGaugeMetric].size());
+  for (int i = 1; i < data[kInt64CallbackGaugeMetric].size(); ++i) {
+    EXPECT_THAT(data[kInt64CallbackGaugeMetric][i],
+                ::testing::AllOf(
+                    GaugeResultGe(opentelemetry::nostd::get<int64_t>(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kInt64CallbackGaugeMetric][i - 1].point_data)
+                            .value_)),
+                    GaugeResultLaterThan(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kInt64CallbackGaugeMetric][i - 1].point_data)
+                            .sample_ts_)));
+    EXPECT_THAT(data[kDoubleCallbackGaugeMetric][i],
+                ::testing::AllOf(
+                    GaugeResultGe(opentelemetry::nostd::get<double>(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kDoubleCallbackGaugeMetric][i - 1].point_data)
+                            .value_)),
+                    GaugeResultLaterThan(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kDoubleCallbackGaugeMetric][i - 1].point_data)
+                            .sample_ts_)));
+  }
+  // Verify labels.
+  EXPECT_THAT(
+      data,
+      ::testing::UnorderedElementsAre(
+          ::testing::Pair(kInt64CallbackGaugeMetric,
+                          ::testing::Each(AttributesEq(kLabelKeys, kLabelValues,
+                                                       kOptionalLabelKeys,
+                                                       kOptionalLabelValues))),
+          ::testing::Pair(kDoubleCallbackGaugeMetric,
+                          ::testing::Each(AttributesEq(
+                              kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                              kOptionalLabelValues)))));
+}
+
+// The report duration is shorter than the collect duration, so for each collect
+// we should go update the cache and report the latest values.
+TEST_F(OpenTelemetryPluginCallbackMetricsTest,
+       ReportDurationShorterThanCollectDuration) {
+  constexpr absl::string_view kInt64CallbackGaugeMetric =
+      "yet_another_int64_callback_gauge";
+  constexpr absl::string_view kDoubleCallbackGaugeMetric =
+      "yet_another_double_callback_gauge";
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto integer_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+          kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
+          kLabelKeys, kOptionalLabelKeys,
+          /*enable_by_default=*/true);
+  auto double_gauge_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+          kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
+          kLabelKeys, kOptionalLabelKeys,
+          /*enable_by_default=*/true);
+  Init(std::move(Options()
+                     .set_metric_names({kInt64CallbackGaugeMetric,
+                                        kDoubleCallbackGaugeMetric})
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  int64_t int_value = 0;
+  double double_value = 0.5;
+  auto registered_metric_callback = stats_plugins.RegisterCallback(
+      [&](grpc_core::CallbackMetricReporter& reporter) {
+        reporter.Report(integer_gauge_handle, int_value++, kLabelValues,
+                        kOptionalLabelValues);
+        reporter.Report(double_gauge_handle, double_value++, kLabelValues,
+                        kOptionalLabelValues);
+      },
+      {integer_gauge_handle, double_gauge_handle},
       grpc_core::Duration::Milliseconds(10));
-  std::thread t([&, this]() {
-    constexpr int kIterations = 10;
-    int64_t expected_int_value = 0;
-    double expected_double_value = 0.5;
-    for (int i = 0; i < kIterations; ++i) {
-      // With 10ms collect interval, we should expect to get incremental result
-      // everytime we collect.
-      auto data = ReadCurrentMetricsData(
-          [&](const absl::flat_hash_map<
-              std::string,
-              std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
-                  data) {
-            return !data.contains(kInt64CallbackGaugeMetric) ||
-                   !data.contains(kDoubleCallbackGaugeMetric);
-          });
-      EXPECT_THAT(
-          data,
-          ::testing::UnorderedElementsAre(
-              ::testing::Pair(
-                  kInt64CallbackGaugeMetric,
-                  ::testing::ElementsAre(::testing::AllOf(
-                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
-                                   kOptionalLabelValues),
-                      GaugeResultEq(expected_int_value++,
-                                    std::chrono::nanoseconds(0))))),
-              ::testing::Pair(
-                  kDoubleCallbackGaugeMetric,
-                  ::testing::ElementsAre(::testing::AllOf(
-                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
-                                   kOptionalLabelValues),
-                      GaugeResultEq(expected_double_value++,
-                                    std::chrono::nanoseconds(0)))))));
-      absl::SleepFor(absl::Milliseconds(100));
-    }
-  });
-  t.join();
+  ThreadedMetricsCollector collector{
+      this, grpc_core::Duration::Milliseconds(100), 100,
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(kInt64CallbackGaugeMetric) ||
+               !data.contains(kDoubleCallbackGaugeMetric);
+      }};
+  absl::flat_hash_map<
+      std::string,
+      std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
+      data = collector.Stop();
+  // Verify that data is incremental without duplications (cached values).
+  EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
+            data[kDoubleCallbackGaugeMetric].size());
+  for (int i = 1; i < data[kInt64CallbackGaugeMetric].size(); ++i) {
+    EXPECT_THAT(data[kInt64CallbackGaugeMetric][i],
+                ::testing::AllOf(
+                    GaugeResultGt(opentelemetry::nostd::get<int64_t>(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kInt64CallbackGaugeMetric][i - 1].point_data)
+                            .value_)),
+                    GaugeResultLaterThan(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kInt64CallbackGaugeMetric][i - 1].point_data)
+                            .sample_ts_)));
+    EXPECT_THAT(data[kDoubleCallbackGaugeMetric][i],
+                ::testing::AllOf(
+                    GaugeResultGt(opentelemetry::nostd::get<double>(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kDoubleCallbackGaugeMetric][i - 1].point_data)
+                            .value_)),
+                    GaugeResultLaterThan(
+                        opentelemetry::nostd::get<
+                            opentelemetry::sdk::metrics::LastValuePointData>(
+                            data[kDoubleCallbackGaugeMetric][i - 1].point_data)
+                            .sample_ts_)));
+    // Verify labels.
+    EXPECT_THAT(
+        data,
+        ::testing::UnorderedElementsAre(
+            ::testing::Pair(kInt64CallbackGaugeMetric,
+                            ::testing::Each(AttributesEq(
+                                kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                kOptionalLabelValues))),
+            ::testing::Pair(kDoubleCallbackGaugeMetric,
+                            ::testing::Each(AttributesEq(
+                                kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                kOptionalLabelValues)))));
+  }
 }
 
 }  // namespace
