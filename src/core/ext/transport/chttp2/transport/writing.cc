@@ -176,7 +176,8 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
             grpc_event_engine::experimental::EventEngine::TaskHandle::
                 kInvalid) {
           t->delayed_ping_timer_handle = t->event_engine->RunAfter(
-              too_soon.wait, [t = t->Ref()]() mutable {
+              too_soon.wait,
+              [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()]() mutable {
                 grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
                 grpc_core::ExecCtx exec_ctx;
                 grpc_chttp2_retry_initiate_ping(std::move(t));
@@ -275,7 +276,8 @@ class WriteContext {
         // We base settings timeout on keepalive timeout, but double it to allow
         // for implementations taking some more time about acking a setting.
         t_->settings_ack_watchdog = t_->event_engine->RunAfter(
-            t_->settings_timeout, [t = t_->Ref()]() mutable {
+            t_->settings_timeout,
+            [t = t_->WeakRefAsSubclass<grpc_chttp2_transport>()]() mutable {
               grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
               grpc_core::ExecCtx exec_ctx;
               grpc_chttp2_settings_timeout(std::move(t));
@@ -710,7 +712,8 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
     // time.
     const auto timeout = t->ping_timeout;
     auto id = t->ping_callbacks.OnPingTimeout(
-        timeout, t->event_engine.get(), [t = t->Ref()] {
+        timeout, t->event_engine.get(),
+        [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()] {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_chttp2_ping_timeout(t);
@@ -733,8 +736,9 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
                 t->is_client ? "CLIENT" : "SERVER", t,
                 t->keepalive_timeout.ToString().c_str());
       }
-      t->keepalive_ping_timeout_handle =
-          t->event_engine->RunAfter(t->keepalive_timeout, [t = t->Ref()] {
+      t->keepalive_ping_timeout_handle = t->event_engine->RunAfter(
+          t->keepalive_timeout,
+          [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()] {
             grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
             grpc_core::ExecCtx exec_ctx;
             grpc_chttp2_keepalive_timeout(t);

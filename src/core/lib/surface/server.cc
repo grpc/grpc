@@ -235,7 +235,7 @@ struct Server::RequestedCall {
 
   template <typename NextMessage>
   void Complete(NextMessage payload, ClientMetadata& md) {
-    Timestamp deadline = GetContext<HasContext>()->deadline();
+    Timestamp deadline = GetContext<ServerCall>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
         GPR_ASSERT(!payload.has_value());
@@ -746,13 +746,13 @@ class Server::ChannelBroadcaster {
       SendShutdown(channel.get(), send_goaway, force_disconnect);
     }
     if (send_goaway) {
-      for (const RefCountedPtr<Connection>& channel : channels_.channels) {
-        channel->transport().SendGoaway("Server shutdown");
+      for (const OrphanablePtr<Transport>& connection : channels_.connections) {
+        connection->SendGoaway("Server shutdown");
       }
     }
     // just for safety against double broadcast
     channels_.ye_olde_channels.clear();
-    channels_.channels.clear();
+    channels_.connections.clear();
   }
 
  private:

@@ -60,8 +60,13 @@ class OrphanableDelete {
   }
 };
 
+template <typename T, typename Deleter = OrphanableDelete, typename = void>
+struct OrphanablePtrTraits {
+  using Type = std::unique_ptr<T, Deleter>;
+};
+
 template <typename T, typename Deleter = OrphanableDelete>
-using OrphanablePtr = std::unique_ptr<T, Deleter>;
+using OrphanablePtr = typename OrphanablePtrTraits<T, Deleter>::Type;
 
 template <typename T, typename... Args>
 inline OrphanablePtr<T> MakeOrphanable(Args&&... args) {

@@ -170,7 +170,7 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
  public:
   NewConnectedSubchannel(
       RefCountedPtr<CallFilters::Stack> filter_stack,
-      OrphanablePtr<Transport> transport, const ChannelArgs& args,
+      RefCountedPtr<Transport> transport, const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
       : ConnectedSubchannel(args, std::move(channelz_subchannel)),
         filter_stack_(std::move(filter_stack)),
@@ -835,7 +835,7 @@ bool Subchannel::PublishTransportLocked() {
     auto filter_stack = builder.Build();
     connected_subchannel_ = MakeRefCounted<NewConnectedSubchannel>(
         std::move(filter_stack),
-        OrphanablePtr<Transport>(
+        RefCountedPtr<Transport>(
             std::exchange(connecting_result_.transport, nullptr)),
         args_, channelz_node_);
   }

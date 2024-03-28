@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
@@ -224,12 +220,9 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport final
-    : public grpc_core::Transport,
-      public grpc_core::FilterStackTransport,
-      public grpc_core::RefCounted<grpc_chttp2_transport,
-                                   grpc_core::NonPolymorphicRefCount>,
-      public grpc_core::KeepsGrpcInitialized {
+struct grpc_chttp2_transport final : public grpc_core::Transport,
+                                     public grpc_core::FilterStackTransport,
+                                     public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport() override;
@@ -288,7 +281,7 @@ struct grpc_chttp2_transport final
    public:
     RemovedStreamHandle() = default;
     explicit RemovedStreamHandle(
-        grpc_core::RefCountedPtr<grpc_chttp2_transport> t)
+        grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t)
         : transport_(std::move(t)) {
       ++transport_->extra_streams;
     }
@@ -303,7 +296,7 @@ struct grpc_chttp2_transport final
     RemovedStreamHandle& operator=(RemovedStreamHandle&&) = default;
 
    private:
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> transport_;
   };
 
   grpc_closure write_action_begin_locked;
@@ -550,7 +543,7 @@ struct grpc_chttp2_stream {
   ~grpc_chttp2_stream();
 
   void* context = nullptr;
-  const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
+  const grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
 
   grpc_closure destroy_stream;
@@ -784,12 +777,12 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_core::DebugLocation whence = {});
 
 void grpc_chttp2_keepalive_timeout(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 void grpc_chttp2_ping_timeout(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 
 void grpc_chttp2_settings_timeout(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)
@@ -869,10 +862,10 @@ void grpc_chttp2_config_default_keepalive_args(
     const grpc_core::ChannelArgs& channel_args, bool is_client);
 
 void grpc_chttp2_retry_initiate_ping(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 
 void schedule_bdp_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 
 uint32_t grpc_chttp2_min_read_progress_size(grpc_chttp2_transport* t);
 

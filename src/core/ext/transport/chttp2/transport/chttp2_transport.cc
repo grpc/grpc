@@ -148,19 +148,23 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
 
 // forward declarations of various callbacks that we'll build closures around
 static void write_action_begin_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 static void write_action(grpc_chttp2_transport* t);
-static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
-                             grpc_error_handle error);
+static void write_action_end(
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 static void write_action_end_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 
-static void read_action(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
+static void read_action(grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
                         grpc_error_handle error);
-static void read_action_locked(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
-                               grpc_error_handle error);
+static void read_action_locked(
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 static void continue_read_action_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 
 static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                            grpc_error_handle error, bool tarpit);
@@ -174,9 +178,11 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    const char* reason);
 
 static void benign_reclaimer_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 static void destructive_reclaimer_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 
 static void post_benign_reclaimer(grpc_chttp2_transport* t);
 static void post_destructive_reclaimer(grpc_chttp2_transport* t);
@@ -186,36 +192,40 @@ static void close_transport_locked(grpc_chttp2_transport* t,
 static void end_all_the_calls(grpc_chttp2_transport* t,
                               grpc_error_handle error);
 
-static void start_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
+static void start_bdp_ping(grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
                            grpc_error_handle error);
-static void finish_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
+static void finish_bdp_ping(grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
                             grpc_error_handle error);
 static void start_bdp_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 static void finish_bdp_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport>,
+    grpc_error_handle error);
 static void next_bdp_ping_timer_expired(grpc_chttp2_transport* t);
 static void next_bdp_ping_timer_expired_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> tp,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> tp,
     GRPC_UNUSED grpc_error_handle error);
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error);
 static void send_ping_locked(grpc_chttp2_transport* t,
                              grpc_closure* on_initiate, grpc_closure* on_ack);
 static void retry_initiate_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error);
 
 // keepalive-relevant functions
 static void init_keepalive_ping(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t);
 static void init_keepalive_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error);
 static void finish_keepalive_ping(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error);
 static void finish_keepalive_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t, grpc_error_handle error);
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error);
 static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t);
 
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
@@ -266,13 +276,14 @@ namespace grpc_core {
 namespace {
 // Initialize a grpc_closure \a c to call \a Fn with \a t and \a error. Holds
 // the passed in reference to \a t until it's moved into Fn.
-template <void (*Fn)(RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle)>
-grpc_closure* InitTransportClosure(RefCountedPtr<grpc_chttp2_transport> t,
+template <void (*Fn)(WeakRefCountedPtr<grpc_chttp2_transport>,
+                     grpc_error_handle)>
+grpc_closure* InitTransportClosure(WeakRefCountedPtr<grpc_chttp2_transport> t,
                                    grpc_closure* c) {
   GRPC_CLOSURE_INIT(
       c,
       [](void* tp, grpc_error_handle error) {
-        Fn(RefCountedPtr<grpc_chttp2_transport>(
+        Fn(WeakRefCountedPtr<grpc_chttp2_transport>(
                static_cast<grpc_chttp2_transport*>(tp)),
            std::move(error));
       },
@@ -574,13 +585,14 @@ static void read_channel_args(grpc_chttp2_transport* t,
 }
 
 static void init_keepalive_pings_if_enabled_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   if (t->keepalive_time != grpc_core::Duration::Infinity()) {
     t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
-    t->keepalive_ping_timer_handle =
-        t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
+    t->keepalive_ping_timer_handle = t->event_engine->RunAfter(
+        t->keepalive_time,
+        [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()]() mutable {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           init_keepalive_ping(std::move(t));
@@ -595,12 +607,7 @@ static void init_keepalive_pings_if_enabled_locked(
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client)
-    : grpc_core::RefCounted<grpc_chttp2_transport,
-                            grpc_core::NonPolymorphicRefCount>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_refcount)
-              ? "chttp2_refcount"
-              : nullptr),
-      ep(ep),
+    : ep(ep),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
@@ -654,7 +661,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   grpc_core::ExecCtx exec_ctx;
   combiner->Run(
       grpc_core::InitTransportClosure<init_keepalive_pings_if_enabled_locked>(
-          Ref(), &init_keepalive_ping_locked),
+          WeakRefAsSubclass<grpc_chttp2_transport>(),
+          &init_keepalive_ping_locked),
       absl::OkStatus());
 
   if (flow_control.bdp_probe()) {
@@ -679,7 +687,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
-  grpc_core::RefCountedPtr<grpc_chttp2_transport> t(
+  grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t(
       static_cast<grpc_chttp2_transport*>(tp));
   t->destroying = 1;
   close_transport_locked(
@@ -792,7 +800,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
                                        grpc_core::Arena* arena)
-    : t(t->Ref()),
+    : t(t->WeakRefAsSubclass<grpc_chttp2_transport>()),
       refcount([refcount]() {
 // We reserve one 'active stream' that's dropped when the stream is
 //   read-closed. The others are for Chttp2IncomingByteStreams that are
@@ -959,7 +967,8 @@ void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
       // 'write_action' (which is scheduled by 'write_action_begin_locked')
       t->combiner->FinallyRun(
           grpc_core::InitTransportClosure<write_action_begin_locked>(
-              t->Ref(), &t->write_action_begin_locked),
+              t->WeakRefAsSubclass<grpc_chttp2_transport>(),
+              &t->write_action_begin_locked),
           absl::OkStatus());
       break;
     case GRPC_CHTTP2_WRITE_STATE_WRITING:
@@ -987,7 +996,7 @@ static const char* begin_writing_desc(bool partial) {
 }
 
 static void write_action_begin_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle /*error_ignored*/) {
   GPR_ASSERT(t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE);
   grpc_chttp2_begin_write_result r;
@@ -1050,12 +1059,14 @@ static void write_action(grpc_chttp2_transport* t) {
   t->write_size_policy.BeginWrite(t->outbuf.Length());
   grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
-                          t->Ref(), &t->write_action_end_locked),
+                          t->WeakRefAsSubclass<grpc_chttp2_transport>(),
+                          &t->write_action_end_locked),
                       cl, max_frame_size);
 }
 
-static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
-                             grpc_error_handle error) {
+static void write_action_end(
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error) {
   auto* tp = t.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
     gpr_log(GPR_INFO, "%s[%p]: Finish write",
@@ -1069,7 +1080,7 @@ static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 // Callback from the grpc_endpoint after bytes have been written by calling
 // sendmsg
 static void write_action_end_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   t->write_size_policy.EndWrite(error.ok());
 
@@ -1684,21 +1695,23 @@ static void send_ping_locked(grpc_chttp2_transport* t,
 // a ping in progress, the keepalive ping would piggyback onto that ping,
 // instead of waiting for that ping to complete and then starting a new ping.
 static void send_keepalive_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   if (!t->closed_with_error.ok()) {
     t->combiner->Run(
         grpc_core::InitTransportClosure<finish_keepalive_ping_locked>(
-            t->Ref(), &t->finish_keepalive_ping_locked),
+            t->WeakRefAsSubclass<grpc_chttp2_transport>(),
+            &t->finish_keepalive_ping_locked),
         t->closed_with_error);
     return;
   }
   t->ping_callbacks.OnPingAck(
       PingClosureWrapper(grpc_core::InitTransportClosure<finish_keepalive_ping>(
-          t->Ref(), &t->finish_keepalive_ping_locked)));
+          t->WeakRefAsSubclass<grpc_chttp2_transport>(),
+          &t->finish_keepalive_ping_locked)));
 }
 
 void grpc_chttp2_retry_initiate_ping(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   auto tp = t.get();
   tp->combiner->Run(grpc_core::InitTransportClosure<retry_initiate_ping_locked>(
                         std::move(t), &tp->retry_initiate_ping_locked),
@@ -1706,7 +1719,7 @@ void grpc_chttp2_retry_initiate_ping(
 }
 
 static void retry_initiate_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   GPR_ASSERT(t->delayed_ping_timer_handle != TaskHandle::kInvalid);
@@ -1727,7 +1740,7 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 }
 
 void grpc_chttp2_keepalive_timeout(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
       grpc_core::NewClosure([t](grpc_error_handle) {
         gpr_log(GPR_INFO, "%s: Keepalive timeout. Closing transport.",
@@ -1748,7 +1761,7 @@ void grpc_chttp2_keepalive_timeout(
 }
 
 void grpc_chttp2_ping_timeout(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
       grpc_core::NewClosure([t](grpc_error_handle) {
         gpr_log(GPR_INFO, "%s: Ping timeout. Closing transport.",
@@ -1769,7 +1782,7 @@ void grpc_chttp2_ping_timeout(
 }
 
 void grpc_chttp2_settings_timeout(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   t->combiner->Run(
       grpc_core::NewClosure([t](grpc_error_handle) {
         gpr_log(GPR_INFO, "%s: Settings timeout. Closing transport.",
@@ -1805,7 +1818,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
  private:
   using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-  explicit GracefulGoaway(grpc_chttp2_transport* t) : t_(t->Ref()) {
+  explicit GracefulGoaway(grpc_chttp2_transport* t)
+      : t_(t->WeakRefAsSubclass<grpc_chttp2_transport>()) {
     t->sent_goaway_state = GRPC_CHTTP2_GRACEFUL_GOAWAY;
     grpc_chttp2_goaway_append((1u << 31) - 1, 0, grpc_empty_slice(), &t->qbuf);
     t->keepalive_timeout =
@@ -1859,7 +1873,7 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     self->Unref();
   }
 
-  const grpc_core::RefCountedPtr<grpc_chttp2_transport> t_;
+  const grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t_;
   grpc_closure on_ping_ack_;
 };
 
@@ -1919,7 +1933,7 @@ void grpc_chttp2_reset_ping_clock(grpc_chttp2_transport* t) {
 static void perform_transport_op_locked(void* stream_op,
                                         grpc_error_handle /*error_ignored*/) {
   grpc_transport_op* op = static_cast<grpc_transport_op*>(stream_op);
-  grpc_core::RefCountedPtr<grpc_chttp2_transport> t(
+  grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t(
       static_cast<grpc_chttp2_transport*>(op->handler_private.extra_arg));
 
   if (!op->goaway_error.ok()) {
@@ -1969,7 +1983,7 @@ void grpc_chttp2_transport::PerformOp(grpc_transport_op* op) {
             grpc_transport_op_string(op).c_str());
   }
   op->handler_private.extra_arg = this;
-  Ref().release()->combiner->Run(
+  WeakRefAsSubclass<grpc_chttp2_transport>().release()->combiner->Run(
       GRPC_CLOSURE_INIT(&op->handler_private.closure,
                         perform_transport_op_locked, op, nullptr),
       absl::OkStatus());
@@ -2138,7 +2152,8 @@ static grpc_chttp2_transport::RemovedStreamHandle remove_stream(
   maybe_start_some_streams(t);
 
   if (t->is_client) return grpc_chttp2_transport::RemovedStreamHandle();
-  return grpc_chttp2_transport::RemovedStreamHandle(t->Ref());
+  return grpc_chttp2_transport::RemovedStreamHandle(
+      t->WeakRefAsSubclass<grpc_chttp2_transport>());
 }
 
 namespace grpc_core {
@@ -2157,7 +2172,8 @@ void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
   }
   const auto duration = TarpitDuration(t);
   t->event_engine->RunAfter(
-      duration, [t = t->Ref(), fn = std::move(fn)]() mutable {
+      duration, [t = t->WeakRefAsSubclass<grpc_chttp2_transport>(),
+                 fn = std::move(fn)]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         t->combiner->Run(
@@ -2631,7 +2647,7 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   return error;
 }
 
-static void read_action(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+static void read_action(grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
                         grpc_error_handle error) {
   auto* tp = t.get();
   tp->combiner->Run(grpc_core::InitTransportClosure<read_action_locked>(
@@ -2640,7 +2656,7 @@ static void read_action(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 }
 
 static void read_action_parse_loop_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   if (t->closed_with_error.ok()) {
     grpc_error_handle errors[3] = {error, absl::OkStatus(), absl::OkStatus()};
@@ -2725,7 +2741,7 @@ static void read_action_parse_loop_locked(
 }
 
 static void read_action_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   // got an incoming read, cancel any pending keepalive timers
   t->keepalive_incoming_data_wanted = false;
@@ -2750,7 +2766,7 @@ static void read_action_locked(
 }
 
 static void continue_read_action_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   const bool urgent = !t->goaway_error.ok();
   auto* tp = t.get();
   grpc_endpoint_read(tp->ep, &tp->read_buffer,
@@ -2762,19 +2778,21 @@ static void continue_read_action_locked(
 // t is reffed prior to calling the first time, and once the callback chain
 // that kicks off finishes, it's unreffed
 void schedule_bdp_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   auto* tp = t.get();
   tp->flow_control.bdp_estimator()->SchedulePing();
   send_ping_locked(tp,
                    grpc_core::InitTransportClosure<start_bdp_ping>(
-                       tp->Ref(), &tp->start_bdp_ping_locked),
+                       tp->WeakRefAsSubclass<grpc_chttp2_transport>(),
+                       &tp->start_bdp_ping_locked),
                    grpc_core::InitTransportClosure<finish_bdp_ping>(
                        std::move(t), &tp->finish_bdp_ping_locked));
   grpc_chttp2_initiate_write(tp, GRPC_CHTTP2_INITIATE_WRITE_BDP_PING);
 }
 
-static void start_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
-                           grpc_error_handle error) {
+static void start_bdp_ping(
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error) {
   grpc_chttp2_transport* tp = t.get();
   tp->combiner->Run(grpc_core::InitTransportClosure<start_bdp_ping_locked>(
                         std::move(t), &tp->start_bdp_ping_locked),
@@ -2782,7 +2800,7 @@ static void start_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 }
 
 static void start_bdp_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s",
@@ -2800,8 +2818,9 @@ static void start_bdp_ping_locked(
   t->bdp_ping_started = true;
 }
 
-static void finish_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
-                            grpc_error_handle error) {
+static void finish_bdp_ping(
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
+    grpc_error_handle error) {
   grpc_chttp2_transport* tp = t.get();
   tp->combiner->Run(grpc_core::InitTransportClosure<finish_bdp_ping_locked>(
                         std::move(t), &tp->finish_bdp_ping_locked),
@@ -2809,7 +2828,7 @@ static void finish_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 }
 
 static void finish_bdp_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s",
@@ -2842,12 +2861,13 @@ static void finish_bdp_ping_locked(
 static void next_bdp_ping_timer_expired(grpc_chttp2_transport* t) {
   t->combiner->Run(
       grpc_core::InitTransportClosure<next_bdp_ping_timer_expired_locked>(
-          t->Ref(), &t->next_bdp_ping_timer_expired_locked),
+          t->WeakRefAsSubclass<grpc_chttp2_transport>(),
+          &t->next_bdp_ping_timer_expired_locked),
       absl::OkStatus());
 }
 
 static void next_bdp_ping_timer_expired_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   t->next_bdp_ping_timer_handle = TaskHandle::kInvalid;
@@ -2907,7 +2927,7 @@ void grpc_chttp2_config_default_keepalive_args(
 }
 
 static void init_keepalive_ping(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t) {
   auto* tp = t.get();
   tp->combiner->Run(grpc_core::InitTransportClosure<init_keepalive_ping_locked>(
                         std::move(t), &tp->init_keepalive_ping_locked),
@@ -2915,7 +2935,7 @@ static void init_keepalive_ping(
 }
 
 static void init_keepalive_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     GRPC_UNUSED grpc_error_handle error) {
   GPR_DEBUG_ASSERT(error.ok());
   GPR_ASSERT(t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING);
@@ -2941,7 +2961,7 @@ static void init_keepalive_ping_locked(
 }
 
 static void finish_keepalive_ping(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   auto* tp = t.get();
   tp->combiner->Run(
@@ -2951,7 +2971,7 @@ static void finish_keepalive_ping(
 }
 
 static void finish_keepalive_ping_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error.ok()) {
@@ -2982,8 +3002,9 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
       gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
               std::string(t->peer_string.as_string_view()).c_str());
     }
-    t->keepalive_ping_timer_handle =
-        t->event_engine->RunAfter(t->keepalive_time, [t = t->Ref()]() mutable {
+    t->keepalive_ping_timer_handle = t->event_engine->RunAfter(
+        t->keepalive_time,
+        [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()]() mutable {
           grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
           grpc_core::ExecCtx exec_ctx;
           init_keepalive_ping(std::move(t));
@@ -3028,7 +3049,7 @@ static void post_benign_reclaimer(grpc_chttp2_transport* t) {
     t->benign_reclaimer_registered = true;
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [t = t->Ref()](
+        [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()](
             absl::optional<grpc_core::ReclamationSweep> sweep) mutable {
           if (sweep.has_value()) {
             auto* tp = t.get();
@@ -3047,7 +3068,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
     t->destructive_reclaimer_registered = true;
     t->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kDestructive,
-        [t = t->Ref()](
+        [t = t->WeakRefAsSubclass<grpc_chttp2_transport>()](
             absl::optional<grpc_core::ReclamationSweep> sweep) mutable {
           if (sweep.has_value()) {
             auto* tp = t.get();
@@ -3062,7 +3083,7 @@ static void post_destructive_reclaimer(grpc_chttp2_transport* t) {
 }
 
 static void benign_reclaimer_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
@@ -3090,7 +3111,7 @@ static void benign_reclaimer_locked(
 }
 
 static void destructive_reclaimer_locked(
-    grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
+    grpc_core::WeakRefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
   t->destructive_reclaimer_registered = false;
   if (error.ok() && !t->stream_map.empty()) {
@@ -3205,7 +3226,8 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
     grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close) {
-  auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
+  auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)
+               ->WeakRefAsSubclass<grpc_chttp2_transport>();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
     gpr_free(read_buffer);

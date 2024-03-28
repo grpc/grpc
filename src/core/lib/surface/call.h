@@ -100,6 +100,7 @@ class Call : public CppImplOf<Call, grpc_call> {
   virtual char* GetPeer() = 0;
 
   void ResetDeadline();
+  Timestamp deadline() { Crash("not implemented"); };
 
   virtual grpc_call_stats* call_stats() { Crash("not implemented"); }
   virtual Timestamp start_time() { Crash("not implemented"); }

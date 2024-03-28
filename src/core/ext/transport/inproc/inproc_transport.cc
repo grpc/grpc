@@ -34,9 +34,7 @@
 namespace grpc_core {
 
 namespace {
-class InprocServerTransport final : public RefCounted<InprocServerTransport>,
-                                    public Transport,
-                                    public ServerTransport {
+class InprocServerTransport final : public Transport, public ServerTransport {
  public:
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override {
@@ -51,7 +49,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
     }
   }
 
-  void Orphan() override { Unref(); }
+  void Orphan() override {}
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -136,7 +134,7 @@ class InprocClientTransport final : public Transport, public ClientTransport {
                }));
   }
 
-  void Orphan() override { delete this; }
+  void Orphan() override {}
 
   OrphanablePtr<Transport> GetServerTransport() {
     return OrphanablePtr<Transport>(server_transport_->Ref().release());

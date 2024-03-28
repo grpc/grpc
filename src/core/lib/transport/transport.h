@@ -560,7 +560,7 @@ class ServerTransport {
   ~ServerTransport() = default;
 };
 
-class Transport : public Orphanable {
+class Transport : public DualRefCounted<Transport> {
  public:
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }

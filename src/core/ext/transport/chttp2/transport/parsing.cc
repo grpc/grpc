@@ -530,7 +530,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
-      schedule_bdp_ping_locked(t->Ref());
+      schedule_bdp_ping_locked(t->WeakRefAsSubclass<grpc_chttp2_transport>());
     }
     bdp_est->AddIncomingBytes(t->incoming_frame_size);
   }
