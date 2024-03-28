@@ -53,6 +53,10 @@ class AuthMetadataProcessorAsyncWrapper final {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
+// TODO(hork): Remove this class once we either (a) allow AuthMetadataProcessor
+// to be used with any creds type as requested in #21589 or (b) find a way to
+// remove AuthMetadataProcessor in favor of some new server-side interception
+// API.
 class SecureServerCredentials final : public ServerCredentials {
  public:
   explicit SecureServerCredentials(grpc_server_credentials* creds);

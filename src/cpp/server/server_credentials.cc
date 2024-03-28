@@ -36,6 +36,4 @@ int ServerCredentials::AddPortToServer(const std::string& addr,
   return grpc_server_add_http2_port(server, addr.c_str(), c_creds_);
 }
 
-grpc_server_credentials* ServerCredentials::c_creds() const { return c_creds_; }
-
 }  // namespace grpc

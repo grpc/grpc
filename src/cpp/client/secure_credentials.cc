@@ -292,7 +292,7 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   // incremented.
   if (channel_creds->c_creds() != nullptr) {
     return WrapChannelCredentials(grpc_composite_channel_credentials_create(
-        channel_creds->c_creds(), call_creds->c_creds(), nullptr));
+        channel_creds->c_creds(), call_creds->c_creds_, nullptr));
   }
   return nullptr;
 }
@@ -301,7 +301,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2) {
   return MakeCallCredentials(grpc_composite_call_credentials_create(
-      creds1->c_creds(), creds2->c_creds(), nullptr));
+      creds1->c_creds_, creds2->c_creds_, nullptr));
 }
 
 namespace {

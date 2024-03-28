@@ -25,9 +25,16 @@
 #include <grpcpp/security/server_credentials.h>
 
 namespace grpc {
+namespace {
+class InsecureServerCredentialsImpl final : public ServerCredentials {
+ public:
+  InsecureServerCredentialsImpl()
+      : ServerCredentials(grpc_insecure_server_credentials_create()) {}
+};
+}  // namespace
 
 std::shared_ptr<ServerCredentials> InsecureServerCredentials() {
-  return std::shared_ptr<ServerCredentials>(new ServerCredentials(nullptr));
+  return std::make_shared<InsecureServerCredentialsImpl>();
 }
 
 }  // namespace grpc

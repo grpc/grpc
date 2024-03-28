@@ -117,6 +117,9 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   virtual grpc::string DebugString();
 
  protected:
+  explicit CallCredentials(grpc_call_credentials* creds);
+
+ private:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
@@ -126,10 +129,6 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   friend std::string grpc::testing::GetOauth2AccessToken();
   friend std::shared_ptr<CallCredentials> MakeCallCredentials(
       grpc_call_credentials* creds);
-
-  explicit CallCredentials(grpc_call_credentials* creds);
-
-  virtual grpc_call_credentials* c_creds();
 
   grpc_call_credentials* c_creds_ = nullptr;
 };

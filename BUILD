@@ -913,7 +913,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++",
     hdrs = [
-        "src/cpp/client/call_credentials.cc",
         "src/cpp/client/secure_credentials.h",
         "src/cpp/client/wrapped_credentials.h",
         "src/cpp/common/secure_auth_context.h",

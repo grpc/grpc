@@ -51,14 +51,6 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
   }
-
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    grpc_core::Crash("unreachable");
-  }
-
- private:
-  grpc_server_credentials* c_creds() const override { return nullptr; }
 };
 
 }  // namespace

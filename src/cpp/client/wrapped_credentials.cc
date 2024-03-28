@@ -24,8 +24,6 @@
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
-
 namespace grpc {
 
 class WrappedChannelCredentials final : public ChannelCredentials {

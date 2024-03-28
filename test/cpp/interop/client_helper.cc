@@ -68,7 +68,7 @@ std::string GetServiceAccountJsonKey() {
 
 std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
-  char* token = grpc_test_fetch_oauth2_token_with_credentials(creds->c_creds());
+  char* token = grpc_test_fetch_oauth2_token_with_credentials(creds->c_creds_);
   GPR_ASSERT(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
   std::string access_token(token + sizeof("Bearer ") - 1);

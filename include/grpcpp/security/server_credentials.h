@@ -78,14 +78,13 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
  protected:
   explicit ServerCredentials(grpc_server_credentials* creds);
 
-  virtual grpc_server_credentials* c_creds() const;
+  grpc_server_credentials* c_creds() const { return c_creds_; }
 
  private:
   // We need these friend declarations for access to c_creds().
   friend class Server;
   friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);
-  friend std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
   /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
   /// 192.168.1.1:31416, [::1]:27182, etc.)
@@ -94,7 +93,7 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   // TODO(dgq): the "port" part seems to be a misnomer.
   virtual int AddPortToServer(const std::string& addr, grpc_server* server);
 
-  grpc_server_credentials* c_creds_ = nullptr;
+  grpc_server_credentials* c_creds_;
 };
 
 /// Builds SSL ServerCredentials given SSL specific options

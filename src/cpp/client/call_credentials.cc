@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CPP_CLIENT_CREDENTIALS_CC
-#define GRPC_CPP_CLIENT_CREDENTIALS_CC
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_cat.h"
@@ -30,11 +28,8 @@ CallCredentials::CallCredentials(grpc_call_credentials* c_creds)
 
 CallCredentials::~CallCredentials() { grpc_call_credentials_release(c_creds_); }
 
-grpc_call_credentials* CallCredentials::c_creds() { return c_creds_; }
-
 grpc::string CallCredentials::DebugString() {
-  return absl::StrCat("CallCredentials{", std::string(c_creds_->debug_string()),
-                      "}");
+  return absl::StrCat("CallCredentials{", c_creds_->debug_string(), "}");
 }
 
 bool CallCredentials::ApplyToCall(grpc_call* call) {
@@ -42,5 +37,3 @@ bool CallCredentials::ApplyToCall(grpc_call* call) {
 }
 
 }  // namespace grpc
-
-#endif  // GRPC_CPP_CLIENT_CREDENTIALS_CC
