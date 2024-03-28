@@ -14,15 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
+load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
+load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_examples_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
-load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
-load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
 
 licenses(["notice"])
 

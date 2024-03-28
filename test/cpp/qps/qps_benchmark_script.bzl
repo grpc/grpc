@@ -26,8 +26,8 @@
 """Script to run qps benchmark."""
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
-load("//test/cpp/qps:qps_json_driver_scenarios.bzl", "QPS_JSON_DRIVER_SCENARIOS")
 load("//test/cpp/qps:json_run_localhost_scenarios.bzl", "JSON_RUN_LOCALHOST_SCENARIOS")
+load("//test/cpp/qps:qps_json_driver_scenarios.bzl", "QPS_JSON_DRIVER_SCENARIOS")
 
 def add_suffix(name):
     # NOTE(https://github.com/grpc/grpc/issues/24178): Add the suffix to the name
