@@ -261,7 +261,8 @@ TEST_P(XdsFallbackTest, PerAuthorityFallback) {
   ExpectBackendCall(authority2_stub.get(), 1, DEBUG_LOCATION);
   // Primary balancer is up, its data will be used now.
   balancer_->ads_service()->ClearADSFailure();
-  auto deadline = absl::Now() + absl::Seconds(5);
+  auto deadline =
+      absl::Now() + (absl::Seconds(5) * grpc_test_slowdown_factor());
   while (absl::Now() < deadline &&
          (backends_[2]->backend_service()->request_count() == 0 ||
           backends_[3]->backend_service()->request_count() == 0)) {
@@ -270,20 +271,13 @@ TEST_P(XdsFallbackTest, PerAuthorityFallback) {
     EchoResponse response;
     RpcOptions().SetupRpc(&context, &request);
     Status status = authority1_stub->Echo(&context, request, &response);
-    if (!status.ok()) {
-      gpr_log(GPR_ERROR, "RPC failed, may be caused by a config tear: %s",
-              status.error_message().c_str());
-    }
+    EXPECT_TRUE(status.ok()) << status.error_message();
     ClientContext context2;
     EchoRequest request2;
     EchoResponse response2;
     RpcOptions().SetupRpc(&context2, &request2);
-    // RPCs may briefly fail if the config tear happens
     status = authority2_stub->Echo(&context2, request2, &response2);
-    if (!status.ok()) {
-      gpr_log(GPR_ERROR, "RPC failed, may be caused by a config tear: %s",
-              status.error_message().c_str());
-    }
+    EXPECT_TRUE(status.ok()) << status.error_message();
   }
   ASSERT_LE(1U, backends_[2]->backend_service()->request_count());
   ASSERT_LE(1U, backends_[3]->backend_service()->request_count());
