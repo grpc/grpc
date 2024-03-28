@@ -305,10 +305,10 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   // here. This is OK because the underlying C objects (i.e., channel_creds and
   // call_creds) into grpc_composite_credentials_create will see their refcounts
   // incremented.
-  if (channel_creds->c_creds() != nullptr) {
+  if (channel_creds->c_creds_ != nullptr) {
     return std::make_shared<WrappedChannelCredentials>(
         grpc_composite_channel_credentials_create(
-            channel_creds->c_creds(), call_creds->c_creds_, nullptr));
+            channel_creds->c_creds_, call_creds->c_creds_, nullptr));
   }
   return nullptr;
 }

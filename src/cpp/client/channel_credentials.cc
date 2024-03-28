@@ -40,7 +40,7 @@ std::shared_ptr<Channel> ChannelCredentials::CreateChannelWithInterceptors(
   args.SetChannelArgs(&channel_args);
   return grpc::CreateChannelInternal(
       args.GetSslTargetNameOverride(),
-      grpc_channel_create(target.c_str(), c_creds(), &channel_args),
+      grpc_channel_create(target.c_str(), c_creds_, &channel_args),
       std::move(interceptor_creators));
 }
 

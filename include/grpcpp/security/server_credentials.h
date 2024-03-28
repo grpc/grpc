@@ -81,7 +81,7 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   grpc_server_credentials* c_creds() const { return c_creds_; }
 
  private:
-  // We need these friend declarations for access to c_creds().
+  // We need these friend declarations for access to c_creds.
   friend class Server;
   friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
       const std::shared_ptr<ServerCredentials>& fallback_credentials);

@@ -28,9 +28,9 @@ namespace grpc {
 std::shared_ptr<ServerCredentials> XdsServerCredentials(
     const std::shared_ptr<ServerCredentials>& fallback_credentials) {
   GPR_ASSERT(fallback_credentials != nullptr);
-  GPR_ASSERT(fallback_credentials->c_creds() != nullptr);
+  GPR_ASSERT(fallback_credentials->c_creds_ != nullptr);
   return std::shared_ptr<ServerCredentials>(new ServerCredentials(
-      grpc_xds_server_credentials_create(fallback_credentials->c_creds())));
+      grpc_xds_server_credentials_create(fallback_credentials->c_creds_)));
 }
 
 namespace experimental {
