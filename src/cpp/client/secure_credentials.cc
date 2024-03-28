@@ -61,11 +61,21 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
       grpc_google_default_credentials_create(nullptr));
 }
 
+namespace {
+class WrappedCallCredentials : public CallCredentials {
+ public:
+  explicit WrappedCallCredentials(grpc_call_credentials* creds)
+      : CallCredentials(creds) {}
+};
+
+}  // namespace
+
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return MakeCallCredentials(grpc_external_account_credentials_create(
-      json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_external_account_credentials_create(
+          json_string.c_str(), absl::StrJoin(scopes, ",").c_str()));
 }
 
 // Builds SSL Credentials given SSL specific options
@@ -200,7 +210,8 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options) {
   auto opts = StsCredentialsCppToCoreOptions(options);
-  return MakeCallCredentials(grpc_sts_credentials_create(&opts, nullptr));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_sts_credentials_create(&opts, nullptr));
 }
 
 // Builds ALTS Credentials given ALTS specific options
@@ -237,7 +248,7 @@ std::shared_ptr<ChannelCredentials> TlsCredentials(
 // Builds credentials for use when running in GCE
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return MakeCallCredentials(
+  return std::make_shared<WrappedCallCredentials>(
       grpc_google_compute_engine_credentials_create(nullptr));
 }
 
@@ -248,27 +259,29 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   if (token_lifetime_seconds <= 0) {
     gpr_log(GPR_ERROR,
             "Trying to create JWTCredentials with non-positive lifetime");
-    return MakeCallCredentials(nullptr);
+    return std::make_shared<WrappedCallCredentials>(nullptr);
   }
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
-  return MakeCallCredentials(grpc_service_account_jwt_access_credentials_create(
-      json_key.c_str(), lifetime, nullptr));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_service_account_jwt_access_credentials_create(json_key.c_str(),
+                                                         lifetime, nullptr));
 }
 
 // Builds refresh token credentials.
 std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
     const std::string& json_refresh_token) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return MakeCallCredentials(grpc_google_refresh_token_credentials_create(
-      json_refresh_token.c_str(), nullptr));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_google_refresh_token_credentials_create(json_refresh_token.c_str(),
+                                                   nullptr));
 }
 
 // Builds access token credentials.
 std::shared_ptr<CallCredentials> AccessTokenCredentials(
     const std::string& access_token) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return MakeCallCredentials(
+  return std::make_shared<WrappedCallCredentials>(
       grpc_access_token_credentials_create(access_token.c_str(), nullptr));
 }
 
@@ -277,8 +290,9 @@ std::shared_ptr<CallCredentials> GoogleIAMCredentials(
     const std::string& authorization_token,
     const std::string& authority_selector) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return MakeCallCredentials(grpc_google_iam_credentials_create(
-      authorization_token.c_str(), authority_selector.c_str(), nullptr));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_google_iam_credentials_create(authorization_token.c_str(),
+                                         authority_selector.c_str(), nullptr));
 }
 
 // Combines one channel credentials and one call credentials into a channel
@@ -300,8 +314,9 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
 std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds1,
     const std::shared_ptr<CallCredentials>& creds2) {
-  return MakeCallCredentials(grpc_composite_call_credentials_create(
-      creds1->c_creds_, creds2->c_creds_, nullptr));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_composite_call_credentials_create(creds1->c_creds_, creds2->c_creds_,
+                                             nullptr));
 }
 
 namespace {
@@ -442,8 +457,9 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       MetadataCredentialsPluginWrapper::GetMetadata,
       MetadataCredentialsPluginWrapper::DebugString,
       MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
-  return MakeCallCredentials(grpc_metadata_credentials_create_from_plugin(
-      c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
+  return std::make_shared<WrappedCallCredentials>(
+      grpc_metadata_credentials_create_from_plugin(
+          c_plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr));
 }
 
 }  // namespace grpc

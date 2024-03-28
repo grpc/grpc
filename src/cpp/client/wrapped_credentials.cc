@@ -73,10 +73,4 @@ std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
   return std::make_shared<WrappedChannelCredentials>(creds);
 }
 
-std::shared_ptr<CallCredentials> MakeCallCredentials(
-    grpc_call_credentials* creds) {
-  if (creds == nullptr) return nullptr;
-  return std::shared_ptr<CallCredentials>(new CallCredentials(creds));
-}
-
 }  // namespace grpc
