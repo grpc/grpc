@@ -24,7 +24,14 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/un.h>
+#endif  // GPR_WINDOWS
 
 #include "absl/strings/str_cat.h"
 
@@ -39,7 +46,11 @@
 #include "src/core/lib/transport/error_utils.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
+#ifdef GPR_WINDOWS
+  grpc_core::Crash("AF_UNIX socket pairs are not supported on Windows");
+#else
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+#endif
 }
 
 absl::StatusOr<std::vector<grpc_resolved_address>>
@@ -86,10 +97,12 @@ void grpc_unlink_if_unix_domain_socket(
     return;
   }
 
+#ifndef GPR_WINDOWS
   struct stat st;
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
     unlink(un->sun_path);
   }
+#endif
 }
 
 #endif

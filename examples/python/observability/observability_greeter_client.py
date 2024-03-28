@@ -16,7 +16,6 @@
 from collections import defaultdict
 import logging
 import time
-from typing import Optional
 
 import grpc
 import grpc_observability
@@ -29,14 +28,6 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 OTEL_EXPORT_INTERVAL_S = 0.5
 
 
-class BaseOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
-    def __init__(self, provider: MeterProvider):
-        self.provider = provider
-
-    def get_meter_provider(self) -> Optional[MeterProvider]:
-        return self.provider
-
-
 def run():
     all_metrics = defaultdict(list)
     otel_exporter = open_telemetry_exporter.OTelMetricExporter(all_metrics)
@@ -45,18 +36,20 @@ def run():
         export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
     )
     provider = MeterProvider(metric_readers=[reader])
-    otel_plugin = BaseOpenTelemetryPlugin(provider)
 
-    with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
-        with grpc.insecure_channel(target="localhost:50051") as channel:
-            stub = helloworld_pb2_grpc.GreeterStub(channel)
-            try:
-                response = stub.SayHello(
-                    helloworld_pb2.HelloRequest(name="You")
-                )
-                print(f"Greeter client received: {response.message}")
-            except grpc.RpcError as rpc_error:
-                print("Call failed with code: ", rpc_error.code())
+    otel_plugin = grpc_observability.OpenTelemetryPlugin(
+        meter_provider=provider
+    )
+    otel_plugin.register_global()
+
+    with grpc.insecure_channel(target="localhost:50051") as channel:
+        stub = helloworld_pb2_grpc.GreeterStub(channel)
+        try:
+            response = stub.SayHello(helloworld_pb2.HelloRequest(name="You"))
+            print(f"Greeter client received: {response.message}")
+        except grpc.RpcError as rpc_error:
+            print("Call failed with code: ", rpc_error.code())
+    otel_plugin.deregister_global()
 
     # Sleep to make sure all metrics are exported.
     time.sleep(5)

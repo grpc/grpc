@@ -145,6 +145,8 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   grpc_error_handle error;
   async_connect* ac = NULL;
   absl::StatusOr<std::string> addr_uri;
+  int addr_family;
+  int protocol;
 
   addr_uri = grpc_sockaddr_to_uri(addr);
   if (!addr_uri.ok()) {
@@ -159,14 +161,25 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     addr = &addr6_v4mapped;
   }
 
-  sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+  // extract family
+  addr_family =
+      (grpc_sockaddr_get_family(addr) == AF_UNIX) ? AF_UNIX : AF_INET6;
+  protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+
+  sock = WSASocket(addr_family, SOCK_STREAM, protocol, NULL, 0,
                    grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
   }
 
-  error = grpc_tcp_prepare_socket(sock);
+  if (addr_family == AF_UNIX) {
+    // tcp settings for af_unix are skipped.
+    error = grpc_tcp_set_non_block(sock);
+  } else {
+    error = grpc_tcp_prepare_socket(sock);
+  }
+
   if (!error.ok()) {
     goto failure;
   }
@@ -183,7 +196,15 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
     goto failure;
   }
 
-  grpc_sockaddr_make_wildcard6(0, &local_address);
+  if (addr_family == AF_UNIX) {
+    // For ConnectEx() to work for AF_UNIX, the sock needs to be bound to
+    // the local address of an unnamed socket.
+    local_address = {};
+    ((grpc_sockaddr*)local_address.addr)->sa_family = AF_UNIX;
+    local_address.len = sizeof(grpc_sockaddr);
+  } else {
+    grpc_sockaddr_make_wildcard6(0, &local_address);
+  }
 
   status =
       bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);
@@ -196,7 +217,6 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   info = &socket->write_info;
   success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL,
                       0, NULL, &info->overlapped);
-
   // It wouldn't be unusual to get a success immediately. But we'll still get
   // an IOCP notification, so let's ignore it.
   if (!success) {
@@ -206,7 +226,6 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
       goto failure;
     }
   }
-
   ac = new async_connect();
   ac->on_done = on_done;
   ac->socket = socket;

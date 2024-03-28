@@ -17,7 +17,6 @@ from collections import defaultdict
 from concurrent import futures
 import logging
 import time
-from typing import Optional
 
 import grpc
 import grpc_observability
@@ -29,14 +28,6 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
 _OTEL_EXPORT_INTERVAL_S = 0.5
 _SERVER_PORT = "50051"
-
-
-class BaseOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
-    def __init__(self, provider: MeterProvider):
-        self.provider = provider
-
-    def get_meter_provider(self) -> Optional[MeterProvider]:
-        return self.provider
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
@@ -55,24 +46,28 @@ def serve():
         export_interval_millis=_OTEL_EXPORT_INTERVAL_S * 1000,
     )
     provider = MeterProvider(metric_readers=[reader])
-    otel_plugin = BaseOpenTelemetryPlugin(provider)
 
-    with grpc_observability.OpenTelemetryObservability(plugins=[otel_plugin]):
-        server = grpc.server(
-            thread_pool=futures.ThreadPoolExecutor(max_workers=10),
-        )
-        helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
-        server.add_insecure_port("[::]:" + _SERVER_PORT)
-        server.start()
-        print("Server started, listening on " + _SERVER_PORT)
+    otel_plugin = grpc_observability.OpenTelemetryPlugin(
+        meter_provider=provider
+    )
+    otel_plugin.register_global()
 
-        # Sleep to make sure client made RPC call and all metrics are exported.
-        time.sleep(10)
-        print("Metrics exported on Server side:")
-        for metric in all_metrics:
-            print(metric)
+    server = grpc.server(
+        thread_pool=futures.ThreadPoolExecutor(max_workers=10),
+    )
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+    server.add_insecure_port("[::]:" + _SERVER_PORT)
+    server.start()
+    print("Server started, listening on " + _SERVER_PORT)
 
-        server.stop(0)
+    # Sleep to make sure client made RPC call and all metrics are exported.
+    time.sleep(10)
+    print("Metrics exported on Server side:")
+    for metric in all_metrics:
+        print(metric)
+
+    server.stop(0)
+    otel_plugin.deregister_global()
 
 
 if __name__ == "__main__":

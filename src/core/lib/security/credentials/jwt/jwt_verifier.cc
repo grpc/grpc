@@ -43,6 +43,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
@@ -66,7 +67,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
-#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -111,14 +111,12 @@ static const EVP_MD* evp_md_from_alg(const char* alg) {
 }
 
 static Json parse_json_part_from_jwt(const char* str, size_t len) {
-  grpc_slice slice = grpc_base64_decode_with_len(str, len, 1);
-  if (GRPC_SLICE_IS_EMPTY(slice)) {
+  std::string string;
+  if (!absl::WebSafeBase64Unescape(absl::string_view(str, len), &string)) {
     gpr_log(GPR_ERROR, "Invalid base64.");
     return Json();  // JSON null
   }
-  absl::string_view string = grpc_core::StringViewFromSlice(slice);
   auto json = grpc_core::JsonParse(string);
-  grpc_core::CSliceUnref(slice);
   if (!json.ok()) {
     gpr_log(GPR_ERROR, "JSON parse error: %s",
             json.status().ToString().c_str());
@@ -480,19 +478,14 @@ end:
 }
 
 static BIGNUM* bignum_from_base64(const char* b64) {
-  BIGNUM* result = nullptr;
-  grpc_slice bin;
-
   if (b64 == nullptr) return nullptr;
-  bin = grpc_base64_decode(b64, 1);
-  if (GRPC_SLICE_IS_EMPTY(bin)) {
+  std::string string;
+  if (!absl::WebSafeBase64Unescape(b64, &string)) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return nullptr;
   }
-  result = BN_bin2bn(GRPC_SLICE_START_PTR(bin),
-                     TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
-  grpc_core::CSliceUnref(bin);
-  return result;
+  return BN_bin2bn(reinterpret_cast<const uint8_t*>(string.data()),
+                   TSI_SIZE_AS_SIZE(string.size()), nullptr);
 }
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -931,6 +924,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   size_t signed_jwt_len;
   const char* cur = jwt;
   Json json;
+  std::string signature_str;
 
   GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
              cb != nullptr);
@@ -951,8 +945,9 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
 
   signed_jwt_len = static_cast<size_t>(dot - jwt);
   cur = dot + 1;
-  signature = grpc_base64_decode(cur, 1);
-  if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
+
+  if (!absl::WebSafeBase64Unescape(cur, &signature_str)) goto error;
+  signature = grpc_slice_from_cpp_string(std::move(signature_str));
   retrieve_key_and_verify(
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
                              signature, jwt, signed_jwt_len, user_data, cb));

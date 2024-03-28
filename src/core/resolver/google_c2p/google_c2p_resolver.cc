@@ -173,7 +173,11 @@ void GoogleCloud2ProdResolver::StartLocked() {
           absl::StatusOr<std::string> result) mutable {
         resolver->work_serializer_->Run(
             [resolver, result = std::move(result)]() {
-              resolver->IPv6QueryDone(result.ok());
+              // Check that the payload is non-empty in order to work around
+              // the fact that there are buggy implementations of metadata
+              // servers in the wild, which can in some cases return 200
+              // plus an empty result when they should have returned 404.
+              resolver->IPv6QueryDone(result.ok() && !result->empty());
             },
             DEBUG_LOCATION);
       },

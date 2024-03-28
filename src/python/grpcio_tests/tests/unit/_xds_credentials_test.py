@@ -71,9 +71,10 @@ class XdsCredentialsTest(unittest.TestCase):
                 server_address, channel_creds, options=override_options
             ) as channel:
                 request = b"abc"
-                response = channel.unary_unary("/test/method")(
-                    request, wait_for_ready=True
-                )
+                response = channel.unary_unary(
+                    "/test/method",
+                    _registered_method=True,
+                )(request, wait_for_ready=True)
                 self.assertEqual(response, request)
 
     def test_xds_creds_fallback_insecure(self):
@@ -89,9 +90,10 @@ class XdsCredentialsTest(unittest.TestCase):
             channel_creds = grpc.xds_channel_credentials(channel_fallback_creds)
             with grpc.secure_channel(server_address, channel_creds) as channel:
                 request = b"abc"
-                response = channel.unary_unary("/test/method")(
-                    request, wait_for_ready=True
-                )
+                response = channel.unary_unary(
+                    "/test/method",
+                    _registered_method=True,
+                )(request, wait_for_ready=True)
                 self.assertEqual(response, request)
 
     def test_start_xds_server(self):

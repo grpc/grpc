@@ -39,6 +39,7 @@ _ELEM_KEYS = [
     "build",
     "run",
     "language",
+    "plugin_option",
     "public_headers",
     "headers",
     "src",

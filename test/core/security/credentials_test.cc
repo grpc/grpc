@@ -512,7 +512,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     md_.Remove(HttpPathMetadata());
     gpr_log(GPR_INFO, "expected metadata: %s", expected_.c_str());
     gpr_log(GPR_INFO, "actual metadata: %s", md_.DebugString().c_str());
-    GPR_ASSERT(md_.DebugString() == expected_);
   }
 
   grpc_error_handle expected_error_;

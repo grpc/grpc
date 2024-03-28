@@ -27,6 +27,7 @@ def grpc_transport_test(name, deps):
         deps = [
             ":test_main",
         ] + deps,
+        uses_polling = False,
     )
 
     grpc_proto_fuzzer(

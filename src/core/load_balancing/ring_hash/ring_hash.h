@@ -26,7 +26,7 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 

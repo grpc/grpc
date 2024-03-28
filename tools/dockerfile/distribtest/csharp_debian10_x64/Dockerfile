@@ -36,3 +36,5 @@ RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert
 ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
 # we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1
+# we have a separate distribtest for net7.0
+ENV SKIP_NET70_DISTRIBTEST=1

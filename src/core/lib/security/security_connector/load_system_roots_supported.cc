@@ -37,8 +37,8 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
 
@@ -63,14 +63,10 @@ const char* kCertDirectories[] = {""};
 #endif                      // GPR_APPLE
 
 grpc_slice GetSystemRootCerts() {
-  grpc_slice valid_bundle_slice = grpc_empty_slice();
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    grpc_error_handle error =
-        grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
-    if (error.ok()) {
-      return valid_bundle_slice;
-    }
+    auto slice = LoadFile(kCertFiles[i], /*add_null_terminator=*/true);
+    if (slice.ok()) return slice->TakeCSlice();
   }
   return grpc_empty_slice();
 }

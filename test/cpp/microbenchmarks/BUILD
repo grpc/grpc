@@ -324,6 +324,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_fullstack_unary_ping_pong_chaotic_good",
+    size = "large",
+    srcs = [
+        "bm_fullstack_unary_ping_pong_chaotic_good.cc",
+    ],
+    args = grpc_benchmark_args(),
+    tags = [
+        "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "no_windows",
+    ],
+    deps = [
+        ":fullstack_unary_ping_pong_h",
+        "//:grpcpp_chaotic_good",
+    ],
+)
+
+grpc_cc_test(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
     args = grpc_benchmark_args(),

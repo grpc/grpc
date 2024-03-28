@@ -95,6 +95,7 @@ def _update_visibility(visibility):
         "alt_grpc++_base_unsecure_legacy": PRIVATE,
         "alts_frame_protector": PRIVATE,
         "channelz": PRIVATE,
+        "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
         "debug_location": PRIVATE,
@@ -203,7 +204,6 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
-            "api/include",
             "include",
             "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
             "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.

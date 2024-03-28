@@ -100,8 +100,6 @@ ENV['EMBED_OPENSSL'] = (RUBY_ENGINE != 'truffleruby').to_s
 # Don't embed on TruffleRuby (the system zlib is already linked for the zlib C extension, slow build times)
 ENV['EMBED_ZLIB'] = (RUBY_ENGINE != 'truffleruby').to_s
 
-ENV['EMBED_CARES'] = 'true'
-
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 if apple_toolchain && !cross_compiling
   if RUBY_PLATFORM =~ /arm64/
@@ -192,7 +190,6 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy' if linux
 # Do not statically link standard libraries on TruffleRuby as this does not work when compiling to bitcode
 if linux && RUBY_ENGINE != 'truffleruby'
   $LDFLAGS << ' -static-libgcc -static-libstdc++'

@@ -1,0 +1,64 @@
+%YAML 1.2
+--- |
+    // swift-tools-version:5.5
+    // The swift-tools-version declares the minimum version of Swift required to build this package.
+    import PackageDescription
+    import Foundation
+
+    let basePath = "third_party/boringssl-with-bazel"
+    let privacyInfoPath = "../../src/objective-c/PrivacyInfo.xcprivacy"
+    let testPath = "test/boringssl_spm_build"
+    
+
+
+    let package = Package(
+      name: "BoringSSL-GRPC",
+      products: [
+        .library(
+          name: "openssl_grpc",
+          targets: ["openssl_grpc"]
+        )
+      ],
+    
+      targets: [
+        .target(
+          name: "openssl_grpc",
+          path: basePath,
+          exclude: [
+          ],
+        <%
+          def remove_prefix(s, prefix):
+            return s[len(prefix):] if s.startswith(prefix) else s
+          files = []
+          lib_maps = {lib.name: lib for lib in libs}
+          for dep in swift_boringssl_package.get('deps', []):
+            lib = lib_maps[dep]
+            files.extend(lib.src)
+          files = sorted(set({remove_prefix(file, "third_party/boringssl-with-bazel/"): file for file in files}))
+        %>
+          sources: [
+            % for file in files:
+            "${file}",
+            % endfor
+          ],
+          resources: [
+            .copy(privacyInfoPath),
+          ],
+          publicHeadersPath: "src/include",
+
+          cSettings: [
+            .define("OPENSSL_NO_ASM", to: "1"),
+            .headerSearchPath("./"),
+            .headerSearchPath("include/"),
+          ]
+        ),
+        .testTarget(
+          name: "build-test",
+          dependencies: [
+            "openssl_grpc",
+          ],
+          path: testPath
+        ),
+      ],
+      cxxLanguageStandard: .cxx14
+    )

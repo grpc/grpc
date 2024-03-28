@@ -64,6 +64,7 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
@@ -307,19 +308,13 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
+absl::StatusOr<OrphanablePtr<Channel>> CreateChannel(const char* target,
                                                      const ChannelArgs& args) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return absl::InvalidArgumentError("channel target is NULL");
   }
-  // Add channel arg containing the server URI.
-  std::string canonical_target =
-      CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
-          target);
-  return Channel::Create(target,
-                         args.Set(GRPC_ARG_SERVER_URI, canonical_target),
-                         GRPC_CLIENT_CHANNEL, nullptr);
+  return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);
 }
 
 }  // namespace
@@ -410,7 +405,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
   grpc_core::Transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
-  auto channel = grpc_core::Channel::Create(
+  auto channel = grpc_core::ChannelCreate(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   if (channel.ok()) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);

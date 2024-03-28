@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -34,8 +36,8 @@ namespace grpc_core {
 
 /// Creates a security handshaker using \a handshaker.
 RefCountedPtr<Handshaker> SecurityHandshakerCreate(
-    tsi_handshaker* handshaker, grpc_security_connector* connector,
-    const ChannelArgs& args);
+    absl::StatusOr<tsi_handshaker*> handshaker,
+    grpc_security_connector* connector, const ChannelArgs& args);
 
 /// Registers security handshaker factories.
 void SecurityRegisterHandshakerFactories(CoreConfiguration::Builder*);
