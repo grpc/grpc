@@ -1346,16 +1346,15 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   }
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  GPR_ASSERT(transport->server_transport() == nullptr);
-  GPR_ASSERT(transport->filter_stack_transport() != nullptr);
-  op->set_accept_stream = true;
-  op->set_accept_stream_fn = AcceptStream;
-  if (IsRegisteredMethodLookupInTransportEnabled()) {
+  if (transport->filter_stack_transport() != nullptr) {
+    op->set_accept_stream = true;
+    op->set_accept_stream_fn = AcceptStream;
     op->set_registered_method_matcher_fn = [](void* arg,
                                               ClientMetadata* metadata) {
       static_cast<ChannelData*>(arg)->server_->SetRegisteredMethodOnMetadata(
           *metadata);
     };
+    op->set_accept_stream_user_data = this;
   }
   op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
@@ -1682,15 +1681,8 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
-    RegisteredMethod* rm;
-    if (IsRegisteredMethodLookupInTransportEnabled()) {
-      rm = static_cast<RegisteredMethod*>(
-          recv_initial_metadata_->get(GrpcRegisteredMethod())
-              .value_or(nullptr));
-    } else {
-      rm = server_->GetRegisteredMethod(host_->as_string_view(),
-                                        path_->as_string_view());
-    }
+    RegisteredMethod* rm = static_cast<RegisteredMethod*>(
+        recv_initial_metadata_->get(GrpcRegisteredMethod()).value_or(nullptr));
     if (rm != nullptr) {
       matcher_ = rm->matcher.get();
       payload_handling = rm->payload_handling;
