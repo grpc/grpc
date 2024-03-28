@@ -29,8 +29,6 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/cpp/client/secure_credentials.h"
-#include "src/cpp/client/wrapped_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
@@ -39,6 +37,7 @@
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "test/cpp/util/credentials.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 
@@ -247,8 +246,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
         grpc_core::LocalIpAndPort(admin_server_thread_->port());
     admin_channel_ = grpc::CreateChannel(
         admin_server_address,
-        std::make_shared<WrappedChannelCredentials>(
-            grpc_fake_transport_security_credentials_create()));
+        std::make_shared<FakeTransportSecurityChannelCredentials>());
     csds_stub_ =
         envoy::service::status::v3::ClientStatusDiscoveryService::NewStub(
             admin_channel_);

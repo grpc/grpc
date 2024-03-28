@@ -51,7 +51,6 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/util/json_util.h"
-#include "src/cpp/client/wrapped_credentials.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -69,6 +68,12 @@ std::shared_ptr<WrappedCallCredentials> WrapCallCredentials(
   return creds == nullptr ? nullptr
                           : std::make_shared<WrappedCallCredentials>(creds);
 }
+
+class WrappedChannelCredentials final : public ChannelCredentials {
+ public:
+  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds)
+      : ChannelCredentials(c_creds) {}
+};
 
 std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {

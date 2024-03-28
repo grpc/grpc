@@ -914,7 +914,6 @@ grpc_cc_library(
     name = "grpc++",
     hdrs = [
         "src/cpp/client/secure_credentials.h",
-        "src/cpp/client/wrapped_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
@@ -1177,7 +1176,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
-        "src/cpp/client/wrapped_credentials.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -1224,9 +1222,6 @@ grpc_cc_library(
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server_credentials.cc",
-    ],
-    hdrs = [
-        "src/cpp/client/wrapped_credentials.h",
     ],
     external_deps = [
         "absl/strings",
@@ -2395,7 +2390,6 @@ grpc_cc_library(
     ],
     hdrs = GRPCXX_HDRS + [
         "src/cpp/client/secure_credentials.h",
-        "src/cpp/client/wrapped_credentials.h",
         "src/cpp/common/secure_auth_context.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
