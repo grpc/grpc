@@ -44,8 +44,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/load_balancing/child_policy_handler.h"
-#include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -66,7 +64,9 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
@@ -144,7 +144,21 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       }
     }
 
-    void Orphan() override {
+    void Eject();
+
+    void Uneject();
+
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
+
+    void CancelDataWatcher(DataWatcherInterface* watcher) override;
+
+    RefCountedPtr<EndpointState> endpoint_state() const {
+      if (subchannel_state_ == nullptr) return nullptr;
+      return subchannel_state_->endpoint_state();
+    }
+
+   protected:
+    void Orphaned() override {
       if (!IsWorkSerializerDispatchEnabled()) {
         if (subchannel_state_ != nullptr) {
           subchannel_state_->RemoveSubchannel(this);
@@ -158,19 +172,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
             }
           },
           DEBUG_LOCATION);
-    }
-
-    void Eject();
-
-    void Uneject();
-
-    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override;
-
-    void CancelDataWatcher(DataWatcherInterface* watcher) override;
-
-    RefCountedPtr<EndpointState> endpoint_state() const {
-      if (subchannel_state_ == nullptr) return nullptr;
-      return subchannel_state_->endpoint_state();
     }
 
    private:

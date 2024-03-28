@@ -215,8 +215,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
       const ChannelArgs& args, grpc_endpoint* tcp) override;
 
-  void Orphan() override;
-
   // Invoked by ListenerWatcher to start fetching referenced RDS resources.
   void StartRdsWatch(RefCountedPtr<ListenerWatcher> listener_watcher)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ListenerWatcher::mu_);
@@ -229,6 +227,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   default_filter_chain() const {
     return default_filter_chain_;
   }
+
+ protected:
+  void Orphaned() override;
 
  private:
   class RouteConfigWatcher;
@@ -415,9 +416,10 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         static_resource_.value(), http_filters_);
   }
 
-  void Orphan() override {}
-
   void CancelWatch() override { watcher_.reset(); }
+
+ protected:
+  void Orphaned() override {}
 
  private:
   RefCountedPtr<GrpcXdsClient> xds_client_;
@@ -449,12 +451,13 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     xds_client_.reset(DEBUG_LOCATION, "DynamicXdsServerConfigSelectorProvider");
   }
 
-  void Orphan() override;
-
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override;
   void CancelWatch() override;
+
+ protected:
+  void Orphaned() override;
 
  private:
   class RouteConfigWatcher;
@@ -783,7 +786,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    Orphan() {
+    Orphaned() {
   MutexLock lock(&mu_);
   // Cancel the RDS watches to clear up the weak refs
   for (const auto& entry : rds_map_) {
@@ -1281,7 +1284,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider::Orphan() {
+    DynamicXdsServerConfigSelectorProvider::Orphaned() {
   XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), resource_name_,
                                           route_config_watcher_,
                                           false /* delay_unsubscription */);

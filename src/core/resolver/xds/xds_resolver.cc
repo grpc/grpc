@@ -79,20 +79,20 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/resolver.h"
-#include "src/core/resolver/resolver_factory.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/resolver/xds/xds_resolver_trace.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 namespace grpc_core {
 
@@ -173,7 +173,7 @@ class XdsResolver : public Resolver {
           cluster_subscription_(std::move(cluster_subscription)),
           cluster_key_(cluster_key) {}
 
-    void Orphan() override {
+    void Orphaned() override {
       XdsResolver* resolver_ptr = resolver_.get();
       resolver_ptr->work_serializer_->Run(
           [resolver = std::move(resolver_)]() {

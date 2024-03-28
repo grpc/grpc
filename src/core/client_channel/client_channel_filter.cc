@@ -684,7 +684,7 @@ class ClientChannelFilter::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  void Orphan() override {
+  void Orphaned() override {
     if (!IsWorkSerializerDispatchEnabled()) return;
     // Make sure we clean up the channel's subchannel maps inside the
     // WorkSerializer.

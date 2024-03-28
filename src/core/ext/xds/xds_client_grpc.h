@@ -66,8 +66,6 @@ class GrpcXdsClient : public XdsClient {
                 const ChannelArgs& args,
                 OrphanablePtr<XdsTransportFactory> transport_factory);
 
-  void Orphan() override;
-
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_client";
@@ -86,6 +84,9 @@ class GrpcXdsClient : public XdsClient {
 
   // Builds ClientStatusResponse containing all resources from all XdsClients
   static grpc_slice DumpAllClientConfigs();
+
+ protected:
+  void Orphaned() override;
 
  private:
   class MetricsReporter;

@@ -39,19 +39,19 @@ namespace grpc_core {
 //
 // Each class of refs can be incremented and decremented independently.
 // Objects start with 1 strong ref and 0 weak refs at instantiation.
-// When the strong refcount reaches 0, the object's Orphan() method is called.
+// When the strong refcount reaches 0, the object's Orphaned() method is called.
 // When the weak refcount reaches 0, the object is destroyed.
 //
 // This will be used by CRTP (curiously-recurring template pattern), e.g.:
 //   class MyClass : public RefCounted<MyClass> { ... };
 template <typename Child>
-class DualRefCounted : public Orphanable {
+class DualRefCounted {
  public:
   // Not copyable nor movable.
   DualRefCounted(const DualRefCounted&) = delete;
   DualRefCounted& operator=(const DualRefCounted&) = delete;
 
-  ~DualRefCounted() override = default;
+  virtual ~DualRefCounted() = default;
 
   GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref() {
     IncrementRefCount();
@@ -93,7 +93,7 @@ class DualRefCounted : public Orphanable {
     GPR_ASSERT(strong_refs > 0);
 #endif
     if (GPR_UNLIKELY(strong_refs == 1)) {
-      Orphan();
+      Orphaned();
     }
     // Now drop the weak ref.
     WeakUnref();
@@ -116,7 +116,7 @@ class DualRefCounted : public Orphanable {
     (void)reason;
 #endif
     if (GPR_UNLIKELY(strong_refs == 1)) {
-      Orphan();
+      Orphaned();
     }
     // Now drop the weak ref.
     WeakUnref(location, reason);
@@ -256,6 +256,10 @@ class DualRefCounted : public Orphanable {
 #endif
         refs_(MakeRefPair(initial_refcount, 0)) {
   }
+
+ protected:
+  // Ref count has dropped to zero, so the object is now orphaned.
+  virtual void Orphaned() = 0;
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().

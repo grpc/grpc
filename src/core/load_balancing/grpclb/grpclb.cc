@@ -140,8 +140,8 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
-#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -317,7 +317,11 @@ class GrpcLb : public LoadBalancingPolicy {
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    void Orphan() override {
+    const std::string& lb_token() const { return lb_token_; }
+    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
+
+   protected:
+    void Orphaned() override {
       if (!IsWorkSerializerDispatchEnabled()) {
         if (!lb_policy_->shutting_down_) {
           lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
@@ -333,9 +337,6 @@ class GrpcLb : public LoadBalancingPolicy {
           },
           DEBUG_LOCATION);
     }
-
-    const std::string& lb_token() const { return lb_token_; }
-    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
 
    private:
     RefCountedPtr<GrpcLb> lb_policy_;
@@ -1627,10 +1628,9 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   if (lb_channel_ == nullptr) {
     std::string uri_str =
         absl::StrCat("fake:///", channel_control_helper()->GetAuthority());
-    lb_channel_.reset(
-        Channel::FromC(
-            grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
-                                lb_channel_args.ToC().get())));
+    lb_channel_.reset(Channel::FromC(
+        grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
+                            lb_channel_args.ToC().get())));
     GPR_ASSERT(lb_channel_ != nullptr);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();

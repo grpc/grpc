@@ -59,8 +59,6 @@ class HealthProducer : public Subchannel::DataProducerInterface {
 
   void Start(RefCountedPtr<Subchannel> subchannel);
 
-  void Orphan() override;
-
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("health_check");
     return kFactory.Create();
@@ -73,6 +71,9 @@ class HealthProducer : public Subchannel::DataProducerInterface {
   void RemoveWatcher(
       HealthWatcher* watcher,
       const absl::optional<std::string>& health_check_service_name);
+
+ protected:
+  void Orphaned() override;
 
  private:
   class ConnectivityWatcher;

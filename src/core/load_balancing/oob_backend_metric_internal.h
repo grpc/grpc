@@ -28,8 +28,6 @@
 
 #include <grpc/impl/connectivity_state.h>
 
-#include "src/core/load_balancing/backend_metric_data.h"
-#include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
@@ -38,6 +36,8 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
 
 namespace grpc_core {
 
@@ -50,8 +50,6 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
  public:
   void Start(RefCountedPtr<Subchannel> subchannel);
 
-  void Orphan() override;
-
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("orca");
     return kFactory.Create();
@@ -62,6 +60,9 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   // Adds and removes watchers.
   void AddWatcher(OrcaWatcher* watcher);
   void RemoveWatcher(OrcaWatcher* watcher);
+
+ protected:
+  void Orphaned() override;
 
  private:
   class ConnectivityWatcher;

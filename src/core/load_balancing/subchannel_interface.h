@@ -63,8 +63,6 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
   ~SubchannelInterface() override = default;
 
-  void Orphan() override {}
-
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
@@ -100,6 +98,9 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
   // Cancels a data watch.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
+
+ protected:
+  void Orphaned() override {}
 };
 
 // A class that delegates to another subchannel, to be used in cases

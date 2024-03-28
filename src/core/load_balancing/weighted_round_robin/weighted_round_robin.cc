@@ -67,12 +67,12 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/endpoint_list.h"
-#include "src/core/load_balancing/oob_backend_metric.h"
-#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
-#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
@@ -85,13 +85,12 @@ constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
-const auto kMetricRrFallback =
-    GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.lb.wrr.rr_fallback",
-        "EXPERIMENTAL.  Number of scheduler updates in which there were not "
-        "enough endpoints with valid weight, which caused the WRR policy to "
-        "fall back to RR behavior.",
-        "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+const auto kMetricRrFallback = GlobalInstrumentsRegistry::RegisterUInt64Counter(
+    "grpc.lb.wrr.rr_fallback",
+    "EXPERIMENTAL.  Number of scheduler updates in which there were not "
+    "enough endpoints with valid weight, which caused the WRR policy to "
+    "fall back to RR behavior.",
+    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -319,7 +318,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
     PickResult Pick(PickArgs args) override;
 
-    void Orphan() override;
+   protected:
+    void Orphaned() override;
 
    private:
     // A call tracker that collects per-call endpoint utilization reports.
@@ -556,7 +556,7 @@ WeightedRoundRobin::Picker::~Picker() {
   }
 }
 
-void WeightedRoundRobin::Picker::Orphan() {
+void WeightedRoundRobin::Picker::Orphaned() {
   MutexLock lock(&timer_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
@@ -616,16 +616,16 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         now, config_->weight_expiration_period(), config_->blackout_period(),
         &num_not_yet_usable, &num_stale);
     weights.push_back(weight);
-    stats_plugins.RecordHistogram(
-        kMetricEndpointWeights, weight,
-        {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+    stats_plugins.RecordHistogram(kMetricEndpointWeights, weight,
+                                  {wrr_->channel_control_helper()->GetTarget()},
+                                  {wrr_->locality_name_});
   }
   stats_plugins.AddCounter(
       kMetricEndpointWeightNotYetUsable, num_not_yet_usable,
       {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
-  stats_plugins.AddCounter(
-      kMetricEndpointWeightStale, num_stale,
-      {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+  stats_plugins.AddCounter(kMetricEndpointWeightStale, num_stale,
+                           {wrr_->channel_control_helper()->GetTarget()},
+                           {wrr_->locality_name_});
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
             absl::StrJoin(weights, " ").c_str());
@@ -645,9 +645,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
               wrr_.get(), this);
     }
-    stats_plugins.AddCounter(
-        kMetricRrFallback, 1, {wrr_->channel_control_helper()->GetTarget()},
-        {wrr_->locality_name_});
+    stats_plugins.AddCounter(kMetricRrFallback, 1,
+                             {wrr_->channel_control_helper()->GetTarget()},
+                             {wrr_->locality_name_});
   }
   {
     MutexLock lock(&scheduler_mu_);
