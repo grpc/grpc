@@ -44,6 +44,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/status",
@@ -75,6 +76,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metrics",
         "//src/core:slice",

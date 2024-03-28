@@ -29,6 +29,7 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/nostd/unique_ptr.h"
+#include "opentelemetry/nostd/variant.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/ext/otel_plugin.h>
@@ -38,6 +39,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
@@ -383,13 +385,36 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                                     descriptor.value_type));
             }
             break;
-          // TODO(yashkt, yijiem): implement gauges.
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge:
             switch (descriptor.value_type) {
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+              case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
+                auto observable_state =
+                    std::make_unique<ObservableState<int64_t>>();
+                observable_state->id = descriptor.index;
+                observable_state->parent = this;
+                observable_state->instrument =
+                    meter->CreateInt64ObservableGauge(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
+                instruments_data_[descriptor.index].instrument =
+                    std::move(observable_state);
                 break;
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+              }
+              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
+                auto observable_state =
+                    std::make_unique<ObservableState<double>>();
+                observable_state->id = descriptor.index;
+                observable_state->parent = this;
+                observable_state->instrument =
+                    meter->CreateDoubleObservableGauge(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
+                instruments_data_[descriptor.index].instrument =
+                    std::move(observable_state);
                 break;
+              }
               default:
                 grpc_core::Crash(
                     absl::StrFormat("Unknown or unsupported value type: %d",
@@ -399,10 +424,34 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
               kCallbackGauge:
             switch (descriptor.value_type) {
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64:
+              case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
+                auto observable_state =
+                    std::make_unique<ObservableState<int64_t>>();
+                observable_state->id = descriptor.index;
+                observable_state->parent = this;
+                observable_state->instrument =
+                    meter->CreateInt64ObservableGauge(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
+                instruments_data_[descriptor.index].instrument =
+                    std::move(observable_state);
                 break;
-              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble:
+              }
+              case grpc_core::GlobalInstrumentsRegistry::ValueType::kDouble: {
+                auto observable_state =
+                    std::make_unique<ObservableState<double>>();
+                observable_state->id = descriptor.index;
+                observable_state->parent = this;
+                observable_state->instrument =
+                    meter->CreateDoubleObservableGauge(
+                        std::string(descriptor.name),
+                        std::string(descriptor.description),
+                        std::string(descriptor.unit));
+                instruments_data_[descriptor.index].instrument =
+                    std::move(observable_state);
                 break;
+              }
               default:
                 grpc_core::Crash(
                     absl::StrFormat("Unknown or unsupported value type: %d",
@@ -420,6 +469,48 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
           }
         }
       });
+}
+
+void OpenTelemetryPlugin::CallbackMetricReporter::Report(
+    grpc_core::GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
+    int64_t value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) {
+  const auto& instrument_data = parent_->instruments_data_.at(handle.index);
+  GPR_ASSERT(absl::holds_alternative<std::unique_ptr<ObservableState<int64_t>>>(
+      instrument_data.instrument));
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+  GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
+  GPR_ASSERT(descriptor.optional_label_keys.size() == optional_values.size());
+  auto& observable_state = absl::get<std::unique_ptr<ObservableState<int64_t>>>(
+      instrument_data.instrument);
+  grpc_core::MutexLock l{&observable_state->mu};
+  observable_state->value = value;
+  observable_state->label_values =
+      std::vector<absl::string_view>(label_values.begin(), label_values.end());
+  observable_state->optional_label_values = std::vector<absl::string_view>(
+      optional_values.begin(), optional_values.end());
+}
+void OpenTelemetryPlugin::CallbackMetricReporter::Report(
+    grpc_core::GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle
+        handle,
+    double value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) {
+  const auto& instrument_data = parent_->instruments_data_.at(handle.index);
+  GPR_ASSERT(absl::holds_alternative<std::unique_ptr<ObservableState<double>>>(
+      instrument_data.instrument));
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+  GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
+  GPR_ASSERT(descriptor.optional_label_keys.size() == optional_values.size());
+  auto& observable_state = absl::get<std::unique_ptr<ObservableState<double>>>(
+      instrument_data.instrument);
+  grpc_core::MutexLock l{&observable_state->mu};
+  observable_state->value = value;
+  observable_state->label_values =
+      std::vector<absl::string_view>(label_values.begin(), label_values.end());
+  observable_state->optional_label_values = std::vector<absl::string_view>(
+      optional_values.begin(), optional_values.end());
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
@@ -535,6 +626,209 @@ void OpenTelemetryPlugin::RecordHistogram(
                                           optional_values,
                                           instrument_data.optional_labels_bits),
                opentelemetry::context::Context{});
+}
+void OpenTelemetryPlugin::SetGauge(
+    grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
+    int64_t value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) {
+  const auto& instrument_data = instruments_data_.at(handle.index);
+  if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+    // This instrument is disabled.
+    return;
+  }
+  GPR_ASSERT(absl::holds_alternative<std::unique_ptr<ObservableState<int64_t>>>(
+      instrument_data.instrument));
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+  GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
+  GPR_ASSERT(descriptor.optional_label_keys.size() == optional_values.size());
+  auto& observable_state = absl::get<std::unique_ptr<ObservableState<int64_t>>>(
+      instrument_data.instrument);
+  {
+    grpc_core::MutexLock l{&observable_state->mu};
+    observable_state->value = value;
+    observable_state->label_values = std::vector<absl::string_view>(
+        label_values.begin(), label_values.end());
+    observable_state->optional_label_values = std::vector<absl::string_view>(
+        optional_values.begin(), optional_values.end());
+  }
+  if (!std::exchange(observable_state->callback_registered, true)) {
+    observable_state->instrument->AddCallback(&ObservableCallback<int64_t>,
+                                              observable_state.get());
+  }
+}
+void OpenTelemetryPlugin::SetGauge(
+    grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
+    double value, absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_values) {
+  const auto& instrument_data = instruments_data_.at(handle.index);
+  if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+    // This instrument is disabled.
+    return;
+  }
+  GPR_ASSERT(absl::holds_alternative<std::unique_ptr<ObservableState<double>>>(
+      instrument_data.instrument));
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+  GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
+  GPR_ASSERT(descriptor.optional_label_keys.size() == optional_values.size());
+  auto& observable_state = absl::get<std::unique_ptr<ObservableState<double>>>(
+      instrument_data.instrument);
+  {
+    grpc_core::MutexLock l{&observable_state->mu};
+    observable_state->value = value;
+    observable_state->label_values = std::vector<absl::string_view>(
+        label_values.begin(), label_values.end());
+    observable_state->optional_label_values = std::vector<absl::string_view>(
+        optional_values.begin(), optional_values.end());
+  }
+  if (!std::exchange(observable_state->callback_registered, true)) {
+    observable_state->instrument->AddCallback(&ObservableCallback<double>,
+                                              observable_state.get());
+  }
+}
+
+void OpenTelemetryPlugin::AddCallback(
+    grpc_core::RegisteredMetricCallback* callback) {
+  {
+    grpc_core::MutexLock l{&mu_};
+    callback_states_.emplace(callback, RegisteredMetricCallbackState{});
+  }
+  for (const auto& handle : callback->metrics()) {
+    grpc_core::Match(
+        handle,
+        [&, this](const grpc_core::GlobalInstrumentsRegistry::
+                      GlobalCallbackInt64GaugeHandle& handle) {
+          const auto& instrument_data = instruments_data_.at(handle.index);
+          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+            // This instrument is disabled.
+            return;
+          }
+          GPR_ASSERT(absl::holds_alternative<
+                     std::unique_ptr<ObservableState<int64_t>>>(
+              instrument_data.instrument));
+          auto& observable_state =
+              absl::get<std::unique_ptr<ObservableState<int64_t>>>(
+                  instrument_data.instrument);
+          GPR_ASSERT(
+              !std::exchange(observable_state->callback_registered, true));
+          observable_state->registered_metric_callback = callback;
+          observable_state->instrument->AddCallback(
+              &ObservableCallback<int64_t>, observable_state.get());
+        },
+        [&, this](const grpc_core::GlobalInstrumentsRegistry::
+                      GlobalCallbackDoubleGaugeHandle& handle) {
+          const auto& instrument_data = instruments_data_.at(handle.index);
+          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+            // This instrument is disabled.
+            return;
+          }
+          GPR_ASSERT(
+              absl::holds_alternative<std::unique_ptr<ObservableState<double>>>(
+                  instrument_data.instrument));
+          auto& observable_state =
+              absl::get<std::unique_ptr<ObservableState<double>>>(
+                  instrument_data.instrument);
+          GPR_ASSERT(
+              !std::exchange(observable_state->callback_registered, true));
+          observable_state->registered_metric_callback = callback;
+          observable_state->instrument->AddCallback(&ObservableCallback<double>,
+                                                    observable_state.get());
+        });
+  }
+}
+void OpenTelemetryPlugin::RemoveCallback(
+    grpc_core::RegisteredMetricCallback* callback) {
+  for (const auto& handle : callback->metrics()) {
+    grpc_core::Match(
+        handle,
+        [&, this](const grpc_core::GlobalInstrumentsRegistry::
+                      GlobalCallbackInt64GaugeHandle& handle) {
+          const auto& instrument_data = instruments_data_.at(handle.index);
+          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+            // This instrument is disabled.
+            return;
+          }
+          GPR_ASSERT(absl::holds_alternative<
+                     std::unique_ptr<ObservableState<int64_t>>>(
+              instrument_data.instrument));
+          auto& observable_state =
+              absl::get<std::unique_ptr<ObservableState<int64_t>>>(
+                  instrument_data.instrument);
+          GPR_ASSERT(observable_state->callback_registered);
+          GPR_ASSERT(observable_state->registered_metric_callback == callback);
+          observable_state->instrument->RemoveCallback(
+              &ObservableCallback<int64_t>, observable_state.get());
+        },
+        [&, this](const grpc_core::GlobalInstrumentsRegistry::
+                      GlobalCallbackDoubleGaugeHandle& handle) {
+          const auto& instrument_data = instruments_data_.at(handle.index);
+          if (absl::holds_alternative<Disabled>(instrument_data.instrument)) {
+            // This instrument is disabled.
+            return;
+          }
+          GPR_ASSERT(
+              absl::holds_alternative<std::unique_ptr<ObservableState<double>>>(
+                  instrument_data.instrument));
+          auto& observable_state =
+              absl::get<std::unique_ptr<ObservableState<double>>>(
+                  instrument_data.instrument);
+          GPR_ASSERT(observable_state->callback_registered);
+          GPR_ASSERT(observable_state->registered_metric_callback == callback);
+          observable_state->instrument->RemoveCallback(
+              &ObservableCallback<double>, observable_state.get());
+        });
+  }
+  {
+    grpc_core::MutexLock l{&mu_};
+    callback_states_.erase(callback);
+  }
+}
+
+template <typename ValueType>
+void OpenTelemetryPlugin::ObservableState<ValueType>::Observe(
+    opentelemetry::metrics::ObserverResult& result) {
+  const auto& descriptor =
+      grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor({id});
+  grpc_core::MutexLock l{&mu};
+  GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
+  GPR_ASSERT(descriptor.optional_label_keys.size() ==
+             optional_label_values.size());
+  auto& instrument_data = parent->instruments_data_.at(id);
+  opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
+      opentelemetry::metrics::ObserverResultT<ValueType>>>(result)
+      ->Observe(value,
+                NPCMetricsKeyValueIterable(
+                    descriptor.label_keys, label_values,
+                    descriptor.optional_label_keys, optional_label_values,
+                    instrument_data.optional_labels_bits));
+}
+
+template <typename T>
+void OpenTelemetryPlugin::ObservableCallback(
+    opentelemetry::metrics::ObserverResult result, void* arg) {
+  auto* observable_state = static_cast<ObservableState<T>*>(arg);
+  if (observable_state->registered_metric_callback == nullptr) {
+    // No batching.
+    observable_state->Observe(result);
+    return;
+  }
+  grpc_core::MutexLock l{&observable_state->parent->mu_};
+  auto iter = observable_state->parent->callback_states_.find(
+      observable_state->registered_metric_callback);
+  GPR_ASSERT(iter != observable_state->parent->callback_states_.end());
+  auto now = grpc_core::Timestamp::Now();
+  if (now - iter->second.last_update_time <
+      observable_state->registered_metric_callback->min_interval()) {
+    // Use cached value.
+    observable_state->Observe(result);
+    return;
+  }
+  // Otherwise update and use the cache.
+  iter->second.last_update_time = now;
+  CallbackMetricReporter reporter{observable_state->parent};
+  observable_state->registered_metric_callback->Run(reporter);
+  observable_state->Observe(result);
 }
 
 grpc_core::ClientCallTracer* OpenTelemetryPlugin::GetClientCallTracer(

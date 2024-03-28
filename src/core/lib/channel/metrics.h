@@ -86,9 +86,10 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
   struct GlobalInt64GaugeHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackInt64GaugeHandle : public GlobalCallbackHandle {};
-  struct GlobalCallbackDoubleGaugeHandle : public GlobalCallbackHandle {};
+  struct GlobalCallbackInt64GaugeHandle : public GlobalInstrumentHandle {};
+  struct GlobalCallbackDoubleGaugeHandle : public GlobalInstrumentHandle {};
+  using GlobalCallbackHandle = absl::variant<GlobalCallbackInt64GaugeHandle,
+                                             GlobalCallbackDoubleGaugeHandle>;
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -335,7 +336,8 @@ class GlobalStatsPluginRegistry {
     // the lifetime of the callback; when the returned object is
     // destroyed, the callback is de-registered.  The returned object
     // must not outlive the StatsPluginGroup object that created it.
-    std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
+    GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
+    RegisterCallback(
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
