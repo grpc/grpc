@@ -3804,12 +3804,12 @@ TEST_F(XdsClientTest, AdsReadWaitsForHandleRelease) {
   EXPECT_TRUE(stream->Orphaned());
 }
 
-TEST_F(XdsClientTest, Fallback) {
-  FakeXdsBootstrap::FakeXdsServer default_server(kDefaultXdsServerUrl);
+TEST_F(XdsClientTest, FallbackAndRecover) {
+  FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
   FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
   // Regular operation
   InitXdsClient(FakeXdsBootstrap::Builder()
-                    .AddServer(default_server)
+                    .AddServer(primary_server)
                     .AddServer(fallback_server));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
@@ -3839,7 +3839,7 @@ TEST_F(XdsClientTest, Fallback) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
-  TriggerConnectionFailure(default_server,
+  TriggerConnectionFailure(primary_server,
                            absl::UnavailableError("Server down"));
   // Uses cached data
   auto watcher_cached = StartFooWatch("foo1");
@@ -3916,14 +3916,52 @@ TEST_F(XdsClientTest, Fallback) {
                /*version_info=*/"15", /*response_nonce=*/"B",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
+  // Primary responding again, fallback is ignored
+  TriggerConnectionFailure(primary_server, absl::OkStatus());
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("15")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource("foo1", 35))
+          .Serialize());
+  stream->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("15")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource("foo2", 25))
+          .Serialize());
+  stream2->SendMessageToClient(
+      ResponseBuilder(XdsFooResourceType::Get()->type_url())
+          .set_version_info("15")
+          .set_nonce("B")
+          .AddFooResource(XdsFooResource("foo1", 50))
+          .Serialize());
+  resource = watcher->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo1");
+  EXPECT_EQ(resource->value, 35);
+  resource = watcher2->WaitForNextResource();
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->name, "foo2");
+  EXPECT_EQ(resource->value, 25);
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"15", /*response_nonce=*/"B",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // There is a race condition when sometimes there's a request sent before the
+  // channel was abandoned
+  WaitForRequest(stream.get());
+  WaitForRequest(stream2.get());
 }
 
 TEST_F(XdsClientTest, FallbackReportsError) {
-  FakeXdsBootstrap::FakeXdsServer default_server(kDefaultXdsServerUrl);
+  FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
   FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
   // Regular operation
   InitXdsClient(FakeXdsBootstrap::Builder()
-                    .AddServer(default_server)
+                    .AddServer(primary_server)
                     .AddServer(fallback_server));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
@@ -3953,7 +3991,7 @@ TEST_F(XdsClientTest, FallbackReportsError) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
-  TriggerConnectionFailure(default_server,
+  TriggerConnectionFailure(primary_server,
                            absl::UnavailableError("Server down"));
   // XdsClient should have sent a subscription request on the ADS stream.
   request = WaitForRequest(stream.get());
