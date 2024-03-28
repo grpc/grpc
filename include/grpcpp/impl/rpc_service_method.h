@@ -30,6 +30,7 @@
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+#include "absl/log/log.h"
 
 namespace grpc {
 class ServerContextBase;
@@ -114,12 +115,11 @@ class RpcServiceMethod : public RpcMethod {
       // this is not an error condition, as it allows users to declare a server
       // like WithRawMethod_foo<AsyncService>. However since it
       // overwrites behavior, it should be logged.
-      gpr_log(
-          GPR_INFO,
-          "You are marking method %s as '%s', even though it was "
-          "previously marked '%s'. This behavior will overwrite the original "
-          "behavior. If you expected this then ignore this message.",
-          name(), TypeToString(api_type_), TypeToString(type));
+      LOG(INFO) << "You are marking method " << name() << " as '"
+                << TypeToString(api_type_) << "', even though it was previously"
+                << " marked '" << TypeToString(type)
+                << "'. This behavior will overwrite the original behavior. If "
+                   "you expected this then ignore this message.";
     }
     api_type_ = type;
   }
