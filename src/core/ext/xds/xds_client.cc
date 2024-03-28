@@ -1591,9 +1591,7 @@ XdsClient::XdsClient(
       engine_(std::move(engine)),
       metrics_reporter_(std::move(metrics_reporter)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] creating xds client with %ld xDS servers", this,
-            bootstrap_->servers().size());
+    gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
   GPR_ASSERT(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
@@ -1698,6 +1696,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     ResourceState& resource_state =
         authority_state.resource_map[type][resource_name->key];
     resource_state.watchers[w] = watcher;
+    bool fetch_needed = true;
     // If we already have a cached value for the resource, notify the new
     // watcher immediately.
     if (resource_state.resource != nullptr) {
@@ -1706,6 +1705,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                 "[xds_client %p] returning cached listener data for %s", this,
                 std::string(name).c_str());
       }
+      fetch_needed = false;
       work_serializer_.Schedule(
           [watcher, value = resource_state.resource]()
               ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
@@ -1720,6 +1720,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
                 "[xds_client %p] reporting cached does-not-exist for %s", this,
                 std::string(name).c_str());
       }
+      fetch_needed = false;
       work_serializer_.Schedule(
           [watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) {
             watcher->OnResourceDoesNotExist(ReadDelayHandle::NoWait());
@@ -1734,6 +1735,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
             this, std::string(name).c_str(),
             resource_state.meta.failed_details.c_str());
       }
+      fetch_needed = false;
       std::string details = resource_state.meta.failed_details;
       const auto* node = bootstrap_->node();
       if (node != nullptr) {
@@ -1751,11 +1753,12 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     // If this is the first watcher for this authority, add channels.
     // Note that a channel might have already triggered fallback
     // due to being used in a different authority.
-    if (authority_state.xds_channels.empty() ||
-        !authority_state.xds_channels.back()->status().ok()) {
-      for (const auto& server : xds_servers) {
+    if (fetch_needed && (authority_state.xds_channels.empty() ||
+                         !authority_state.xds_channels.back()->status().ok())) {
+      for (size_t i = authority_state.xds_channels.size();
+           i < xds_servers.size(); i++) {
         authority_state.xds_channels.emplace_back(
-            GetOrCreateXdsChannelLocked(*server, "start watch"));
+            GetOrCreateXdsChannelLocked(*(xds_servers[i]), "start watch"));
         if (authority_state.xds_channels.back()->status().ok()) {
           break;
         }
