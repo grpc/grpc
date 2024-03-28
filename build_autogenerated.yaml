@@ -3860,7 +3860,6 @@ libs:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -3908,7 +3907,6 @@ libs:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -4029,6 +4027,7 @@ libs:
   - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
+  - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
@@ -4264,7 +4263,6 @@ libs:
   headers:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
@@ -4286,7 +4284,6 @@ libs:
   - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/completion_queue_cc.cc
-  - src/cpp/common/insecure_channel_arguments.cc
   - src/cpp/common/insecure_create_auth_context.cc
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
@@ -5292,6 +5289,7 @@ targets:
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
@@ -6152,7 +6150,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -6200,7 +6197,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -8851,7 +8847,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -8899,7 +8894,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -9350,7 +9344,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -9398,7 +9391,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -19570,7 +19562,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -19617,7 +19608,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -19948,7 +19938,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -19996,7 +19985,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -20059,7 +20047,6 @@ targets:
   - src/cpp/client/client_stats_interceptor.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
-  - src/cpp/client/wrapped_credentials.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/backend_metric_recorder.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -20107,7 +20094,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
