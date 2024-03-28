@@ -40,7 +40,7 @@ CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
   auto call =
       grpc_core::MakeCallPair(std::move(metadata), call_handler_.event_engine(),
-                              call_handler_.arena(), false);
+                              call_handler_.arena(), nullptr);
   destination_->StartCall(std::move(call.unstarted_handler));
   return std::move(call.initiator);
 }

@@ -39,7 +39,7 @@
 namespace grpc_core {
 
 // Handles calling out to credentials to fill in metadata per call.
-class ClientAuthFilter final : public ChannelFilter {
+class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -50,13 +50,39 @@ class ClientAuthFilter final : public ChannelFilter {
   static absl::StatusOr<std::unique_ptr<ClientAuthFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args = {});
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    auto OnClientInitialMetadata(ClientMetadataHandle md,
+                                 ClientAuthFilter* filter) {
+      filter->InstallCallContext();
+      auto* host = md->get_pointer(HttpAuthorityMetadata());
+      return WithResult<absl::StatusOr<ClientMetadataHandle>>(If(
+          host == nullptr,
+          []() -> absl::StatusOr<ClientMetadataHandle> {
+            return absl::OkStatus();
+          },
+          // TODO(ctiller): we should do better than allocating two promises on
+          // the arena for every call
+          [&md, filter, host]() {
+            return TrySeq(
+                filter->args_.security_connector->CheckCallHost(
+                    host->as_string_view(), filter->args_.auth_context.get()),
+                [filter, md = std::move(md)]() mutable {
+                  return filter->GetCallCredsMetadata(std::move(md));
+                });
+          }));
+    }
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
-  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
-      CallArgs call_args);
+  ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetCallCredsMetadata(
+      ClientMetadataHandle md);
+  void InstallCallContext();
 
   // Contains refs to security connector and auth context.
   grpc_call_credentials::GetRequestMetadataArgs args_;

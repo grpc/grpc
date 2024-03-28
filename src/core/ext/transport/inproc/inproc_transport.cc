@@ -38,15 +38,17 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                                     public Transport,
                                     public ServerTransport {
  public:
-  void SetCallFactory(WeakRefCountedPtr<CallFactory> call_factory) override {
-    call_factory_ = std::move(call_factory);
+  void SetCallDestination(
+      RefCountedPtr<UnstartedCallDestination> call_destination) override {
+    call_destination_ = std::move(call_destination);
     ConnectionState expect = ConnectionState::kInitial;
-    state_.compare_exchange_strong(expect, ConnectionState::kReady,
-                                   std::memory_order_acq_rel,
-                                   std::memory_order_acquire);
-    MutexLock lock(&state_tracker_mu_);
-    state_tracker_.SetState(GRPC_CHANNEL_READY, absl::OkStatus(),
-                            "accept function set");
+    if (state_.compare_exchange_strong(expect, ConnectionState::kReady,
+                                       std::memory_order_acq_rel,
+                                       std::memory_order_acquire)) {
+      MutexLock lock(&state_tracker_mu_);
+      state_tracker_.SetState(GRPC_CHANNEL_READY, absl::OkStatus(),
+                              "accept function set");
+    }
   }
 
   void Orphan() override { Unref(); }
@@ -95,8 +97,13 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return call_factory_->CreateCall(std::move(md),
-                                     call_factory_->CreateArena());
+    auto call = MakeCallPair(
+        std::move(md),
+        GetContext<grpc_event_engine::experimental::EventEngine>(),
+        Arena::Create(call_size_estimator_.CallSizeEstimate(), &allocator_),
+        &call_size_estimator_);
+    call_destination_->StartCall(std::move(call.unstarted_handler));
+    return std::move(call.initiator);
   }
 
  private:
@@ -104,8 +111,10 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
   std::atomic<bool> disconnecting_{false};
-  WeakRefCountedPtr<CallFactory> call_factory_;
+  RefCountedPtr<UnstartedCallDestination> call_destination_;
   absl::Status disconnect_error_;
+  CallSizeEstimator call_size_estimator_{4096};
+  grpc_event_engine::experimental::MemoryAllocator allocator_;
   Mutex state_tracker_mu_;
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
       "inproc_server_transport", GRPC_CHANNEL_CONNECTING};

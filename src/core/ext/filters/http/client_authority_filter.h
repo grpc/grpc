@@ -39,6 +39,9 @@ class ClientAuthorityFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  explicit ClientAuthorityFilter(Slice default_authority)
+      : default_authority_(std::move(default_authority)) {}
+
   static absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args = {});
 
@@ -54,8 +57,6 @@ class ClientAuthorityFilter final
   };
 
  private:
-  explicit ClientAuthorityFilter(Slice default_authority)
-      : default_authority_(std::move(default_authority)) {}
   Slice default_authority_;
 };
 

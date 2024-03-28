@@ -147,8 +147,7 @@ class ClientChannel : public Channel {
 
   void StartIdleTimer();
 
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
-                           Arena* arena);
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
 
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
@@ -182,10 +181,10 @@ class ClientChannel : public Channel {
   grpc_pollset_set* interested_parties_;
 
   //
-  // State for LB calls.
+  // State for sizing calls.
   //
-  CallSizeEstimator lb_call_size_estimator_;
-  MemoryAllocator lb_call_allocator_;
+  CallSizeEstimator call_size_estimator_;
+  MemoryAllocator call_allocator_;
 
   //
   // Idleness state.

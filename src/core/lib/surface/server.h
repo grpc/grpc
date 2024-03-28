@@ -381,7 +381,7 @@ class Server : public ServerInterface,
 
   struct ChannelSet {
     std::vector<RefCountedPtr<Channel>> ye_olde_channels;
-    std::vector<RefCountedPtr<Connection>> channels;
+    std::vector<RefCountedPtr<Transport>> channels;
   };
 
   class CallPublisher final : public CallDestination {

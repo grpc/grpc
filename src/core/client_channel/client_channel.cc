@@ -955,10 +955,10 @@ ClientChannel::ClientChannel(
       client_channel_factory_(client_channel_factory),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       interested_parties_(grpc_pollset_set_create()),
-      lb_call_size_estimator_(1024),
-      lb_call_allocator_(channel_args_.GetObject<ResourceQuota>()
-                             ->memory_quota()
-                             ->CreateMemoryOwner()),
+      call_size_estimator_(1024),
+      call_allocator_(channel_args_.GetObject<ResourceQuota>()
+                          ->memory_quota()
+                          ->CreateMemoryOwner()),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
       resolver_data_for_calls_(ResolverDataForCalls{}),
       picker_(nullptr),
@@ -1199,14 +1199,17 @@ grpc_call* ClientChannel::CreateCall(
 }
 
 CallInitiator ClientChannel::CreateCall(
-    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+    ClientMetadataHandle client_initial_metadata) {
   // Increment call count.
   if (idle_timeout_ != Duration::Zero()) idle_state_.IncreaseCallCount();
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/unstarted-handler pair.
-  auto call = MakeCallPair(std::move(client_initial_metadata),
-                           GetContext<EventEngine>(), arena, true);
+  auto* arena =
+      Arena::Create(call_size_estimator_.CallSizeEstimate(), &call_allocator_);
+  auto call =
+      MakeCallPair(std::move(client_initial_metadata),
+                   GetContext<EventEngine>(), arena, &call_size_estimator_);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuarded(

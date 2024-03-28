@@ -54,11 +54,13 @@ class ServerConfigSelectorFilter final
  public:
   ~ServerConfigSelectorFilter() override;
 
+  explicit ServerConfigSelectorFilter(
+      RefCountedPtr<ServerConfigSelectorProvider>
+          server_config_selector_provider);
+
   ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
   ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
       delete;
-  ServerConfigSelectorFilter(ServerConfigSelectorFilter&&) = default;
-  ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
 
   static absl::StatusOr<RefCountedPtr<ServerConfigSelectorFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args = {});
@@ -95,10 +97,6 @@ class ServerConfigSelectorFilter final
    private:
     RefCountedPtr<ServerConfigSelectorFilter> filter_;
   };
-
-  explicit ServerConfigSelectorFilter(
-      RefCountedPtr<ServerConfigSelectorProvider>
-          server_config_selector_provider);
 
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
   Mutex mu_;

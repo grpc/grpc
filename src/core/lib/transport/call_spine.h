@@ -17,6 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "call_size_estimator.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
@@ -39,10 +41,11 @@ class CallSpine final : public Party {
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
       grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-      bool arena_is_owned, grpc_call_context_element* legacy_context) {
-    return RefCountedPtr<CallSpine>(
-        arena->New<CallSpine>(std::move(client_initial_metadata), event_engine,
-                              arena, arena_is_owned, legacy_context));
+      CallSizeEstimator* call_size_estimator_if_arena_is_owned,
+      grpc_call_context_element* legacy_context) {
+    return RefCountedPtr<CallSpine>(arena->New<CallSpine>(
+        std::move(client_initial_metadata), event_engine, arena,
+        call_size_estimator_if_arena_is_owned, legacy_context));
   }
 
   ~CallSpine() override {
@@ -118,13 +121,15 @@ class CallSpine final : public Party {
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
             grpc_event_engine::experimental::EventEngine* event_engine,
-            Arena* arena, bool arena_is_owned,
+            Arena* arena,
+            CallSizeEstimator* call_size_estimator_if_arena_is_owned,
             grpc_call_context_element* legacy_context)
       : Party(1),
         call_filters_(std::move(client_initial_metadata)),
         arena_(arena),
         event_engine_(event_engine),
-        arena_is_owned_(arena_is_owned) {
+        call_size_estimator_if_arena_is_owned_(
+            call_size_estimator_if_arena_is_owned) {
     if (legacy_context == nullptr) {
       legacy_context_ = static_cast<grpc_call_context_element*>(
           arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
@@ -159,14 +164,19 @@ class CallSpine final : public Party {
 
   void PartyOver() override {
     Arena* a = arena_;
+    CallSizeEstimator* call_size_estimator_if_arena_is_owned =
+        call_size_estimator_if_arena_is_owned_;
     {
       ScopedContext context(this);
       CancelRemainingParticipants();
       a->DestroyManagedNewObjects();
     }
-    if (!arena_is_owned_) a = nullptr;
     this->~CallSpine();
-    if (a != nullptr) a->Destroy();
+    if (call_size_estimator_if_arena_is_owned != nullptr) {
+      call_size_estimator_if_arena_is_owned->UpdateCallSizeEstimate(
+          a->TotalUsedBytes());
+      a->Destroy();
+    }
   }
 
   // Call filters/pipes part of the spine
@@ -177,8 +187,8 @@ class CallSpine final : public Party {
   // Legacy context
   // TODO(ctiller): remove
   grpc_call_context_element* legacy_context_;
+  CallSizeEstimator* const call_size_estimator_if_arena_is_owned_;
   bool legacy_context_is_owned_;
-  const bool arena_is_owned_;
 };
 
 class CallInitiator {
@@ -395,7 +405,7 @@ struct CallInitiatorAndUnstartedHandler {
 CallInitiatorAndUnstartedHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-    bool arena_is_owned);
+    CallSizeEstimator* call_size_estimator_if_arena_is_owned);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {

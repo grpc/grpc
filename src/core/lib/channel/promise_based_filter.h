@@ -360,6 +360,41 @@ struct RunCallImpl<void (Derived::Call::*)(ClientMetadata& md), Derived> {
 };
 
 template <typename Derived>
+struct RunCallImpl<absl::StatusOr<ClientMetadataHandle> (Derived::Call::*)(
+                       ClientMetadataHandle md),
+                   Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    auto md = std::move(call_args.client_initial_metadata);
+    return TrySeq(call_data->call.OnClientInitialMetadata(std::move(md)),
+                  [call_args = std::move(call_args),
+                   next_promise_factory = std::move(next_promise_factory)](
+                      ClientMetadataHandle md) mutable {
+                    call_args.client_initial_metadata = std::move(md);
+                    return next_promise_factory(std::move(call_args));
+                  });
+  }
+};
+
+template <typename Derived>
+struct RunCallImpl<absl::StatusOr<ClientMetadataHandle> (Derived::Call::*)(
+                       ClientMetadataHandle md, Derived* channel),
+                   Derived> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    auto md = std::move(call_args.client_initial_metadata);
+    return TrySeq(call_data->call.OnClientInitialMetadata(std::move(md),
+                                                          call_data->channel),
+                  [call_args = std::move(call_args),
+                   next_promise_factory = std::move(next_promise_factory)](
+                      ClientMetadataHandle md) mutable {
+                    call_args.client_initial_metadata = std::move(md);
+                    return next_promise_factory(std::move(call_args));
+                  });
+  }
+};
+
+template <typename Derived>
 struct RunCallImpl<ServerMetadataHandle (Derived::Call::*)(ClientMetadata& md),
                    Derived> {
   static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
@@ -438,6 +473,26 @@ struct RunCallImpl<
          next_promise_factory = std::move(next_promise_factory)]() mutable {
           return next_promise_factory(std::move(call_args));
         });
+  }
+};
+
+template <typename Derived, typename Promise>
+struct RunCallImpl<
+    Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),
+    Derived,
+    absl::enable_if_t<std::is_same<
+        PromiseResult<Promise>, absl::StatusOr<ClientMetadataHandle>>::value>> {
+  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+                  FilterCallData<Derived>* call_data) {
+    auto md = std::move(call_args.client_initial_metadata);
+    return TrySeq(call_data->call.OnClientInitialMetadata(std::move(md),
+                                                          call_data->channel),
+                  [call_args = std::move(call_args),
+                   next_promise_factory = std::move(next_promise_factory)](
+                      ClientMetadataHandle md) mutable {
+                    call_args.client_initial_metadata = std::move(md);
+                    return next_promise_factory(std::move(call_args));
+                  });
   }
 };
 

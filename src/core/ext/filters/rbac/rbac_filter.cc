@@ -94,7 +94,7 @@ absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
-  return std::unique_ptr<RbacFilter>(
+  return std::make_unique<RbacFilter>(
       grpc_channel_stack_filter_instance_number(
           filter_args.channel_stack(),
           filter_args.uninitialized_channel_element()),

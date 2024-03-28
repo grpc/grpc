@@ -50,7 +50,7 @@ class ServerCallTracerFilter
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<std::unique_ptr<ServerCallTracerFilter>> Create(
-      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
+      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/ = {});
 
   class Call {
    public:

@@ -773,6 +773,55 @@ struct AddOpImpl<
   }
 };
 
+// PROMISE_RETURNING(absl::StatusOr<$VALUE_HANDLE>)
+// $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
+template <typename FilterType, typename T, typename R,
+          R (FilterType::Call::*impl)(T, FilterType*)>
+struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
+                 absl::enable_if_t<std::is_same<absl::StatusOr<T>,
+                                                PromiseResult<R>>::value>> {
+  static void Add(FilterType* channel_data, size_t call_offset,
+                  Layout<FallibleOperator<T>>& to) {
+    class Promise {
+     public:
+      Promise(T value, typename FilterType::Call* call_data,
+              FilterType* channel_data)
+          : impl_((call_data->*impl)(std::move(value), channel_data)) {}
+
+      Poll<ResultOr<T>> PollOnce() {
+        auto p = impl_();
+        auto* r = p.value_if_ready();
+        if (r == nullptr) return Pending{};
+        this->~Promise();
+        if (r->ok()) return ResultOr<T>{std::move(**r), nullptr};
+        return ResultOr<T>{nullptr, ServerMetadataFromStatus(r->status())};
+      }
+
+     private:
+      GPR_NO_UNIQUE_ADDRESS R impl_;
+    };
+    to.Add(sizeof(Promise), alignof(Promise),
+           FallibleOperator<T>{
+               channel_data,
+               call_offset,
+               [](void* promise_data, void* call_data, void* channel_data,
+                  T value) -> Poll<ResultOr<T>> {
+                 auto* promise = new (promise_data)
+                     Promise(std::move(value),
+                             static_cast<typename FilterType::Call*>(call_data),
+                             static_cast<FilterType*>(channel_data));
+                 return promise->PollOnce();
+               },
+               [](void* promise_data) {
+                 return static_cast<Promise*>(promise_data)->PollOnce();
+               },
+               [](void* promise_data) {
+                 static_cast<Promise*>(promise_data)->~Promise();
+               },
+           });
+  }
+};
+
 struct ChannelDataDestructor {
   void (*destroy)(void* channel_data);
   void* channel_data;

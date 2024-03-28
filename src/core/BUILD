@@ -7808,6 +7808,7 @@ grpc_cc_library(
     deps=[
         "1999",
         "call_filters",
+        "call_size_estimator",
         "dual_ref_counted",
         "for_each",
         "if",

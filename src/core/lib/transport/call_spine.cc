@@ -16,6 +16,8 @@
 
 #include "src/core/lib/transport/call_spine.h"
 
+#include "call_size_estimator.h"
+
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -107,9 +109,10 @@ CallHandler UnstartedCallHandler::StartCall(
 CallInitiatorAndUnstartedHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-    bool arena_is_owned) {
-  auto spine = CallSpine::Create(std::move(client_initial_metadata),
-                                 event_engine, arena, arena_is_owned, nullptr);
+    CallSizeEstimator* call_size_estimator_if_arena_is_owned) {
+  auto spine =
+      CallSpine::Create(std::move(client_initial_metadata), event_engine, arena,
+                        call_size_estimator_if_arena_is_owned, nullptr);
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 
