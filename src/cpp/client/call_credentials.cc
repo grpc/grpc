@@ -22,9 +22,7 @@
 namespace grpc {
 
 CallCredentials::CallCredentials(grpc_call_credentials* c_creds)
-    : c_creds_(c_creds) {
-  GPR_ASSERT(c_creds != nullptr);
-}
+    : c_creds_(c_creds) {}
 
 CallCredentials::~CallCredentials() { grpc_call_credentials_release(c_creds_); }
 
