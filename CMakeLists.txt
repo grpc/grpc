@@ -4046,6 +4046,7 @@ add_library(grpc++
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -4055,7 +4056,6 @@ add_library(grpc++
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/client/xds_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
@@ -4797,6 +4797,7 @@ endif()
 add_library(grpc++_unsecure
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -4805,7 +4806,6 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
@@ -8160,6 +8160,7 @@ add_executable(binder_transport_test
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -8169,7 +8170,6 @@ add_executable(binder_transport_test
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
@@ -12679,6 +12679,7 @@ add_executable(endpoint_binder_pool_test
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -12688,7 +12689,6 @@ add_executable(endpoint_binder_pool_test
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
@@ -13539,6 +13539,7 @@ add_executable(fake_binder_test
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -13548,7 +13549,6 @@ add_executable(fake_binder_test
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
@@ -31385,6 +31385,7 @@ add_executable(transport_stream_receiver_test
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -31394,7 +31395,6 @@ add_executable(transport_stream_receiver_test
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
@@ -32220,6 +32220,7 @@ add_executable(wire_reader_test
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -32229,7 +32230,6 @@ add_executable(wire_reader_test
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
@@ -32329,6 +32329,7 @@ add_executable(wire_writer_test
   src/core/ext/transport/binder/wire_format/wire_writer.cc
   src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
+  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -32338,7 +32339,6 @@ add_executable(wire_writer_test
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/wrapped_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
