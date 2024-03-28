@@ -256,7 +256,7 @@ class XdsClientTest : public ::testing::Test {
         MutexLock lock(&mu_);
         EXPECT_THAT(queue_, ::testing::IsEmpty())
             << this << " "
-            << grpc_core::Match(
+            << Match(
                    queue_[0],
                    [&](const ResourceAndReadDelayHandle& resource) {
                      return absl::StrFormat("Resource %s",
