@@ -49,7 +49,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/client_channel/backend_metric.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -92,20 +91,20 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/service_config/service_config_call_data.h"
+#include "src/core/service_config/service_config_impl.h"
 
 //
 // Client channel filter
@@ -1148,6 +1147,8 @@ class ClientChannelFilter::ClientChannelControlHelper
     chand_->resolver_->RequestReresolutionLocked();
   }
 
+  absl::string_view GetTarget() override { return chand_->target_uri_; }
+
   absl::string_view GetAuthority() override {
     return chand_->default_authority_;
   }
@@ -1164,6 +1165,10 @@ class ClientChannelFilter::ClientChannelControlHelper
 
   grpc_event_engine::experimental::EventEngine* GetEventEngine() override {
     return chand_->owning_stack_->EventEngine();
+  }
+
+  GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
+    return *chand_->owning_stack_->stats_plugin_group;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
@@ -1190,16 +1195,6 @@ class ClientChannelFilter::ClientChannelControlHelper
 //
 // ClientChannelFilter implementation
 //
-
-ClientChannelFilter* ClientChannelFilter::GetFromChannel(Channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtableWithPromises &&
-      elem->filter != &kFilterVtableWithoutPromises) {
-    return nullptr;
-  }
-  return static_cast<ClientChannelFilter*>(elem->channel_data);
-}
 
 grpc_error_handle ClientChannelFilter::Init(grpc_channel_element* elem,
                                             grpc_channel_element_args* args) {
@@ -1270,18 +1265,19 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   }
   default_service_config_ = std::move(*service_config);
   // Get URI to resolve, using proxy mapper if needed.
-  absl::optional<std::string> server_uri =
+  absl::optional<std::string> target_uri =
       channel_args_.GetOwnedString(GRPC_ARG_SERVER_URI);
-  if (!server_uri.has_value()) {
+  if (!target_uri.has_value()) {
     *error = GRPC_ERROR_CREATE(
         "target URI channel arg missing or wrong type in client channel "
         "filter");
     return;
   }
+  target_uri_ = std::move(*target_uri);
   uri_to_resolve_ = CoreConfiguration::Get()
                         .proxy_mapper_registry()
-                        .MapName(*server_uri, &channel_args_)
-                        .value_or(*server_uri);
+                        .MapName(target_uri_, &channel_args_)
+                        .value_or(target_uri_);
   // Make sure the URI to resolve is valid, so that we know that
   // resolver creation will succeed later.
   if (!CoreConfiguration::Get().resolver_registry().IsValidTarget(
@@ -1306,7 +1302,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   if (!default_authority.has_value()) {
     default_authority_ =
         CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
-            *server_uri);
+            target_uri_);
   } else {
     default_authority_ = std::move(*default_authority);
   }
@@ -1344,6 +1340,7 @@ ClientChannelFilter::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
+  promise_detail::Context<Arena> arena_ctx(args.arena);
   return OrphanablePtr<FilterBasedLoadBalancedCall>(
       args.arena->New<FilterBasedLoadBalancedCall>(
           this, args, pollent, on_call_destruction_complete,
@@ -2898,6 +2895,15 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     set_picker(chand_->picker_);
   }
   while (true) {
+    // TODO(roth): Fix race condition in channel_idle filter and any
+    // other possible causes of this.
+    if (pickers.back() == nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+        gpr_log(GPR_ERROR, "chand=%p lb_call=%p: picker is null, failing call",
+                chand_, this);
+      }
+      return absl::InternalError("picker is null -- shouldn't happen");
+    }
     // Do pick.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",

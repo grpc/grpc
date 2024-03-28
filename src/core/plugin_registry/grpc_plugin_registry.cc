@@ -20,8 +20,11 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/channel/server_call_tracer_filter.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/builtins.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/lame_client.h"
+#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 
@@ -72,6 +75,20 @@ extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 extern void RegisterBinderResolver(CoreConfiguration::Builder* builder);
 #endif
+
+namespace {
+
+void RegisterBuiltins(CoreConfiguration::Builder* builder) {
+  RegisterServerCallTracerFilter(builder);
+  builder->channel_init()
+      ->RegisterFilter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
+      .Terminal();
+  builder->channel_init()
+      ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .BeforeAll();
+}
+
+}  // namespace
 
 void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   grpc_event_engine::experimental::RegisterEventEngineChannelArgPreconditioning(

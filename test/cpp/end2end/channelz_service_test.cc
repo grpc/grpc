@@ -37,7 +37,6 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -48,6 +47,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -66,6 +66,7 @@ using grpc::channelz::v1::GetSubchannelRequest;
 using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
+using grpc_core::testing::GetFileContents;
 
 namespace grpc {
 namespace testing {
@@ -134,15 +135,6 @@ constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
 constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
 
-std::string ReadFile(const char* file_path) {
-  grpc_slice slice;
-  GPR_ASSERT(
-      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
-  std::string file_contents(grpc_core::StringViewFromSlice(slice));
-  grpc_slice_unref(slice);
-  return file_contents;
-}
-
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
     CredentialsType type, ChannelArguments* args) {
   if (type == CredentialsType::kInsecure) {
@@ -150,11 +142,11 @@ std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
   }
   args->SetSslTargetNameOverride("foo.test.google.fr");
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {ReadFile(kClientKeyPath), ReadFile(kClientCertPath)}};
+      {GetFileContents(kClientKeyPath), GetFileContents(kClientCertPath)}};
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(
       std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs));
+          GetFileContents(kCaCertPath), identity_key_cert_pairs));
   if (type == CredentialsType::kMtls) {
     options.watch_identity_key_cert_pairs();
   }
@@ -168,10 +160,10 @@ std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
     return InsecureServerCredentials();
   }
   std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
-      {ReadFile(kServerKeyPath), ReadFile(kServerCertPath)}};
+      {GetFileContents(kServerKeyPath), GetFileContents(kServerCertPath)}};
   auto certificate_provider =
       std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-          ReadFile(kCaCertPath), identity_key_cert_pairs);
+          GetFileContents(kCaCertPath), identity_key_cert_pairs);
   grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
   options.watch_root_certs();
   options.watch_identity_key_cert_pairs();
@@ -711,7 +703,7 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
         EXPECT_EQ(
             RemoveWhitespaces(
                 get_socket_resp.socket().security().tls().remote_certificate()),
-            RemoveWhitespaces(ReadFile(kServerCertPath)));
+            RemoveWhitespaces(GetFileContents(kServerCertPath)));
         break;
     }
   }
@@ -777,7 +769,7 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
                                       .security()
                                       .tls()
                                       .remote_certificate()),
-                RemoveWhitespaces(ReadFile(kServerCertPath)));
+                RemoveWhitespaces(GetFileContents(kServerCertPath)));
       break;
   }
 }
@@ -829,7 +821,7 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
                                         .security()
                                         .tls()
                                         .remote_certificate()),
-                  RemoveWhitespaces(ReadFile(kClientCertPath)));
+                  RemoveWhitespaces(GetFileContents(kClientCertPath)));
       } else {
         EXPECT_TRUE(get_socket_response.socket()
                         .security()

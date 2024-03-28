@@ -44,6 +44,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/time.h"
@@ -99,7 +100,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     }
   }
 
-  auto used_port = ResolvedAddressIsWildcard(res_addr);
+  auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
@@ -125,6 +126,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Start() {
 
 void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     absl::Status status) {
+  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Acceptor[%p]: NotifyOnAccept: %s", this,
+                                   status.ToString().c_str());
   if (!status.ok()) {
     // Shutting down the acceptor. Unref the ref grabbed in
     // AsyncConnectionAcceptor::Start().

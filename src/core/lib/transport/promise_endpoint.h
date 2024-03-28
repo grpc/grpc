@@ -21,6 +21,7 @@
 #include <stdint.h>
 
 #include <atomic>
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -36,9 +37,12 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
@@ -54,6 +58,7 @@ class PromiseEndpoint {
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint,
       SliceBuffer already_received);
+  PromiseEndpoint() = default;
   ~PromiseEndpoint() = default;
   /// Prevent copying of PromiseEndpoint; moving is fine.
   PromiseEndpoint(const PromiseEndpoint&) = delete;
@@ -68,8 +73,10 @@ class PromiseEndpoint {
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
   auto Write(SliceBuffer data) {
-    // Assert previous write finishes.
-    GPR_ASSERT(!write_state_->complete.load(std::memory_order_relaxed));
+    // Start write and assert previous write finishes.
+    auto prev = write_state_->state.exchange(WriteState::kWriting,
+                                             std::memory_order_relaxed);
+    GPR_ASSERT(prev == WriteState::kIdle);
     bool completed;
     if (data.Length() == 0) {
       completed = true;
@@ -91,16 +98,31 @@ class PromiseEndpoint {
       if (completed) write_state_->waker = Waker();
     }
     return If(
-        completed, []() { return []() { return absl::OkStatus(); }; },
+        completed,
+        [this]() {
+          return [write_state = write_state_]() {
+            auto prev = write_state->state.exchange(WriteState::kIdle,
+                                                    std::memory_order_relaxed);
+            GPR_ASSERT(prev == WriteState::kWriting);
+            return absl::OkStatus();
+          };
+        },
         [this]() {
           return [write_state = write_state_]() -> Poll<absl::Status> {
-            // If current write isn't finished return `Pending()`, else return
-            // write result.
-            if (!write_state->complete.load(std::memory_order_acquire)) {
-              return Pending();
+            // If current write isn't finished return `Pending()`, else
+            // return write result.
+            WriteState::State expected = WriteState::kWritten;
+            if (write_state->state.compare_exchange_strong(
+                    expected, WriteState::kIdle, std::memory_order_acquire,
+                    std::memory_order_relaxed)) {
+              // State was Written, and we changed it to Idle. We can return
+              // the result.
+              return std::move(write_state->result);
             }
-            write_state->complete.store(false, std::memory_order_relaxed);
-            return std::move(write_state->result);
+            // State was not Written; since we're polling it must be
+            // Writing. Assert that and return Pending.
+            GPR_ASSERT(expected == WriteState::kWriting);
+            return Pending();
           };
         });
   }
@@ -145,8 +167,9 @@ class PromiseEndpoint {
         complete,
         [this, num_bytes]() {
           SliceBuffer ret;
-          grpc_slice_buffer_move_first(read_state_->buffer.c_slice_buffer(),
-                                       num_bytes, ret.c_slice_buffer());
+          grpc_slice_buffer_move_first_no_inline(
+              read_state_->buffer.c_slice_buffer(), num_bytes,
+              ret.c_slice_buffer());
           return [ret = std::move(
                       ret)]() mutable -> Poll<absl::StatusOr<SliceBuffer>> {
             return std::move(ret);
@@ -161,8 +184,9 @@ class PromiseEndpoint {
             // If read succeeds, return `SliceBuffer` with `num_bytes` bytes.
             if (read_state->result.ok()) {
               SliceBuffer ret;
-              grpc_slice_buffer_move_first(read_state->buffer.c_slice_buffer(),
-                                           num_bytes, ret.c_slice_buffer());
+              grpc_slice_buffer_move_first_no_inline(
+                  read_state->buffer.c_slice_buffer(), num_bytes,
+                  ret.c_slice_buffer());
               read_state->complete.store(false, std::memory_order_relaxed);
               return std::move(ret);
             }
@@ -193,6 +217,38 @@ class PromiseEndpoint {
                  if (!slice.ok()) return slice.status();
                  return (*slice)[0];
                });
+  }
+
+  void EnforceRxMemoryAlignment() {
+    auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint_.get());
+    if (chaotic_good_ext != nullptr) {
+      chaotic_good_ext->EnforceRxMemoryAlignment();
+      if (read_state_->buffer.Length() == 0) {
+        return;
+      }
+
+      // Copy everything from read_state_->buffer into a single slice and
+      // replace the contents of read_state_->buffer with that slice.
+      grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
+      GPR_ASSERT(
+          reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
+      size_t ofs = 0;
+      for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
+        memcpy(
+            GRPC_SLICE_START_PTR(slice) + ofs,
+            GRPC_SLICE_START_PTR(
+                read_state_->buffer.c_slice_buffer()->slices[i]),
+            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]));
+        ofs +=
+            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]);
+      }
+
+      read_state_->buffer.Clear();
+      read_state_->buffer.AppendIndexed(
+          grpc_event_engine::experimental::Slice(slice));
+      GPR_DEBUG_ASSERT(read_state_->buffer.Length() == ofs);
+    }
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
@@ -227,7 +283,13 @@ class PromiseEndpoint {
   };
 
   struct WriteState : public RefCounted<WriteState> {
-    std::atomic<bool> complete{false};
+    enum State : uint8_t {
+      kIdle,     // Not writing.
+      kWriting,  // Write started, but not completed.
+      kWritten,  // Write completed.
+    };
+
+    std::atomic<State> state{kIdle};
     // Write buffer used for `EventEngine::Endpoint::Write()` to ensure the
     // memory behind the buffer is not lost.
     grpc_event_engine::experimental::SliceBuffer buffer;
@@ -238,7 +300,10 @@ class PromiseEndpoint {
     void Complete(absl::Status status) {
       result = std::move(status);
       auto w = std::move(waker);
-      complete.store(true, std::memory_order_release);
+      auto prev = state.exchange(kWritten, std::memory_order_release);
+      // Previous state should be Writing. If we got anything else we've entered
+      // the callback path twice.
+      GPR_ASSERT(prev == kWriting);
       w.Wakeup();
     }
   };

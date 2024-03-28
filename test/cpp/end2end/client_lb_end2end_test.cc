@@ -56,7 +56,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/env.h"
@@ -65,12 +64,12 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
@@ -1982,13 +1981,8 @@ TEST_F(RoundRobinTest, HealthChecking) {
     EXPECT_THAT(
         status.error_message(),
         ::testing::MatchesRegex(
-            grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
-                ? "connections to all backends failing; last error: "
-                  "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                  "backend unhealthy"
-                : "connections to all backends failing; last error: "
-                  "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                  "backend unhealthy"));
+            "connections to all backends failing; last error: "
+            "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: backend unhealthy"));
     return false;
   });
   // Clean up.
@@ -2048,13 +2042,8 @@ TEST_F(RoundRobinTest, WithHealthCheckingInhibitPerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
-      grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
-          ? "connections to all backends failing; last error: "
-            "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy"
-          : "connections to all backends failing; last error: "
-            "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy");
+      "connections to all backends failing; last error: "
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);
@@ -2099,13 +2088,8 @@ TEST_F(RoundRobinTest, HealthCheckingServiceNamePerChannel) {
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub1, StatusCode::UNAVAILABLE,
-      grpc_core::IsRoundRobinDelegateToPickFirstEnabled()
-          ? "connections to all backends failing; last error: "
-            "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy"
-          : "connections to all backends failing; last error: "
-            "UNAVAILABLE: (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-            "backend unhealthy");
+      "connections to all backends failing; last error: "
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: backend unhealthy");
   // Second channel should be READY.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1));
   CheckRpcSendOk(DEBUG_LOCATION, stub2);

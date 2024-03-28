@@ -37,7 +37,6 @@ import sys
 import sysconfig
 
 import _metadata
-import pkg_resources
 from setuptools import Extension
 from setuptools.command import egg_info
 
@@ -362,7 +361,8 @@ if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ("re2",)
 if BUILD_WITH_SYSTEM_ABSL:
     EXTENSION_LIBRARIES += tuple(
-        lib.stem[3:] for lib in pathlib.Path("/usr").glob("lib*/libabsl_*.so")
+        lib.stem[3:]
+        for lib in sorted(pathlib.Path("/usr").glob("lib*/libabsl_*.so"))
     )
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
@@ -393,6 +393,11 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         else sysconfig.get_platform()
     )
+    if "i686" in boringssl_asm_platform:
+        print("Enabling SSE2 on %s platform" % boringssl_asm_platform)
+        EXTRA_COMPILE_ARGS.append("-msse2")
+    else:
+        print("SSE2 not enabled on %s platform" % boringssl_asm_platform)
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
     # (i.e. not Windows), we can include the assembly files and let BoringSSL
@@ -453,22 +458,6 @@ if "linux" in sys.platform or "darwin" in sys.platform:
     )
     DEFINE_MACROS += (("PyMODINIT_FUNC", pymodinit),)
     DEFINE_MACROS += (("GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK", 1),)
-
-# By default, Python3 distutils enforces compatibility of
-# c plugins (.so files) with the OSX version Python was built with.
-# We need OSX 10.10, the oldest which supports C++ thread_local.
-# Python 3.9: Mac OS Big Sur sysconfig.get_config_var('MACOSX_DEPLOYMENT_TARGET') returns int (11)
-if "darwin" in sys.platform:
-    mac_target = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-    if mac_target:
-        mac_target = pkg_resources.parse_version(str(mac_target))
-        if mac_target < pkg_resources.parse_version("10.10.0"):
-            os.environ["MACOSX_DEPLOYMENT_TARGET"] = "10.10"
-            os.environ["_PYTHON_HOST_PLATFORM"] = re.sub(
-                r"macosx-[0-9]+\.[0-9]+-(.+)",
-                r"macosx-10.10-\1",
-                sysconfig.get_platform(),
-            )
 
 
 def cython_extensions_and_necessity():

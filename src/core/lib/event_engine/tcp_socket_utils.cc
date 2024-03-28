@@ -32,8 +32,15 @@
 #endif  //  GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/stat.h>  // IWYU pragma: keep
 #include <sys/un.h>
+#endif  // GPR_WINDOWS
 #endif
 
 #ifdef GRPC_HAVE_VSOCK
@@ -304,7 +311,7 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
   }
 }
 
-absl::optional<int> ResolvedAddressIsWildcard(
+absl::optional<int> MaybeGetWildcardPortFromAddress(
     const EventEngine::ResolvedAddress& addr) {
   const EventEngine::ResolvedAddress* resolved_addr = &addr;
   EventEngine::ResolvedAddress addr4_normalized;

@@ -51,6 +51,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -191,18 +192,46 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
  private:
   class StatsSubchannelWrapper : public DelegatingSubchannel {
    public:
+    // If load reporting is enabled and we have an XdsClusterLocalityStats
+    // object, that object already contains the locality labels.  We
+    // need to store the locality labels directly only in the case where
+    // load reporting is disabled.
+    using LocalityData = absl::variant<
+        std::shared_ptr<std::map<std::string, std::string>> /*locality_labels*/,
+        RefCountedPtr<XdsClusterLocalityStats> /*locality_stats*/>;
+
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        RefCountedPtr<XdsClusterLocalityStats> locality_stats)
+        LocalityData locality_data)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
-          locality_stats_(std::move(locality_stats)) {}
+          locality_data_(std::move(locality_data)) {}
+
+    std::shared_ptr<std::map<std::string, std::string>> locality_labels()
+        const {
+      return Match(
+          locality_data_,
+          [](const std::shared_ptr<std::map<std::string, std::string>>&
+                 locality_labels) {
+            return locality_labels;
+          },
+          [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
+            return locality_stats->locality_name()->locality_labels();
+          });
+    }
 
     XdsClusterLocalityStats* locality_stats() const {
-      return locality_stats_.get();
+      return Match(
+          locality_data_,
+          [](const std::shared_ptr<std::map<std::string, std::string>>&) {
+            return static_cast<XdsClusterLocalityStats*>(nullptr);
+          },
+          [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
+            return locality_stats.get();
+          });
     }
 
    private:
-    RefCountedPtr<XdsClusterLocalityStats> locality_stats_;
+    LocalityData locality_data_;
   };
 
   // A picker that wraps the picker from the child to perform drops.
@@ -375,8 +404,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
 LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     LoadBalancingPolicy::PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  if (call_state->GetCallAttemptTracer() != nullptr) {
-    call_state->GetCallAttemptTracer()->AddOptionalLabels(
+  auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
+  if (call_attempt_tracer != nullptr) {
+    call_attempt_tracer->AddOptionalLabels(
         OptionalLabelComponent::kXdsServiceLabels, service_labels_);
   }
   // Handle EDS drops.
@@ -404,16 +434,22 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   PickResult result = picker_->Pick(args);
   auto* complete_pick = absl::get_if<PickResult::Complete>(&result.result);
   if (complete_pick != nullptr) {
+    auto* subchannel_wrapper =
+        static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
+    // Add locality labels to per-call metrics if needed.
+    if (call_attempt_tracer != nullptr) {
+      call_attempt_tracer->AddOptionalLabels(
+          OptionalLabelComponent::kXdsLocalityLabels,
+          subchannel_wrapper->locality_labels());
+    }
+    // Handle load reporting.
     RefCountedPtr<XdsClusterLocalityStats> locality_stats;
-    if (drop_stats_ != nullptr) {  // If load reporting is enabled.
-      auto* subchannel_wrapper =
-          static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
-      // Handle load reporting.
+    if (subchannel_wrapper->locality_stats() != nullptr) {
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
-      // Unwrap subchannel to pass back up the stack.
-      complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     }
+    // Unwrap subchannel to pass back up the stack.
+    complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     // Inject subchannel call tracker to record call completion.
     complete_pick->subchannel_call_tracker =
         std::make_unique<SubchannelCallTracker>(
@@ -743,36 +779,39 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     const grpc_resolved_address& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  // If load reporting is enabled, wrap the subchannel such that it
-  // includes the locality stats object, which will be used by the Picker.
+  // Wrap the subchannel so that we pass along the locality labels and
+  // (if load reporting is enabled) the locality stats object, which
+  // will be used by the picker.
+  auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
+  RefCountedPtr<XdsClusterLocalityStats> locality_stats;
   if (parent()->cluster_resource_->lrs_load_reporting_server.has_value()) {
-    auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
-    RefCountedPtr<XdsClusterLocalityStats> locality_stats =
-        parent()->xds_client_->AddClusterLocalityStats(
-            parent()->cluster_resource_->lrs_load_reporting_server.value(),
-            parent()->config_->cluster_name(),
-            GetEdsResourceName(*parent()->cluster_resource_),
-            std::move(locality_name));
-    if (locality_stats != nullptr) {
-      return MakeRefCounted<StatsSubchannelWrapper>(
-          parent()->channel_control_helper()->CreateSubchannel(
-              address, per_address_args, args),
-          std::move(locality_stats));
+    locality_stats = parent()->xds_client_->AddClusterLocalityStats(
+        parent()->cluster_resource_->lrs_load_reporting_server.value(),
+        parent()->config_->cluster_name(),
+        GetEdsResourceName(*parent()->cluster_resource_), locality_name);
+    if (locality_stats == nullptr) {
+      gpr_log(GPR_ERROR,
+              "[xds_cluster_impl_lb %p] Failed to get locality stats object "
+              "for LRS server %s, cluster %s, EDS service name %s; load "
+              "reports will not be generated",
+              parent(),
+              parent()
+                  ->cluster_resource_->lrs_load_reporting_server->server_uri()
+                  .c_str(),
+              parent()->config_->cluster_name().c_str(),
+              GetEdsResourceName(*parent()->cluster_resource_).c_str());
     }
-    gpr_log(GPR_ERROR,
-            "[xds_cluster_impl_lb %p] Failed to get locality stats object for "
-            "LRS server %s, cluster %s, EDS service name %s; load reports will "
-            "not be generated (not wrapping subchannel)",
-            parent(),
-            parent()
-                ->cluster_resource_->lrs_load_reporting_server->server_uri()
-                .c_str(),
-            parent()->config_->cluster_name().c_str(),
-            GetEdsResourceName(*parent()->cluster_resource_).c_str());
   }
-  // Load reporting not enabled, so don't wrap the subchannel.
-  return parent()->channel_control_helper()->CreateSubchannel(
-      address, per_address_args, args);
+  StatsSubchannelWrapper::LocalityData locality_data;
+  if (locality_stats != nullptr) {
+    locality_data = std::move(locality_stats);
+  } else {
+    locality_data = locality_name->locality_labels();
+  }
+  return MakeRefCounted<StatsSubchannelWrapper>(
+      parent()->channel_control_helper()->CreateSubchannel(
+          address, per_address_args, args),
+      std::move(locality_data));
 }
 
 void XdsClusterImplLb::Helper::UpdateState(

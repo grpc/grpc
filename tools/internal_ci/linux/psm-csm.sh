@@ -161,6 +161,7 @@ main() {
   test_suites=(
     "gamma.gamma_baseline_test"
     "gamma.affinity_test"
+    "gamma.affinity_session_drain_test"
     "gamma.csm_observability_test"
     "app_net_ssa_test"
   )

@@ -106,6 +106,9 @@ class OpenTelemetryPluginBuilder {
   /// options can be added.
   OpenTelemetryPluginBuilder& AddPluginOption(
       std::unique_ptr<OpenTelemetryPluginOption> option);
+  // Records \a optional_label_key on all metrics that provide it.
+  OpenTelemetryPluginBuilder& AddOptionalLabel(
+      absl::string_view optional_label_key);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
   absl::Status BuildAndRegisterGlobal();
