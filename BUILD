@@ -1221,6 +1221,7 @@ grpc_cc_library(
     srcs = [
         "src/cpp/client/call_credentials.cc",
         "src/cpp/client/channel_credentials.cc",
+        "src/cpp/client/insecure_credentials.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server_credentials.cc",
@@ -2378,6 +2379,7 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS + [
         "src/cpp/client/call_credentials.cc",
         "src/cpp/client/channel_credentials.cc",
+        "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
