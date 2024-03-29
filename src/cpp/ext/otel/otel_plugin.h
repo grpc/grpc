@@ -331,9 +331,9 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   // This object should be used inline.
   class CallbackMetricReporter : public grpc_core::CallbackMetricReporter {
    public:
-    CallbackMetricReporter(OpenTelemetryPlugin* parent,
+    CallbackMetricReporter(OpenTelemetryPlugin* ot_plugin,
                            grpc_core::RegisteredMetricCallback* key)
-        : parent_(parent), key_(key) {}
+        : ot_plugin_(ot_plugin), key_(key) {}
 
     void Report(
         grpc_core::GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle
@@ -349,7 +349,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(CallbackGaugeState<double>::mu) override;
 
    private:
-    OpenTelemetryPlugin* parent_;
+    OpenTelemetryPlugin* ot_plugin_;
     grpc_core::RegisteredMetricCallback* key_;
   };
 
@@ -382,7 +382,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
       double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
       absl::Span<const absl::string_view> /*optional_values*/) override;
-  // TODO(yashkt, yijiem): implement async instrument.
   void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/) override;
   void RemoveCallback(
       grpc_core::RegisteredMetricCallback* /*callback*/) override;

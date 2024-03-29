@@ -473,7 +473,7 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
     grpc_core::GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
     int64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
-  const auto& instrument_data = parent_->instruments_data_.at(handle.index);
+  const auto& instrument_data = ot_plugin_->instruments_data_.at(handle.index);
   GPR_ASSERT(
       absl::holds_alternative<std::unique_ptr<CallbackGaugeState<int64_t>>>(
           instrument_data.instrument));
@@ -496,7 +496,7 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
         handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
-  const auto& instrument_data = parent_->instruments_data_.at(handle.index);
+  const auto& instrument_data = ot_plugin_->instruments_data_.at(handle.index);
   GPR_ASSERT(
       absl::holds_alternative<std::unique_ptr<CallbackGaugeState<double>>>(
           instrument_data.instrument));
