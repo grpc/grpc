@@ -1213,6 +1213,9 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
+# similar way to how the grpc_unsecure and grpc targets were restructured in
+# #25586
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [

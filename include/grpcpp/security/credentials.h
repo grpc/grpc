@@ -117,7 +117,7 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   ~CallCredentials() override;
 
   /// Apply this instance's credentials to \a call.
-  virtual bool ApplyToCall(grpc_call* call);
+  bool ApplyToCall(grpc_call* call);
 
   virtual grpc::string DebugString();
 

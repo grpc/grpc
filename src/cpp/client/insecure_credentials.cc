@@ -26,7 +26,7 @@
 
 namespace grpc {
 namespace {
-class InsecureChannelCredentialsImpl : public ChannelCredentials {
+class InsecureChannelCredentialsImpl final : public ChannelCredentials {
  public:
   InsecureChannelCredentialsImpl()
       : ChannelCredentials(grpc_insecure_credentials_create()) {}
