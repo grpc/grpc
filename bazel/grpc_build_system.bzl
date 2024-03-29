@@ -77,6 +77,8 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
+        elif dep == "libprotobuf_mutator":
+            ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
             ret.append("//external:" + dep)
     return ret
