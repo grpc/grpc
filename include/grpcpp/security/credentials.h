@@ -119,7 +119,7 @@ class CallCredentials : private grpc::internal::GrpcLibrary {
   /// Apply this instance's credentials to \a call.
   bool ApplyToCall(grpc_call* call);
 
-  virtual grpc::string DebugString();
+  grpc::string DebugString();
 
  protected:
   explicit CallCredentials(grpc_call_credentials* creds);
