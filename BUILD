@@ -941,6 +941,7 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "grpc++_base",
+        "grpc++_codegen_proto",
         "grpc++_insecure_client_credentials",
         "grpc++_insecure_server_credentials",
         "grpc++_secure_client_credentials",
@@ -1220,6 +1221,7 @@ grpc_cc_library(
 # similar way to how the grpc_unsecure and grpc targets were restructured in
 # #25586. specifically, grpc++ should essentially be the same as grpc++_unsecure
 # except for additional dependencies to pull in additional credential types.
+# DO NOT SUBMIT(hork): fix @grpc:alt_grpc++_base_unsecure_legacy in cherrypick
 # DO NOT SUBMIT(hork) - rm
 # It looks like the biggest change needed for the TODO would be convergence of grpc++_base and grpc++_base_unsecure. There is no grpc_base_unsecure
 # and yeah, i think there should be a single base target used by both grpc++ and grpc++_unsecure
@@ -2552,63 +2554,6 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_service_config_impl",
-        "grpcpp_backend_metric_recorder",
-        "grpcpp_call_metric_recorder",
-        "grpcpp_status",
-        "iomgr",
-        "iomgr_timer",
-        "legacy_context",
-        "ref_counted_ptr",
-        "resource_quota_api",
-        "server",
-        "//src/core:arena",
-        "//src/core:channel_args",
-        "//src/core:default_event_engine",
-        "//src/core:error",
-        "//src/core:gpr_atm",
-        "//src/core:gpr_manual_constructor",
-        "//src/core:grpc_service_config",
-        "//src/core:grpc_transport_inproc",
-        "//src/core:ref_counted",
-        "//src/core:resource_quota",
-        "//src/core:slice",
-        "//src/core:socket_mutator",
-        "//src/core:thread_quota",
-        "//src/core:time",
-        "//src/core:useful",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc++_base_unsecure",
-    srcs = GRPCXX_SRCS,
-    hdrs = GRPCXX_HDRS,
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/functional:any_invocable",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/strings:cord",
-        "absl/strings:str_format",
-        "absl/synchronization",
-        "upb_base_lib",
-        "upb_mem_lib",
-    ],
-    language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
-    visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
-    deps = [
-        "channel_arg_names",
-        "exec_ctx",
-        "gpr",
-        "grpc++_config_proto",
-        "grpc_base",
-        "grpc_health_upb",
-        "grpc_public_hdrs",
-        "grpc_security_base",
-        "grpc_service_config_impl",
-        "grpc_unsecure",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
