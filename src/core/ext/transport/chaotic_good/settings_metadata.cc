@@ -23,8 +23,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-Arena::PoolPtr<grpc_metadata_batch> SettingsMetadata::ToMetadataBatch(
-    Arena* arena) {
+Arena::PoolPtr<grpc_metadata_batch> SettingsMetadata::ToMetadataBatch() {
   auto md = Arena::MakePooled<grpc_metadata_batch>();
   auto add = [&md](absl::string_view key, std::string value) {
     md->Append(key, Slice::FromCopiedString(value),

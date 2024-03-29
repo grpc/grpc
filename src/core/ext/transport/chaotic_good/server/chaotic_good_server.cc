@@ -59,6 +59,7 @@
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/server.h"
@@ -338,7 +339,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   frame.headers =
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        absl::nullopt}
-          .ToMetadataBatch(GetContext<Arena>());
+          .ToMetadataBatch();
   auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
@@ -352,7 +353,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   frame.headers =
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        self->connection_->data_alignment_}
-          .ToMetadataBatch(GetContext<Arena>());
+          .ToMetadataBatch();
   auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
@@ -418,6 +419,11 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             [self, chaotic_good_ext](bool is_control_endpoint) {
               if (chaotic_good_ext != nullptr) {
                 chaotic_good_ext->EnableStatsCollection(is_control_endpoint);
+                if (is_control_endpoint) {
+                  // Control endpoint should use the default memory quota
+                  chaotic_good_ext->UseMemoryQuota(
+                      ResourceQuota::Default()->memory_quota());
+                }
               }
               return EndpointWriteSettingsFrame(self, is_control_endpoint);
             });
