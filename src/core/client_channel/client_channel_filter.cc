@@ -1340,6 +1340,7 @@ ClientChannelFilter::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
+  promise_detail::Context<Arena> arena_ctx(args.arena);
   return OrphanablePtr<FilterBasedLoadBalancedCall>(
       args.arena->New<FilterBasedLoadBalancedCall>(
           this, args, pollent, on_call_destruction_complete,
@@ -2894,6 +2895,15 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     set_picker(chand_->picker_);
   }
   while (true) {
+    // TODO(roth): Fix race condition in channel_idle filter and any
+    // other possible causes of this.
+    if (pickers.back() == nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+        gpr_log(GPR_ERROR, "chand=%p lb_call=%p: picker is null, failing call",
+                chand_, this);
+      }
+      return absl::InternalError("picker is null -- shouldn't happen");
+    }
     // Do pick.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",

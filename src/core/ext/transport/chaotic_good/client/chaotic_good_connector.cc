@@ -33,8 +33,8 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -257,6 +257,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                 endpoint.value().get());
         if (chaotic_good_ext != nullptr) {
           chaotic_good_ext->EnableStatsCollection(/*is_control_channel=*/true);
+          chaotic_good_ext->UseMemoryQuota(
+              ResourceQuota::Default()->memory_quota());
         }
         p->handshake_mgr_->DoHandshake(
             grpc_event_engine_endpoint_create(std::move(endpoint.value())),

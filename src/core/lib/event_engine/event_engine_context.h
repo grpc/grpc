@@ -1,5 +1,4 @@
-//
-// Copyright 2019 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include <grpc/grpc.h>
-#include <grpcpp/support/client_callback.h>
-#include <grpcpp/support/status.h>
+#ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_CONTEXT_H
+#define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_CONTEXT_H
 
-#include "src/core/lib/surface/call.h"
+#include <grpc/support/port_platform.h>
 
-namespace grpc {
-namespace internal {
+#include <grpc/event_engine/event_engine.h>
 
-bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {
-  return grpc_call_is_trailers_only(call);
-}
+#include "src/core/lib/promise/context.h"
 
-}  // namespace internal
-}  // namespace grpc
+namespace grpc_core {
+
+template <>
+struct ContextType<grpc_event_engine::experimental::EventEngine> {};
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_CONTEXT_H

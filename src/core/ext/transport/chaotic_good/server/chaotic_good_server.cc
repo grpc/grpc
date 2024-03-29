@@ -38,7 +38,7 @@
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
@@ -59,6 +59,7 @@
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/server.h"
@@ -418,6 +419,11 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
             [self, chaotic_good_ext](bool is_control_endpoint) {
               if (chaotic_good_ext != nullptr) {
                 chaotic_good_ext->EnableStatsCollection(is_control_endpoint);
+                if (is_control_endpoint) {
+                  // Control endpoint should use the default memory quota
+                  chaotic_good_ext->UseMemoryQuota(
+                      ResourceQuota::Default()->memory_quota());
+                }
               }
               return EndpointWriteSettingsFrame(self, is_control_endpoint);
             });

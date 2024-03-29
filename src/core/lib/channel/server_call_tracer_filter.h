@@ -1,5 +1,4 @@
-//
-// Copyright 2019 gRPC authors.
+// Copyright 2024 The gRPC Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include <grpc/grpc.h>
-#include <grpcpp/support/client_callback.h>
-#include <grpcpp/support/status.h>
+#ifndef GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
+#define GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
 
-#include "src/core/lib/surface/call.h"
+#include <grpc/support/port_platform.h>
 
-namespace grpc {
-namespace internal {
+#include "src/core/lib/config/core_configuration.h"
 
-bool ClientReactor::InternalTrailersOnly(const grpc_call* call) const {
-  return grpc_call_is_trailers_only(call);
-}
+namespace grpc_core {
 
-}  // namespace internal
-}  // namespace grpc
+void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
