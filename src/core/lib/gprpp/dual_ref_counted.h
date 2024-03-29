@@ -257,7 +257,6 @@ class DualRefCounted {
         refs_(MakeRefPair(initial_refcount, 0)) {
   }
 
- protected:
   // Ref count has dropped to zero, so the object is now orphaned.
   virtual void Orphaned() = 0;
 
