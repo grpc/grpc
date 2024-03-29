@@ -424,12 +424,12 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         instrument;
     // Per-instrument mutex.
     grpc_core::Mutex mu ABSL_ACQUIRED_BEFORE(OpenTelemetryPlugin::mu_);
-    bool callback_registered = false;
+    bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
     // Cache.
-    ValueType value;
-    std::vector<absl::string_view> label_values;
-    std::vector<absl::string_view> optional_label_values;
-    OpenTelemetryPlugin* parent;
+    ValueType value ABSL_GUARDED_BY(mu);
+    std::vector<absl::string_view> label_values ABSL_GUARDED_BY(mu);
+    std::vector<absl::string_view> optional_label_values ABSL_GUARDED_BY(mu);
+    OpenTelemetryPlugin* ot_plugin;
   };
   template <typename T>
   static void GaugeCallback(opentelemetry::metrics::ObserverResult result,
@@ -447,14 +447,14 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         instrument;
     // Per-instrument mutex.
     grpc_core::Mutex mu ABSL_ACQUIRED_BEFORE(OpenTelemetryPlugin::mu_);
-    bool callback_registered ABSL_GUARDED_BY(mu) = false;
+    bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
     // instrument1 ----- RegisteredMetricCallback1
     //               x
     // instrument2 ----- RegisteredMetricCallback2
     // One instrument can be registered by multiple callbacks.
     absl::flat_hash_map<grpc_core::RegisteredMetricCallback*, Cache> caches
         ABSL_GUARDED_BY(mu);
-    OpenTelemetryPlugin* parent;
+    OpenTelemetryPlugin* ot_plugin;
 
     void ObserveLocked(opentelemetry::metrics::ObserverResult& result,
                        grpc_core::RegisteredMetricCallback* key)
@@ -485,12 +485,9 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   };
   std::vector<InstrumentData> instruments_data_;
   grpc_core::Mutex mu_;
-  struct RegisteredMetricCallbackState {
-    grpc_core::Timestamp last_update_time;
-  };
   absl::flat_hash_map<grpc_core::RegisteredMetricCallback*,
-                      RegisteredMetricCallbackState>
-      callback_states_ ABSL_GUARDED_BY(mu_);
+                      grpc_core::Timestamp>
+      callback_timestamps_ ABSL_GUARDED_BY(mu_);
   opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
       meter_provider_;
   absl::AnyInvocable<bool(absl::string_view /*target*/) const> target_selector_;
