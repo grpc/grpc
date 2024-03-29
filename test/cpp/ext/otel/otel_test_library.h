@@ -60,7 +60,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
  protected:
   struct Options {
    public:
-    Options& set_metric_names(absl::flat_hash_set<absl::string_view> names) {
+    Options& set_metric_names(std::vector<absl::string_view> names) {
       metric_names = std::move(names);
       return *this;
     }
@@ -119,7 +119,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
-    absl::flat_hash_set<absl::string_view> metric_names;
+    std::vector<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
     std::unique_ptr<opentelemetry::sdk::resource::Resource> resource =

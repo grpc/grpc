@@ -219,11 +219,14 @@ class PromiseEndpoint {
                });
   }
 
-  void EnforceRxMemoryAlignment() {
+  // Enables RPC receive coalescing and alignment of memory holding received
+  // RPCs.
+  void EnforceRxMemoryAlignmentAndCoalescing() {
     auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
         grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint_.get());
     if (chaotic_good_ext != nullptr) {
       chaotic_good_ext->EnforceRxMemoryAlignment();
+      chaotic_good_ext->EnableRpcReceiveCoalescing();
       if (read_state_->buffer.Length() == 0) {
         return;
       }

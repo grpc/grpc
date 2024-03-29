@@ -47,7 +47,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         data_endpoint_(std::move(data_endpoint)),
         encoder_(std::move(hpack_encoder)),
         parser_(std::move(hpack_parser)) {
-    data_endpoint_.EnforceRxMemoryAlignment();
+    // Enable RxMemoryAlignment and RPC receive coalescing after the transport
+    // setup is complete. At this point all the settings frames should have
+    // been read.
+    data_endpoint_.EnforceRxMemoryAlignmentAndCoalescing();
   }
 
   auto WriteFrame(const FrameInterface& frame) {
