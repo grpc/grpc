@@ -1217,14 +1217,7 @@ grpc_cc_library(
     ],
 )
 
-# TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
-# similar way to how the grpc_unsecure and grpc targets were restructured in
-# #25586. specifically, grpc++ should essentially be the same as grpc++_unsecure
-# except for additional dependencies to pull in additional credential types.
 # DO NOT SUBMIT(hork): fix @grpc:alt_grpc++_base_unsecure_legacy in cherrypick
-# DO NOT SUBMIT(hork) - rm
-# It looks like the biggest change needed for the TODO would be convergence of grpc++_base and grpc++_base_unsecure. There is no grpc_base_unsecure
-# and yeah, i think there should be a single base target used by both grpc++ and grpc++_unsecure
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [
@@ -1233,7 +1226,7 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     external_deps = [
-        "absl/strings",
+        "absl/strings:cord",
         "absl/synchronization",
     ],
     language = "c++",
@@ -1244,7 +1237,6 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "channel_arg_names",
         "gpr",
         "grpc++_base",
         "grpc++_codegen_proto",
