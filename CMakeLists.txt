@@ -30175,7 +30175,7 @@ target_include_directories(test_cpp_ext_chaotic_good_test
 target_link_libraries(test_cpp_ext_chaotic_good_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
+  grpc++_unsecure
   grpc_test_util
 )
 
