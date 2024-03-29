@@ -68,6 +68,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        ":memory_quota",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],

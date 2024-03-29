@@ -1364,6 +1364,24 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
               HistogramResultEq(kSum, kMin, kMax, kCount))))));
 }
 
+TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
+  grpc::internal::OpenTelemetryPluginBuilderImpl builder;
+  // First disable all metrics
+  builder.DisableAllMetrics();
+  EXPECT_TRUE(builder.TestOnlyEnabledMetrics().empty());
+  // Add in a few metrics
+  builder.EnableMetrics(
+      {"grpc.test.metric_1", "grpc.test.metric_2", "grpc.test.metric_3"});
+  EXPECT_THAT(
+      builder.TestOnlyEnabledMetrics(),
+      ::testing::UnorderedElementsAre(
+          "grpc.test.metric_1", "grpc.test.metric_2", "grpc.test.metric_3"));
+  // Now remove a few metrics
+  builder.DisableMetrics({"grpc.test.metric_1", "grpc.test.metric_2"});
+  EXPECT_THAT(builder.TestOnlyEnabledMetrics(),
+              ::testing::UnorderedElementsAre("grpc.test.metric_3"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

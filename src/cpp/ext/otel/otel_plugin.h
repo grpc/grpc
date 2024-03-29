@@ -135,8 +135,10 @@ class OpenTelemetryPluginBuilderImpl {
   // grpc.server.call.duration
   // grpc.server.call.sent_total_compressed_message_size
   // grpc.server.call.rcvd_total_compressed_message_size
-  OpenTelemetryPluginBuilderImpl& EnableMetric(absl::string_view metric_name);
-  OpenTelemetryPluginBuilderImpl& DisableMetric(absl::string_view metric_name);
+  OpenTelemetryPluginBuilderImpl& EnableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilderImpl& DisableMetrics(
+      absl::Span<const absl::string_view> metric_names);
   OpenTelemetryPluginBuilderImpl& DisableAllMetrics();
   // If set, \a server_selector is called per incoming call on the server
   // to decide whether to collect metrics on that call or not.
@@ -173,6 +175,10 @@ class OpenTelemetryPluginBuilderImpl {
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
   absl::Status BuildAndRegisterGlobal();
+
+  const absl::flat_hash_set<std::string>& TestOnlyEnabledMetrics() {
+    return metrics_;
+  }
 
  private:
   std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider_;
