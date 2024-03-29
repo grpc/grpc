@@ -72,20 +72,13 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  if (IsV3ServerAuthFilterEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  } else {
-    builder->channel_init()
-        ->RegisterFilter<LegacyServerAuthFilter>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  }
+  builder->channel_init()
+      ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
+      .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   builder->channel_init()
       ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After<ServerAuthFilter>()
-      .After<LegacyServerAuthFilter>();
+      .After<ServerAuthFilter>();
 }
 }  // namespace grpc_core
 

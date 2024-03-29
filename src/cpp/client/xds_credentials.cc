@@ -23,16 +23,21 @@
 #include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/cpp/client/secure_credentials.h"
-
 namespace grpc {
+class XdsChannelCredentialsImpl : public ChannelCredentials {
+ public:
+  explicit XdsChannelCredentialsImpl(
+      const std::shared_ptr<ChannelCredentials>& fallback_creds)
+      : ChannelCredentials(
+            grpc_xds_credentials_create(fallback_creds->c_creds_)) {
+    GPR_ASSERT(fallback_creds->c_creds_ != nullptr);
+  }
+};
 
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
   GPR_ASSERT(fallback_creds != nullptr);
-  GPR_ASSERT(fallback_creds->c_creds() != nullptr);
-  return internal::WrapChannelCredentials(
-      grpc_xds_credentials_create(fallback_creds->c_creds()));
+  return std::make_shared<XdsChannelCredentialsImpl>(fallback_creds);
 }
 
 namespace experimental {

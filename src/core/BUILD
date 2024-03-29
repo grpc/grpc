@@ -7029,6 +7029,8 @@ grpc_cc_library(
         "activity",
         "cancel_callback",
         "event_engine_common",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "if",
         "map",
         "poll",

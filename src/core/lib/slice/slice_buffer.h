@@ -32,6 +32,12 @@
 void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
                                               void* dst);
 
+void grpc_slice_buffer_move_first_no_inline(grpc_slice_buffer* src, size_t n,
+                                            grpc_slice_buffer* dst);
+
+void grpc_slice_buffer_trim_end_no_inline(grpc_slice_buffer* sb, size_t n,
+                                          grpc_slice_buffer* garbage);
+
 namespace grpc_core {
 
 /// A slice buffer holds the memory for a collection of slices.
@@ -96,7 +102,14 @@ class SliceBuffer {
     grpc_slice_buffer_trim_end(&slice_buffer_, n, nullptr);
   }
 
-  /// Move the first n bytes of the SliceBuffer into a memory pointed to by dst.
+  /// Removes/deletes the last n bytes in the SliceBuffer while avoiding the
+  /// the creation of inline slices.
+  void RemoveLastNBytesNoInline(size_t n) {
+    grpc_slice_buffer_trim_end_no_inline(&slice_buffer_, n, nullptr);
+  }
+
+  /// Move the first n bytes of the SliceBuffer into a memory pointed to by
+  /// dst.
   void MoveFirstNBytesIntoBuffer(size_t n, void* dst) {
     grpc_slice_buffer_move_first_into_buffer(&slice_buffer_, n, dst);
   }

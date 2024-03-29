@@ -34,7 +34,6 @@ namespace grpc {
 
 class Server;
 class ServerCredentials;
-class SecureServerCredentials;
 
 /// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
@@ -69,13 +68,20 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials : private grpc::internal::GrpcLibrary {
  public:
+  ~ServerCredentials() override;
+
   /// This method is not thread-safe and has to be called before the server is
   /// started. The last call to this function wins.
   virtual void SetAuthMetadataProcessor(
-      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) = 0;
+      const std::shared_ptr<grpc::AuthMetadataProcessor>& processor);
+
+ protected:
+  explicit ServerCredentials(grpc_server_credentials* creds);
+
+  grpc_server_credentials* c_creds() const { return c_creds_; }
 
  private:
-  // We need these friend declarations for access to c_creds().
+  // We need these friend declarations for access to c_creds.
   friend class Server;
   friend class ServerBuilder;
   friend std::shared_ptr<ServerCredentials> grpc::XdsServerCredentials(
@@ -86,9 +92,9 @@ class ServerCredentials : private grpc::internal::GrpcLibrary {
   ///
   /// \return bound port number on success, 0 on failure.
   // TODO(dgq): the "port" part seems to be a misnomer.
-  virtual int AddPortToServer(const std::string& addr, grpc_server* server) = 0;
+  virtual int AddPortToServer(const std::string& addr, grpc_server* server);
 
-  virtual grpc_server_credentials* c_creds() const = 0;
+  grpc_server_credentials* c_creds_;
 };
 
 /// Builds SSL ServerCredentials given SSL specific options
