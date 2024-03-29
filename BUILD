@@ -4712,7 +4712,7 @@ grpc_cc_library(
     visibility = ["@grpc:chaotic_good"],
     deps = [
         "gpr",
-        "grpc++_base",
+        "grpc++_base_unsecure",
         "grpc_public_hdrs",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",
