@@ -146,7 +146,7 @@ main() {
   echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
   source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
 
-  activate_gke_cluster GKE_CLUSTER_PSM_CSM
+  activate_gke_cluster GKE_CLUSTER_PSM_CSM_REGIONAL
 
   set -x
   if [[ -n "${KOKORO_ARTIFACTS_DIR}" ]]; then
