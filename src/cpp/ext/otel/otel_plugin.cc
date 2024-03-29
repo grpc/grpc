@@ -698,7 +698,7 @@ void OpenTelemetryPlugin::AddCallback(
     grpc_core::RegisteredMetricCallback* callback) {
   {
     grpc_core::MutexLock l{&mu_};
-    callback_timestamps_.emplace(callback, grpc_core::Timestamp::InfPast());
+    callback_timestamps_.emplace(callback, grpc_core::Timestamp{});
   }
   for (const auto& handle : callback->metrics()) {
     grpc_core::Match(
@@ -830,9 +830,7 @@ void OpenTelemetryPlugin::GaugeCallback(
 
 template <typename ValueType>
 void OpenTelemetryPlugin::CallbackGaugeState<ValueType>::ObserveLocked(
-    opentelemetry::metrics::ObserverResult& result,
-    grpc_core::RegisteredMetricCallback* key) {
-  const auto& cache = caches.at(key);
+    opentelemetry::metrics::ObserverResult& result, const Cache& cache) {
   const auto& descriptor =
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor({id});
   GPR_ASSERT(descriptor.label_keys.size() == cache.label_values.size());
@@ -863,7 +861,7 @@ void OpenTelemetryPlugin::CallbackGaugeCallback(
                callback_gauge_state->ot_plugin->callback_timestamps_.end());
     if (now - iter->second < registered_metric_callback->min_interval()) {
       // Use cached value.
-      callback_gauge_state->ObserveLocked(result, registered_metric_callback);
+      callback_gauge_state->ObserveLocked(result, elem.second);
       continue;
     }
     // Otherwise update and use the cache.
@@ -871,7 +869,7 @@ void OpenTelemetryPlugin::CallbackGaugeCallback(
     CallbackMetricReporter reporter(callback_gauge_state->ot_plugin,
                                     registered_metric_callback);
     registered_metric_callback->Run(reporter);
-    callback_gauge_state->ObserveLocked(result, registered_metric_callback);
+    callback_gauge_state->ObserveLocked(result, elem.second);
   }
 }
 

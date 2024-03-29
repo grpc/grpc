@@ -457,8 +457,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     OpenTelemetryPlugin* ot_plugin;
 
     void ObserveLocked(opentelemetry::metrics::ObserverResult& result,
-                       grpc_core::RegisteredMetricCallback* key)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
+                       const Cache& cache) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
   };
   template <typename T>
   static void CallbackGaugeCallback(
