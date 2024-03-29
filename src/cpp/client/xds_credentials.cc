@@ -24,7 +24,7 @@
 #include <grpcpp/security/credentials.h>
 
 namespace grpc {
-class XdsChannelCredentialsImpl : public ChannelCredentials {
+class XdsChannelCredentialsImpl final : public ChannelCredentials {
  public:
   explicit XdsChannelCredentialsImpl(
       const std::shared_ptr<ChannelCredentials>& fallback_creds)

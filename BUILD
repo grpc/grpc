@@ -1216,12 +1216,14 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
+# similar way to how the grpc_unsecure and grpc targets were restructured in
+# #25586
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [
         "src/cpp/client/call_credentials.cc",
         "src/cpp/client/channel_credentials.cc",
-        "src/cpp/client/insecure_credentials.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/server_credentials.cc",
@@ -2379,7 +2381,6 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS + [
         "src/cpp/client/call_credentials.cc",
         "src/cpp/client/channel_credentials.cc",
-        "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
