@@ -1330,13 +1330,10 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     ++accept_stream_types;
     op->set_accept_stream = true;
     op->set_accept_stream_fn = AcceptStream;
-    if (IsRegisteredMethodLookupInTransportEnabled()) {
-      op->set_registered_method_matcher_fn = [](void* arg,
-                                                ClientMetadata* metadata) {
-        static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(
-            *metadata);
-      };
-    }
+    op->set_registered_method_matcher_fn = [](void* arg,
+                                              ClientMetadata* metadata) {
+      static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(*metadata);
+    };
     op->set_accept_stream_user_data = this;
   }
   if (transport->server_transport() != nullptr) {
@@ -1527,15 +1524,9 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   }
   // Find request matcher.
   RequestMatcherInterface* matcher;
-  RegisteredMethod* rm = nullptr;
-  if (IsRegisteredMethodLookupInTransportEnabled()) {
-    rm = static_cast<RegisteredMethod*>(
-        call_args.client_initial_metadata->get(GrpcRegisteredMethod())
-            .value_or(nullptr));
-  } else {
-    rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
-                                    path_ptr->as_string_view());
-  }
+  RegisteredMethod* rm = static_cast<RegisteredMethod*>(
+      call_args.client_initial_metadata->get(GrpcRegisteredMethod())
+          .value_or(nullptr));
   ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
       maybe_read_first_message([] { return NextResult<MessageHandle>(); });
   if (rm != nullptr) {
@@ -1760,7 +1751,6 @@ void Server::CallData::KillZombie() {
 
 // If this changes, change MakeCallPromise too.
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
     state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     KillZombie();
@@ -1771,15 +1761,8 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
-    RegisteredMethod* rm;
-    if (IsRegisteredMethodLookupInTransportEnabled()) {
-      rm = static_cast<RegisteredMethod*>(
-          recv_initial_metadata_->get(GrpcRegisteredMethod())
-              .value_or(nullptr));
-    } else {
-      rm = chand->GetRegisteredMethod(host_->as_string_view(),
-                                      path_->as_string_view());
-    }
+    RegisteredMethod* rm = static_cast<RegisteredMethod*>(
+        recv_initial_metadata_->get(GrpcRegisteredMethod()).value_or(nullptr));
     if (rm != nullptr) {
       matcher_ = rm->matcher.get();
       payload_handling = rm->payload_handling;

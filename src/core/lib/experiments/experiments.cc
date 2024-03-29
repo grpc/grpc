@@ -24,8 +24,6 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_absl_base64 = "Use abseil base64 functions.";
-const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -98,18 +96,12 @@ const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -142,12 +134,6 @@ const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_v3_channel_idle_filters =
     "Use the v3 filter API version of the idle filters.";
 const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -169,8 +155,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
-     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -211,14 +195,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good", description_chaotic_good,
      additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
      false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -241,10 +221,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"v3_channel_idle_filters", description_v3_channel_idle_filters,
      additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -258,8 +234,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_absl_base64 = "Use abseil base64 functions.";
-const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -332,18 +306,12 @@ const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -376,12 +344,6 @@ const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_v3_channel_idle_filters =
     "Use the v3 filter API version of the idle filters.";
 const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -403,8 +365,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
-     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -445,14 +405,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good", description_chaotic_good,
      additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
      false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -475,10 +431,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"v3_channel_idle_filters", description_v3_channel_idle_filters,
      additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -492,8 +444,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
-const char* const description_absl_base64 = "Use abseil base64 functions.";
-const char* const additional_constraints_absl_base64 = "{}";
 const char* const description_call_status_override_on_cancellation =
     "Avoid overriding call status of successfully finished calls if it races "
     "with cancellation.";
@@ -566,18 +516,12 @@ const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -610,12 +554,6 @@ const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_v3_channel_idle_filters =
     "Use the v3 filter API version of the idle filters.";
 const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -637,8 +575,6 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"absl_base64", description_absl_base64, additional_constraints_absl_base64,
-     nullptr, 0, true, true},
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
@@ -679,14 +615,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"chaotic_good", description_chaotic_good,
      additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
      false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -709,10 +641,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"v3_channel_idle_filters", description_v3_channel_idle_filters,
      additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,

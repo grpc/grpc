@@ -364,7 +364,6 @@ grpc_cc_test(
     tags = [
         "cpp_end2end_test",
         "no_test_ios",
-        "surface_registered_method_lookup",
     ],
     deps = [
         ":end2end_test_lib",

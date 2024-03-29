@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
@@ -22,8 +24,6 @@ load(
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
 )
-load("@bazel_skylib//lib:selects.bzl", "selects")
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 
 licenses(["reciprocal"])
 
@@ -1919,7 +1919,6 @@ grpc_cc_library(
         "//src/core:lib/channel/promise_based_filter.cc",
         "//src/core:lib/channel/status_util.cc",
         "//src/core:lib/compression/message_compress.cc",
-        "//src/core:lib/slice/b64.cc",
         "//src/core:lib/surface/call.cc",
         "//src/core:lib/surface/call_details.cc",
         "//src/core:lib/surface/call_log_batch.cc",
@@ -1942,7 +1941,6 @@ grpc_cc_library(
         "//src/core:lib/channel/promise_based_filter.h",
         "//src/core:lib/channel/status_util.h",
         "//src/core:lib/compression/message_compress.h",
-        "//src/core:lib/slice/b64.h",
         "//src/core:lib/surface/call.h",
         "//src/core:lib/surface/call_test_only.h",
         "//src/core:lib/surface/completion_queue.h",
@@ -2213,7 +2211,6 @@ grpc_cc_library(
         "//src/core:lib/security/credentials/plugin/plugin_credentials.cc",
         "//src/core:lib/security/security_connector/security_connector.cc",
         "//src/core:lib/security/transport/client_auth_filter.cc",
-        "//src/core:lib/security/transport/legacy_server_auth_filter.cc",
         "//src/core:lib/security/transport/secure_endpoint.cc",
         "//src/core:lib/security/transport/security_handshaker.cc",
         "//src/core:lib/security/transport/server_auth_filter.cc",
@@ -2388,6 +2385,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2468,6 +2466,7 @@ grpc_cc_library(
     hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3922,7 +3921,6 @@ grpc_cc_library(
         "//src/core:arena_promise",
         "//src/core:closure",
         "//src/core:error",
-        "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
@@ -4140,13 +4138,11 @@ grpc_cc_library(
         "//src/core:ext/filters/http/client/http_client_filter.cc",
         "//src/core:ext/filters/http/http_filters_plugin.cc",
         "//src/core:ext/filters/http/message_compress/compression_filter.cc",
-        "//src/core:ext/filters/http/message_compress/legacy_compression_filter.cc",
         "//src/core:ext/filters/http/server/http_server_filter.cc",
     ],
     hdrs = [
         "//src/core:ext/filters/http/client/http_client_filter.h",
         "//src/core:ext/filters/http/message_compress/compression_filter.h",
-        "//src/core:ext/filters/http/message_compress/legacy_compression_filter.h",
         "//src/core:ext/filters/http/server/http_server_filter.h",
     ],
     external_deps = [

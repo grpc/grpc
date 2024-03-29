@@ -68,6 +68,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        ":memory_quota",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -7027,6 +7028,8 @@ grpc_cc_library(
         "activity",
         "cancel_callback",
         "event_engine_common",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "if",
         "map",
         "poll",
