@@ -270,9 +270,9 @@ grpc_cc_library(
         "end2end_test_suites",
         "fixture_support",
         "//:config_vars",
-        "//test/core/util:grpc_test_util",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/util:fuzz_config_vars",
+        "//test/core/util:grpc_test_util",
     ],
 )
 

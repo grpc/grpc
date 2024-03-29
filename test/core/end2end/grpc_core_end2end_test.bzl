@@ -16,7 +16,7 @@
 Generate one e2e test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 END2END_TEST_DATA = [
@@ -26,6 +26,14 @@ END2END_TEST_DATA = [
 ]
 
 def grpc_core_end2end_test(name, shard_count = 10, tags = []):
+    """Generate one core end2end test
+
+    Args:
+        name: name of the test, must correspond to a "test/name.cc" file
+        shard_count: per bazel
+        tags: per bazel
+    """
+
     if len(name) > 60:
         fail("test name %s too long" % name)
 
