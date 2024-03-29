@@ -4815,7 +4815,6 @@ add_library(grpc++_unsecure
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
@@ -4878,6 +4877,7 @@ target_include_directories(grpc++_unsecure
 )
 target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
   grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
 )
@@ -8163,31 +8163,20 @@ add_executable(binder_transport_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
-  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/common/tls_certificate_provider.cc
-  src/cpp/common/tls_certificate_verifier.cc
-  src/cpp/common/tls_credentials_options.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -12677,31 +12666,20 @@ add_executable(endpoint_binder_pool_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
-  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/common/tls_certificate_provider.cc
-  src/cpp/common/tls_certificate_verifier.cc
-  src/cpp/common/tls_credentials_options.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -13534,31 +13512,20 @@ add_executable(fake_binder_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
-  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/common/tls_certificate_provider.cc
-  src/cpp/common/tls_certificate_verifier.cc
-  src/cpp/common/tls_credentials_options.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -30175,7 +30142,7 @@ target_include_directories(test_cpp_ext_chaotic_good_test
 target_link_libraries(test_cpp_ext_chaotic_good_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
+  grpc++_unsecure
   grpc_test_util
 )
 
@@ -31369,31 +31336,20 @@ add_executable(transport_stream_receiver_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
-  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/common/tls_certificate_provider.cc
-  src/cpp/common/tls_certificate_verifier.cc
-  src/cpp/common/tls_credentials_options.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -32203,31 +32159,20 @@ add_executable(wire_reader_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
-  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/common/tls_certificate_provider.cc
-  src/cpp/common/tls_certificate_verifier.cc
-  src/cpp/common/tls_credentials_options.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -32311,31 +32256,20 @@ add_executable(wire_writer_test
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_credentials.cc
   src/cpp/common/alarm.cc
-  src/cpp/common/auth_property_iterator.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
-  src/cpp/common/secure_auth_context.cc
-  src/cpp/common/secure_create_auth_context.cc
-  src/cpp/common/tls_certificate_provider.cc
-  src/cpp/common/tls_certificate_verifier.cc
-  src/cpp/common/tls_credentials_options.cc
   src/cpp/common/validate_service_config.cc
   src/cpp/common/version_cc.cc
   src/cpp/server/async_generic_service.cc
   src/cpp/server/backend_metric_recorder.cc
   src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
   src/cpp/server/external_connection_acceptor_impl.cc
   src/cpp/server/health/default_health_check_service.cc
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/server/secure_server_credentials.cc
   src/cpp/server/server_builder.cc
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
@@ -36472,8 +36406,8 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
-  "libcares zlib"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc_unsecure"
+  "libcares openssl re2 zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
   "grpc++_unsecure.pc")
