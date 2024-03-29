@@ -557,7 +557,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         )
 
     native.cc_library(
-        name = "%s_library" % name,
+        name = "%s_TEST_LIBRARY" % name,
         testonly = 1,
         srcs = srcs,
         deps = core_deps,
@@ -570,7 +570,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
         native.cc_test(
             name = poller_config["name"],
-            deps = ["%s_library" % name],
+            deps = ["%s_TEST_LIBRARY" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
