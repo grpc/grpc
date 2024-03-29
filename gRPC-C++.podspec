@@ -1358,7 +1358,6 @@ Pod::Spec.new do |s|
                       'src/cpp/client/create_channel_internal.cc',
                       'src/cpp/client/create_channel_internal.h',
                       'src/cpp/client/create_channel_posix.cc',
-                      'src/cpp/client/insecure_credentials.cc',
                       'src/cpp/client/secure_credentials.cc',
                       'src/cpp/client/secure_credentials.h',
                       'src/cpp/client/xds_credentials.cc',
