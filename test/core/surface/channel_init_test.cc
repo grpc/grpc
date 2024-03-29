@@ -255,7 +255,10 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   segment->AddToCallFilterStack(stack_builder);
   segment = absl::CancelledError();  // force the segment to be destroyed
   auto stack = stack_builder.Build();
-  { CallFilters call_filters(stack); }
+  {
+    CallFilters call_filters(Arena::MakePooled<ClientMetadata>());
+    call_filters.SetStack(std::move(stack));
+  }
   EXPECT_EQ(p, 1);
 }
 
