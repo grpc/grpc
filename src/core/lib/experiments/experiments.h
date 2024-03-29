@@ -87,8 +87,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -135,8 +133,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -184,8 +180,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -222,7 +216,6 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdChaoticGood,
-  kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
@@ -308,10 +301,6 @@ inline bool IsPromiseBasedServerCallEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
 inline bool IsChaoticGoodEnabled() {
   return IsExperimentEnabled(kExperimentIdChaoticGood);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() {
-  return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {

@@ -257,6 +257,8 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
                 endpoint.value().get());
         if (chaotic_good_ext != nullptr) {
           chaotic_good_ext->EnableStatsCollection(/*is_control_channel=*/true);
+          chaotic_good_ext->UseMemoryQuota(
+              ResourceQuota::Default()->memory_quota());
         }
         p->handshake_mgr_->DoHandshake(
             grpc_event_engine_endpoint_create(std::move(endpoint.value())),

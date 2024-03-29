@@ -100,6 +100,13 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
+  // Methods to manipulate which instruments are enabled in the OpenTelemetry
+  // Stats Plugin.
+  OpenTelemetryPluginBuilder& EnableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilder& DisableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilder& DisableAllMetrics();
   /// Add a plugin option to add to the opentelemetry plugin being built. At
   /// present, this type is an opaque type. Ownership of \a option is
   /// transferred when `AddPluginOption` is invoked. A maximum of 64 plugin
