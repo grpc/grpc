@@ -16,7 +16,7 @@
 Generate one e2e test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 END2END_TEST_DATA = [
