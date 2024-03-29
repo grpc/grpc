@@ -343,7 +343,6 @@ GRPCXX_SRCS = [
     "src/cpp/common/validate_service_config.cc",
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
-    "src/cpp/server/create_default_thread_pool.cc",
     "src/cpp/server/external_connection_acceptor_impl.cc",
     "src/cpp/server/health/default_health_check_service.cc",
     "src/cpp/server/health/health_check_service.cc",
@@ -363,10 +362,8 @@ GRPCXX_SRCS = [
 GRPCXX_HDRS = [
     "src/cpp/client/create_channel_internal.h",
     "src/cpp/client/client_stats_interceptor.h",
-    "src/cpp/server/dynamic_thread_pool.h",
     "src/cpp/server/external_connection_acceptor_impl.h",
     "src/cpp/server/health/default_health_check_service.h",
-    "src/cpp/server/thread_pool_interface.h",
     "src/cpp/thread_manager/thread_manager.h",
 ]
 
@@ -944,6 +941,11 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "grpc++_base",
+        "grpc++_insecure_client_credentials",
+        "grpc++_insecure_server_credentials",
+        "grpc++_secure_client_credentials",
+        "grpc++_secure_server_credentials",
+        "grpc++_tls_credentials",
         "//src/core:gpr_atm",
         "//src/core:slice",
     ],
@@ -1216,7 +1218,11 @@ grpc_cc_library(
 
 # TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
 # similar way to how the grpc_unsecure and grpc targets were restructured in
-# #25586
+# #25586. specifically, grpc++ should essentially be the same as grpc++_unsecure
+# except for additional dependencies to pull in additional credential types.
+# DO NOT SUBMIT(hork) - rm
+# It looks like the biggest change needed for the TODO would be convergence of grpc++_base and grpc++_base_unsecure. There is no grpc_base_unsecure
+# and yeah, i think there should be a single base target used by both grpc++ and grpc++_unsecure
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [
@@ -1238,8 +1244,10 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr",
-        "grpc++_base_unsecure",
+        "grpc++_base",
         "grpc++_codegen_proto",
+        "grpc++_insecure_client_credentials",
+        "grpc++_insecure_server_credentials",
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_unsecure",
@@ -2376,58 +2384,174 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc++_base",
-    srcs = GRPCXX_SRCS + [
-        "src/cpp/client/insecure_credentials.cc",
-        "src/cpp/client/secure_credentials.cc",
-        "src/cpp/common/auth_property_iterator.cc",
+    name = "grpc++_insecure_client_credentials",
+    srcs = ["src/cpp/client/insecure_credentials.cc"],
+    hdrs = [],
+    external_deps = [],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "grpc++_public_hdrs",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_insecure_server_credentials",
+    srcs = ["src/cpp/server/insecure_server_credentials.cc"],
+    hdrs = [],
+    external_deps = [],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_secure_auth_context",
+    srcs = [
         "src/cpp/common/secure_auth_context.cc",
+    ],
+    hdrs = [
+        "src/cpp/common/secure_auth_context.h",
+    ],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "grpc++_auth_property_iterator",
+        "grpc++_public_hdrs",
+        "grpc_security_base",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_secure_client_credentials",
+    srcs = ["src/cpp/client/secure_credentials.cc"],
+    hdrs = ["src/cpp/client/secure_credentials.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc++_secure_auth_context",
+        "grpc_base",
+        "grpc_credentials_util",
+        "legacy_grpc++_thread_pool",
+        "//src/core:default_event_engine",
+        "//src/core:env",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:load_file",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_secure_server_credentials",
+    srcs = [
         "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/server/secure_server_credentials.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/secure_server_credentials.h",
+    ],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "grpc++_public_hdrs",
+        "grpc++_secure_auth_context",
+        "grpc_base",
+        "grpc_public_hdrs",
+        "grpc_security_base",
+        "legacy_grpc++_thread_pool",
+        "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "legacy_grpc++_thread_pool",
+    srcs = ["src/cpp/server/create_default_thread_pool.cc"],
+    hdrs = [
+        "src/cpp/server/dynamic_thread_pool.h",
+        "src/cpp/server/thread_pool_interface.h",
+    ],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "grpc_base",
+        "//src/core:default_event_engine",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_tls_credentials",
+    srcs = [
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/server/insecure_server_credentials.cc",
-        "src/cpp/server/secure_server_credentials.cc",
     ],
-    hdrs = GRPCXX_HDRS + [
-        "src/cpp/client/secure_credentials.h",
-        "src/cpp/common/secure_auth_context.h",
-        "src/cpp/server/secure_server_credentials.h",
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
     ],
+)
+
+grpc_cc_library(
+    name = "grpc++_auth_property_iterator",
+    srcs = [
+        "src/cpp/common/auth_property_iterator.cc",
+    ],
+    language = "c++",
+    visibility = ["//visibility:private"],
+    deps = [
+        "gpr",
+        "grpc++_public_hdrs",
+        "grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_base",
+    srcs = GRPCXX_SRCS,
+    hdrs = GRPCXX_HDRS,
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:cord",
         "absl/strings:str_format",
         "absl/synchronization",
-        "absl/memory",
-        "absl/types:optional",
         "upb_base_lib",
         "upb_mem_lib",
-        "protobuf_headers",
-        "absl/container:inlined_vector",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
         "channel_arg_names",
-        "channel_stack_builder",
-        "config",
         "exec_ctx",
         "gpr",
         "grpc",
-        "grpc++_codegen_proto",
+        "grpc++_config_proto",
         "grpc_base",
-        "grpc_credentials_util",
         "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_service_config_impl",
-        "grpc_trace",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
@@ -2439,38 +2563,22 @@ grpc_cc_library(
         "server",
         "//src/core:arena",
         "//src/core:channel_args",
-        "//src/core:channel_fwd",
-        "//src/core:channel_init",
-        "//src/core:channel_stack_type",
-        "//src/core:closure",
         "//src/core:default_event_engine",
-        "//src/core:env",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
-        "//src/core:grpc_audit_logging",
-        "//src/core:grpc_backend_metric_provider",
-        "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
-        "//src/core:json",
-        "//src/core:json_reader",
-        "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
         "//src/core:slice",
-        "//src/core:slice_buffer",
-        "//src/core:slice_refcount",
         "//src/core:socket_mutator",
-        "//src/core:status_helper",
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
     ],
 )
 
-# TODO(chengyuc): Give it another try to merge this to `grpc++_base` after
-# codegen files are removed.
 grpc_cc_library(
     name = "grpc++_base_unsecure",
     srcs = GRPCXX_SRCS,
@@ -2481,33 +2589,25 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/strings:cord",
+        "absl/strings:str_format",
         "absl/synchronization",
-        "absl/types:optional",
-        "absl/memory",
         "upb_base_lib",
         "upb_mem_lib",
-        "absl/strings:str_format",
-        "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    tags = [
-        "avoid_dep",
-        "nofixdeps",
-    ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
         "channel_arg_names",
-        "channel_stack_builder",
-        "config",
         "exec_ctx",
         "gpr",
+        "grpc++_config_proto",
         "grpc_base",
         "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_service_config_impl",
-        "grpc_trace",
         "grpc_unsecure",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
@@ -2520,14 +2620,10 @@ grpc_cc_library(
         "server",
         "//src/core:arena",
         "//src/core:channel_args",
-        "//src/core:channel_init",
-        "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
-        "//src/core:grpc_backend_metric_provider",
-        "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_inproc",
         "//src/core:ref_counted",
@@ -4712,7 +4808,7 @@ grpc_cc_library(
     visibility = ["@grpc:chaotic_good"],
     deps = [
         "gpr",
-        "grpc++_base_unsecure",
+        "grpc++_base",
         "grpc_public_hdrs",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",
