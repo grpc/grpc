@@ -384,19 +384,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "bm_pollset",
-    srcs = ["bm_pollset.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    deps = [
-        ":helpers",
-    ],
-)
-
 grpc_cc_library(
     name = "bm_callback_test_service_impl",
     testonly = 1,
