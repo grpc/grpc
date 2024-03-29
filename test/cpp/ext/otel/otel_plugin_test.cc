@@ -1629,10 +1629,12 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  int report_count = 0;
   int64_t int_value = 0;
   double double_value = 0.5;
   auto registered_metric_callback = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
+        ++report_count;
         reporter.Report(integer_gauge_handle, int_value++, kLabelValues,
                         kOptionalLabelValues);
         reporter.Report(double_gauge_handle, double_value++, kLabelValues,
@@ -1640,8 +1642,9 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       },
       {integer_gauge_handle, double_gauge_handle},
       grpc_core::Duration::Milliseconds(100));
+  constexpr int kIterations = 100;
   ThreadedMetricsCollector collector{
-      this, grpc_core::Duration::Milliseconds(10), 100,
+      this, grpc_core::Duration::Milliseconds(10), kIterations,
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
@@ -1654,6 +1657,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
       data = collector.Stop();
   // Verify that data is incremental with duplications (cached values).
+  EXPECT_LT(report_count, kIterations);
   EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
             data[kDoubleCallbackGaugeMetric].size());
   for (size_t i = 1; i < data[kInt64CallbackGaugeMetric].size(); ++i) {
@@ -1730,10 +1734,12 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  int report_count = 0;
   int64_t int_value = 0;
   double double_value = 0.5;
   auto registered_metric_callback = stats_plugins.RegisterCallback(
       [&](grpc_core::CallbackMetricReporter& reporter) {
+        ++report_count;
         reporter.Report(integer_gauge_handle, int_value++, kLabelValues,
                         kOptionalLabelValues);
         reporter.Report(double_gauge_handle, double_value++, kLabelValues,
@@ -1741,8 +1747,9 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       },
       {integer_gauge_handle, double_gauge_handle},
       grpc_core::Duration::Milliseconds(10));
+  constexpr int kIterations = 100;
   ThreadedMetricsCollector collector{
-      this, grpc_core::Duration::Milliseconds(100), 100,
+      this, grpc_core::Duration::Milliseconds(100), kIterations,
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
@@ -1755,6 +1762,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
       data = collector.Stop();
   // Verify that data is incremental without duplications (cached values).
+  EXPECT_EQ(report_count, kIterations);
   EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
             data[kDoubleCallbackGaugeMetric].size());
   for (size_t i = 1; i < data[kInt64CallbackGaugeMetric].size(); ++i) {
@@ -1795,50 +1803,6 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                           ::testing::Each(AttributesEq(
                               kLabelKeys, kLabelValues, kOptionalLabelKeys,
                               kOptionalLabelValues)))));
-}
-
-using OpenTelemetryPluginCallbackMetricsDeathTest =
-    OpenTelemetryPluginEnd2EndTest;
-
-// We only support one Observable to one RegisteredMetricCallback and one
-// RegisteredMetricCallback to multiple Observables relationship for now.
-TEST_F(OpenTelemetryPluginCallbackMetricsDeathTest,
-       RegisterCallbackForTheSameMetricWouldCrash) {
-  constexpr absl::string_view kInt64CallbackGaugeMetric =
-      "yet_another_yet_another_int64_callback_gauge";
-  constexpr absl::string_view kDoubleCallbackGaugeMetric =
-      "yet_another_yet_another_double_callback_gauge";
-  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
-                                                           "label_key_2"};
-  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
-      "optional_label_key_1", "optional_label_key_2"};
-  auto integer_gauge_handle =
-      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
-          kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
-          kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
-  auto double_gauge_handle =
-      grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
-          kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
-          kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
-  Init(std::move(Options()
-                     .set_metric_names({kInt64CallbackGaugeMetric,
-                                        kDoubleCallbackGaugeMetric})
-                     .add_optional_label(kOptionalLabelKeys[0])
-                     .add_optional_label(kOptionalLabelKeys[1])));
-  auto stats_plugins =
-      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
-  auto registered_metric_callback = stats_plugins.RegisterCallback(
-      [&](grpc_core::CallbackMetricReporter& reporter) {},
-      {integer_gauge_handle, double_gauge_handle});
-  EXPECT_DEATH(
-      (void)stats_plugins.RegisterCallback(
-          [&](grpc_core::CallbackMetricReporter& reporter) {},
-          {integer_gauge_handle}),
-      "ASSERTION FAILED: "
-      "\\!std::exchange\\(observable_state->callback_registered, true\\)");
 }
 
 }  // namespace
