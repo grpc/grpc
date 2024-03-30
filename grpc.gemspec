@@ -110,6 +110,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/support/json.h )
   s.files += %w( include/grpc/support/log.h )
   s.files += %w( include/grpc/support/log_windows.h )
+  s.files += %w( include/grpc/support/metrics.h )
   s.files += %w( include/grpc/support/port_platform.h )
   s.files += %w( include/grpc/support/string_util.h )
   s.files += %w( include/grpc/support/sync.h )

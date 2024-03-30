@@ -271,7 +271,7 @@ GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
     return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
   }
   // TODO(roth): How do we set the authority here?
-  StatsPlugin::ChannelScope scope(key, "");
+  experimental::StatsPluginChannelScope scope(key, "");
   return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 

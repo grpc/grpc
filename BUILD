@@ -252,6 +252,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/json.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
+    "include/grpc/support/metrics.h",
     "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",

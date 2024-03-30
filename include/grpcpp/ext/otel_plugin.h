@@ -31,6 +31,8 @@
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
+#include <grpc/support/metrics.h>
+
 namespace grpc {
 
 namespace internal {
@@ -58,26 +60,7 @@ class OpenTelemetryPluginOption {
 /// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
-  /// Configuration (scope) for a specific client channel.
-  class ChannelScope {
-   public:
-    /// Returns the target used for creating the channel in the canonical form.
-    /// (Canonicalized target definition -
-    /// https://github.com/grpc/proposal/blob/master/A66-otel-stats.md)
-    absl::string_view target() const { return target_; }
-    /// Returns the default authority set for the channel, empty if un-set.
-    absl::string_view default_authority() const { return authority_; }
-
-   private:
-    friend class grpc::internal::OpenTelemetryPlugin;
-    ChannelScope(absl::string_view target, absl::string_view authority)
-        : target_(target), authority_(authority) {}
-    // Disable copy constructor and copy-assignment operator.
-    ChannelScope(const ChannelScope&) = delete;
-    ChannelScope& operator=(const ChannelScope&) = delete;
-    absl::string_view target_;
-    absl::string_view authority_;
-  };
+  using ChannelScope = grpc_core::experimental::StatsPluginChannelScope;
 
   /// Metrics
   static constexpr absl::string_view kClientAttemptStartedInstrumentName =

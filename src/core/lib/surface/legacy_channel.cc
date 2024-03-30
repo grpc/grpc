@@ -93,8 +93,11 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {
-    StatsPlugin::ChannelScope scope(
-        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY).value_or(""));
+    experimental::StatsPluginChannelScope scope(
+        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                    .value_or(CoreConfiguration::Get()
+                                  .resolver_registry()
+                                  .GetDefaultAuthority(target)));
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }

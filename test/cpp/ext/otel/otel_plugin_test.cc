@@ -1039,7 +1039,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
@@ -1083,7 +1084,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
