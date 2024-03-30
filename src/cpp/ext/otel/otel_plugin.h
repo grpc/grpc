@@ -425,22 +425,25 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     // Per-instrument mutex.
     grpc_core::Mutex mu ABSL_ACQUIRED_BEFORE(OpenTelemetryPlugin::mu_);
     bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
-    // Cache.
-    ValueType value ABSL_GUARDED_BY(mu);
-    std::vector<absl::string_view> label_values ABSL_GUARDED_BY(mu);
-    std::vector<absl::string_view> optional_label_values ABSL_GUARDED_BY(mu);
+    // Cache, it's possible to set values for multiple sets of labels at the
+    // same time.
+    absl::flat_hash_map<std::pair<std::vector<absl::string_view>,
+                                  std::vector<absl::string_view>>,
+                        ValueType>
+        cache ABSL_GUARDED_BY(mu);
     OpenTelemetryPlugin* ot_plugin;
   };
   template <typename T>
   static void GaugeCallback(opentelemetry::metrics::ObserverResult result,
                             void* arg);
+
   template <typename ValueType>
   struct CallbackGaugeState {
-    struct Cache {
-      ValueType value;
-      std::vector<absl::string_view> label_values;
-      std::vector<absl::string_view> optional_label_values;
-    };
+    // It's possible to set values for multiple sets of labels at the same time
+    // in a single callback.
+    using Cache = absl::flat_hash_map<std::pair<std::vector<absl::string_view>,
+                                                std::vector<absl::string_view>>,
+                                      ValueType>;
     grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
