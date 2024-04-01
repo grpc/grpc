@@ -140,7 +140,7 @@ const auto kMetricResources =
 // GrpcXdsClient::MetricsReporter
 //
 
-class GrpcXdsClient::MetricsReporter : public XdsMetricsReporter {
+class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
  public:
   explicit MetricsReporter(GrpcXdsClient& xds_client)
       : xds_client_(xds_client) {}

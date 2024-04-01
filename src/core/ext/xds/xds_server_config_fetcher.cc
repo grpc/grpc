@@ -99,7 +99,7 @@ TraceFlag grpc_xds_server_config_fetcher_trace(false,
 
 // A server config fetcher that fetches the information for configuring server
 // listeners from the xDS control plane.
-class XdsServerConfigFetcher : public grpc_server_config_fetcher {
+class XdsServerConfigFetcher final : public grpc_server_config_fetcher {
  public:
   XdsServerConfigFetcher(RefCountedPtr<GrpcXdsClient> xds_client,
                          grpc_server_xds_status_notifier notifier);
@@ -140,7 +140,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 // continues to be used. If there isn't any previous good update or if the
 // update received was a fatal error (resource does not exist), the server
 // listener is made to stop listening.
-class XdsServerConfigFetcher::ListenerWatcher
+class XdsServerConfigFetcher::ListenerWatcher final
     : public XdsListenerResourceType::WatcherInterface {
  public:
   ListenerWatcher(RefCountedPtr<GrpcXdsClient> xds_client,
@@ -200,7 +200,7 @@ class XdsServerConfigFetcher::ListenerWatcher
 // appropriate filter chain from the xDS Listener resource and injects channel
 // args that configure the right mTLS certs and cause the right set of HTTP
 // filters to be injected.
-class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
+class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
     : public grpc_server_config_fetcher::ConnectionManager {
  public:
   FilterChainMatchManager(RefCountedPtr<GrpcXdsClient> xds_client,
@@ -281,7 +281,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
 // with the latest updates and new connections do not need to wait for the RDS
 // resources to be fetched.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    RouteConfigWatcher : public XdsRouteConfigResourceType::WatcherInterface {
+    RouteConfigWatcher final
+    : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   RouteConfigWatcher(
       std::string resource_name,
@@ -317,7 +318,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // DynamicXdsServerConfigSelectorProvider to parse the RDS update and get
 // per-call configuration based on incoming metadata.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector : public ServerConfigSelector {
+    XdsServerConfigSelector final : public ServerConfigSelector {
  public:
   static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
       const XdsHttpFilterRegistry& http_filter_registry,
@@ -341,7 +342,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       RefCountedPtr<ServiceConfig> method_config;
     };
 
-    class RouteListIterator : public XdsRouting::RouteListIterator {
+    class RouteListIterator final : public XdsRouting::RouteListIterator {
      public:
       explicit RouteListIterator(const std::vector<Route>* routes)
           : routes_(routes) {}
@@ -361,7 +362,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     std::vector<Route> routes;
   };
 
-  class VirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
+  class VirtualHostListIterator final
+      : public XdsRouting::VirtualHostListIterator {
    public:
     explicit VirtualHostListIterator(
         const std::vector<VirtualHost>* virtual_hosts)
@@ -384,7 +386,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // An XdsServerConfigSelectorProvider implementation for when the
 // RouteConfiguration is available inline.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    StaticXdsServerConfigSelectorProvider
+    StaticXdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
   StaticXdsServerConfigSelectorProvider(
@@ -435,7 +437,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // An XdsServerConfigSelectorProvider implementation for when the
 // RouteConfiguration is to be fetched separately via RDS.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider
+    DynamicXdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
   DynamicXdsServerConfigSelectorProvider(
@@ -482,7 +484,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // A watcher implementation for updating the RDS resource used by
 // DynamicXdsServerConfigSelectorProvider
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider::RouteConfigWatcher
+    DynamicXdsServerConfigSelectorProvider::RouteConfigWatcher final
     : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   explicit RouteConfigWatcher(

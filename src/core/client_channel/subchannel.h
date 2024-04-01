@@ -65,7 +65,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel final : public RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const ChannelArgs& args,
@@ -96,7 +96,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 };
 
 // Implements the interface of RefCounted<>.
-class SubchannelCall {
+class SubchannelCall final {
  public:
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
@@ -166,7 +166,7 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel : public DualRefCounted<Subchannel> {
+class Subchannel final : public DualRefCounted<Subchannel> {
  public:
   // TODO(roth): Once we remove pollset_set, consider whether this can
   // just use the normal AsyncConnectivityStateWatcherInterface API.
@@ -279,7 +279,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.
-  class ConnectivityStateWatcherList {
+  class ConnectivityStateWatcherList final {
    public:
     explicit ConnectivityStateWatcherList(Subchannel* subchannel)
         : subchannel_(subchannel) {}

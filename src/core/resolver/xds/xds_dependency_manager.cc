@@ -105,7 +105,7 @@ std::string XdsDependencyManager::XdsConfig::ToString() const {
 // XdsDependencyManager::ListenerWatcher
 //
 
-class XdsDependencyManager::ListenerWatcher
+class XdsDependencyManager::ListenerWatcher final
     : public XdsListenerResourceType::WatcherInterface {
  public:
   explicit ListenerWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr)
@@ -154,7 +154,7 @@ class XdsDependencyManager::ListenerWatcher
 // XdsDependencyManager::RouteConfigWatcher
 //
 
-class XdsDependencyManager::RouteConfigWatcher
+class XdsDependencyManager::RouteConfigWatcher final
     : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   RouteConfigWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
@@ -206,7 +206,7 @@ class XdsDependencyManager::RouteConfigWatcher
 // XdsDependencyManager::ClusterWatcher
 //
 
-class XdsDependencyManager::ClusterWatcher
+class XdsDependencyManager::ClusterWatcher final
     : public XdsClusterResourceType::WatcherInterface {
  public:
   ClusterWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
@@ -255,7 +255,7 @@ class XdsDependencyManager::ClusterWatcher
 // XdsDependencyManager::EndpointWatcher
 //
 
-class XdsDependencyManager::EndpointWatcher
+class XdsDependencyManager::EndpointWatcher final
     : public XdsEndpointResourceType::WatcherInterface {
  public:
   EndpointWatcher(RefCountedPtr<XdsDependencyManager> dependency_mgr,
@@ -306,7 +306,8 @@ class XdsDependencyManager::EndpointWatcher
 // XdsDependencyManager::DnsResultHandler
 //
 
-class XdsDependencyManager::DnsResultHandler : public Resolver::ResultHandler {
+class XdsDependencyManager::DnsResultHandler final
+    : public Resolver::ResultHandler {
  public:
   DnsResultHandler(RefCountedPtr<XdsDependencyManager> dependency_mgr,
                    std::string name)
@@ -468,7 +469,8 @@ void XdsDependencyManager::OnListenerUpdate(
 
 namespace {
 
-class XdsVirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
+class XdsVirtualHostListIterator final
+    : public XdsRouting::VirtualHostListIterator {
  public:
   explicit XdsVirtualHostListIterator(
       const std::vector<XdsRouteConfigResource::VirtualHost>* virtual_hosts)

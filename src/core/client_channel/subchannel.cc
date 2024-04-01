@@ -328,7 +328,7 @@ void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
 // Subchannel::ConnectedSubchannelStateWatcher
 //
 
-class Subchannel::ConnectedSubchannelStateWatcher
+class Subchannel::ConnectedSubchannelStateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
   // Must be instantiated while holding c->mu.

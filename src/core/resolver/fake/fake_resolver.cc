@@ -42,7 +42,7 @@ namespace grpc_core {
 
 // This cannot be in an anonymous namespace, because it is a friend of
 // FakeResolverResponseGenerator.
-class FakeResolver : public Resolver {
+class FakeResolver final : public Resolver {
  public:
   explicit FakeResolver(ResolverArgs args);
 
@@ -232,7 +232,7 @@ const grpc_arg_pointer_vtable
 
 namespace {
 
-class FakeResolverFactory : public ResolverFactory {
+class FakeResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "fake"; }
 

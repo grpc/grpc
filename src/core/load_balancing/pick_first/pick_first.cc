@@ -97,7 +97,7 @@ const auto kMetricConnectionAttemptsFailed =
         "EXPERIMENTAL.  Number of failed connection attempts.",
         "{attempt}", {kMetricLabelTarget}, {}, false);
 
-class PickFirstConfig : public LoadBalancingPolicy::Config {
+class PickFirstConfig final : public LoadBalancingPolicy::Config {
  public:
   absl::string_view name() const override { return kPickFirst; }
   bool shuffle_addresses() const { return shuffle_addresses_; }
@@ -115,7 +115,7 @@ class PickFirstConfig : public LoadBalancingPolicy::Config {
   bool shuffle_addresses_ = false;
 };
 
-class PickFirst : public LoadBalancingPolicy {
+class PickFirst final : public LoadBalancingPolicy {
  public:
   explicit PickFirst(Args args);
 
@@ -128,9 +128,9 @@ class PickFirst : public LoadBalancingPolicy {
  private:
   ~PickFirst() override;
 
-  class SubchannelList : public InternallyRefCounted<SubchannelList> {
+  class SubchannelList final : public InternallyRefCounted<SubchannelList> {
    public:
-    class SubchannelData {
+    class SubchannelData final {
      public:
       SubchannelData(SubchannelList* subchannel_list, size_t index,
                      RefCountedPtr<SubchannelInterface> subchannel);
@@ -162,7 +162,7 @@ class PickFirst : public LoadBalancingPolicy {
 
      private:
       // Watcher for subchannel connectivity state.
-      class Watcher
+      class Watcher final
           : public SubchannelInterface::ConnectivityStateWatcherInterface {
        public:
         Watcher(RefCountedPtr<SubchannelList> subchannel_list, size_t index)
@@ -287,7 +287,7 @@ class PickFirst : public LoadBalancingPolicy {
     absl::Status last_failure_;
   };
 
-  class HealthWatcher
+  class HealthWatcher final
       : public SubchannelInterface::ConnectivityStateWatcherInterface {
    public:
     explicit HealthWatcher(RefCountedPtr<PickFirst> policy)
@@ -308,7 +308,7 @@ class PickFirst : public LoadBalancingPolicy {
     RefCountedPtr<PickFirst> policy_;
   };
 
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<SubchannelInterface> subchannel)
         : subchannel_(std::move(subchannel)) {}
@@ -467,7 +467,7 @@ absl::string_view GetAddressFamily(const grpc_resolved_address& address) {
 
 // An endpoint list iterator that returns only entries for a specific
 // address family, as indicated by the URI scheme.
-class AddressFamilyIterator {
+class AddressFamilyIterator final {
  public:
   AddressFamilyIterator(absl::string_view scheme, size_t index)
       : scheme_(scheme), index_(index) {}
@@ -1128,7 +1128,7 @@ void PickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
 // factory
 //
 
-class PickFirstFactory : public LoadBalancingPolicyFactory {
+class PickFirstFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

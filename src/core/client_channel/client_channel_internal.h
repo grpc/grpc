@@ -54,7 +54,7 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.
-class ClientChannelServiceConfigCallData : public ServiceConfigCallData {
+class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
  public:
   ClientChannelServiceConfigCallData(Arena* arena,
                                      grpc_call_context_element* call_context)

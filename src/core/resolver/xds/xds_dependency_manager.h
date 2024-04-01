@@ -35,8 +35,8 @@ namespace grpc_core {
 
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
-class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
-                             public Orphanable {
+class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
+                                   public Orphanable {
  public:
   struct XdsConfig : public RefCounted<XdsConfig> {
     // Listener resource.  Always non-null.
@@ -117,7 +117,7 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };
 
-  class ClusterSubscription : public DualRefCounted<ClusterSubscription> {
+  class ClusterSubscription final : public DualRefCounted<ClusterSubscription> {
    public:
     ClusterSubscription(absl::string_view cluster_name,
                         RefCountedPtr<XdsDependencyManager> dependency_mgr)

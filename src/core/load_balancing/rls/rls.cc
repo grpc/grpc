@@ -190,7 +190,7 @@ const Duration kCacheCleanupTimerInterval = Duration::Minutes(1);
 const int64_t kMaxCacheSizeBytes = 5 * 1024 * 1024;
 
 // Parsed RLS LB policy configuration.
-class RlsLbConfig : public LoadBalancingPolicy::Config {
+class RlsLbConfig final : public LoadBalancingPolicy::Config {
  public:
   struct KeyBuilder {
     std::map<std::string /*key*/, std::vector<std::string /*header*/>>
@@ -269,7 +269,7 @@ class RlsLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // RLS LB policy.
-class RlsLb : public LoadBalancingPolicy {
+class RlsLb final : public LoadBalancingPolicy {
  public:
   explicit RlsLb(Args args);
 
@@ -325,7 +325,7 @@ class RlsLb : public LoadBalancingPolicy {
   };
 
   // Wraps a child policy for a given RLS target.
-  class ChildPolicyWrapper : public DualRefCounted<ChildPolicyWrapper> {
+  class ChildPolicyWrapper final : public DualRefCounted<ChildPolicyWrapper> {
    public:
     ChildPolicyWrapper(RefCountedPtr<RlsLb> lb_policy, std::string target);
 
@@ -381,7 +381,7 @@ class RlsLb : public LoadBalancingPolicy {
    private:
     // ChannelControlHelper object that allows the child policy to update state
     // with the wrapper.
-    class ChildPolicyHelper : public DelegatingChannelControlHelper {
+    class ChildPolicyHelper final : public DelegatingChannelControlHelper {
      public:
       explicit ChildPolicyHelper(WeakRefCountedPtr<ChildPolicyWrapper> wrapper)
           : wrapper_(std::move(wrapper)) {}
@@ -417,7 +417,7 @@ class RlsLb : public LoadBalancingPolicy {
 
   // A picker that uses the cache and the request map in the LB policy
   // (synchronized via a mutex) to determine how to route requests.
-  class Picker : public LoadBalancingPolicy::SubchannelPicker {
+  class Picker final : public LoadBalancingPolicy::SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<RlsLb> lb_policy);
 
@@ -434,11 +434,11 @@ class RlsLb : public LoadBalancingPolicy {
   };
 
   // An LRU cache with adjustable size.
-  class Cache {
+  class Cache final {
    public:
     using Iterator = std::list<RequestKey>::iterator;
 
-    class Entry : public InternallyRefCounted<Entry> {
+    class Entry final : public InternallyRefCounted<Entry> {
      public:
       Entry(RefCountedPtr<RlsLb> lb_policy, const RequestKey& key);
 
@@ -510,7 +510,7 @@ class RlsLb : public LoadBalancingPolicy {
       void MarkUsed() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
      private:
-      class BackoffTimer : public InternallyRefCounted<BackoffTimer> {
+      class BackoffTimer final : public InternallyRefCounted<BackoffTimer> {
        public:
         BackoffTimer(RefCountedPtr<Entry> entry, Timestamp backoff_time);
 
@@ -609,7 +609,7 @@ class RlsLb : public LoadBalancingPolicy {
 
   // Channel for communicating with the RLS server.
   // Contains throttling logic for RLS requests.
-  class RlsChannel : public InternallyRefCounted<RlsChannel> {
+  class RlsChannel final : public InternallyRefCounted<RlsChannel> {
    public:
     explicit RlsChannel(RefCountedPtr<RlsLb> lb_policy);
 
@@ -639,7 +639,7 @@ class RlsLb : public LoadBalancingPolicy {
    private:
     // Watches the state of the RLS channel. Notifies the LB policy when
     // the channel was previously in TRANSIENT_FAILURE and then becomes READY.
-    class StateWatcher : public AsyncConnectivityStateWatcherInterface {
+    class StateWatcher final : public AsyncConnectivityStateWatcherInterface {
      public:
       explicit StateWatcher(RefCountedPtr<RlsChannel> rls_channel)
           : AsyncConnectivityStateWatcherInterface(
@@ -655,7 +655,7 @@ class RlsLb : public LoadBalancingPolicy {
     };
 
     // Throttle state for RLS requests.
-    class Throttle {
+    class Throttle final {
      public:
       explicit Throttle(
           Duration window_size = kDefaultThrottleWindowSize,
@@ -693,7 +693,7 @@ class RlsLb : public LoadBalancingPolicy {
   };
 
   // A pending RLS request.  Instances will be tracked in request_map_.
-  class RlsRequest : public InternallyRefCounted<RlsRequest> {
+  class RlsRequest final : public InternallyRefCounted<RlsRequest> {
    public:
     // Asynchronously starts a call on rls_channel for key.
     // Stores backoff_state, which will be transferred to the data cache
@@ -2583,7 +2583,7 @@ void RlsLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
 }
 
-class RlsLbFactory : public LoadBalancingPolicyFactory {
+class RlsLbFactory final : public LoadBalancingPolicyFactory {
  public:
   absl::string_view name() const override { return kRls; }
 

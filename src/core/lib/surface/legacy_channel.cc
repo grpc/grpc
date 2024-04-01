@@ -214,7 +214,7 @@ bool LegacyChannel::SupportsConnectivityWatcher() const {
 }
 
 // A fire-and-forget object to handle external connectivity state watches.
-class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
+class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
  public:
   StateWatcher(RefCountedPtr<LegacyChannel> channel, grpc_completion_queue* cq,
                void* tag, grpc_connectivity_state last_observed_state,
@@ -254,7 +254,7 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
  private:
   // A fire-and-forget object used to delay starting the timer until the
   // ClientChannelFilter actually starts the watch.
-  class WatcherTimerInitState {
+  class WatcherTimerInitState final {
    public:
     WatcherTimerInitState(StateWatcher* state_watcher, Timestamp deadline)
         : state_watcher_(state_watcher), deadline_(deadline) {

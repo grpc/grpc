@@ -35,7 +35,7 @@
 
 namespace grpc_core {
 
-class ResolverRegistry {
+class ResolverRegistry final {
  private:
   // Forward declaration needed to use this in Builder.
   struct State {
@@ -47,7 +47,7 @@ class ResolverRegistry {
   /// Methods used to create and populate the ResolverRegistry.
   /// NOT THREAD SAFE -- to be used only during global gRPC
   /// initialization and shutdown.
-  class Builder {
+  class Builder final {
    public:
     Builder();
 

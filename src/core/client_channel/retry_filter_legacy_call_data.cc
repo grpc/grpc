@@ -72,7 +72,7 @@ namespace grpc_core {
 // those refs are not released until the LB call stack is destroyed.
 // When this object is destroyed, it will invoke the
 // on_call_stack_destruction closure from the surface.
-class RetryFilter::LegacyCallData::CallStackDestructionBarrier
+class RetryFilter::LegacyCallData::CallStackDestructionBarrier final
     : public RefCounted<CallStackDestructionBarrier, PolymorphicRefCount,
                         UnrefCallDtor> {
  public:

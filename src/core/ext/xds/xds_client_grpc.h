@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-class GrpcXdsClient : public XdsClient {
+class GrpcXdsClient final : public XdsClient {
  public:
   // The key to pass to GetOrCreate() for gRPC servers.
   static constexpr absl::string_view kServerKey = "#server";

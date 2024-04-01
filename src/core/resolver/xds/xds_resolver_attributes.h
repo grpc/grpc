@@ -26,7 +26,7 @@
 
 namespace grpc_core {
 
-class XdsClusterAttribute
+class XdsClusterAttribute final
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName() {
