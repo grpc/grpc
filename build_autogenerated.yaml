@@ -20258,6 +20258,7 @@ targets:
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
