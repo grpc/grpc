@@ -556,11 +556,22 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+    native.cc_library(
+        name = "%s_TEST_LIBRARY" % name,
+        testonly = 1,
+        srcs = srcs,
+        deps = core_deps,
+        tags = tags,
+    )
+
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+        if poller_config["srcs"] != srcs:
+            fail("srcs changed")
+        if poller_config["deps"] != core_deps:
+            fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
         native.cc_test(
             name = poller_config["name"],
-            srcs = poller_config["srcs"],
-            deps = poller_config["deps"],
+            deps = ["%s_TEST_LIBRARY" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],
