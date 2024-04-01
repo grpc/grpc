@@ -31,6 +31,8 @@ grpc_cc_library(
         "manifest_file.h",
     ],
     external_deps = [
+        "absl/log",
+        "absl/log:check",
         "absl/strings",
     ],
     deps = [

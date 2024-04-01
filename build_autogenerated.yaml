@@ -4047,6 +4047,7 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: grpc++_unsecure
@@ -10491,6 +10492,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - absl/log:check
   - grpc++
   - protoc
   - grpc++_test_config
@@ -20299,6 +20301,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -20529,6 +20532,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -20885,6 +20889,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -20927,6 +20932,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -20974,6 +20980,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21347,6 +21354,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
