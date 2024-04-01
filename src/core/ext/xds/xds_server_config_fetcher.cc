@@ -228,9 +228,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
     return default_filter_chain_;
   }
 
- protected:
-  void Orphaned() override;
-
  private:
   class RouteConfigWatcher;
   struct RdsUpdateState {
@@ -247,6 +244,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
   CreateOrGetXdsCertificateProviderFromFilterChainData(
       const XdsListenerResource::FilterChainData* filter_chain);
+  void Orphaned() override;
 
   // Helper functions invoked by RouteConfigWatcher when there are updates to
   // RDS resources.
@@ -418,10 +416,9 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
   void CancelWatch() override { watcher_.reset(); }
 
- protected:
+ private:
   void Orphaned() override {}
 
- private:
   RefCountedPtr<GrpcXdsClient> xds_client_;
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
       static_resource_;
@@ -456,12 +453,10 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           watcher) override;
   void CancelWatch() override;
 
- protected:
-  void Orphaned() override;
-
  private:
   class RouteConfigWatcher;
 
+  void Orphaned() override;
   void OnRouteConfigChanged(
       std::shared_ptr<const XdsRouteConfigResource> rds_update);
   void OnError(absl::Status status);

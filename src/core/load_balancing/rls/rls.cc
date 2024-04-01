@@ -371,12 +371,6 @@ class RlsLb : public LoadBalancingPolicy {
       return connectivity_state_;
     }
 
-   protected:
-    // Note: We are forced to disable lock analysis here because
-    // Orphan() is called by Unref() which is called by RefCountedPtr<>, which
-    // cannot have lock annotations for this particular caller.
-    void Orphaned() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
-
    private:
     // ChannelControlHelper object that allows the child policy to update state
     // with the wrapper.
@@ -399,6 +393,11 @@ class RlsLb : public LoadBalancingPolicy {
 
       WeakRefCountedPtr<ChildPolicyWrapper> wrapper_;
     };
+
+    // Note: We are forced to disable lock analysis here because
+    // Orphan() is called by Unref() which is called by RefCountedPtr<>, which
+    // cannot have lock annotations for this particular caller.
+    void Orphaned() override ABSL_NO_THREAD_SAFETY_ANALYSIS;
 
     RefCountedPtr<RlsLb> lb_policy_;
     std::string target_;

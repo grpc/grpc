@@ -61,12 +61,11 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
   void AddWatcher(OrcaWatcher* watcher);
   void RemoveWatcher(OrcaWatcher* watcher);
 
- protected:
-  void Orphaned() override;
-
  private:
   class ConnectivityWatcher;
   class OrcaStreamEventHandler;
+
+  void Orphaned() override;
 
   // Returns the minimum requested reporting interval across all watchers.
   Duration GetMinIntervalLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);

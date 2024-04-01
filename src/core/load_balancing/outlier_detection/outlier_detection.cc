@@ -157,23 +157,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       return subchannel_state_->endpoint_state();
     }
 
-   protected:
-    void Orphaned() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (subchannel_state_ != nullptr) {
-          subchannel_state_->RemoveSubchannel(this);
-        }
-        return;
-      }
-      work_serializer_->Run(
-          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
-            if (self->subchannel_state_ != nullptr) {
-              self->subchannel_state_->RemoveSubchannel(self.get());
-            }
-          },
-          DEBUG_LOCATION);
-    }
-
    private:
     class WatcherWrapper
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
@@ -228,6 +211,22 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       absl::Status last_seen_status_;
       bool ejected_;
     };
+
+    void Orphaned() override {
+      if (!IsWorkSerializerDispatchEnabled()) {
+        if (subchannel_state_ != nullptr) {
+          subchannel_state_->RemoveSubchannel(this);
+        }
+        return;
+      }
+      work_serializer_->Run(
+          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
+            if (self->subchannel_state_ != nullptr) {
+              self->subchannel_state_->RemoveSubchannel(self.get());
+            }
+          },
+          DEBUG_LOCATION);
+    }
 
     std::shared_ptr<WorkSerializer> work_serializer_;
     RefCountedPtr<SubchannelState> subchannel_state_;

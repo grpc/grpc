@@ -318,9 +318,6 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
     PickResult Pick(PickArgs args) override;
 
-   protected:
-    void Orphaned() override;
-
    private:
     // A call tracker that collects per-call endpoint utilization reports.
     class SubchannelCallTracker : public SubchannelCallTrackerInterface {
@@ -351,6 +348,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       RefCountedPtr<SubchannelPicker> picker;
       RefCountedPtr<EndpointWeight> weight;
     };
+
+    void Orphaned() override;
 
     // Returns the index into endpoints_ to be picked.
     size_t PickIndex();

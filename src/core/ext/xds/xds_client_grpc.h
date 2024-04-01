@@ -85,13 +85,11 @@ class GrpcXdsClient : public XdsClient {
   // Builds ClientStatusResponse containing all resources from all XdsClients
   static grpc_slice DumpAllClientConfigs();
 
- protected:
-  void Orphaned() override;
-
  private:
   class MetricsReporter;
 
   void ReportCallbackMetrics(CallbackMetricReporter& reporter);
+  void Orphaned() override;
 
   std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;

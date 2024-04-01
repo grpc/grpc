@@ -320,7 +320,7 @@ class GrpcLb : public LoadBalancingPolicy {
     const std::string& lb_token() const { return lb_token_; }
     GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
 
-   protected:
+   private:
     void Orphaned() override {
       if (!IsWorkSerializerDispatchEnabled()) {
         if (!lb_policy_->shutting_down_) {
@@ -338,7 +338,6 @@ class GrpcLb : public LoadBalancingPolicy {
           DEBUG_LOCATION);
     }
 
-   private:
     RefCountedPtr<GrpcLb> lb_policy_;
     std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;

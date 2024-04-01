@@ -162,9 +162,6 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       return subchannel;
     }
 
-   protected:
-    void Orphaned() override;
-
    private:
     class ConnectivityStateWatcher : public ConnectivityStateWatcherInterface {
      public:
@@ -185,6 +182,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       WeakRefCountedPtr<SubchannelWrapper> subchannel_;
     };
 
+    void Orphaned() override;
     void UpdateConnectivityState(grpc_connectivity_state state,
                                  absl::Status status);
 

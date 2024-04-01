@@ -243,10 +243,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     absl::string_view server_uri() const { return server_.server_uri(); }
 
-   protected:
+   private:
     void Orphaned() override;
 
-   private:
     void OnConnectivityFailure(absl::Status status);
 
     // Enqueues error notifications to watchers.  Caller must drain

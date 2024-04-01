@@ -72,9 +72,6 @@ class HealthProducer : public Subchannel::DataProducerInterface {
       HealthWatcher* watcher,
       const absl::optional<std::string>& health_check_service_name);
 
- protected:
-  void Orphaned() override;
-
  private:
   class ConnectivityWatcher;
 
@@ -140,6 +137,7 @@ class HealthProducer : public Subchannel::DataProducerInterface {
   // Handles a connectivity state change on the subchannel.
   void OnConnectivityStateChange(grpc_connectivity_state state,
                                  const absl::Status& status);
+  void Orphaned() override;
 
   RefCountedPtr<Subchannel> subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
