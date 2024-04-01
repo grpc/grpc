@@ -227,7 +227,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       ValidationErrors* errors);
 };
 
-class XdsRouteConfigResourceType
+class XdsRouteConfigResourceType final
     : public XdsResourceTypeImpl<XdsRouteConfigResourceType,
                                  XdsRouteConfigResource> {
  public:

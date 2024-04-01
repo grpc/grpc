@@ -208,7 +208,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
-  class XdsChannel : public DualRefCounted<XdsChannel> {
+  class XdsChannel final : public DualRefCounted<XdsChannel> {
    public:
     template <typename T>
     class RetryableCall;

@@ -227,7 +227,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 // GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 //
 
-class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
+class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(

@@ -57,7 +57,7 @@
 namespace grpc_core {
 namespace {
 
-class BinderResolver : public Resolver {
+class BinderResolver final : public Resolver {
  public:
   BinderResolver(EndpointAddressesList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
@@ -80,7 +80,7 @@ class BinderResolver : public Resolver {
   ChannelArgs channel_args_;
 };
 
-class BinderResolverFactory : public ResolverFactory {
+class BinderResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "binder"; }
 

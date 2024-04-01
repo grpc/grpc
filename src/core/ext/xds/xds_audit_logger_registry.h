@@ -33,7 +33,7 @@ namespace grpc_core {
 
 // A registry that maintains a set of converters that are able to map xDS
 // RBAC audit logger configuration to gRPC's JSON format.
-class XdsAuditLoggerRegistry {
+class XdsAuditLoggerRegistry final {
  public:
   class ConfigFactory {
    public:

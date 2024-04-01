@@ -30,7 +30,7 @@
 
 namespace grpc_core {
 
-class RequestHashAttribute
+class RequestHashAttribute final
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName();

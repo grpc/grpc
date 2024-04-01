@@ -44,7 +44,7 @@ namespace grpc_core {
 // ChildPolicyHandler::Helper
 //
 
-class ChildPolicyHandler::Helper
+class ChildPolicyHandler::Helper final
     : public LoadBalancingPolicy::ParentOwningDelegatingChannelControlHelper<
           ChildPolicyHandler> {
  public:

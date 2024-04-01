@@ -46,7 +46,7 @@ class OrcaWatcher;
 // This producer is registered with a subchannel.  It creates a
 // streaming ORCA call and reports the resulting backend metrics to all
 // registered watchers.
-class OrcaProducer : public Subchannel::DataProducerInterface {
+class OrcaProducer final : public Subchannel::DataProducerInterface {
  public:
   void Start(RefCountedPtr<Subchannel> subchannel);
 
@@ -92,7 +92,7 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
 
 // This watcher is returned to the LB policy and added to the
 // client channel SubchannelWrapper.
-class OrcaWatcher : public InternalSubchannelDataWatcherInterface {
+class OrcaWatcher final : public InternalSubchannelDataWatcherInterface {
  public:
   OrcaWatcher(Duration report_interval,
               std::unique_ptr<OobBackendMetricWatcher> watcher)

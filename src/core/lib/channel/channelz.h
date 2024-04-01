@@ -120,7 +120,7 @@ class BaseNode : public RefCounted<BaseNode> {
 //   - track calls_{started,succeeded,failed}
 //   - track last_call_started_timestamp
 //   - perform rendering of the above items
-class CallCountingHelper {
+class CallCountingHelper final {
  public:
   void RecordCallStarted();
   void RecordCallFailed();
@@ -139,7 +139,7 @@ class CallCountingHelper {
   std::atomic<gpr_cycle_counter> last_call_started_cycle_{0};
 };
 
-class PerCpuCallCountingHelper {
+class PerCpuCallCountingHelper final {
  public:
   void RecordCallStarted();
   void RecordCallFailed();
@@ -183,7 +183,7 @@ class PerCpuCallCountingHelper {
 };
 
 // Handles channelz bookkeeping for channels
-class ChannelNode : public BaseNode {
+class ChannelNode final : public BaseNode {
  public:
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
@@ -247,7 +247,7 @@ class ChannelNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for servers
-class ServerNode : public BaseNode {
+class ServerNode final : public BaseNode {
  public:
   explicit ServerNode(size_t channel_tracer_max_nodes);
 
@@ -291,7 +291,7 @@ class ServerNode : public BaseNode {
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
 
 // Handles channelz bookkeeping for sockets
-class SocketNode : public BaseNode {
+class SocketNode final : public BaseNode {
  public:
   struct Security : public RefCounted<Security> {
     struct Tls {
@@ -367,7 +367,7 @@ class SocketNode : public BaseNode {
 };
 
 // Handles channelz bookkeeping for listen sockets
-class ListenSocketNode : public BaseNode {
+class ListenSocketNode final : public BaseNode {
  public:
   ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}

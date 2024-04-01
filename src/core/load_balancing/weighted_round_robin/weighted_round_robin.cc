@@ -118,7 +118,7 @@ const auto kMetricEndpointWeights =
         "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 // Config for WRR policy.
-class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
+class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
  public:
   WeightedRoundRobinConfig() = default;
 
@@ -179,7 +179,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
 };
 
 // WRR LB policy
-class WeightedRoundRobin : public LoadBalancingPolicy {
+class WeightedRoundRobin final : public LoadBalancingPolicy {
  public:
   explicit WeightedRoundRobin(Args args);
 
@@ -190,7 +190,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
  private:
   // Represents the weight for a given address.
-  class EndpointWeight : public RefCounted<EndpointWeight> {
+  class EndpointWeight final : public RefCounted<EndpointWeight> {
    public:
     EndpointWeight(RefCountedPtr<WeightedRoundRobin> wrr,
                    EndpointAddressSet key)
@@ -216,9 +216,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
   };
 
-  class WrrEndpointList : public EndpointList {
+  class WrrEndpointList final : public EndpointList {
    public:
-    class WrrEndpoint : public Endpoint {
+    class WrrEndpoint final : public Endpoint {
      public:
       WrrEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                   const EndpointAddresses& addresses, const ChannelArgs& args,
@@ -232,7 +232,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
 
      private:
-      class OobWatcher : public OobBackendMetricWatcher {
+      class OobWatcher final : public OobBackendMetricWatcher {
        public:
         OobWatcher(RefCountedPtr<EndpointWeight> weight,
                    float error_utilization_penalty)
@@ -309,7 +309,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
   // A picker that performs WRR picks with weights based on
   // endpoint-reported utilization and QPS.
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     Picker(RefCountedPtr<WeightedRoundRobin> wrr,
            WrrEndpointList* endpoint_list);
@@ -320,7 +320,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
    private:
     // A call tracker that collects per-call endpoint utilization reports.
-    class SubchannelCallTracker : public SubchannelCallTrackerInterface {
+    class SubchannelCallTracker final : public SubchannelCallTrackerInterface {
      public:
       SubchannelCallTracker(
           RefCountedPtr<EndpointWeight> weight, float error_utilization_penalty,
@@ -997,7 +997,7 @@ void WeightedRoundRobin::WrrEndpointList::
 // factory
 //
 
-class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
+class WeightedRoundRobinFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

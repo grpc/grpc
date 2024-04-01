@@ -90,7 +90,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
-class DefaultConfigSelector : public ConfigSelector {
+class DefaultConfigSelector final : public ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
       : service_config_(std::move(service_config)) {

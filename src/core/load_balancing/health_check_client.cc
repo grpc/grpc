@@ -71,7 +71,7 @@ TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 namespace {
 
 // A fire-and-forget class to asynchronously drain a WorkSerializer queue.
-class AsyncWorkSerializerDrainer {
+class AsyncWorkSerializerDrainer final {
  public:
   explicit AsyncWorkSerializerDrainer(
       std::shared_ptr<WorkSerializer> work_serializer)
@@ -212,7 +212,7 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
 // HealthProducer::HealthChecker::HealthStreamEventHandler
 //
 
-class HealthProducer::HealthChecker::HealthStreamEventHandler
+class HealthProducer::HealthChecker::HealthStreamEventHandler final
     : public SubchannelStreamClient::CallEventHandler {
  public:
   explicit HealthStreamEventHandler(RefCountedPtr<HealthChecker> health_checker)
@@ -321,7 +321,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler
 // HealthProducer::ConnectivityWatcher
 //
 
-class HealthProducer::ConnectivityWatcher
+class HealthProducer::ConnectivityWatcher final
     : public Subchannel::ConnectivityStateWatcherInterface {
  public:
   explicit ConnectivityWatcher(WeakRefCountedPtr<HealthProducer> producer)

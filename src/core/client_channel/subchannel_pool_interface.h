@@ -39,7 +39,7 @@ class Subchannel;
 extern TraceFlag grpc_subchannel_pool_trace;
 
 // A key that can uniquely identify a subchannel.
-class SubchannelKey {
+class SubchannelKey final {
  public:
   SubchannelKey(const grpc_resolved_address& address, const ChannelArgs& args);
 
