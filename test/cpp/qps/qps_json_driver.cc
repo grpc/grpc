@@ -16,12 +16,14 @@
 //
 //
 
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <set>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
@@ -244,12 +246,12 @@ static bool QpsDriver() {
   if (scfile) {
     // Read the json data from disk
     FILE* json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
-    GPR_ASSERT(json_file != nullptr);
+    CHECK(json_file != nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
     char* data = new char[len];
     fseek(json_file, 0, SEEK_SET);
-    GPR_ASSERT(len == (long)fread(data, 1, len, json_file));
+    CHECK(len == (long)fread(data, 1, len, json_file));
     fclose(json_file);
     json = std::string(data, data + len);
     delete[] data;
@@ -266,7 +268,7 @@ static bool QpsDriver() {
   bool success = true;
 
   // Make sure that there is at least some valid scenario here
-  GPR_ASSERT(scenarios.scenarios_size() > 0);
+  CHECK(scenarios.scenarios_size() > 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     if (absl::GetFlag(FLAGS_search_param).empty()) {

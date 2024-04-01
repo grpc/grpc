@@ -22659,6 +22659,7 @@ target_include_directories(qps_json_driver
 
 target_link_libraries(qps_json_driver
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -22731,6 +22732,7 @@ target_include_directories(qps_worker
 
 target_link_libraries(qps_worker
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
