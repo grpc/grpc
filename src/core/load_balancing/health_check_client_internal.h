@@ -59,8 +59,6 @@ class HealthProducer : public Subchannel::DataProducerInterface {
 
   void Start(RefCountedPtr<Subchannel> subchannel);
 
-  void Orphan() override;
-
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("health_check");
     return kFactory.Create();
@@ -139,6 +137,7 @@ class HealthProducer : public Subchannel::DataProducerInterface {
   // Handles a connectivity state change on the subchannel.
   void OnConnectivityStateChange(grpc_connectivity_state state,
                                  const absl::Status& status);
+  void Orphaned() override;
 
   RefCountedPtr<Subchannel> subchannel_;
   ConnectivityWatcher* connectivity_watcher_;

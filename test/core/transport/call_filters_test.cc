@@ -1405,7 +1405,7 @@ TEST(CallFiltersTest, UnaryCall) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  CallFilters filters(Arena::MakePooled<ClientMetadata>(arena.get()));
+  CallFilters filters(Arena::MakePooled<ClientMetadata>());
   filters.SetStack(builder.Build());
   promise_detail::Context<Arena> ctx(arena.get());
   StrictMock<MockActivity> activity;

@@ -48,7 +48,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -75,6 +74,7 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -182,8 +182,7 @@ class XdsOverrideHostLb : public LoadBalancingPolicy {
       WeakRefCountedPtr<SubchannelWrapper> subchannel_;
     };
 
-    void Orphan() override;
-
+    void Orphaned() override;
     void UpdateConnectivityState(grpc_connectivity_state state,
                                  absl::Status status);
 
@@ -1112,7 +1111,7 @@ void XdsOverrideHostLb::SubchannelWrapper::CancelConnectivityStateWatch(
   }
 }
 
-void XdsOverrideHostLb::SubchannelWrapper::Orphan() {
+void XdsOverrideHostLb::SubchannelWrapper::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
     gpr_log(GPR_INFO,
             "[xds_override_host_lb %p] subchannel wrapper %p orphaned",
