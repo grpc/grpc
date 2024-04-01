@@ -146,15 +146,15 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     absl::flat_hash_set<absl::string_view> optional_label_keys;
   };
 
-  class ThreadedMetricsCollector {
+  class MetricsCollectorThread {
    public:
     using ResultType = absl::flat_hash_map<
         std::string,
         std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>;
-    ThreadedMetricsCollector(OpenTelemetryPluginEnd2EndTest* test,
-                             grpc_core::Duration interval, int iterations,
-                             std::function<bool(const ResultType&)> predicate);
-    ~ThreadedMetricsCollector();
+    MetricsCollectorThread(OpenTelemetryPluginEnd2EndTest* test,
+                           grpc_core::Duration interval, int iterations,
+                           std::function<bool(const ResultType&)> predicate);
+    ~MetricsCollectorThread();
     const ResultType& Stop();
 
    private:

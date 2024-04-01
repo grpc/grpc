@@ -339,20 +339,22 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
    public:
     CallbackMetricReporter(OpenTelemetryPlugin* ot_plugin,
                            grpc_core::RegisteredMetricCallback* key)
-        : ot_plugin_(ot_plugin), key_(key) {}
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
 
     void Report(
         grpc_core::GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle
             handle,
         int64_t value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(CallbackGaugeState<int64_t>::mu) override;
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            CallbackGaugeState<int64_t>::ot_plugin->mu_) override;
     void Report(
         grpc_core::GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle
             handle,
         double value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(CallbackGaugeState<double>::mu) override;
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            CallbackGaugeState<double>::ot_plugin->mu_) override;
 
    private:
     OpenTelemetryPlugin* ot_plugin_;
@@ -388,9 +390,10 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
       double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
       absl::Span<const absl::string_view> /*optional_values*/) override;
-  void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/) override;
-  void RemoveCallback(
-      grpc_core::RegisteredMetricCallback* /*callback*/) override;
+  void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
+  void RemoveCallback(grpc_core::RegisteredMetricCallback* /*callback*/)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
   grpc_core::ClientCallTracer* GetClientCallTracer(
       const grpc_core::Slice& path, bool registered_method,
       std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
@@ -423,7 +426,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         opentelemetry::metrics::ObservableInstrument>
         instrument;
     // Per-instrument mutex.
-    grpc_core::Mutex mu ABSL_ACQUIRED_BEFORE(OpenTelemetryPlugin::mu_);
+    grpc_core::Mutex mu;
     bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
     // Cache, it's possible to set values for multiple sets of labels at the
     // same time.
@@ -448,23 +451,23 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
         instrument;
-    // Per-instrument mutex.
-    grpc_core::Mutex mu ABSL_ACQUIRED_BEFORE(OpenTelemetryPlugin::mu_);
-    bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
+    bool ot_callback_registered ABSL_GUARDED_BY(ot_plugin->mu_);
     // instrument1 ----- RegisteredMetricCallback1
     //               x
     // instrument2 ----- RegisteredMetricCallback2
     // One instrument can be registered by multiple callbacks.
     absl::flat_hash_map<grpc_core::RegisteredMetricCallback*, Cache> caches
-        ABSL_GUARDED_BY(mu);
+        ABSL_GUARDED_BY(ot_plugin->mu_);
     OpenTelemetryPlugin* ot_plugin;
 
-    void ObserveLocked(opentelemetry::metrics::ObserverResult& result,
-                       const Cache& cache) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu);
+    void Observe(opentelemetry::metrics::ObserverResult& result,
+                 const Cache& cache)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
   };
   template <typename T>
   static void CallbackGaugeCallback(
-      opentelemetry::metrics::ObserverResult result, void* arg);
+      opentelemetry::metrics::ObserverResult result, void* arg)
+      ABSL_LOCKS_EXCLUDED(CallbackGaugeState<T>::ot_plugin->mu_);
 
   // Instruments for per-call metrics.
   ClientMetrics client_;

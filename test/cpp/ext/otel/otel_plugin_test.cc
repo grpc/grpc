@@ -50,12 +50,6 @@ namespace {
 #define GRPC_ARG_SERVER_SELECTOR_KEY "grpc.testing.server_selector_key"
 #define GRPC_ARG_SERVER_SELECTOR_VALUE "grpc.testing.server_selector_value"
 
-template <typename ValueType>
-struct PreviousDataPoint {
-  ValueType prev_value;
-  opentelemetry::common::SystemTimestamp prev_timestamp;
-};
-
 template <typename T>
 void PopulateLabelMap(
     T label_keys, T label_values,
@@ -1629,7 +1623,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
                      .set_metric_names({kMetricName})
                      .add_optional_label(kOptionalLabelKeys[0])
                      .add_optional_label(kOptionalLabelKeys[1])));
-  ThreadedMetricsCollector collector{
+  MetricsCollectorThread collector{
       this, grpc_core::Duration::Zero(), -1,
       [&](const absl::flat_hash_map<
           std::string,
@@ -1741,7 +1735,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       {integer_gauge_handle, double_gauge_handle},
       grpc_core::Duration::Milliseconds(100));
   constexpr int kIterations = 100;
-  ThreadedMetricsCollector collector{
+  MetricsCollectorThread collector{
       this, grpc_core::Duration::Milliseconds(10), kIterations,
       [&](const absl::flat_hash_map<
           std::string,
@@ -1760,7 +1754,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
             data[kDoubleCallbackGaugeMetric].size());
   // Verify labels.
-  EXPECT_THAT(
+  ASSERT_THAT(
       data,
       ::testing::UnorderedElementsAre(
           ::testing::Pair(
@@ -1866,7 +1860,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       {integer_gauge_handle, double_gauge_handle},
       grpc_core::Duration::Milliseconds(10));
   constexpr int kIterations = 100;
-  ThreadedMetricsCollector collector{
+  MetricsCollectorThread collector{
       this, grpc_core::Duration::Milliseconds(100), kIterations,
       [&](const absl::flat_hash_map<
           std::string,
@@ -1885,7 +1879,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),
             data[kDoubleCallbackGaugeMetric].size());
   // Verify labels.
-  EXPECT_THAT(
+  ASSERT_THAT(
       data,
       ::testing::UnorderedElementsAre(
           ::testing::Pair(

@@ -85,29 +85,28 @@ const grpc_channel_filter AddServiceLabelsFilter::kFilter =
                                       grpc_core::FilterEndpoint::kClient>(
         "add_service_labels_filter");
 
-OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::
-    ThreadedMetricsCollector(
-        OpenTelemetryPluginEnd2EndTest* test, grpc_core::Duration interval,
-        int iterations,
-        std::function<bool(
-            const absl::flat_hash_map<std::string,
-                                      std::vector<opentelemetry::sdk::metrics::
-                                                      PointDataAttributes>>&)>
-            predicate)
+OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::MetricsCollectorThread(
+    OpenTelemetryPluginEnd2EndTest* test, grpc_core::Duration interval,
+    int iterations,
+    std::function<
+        bool(const absl::flat_hash_map<
+             std::string,
+             std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
+        predicate)
     : test_(test),
       interval_(interval),
       iterations_(iterations),
       predicate_(std::move(predicate)),
-      thread_(&ThreadedMetricsCollector::Run, this) {}
+      thread_(&MetricsCollectorThread::Run, this) {}
 
-OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::
-    ~ThreadedMetricsCollector() {
+OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::
+    ~MetricsCollectorThread() {
   if (!finished_) {
     thread_.join();
   }
 }
 
-void OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::Run() {
+void OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Run() {
   int i = 0;
   while (i++ < iterations_ || (iterations_ == -1 && !finished_)) {
     auto data_points = test_->ReadCurrentMetricsData(predicate_);
@@ -125,8 +124,8 @@ void OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::Run() {
   }
 }
 
-const OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::ResultType&
-OpenTelemetryPluginEnd2EndTest::ThreadedMetricsCollector::Stop() {
+const OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::ResultType&
+OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
   finished_ = true;
   thread_.join();
   return data_points_;

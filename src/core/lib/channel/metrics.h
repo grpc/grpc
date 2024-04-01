@@ -330,7 +330,10 @@ class GlobalStatsPluginRegistry {
 
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
-    // will be invoked no more often than min_interval.
+    // will be invoked no more often than min_interval.  Multiple callbacks may
+    // be registered for the same metrics, as long as no two callbacks report
+    // data for the same set of labels (in which case the early value may be
+    // overwritten by the later value).
     //
     // The returned object is a handle that allows the caller to control
     // the lifetime of the callback; when the returned object is
