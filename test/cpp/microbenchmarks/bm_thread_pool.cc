@@ -19,6 +19,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/cpu.h>
@@ -135,7 +136,7 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
         (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
   }
   // sanity checking
-  GPR_ASSERT(params.limit >= params.fanout * params.depth);
+  CHECK_GE(params.limit, (params.fanout * params.depth));
   return params;
 }
 
