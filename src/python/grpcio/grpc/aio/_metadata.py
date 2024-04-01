@@ -20,7 +20,7 @@ MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 
-class Metadata(abc.Mapping):
+class Metadata(abc.Collection[Tuple[MetadataKey, MetadataValue]]):
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
