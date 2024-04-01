@@ -23,7 +23,6 @@ _AVAILABLE_BENCHMARK_TESTS = [
     "bm_cq",
     "bm_chttp2_hpack",
     "bm_chttp2_transport",
-    "bm_pollset",
 ]
 
 _INTERESTING = (
