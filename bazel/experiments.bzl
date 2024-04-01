@@ -44,7 +44,6 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "v3_backend_metric_filter": "v3_backend_metric_filter",
-    "v3_channel_idle_filters": "v3_channel_idle_filters",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
 }
