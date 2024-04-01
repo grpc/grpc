@@ -1402,24 +1402,18 @@ TEST(CallFiltersTest, UnaryCall) {
   CallFilters::StackBuilder builder;
   builder.Add(&f1);
   builder.Add(&f2);
-  CallFilters filters(builder.Build());
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
+  CallFilters filters(Arena::MakePooled<ClientMetadata>());
+  filters.SetStack(builder.Build());
   promise_detail::Context<Arena> ctx(arena.get());
   StrictMock<MockActivity> activity;
   activity.Activate();
-  // Push client initial metadata
-  auto push_client_initial_metadata =
-      filters.PushClientInitialMetadata(Arena::MakePooled<ClientMetadata>());
-  EXPECT_THAT(push_client_initial_metadata(), IsPending());
+  // Pull client initial metadata
   auto pull_client_initial_metadata = filters.PullClientInitialMetadata();
-  // Pull client initial metadata, expect a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
   EXPECT_THAT(pull_client_initial_metadata(), IsReady());
   Mock::VerifyAndClearExpectations(&activity);
-  // Push should be done
-  EXPECT_THAT(push_client_initial_metadata(), IsReady(Success{}));
   // Push client to server message
   auto push_client_to_server_message = filters.PushClientToServerMessage(
       Arena::MakePooled<Message>(SliceBuffer(), 0));
