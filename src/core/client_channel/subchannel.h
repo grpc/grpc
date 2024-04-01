@@ -252,9 +252,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Resets the connection backoff of the subchannel.
   void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
 
-  // Tears down any existing connection, and arranges for destruction
-  void Orphan() override ABSL_LOCKS_EXCLUDED(mu_);
-
   // Access to data producer map.
   // We do not hold refs to the data producer; the implementation is
   // expected to register itself upon construction and remove itself
@@ -285,6 +282,9 @@ class Subchannel : public DualRefCounted<Subchannel> {
       const std::string& channel_default_authority);
 
  private:
+  // Tears down any existing connection, and arranges for destruction
+  void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
+
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.
   class ConnectivityStateWatcherList {

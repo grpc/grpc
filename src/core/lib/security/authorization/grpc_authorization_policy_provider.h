@@ -56,7 +56,7 @@ class StaticDataAuthorizationPolicyProvider
     return {allow_engine_, deny_engine_};
   }
 
-  void Orphan() override {}
+  void Orphaned() override {}
 
  private:
   RefCountedPtr<AuthorizationEngine> allow_engine_;
@@ -87,7 +87,7 @@ class FileWatcherAuthorizationPolicyProvider
   void SetCallbackForTesting(
       std::function<void(bool contents_changed, absl::Status Status)> cb);
 
-  void Orphan() override;
+  void Orphaned() override;
 
   AuthorizationEngines engines() override {
     MutexLock lock(&mu_);

@@ -295,7 +295,7 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
   }
 
   // Invoked when both strong refs are released.
-  void Orphan() override {
+  void Orphaned() override {
     WeakRef().release();  // Take a weak ref until completion is finished.
     grpc_error_handle error =
         timer_fired_

@@ -124,11 +124,11 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
         : cluster_name_(cluster_name),
           dependency_mgr_(std::move(dependency_mgr)) {}
 
-    void Orphan() override;
-
     absl::string_view cluster_name() const { return cluster_name_; }
 
    private:
+    void Orphaned() override;
+
     std::string cluster_name_;
     RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   };

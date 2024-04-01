@@ -173,7 +173,7 @@ class XdsResolver : public Resolver {
           cluster_subscription_(std::move(cluster_subscription)),
           cluster_key_(cluster_key) {}
 
-    void Orphan() override {
+    void Orphaned() override {
       XdsResolver* resolver_ptr = resolver_.get();
       resolver_ptr->work_serializer_->Run(
           [resolver = std::move(resolver_)]() {
