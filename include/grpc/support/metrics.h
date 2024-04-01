@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_METRICS_H
-#define GRPC_METRICS_H
+#ifndef GRPC_SUPPORT_METRICS_H
+#define GRPC_SUPPORT_METRICS_H
 
 #include <grpc/support/port_platform.h>
 
