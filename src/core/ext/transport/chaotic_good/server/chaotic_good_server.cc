@@ -339,7 +339,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   frame.headers =
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        absl::nullopt}
-          .ToMetadataBatch(GetContext<Arena>());
+          .ToMetadataBatch();
   auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
@@ -353,7 +353,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
   frame.headers =
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        self->connection_->data_alignment_}
-          .ToMetadataBatch(GetContext<Arena>());
+          .ToMetadataBatch();
   auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),

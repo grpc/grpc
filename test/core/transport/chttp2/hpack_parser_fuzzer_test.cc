@@ -70,7 +70,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
     for (int i = 0; i < msg.frames_size(); i++) {
       auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
       grpc_core::ExecCtx exec_ctx;
-      grpc_metadata_batch b(arena.get());
+      grpc_metadata_batch b;
       const auto& frame = msg.frames(i);
       if (frame.parse_size() == 0) continue;
 
