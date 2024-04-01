@@ -48,4 +48,4 @@ class StatsPluginChannelScope {
 }  // namespace experimental
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
+#endif /* GRPC_SUPPORT_METRICS_H */
