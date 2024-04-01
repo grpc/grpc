@@ -42,7 +42,6 @@
 
 #include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -59,9 +58,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/health_check_client_internal.h"
+#include "src/core/load_balancing/subchannel_interface.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
 namespace grpc_core {
@@ -362,7 +362,7 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
-void HealthProducer::Orphan() {
+void HealthProducer::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthProducer %p: shutting down", this);
   }

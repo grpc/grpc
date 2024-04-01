@@ -104,8 +104,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     return transport_factory_.get();
   }
 
-  void Orphan() override;
-
   // Start and cancel watch for a resource.
   //
   // The XdsClient takes ownership of the watcher, but the caller may
@@ -161,6 +159,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   }
 
  protected:
+  void Orphaned() override;
+
   Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
   // Dumps the active xDS config to the provided
@@ -220,8 +220,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
                const XdsBootstrap::XdsServer& server);
     ~XdsChannel() override;
 
-    void Orphan() override;
-
     XdsClient* xds_client() const { return xds_client_.get(); }
     AdsCall* ads_call() const;
     LrsCall* lrs_call() const;
@@ -246,6 +244,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
+    void Orphaned() override;
+
     void OnConnectivityFailure(absl::Status status);
 
     // Enqueues error notifications to watchers.  Caller must drain

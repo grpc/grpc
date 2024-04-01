@@ -44,8 +44,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/load_balancing/child_policy_handler.h"
-#include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -66,7 +64,9 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
@@ -144,22 +144,6 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       }
     }
 
-    void Orphan() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        if (subchannel_state_ != nullptr) {
-          subchannel_state_->RemoveSubchannel(this);
-        }
-        return;
-      }
-      work_serializer_->Run(
-          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
-            if (self->subchannel_state_ != nullptr) {
-              self->subchannel_state_->RemoveSubchannel(self.get());
-            }
-          },
-          DEBUG_LOCATION);
-    }
-
     void Eject();
 
     void Uneject();
@@ -227,6 +211,22 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
       absl::Status last_seen_status_;
       bool ejected_;
     };
+
+    void Orphaned() override {
+      if (!IsWorkSerializerDispatchEnabled()) {
+        if (subchannel_state_ != nullptr) {
+          subchannel_state_->RemoveSubchannel(this);
+        }
+        return;
+      }
+      work_serializer_->Run(
+          [self = WeakRefAsSubclass<SubchannelWrapper>()]() {
+            if (self->subchannel_state_ != nullptr) {
+              self->subchannel_state_->RemoveSubchannel(self.get());
+            }
+          },
+          DEBUG_LOCATION);
+    }
 
     std::shared_ptr<WorkSerializer> work_serializer_;
     RefCountedPtr<SubchannelState> subchannel_state_;

@@ -305,9 +305,9 @@ GrpcXdsClient::GrpcXdsClient(
           },
           {kMetricConnected, kMetricResources})) {}
 
-void GrpcXdsClient::Orphan() {
+void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
-  XdsClient::Orphan();
+  XdsClient::Orphaned();
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {

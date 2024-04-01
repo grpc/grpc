@@ -485,7 +485,7 @@ XdsClient::XdsChannel::~XdsChannel() {
 // use a ABSL_EXCLUSIVE_LOCKS_REQUIRED annotation, because Orphan() will be
 // called from DualRefCounted::Unref, which cannot have a lock annotation for
 // a lock in this subclass.
-void XdsClient::XdsChannel::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
+void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] orphaning xds channel %p for server %s",
             xds_client(), this, server_.server_uri().c_str());
@@ -1533,7 +1533,7 @@ XdsClient::~XdsClient() {
   }
 }
 
-void XdsClient::Orphan() {
+void XdsClient::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
   }

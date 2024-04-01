@@ -221,7 +221,7 @@ void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
-void OrcaProducer::Orphan() {
+void OrcaProducer::Orphaned() {
   {
     MutexLock lock(&mu_);
     stream_client_.reset();

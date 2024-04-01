@@ -330,7 +330,7 @@ class XdsDependencyManager::DnsResultHandler : public Resolver::ResultHandler {
 // XdsDependencyManager::ClusterSubscription
 //
 
-void XdsDependencyManager::ClusterSubscription::Orphan() {
+void XdsDependencyManager::ClusterSubscription::Orphaned() {
   dependency_mgr_->work_serializer_->Run(
       [self = WeakRef()]() {
         self->dependency_mgr_->OnClusterSubscriptionUnref(self->cluster_name_,
