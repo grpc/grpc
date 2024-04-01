@@ -5251,6 +5251,7 @@ targets:
   - test/cpp/naming/address_sorting_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -5295,6 +5296,7 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -6860,6 +6862,7 @@ targets:
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: cancel_before_invoke_test
