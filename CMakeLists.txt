@@ -16103,6 +16103,7 @@ target_include_directories(grpclb_api_test
 target_link_libraries(grpclb_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
