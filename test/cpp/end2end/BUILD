@@ -63,7 +63,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["connection_attempt_injector.cc"],
     hdrs = ["connection_attempt_injector.h"],
-       external_deps = [
+    external_deps = [
         "absl/log:check",
     ],
     deps = [
