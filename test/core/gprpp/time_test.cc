@@ -30,25 +30,15 @@ TEST(TimestampTest, Infinities) {
             Timestamp::InfFuture());
   EXPECT_EQ(Timestamp::InfPast() + Duration::Milliseconds(1),
             Timestamp::InfPast());
-  // EXPECT_EQ(absl::Now() - absl::InfinitePast(), absl::InfiniteDuration());
   EXPECT_EQ(Timestamp::Now() - Timestamp::InfPast(), Duration::Infinity());
-  // EXPECT_EQ(absl::Now() - absl::InfiniteFuture(), -absl::InfiniteDuration());
   EXPECT_EQ(Timestamp::Now() - Timestamp::InfFuture(),
             Duration::NegativeInfinity());
-  // EXPECT_EQ(absl::InfinitePast() - absl::InfinitePast(),
-  //           -absl::InfiniteDuration());
   EXPECT_EQ(Timestamp::InfPast() - Timestamp::InfPast(),
             Duration::NegativeInfinity());
-  // EXPECT_EQ(absl::InfiniteFuture() - absl::InfinitePast(),
-  //           absl::InfiniteDuration());
   EXPECT_EQ(Timestamp::InfFuture() - Timestamp::InfPast(),
             Duration::Infinity());
-  // EXPECT_EQ(absl::InfiniteFuture() - absl::InfiniteFuture(),
-  //           absl::InfiniteDuration());
   EXPECT_EQ(Timestamp::InfFuture() - Timestamp::InfFuture(),
             Duration::Infinity());
-  // EXPECT_EQ(absl::InfinitePast() - absl::InfiniteFuture(),
-  //           -absl::InfiniteDuration());
   EXPECT_EQ(Timestamp::InfPast() - Timestamp::InfFuture(),
             Duration::NegativeInfinity());
 }
