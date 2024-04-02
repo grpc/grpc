@@ -3834,27 +3834,53 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   // Send a response.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
-          .set_version_info("")
-          .set_nonce("")
+          .set_version_info("20")
+          .set_nonce("O")
           .AddFooResource(XdsFooResource("foo1", 6))
           .Serialize());
-  request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"", /*response_nonce=*/"",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
-  // XdsClient should have delivered the response to the watcher.
+  // Input: Get initial response from primary server.
+  // Result (local): Resource is delivered to watcher.
   auto resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
+  // Result (local): Metrics show 1 resource update and 1 cached resource.
+  EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
+              ::testing::ElementsAre(::testing::Pair(
+                  ::testing::Pair(kDefaultXdsServerUrl,
+                                  XdsFooResourceType::Get()->type_url()),
+                  1)));
+  EXPECT_THAT(
+      GetResourceCounts(),
+      ::testing::ElementsAre(::testing::Pair(
+          ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
+                                XdsFooResourceType::Get()->type_url(), "acked"),
+          1)));
+  // Result (remote): Client sends ACK to server.
+  request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"20", /*response_nonce=*/"O",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
+  // Input: Trigger connection failure to primary.
+  // Result (local): The error is reported to the watcher.
   TriggerConnectionFailure(primary_server,
                            absl::UnavailableError("Server down"));
+  auto error = watcher->WaitForNextError();
+  ASSERT_TRUE(error.has_value());
+  EXPECT_EQ(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_THAT(error->message(), ::testing::ContainsRegex("Server down"));
+  // Result (local): The metrics show the channel as being unhealthy.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  // Connection failure causes stream to fail, so client starts a new one.
-  stream->MaybeSendStatusToClient(absl::UnavailableError("ugh"));
+  // Input: Trigger stream failure.
+  stream->MaybeSendStatusToClient(absl::UnavailableError("Stream failure"));
+  // Result (local): The metrics still show the channel as being unhealthy.
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, false)));
+  // Result (remote): The client starts a new stream and sends a subscription
+  //   message.
   stream = WaitForAdsStream();
   ASSERT_NE(stream, nullptr);
   // Client sends initial request on the new stream, but server does not
@@ -3862,18 +3888,20 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"", /*response_nonce=*/"",
+               /*version_info=*/"20", /*response_nonce=*/"",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, false)));
-  // Uses cached data
+  // Input: Start second watch for foo1 (already cached).
   auto watcher_cached = StartFooWatch("foo1");
+  // Result (local): New watcher gets the cached resource.
   resource = watcher_cached->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 6);
-  auto error = watcher_cached->WaitForNextError();
+  // Result (local): New watcher gets the error from the channel state.
+  error = watcher_cached->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_THAT(error->message(), ::testing::ContainsRegex("Server down"))
       << error->message();
@@ -3883,30 +3911,32 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                   ::testing::Pair(kDefaultXdsServerUrl,
                                   XdsFooResourceType::Get()->type_url()),
                   1)));
-  error = watcher->WaitForNextError();
-  ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->message(),
-            "xDS channel for server default_xds_server: Server down (node "
-            "ID:xds_client_test)");
-  // Start a watch for a resource that is not already cached. This will trigger
-  // fallback.
+  // Input: Start watch for foo2 (not already cached).
   auto watcher2 = StartFooWatch("foo2");
-  // Requested on stream1
+  // Result (local): Metrics show a healthy channel to the fallback server.
+  EXPECT_THAT(
+      GetServerConnections(),
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, false),
+                             ::testing::Pair("fallback_xds_server", true)));
+  // Result (remote): Client sent a new request for both resources on the
+  //   stream to the primary.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"", /*response_nonce=*/"",
+               /*version_info=*/"20", /*response_nonce=*/"",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
   auto stream2 = WaitForAdsStream(fallback_server);
   ASSERT_TRUE(stream2 != nullptr);
-  // XdsClient should have sent a subscription request on the ADS stream.
+  // Result (remote): Client created a stream to the fallback server and sent a
+  //   request on that stream for both resources.
   request = WaitForRequest(stream2.get());
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"", /*response_nonce=*/"",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1", "foo2"});
+  // Input: Fallback server sends a response with both resources.
   stream2->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("5")
@@ -3918,16 +3948,12 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 20);
+  // Result (local): Watcher for foo2 gets resource.
   resource = watcher2->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo2");
   EXPECT_EQ(resource->value, 30);
-  request = WaitForRequest(stream2.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"5", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1", "foo2"});
+  // Result (local): Metrics show an update from fallback server.
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre(
                   ::testing::Pair(
@@ -3948,8 +3974,14 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
           ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                 XdsFooResourceType::Get()->type_url(), "acked"),
           2)));
-  // Primary responding again, fallback is ignored
-  TriggerConnectionFailure(primary_server, absl::OkStatus());
+  // Result (remote): Client sends ACK to fallback server.
+  request = WaitForRequest(stream2.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"5", /*response_nonce=*/"A",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1", "foo2"});
+  // Input: Primary server sends a response containing both resources.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("15")
@@ -3968,6 +4000,8 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                       ::testing::Pair(fallback_server.server_uri(),
                                       XdsFooResourceType::Get()->type_url()),
                       2)));
+  // Result (local): Metrics show that we've closed the channel to the fallback
+  //   server and received resource updates from the primary server.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
   resource = watcher->WaitForNextResource();
@@ -3986,6 +4020,7 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                /*resource_names=*/{"foo1", "foo2"});
   CancelFooWatch(watcher.get(), "foo1", /*delay_unsubscription=*/true);
   CancelFooWatch(watcher2.get(), "foo2");
+  // Result (remote): The stream to the fallback server has been orphaned.
   EXPECT_TRUE(stream->Orphaned());
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre(
@@ -3999,85 +4034,58 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
                       2)));
 }
 
+// Test for both servers being unavailable
 TEST_F(XdsClientTest, FallbackReportsError) {
   FakeXdsBootstrap::FakeXdsServer primary_server(kDefaultXdsServerUrl);
   FakeXdsBootstrap::FakeXdsServer fallback_server("fallback_xds_server");
-  // Regular operation
   InitXdsClient(FakeXdsBootstrap::Builder().SetServers(
       {primary_server, fallback_server}));
-  // Start a watch for "foo1".
+  // Input: Get initial response from primary server.
   auto watcher = StartFooWatch("foo1");
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
+  // Result (local): Resource is delivered to watcher.
+  auto stream = WaitForAdsStream();
+  ASSERT_TRUE(stream != nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(stream.get());
+  ASSERT_TRUE(request.has_value());
+  // Result (local): Metrics show 1 resource update and 1 cached resource.
   EXPECT_THAT(GetResourceCounts(),
               ::testing::ElementsAre(::testing::Pair(
                   ResourceCountLabelsEq(XdsClient::kOldStyleAuthority,
                                         XdsFooResourceType::Get()->type_url(),
                                         "requested"),
                   1)));
-  // XdsClient should have created an ADS stream.
-  auto stream = WaitForAdsStream();
-  ASSERT_TRUE(stream != nullptr);
-  // XdsClient should have sent a subscription request on the ADS stream.
-  auto request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  // Send a response.
-  stream->SendMessageToClient(
-      ResponseBuilder(XdsFooResourceType::Get()->type_url())
-          .set_version_info("1")
-          .set_nonce("A")
-          .AddFooResource(XdsFooResource("foo1", 6))
-          .Serialize());
-  // XdsClient should have delivered the response to the watcher.
-  auto resource = watcher->WaitForNextResource();
-  ASSERT_NE(resource, nullptr);
-  EXPECT_EQ(resource->name, "foo1");
-  EXPECT_EQ(resource->value, 6);
-  request = WaitForRequest(stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"A",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
   TriggerConnectionFailure(primary_server,
                            absl::UnavailableError("Server down"));
   stream->MaybeSendStatusToClient(absl::UnavailableError("Server is down"));
-  stream = WaitForAdsStream();
+  // Fallback happens now
+  stream = WaitForAdsStream(fallback_server);
   ASSERT_NE(stream, nullptr);
-  // XdsClient should have sent a subscription request on the ADS stream.
   request = WaitForRequest(stream.get());
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"1", /*response_nonce=*/"",
+               /*version_info=*/"", /*response_nonce=*/"",
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
-  auto error = watcher->WaitForNextError();
-  ASSERT_TRUE(error.has_value());
-  EXPECT_EQ(error->message(),
-            "xDS channel for server default_xds_server: Server down (node "
-            "ID:xds_client_test)");
   TriggerConnectionFailure(fallback_server,
                            absl::UnavailableError("Another server down"));
-  stream->MaybeSendStatusToClient(
-      absl::UnavailableError("Another server down"));
-
-  // Fallback happens now
-  auto watcher2 = StartFooWatch("foo1");
-  // XdsClient should have sent a subscription request on the ADS stream.
-  error = watcher->WaitForNextError();
+  stream->MaybeSendStatusToClient(absl::UnavailableError("Fallback"));
+  auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
+  EXPECT_THAT(error->code(), absl::StatusCode::kUnavailable);
   EXPECT_THAT(error->message(), ::testing::ContainsRegex("Another server down"))
       << error->message();
-  resource = watcher2->WaitForNextResource();
-  ASSERT_NE(resource, nullptr);
-  EXPECT_EQ(resource->name, "foo1");
-  EXPECT_EQ(resource->value, 6);
-  error = watcher2->WaitForNextError();
+  error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
-  EXPECT_THAT(error->message(),
-              ::testing::ContainsRegex("Another server down"));
-  CancelFooWatch(watcher.get(), "foo1");
-  CancelFooWatch(watcher2.get(), "foo1");
+  EXPECT_THAT(error->code(), absl::StatusCode::kUnavailable);
+  EXPECT_THAT(error->message(), ::testing::ContainsRegex("Fallback"))
+      << error->message();
+  EXPECT_THAT(GetServerConnections(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(kDefaultXdsServerUrl, false),
+                  ::testing::Pair(fallback_server.server_uri(), false)));
 }
 
 TEST_F(XdsClientTest, FallbackOnStartup) {
@@ -4088,6 +4096,15 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
       {primary_server, fallback_server}));
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
+  auto primary_stream = WaitForAdsStream(primary_server);
+  ASSERT_NE(primary_stream, nullptr);
+  // XdsClient should have sent a subscription request on the ADS stream.
+  auto request = WaitForRequest(primary_stream.get());
+  ASSERT_TRUE(request.has_value());
+  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
+               /*version_info=*/"", /*response_nonce=*/"",
+               /*error_detail=*/absl::OkStatus(),
+               /*resource_names=*/{"foo1"});
   TriggerConnectionFailure(primary_server,
                            absl::UnavailableError("Primary server is down"));
   EXPECT_THAT(
@@ -4098,7 +4115,7 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
   auto fallback_stream = WaitForAdsStream(fallback_server);
   ASSERT_NE(fallback_stream, nullptr);
   // XdsClient should have sent a subscription request on the ADS stream.
-  auto request = WaitForRequest(fallback_stream.get());
+  request = WaitForRequest(fallback_stream.get());
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
                /*version_info=*/"", /*response_nonce=*/"",
@@ -4123,22 +4140,15 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{"foo1"});
   // Recover to primary
-  TriggerConnectionFailure(primary_server, absl::OkStatus());
-  auto primary_stream = WaitForAdsStream(primary_server);
-  ASSERT_NE(primary_stream, nullptr);
-  fallback_stream.reset();
-  request = WaitForRequest(primary_stream.get());
-  ASSERT_TRUE(request.has_value());
-  CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
-               /*version_info=*/"", /*response_nonce=*/"",
-               /*error_detail=*/absl::OkStatus(),
-               /*resource_names=*/{"foo1"});
+  primary_stream = WaitForAdsStream(primary_server);
   primary_stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
           .set_version_info("5")
           .set_nonce("D")
           .AddFooResource(XdsFooResource("foo1", 42))
           .Serialize());
+  ASSERT_NE(primary_stream, nullptr);
+  fallback_stream.reset();
   resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
