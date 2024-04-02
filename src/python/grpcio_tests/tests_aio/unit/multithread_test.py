@@ -31,7 +31,7 @@ _NUM_THREADS = 5
 _NUM_CALLS_IN_THREAD = 10
 
 
-class TestChannel(AioTestBase):
+class TestChannel(bazel test "//src/python/grpcio_tests/tests_aio/unit:multithread_test"):
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
 
@@ -46,7 +46,7 @@ class TestChannel(AioTestBase):
             def record_exceptions(loop, context) -> None:
                 unhandled_exceptions.append(context.get("exception"))
 
-            asyncio.get_running_loop.set_exception_handler(record_exceptions)
+            asyncio.get_running_loop().set_exception_handler(record_exceptions)
 
             async with grpc.aio.insecure_channel(self._server_target) as channel:
                 hi = channel.unary_unary(
@@ -66,7 +66,7 @@ class TestChannel(AioTestBase):
 
         for future in futures:
             unhandled_exceptions = future.result()
-            assert not unhandled_exceptions
+            self.assertFalse(unhandled_exceptions)
 
 
 if __name__ == "__main__":
