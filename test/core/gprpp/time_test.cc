@@ -30,6 +30,12 @@ TEST(TimestampTest, Infinities) {
             Timestamp::InfFuture());
   EXPECT_EQ(Timestamp::InfPast() + Duration::Milliseconds(1),
             Timestamp::InfPast());
+  // EXPECT_EQ(absl::Now() - absl::InfinitePast(), absl::InfiniteDuration());
+  EXPECT_EQ(Timestamp::Now() - Timestamp::InfPast(), Duration::Infinity());
+  EXPECT_TRUE(Timestamp::Now() - Timestamp::InfPast() < Duration::Minutes(5));
+  // EXPECT_EQ(absl::Now() - absl::InfiniteFuture(), -absl::InfiniteDuration());
+  EXPECT_EQ(Timestamp::Now() - Timestamp::InfFuture(),
+            Duration::NegativeInfinity());
 }
 
 TEST(TimestampTest, ToString) {
