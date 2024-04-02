@@ -324,9 +324,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
 ]
 
 GRPCXX_SRCS = [
-    "src/cpp/client/call_credentials.cc",
     "src/cpp/client/channel_cc.cc",
-    "src/cpp/client/channel_credentials.cc",
     "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
@@ -352,7 +350,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
     "src/cpp/server/server_context.cc",
-    "src/cpp/server/server_credentials.cc",
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
@@ -941,7 +938,9 @@ grpc_cc_library(
         },
     ],
     tags = ["nofixdeps"],
-    visibility = ["@grpc:public"],
+    visibility = [
+        "@grpc:public",
+    ],
     deps = [
         "grpc++_base",
         "//src/core:gpr_atm",
@@ -1214,9 +1213,6 @@ grpc_cc_library(
     ],
 )
 
-# TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
-# similar way to how the grpc_unsecure and grpc targets were restructured in
-# #25586
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [
@@ -1224,26 +1220,18 @@ grpc_cc_library(
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
     ],
-    external_deps = [
-        "absl/strings",
-        "absl/synchronization",
-    ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
     deps = [
-        "channel_arg_names",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
         "grpc_public_hdrs",
-        "grpc_security_base",
         "grpc_unsecure",
-        "//src/core:gpr_atm",
         "//src/core:grpc_insecure_credentials",
     ],
 )
@@ -2382,6 +2370,7 @@ grpc_cc_library(
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
+        "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
@@ -2505,7 +2494,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_health_upb",
         "grpc_public_hdrs",
-        "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_unsecure",
@@ -4712,7 +4700,7 @@ grpc_cc_library(
     visibility = ["@grpc:chaotic_good"],
     deps = [
         "gpr",
-        "grpc++_base_unsecure",
+        "grpc++_public_hdrs",
         "grpc_public_hdrs",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",

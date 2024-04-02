@@ -4041,9 +4041,7 @@ add_library(grpc++
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -4061,6 +4059,7 @@ add_library(grpc++
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -4081,7 +4080,6 @@ add_library(grpc++
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/server/xds_server_builder.cc
   src/cpp/server/xds_server_credentials.cc
@@ -4791,9 +4789,7 @@ target_link_libraries(grpc++_test_util
 endif()
 
 add_library(grpc++_unsecure
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -4823,7 +4819,6 @@ add_library(grpc++_unsecure
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -8151,9 +8146,7 @@ add_executable(binder_transport_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -8170,6 +8163,7 @@ add_executable(binder_transport_test
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -8190,7 +8184,6 @@ add_executable(binder_transport_test
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -12665,9 +12658,7 @@ add_executable(endpoint_binder_pool_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -12684,6 +12675,7 @@ add_executable(endpoint_binder_pool_test
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -12704,7 +12696,6 @@ add_executable(endpoint_binder_pool_test
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -13522,9 +13513,7 @@ add_executable(fake_binder_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -13541,6 +13530,7 @@ add_executable(fake_binder_test
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -13561,7 +13551,6 @@ add_executable(fake_binder_test
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -30173,7 +30162,7 @@ target_include_directories(test_cpp_ext_chaotic_good_test
 target_link_libraries(test_cpp_ext_chaotic_good_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++_unsecure
+  grpc++
   grpc_test_util
 )
 
@@ -31357,9 +31346,7 @@ add_executable(transport_stream_receiver_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -31376,6 +31363,7 @@ add_executable(transport_stream_receiver_test
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -31396,7 +31384,6 @@ add_executable(transport_stream_receiver_test
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -32191,9 +32178,7 @@ add_executable(wire_reader_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -32210,6 +32195,7 @@ add_executable(wire_reader_test
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -32230,7 +32216,6 @@ add_executable(wire_reader_test
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
@@ -32299,9 +32284,7 @@ add_executable(wire_writer_test
   src/core/ext/transport/binder/wire_format/transaction.cc
   src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   src/core/ext/transport/binder/wire_format/wire_writer.cc
-  src/cpp/client/call_credentials.cc
   src/cpp/client/channel_cc.cc
-  src/cpp/client/channel_credentials.cc
   src/cpp/client/client_callback.cc
   src/cpp/client/client_context.cc
   src/cpp/client/client_interceptor.cc
@@ -32318,6 +32301,7 @@ add_executable(wire_writer_test
   src/cpp/common/resource_quota_cc.cc
   src/cpp/common/rpc_method.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/common/tls_certificate_provider.cc
   src/cpp/common/tls_certificate_verifier.cc
@@ -32338,7 +32322,6 @@ add_executable(wire_writer_test
   src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc

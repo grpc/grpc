@@ -70,6 +70,7 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -80,7 +81,6 @@
 #include "test/core/util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
-#include "test/cpp/util/credentials.h"
 
 namespace grpc {
 namespace testing {
@@ -262,7 +262,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
  protected:
   ClientLbEnd2endTest()
       : server_host_("localhost"),
-        creds_(std::make_shared<FakeTransportSecurityChannelCredentials>()) {}
+        creds_(new SecureChannelCredentials(
+            grpc_fake_transport_security_credentials_create())) {}
 
   void SetUp() override { grpc_init(); }
 
