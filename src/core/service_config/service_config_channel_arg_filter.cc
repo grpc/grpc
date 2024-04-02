@@ -54,7 +54,7 @@ namespace grpc_core {
 
 namespace {
 
-class ServiceConfigChannelArgFilter
+class ServiceConfigChannelArgFilter final
     : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
   static const grpc_channel_filter kFilter;

@@ -32,7 +32,10 @@
     s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
     s.platform      = Gem::Platform::RUBY
 
-    s.add_dependency 'google-protobuf', '~> ${settings.protobuf_major_minor_version}'
+    ## Once protobuf 4.x is working with other dependencies,
+    ## please replace the following fixed 3.25 version with
+    ## '~> 4.${settings.protobuf_version.split(".")[1]}'
+    s.add_dependency 'google-protobuf', '~> 3.25'
     s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
     s.add_development_dependency 'bundler',            '>= 1.9'

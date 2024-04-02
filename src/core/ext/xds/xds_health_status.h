@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-class XdsHealthStatus {
+class XdsHealthStatus final {
  public:
   enum HealthStatus { kUnknown, kHealthy, kDraining };
 
@@ -56,7 +56,7 @@ class XdsHealthStatus {
   HealthStatus status_;
 };
 
-class XdsHealthStatusSet {
+class XdsHealthStatusSet final {
  public:
   XdsHealthStatusSet() = default;
 

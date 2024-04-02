@@ -102,7 +102,7 @@ namespace {
 // XdsResolver
 //
 
-class XdsResolver : public Resolver {
+class XdsResolver final : public Resolver {
  public:
   XdsResolver(ResolverArgs args, std::string data_plane_authority)
       : work_serializer_(std::move(args.work_serializer)),
@@ -135,7 +135,7 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  class XdsWatcher : public XdsDependencyManager::Watcher {
+  class XdsWatcher final : public XdsDependencyManager::Watcher {
    public:
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
@@ -163,7 +163,7 @@ class XdsResolver : public Resolver {
   // the cluster by the ConfigSelector.  The ref for each call is held
   // until the call is committed.  When the strong refs go away, we hop
   // back into the WorkSerializer to remove the entry from the map.
-  class ClusterRef : public DualRefCounted<ClusterRef> {
+  class ClusterRef final : public DualRefCounted<ClusterRef> {
    public:
     ClusterRef(RefCountedPtr<XdsResolver> resolver,
                RefCountedPtr<XdsDependencyManager::ClusterSubscription>
@@ -196,7 +196,7 @@ class XdsResolver : public Resolver {
   // XdsConfigSelector. A ref to this map will be taken by each call processed
   // by the XdsConfigSelector, stored in a the call's call attributes, and later
   // unreffed by the ClusterSelection filter.
-  class RouteConfigData : public RefCounted<RouteConfigData> {
+  class RouteConfigData final : public RefCounted<RouteConfigData> {
    public:
     struct RouteEntry {
       struct ClusterWeightState {
@@ -266,7 +266,7 @@ class XdsResolver : public Resolver {
     std::vector<RouteEntry> routes_;
   };
 
-  class XdsConfigSelector : public ConfigSelector {
+  class XdsConfigSelector final : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       RefCountedPtr<RouteConfigData> route_config_data);
@@ -293,7 +293,7 @@ class XdsResolver : public Resolver {
     std::vector<const grpc_channel_filter*> filters_;
   };
 
-  class XdsRouteStateAttributeImpl : public XdsRouteStateAttribute {
+  class XdsRouteStateAttributeImpl final : public XdsRouteStateAttribute {
    public:
     explicit XdsRouteStateAttributeImpl(
         RefCountedPtr<RouteConfigData> route_config_data,
@@ -312,7 +312,7 @@ class XdsResolver : public Resolver {
     RouteConfigData::RouteEntry* route_;
   };
 
-  class ClusterSelectionFilter
+  class ClusterSelectionFilter final
       : public ImplementChannelFilter<ClusterSelectionFilter> {
    public:
     const static grpc_channel_filter kFilter;
@@ -398,7 +398,7 @@ const NoInterceptor XdsResolver::ClusterSelectionFilter::Call::OnFinalize;
 
 // Implementation of XdsRouting::RouteListIterator for getting the matching
 // route for a request.
-class XdsResolver::RouteConfigData::RouteListIterator
+class XdsResolver::RouteConfigData::RouteListIterator final
     : public XdsRouting::RouteListIterator {
  public:
   explicit RouteListIterator(const RouteConfigData* route_table)
@@ -1097,7 +1097,7 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 // XdsResolverFactory
 //
 
-class XdsResolverFactory : public ResolverFactory {
+class XdsResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "xds"; }
 

@@ -48,7 +48,7 @@ extern grpc_core::TraceFlag grpc_retry_trace;
 
 namespace grpc_core {
 
-class RetryFilter {
+class RetryFilter final {
  public:
   static const grpc_channel_filter kVtable;
 

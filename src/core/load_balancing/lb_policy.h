@@ -430,7 +430,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
-  class QueuePicker : public SubchannelPicker {
+  class QueuePicker final : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
@@ -445,7 +445,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   // A picker that returns PickResult::Fail for all picks.
-  class TransientFailurePicker : public SubchannelPicker {
+  class TransientFailurePicker final : public SubchannelPicker {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 

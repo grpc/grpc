@@ -30,7 +30,8 @@
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
-class ClientLoadReportingFilter : public ChannelFilter {
+
+class ClientLoadReportingFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -55,6 +56,7 @@ class ClientLoadReportingFilter : public ChannelFilter {
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H

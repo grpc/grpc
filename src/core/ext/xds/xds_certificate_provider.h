@@ -42,7 +42,7 @@
 
 namespace grpc_core {
 
-class XdsCertificateProvider : public grpc_tls_certificate_provider {
+class XdsCertificateProvider final : public grpc_tls_certificate_provider {
  public:
   // ctor for client side
   XdsCertificateProvider(

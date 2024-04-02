@@ -85,7 +85,7 @@ constexpr absl::string_view kOutlierDetection =
     "outlier_detection_experimental";
 
 // Config for xDS Cluster Impl LB policy.
-class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
+class OutlierDetectionLbConfig final : public LoadBalancingPolicy::Config {
  public:
   OutlierDetectionLbConfig(
       OutlierDetectionConfig outlier_detection_config,
@@ -114,7 +114,7 @@ class OutlierDetectionLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // xDS Cluster Impl LB policy.
-class OutlierDetectionLb : public LoadBalancingPolicy {
+class OutlierDetectionLb final : public LoadBalancingPolicy {
  public:
   explicit OutlierDetectionLb(Args args);
 
@@ -128,7 +128,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   class SubchannelState;
   class EndpointState;
 
-  class SubchannelWrapper : public DelegatingSubchannel {
+  class SubchannelWrapper final : public DelegatingSubchannel {
    public:
     SubchannelWrapper(std::shared_ptr<WorkSerializer> work_serializer,
                       RefCountedPtr<SubchannelState> subchannel_state,
@@ -158,7 +158,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     }
 
    private:
-    class WatcherWrapper
+    class WatcherWrapper final
         : public SubchannelInterface::ConnectivityStateWatcherInterface {
      public:
       WatcherWrapper(std::shared_ptr<
@@ -234,7 +234,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     WatcherWrapper* watcher_wrapper_ = nullptr;
   };
 
-  class SubchannelState : public RefCounted<SubchannelState> {
+  class SubchannelState final : public RefCounted<SubchannelState> {
    public:
     void AddSubchannel(SubchannelWrapper* wrapper) {
       subchannels_.insert(wrapper);
@@ -277,7 +277,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     RefCountedPtr<EndpointState> endpoint_state_ ABSL_GUARDED_BY(mu_);
   };
 
-  class EndpointState : public RefCounted<EndpointState> {
+  class EndpointState final : public RefCounted<EndpointState> {
    public:
     explicit EndpointState(std::set<SubchannelState*> subchannels)
         : subchannels_(std::move(subchannels)) {
@@ -371,7 +371,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
   };
 
   // A picker that wraps the picker from the child to perform outlier detection.
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     Picker(OutlierDetectionLb* outlier_detection_lb,
            RefCountedPtr<SubchannelPicker> picker, bool counting_enabled);
@@ -384,7 +384,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
     bool counting_enabled_;
   };
 
-  class Helper
+  class Helper final
       : public ParentOwningDelegatingChannelControlHelper<OutlierDetectionLb> {
    public:
     explicit Helper(RefCountedPtr<OutlierDetectionLb> outlier_detection_policy)
@@ -398,7 +398,7 @@ class OutlierDetectionLb : public LoadBalancingPolicy {
                      RefCountedPtr<SubchannelPicker> picker) override;
   };
 
-  class EjectionTimer : public InternallyRefCounted<EjectionTimer> {
+  class EjectionTimer final : public InternallyRefCounted<EjectionTimer> {
    public:
     EjectionTimer(RefCountedPtr<OutlierDetectionLb> parent,
                   Timestamp start_time);
@@ -483,7 +483,7 @@ void OutlierDetectionLb::SubchannelWrapper::CancelDataWatcher(
 // OutlierDetectionLb::Picker::SubchannelCallTracker
 //
 
-class OutlierDetectionLb::Picker::SubchannelCallTracker
+class OutlierDetectionLb::Picker::SubchannelCallTracker final
     : public LoadBalancingPolicy::SubchannelCallTrackerInterface {
  public:
   SubchannelCallTracker(
@@ -1068,7 +1068,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
 // factory
 //
 
-class OutlierDetectionLbFactory : public LoadBalancingPolicyFactory {
+class OutlierDetectionLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

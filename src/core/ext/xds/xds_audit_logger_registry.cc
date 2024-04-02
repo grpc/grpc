@@ -39,7 +39,8 @@ namespace {
 
 using experimental::AuditLoggerRegistry;
 
-class StdoutLoggerConfigFactory : public XdsAuditLoggerRegistry::ConfigFactory {
+class StdoutLoggerConfigFactory final
+    : public XdsAuditLoggerRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsAuditLoggerConfig(
       const XdsResourceType::DecodeContext& /*context*/,

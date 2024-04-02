@@ -54,7 +54,7 @@
 
 namespace grpc_core {
 
-class RetryFilter::LegacyCallData {
+class RetryFilter::LegacyCallData final {
  public:
   static grpc_error_handle Init(grpc_call_element* elem,
                                 const grpc_call_element_args* args);
@@ -78,7 +78,7 @@ class RetryFilter::LegacyCallData {
   };
 
   // State associated with each call attempt.
-  class CallAttempt : public RefCounted<CallAttempt> {
+  class CallAttempt final : public RefCounted<CallAttempt> {
    public:
     CallAttempt(LegacyCallData* calld, bool is_transparent_retry);
     ~CallAttempt() override;
@@ -102,7 +102,7 @@ class RetryFilter::LegacyCallData {
     // structures needed to populate the ops in the batch.
     // We allocate one struct on the arena for each attempt at starting a
     // batch on a given LB call.
-    class BatchData
+    class BatchData final
         : public RefCounted<BatchData, PolymorphicRefCount, UnrefCallDtor> {
      public:
       BatchData(RefCountedPtr<CallAttempt> call_attempt, int refcount,

@@ -75,7 +75,7 @@ constexpr absl::string_view kXdsClusterManager =
     "xds_cluster_manager_experimental";
 
 // Config for xds_cluster_manager LB policy.
-class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
+class XdsClusterManagerLbConfig final : public LoadBalancingPolicy::Config {
  public:
   struct Child {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
@@ -108,7 +108,7 @@ class XdsClusterManagerLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // xds_cluster_manager LB policy.
-class XdsClusterManagerLb : public LoadBalancingPolicy {
+class XdsClusterManagerLb final : public LoadBalancingPolicy {
  public:
   explicit XdsClusterManagerLb(Args args);
 
@@ -121,7 +121,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
  private:
   // Picks a child using prefix or path matching and then delegates to that
   // child's picker.
-  class ClusterPicker : public SubchannelPicker {
+  class ClusterPicker final : public SubchannelPicker {
    public:
     // Maintains a map of cluster names to pickers.
     using ClusterMap = std::map<std::string /*cluster_name*/,
@@ -139,7 +139,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
   };
 
   // Each ClusterChild holds a ref to its parent XdsClusterManagerLb.
-  class ClusterChild : public InternallyRefCounted<ClusterChild> {
+  class ClusterChild final : public InternallyRefCounted<ClusterChild> {
    public:
     ClusterChild(RefCountedPtr<XdsClusterManagerLb> xds_cluster_manager_policy,
                  const std::string& name);
@@ -162,7 +162,7 @@ class XdsClusterManagerLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelPicker> picker() const { return picker_; }
 
    private:
-    class Helper : public DelegatingChannelControlHelper {
+    class Helper final : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ClusterChild> xds_cluster_manager_child)
           : xds_cluster_manager_child_(std::move(xds_cluster_manager_child)) {}
@@ -625,7 +625,7 @@ const JsonLoaderInterface* XdsClusterManagerLbConfig::JsonLoader(
   return loader;
 }
 
-class XdsClusterManagerLbFactory : public LoadBalancingPolicyFactory {
+class XdsClusterManagerLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
