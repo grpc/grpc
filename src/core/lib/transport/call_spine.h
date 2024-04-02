@@ -179,7 +179,7 @@ class CallSpine final : public CallSpineInterface, public Party {
   friend class Arena;
   CallSpine(grpc_event_engine::experimental::EventEngine* event_engine,
             Arena* arena)
-      : Party(1), event_engine_(event_engine) {}
+      : Party(1), arena_(arena), event_engine_(event_engine) {}
 
   class ScopedContext : public ScopedActivity,
                         public promise_detail::Context<Arena> {
