@@ -70,15 +70,10 @@ BatchBuilder::Batch::~Batch() {
     gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
             GetContext<Activity>()->DebugTag().c_str(), this);
   }
-
   delete pending_receive_message;
-
   delete pending_receive_initial_metadata;
-
   delete pending_receive_trailing_metadata;
-
   delete pending_sends;
-
   if (batch.cancel_stream) {
     delete batch.payload;
   }
