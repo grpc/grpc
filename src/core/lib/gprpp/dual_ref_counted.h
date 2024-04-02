@@ -182,7 +182,8 @@ class DualRefCounted {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass() {
     IncrementWeakRefCount();
-    return WeakRefCountedPtr<Subclass>(down_cast<Subclass*>(this));
+    return WeakRefCountedPtr<Subclass>(
+        down_cast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -190,7 +191,8 @@ class DualRefCounted {
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass(const DebugLocation& location,
                                                 const char* reason) {
     IncrementWeakRefCount(location, reason);
-    return WeakRefCountedPtr<Subclass>(down_cast<Subclass*>(this));
+    return WeakRefCountedPtr<Subclass>(
+        down_cast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void WeakUnref() {
