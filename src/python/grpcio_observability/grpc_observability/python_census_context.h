@@ -105,6 +105,7 @@ struct Measurement {
   MetricsName name;
   MeasurementType type;
   MeasurementValue value;
+  bool registered_method;
 };
 
 struct Annotation {

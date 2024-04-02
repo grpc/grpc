@@ -81,7 +81,6 @@ class OpenTelemetryPluginOption(abc.ABC):
 # pylint: disable=no-self-use
 class OpenTelemetryPlugin:
     """Describes a Plugin for OpenTelemetry observability."""
-
     plugin_options: Iterable[OpenTelemetryPluginOption]
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]

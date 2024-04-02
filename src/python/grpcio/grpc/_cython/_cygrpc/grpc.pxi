@@ -454,9 +454,23 @@ cdef extern from "grpc/grpc.h":
       grpc_metadata_array *request_metadata, grpc_completion_queue
       *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void
       *tag_new) nogil
+  grpc_call_error grpc_server_request_registered_call(
+      grpc_server* server, void* registered_method, grpc_call** call,
+      gpr_timespec* deadline, grpc_metadata_array* request_metadata,
+      grpc_byte_buffer** optional_payload,
+      grpc_completion_queue* cq_bound_to_call,
+      grpc_completion_queue* cq_for_notification, void* tag_new)
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
+
+  ctypedef enum grpc_server_register_method_payload_handling:
+    GRPC_SRM_PAYLOAD_NONE
+    GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+
+  void *grpc_server_register_method(grpc_server* server, const char* method,
+    const char* host, grpc_server_register_method_payload_handling payload_handling,
+    uint32_t flags) nogil
 
   ctypedef struct grpc_server_config_fetcher:
     pass

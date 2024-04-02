@@ -224,6 +224,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     """
 
     exporter: "grpc_observability.Exporter"
+    _registered_method: Set[bytes]
 
     def __init__(
         self,
@@ -231,6 +232,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         plugins: Optional[Iterable[_OpenTelemetryPlugin]],
     ):
         self.exporter = _OpenTelemetryExporterDelegator(plugins)
+        self._registered_method = set()
 
     def observability_init(self):
         try:
@@ -266,8 +268,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         trace_id = b"TRACE_ID"
+        registered_method = False
+        if method_name in self._registered_method:
+            registered_method = True
         capsule = _cyobservability.create_client_call_tracer(
-            method_name, target, trace_id
+            method_name, target, trace_id, registered_method
         )
         return capsule
 
@@ -295,8 +300,13 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         status_code: grpc.StatusCode,
     ) -> None:
         status_code = GRPC_STATUS_CODE_TO_STRING.get(status_code, "UNKNOWN")
+        registered_method = False
+        encoded_method = method.encode("utf8")
+        if encoded_method in self._registered_method:
+            print(f">>>>After method.encode: {encoded_method}")
+            registered_method = True
         _cyobservability._record_rpc_latency(
-            self.exporter, method, target, rpc_latency, status_code
+            self.exporter, method, target, rpc_latency, status_code, registered_method
         )
 
 

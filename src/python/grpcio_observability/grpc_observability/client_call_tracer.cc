@@ -42,10 +42,11 @@ constexpr uint32_t
 
 PythonOpenCensusCallTracer::PythonOpenCensusCallTracer(
     const char* method, const char* target, const char* trace_id,
-    const char* parent_span_id, bool tracing_enabled)
+    const char* parent_span_id, bool tracing_enabled, bool registered_method)
     : method_(GetMethod(method)),
       target_(GetTarget(target)),
-      tracing_enabled_(tracing_enabled) {
+      tracing_enabled_(tracing_enabled),
+      registered_method_(registered_method) {
   GenerateClientContext(absl::StrCat("Sent.", method_),
                         absl::string_view(trace_id),
                         absl::string_view(parent_span_id), &context_);
@@ -81,12 +82,12 @@ void PythonOpenCensusCallTracer::RecordAnnotation(
 PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, std::string(method_));
-    RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
+    RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1, registered_method_,
                     context_.Labels());  // exclude first attempt
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName,
-                    transparent_retries_, context_.Labels());
+                    transparent_retries_, registered_method_, context_.Labels());
     RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
-                       ToDoubleSeconds(retry_delay_), context_.Labels());
+                       ToDoubleSeconds(retry_delay_), registered_method_, context_.Labels());
   }
 
   if (tracing_enabled_) {
@@ -149,7 +150,7 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   }
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
   context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
-  RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, context_.Labels());
+  RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, parent_->registered_method_, context_.Labels());
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -173,6 +174,10 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     send_initial_metadata->Set(grpc_core::GrpcTagsBinMetadata(),
                                grpc_core::Slice(tags));
   }
+  bool c_registered_method_ =
+      send_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
+          .value_or(nullptr) != nullptr;
+  std::cout << ">>>> Client registered_method_ MD: " << c_registered_method_ << std::endl;
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -235,20 +240,27 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
       static_cast<double>(transport_stream_stats != nullptr
                               ? transport_stream_stats->outgoing.data_bytes
                               : 0),
+      parent_->registered_method_,
       context_.Labels());
   RecordDoubleMetric(
       kRpcClientReceivedBytesPerRpcMeasureName,
       static_cast<double>(transport_stream_stats != nullptr
                               ? transport_stream_stats->incoming.data_bytes
                               : 0),
+      parent_->registered_method_,
       context_.Labels());
   RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
                      absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
+                     parent_->registered_method_,
                      context_.Labels());
   RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
                      absl::ToDoubleSeconds(absl::Now() - start_time_),
+                     parent_->registered_method_,
                      context_.Labels());
-  RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels());
+  RecordIntMetric(kRpcClientCompletedRpcMeasureName,
+                  1,
+                  parent_->registered_method_,
+                  context_.Labels());
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -262,9 +274,13 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
     context_.Labels().emplace_back(kClientStatus,
                                    StatusCodeToString(status_code_));
     RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName,
-                    sent_message_count_, context_.Labels());
+                    sent_message_count_,
+                    parent_->registered_method_,
+                    context_.Labels());
     RecordIntMetric(kRpcClientReceivedMessagesPerRpcMeasureName,
-                    recv_message_count_, context_.Labels());
+                    recv_message_count_,
+                    parent_->registered_method_,
+                    context_.Labels());
 
     grpc_core::MutexLock lock(&parent_->mu_);
     if (--parent_->num_active_rpcs_ == 0) {

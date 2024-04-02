@@ -18,7 +18,7 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, List, Optional, TypeVar
+from typing import Any, Generator, Generic, List, Optional, Set, TypeVar
 
 from grpc._cython import cygrpc as _cygrpc
 
@@ -55,10 +55,13 @@ class ObservabilityPlugin(
     Attributes:
       _stats_enabled: A bool indicates whether tracing is enabled.
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
+      _registered_method: A set which stores the registered method names in
+        bytes.
     """
 
     _tracing_enabled: bool = False
     _stats_enabled: bool = False
+    _registered_method: Set[bytes]
 
     @abc.abstractmethod
     def create_client_call_tracer(
@@ -76,6 +79,7 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name of the call in byte format.
           target: The channel target of the call in byte format.
+          registered_method: Wether this method is pre-registered.
 
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
@@ -173,6 +177,9 @@ class ObservabilityPlugin(
           enable: A bool indicates whether stats should be enabled.
         """
         self._stats_enabled = enable
+      
+    def save_registered_method(self, method_name: bytes):
+        self._registered_method.add(method_name)
 
     @property
     def tracing_enabled(self) -> bool:

@@ -24,6 +24,22 @@ cdef class Server:
   # TODO(https://github.com/grpc/grpc/issues/15662): Elide this.
   cdef list references
   cdef list registered_completion_queues
+  cdef dict registered_methods # Mapping[bytes, _BoundEventLoop]
+  cdef grpc_call_error c_call_error
 
   cdef _c_shutdown(self, CompletionQueue queue, tag)
+  cdef _c_request_general_call(self,
+       _RequestCallTag request_call_tag,
+       CompletionQueue call_queue,
+       CompletionQueue server_queue)
+  cdef _c_request_registered_call(self,
+       _RequestCallTag request_call_tag,
+       CompletionQueue call_queue,
+       CompletionQueue server_queue,
+       bytes method)
   cdef notify_shutdown_complete(self)
+
+cdef class RegisteredMethod:
+
+  cdef void *c_registered_method
+  cdef bytes method

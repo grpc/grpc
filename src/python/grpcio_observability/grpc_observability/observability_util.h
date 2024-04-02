@@ -51,7 +51,8 @@ extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;
 
 void* CreateClientCallTracer(const char* method, const char* target,
-                             const char* trace_id, const char* parent_span_id);
+                             const char* trace_id, const char* parent_span_id,
+                             bool registered_method);
 
 void* CreateServerCallTracerFactory();
 
@@ -61,10 +62,10 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms);
 
 void AddCensusDataToBuffer(const CensusData& buffer);
 
-void RecordIntMetric(MetricsName name, int64_t value,
+void RecordIntMetric(MetricsName name, int64_t value, const bool registered_method,
                      const std::vector<Label>& labels);
 
-void RecordDoubleMetric(MetricsName name, double value,
+void RecordDoubleMetric(MetricsName name, double value, const bool registered_method,
                         const std::vector<Label>& labels);
 
 void RecordSpan(const SpanCensusData& span_census_data);

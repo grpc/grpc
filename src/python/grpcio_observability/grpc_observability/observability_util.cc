@@ -60,22 +60,24 @@ int GetMaxExportBufferSize() {
 
 }  // namespace
 
-void RecordIntMetric(MetricsName name, int64_t value,
+void RecordIntMetric(MetricsName name, int64_t value, const bool registered_method,
                      const std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;
+  measurement_data.registered_method = registered_method;
   measurement_data.value.value_int = value;
 
   CensusData data = CensusData(measurement_data, labels);
   AddCensusDataToBuffer(data);
 }
 
-void RecordDoubleMetric(MetricsName name, double value,
+void RecordDoubleMetric(MetricsName name, double value, const bool registered_method,
                         const std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
   measurement_data.name = name;
+  measurement_data.registered_method = registered_method;
   measurement_data.value.value_double = value;
 
   CensusData data = CensusData(measurement_data, labels);
@@ -92,9 +94,10 @@ void NativeObservabilityInit() {
 }
 
 void* CreateClientCallTracer(const char* method, const char* target,
-                             const char* trace_id, const char* parent_span_id) {
+                             const char* trace_id, const char* parent_span_id,
+                             bool registered_method) {
   void* client_call_tracer = new PythonOpenCensusCallTracer(
-      method, target, trace_id, parent_span_id, PythonCensusTracingEnabled());
+      method, target, trace_id, parent_span_id, PythonCensusTracingEnabled(), registered_method);
   return client_call_tracer;
 }
 
