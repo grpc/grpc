@@ -110,7 +110,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -286,11 +286,9 @@ bool Party::RunOneParticipant(int i) {
             std::string(name).c_str(), i);
   }
   // Poll the participant.
-  gpr_log(GPR_INFO, "Begin PollParticipantPromise %p:%d", &sync_, i);
   currently_polling_ = i;
   bool done = participant->PollParticipantPromise();
   currently_polling_ = kNotPolling;
-  gpr_log(GPR_INFO, "End PollParticipantPromise %p:%d", &sync_, i);
   if (done) {
     if (!name.empty()) {
       gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
@@ -341,7 +339,6 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
 void Party::Drop(WakeupMask) { Unref(); }
 
 void Party::PartyIsOver() {
-  gpr_log(GPR_INFO, "PARTY IS OVER: %p", &sync_);
   ScopedActivity activity(this);
   PartyOver();
 }
