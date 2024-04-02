@@ -1766,10 +1766,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(4, expected_cq_result);
     got_tag = tag_3_done ? 3 : verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
-    CHECK((got_tag == 3) || (got_tag == 4) ||
-             (got_tag == 11 && want_done_tag));
+    CHECK((got_tag == 3) || (got_tag == 4) || (got_tag == 11 && want_done_tag));
     CHECK((got_tag2 == 3) || (got_tag2 == 4) ||
-             (got_tag2 == 11 && want_done_tag));
+          (got_tag2 == 11 && want_done_tag));
     // If we get 3 and 4, we don't need to wait for 11, but if
     // we get 11, we should also clear 3 and 4
     if (got_tag + got_tag2 != 7) {
@@ -1787,10 +1786,9 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(6, expected_cq_result);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
-    CHECK((got_tag == 5) || (got_tag == 6) ||
-             (got_tag == 11 && want_done_tag));
+    CHECK((got_tag == 5) || (got_tag == 6) || (got_tag == 11 && want_done_tag));
     CHECK((got_tag2 == 5) || (got_tag2 == 6) ||
-             (got_tag2 == 11 && want_done_tag));
+          (got_tag2 == 11 && want_done_tag));
     // If we get 5 and 6, we don't need to wait for 11, but if
     // we get 11, we should also clear 5 and 6
     if (got_tag + got_tag2 != 11) {
