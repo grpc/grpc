@@ -163,8 +163,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/backend_metrics/backend_metric_filter.h )
   s.files += %w( src/core/ext/filters/backend_metrics/backend_metric_provider.h )
   s.files += %w( src/core/ext/filters/census/grpc_context.cc )
-  s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.cc )
-  s.files += %w( src/core/ext/filters/channel_idle/channel_idle_filter.h )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.cc )
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc )
