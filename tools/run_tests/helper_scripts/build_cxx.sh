@@ -39,8 +39,12 @@ cd ../../..
 mkdir -p cmake/build
 cd cmake/build
 
-# MSBUILD_CONFIG's values are suitable for cmake as well
+# TODO(yashykt/veblush): Remove workaround after fixing b/332425004 
+if [ "${GRPC_RUNTESTS_ARCHITECTURE}" = "x86" ]; then
+cmake -DCMAKE_CXX_STANDARD=14 -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" "$@" ../..
+else
 cmake -DCMAKE_CXX_STANDARD=14 -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ../..
+fi
 
 # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
 make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
