@@ -325,7 +325,7 @@ std::vector<TestScenario> CreateTestScenarios() {
     credentials_types.push_back(kInsecureCredentialsType);
   }
 
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK_EQ(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     for (auto server_has_port : {true, false}) {
       for (auto queue_pending_data : {true, false}) {

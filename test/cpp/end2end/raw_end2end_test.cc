@@ -77,7 +77,7 @@ class Verifier {
   // Verify keeps calling Next until all currently set
   // expected tags are complete
   void Verify(CompletionQueue* cq) {
-    GPR_ASSERT(!expectations_.empty());
+    CHECK_EQ(!expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, false);
     }

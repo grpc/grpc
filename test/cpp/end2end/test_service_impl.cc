@@ -210,7 +210,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().server_die()) {
         gpr_log(GPR_ERROR, "The request should not reach application handler.");
-        GPR_ASSERT(0);
+        CHECK_EQ(0);
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
         const auto& error = req_->param().expected_error();

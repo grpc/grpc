@@ -104,7 +104,7 @@ class CrashTest : public ::testing::Test {
     client_ = std::make_unique<SubProcess>(
         std::vector<std::string>({g_root + "/server_crash_test_client",
                                   "--address=" + addr, "--mode=" + mode}));
-    GPR_ASSERT(client_);
+    CHECK_EQ(client_);
 
     ServerBuilder builder;
     builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
@@ -130,7 +130,7 @@ TEST_F(CrashTest, ResponseStream) {
                                gpr_time_from_seconds(60, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
-  GPR_ASSERT(HadOneResponseStream());
+  CHECK_EQ(HadOneResponseStream());
 }
 
 TEST_F(CrashTest, BidiStream) {
@@ -140,7 +140,7 @@ TEST_F(CrashTest, BidiStream) {
                                gpr_time_from_seconds(60, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
-  GPR_ASSERT(HadOneBidiStream());
+  CHECK_EQ(HadOneBidiStream());
 }
 
 }  // namespace
