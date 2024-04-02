@@ -50,7 +50,7 @@ cdef class CallbackWrapper:
     @staticmethod
     cdef void functor_run(
             grpc_completion_queue_functor* functor,
-            int success):
+            int success) noexcept:
         cdef CallbackContext *context = <CallbackContext *>functor
         cdef object waiter = <object>context.waiter
         if not waiter.cancelled():
