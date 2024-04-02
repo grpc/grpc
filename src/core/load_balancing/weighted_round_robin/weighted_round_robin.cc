@@ -483,7 +483,8 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
     return 0;
   }
   // If we don't have at least blackout_period worth of data, return 0.
-  if (now - non_empty_since_ < blackout_period) {
+  if (blackout_period > Duration::Zero() &&
+      now - non_empty_since_ < blackout_period) {
     ++*num_not_yet_usable;
     return 0;
   }
