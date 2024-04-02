@@ -26,10 +26,7 @@ grpc_cc_library(
         "no_linux",
         "no_windows",
     ],
-    visibility = [
-        "//src/objective-c/tests:__subpackages__",
-        "//test:__subpackages__",
-    ],
+    visibility = ["//visibility:private"],
     deps = [
         "//:gpr_platform",
         "//src/core:cf_event_engine",
