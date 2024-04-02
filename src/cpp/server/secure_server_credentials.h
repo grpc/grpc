@@ -19,7 +19,10 @@
 #ifndef GRPC_SRC_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 #define GRPC_SRC_CPP_SERVER_SECURE_SERVER_CREDENTIALS_H
 
+#include <stddef.h>
+
 #include <memory>
+#include <string>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -29,6 +32,9 @@
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
+
+class SecureServerCredentials;
+
 class AuthMetadataProcessorAsyncWrapper final {
  public:
   static void Destroy(void* wrapper);
@@ -53,18 +59,25 @@ class AuthMetadataProcessorAsyncWrapper final {
   std::shared_ptr<AuthMetadataProcessor> processor_;
 };
 
-// TODO(hork): Remove this class once we either (a) allow AuthMetadataProcessor
-// to be used with any creds type as requested in #21589 or (b) find a way to
-// remove AuthMetadataProcessor in favor of some new server-side interception
-// API.
 class SecureServerCredentials final : public ServerCredentials {
  public:
-  explicit SecureServerCredentials(grpc_server_credentials* creds);
+  explicit SecureServerCredentials(grpc_server_credentials* creds)
+      : creds_(creds) {}
+  ~SecureServerCredentials() override {
+    grpc_server_credentials_release(creds_);
+  }
+
+  int AddPortToServer(const std::string& addr, grpc_server* server) override;
 
   void SetAuthMetadataProcessor(
       const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) override;
 
+  grpc_server_credentials* c_creds() { return creds_; }
+
  private:
+  SecureServerCredentials* AsSecureServerCredentials() override { return this; }
+
+  grpc_server_credentials* creds_;
   std::unique_ptr<grpc::AuthMetadataProcessorAsyncWrapper> processor_;
 };
 
