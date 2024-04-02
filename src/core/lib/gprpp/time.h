@@ -322,6 +322,12 @@ inline Timestamp operator-(Timestamp lhs, Duration rhs) {
 inline Timestamp operator+(Duration lhs, Timestamp rhs) { return rhs + lhs; }
 
 inline Duration operator-(Timestamp lhs, Timestamp rhs) {
+  if (rhs == Timestamp::InfPast() && lhs != Timestamp::InfPast()) {
+    return Duration::Infinity();
+  }
+  if (rhs == Timestamp::InfFuture() && lhs != Timestamp::InfFuture()) {
+    return Duration::NegativeInfinity();
+  }
   return Duration::Milliseconds(
       time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
                              -rhs.milliseconds_after_process_epoch()));
