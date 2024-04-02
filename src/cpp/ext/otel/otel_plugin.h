@@ -436,7 +436,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     OpenTelemetryPlugin* ot_plugin;
 
     static void GaugeCallback(opentelemetry::metrics::ObserverResult result,
-                              void* arg);
+                              void* arg) ABSL_LOCKS_EXCLUDED(mu);
   };
 
   template <typename ValueType>
@@ -460,7 +460,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
 
     static void CallbackGaugeCallback(
         opentelemetry::metrics::ObserverResult result, void* arg)
-        ABSL_LOCKS_EXCLUDED(CallbackGaugeState<ValueType>::ot_plugin->mu_);
+        ABSL_LOCKS_EXCLUDED(ot_plugin->mu_);
 
     void Observe(opentelemetry::metrics::ObserverResult& result,
                  const Cache& cache)

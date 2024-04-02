@@ -1404,15 +1404,16 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
   constexpr std::array<absl::string_view, 4> kOptionalLabelKeys = {
       "optional_label_key_1", "optional_label_key_2", "optional_label_key_3",
       "optional_label_key_4"};
-  constexpr std::array<absl::string_view, 2> kActualOptionalLabelKeys = {
-      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 3> kActualOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2", "optional_label_key_4"};
   constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
                                                              "label_value_2"};
   constexpr std::array<absl::string_view, 4> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2",
       "optional_label_value_3", "optional_label_value_4"};
-  constexpr std::array<absl::string_view, 2> kActualOptionalLabelValues = {
-      "optional_label_value_1", "optional_label_value_2"};
+  constexpr std::array<absl::string_view, 3> kActualOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2",
+      "optional_label_value_4"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       kMetricName, "A simple double histogram.", "unit", kLabelKeys,
       kOptionalLabelKeys, /*enable_by_default=*/true);
@@ -1424,7 +1425,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                    GRPC_ARG_SERVER_SELECTOR_VALUE;
           })
           .add_optional_label(kOptionalLabelKeys[0])
-          .add_optional_label(kOptionalLabelKeys[1])));
+          .add_optional_label(kOptionalLabelKeys[1])
+          .add_optional_label(kOptionalLabelKeys[3])));
   grpc_core::ChannelArgs args;
   args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
   auto stats_plugins =

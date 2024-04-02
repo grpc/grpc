@@ -111,18 +111,15 @@ class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
         return false;
       }
     }
-    if (optional_label_keys_.size() != optional_label_values_.size()) {
-      // We have filtered the optional label values already.
-      GPR_ASSERT(optional_labels_bits_.count() ==
-                 optional_label_values_.size());
-    }
-    auto iter = optional_label_values_.begin();
-    for (size_t i = 0; i < optional_label_keys_.size(); ++i) {
+    bool filtered = optional_label_values_.size() < optional_label_keys_.size();
+    for (size_t i = 0, j = 0; i < optional_label_keys_.size(); ++i) {
       if (!optional_labels_bits_.test(i)) {
+        !filtered && ++j;
         continue;
       }
-      if (!callback(AbslStrViewToOpenTelemetryStrView(optional_label_keys_[i]),
-                    AbslStrViewToOpenTelemetryStrView(*iter++))) {
+      if (!callback(
+              AbslStrViewToOpenTelemetryStrView(optional_label_keys_[i]),
+              AbslStrViewToOpenTelemetryStrView(optional_label_values_[j++]))) {
         return false;
       }
     }
@@ -526,12 +523,7 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
       key.emplace_back(optional_values[i]);
     }
   }
-  auto iter = cell.find(key);
-  if (iter == cell.end()) {
-    cell.emplace(std::move(key), value);
-  } else {
-    iter->second = value;
-  }
+  cell.insert_or_assign(std::move(key), value);
 }
 
 void OpenTelemetryPlugin::CallbackMetricReporter::Report(
@@ -555,12 +547,7 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
       key.emplace_back(optional_values[i]);
     }
   }
-  auto iter = cell.find(key);
-  if (iter == cell.end()) {
-    cell.emplace(std::move(key), value);
-  } else {
-    iter->second = value;
-  }
+  cell.insert_or_assign(std::move(key), value);
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
@@ -705,12 +692,7 @@ void OpenTelemetryPlugin::SetGauge(
     }
   }
   grpc_core::MutexLock lock(&(*gauge_state)->mu);
-  auto iter = (*gauge_state)->cache.find(key);
-  if (iter == (*gauge_state)->cache.end()) {
-    (*gauge_state)->cache.emplace(std::move(key), value);
-  } else {
-    iter->second = value;
-  }
+  (*gauge_state)->cache.insert_or_assign(std::move(key), value);
   if (!std::exchange((*gauge_state)->ot_callback_registered, true)) {
     (*gauge_state)
         ->instrument->AddCallback(&GaugeState<int64_t>::GaugeCallback,
@@ -736,20 +718,14 @@ void OpenTelemetryPlugin::SetGauge(
   auto* gauge_state = absl::get_if<std::unique_ptr<GaugeState<double>>>(
       &instrument_data.instrument);
   GPR_ASSERT(gauge_state != nullptr);
-  auto key =
-      std::vector<std::string>(label_values.cbegin(), label_values.cend());
+  auto key = std::vector<std::string>(label_values.begin(), label_values.end());
   for (size_t i = 0; i < optional_values.size(); ++i) {
     if (instrument_data.optional_labels_bits.test(i)) {
       key.emplace_back(optional_values[i]);
     }
   }
   grpc_core::MutexLock lock(&(*gauge_state)->mu);
-  auto iter = (*gauge_state)->cache.find(key);
-  if (iter == (*gauge_state)->cache.end()) {
-    (*gauge_state)->cache.emplace(std::move(key), value);
-  } else {
-    iter->second = value;
-  }
+  (*gauge_state)->cache.insert_or_assign(std::move(key), value);
   if (!std::exchange((*gauge_state)->ot_callback_registered, true)) {
     (*gauge_state)
         ->instrument->AddCallback(&GaugeState<double>::GaugeCallback,
