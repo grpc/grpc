@@ -173,14 +173,6 @@ OpenTelemetryPluginBuilderImpl::DisableAllMetrics() {
 }
 
 OpenTelemetryPluginBuilderImpl&
-OpenTelemetryPluginBuilderImpl::SetTargetSelector(
-    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        target_selector) {
-  target_selector_ = std::move(target_selector);
-  return *this;
-}
-
-OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::SetTargetAttributeFilter(
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter) {
@@ -222,17 +214,25 @@ OpenTelemetryPluginBuilderImpl::AddOptionalLabel(
   return *this;
 }
 
+OpenTelemetryPluginBuilderImpl&
+OpenTelemetryPluginBuilderImpl::SetChannelScopeFilter(
+    absl::AnyInvocable<
+        bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+        channel_scope_filter) {
+  channel_scope_filter_ = std::move(channel_scope_filter);
+  return *this;
+}
+
 absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   if (meter_provider_ == nullptr) {
     return absl::OkStatus();
   }
   grpc_core::GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<OpenTelemetryPlugin>(
-          metrics_, meter_provider_, std::move(target_selector_),
-          std::move(target_attribute_filter_),
+          metrics_, meter_provider_, std::move(target_attribute_filter_),
           std::move(generic_method_attribute_filter_),
           std::move(server_selector_), std::move(plugin_options_),
-          std::move(optional_label_keys_)));
+          std::move(optional_label_keys_), std::move(channel_scope_filter_)));
   return absl::OkStatus();
 }
 
@@ -241,8 +241,6 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
     opentelemetry::nostd::shared_ptr<opentelemetry::metrics::MeterProvider>
         meter_provider,
     absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        target_selector,
-    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
         target_attribute_filter,
     absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
         generic_method_attribute_filter,
@@ -250,14 +248,17 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
         server_selector,
     std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
         plugin_options,
-    std::shared_ptr<std::set<absl::string_view>> optional_label_keys)
+    std::shared_ptr<std::set<absl::string_view>> optional_label_keys,
+    absl::AnyInvocable<
+        bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+        channel_scope_filter)
     : meter_provider_(std::move(meter_provider)),
-      target_selector_(std::move(target_selector)),
       server_selector_(std::move(server_selector)),
       target_attribute_filter_(std::move(target_attribute_filter)),
       generic_method_attribute_filter_(
           std::move(generic_method_attribute_filter)),
-      plugin_options_(std::move(plugin_options)) {
+      plugin_options_(std::move(plugin_options)),
+      channel_scope_filter_(std::move(channel_scope_filter)) {
   auto meter = meter_provider_->GetMeter("grpc-c++", GRPC_CPP_VERSION_STRING);
   // Per-call metrics.
   if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
@@ -427,8 +428,9 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
-OpenTelemetryPlugin::IsEnabledForChannel(const ChannelScope& scope) const {
-  if (target_selector_ == nullptr || target_selector_(scope.target())) {
+OpenTelemetryPlugin::IsEnabledForChannel(
+    const OpenTelemetryPluginBuilder::ChannelScope& scope) const {
+  if (channel_scope_filter_ == nullptr || channel_scope_filter_(scope)) {
     return {true, std::make_shared<ClientScopeConfig>(this, scope)};
   }
   return {false, nullptr};
@@ -640,6 +642,13 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddPluginOption(
 OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::AddOptionalLabel(
     absl::string_view optional_label_key) {
   impl_->AddOptionalLabel(optional_label_key);
+  return *this;
+}
+
+OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetChannelScopeFilter(
+    absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+        channel_scope_filter) {
+  impl_->SetChannelScopeFilter(std::move(channel_scope_filter));
   return *this;
 }
 

@@ -40,6 +40,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -206,6 +207,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -1136,7 +1138,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -1938,7 +1939,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
@@ -2192,6 +2192,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -2603,7 +2604,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
@@ -3023,7 +3023,6 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
@@ -4369,6 +4368,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h

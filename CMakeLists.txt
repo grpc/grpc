@@ -1783,6 +1783,7 @@ foreach(_hdr
   include/grpc/support/json.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
+  include/grpc/support/metrics.h
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
@@ -2509,7 +2510,6 @@ add_library(grpc
   src/core/lib/surface/wait_for_cq_end_op.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_size_estimator.cc
@@ -2746,6 +2746,7 @@ foreach(_hdr
   include/grpc/support/json.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
+  include/grpc/support/metrics.h
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
@@ -3234,7 +3235,6 @@ add_library(grpc_unsecure
   src/core/lib/surface/wait_for_cq_end_op.cc
   src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/call_factory.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_size_estimator.cc
@@ -3446,6 +3446,7 @@ foreach(_hdr
   include/grpc/support/json.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
+  include/grpc/support/metrics.h
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
@@ -5495,6 +5496,7 @@ foreach(_hdr
   include/grpc/support/json.h
   include/grpc/support/log.h
   include/grpc/support/log_windows.h
+  include/grpc/support/metrics.h
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
