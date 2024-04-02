@@ -70,18 +70,15 @@ BatchBuilder::Batch::~Batch() {
     gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
             GetContext<Activity>()->DebugTag().c_str(), this);
   }
-  if (pending_receive_message != nullptr) {
-    delete pending_receive_message;
-  }
-  if (pending_receive_initial_metadata != nullptr) {
-    delete pending_receive_initial_metadata;
-  }
-  if (pending_receive_trailing_metadata != nullptr) {
-    delete pending_receive_trailing_metadata;
-  }
-  if (pending_sends != nullptr) {
-    delete pending_sends;
-  }
+
+  delete pending_receive_message;
+
+  delete pending_receive_initial_metadata;
+
+  delete pending_receive_trailing_metadata;
+
+  delete pending_sends;
+
   if (batch.cancel_stream) {
     delete batch.payload;
   }
