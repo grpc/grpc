@@ -22,6 +22,7 @@
 
 #include <utility>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 

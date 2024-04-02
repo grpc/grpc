@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>

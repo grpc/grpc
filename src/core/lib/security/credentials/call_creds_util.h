@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/security/credentials/credentials.h"

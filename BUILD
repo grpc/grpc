@@ -2249,6 +2249,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials",
         "grpc_public_hdrs",
         "grpc_trace",
         "handshaker",
@@ -2311,6 +2312,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_core_credentials",
+    hdrs = ["include/grpc/credentials.h"],
+    language = "c++",
+    visibility = ["@grpc:core_credentials"],
+)
+
+grpc_cc_library(
     name = "alts_util",
     srcs = [
         "//src/core:lib/security/credentials/alts/check_gcp_environment.cc",
@@ -2337,6 +2345,7 @@ grpc_cc_library(
     deps = [
         "alts_upb",
         "gpr",
+        "grpc_core_credentials",
         "grpc_public_hdrs",
     ],
 )
@@ -2411,6 +2420,7 @@ grpc_cc_library(
         "grpc",
         "grpc++_codegen_proto",
         "grpc_base",
+        "grpc_core_credentials",
         "grpc_credentials_util",
         "grpc_health_upb",
         "grpc_public_hdrs",
@@ -2492,6 +2502,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials",
         "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_service_config_impl",
@@ -3840,6 +3851,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials",
         "grpc_public_hdrs",
         "grpc_security_base",
         "handshaker",
@@ -3909,6 +3921,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials",
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_trace",
@@ -3997,6 +4010,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials",
         "grpc_security_base",
         "tsi_alts_frame_protector",
         "tsi_base",
