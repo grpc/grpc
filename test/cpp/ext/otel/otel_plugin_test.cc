@@ -149,6 +149,62 @@ MATCHER_P(GaugeResultLaterThan, prev_timestamp, "") {
       arg.point_data, result_listener);
 }
 
+#define RETURN_IF_FALSE(expr)  \
+  do {                         \
+    if (!(expr)) return false; \
+  } while (0)
+
+MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
+           label_key, label_value, optional_label_key, optional_label_value,
+           default_value, greater_than, "") {
+  std::unordered_map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>
+      label_map;
+  PopulateLabelMap(label_key, label_value, &label_map);
+  PopulateLabelMap(optional_label_key, optional_label_value, &label_map);
+  opentelemetry::common::SystemTimestamp prev_timestamp;
+  auto prev_value = default_value;
+  for (size_t i = 1; i < arg.at(metric_name).size(); ++i) {
+    if (::testing::Matches(::testing::UnorderedElementsAreArray(
+            arg.at(metric_name)[i - 1].attributes.GetAttributes()))(
+            label_map)) {
+      // Update the previous value for the same associated label values.
+      prev_value = opentelemetry::nostd::get<decltype(prev_value)>(
+          opentelemetry::nostd::get<
+              opentelemetry::sdk::metrics::LastValuePointData>(
+              arg.at(metric_name)[i - 1].point_data)
+              .value_);
+      prev_timestamp = opentelemetry::nostd::get<
+                           opentelemetry::sdk::metrics::LastValuePointData>(
+                           arg.at(metric_name)[i - 1].point_data)
+                           .sample_ts_;
+    }
+    if (!::testing::Matches(::testing::UnorderedElementsAreArray(
+            arg.at(metric_name)[i].attributes.GetAttributes()))(label_map)) {
+      // Skip values that do not have the same associated label values.
+      continue;
+    }
+    if (greater_than) {
+      RETURN_IF_FALSE(::testing::ExplainMatchResult(
+          ::testing::AllOf(
+              AttributesEq(label_key, label_value, optional_label_key,
+                           optional_label_value),
+              GaugeResultIs(::testing::Gt(prev_value)),
+              GaugeResultLaterThan(prev_timestamp)),
+          arg.at(metric_name)[i], result_listener));
+    } else {
+      RETURN_IF_FALSE(::testing::ExplainMatchResult(
+          ::testing::AllOf(
+              AttributesEq(label_key, label_value, optional_label_key,
+                           optional_label_value),
+              GaugeResultIs(::testing::Ge(prev_value)),
+              GaugeResultLaterThan(prev_timestamp)),
+          arg.at(metric_name)[i], result_listener));
+    }
+  }
+  return true;
+}
+
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
   opentelemetry::metrics::Provider::GetMeterProvider();
 }
@@ -1436,7 +1492,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {
                 ::testing::ElementsAre(::testing::AllOf(
                     AttributesEq(kLabelKeys, kLabelValuesSet1,
                                  kOptionalLabelKeys, kOptionalLabelValuesSet1),
-                    GaugeResultIs(IntOrDoubleEq(kInitialValue)))))));
+                    GaugeResultIs(::testing::Eq(kInitialValue)))))));
   auto initial_timestamp = opentelemetry::nostd::get<
                                opentelemetry::sdk::metrics::LastValuePointData>(
                                data[kMetricName][0].point_data)
@@ -1460,12 +1516,12 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {
               ::testing::AllOf(
                   AttributesEq(kLabelKeys, kLabelValuesSet1, kOptionalLabelKeys,
                                kOptionalLabelValuesSet1),
-                  GaugeResultIs(IntOrDoubleEq(kFinalValue)),
+                  GaugeResultIs(::testing::Eq(kFinalValue)),
                   GaugeResultLaterThan(initial_timestamp)),
               ::testing::AllOf(
                   AttributesEq(kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
                                kOptionalLabelValuesSet2),
-                  GaugeResultIs(IntOrDoubleEq(kFinalValue)))))));
+                  GaugeResultIs(::testing::Eq(kFinalValue)))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
@@ -1512,7 +1568,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
                 ::testing::ElementsAre(::testing::AllOf(
                     AttributesEq(kLabelKeys, kLabelValuesSet1,
                                  kOptionalLabelKeys, kOptionalLabelValuesSet1),
-                    GaugeResultIs(IntOrDoubleEq(kInitialValue)))))));
+                    GaugeResultIs(::testing::DoubleEq(kInitialValue)))))));
   auto initial_timestamp = opentelemetry::nostd::get<
                                opentelemetry::sdk::metrics::LastValuePointData>(
                                data[kMetricName][0].point_data)
@@ -1536,67 +1592,12 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
               ::testing::AllOf(
                   AttributesEq(kLabelKeys, kLabelValuesSet1, kOptionalLabelKeys,
                                kOptionalLabelValuesSet1),
-                  GaugeResultIs(IntOrDoubleEq(kFinalValue)),
+                  GaugeResultIs(::testing::DoubleEq(kFinalValue)),
                   GaugeResultLaterThan(initial_timestamp)),
               ::testing::AllOf(
                   AttributesEq(kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
                                kOptionalLabelValuesSet2),
-                  GaugeResultIs(IntOrDoubleEq(kFinalValue)))))));
-}
-
-template <typename ValueType>
-void VerifyIncrementalForSpecificMetricAndSpecificLabelSet(
-    absl::string_view metric_name,
-    absl::Span<const absl::string_view> label_key,
-    absl::Span<const absl::string_view> label_value,
-    absl::Span<const absl::string_view> optional_label_key,
-    absl::Span<const absl::string_view> optional_label_value,
-    absl::flat_hash_map<
-        std::string,
-        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>& data,
-    bool greater_than = false) {
-  std::unordered_map<std::string,
-                     opentelemetry::sdk::common::OwnedAttributeValue>
-      label_map;
-  PopulateLabelMap(label_key, label_value, &label_map);
-  PopulateLabelMap(optional_label_key, optional_label_value, &label_map);
-  ValueType prev_value = 0;
-  opentelemetry::common::SystemTimestamp prev_timestamp;
-  for (size_t i = 1; i < data[metric_name].size(); ++i) {
-    if (::testing::Matches(::testing::UnorderedElementsAreArray(
-            data[metric_name][i - 1].attributes.GetAttributes()))(label_map)) {
-      // Update the previous value for the same associated label values.
-      prev_value = opentelemetry::nostd::get<ValueType>(
-          opentelemetry::nostd::get<
-              opentelemetry::sdk::metrics::LastValuePointData>(
-              data[metric_name][i - 1].point_data)
-              .value_);
-      prev_timestamp = opentelemetry::nostd::get<
-                           opentelemetry::sdk::metrics::LastValuePointData>(
-                           data[metric_name][i - 1].point_data)
-                           .sample_ts_;
-    }
-    if (!::testing::Matches(::testing::UnorderedElementsAreArray(
-            data[metric_name][i].attributes.GetAttributes()))(label_map)) {
-      // Skip values that do not have the same associated label values.
-      continue;
-    }
-    if (greater_than) {
-      EXPECT_THAT(data[metric_name][i],
-                  ::testing::AllOf(
-                      AttributesEq(label_key, label_value, optional_label_key,
-                                   optional_label_value),
-                      GaugeResultIs(::testing::Gt(prev_value)),
-                      GaugeResultLaterThan(prev_timestamp)));
-    } else {
-      EXPECT_THAT(data[metric_name][i],
-                  ::testing::AllOf(
-                      AttributesEq(label_key, label_value, optional_label_key,
-                                   optional_label_value),
-                      GaugeResultIs(::testing::Ge(prev_value)),
-                      GaugeResultLaterThan(prev_timestamp)));
-    }
-  }
+                  GaugeResultIs(::testing::DoubleEq(kFinalValue)))))));
 }
 
 // Makes sure it doesn't crash when collecting metrics data (thus triggering the
@@ -1650,12 +1651,14 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
                            kOptionalLabelValuesSet1),
               AttributesEq(kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
                            kOptionalLabelValuesSet2))))));
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<int64_t>(
-      kMetricName, kLabelKeys, kLabelValuesSet1, kOptionalLabelKeys,
-      kOptionalLabelValuesSet1, data);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<int64_t>(
-      kMetricName, kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
-      kOptionalLabelValuesSet2, data);
+  EXPECT_THAT(data,
+              GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                  kMetricName, kLabelKeys, kLabelValuesSet1, kOptionalLabelKeys,
+                  kOptionalLabelValuesSet1, int64_t(0), false));
+  EXPECT_THAT(data,
+              GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                  kMetricName, kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
+                  kOptionalLabelValuesSet2, int64_t(0), false));
 }
 
 using OpenTelemetryPluginCallbackMetricsTest = OpenTelemetryPluginEnd2EndTest;
@@ -1716,7 +1719,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                         kOptionalLabelValuesSet2);
       },
       {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(100));
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor());
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
@@ -1733,10 +1736,11 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                         kOptionalLabelValuesSet2);
       },
       {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(100));
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor());
   constexpr int kIterations = 100;
   MetricsCollectorThread collector{
-      this, grpc_core::Duration::Milliseconds(10), kIterations,
+      this, grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      kIterations,
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
@@ -1771,18 +1775,22 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                                kOptionalLabelValuesSet1),
                   AttributesEq(kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
                                kOptionalLabelValuesSet2))))));
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<int64_t>(
-      kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
-      kOptionalLabelKeys, kOptionalLabelValuesSet1, data);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<int64_t>(
-      kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
-      kOptionalLabelKeys, kOptionalLabelValuesSet2, data);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<double>(
-      kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
-      kOptionalLabelKeys, kOptionalLabelValuesSet1, data);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<double>(
-      kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
-      kOptionalLabelKeys, kOptionalLabelValuesSet2, data);
+  EXPECT_THAT(data, GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                        kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
+                        kOptionalLabelKeys, kOptionalLabelValuesSet1,
+                        int64_t(0), false));
+  EXPECT_THAT(data, GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                        kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
+                        kOptionalLabelKeys, kOptionalLabelValuesSet2,
+                        int64_t(0), false));
+  EXPECT_THAT(data,
+              GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                  kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
+                  kOptionalLabelKeys, kOptionalLabelValuesSet1, 0.0, false));
+  EXPECT_THAT(data,
+              GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                  kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
+                  kOptionalLabelKeys, kOptionalLabelValuesSet2, 0.0, false));
 }
 
 // The callback minimal interval is shorter than the OT reporting interval, so
@@ -1841,7 +1849,7 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                         kOptionalLabelValuesSet2);
       },
       {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(10));
+      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor());
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
@@ -1858,10 +1866,12 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                         kOptionalLabelValuesSet2);
       },
       {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(10));
+      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor());
   constexpr int kIterations = 100;
   MetricsCollectorThread collector{
-      this, grpc_core::Duration::Milliseconds(100), kIterations,
+      this,
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      kIterations,
       [&](const absl::flat_hash_map<
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
@@ -1896,18 +1906,22 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                                kOptionalLabelValuesSet1),
                   AttributesEq(kLabelKeys, kLabelValuesSet2, kOptionalLabelKeys,
                                kOptionalLabelValuesSet2))))));
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<int64_t>(
-      kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
-      kOptionalLabelKeys, kOptionalLabelValuesSet1, data, true);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<int64_t>(
-      kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
-      kOptionalLabelKeys, kOptionalLabelValuesSet2, data, true);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<double>(
-      kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
-      kOptionalLabelKeys, kOptionalLabelValuesSet1, data, true);
-  VerifyIncrementalForSpecificMetricAndSpecificLabelSet<double>(
-      kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
-      kOptionalLabelKeys, kOptionalLabelValuesSet2, data, true);
+  EXPECT_THAT(data, GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                        kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
+                        kOptionalLabelKeys, kOptionalLabelValuesSet1,
+                        int64_t(0), true));
+  EXPECT_THAT(data, GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                        kInt64CallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
+                        kOptionalLabelKeys, kOptionalLabelValuesSet2,
+                        int64_t(0), true));
+  EXPECT_THAT(data,
+              GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                  kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet1,
+                  kOptionalLabelKeys, kOptionalLabelValuesSet1, 0.0, true));
+  EXPECT_THAT(data,
+              GaugeDataIsIncrementalForSpecificMetricAndLabelSet(
+                  kDoubleCallbackGaugeMetric, kLabelKeys, kLabelValuesSet2,
+                  kOptionalLabelKeys, kOptionalLabelValuesSet2, 0.0, true));
 }
 
 TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {

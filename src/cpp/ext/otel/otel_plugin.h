@@ -429,24 +429,22 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     grpc_core::Mutex mu;
     bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
     // Cache, it's possible to set values for multiple sets of labels at the
-    // same time.
-    absl::flat_hash_map<std::pair<std::vector<absl::string_view>,
-                                  std::vector<absl::string_view>>,
-                        ValueType>
-        cache ABSL_GUARDED_BY(mu);
+    // same time. Key is a vector of label values and enabled optional label
+    // values.
+    absl::flat_hash_map<std::vector<std::string>, ValueType> cache
+        ABSL_GUARDED_BY(mu);
     OpenTelemetryPlugin* ot_plugin;
+
+    static void GaugeCallback(opentelemetry::metrics::ObserverResult result,
+                              void* arg);
   };
-  template <typename T>
-  static void GaugeCallback(opentelemetry::metrics::ObserverResult result,
-                            void* arg);
 
   template <typename ValueType>
   struct CallbackGaugeState {
     // It's possible to set values for multiple sets of labels at the same time
-    // in a single callback.
-    using Cache = absl::flat_hash_map<std::pair<std::vector<absl::string_view>,
-                                                std::vector<absl::string_view>>,
-                                      ValueType>;
+    // in a single callback. Key is a vector of label values and enabled
+    // optional label values.
+    using Cache = absl::flat_hash_map<std::vector<std::string>, ValueType>;
     grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
     opentelemetry::nostd::shared_ptr<
         opentelemetry::metrics::ObservableInstrument>
@@ -460,14 +458,14 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         ABSL_GUARDED_BY(ot_plugin->mu_);
     OpenTelemetryPlugin* ot_plugin;
 
+    static void CallbackGaugeCallback(
+        opentelemetry::metrics::ObserverResult result, void* arg)
+        ABSL_LOCKS_EXCLUDED(CallbackGaugeState<ValueType>::ot_plugin->mu_);
+
     void Observe(opentelemetry::metrics::ObserverResult& result,
                  const Cache& cache)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
   };
-  template <typename T>
-  static void CallbackGaugeCallback(
-      opentelemetry::metrics::ObserverResult result, void* arg)
-      ABSL_LOCKS_EXCLUDED(CallbackGaugeState<T>::ot_plugin->mu_);
 
   // Instruments for per-call metrics.
   ClientMetrics client_;
