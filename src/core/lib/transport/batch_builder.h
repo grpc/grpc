@@ -208,7 +208,7 @@ class BatchBuilder {
 
     void IncrementRefCount() { ++refs; }
     void Unref() {
-      if (--refs == 0) party->arena()->DeletePooled(this);
+      if (--refs == 0) delete this;
     }
     RefCountedPtr<Batch> Ref() {
       IncrementRefCount();
@@ -222,9 +222,9 @@ class BatchBuilder {
     // completion has already been initialized, or it creates a new completion
     // and returns that.
     template <typename T>
-    T* GetInitializedCompletion(T*(Batch::*field)) {
+    T* GetInitializedCompletion(T*(Batch::* field)) {
       if (this->*field != nullptr) return this->*field;
-      this->*field = party->arena()->NewPooled<T>(Ref());
+      this->*field = new T(Ref());
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_DEBUG, "%sAdd batch closure for %s @ %s",
                 DebugPrefix().c_str(),
