@@ -534,6 +534,8 @@ class CLanguage(object):
             environ[
                 "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
             ] = self._vs_tools_architecture_windows
+        elif self.platform == "linux":
+            environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
 
     def post_tests_steps(self):
