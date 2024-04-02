@@ -162,13 +162,13 @@ class BackendServiceImpl : public BackendService {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
+  CHECK(inet_pton(AF_INET, ip_str, &ip4) == 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 std::string Ip6ToPackedString(const char* ip_str) {
   struct in6_addr ip6;
-  GPR_ASSERT(inet_pton(AF_INET6, ip_str, &ip6) == 1);
+  CHECK(inet_pton(AF_INET6, ip_str, &ip6) == 1);
   return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
 }
 
@@ -450,7 +450,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
     void Start() {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc_core::Mutex mu;
@@ -708,9 +708,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      GPR_ASSERT(lb_uri.ok());
+      CHECK(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
+      CHECK(grpc_parse_uri(*lb_uri, &address));
       grpc_core::ChannelArgs args;
       if (!balancer_name.empty()) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, balancer_name);
@@ -729,7 +729,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses = std::move(backends);
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
-    GPR_ASSERT(result.service_config.ok());
+    CHECK(result.service_config.ok());
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancers));
     response_generator_->SetResponseSynchronously(std::move(result));

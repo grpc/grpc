@@ -173,7 +173,7 @@ class MessageAllocatorEnd2endTestBase
       stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
-            GPR_ASSERT(s.ok());
+            CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
@@ -330,7 +330,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
             google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
       }
       void Release() override { delete this; }
-      void FreeRequest() override { GPR_ASSERT(0); }
+      void FreeRequest() override { CHECK(0); }
 
      private:
       google::protobuf::Arena arena_;
@@ -365,7 +365,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK(!credentials_types.empty());
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {
