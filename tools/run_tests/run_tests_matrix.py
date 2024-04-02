@@ -402,6 +402,19 @@ def _create_portability_test_jobs(
         inner_jobs=inner_jobs,
     )
 
+    # portability C on Windows with the "Visual Studio" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
+    test_jobs += _generate_jobs(
+        languages=["c"],
+        configs=["dbg"],
+        platforms=["windows"],
+        arch="default",
+        compiler="cmake_vs2022",
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+    )
+
     # portability C++ on Windows
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
     test_jobs += _generate_jobs(
