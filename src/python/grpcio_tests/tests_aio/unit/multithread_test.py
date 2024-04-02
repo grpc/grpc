@@ -31,7 +31,7 @@ _NUM_THREADS = 5
 _NUM_CALLS_IN_THREAD = 10
 
 
-class TestChannel(bazel test "//src/python/grpcio_tests/tests_aio/unit:multithread_test"):
+class TestChannel(AioTestBase):
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
 
