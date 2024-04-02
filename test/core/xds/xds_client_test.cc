@@ -3878,7 +3878,6 @@ TEST_F(XdsClientTest, FallbackAndRecover) {
   EXPECT_THAT(error->message(), ::testing::ContainsRegex("Server down"))
       << error->message();
   CancelFooWatch(watcher_cached.get(), "foo1");
-  watcher_cached.release();
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre(::testing::Pair(
                   ::testing::Pair(kDefaultXdsServerUrl,
@@ -4077,6 +4076,8 @@ TEST_F(XdsClientTest, FallbackReportsError) {
   ASSERT_TRUE(error.has_value());
   EXPECT_THAT(error->message(),
               ::testing::ContainsRegex("Another server down"));
+  CancelFooWatch(watcher.get(), "foo1");
+  CancelFooWatch(watcher2.get(), "foo1");
 }
 
 TEST_F(XdsClientTest, FallbackOnStartup) {
@@ -4150,6 +4151,7 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
                /*resource_names=*/{"foo1"});
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           kDefaultXdsServerUrl, true)));
+  CancelFooWatch(watcher.get(), "foo1");
 }
 
 }  // namespace
