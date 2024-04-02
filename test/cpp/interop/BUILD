@@ -45,6 +45,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "absl/time:time",
     ],
     language = "C++",
@@ -66,6 +67,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -103,6 +105,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -161,6 +164,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         ":client_helper_lib",
@@ -176,6 +180,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -194,6 +199,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         ":client_helper_lib",
@@ -239,6 +245,9 @@ grpc_cc_library(
     name = "xds_stats_watcher",
     srcs = ["xds_stats_watcher.cc"],
     hdrs = ["xds_stats_watcher.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         ":rpc_behavior_lb_policy",
         "//:grpc++",
@@ -413,6 +422,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         "//:grpc++",
@@ -432,6 +442,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -522,6 +533,7 @@ grpc_cc_library(
         "backend_metrics_lb_policy.h",
     ],
     external_deps = [
+        "absl/log:check",
     ],
     language = "C++",
     tags = ["nobuilder"],
@@ -557,6 +569,7 @@ grpc_cc_library(
         "rpc_behavior_lb_policy.h",
     ],
     external_deps = [
+        "absl/log:check",
     ],
     language = "C++",
     tags = ["nobuilder"],

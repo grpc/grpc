@@ -24,6 +24,7 @@
 
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 
@@ -70,10 +71,10 @@ std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
   SecureCallCredentials* secure_creds =
       dynamic_cast<SecureCallCredentials*>(creds.get());
-  GPR_ASSERT(secure_creds != nullptr);
+  CHECK(secure_creds != nullptr);
   grpc_call_credentials* c_creds = secure_creds->GetRawCreds();
   char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
-  GPR_ASSERT(token != nullptr);
+  CHECK(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
   std::string access_token(token + sizeof("Bearer ") - 1);
   gpr_free(token);

@@ -20,6 +20,7 @@
 
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -92,7 +93,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
             grpc_core::Json::FromArray({grpc_core::Json::FromObject(
                 {{std::string(delegate_->name()),
                   grpc_core::Json::FromObject({})}})}));
-    GPR_ASSERT(delegate_config.ok());
+    CHECK(delegate_config.ok());
     args.config = std::move(*delegate_config);
     return delegate_->UpdateLocked(std::move(args));
   }
