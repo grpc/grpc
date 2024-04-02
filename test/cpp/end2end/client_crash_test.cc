@@ -57,7 +57,7 @@ class CrashTest : public ::testing::Test {
         g_root + "/client_crash_test_server",
         "--address=" + addr,
     }));
-    CHECK_EQ(server_);
+    GPR_ASSERT(server_);
     return grpc::testing::EchoTestService::NewStub(
         grpc::CreateChannel(addr, InsecureChannelCredentials()));
   }

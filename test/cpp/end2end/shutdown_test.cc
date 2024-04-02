@@ -77,7 +77,7 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     return server;
   }
 
-  void TearDown() override { CHECK_EQ(shutdown_); }
+  void TearDown() override { GPR_ASSERT(shutdown_); }
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
@@ -99,9 +99,9 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     EchoResponse response;
     request.set_message("Hello");
     ClientContext context;
-    CHECK_EQ(!shutdown_);
+    GPR_ASSERT(!shutdown_);
     Status s = stub_->Echo(&context, request, &response);
-    CHECK_EQ(shutdown_);
+    GPR_ASSERT(shutdown_);
   }
 
  protected:
@@ -124,7 +124,7 @@ std::vector<string> GetAllCredentialsTypeList() {
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);
   }
-  CHECK_EQ(!credentials_types.empty());
+  GPR_ASSERT(!credentials_types.empty());
 
   std::string credentials_type_list("credentials types:");
   for (const string& type : credentials_types) {

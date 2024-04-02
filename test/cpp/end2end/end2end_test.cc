@@ -1745,8 +1745,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    CHECK_EQ(!GetParam().use_proxy());
-    CHECK_EQ(GetParam().credentials_type() != kInsecureCredentialsType);
+    GPR_ASSERT(!GetParam().use_proxy());
+    GPR_ASSERT(GetParam().credentials_type() != kInsecureCredentialsType);
   }
 };
 
@@ -2278,7 +2278,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
 
   // Test callback with inproc or if the event-engine allows it
-  CHECK_EQ(!credentials_types.empty());
+  GPR_ASSERT(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);

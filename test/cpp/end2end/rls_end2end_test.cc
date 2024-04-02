@@ -414,7 +414,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Start() {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      CHECK_EQ(!running_);
+      GPR_ASSERT(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;

@@ -95,7 +95,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
-    CHECK_EQ(idx < stubs_.size());
+    GPR_ASSERT(idx < stubs_.size());
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 

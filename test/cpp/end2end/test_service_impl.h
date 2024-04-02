@@ -169,7 +169,7 @@ class TestMultipleServiceImpl : public RpcService {
 
     if (request->has_param() && request->param().server_die()) {
       gpr_log(GPR_ERROR, "The request should not reach application handler.");
-      CHECK_EQ(0);
+      GPR_ASSERT(0);
     }
     if (request->has_param() && request->param().has_expected_error()) {
       const auto& error = request->param().expected_error();
