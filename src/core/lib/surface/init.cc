@@ -29,7 +29,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
@@ -72,20 +72,13 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  if (IsV3ServerAuthFilterEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  } else {
-    builder->channel_init()
-        ->RegisterFilter<LegacyServerAuthFilter>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  }
+  builder->channel_init()
+      ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
+      .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   builder->channel_init()
       ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After<ServerAuthFilter>()
-      .After<LegacyServerAuthFilter>();
+      .After<ServerAuthFilter>();
 }
 }  // namespace grpc_core
 
@@ -136,8 +129,8 @@ void grpc_shutdown_internal_locked(void)
   g_shutting_down_cv->SignalAll();
 }
 
-void grpc_shutdown_internal(void* /*ignored*/) {
-  GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
+void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
+  GRPC_API_TRACE("grpc_shutdown_from_cleanup_thread", 0, ());
   grpc_core::MutexLock lock(g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
@@ -145,6 +138,7 @@ void grpc_shutdown_internal(void* /*ignored*/) {
     return;
   }
   grpc_shutdown_internal_locked();
+  gpr_log(GPR_DEBUG, "grpc_shutdown from cleanup thread done");
 }
 
 void grpc_shutdown(void) {
@@ -165,6 +159,7 @@ void grpc_shutdown(void) {
       gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
+      gpr_log(GPR_DEBUG, "grpc_shutdown done");
     } else {
       // spawn a detached thread to do the actual clean up in case we are
       // currently in an executor thread.
@@ -172,7 +167,7 @@ void grpc_shutdown(void) {
       g_initializations++;
       g_shutting_down = true;
       grpc_core::Thread cleanup_thread(
-          "grpc_shutdown", grpc_shutdown_internal, nullptr, nullptr,
+          "grpc_shutdown", grpc_shutdown_from_cleanup_thread, nullptr, nullptr,
           grpc_core::Thread::Options().set_joinable(false).set_tracked(false));
       cleanup_thread.Start();
     }

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
-load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])
 
@@ -99,6 +99,7 @@ grpc_fuzzer(
     language = "C++",
     tags = ["no_windows"],
     deps = [
+        "//:grpc",
         "//src/core:decode_huff",
         "//src/core:huffsyms",
     ],

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/filters/client_channel/client_channel_service_config.h"
+#include "src/core/client_channel/client_channel_service_config.h"
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -26,9 +26,9 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/service_config/service_config.h"
-#include "src/core/lib/service_config/service_config_impl.h"
-#include "src/core/lib/service_config/service_config_parser.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
+#include "src/core/service_config/service_config_parser.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {

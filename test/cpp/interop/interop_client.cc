@@ -1256,7 +1256,7 @@ void InteropClient::PerformSoakTest(
     std::string peer = std::get<3>(result);
     results.push_back(result);
     if (!success) {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s "
               "failed: %s",
               i, elapsed_ms, peer.c_str(), server_uri.c_str(),
@@ -1264,7 +1264,7 @@ void InteropClient::PerformSoakTest(
       total_failures++;
     } else {
       gpr_log(
-          GPR_DEBUG,
+          GPR_INFO,
           "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s succeeded",
           i, elapsed_ms, peer.c_str(), server_uri.c_str());
     }

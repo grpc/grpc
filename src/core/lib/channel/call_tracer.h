@@ -30,15 +30,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/tcp_tracer.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -129,8 +127,9 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   class CallAttemptTracer : public CallTracerInterface {
    public:
     enum class OptionalLabelComponent : std::uint8_t {
-      kXdsServiceLabels = 0,
-      kSize = 1,  // keep last
+      kXdsServiceLabels,
+      kXdsLocalityLabels,
+      kSize,  // keep last
     };
 
     ~CallAttemptTracer() override {}
@@ -206,8 +205,6 @@ class ServerCallTracerFactory {
 
   static absl::string_view ChannelArgName();
 };
-
-void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
 
 // Convenience functions to add call tracers to a call context. Allows setting
 // multiple call tracers to a single call. It is only valid to add client call

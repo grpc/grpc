@@ -32,6 +32,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -58,7 +59,7 @@ class ClientFuzzer final : public BasicFuzzer {
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
     UpdateMinimumRunTime(
-        ScheduleReads(msg.network_input(), mock_endpoint_, engine()));
+        ScheduleReads(msg.network_input()[0], mock_endpoint_, engine()));
     ChannelArgs args =
         CoreConfiguration::Get()
             .channel_args_preconditioning()
@@ -66,8 +67,8 @@ class ClientFuzzer final : public BasicFuzzer {
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
     Transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint_, true);
-    channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                               transport)
+    channel_ = ChannelCreate("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                             transport)
                    ->release()
                    ->c_ptr();
   }
@@ -101,6 +102,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
   }
+  if (msg.network_input().size() != 1) return;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::testing::ClientFuzzer(msg).Run(msg.api_actions());

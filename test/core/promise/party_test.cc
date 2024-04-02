@@ -284,10 +284,9 @@ TEST_F(PartyTest, CanSpawnAndRun) {
   party->Spawn(
       "TestSpawn",
       [i = 10]() mutable -> Poll<int> {
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-        gpr_log(GPR_DEBUG, "i=%d", i);
-        GPR_ASSERT(i > 0);
-        Activity::current()->ForceImmediateRepoll();
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+        EXPECT_GT(i, 0);
+        GetContext<Activity>()->ForceImmediateRepoll();
         --i;
         if (i == 0) return 42;
         return Pending{};
@@ -331,12 +330,12 @@ TEST_F(PartyTest, CanSpawnFromSpawn) {
   party->Spawn(
       "TestSpawn",
       [party, &n2]() -> Poll<int> {
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
         party->Spawn(
             "TestSpawnInner",
             [i = 10]() mutable -> Poll<int> {
-              EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-              Activity::current()->ForceImmediateRepoll();
+              EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+              GetContext<Activity>()->ForceImmediateRepoll();
               --i;
               if (i == 0) return 42;
               return Pending{};
@@ -363,8 +362,8 @@ TEST_F(PartyTest, CanWakeupWithOwningWaker) {
   party->Spawn(
       "TestSpawn",
       [i = 0, &waker, &n]() mutable -> Poll<int> {
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-        waker = Activity::current()->MakeOwningWaker();
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+        waker = GetContext<Activity>()->MakeOwningWaker();
         n[i].Notify();
         i++;
         if (i == 10) return 42;
@@ -389,8 +388,8 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWaker) {
   party->Spawn(
       "TestSpawn",
       [i = 10, &waker, &n]() mutable -> Poll<int> {
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-        waker = Activity::current()->MakeNonOwningWaker();
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+        waker = GetContext<Activity>()->MakeNonOwningWaker();
         --i;
         n[9 - i].Notify();
         if (i == 0) return 42;
@@ -416,8 +415,8 @@ TEST_F(PartyTest, CanWakeupWithNonOwningWakerAfterOrphaning) {
       "TestSpawn",
       [&waker, &set_waker]() mutable -> Poll<int> {
         EXPECT_FALSE(set_waker.HasBeenNotified());
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-        waker = Activity::current()->MakeNonOwningWaker();
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+        waker = GetContext<Activity>()->MakeNonOwningWaker();
         set_waker.Notify();
         return Pending{};
       },
@@ -437,9 +436,9 @@ TEST_F(PartyTest, CanDropNonOwningWakeAfterOrphaning) {
       "TestSpawn",
       [&waker, &set_waker]() mutable -> Poll<int> {
         EXPECT_FALSE(set_waker.HasBeenNotified());
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-        waker =
-            std::make_unique<Waker>(Activity::current()->MakeNonOwningWaker());
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+        waker = std::make_unique<Waker>(
+            GetContext<Activity>()->MakeNonOwningWaker());
         set_waker.Notify();
         return Pending{};
       },
@@ -458,8 +457,8 @@ TEST_F(PartyTest, CanWakeupNonOwningOrphanedWakerWithNoEffect) {
       "TestSpawn",
       [&waker, &set_waker]() mutable -> Poll<int> {
         EXPECT_FALSE(set_waker.HasBeenNotified());
-        EXPECT_EQ(Activity::current()->DebugTag(), "TestParty");
-        waker = Activity::current()->MakeNonOwningWaker();
+        EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
+        waker = GetContext<Activity>()->MakeNonOwningWaker();
         set_waker.Notify();
         return Pending{};
       },
@@ -574,9 +573,9 @@ class PromiseNotification {
       if (done_) return 42;
       if (!polled_) {
         if (owning_waker_) {
-          waker_ = Activity::current()->MakeOwningWaker();
+          waker_ = GetContext<Activity>()->MakeOwningWaker();
         } else {
-          waker_ = Activity::current()->MakeNonOwningWaker();
+          waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         }
         polled_ = true;
       }
@@ -784,6 +783,60 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST_F(PartyTest, NestedWakeup) {
+  auto party1 = MakeRefCounted<TestParty>();
+  auto party2 = MakeRefCounted<TestParty>();
+  auto party3 = MakeRefCounted<TestParty>();
+  int whats_going_on = 0;
+  Notification started2;
+  Notification done2;
+  Notification started3;
+  Notification notify_done;
+  party1->Spawn(
+      "p1",
+      [&]() {
+        EXPECT_EQ(whats_going_on, 0);
+        whats_going_on = 1;
+        party2->Spawn(
+            "p2",
+            [&]() {
+              started2.Notify();
+              started3.WaitForNotification();
+              EXPECT_EQ(whats_going_on, 3);
+              whats_going_on = 4;
+              return Empty{};
+            },
+            [&](Empty) {
+              EXPECT_EQ(whats_going_on, 4);
+              whats_going_on = 5;
+              done2.Notify();
+            });
+        party3->Spawn(
+            "p3",
+            [&]() {
+              started2.WaitForNotification();
+              started3.Notify();
+              done2.WaitForNotification();
+              EXPECT_EQ(whats_going_on, 5);
+              whats_going_on = 6;
+              return Empty{};
+            },
+            [&](Empty) {
+              EXPECT_EQ(whats_going_on, 6);
+              whats_going_on = 7;
+              notify_done.Notify();
+            });
+        EXPECT_EQ(whats_going_on, 1);
+        whats_going_on = 2;
+        return Empty{};
+      },
+      [&](Empty) {
+        EXPECT_EQ(whats_going_on, 2);
+        whats_going_on = 3;
+      });
+  notify_done.WaitForNotification();
 }
 
 }  // namespace grpc_core

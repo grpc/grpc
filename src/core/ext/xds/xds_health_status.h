@@ -25,7 +25,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg key for xDS health status.
 // Value is an XdsHealthStatus::HealthStatus enum.
@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-class XdsHealthStatus {
+class XdsHealthStatus final {
  public:
   enum HealthStatus { kUnknown, kHealthy, kDraining };
 
@@ -56,7 +56,7 @@ class XdsHealthStatus {
   HealthStatus status_;
 };
 
-class XdsHealthStatusSet {
+class XdsHealthStatusSet final {
  public:
   XdsHealthStatusSet() = default;
 

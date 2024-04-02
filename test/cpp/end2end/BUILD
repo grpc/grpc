@@ -364,7 +364,6 @@ grpc_cc_test(
     tags = [
         "cpp_end2end_test",
         "no_test_ios",
-        "surface_registered_method_lookup",
     ],
     deps = [
         ":end2end_test_lib",
@@ -532,6 +531,7 @@ grpc_cc_test(
         "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
         "//src/core:channel_args",
+        "//src/core:config_selector",
         "//src/proto/grpc/health/v1:health_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -567,6 +567,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_config",
@@ -1028,7 +1029,9 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
+        "//src/core:grpc_fake_credentials",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",

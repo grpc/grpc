@@ -27,7 +27,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice.h"
@@ -100,20 +100,14 @@ FileExternalAccountCredentials::FileExternalAccountCredentials(
 void FileExternalAccountCredentials::RetrieveSubjectToken(
     HTTPRequestContext* /*ctx*/, const Options& /*options*/,
     std::function<void(std::string, grpc_error_handle)> cb) {
-  struct SliceWrapper {
-    ~SliceWrapper() { CSliceUnref(slice); }
-    grpc_slice slice = grpc_empty_slice();
-  };
-  SliceWrapper content_slice;
   // To retrieve the subject token, we read the file every time we make a
   // request because it may have changed since the last request.
-  grpc_error_handle error =
-      grpc_load_file(file_.c_str(), 0, &content_slice.slice);
-  if (!error.ok()) {
-    cb("", error);
+  auto content_slice = LoadFile(file_, /*add_null_terminator=*/false);
+  if (!content_slice.ok()) {
+    cb("", content_slice.status());
     return;
   }
-  absl::string_view content = StringViewFromSlice(content_slice.slice);
+  absl::string_view content = content_slice->as_string_view();
   if (format_type_ == "json") {
     auto content_json = JsonParse(content);
     if (!content_json.ok() || content_json->type() != Json::Type::kObject) {

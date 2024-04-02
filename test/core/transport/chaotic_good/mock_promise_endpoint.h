@@ -56,10 +56,9 @@ class MockEndpoint
 struct MockPromiseEndpoint {
   ::testing::StrictMock<MockEndpoint>* endpoint =
       new ::testing::StrictMock<MockEndpoint>();
-  std::unique_ptr<PromiseEndpoint> promise_endpoint =
-      std::make_unique<PromiseEndpoint>(
-          std::unique_ptr<::testing::StrictMock<MockEndpoint>>(endpoint),
-          SliceBuffer());
+  PromiseEndpoint promise_endpoint = PromiseEndpoint(
+      std::unique_ptr<::testing::StrictMock<MockEndpoint>>(endpoint),
+      SliceBuffer());
   ::testing::Sequence read_sequence;
   ::testing::Sequence write_sequence;
   void ExpectRead(

@@ -35,7 +35,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/outlier_detection/outlier_detection.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -50,6 +49,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -85,7 +85,8 @@ class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
                         &xds_cluster_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
@@ -117,7 +118,8 @@ class XdsClusterTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 
@@ -1106,7 +1108,7 @@ TEST_F(LrsTest, Valid) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_TRUE(resource.lrs_load_reporting_server.has_value());
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            xds_client_->bootstrap().server());
+            *xds_client_->bootstrap().servers().front());
 }
 
 TEST_F(LrsTest, NotSelfConfigSource) {

@@ -403,6 +403,7 @@ for dirname in [
     "test/core/promise",
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
+    "test/core/transport/test_suite",
     "fuzztest",
     "fuzztest/core/channel",
     "fuzztest/core/transport/chttp2",
@@ -423,6 +424,7 @@ for dirname in [
             "grpc_cc_library": grpc_cc_library,
             "grpc_cc_test": grpc_cc_library,
             "grpc_core_end2end_test": lambda **kwargs: None,
+            "grpc_transport_test": lambda **kwargs: None,
             "grpc_fuzzer": grpc_cc_library,
             "grpc_fuzz_test": grpc_cc_library,
             "grpc_proto_fuzzer": grpc_cc_library,
@@ -437,6 +439,7 @@ for dirname in [
             "grpc_package": lambda **kwargs: None,
             "filegroup": lambda name, **kwargs: None,
             "sh_library": lambda name, **kwargs: None,
+            "platform": lambda name, **kwargs: None,
         },
         {},
     )
@@ -655,14 +658,28 @@ def make_library(library):
     return (library, error, deps, external_deps)
 
 
+def matches_target(library, target):
+    if not target.startswith("//"):
+        if "/" in target:
+            target = "//" + target
+        else:
+            target = "//:" + target
+    if target == "..." or target == "//...":
+        return True
+    if target.endswith("/..."):
+        return library.startswith(target[:-4])
+    return library == target
+
+
 def main() -> None:
     update_libraries = []
     for library in sorted(consumes.keys()):
         if library in no_update:
             continue
-        if args.targets and library not in args.targets:
-            continue
-        update_libraries.append(library)
+        for target in args.targets:
+            if matches_target(library, target):
+                update_libraries.append(library)
+                break
     with multiprocessing.Pool(processes=multiprocessing.cpu_count()) as p:
         updated_libraries = p.map(make_library, update_libraries, 1)
 

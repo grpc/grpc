@@ -58,12 +58,7 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(roth): This can go back to being a constant when the experiment
-// is removed.
-Duration DefaultIdleTimeout() {
-  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
-  return Duration::Infinity();
-}
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -86,7 +81,7 @@ namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(DefaultIdleTimeout());
+      .value_or(kDefaultIdleTimeout);
 }
 
 }  // namespace
@@ -300,7 +295,6 @@ const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
         "max_age");
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
       ->RegisterFilter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()

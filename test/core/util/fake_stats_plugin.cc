@@ -79,4 +79,149 @@ void RegisterFakeStatsPlugin() {
       });
 }
 
+namespace {
+
+void AddKeyValuePairs(absl::Span<const absl::string_view> keys,
+                      absl::Span<const absl::string_view> values,
+                      std::vector<std::string>* key_value_pairs) {
+  GPR_ASSERT(keys.size() == values.size());
+  for (size_t i = 0; i < keys.size(); ++i) {
+    key_value_pairs->push_back(absl::StrCat(keys[i], "=", values[i]));
+  }
+}
+
+}  // namespace
+
+std::string MakeLabelString(
+    absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> label_values,
+    absl::Span<const absl::string_view> optional_label_keys,
+    absl::Span<const absl::string_view> optional_values) {
+  std::vector<std::string> key_value_pairs;
+  AddKeyValuePairs(label_keys, label_values, &key_value_pairs);
+  AddKeyValuePairs(optional_label_keys, optional_values, &key_value_pairs);
+  return absl::StrJoin(key_value_pairs, ",");
+}
+
+std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
+    absl::string_view target_suffix) {
+  return FakeStatsPluginBuilder()
+      .SetChannelFilter(
+          [target_suffix](const StatsPlugin::ChannelScope& scope) {
+            return absl::EndsWith(scope.target(), target_suffix);
+          })
+      .BuildAndRegister();
+}
+
+void GlobalInstrumentsRegistryTestPeer::ResetGlobalInstrumentsRegistry() {
+  auto& instruments = GlobalInstrumentsRegistry::GetInstrumentList();
+  instruments.clear();
+}
+
+namespace {
+
+template <typename HandleType>
+absl::optional<HandleType> FindInstrument(
+    const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+        instruments,
+    absl::string_view name, GlobalInstrumentsRegistry::ValueType value_type,
+    GlobalInstrumentsRegistry::InstrumentType instrument_type) {
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name && descriptor.value_type == value_type &&
+        descriptor.instrument_type == instrument_type) {
+      HandleType handle;
+      handle.index = descriptor.index;
+      return handle;
+    }
+  }
+  return absl::nullopt;
+}
+
+}  // namespace
+
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>
+GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalUInt64CounterHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kCounter);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleCounterHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleCounterHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kCounter);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>
+GlobalInstrumentsRegistryTestPeer::FindUInt64HistogramHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kUInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kHistogram);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindInt64GaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindDoubleGaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackInt64GaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kInt64,
+      GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>
+GlobalInstrumentsRegistryTestPeer::FindCallbackDoubleGaugeHandleByName(
+    absl::string_view name) {
+  return FindInstrument<
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle>(
+      GlobalInstrumentsRegistry::GetInstrumentList(), name,
+      GlobalInstrumentsRegistry::ValueType::kDouble,
+      GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+}
+
+GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
+GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+    absl::string_view name) {
+  for (auto& descriptor : GlobalInstrumentsRegistry::GetInstrumentList()) {
+    if (descriptor.name == name) {
+      return &descriptor;
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace grpc_core

@@ -30,7 +30,7 @@
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"

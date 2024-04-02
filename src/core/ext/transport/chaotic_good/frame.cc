@@ -154,7 +154,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   GPR_ASSERT(arena != nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>(arena);
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
@@ -189,24 +189,40 @@ absl::Status FrameLimits::ValidateMessage(const FrameHeader& header) {
   return absl::OkStatus();
 }
 
-absl::Status SettingsFrame::Deserialize(HPackParser*, const FrameHeader& header,
-                                        absl::BitGenRef, Arena*,
+absl::Status SettingsFrame::Deserialize(HPackParser* parser,
+                                        const FrameHeader& header,
+                                        absl::BitGenRef bitsrc, Arena* arena,
                                         BufferPair buffers, FrameLimits) {
   if (header.type != FrameType::kSettings) {
     return absl::InvalidArgumentError("Expected settings frame");
   }
-  if (header.flags.any()) {
+  if (header.flags.is_set(1) || header.flags.is_set(2)) {
     return absl::InvalidArgumentError("Unexpected flags");
   }
   if (buffers.data.Length() != 0) {
     return absl::InvalidArgumentError("Unexpected data");
   }
   FrameDeserializer deserializer(header, buffers);
+  if (header.flags.is_set(0)) {
+    auto r = ReadMetadata<ClientMetadata>(parser, deserializer.ReceiveHeaders(),
+                                          header.stream_id, true, true, bitsrc,
+                                          arena);
+    if (!r.ok()) return r.status();
+    if (r.value() != nullptr) {
+      headers = std::move(r.value());
+    }
+  } else if (header.header_length != 0) {
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unexpected non-zero header length", header.header_length));
+  }
   return deserializer.Finish();
 }
 
-BufferPair SettingsFrame::Serialize(HPackCompressor*) const {
+BufferPair SettingsFrame::Serialize(HPackCompressor* encoder) const {
   FrameSerializer serializer(FrameType::kSettings, 0);
+  if (headers.get() != nullptr) {
+    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+  }
   return serializer.Finish();
 }
 

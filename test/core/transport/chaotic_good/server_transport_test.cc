@@ -71,15 +71,13 @@ const uint8_t kGrpcStatus0[] = {0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
                                 0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ServerMetadataHandle TestInitialMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto md = GetContext<Arena>()->MakePooled<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
 
 ServerMetadataHandle TestTrailingMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto md = GetContext<Arena>()->MakePooled<ServerMetadata>();
   md->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
   return md;
 }
@@ -102,7 +100,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
           .channel_args_preconditioning()
           .PreconditionChannelArgs(nullptr),
       std::move(control_endpoint.promise_endpoint),
-      std::move(data_endpoint.promise_endpoint), event_engine());
+      std::move(data_endpoint.promise_endpoint), event_engine(), HPackParser(),
+      HPackCompressor());
   // Once we set the acceptor, expect to read some frames.
   // We'll return a new request with a payload of "12345678".
   control_endpoint.ExpectRead(

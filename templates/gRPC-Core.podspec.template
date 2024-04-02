@@ -122,7 +122,7 @@
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20230802.0'
+    abseil_version = '1.20240116.1'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -170,6 +170,14 @@
     s.compiler_flags = '-DGRPC_ARES=0 -Wno-comma'
     s.libraries = 'c++'
 
+    # Exposes the privacy manifest. Depended on by any subspecs containing
+    # non-interface files.
+    s.subspec 'Privacy' do |ss|
+      ss.resource_bundles = {
+        s.module_name => 'src/objective-c/PrivacyInfo.xcprivacy'
+      }
+    end
+
     # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
     # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
     # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
@@ -189,7 +197,8 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.31'
+      ss.dependency "#{s.name}/Privacy", version
+      ss.dependency 'BoringSSL-GRPC', '0.0.33'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
@@ -214,6 +223,7 @@
 
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Implementation", version
+      ss.dependency "#{s.name}/Privacy", version
       ss.dependency "#{s.name}/Cronet-Interface", version
 
       ss.source_files = ${ruby_multiline_list(grpc_cronet_files, 22)}

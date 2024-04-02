@@ -169,6 +169,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
       !ResolvedAddressIsVSock(socket.addr)) {
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketLowLatency(1));
     GRPC_RETURN_IF_ERROR(socket.sock.SetSocketReuseAddr(1));
+    GRPC_RETURN_IF_ERROR(socket.sock.SetSocketDscp(options.dscp));
     socket.sock.TrySetSocketTcpUserTimeout(options, false);
   }
   GRPC_RETURN_IF_ERROR(socket.sock.SetSocketNoSigpipeIfPossible());
@@ -249,6 +250,13 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     return absl::FailedPreconditionError(
         absl::StrCat("getifaddrs: ", std::strerror(errno)));
   }
+
+  static const bool is_ipv4_available = [] {
+    const int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd >= 0) close(fd);
+    return fd >= 0;
+  }();
+
   for (ifa_it = ifa; ifa_it != nullptr; ifa_it = ifa_it->ifa_next) {
     ResolvedAddress addr;
     socklen_t len;
@@ -256,6 +264,9 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     if (ifa_it->ifa_addr == nullptr) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
+      if (!is_ipv4_available) {
+        continue;
+      }
       len = static_cast<socklen_t>(sizeof(sockaddr_in));
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
       len = static_cast<socklen_t>(sizeof(sockaddr_in6));

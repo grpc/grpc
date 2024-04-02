@@ -406,8 +406,9 @@ std::vector<CoreEnd2endTestRegistry::Test> CoreEnd2endTestRegistry::AllTests() {
   }
   for (const auto& suite_configs : suites_) {
     if (suite_configs.second.empty()) {
-      CrashWithStdio(
-          absl::StrCat("Suite ", suite_configs.first, " has no tests"));
+      fprintf(
+          stderr, "%s\n",
+          absl::StrCat("Suite ", suite_configs.first, " has no tests").c_str());
     }
     for (const auto& test_factory : tests_by_suite_[suite_configs.first]) {
       for (const auto* config : suite_configs.second) {

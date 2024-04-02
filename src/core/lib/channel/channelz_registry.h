@@ -36,7 +36,7 @@ namespace channelz {
 
 // singleton registry object to track all objects that are needed to support
 // channelz bookkeeping. All objects share globally distributed uuids.
-class ChannelzRegistry {
+class ChannelzRegistry final {
  public:
   static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);

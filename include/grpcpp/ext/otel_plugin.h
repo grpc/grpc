@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
@@ -99,15 +100,25 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
+  // Methods to manipulate which instruments are enabled in the OpenTelemetry
+  // Stats Plugin.
+  OpenTelemetryPluginBuilder& EnableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilder& DisableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilder& DisableAllMetrics();
   /// Add a plugin option to add to the opentelemetry plugin being built. At
   /// present, this type is an opaque type. Ownership of \a option is
   /// transferred when `AddPluginOption` is invoked. A maximum of 64 plugin
   /// options can be added.
   OpenTelemetryPluginBuilder& AddPluginOption(
       std::unique_ptr<OpenTelemetryPluginOption> option);
+  // Records \a optional_label_key on all metrics that provide it.
+  OpenTelemetryPluginBuilder& AddOptionalLabel(
+      absl::string_view optional_label_key);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
-  void BuildAndRegisterGlobal();
+  absl::Status BuildAndRegisterGlobal();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;

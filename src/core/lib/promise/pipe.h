@@ -374,7 +374,7 @@ class Center : public InterceptorList<T> {
   const T& value() const { return value_; }
 
   std::string DebugTag() {
-    if (auto* activity = Activity::current()) {
+    if (auto* activity = GetContext<Activity>()) {
       return absl::StrCat(activity->DebugTag(), " PIPE[0x", absl::Hex(this),
                           "]: ");
     } else {
@@ -638,11 +638,6 @@ class PipeReceiver {
   friend struct Pipe<T>;
   explicit PipeReceiver(pipe_detail::Center<T>* center) : center_(center) {}
   RefCountedPtr<pipe_detail::Center<T>> center_;
-
-  // Make failure to destruct show up in ASAN builds.
-#ifndef NDEBUG
-  std::unique_ptr<int> asan_canary_ = std::make_unique<int>(0);
-#endif
 };
 
 namespace pipe_detail {
@@ -661,7 +656,7 @@ class Push {
     if (center_ == nullptr) {
       if (grpc_trace_promise_primitives.enabled()) {
         gpr_log(GPR_DEBUG, "%s Pipe push has a null center",
-                Activity::current()->DebugTag().c_str());
+                GetContext<Activity>()->DebugTag().c_str());
       }
       return false;
     }

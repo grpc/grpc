@@ -18,10 +18,15 @@
 
 #include "src/cpp/ext/otel/otel_plugin.h"
 
+#include <type_traits>
+
 #include "absl/functional/any_invocable.h"
-#include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "opentelemetry/metrics/provider.h"
+#include "opentelemetry/nostd/variant.h"
+#include "opentelemetry/sdk/common/attribute_utils.h"
+#include "opentelemetry/sdk/metrics/data/point_data.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 
@@ -38,6 +43,73 @@ namespace grpc {
 namespace testing {
 namespace {
 
+#define GRPC_ARG_SERVER_SELECTOR_KEY "grpc.testing.server_selector_key"
+#define GRPC_ARG_SERVER_SELECTOR_VALUE "grpc.testing.server_selector_value"
+
+template <typename T>
+void PopulateLabelMap(
+    T label_keys, T label_values,
+    std::unordered_map<std::string,
+                       opentelemetry::sdk::common::OwnedAttributeValue>*
+        label_maps) {
+  for (size_t i = 0; i < label_keys.size(); ++i) {
+    (*label_maps)[std::string(label_keys[i])] = std::string(label_values[i]);
+  }
+}
+
+MATCHER_P4(AttributesEq, label_keys, label_values, optional_label_keys,
+           optional_label_values, "") {
+  std::unordered_map<std::string,
+                     opentelemetry::sdk::common::OwnedAttributeValue>
+      label_map;
+  PopulateLabelMap(label_keys, label_values, &label_map);
+  PopulateLabelMap(optional_label_keys, optional_label_values, &label_map);
+  return ::testing::ExplainMatchResult(
+      ::testing::UnorderedElementsAreArray(label_map),
+      arg.attributes.GetAttributes(), result_listener);
+}
+
+template <typename T>
+auto IntOrDoubleEq(T result) {
+  return ::testing::Eq(result);
+}
+template <>
+auto IntOrDoubleEq(double result) {
+  return ::testing::DoubleEq(result);
+}
+
+MATCHER_P(CounterResultEq, result, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::SumPointData::value_,
+              ::testing::VariantWith<std::remove_cv_t<decltype(result)>>(
+                  IntOrDoubleEq(result)))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P4(HistogramResultEq, sum, min, max, count, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::HistogramPointData>(
+          ::testing::AllOf(
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::sum_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(sum)>>(
+                      IntOrDoubleEq(sum))),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::min_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(min)>>(
+                      IntOrDoubleEq(min))),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::max_,
+                  ::testing::VariantWith<std::remove_cv_t<decltype(max)>>(
+                      IntOrDoubleEq(max))),
+              ::testing::Field(
+                  &opentelemetry::sdk::metrics::HistogramPointData::count_,
+                  ::testing::Eq(count)))),
+      arg.point_data, result_listener);
+}
+
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
   opentelemetry::metrics::Provider::GetMeterProvider();
 }
@@ -51,7 +123,9 @@ TEST(OpenTelemetryPluginBuildTest, Basic) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -79,8 +153,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptStarted) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
-  Init(
-      {grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -112,8 +187,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ClientAttemptDuration) {
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ClientAttemptSentTotalCompressedMessageSize) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kClientAttemptSentTotalCompressedMessageSizeInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::
+           kClientAttemptSentTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
   const char* kMetricName =
       "grpc.client.attempt.sent_total_compressed_message_size";
@@ -147,8 +223,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ClientAttemptRcvdTotalCompressedMessageSize) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::
+           kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
   const char* kMetricName =
       "grpc.client.attempt.rcvd_total_compressed_message_size";
@@ -181,7 +258,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
-  Init({grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
   auto data = ReadCurrentMetricsData(
@@ -205,7 +283,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallStarted) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
-  Init({grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -233,8 +312,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerCallDuration) {
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ServerCallSentTotalCompressedMessageSize) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kServerCallSentTotalCompressedMessageSizeInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::
+           kServerCallSentTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
   const char* kMetricName =
       "grpc.server.call.sent_total_compressed_message_size";
@@ -264,8 +344,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        ServerCallRcvdTotalCompressedMessageSize) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kServerCallRcvdTotalCompressedMessageSizeInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::
+           kServerCallRcvdTotalCompressedMessageSizeInstrumentName})));
   SendRPC();
   const char* kMetricName =
       "grpc.server.call.rcvd_total_compressed_message_size";
@@ -295,23 +376,22 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 // Make sure that no meter provider results in normal operations.
 TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/true);
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptStartedInstrumentName})
+                    .set_use_meter_provider(false)));
   SendRPC();
 }
 
 // Test that a channel selector returning true records metrics on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kClientAttemptStartedInstrumentName}, /*resource=*/
-       opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/
-       [](absl::string_view /*target*/) { return true; });
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptStartedInstrumentName})
+                    .set_target_selector(
+                        [](absl::string_view /*target*/) { return true; })));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -341,14 +421,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
 // Test that a target selector returning false does not record metrics on the
 // channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kClientAttemptStartedInstrumentName}, /*resource=*/
-       opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/
-       [](absl::string_view /*target*/) { return false; });
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptStartedInstrumentName})
+                    .set_target_selector(
+                        [](absl::string_view /*target*/) { return false; })));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -360,15 +438,13 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
 
 // Test that a server selector returning true records metrics on the server.
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsTrue) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kServerCallDurationInstrumentName}, /*resource=*/
-       opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       [](const grpc_core::ChannelArgs& /*channel_args*/) { return true; });
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerCallDurationInstrumentName})
+                     .set_server_selector(
+                         [](const grpc_core::ChannelArgs& /*channel_args*/) {
+                           return true;
+                         })));
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -388,15 +464,13 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsTrue) {
 // Test that a server selector returning false does not record metrics on the
 // server.
 TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsFalse) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kServerCallDurationInstrumentName}, /*resource=*/
-       opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       [](const grpc_core::ChannelArgs& /*channel_args*/) { return false; });
+  Init(std::move(Options()
+                     .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                            kServerCallDurationInstrumentName})
+                     .set_server_selector(
+                         [](const grpc_core::ChannelArgs& /*channel_args*/) {
+                           return false;
+                         })));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -409,18 +483,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, ServerSelectorReturnsFalse) {
 // Test that a target attribute filter returning true records metrics with the
 // target as is on the channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kClientAttemptStartedInstrumentName}, /*resource=*/
-       opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/[](absl::string_view /*target*/) {
-         return true;
-       });
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptStartedInstrumentName})
+                    .set_target_attribute_filter(
+                        [](absl::string_view /*target*/) { return true; })));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -450,18 +518,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsTrue) {
 // Test that a target attribute filter returning false records metrics with the
 // target as "other".
 TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
-  Init({grpc::OpenTelemetryPluginBuilder::
-            kClientAttemptStartedInstrumentName}, /*resource=*/
-       opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       [server_address = canonical_server_address_](
-           absl::string_view /*target*/) { return false; });
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptStartedInstrumentName})
+                    .set_target_attribute_filter(
+                        [](absl::string_view /*target*/) { return false; })));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -490,7 +552,9 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetAttributeFilterReturnsFalse) {
 
 // Test that generic method names are scrubbed properly on the client side.
 TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptStartedInstrumentName})));
   SendGenericRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -521,18 +585,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericClientRpc) {
 // the method attribute filter is set and it returns false.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericClientRpcWithMethodAttributeFilterReturningFalse) {
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       [](absl::string_view /*generic_method*/) { return false; });
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_generic_method_attribute_filter(
+              [](absl::string_view /*generic_method*/) { return false; })));
   SendGenericRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -563,18 +621,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 // the method attribute filter is set and it returns true.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericClientRpcWithMethodAttributeFilterReturningTrue) {
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       [](absl::string_view /*generic_method*/) { return true; });
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_generic_method_attribute_filter(
+              [](absl::string_view /*generic_method*/) { return true; })));
   SendGenericRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -603,7 +655,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 
 // Test that generic method names are scrubbed properly on the server side.
 TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
-  Init({grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
   SendGenericRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -633,18 +686,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, GenericServerRpc) {
 // the method attribute filter is set and it returns false.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericServerRpcWithMethodAttributeFilterReturningFalse) {
-  Init({grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       [](absl::string_view /*generic_method*/) { return false; });
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kServerCallDurationInstrumentName})
+          .set_generic_method_attribute_filter(
+              [](absl::string_view /*generic_method*/) { return false; })));
   SendGenericRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -674,18 +721,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 // the method attribute filter is set and it returns true.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        GenericServerRpcWithMethodAttributeFilterReturningTrue) {
-  Init({grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       [](absl::string_view /*generic_method*/) { return true; });
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kServerCallDurationInstrumentName})
+          .set_generic_method_attribute_filter(
+              [](absl::string_view /*generic_method*/) { return true; })));
   SendGenericRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -754,6 +795,7 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
       const override {}
 
   bool AddOptionalLabels(
+      bool /*is_client*/,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       /*optional_labels_span*/,
       opentelemetry::nostd::function_ref<
@@ -764,6 +806,7 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
   }
 
   size_t GetOptionalLabelsSize(
+      bool /*is_client*/,
       absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
       /*optional_labels_span*/) const override {
     return 0;
@@ -804,26 +847,15 @@ class CustomPluginOption
 };
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
-  std::vector<
-      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list;
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ true, /*enabled_on_server*/ true,
-      std::make_pair("key", "value")));
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
-        grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
-       /*plugin_options=*/std::move(plugin_option_list));
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptDurationInstrumentName,
+                                       grpc::OpenTelemetryPluginBuilder::
+                                           kServerCallDurationInstrumentName})
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ true, /*enabled_on_server*/ true,
+                        std::make_pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -848,26 +880,15 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, Basic) {
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
-  std::vector<
-      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list;
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-      std::make_pair("key", "value")));
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
-        grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
-       /*plugin_options=*/std::move(plugin_option_list));
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptDurationInstrumentName,
+                                       grpc::OpenTelemetryPluginBuilder::
+                                           kServerCallDurationInstrumentName})
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ true, /*enabled_on_server*/ false,
+                        std::make_pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -893,26 +914,15 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ClientOnlyPluginOption) {
 }
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
-  std::vector<
-      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list;
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-      std::make_pair("key", "value")));
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
-        grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
-       /*plugin_options=*/std::move(plugin_option_list));
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptDurationInstrumentName,
+                                       grpc::OpenTelemetryPluginBuilder::
+                                           kServerCallDurationInstrumentName})
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ false, /*enabled_on_server*/ true,
+                        std::make_pair("key", "value")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -939,39 +949,27 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest, ServerOnlyPluginOption) {
 
 TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
        MultipleEnabledAndDisabledPluginOptions) {
-  std::vector<
-      std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
-      plugin_option_list;
-  plugin_option_list.reserve(5);
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ true, /*enabled_on_server*/ true,
-      std::make_pair("key1", "value1")));
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-      std::make_pair("key2", "value2")));
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ true, /*enabled_on_server*/ false,
-      std::make_pair("key3", "value3")));
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-      std::make_pair("key4", "value4")));
-  plugin_option_list.emplace_back(std::make_unique<CustomPluginOption>(
-      /*enabled_on_client*/ false, /*enabled_on_server*/ true,
-      std::make_pair("key5", "value5")));
-  Init({grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
-        grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName},
-       /*resource=*/opentelemetry::sdk::resource::Resource::Create({}),
-       /*labels_injector=*/nullptr,
-       /*test_no_meter_provider=*/false,
-       /*labels_to_inject=*/{},
-       /*target_selector=*/absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*server_selector=*/
-       absl::AnyInvocable<bool(const grpc_core::ChannelArgs&) const>(),
-       /*target_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view) const>(),
-       /*generic_method_attribute_filter=*/
-       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>(),
-       /*plugin_options=*/std::move(plugin_option_list));
+  Init(
+      std::move(Options()
+                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kClientAttemptDurationInstrumentName,
+                                       grpc::OpenTelemetryPluginBuilder::
+                                           kServerCallDurationInstrumentName})
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ true, /*enabled_on_server*/ true,
+                        std::make_pair("key1", "value1")))
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ true, /*enabled_on_server*/ false,
+                        std::make_pair("key2", "value2")))
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ true, /*enabled_on_server*/ false,
+                        std::make_pair("key3", "value3")))
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ false, /*enabled_on_server*/ true,
+                        std::make_pair("key4", "value4")))
+                    .add_plugin_option(std::make_unique<CustomPluginOption>(
+                        /*enabled_on_client*/ false, /*enabled_on_server*/ true,
+                        std::make_pair("key5", "value5")))));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1005,6 +1003,372 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
               ::testing::Not(::testing::Contains(::testing::Key("key3"))));
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key4")), "value4");
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
+}
+
+using OpenTelemetryPluginNPCMetricsTest = OpenTelemetryPluginEnd2EndTest;
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
+  constexpr absl::string_view kMetricName = "uint64_counter";
+  constexpr int kCounterValues[] = {1, 2, 3};
+  constexpr int64_t kCounterResult = 6;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      kMetricName, "A simple uint64 counter.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(Options()
+                     .set_metric_names({kMetricName})
+                     .set_target_selector([](absl::string_view target) {
+                       return absl::StartsWith(target, "dns:///");
+                     })
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  for (auto v : kCounterValues) {
+    stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
+                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
+                                         AttributesEq(kLabelKeys, kLabelValues,
+                                                      kOptionalLabelKeys,
+                                                      kOptionalLabelValues),
+                                         CounterResultEq(kCounterResult))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
+  constexpr absl::string_view kMetricName = "double_counter";
+  constexpr double kCounterValues[] = {1.23, 2.34, 3.45};
+  constexpr double kCounterResult = 7.02;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
+      kMetricName, "A simple double counter.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/false);
+  Init(std::move(Options()
+                     .set_metric_names({kMetricName})
+                     .set_target_selector([](absl::string_view target) {
+                       return absl::StartsWith(target, "dns:///");
+                     })
+                     .add_optional_label(kOptionalLabelKeys[0])
+                     .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+  for (auto v : kCounterValues) {
+    stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
+                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
+                                         AttributesEq(kLabelKeys, kLabelValues,
+                                                      kOptionalLabelKeys,
+                                                      kOptionalLabelValues),
+                                         CounterResultEq(kCounterResult))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
+  constexpr absl::string_view kMetricName = "uint64_histogram";
+  constexpr int kHistogramValues[] = {1, 1, 2, 3, 4, 4, 5, 6};
+  constexpr int64_t kSum = 26;
+  constexpr int64_t kMin = 1;
+  constexpr int64_t kMax = 6;
+  constexpr int64_t kCount = 8;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
+      kMetricName, "A simple uint64 histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
+  constexpr absl::string_view kMetricName = "double_histogram";
+  constexpr double kHistogramValues[] = {1.1, 1.2, 2.2, 3.3,
+                                         4.4, 4.5, 5.5, 6.6};
+  constexpr double kSum = 28.8;
+  constexpr double kMin = 1.1;
+  constexpr double kMax = 6.6;
+  constexpr double kCount = 8;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest,
+       RegisterMultipleOpenTelemetryPlugins) {
+  constexpr absl::string_view kMetricName = "yet_another_double_histogram";
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  // Build and register a separate OpenTelemetryPlugin and verify its histogram
+  // recording.
+  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
+  auto reader = BuildAndRegisterOpenTelemetryPlugin(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  {
+    constexpr double kHistogramValues[] = {1.23, 2.34, 3.45, 4.56};
+    constexpr double kSum = 11.58;
+    constexpr double kMin = 1.23;
+    constexpr double kMax = 4.56;
+    constexpr int kCount = 4;
+    auto stats_plugins =
+        grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+    for (auto v : kHistogramValues) {
+      stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                    kOptionalLabelValues);
+    }
+    auto data = ReadCurrentMetricsData(
+        [&](const absl::flat_hash_map<
+            std::string,
+            std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+                data) { return !data.contains(kMetricName); },
+        reader.get());
+    EXPECT_THAT(
+        data, ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+  }
+  // Now build and register another OpenTelemetryPlugin using the test fixture
+  // and record histogram.
+  constexpr double kHistogramValues[] = {1.1, 1.2, 2.2, 3.3,
+                                         4.4, 4.5, 5.5, 6.6};
+  constexpr double kSum = 28.8;
+  constexpr double kMin = 1.1;
+  constexpr double kMax = 6.6;
+  constexpr int kCount = 8;
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+  // Verify that the first plugin gets the data as well.
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader.get());
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest,
+       DisabledOptionalLabelKeysShouldNotBeRecorded) {
+  constexpr absl::string_view kMetricName =
+      "yet_another_yet_another_double_histogram";
+  constexpr double kHistogramValues[] = {1.1, 1.2, 2.2, 3.3,
+                                         4.4, 4.5, 5.5, 6.6};
+  constexpr double kSum = 28.8;
+  constexpr double kMin = 1.1;
+  constexpr double kMax = 6.6;
+  constexpr double kCount = 8;
+  constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
+                                                           "label_key_2"};
+  constexpr std::array<absl::string_view, 4> kOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2", "optional_label_key_3",
+      "optional_label_key_4"};
+  constexpr std::array<absl::string_view, 2> kActualOptionalLabelKeys = {
+      "optional_label_key_1", "optional_label_key_2"};
+  constexpr std::array<absl::string_view, 2> kLabelValues = {"label_value_1",
+                                                             "label_value_2"};
+  constexpr std::array<absl::string_view, 4> kOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2",
+      "optional_label_value_3", "optional_label_value_4"};
+  constexpr std::array<absl::string_view, 2> kActualOptionalLabelValues = {
+      "optional_label_value_1", "optional_label_value_2"};
+  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
+      kOptionalLabelKeys, /*enable_by_default=*/true);
+  Init(std::move(
+      Options()
+          .set_metric_names({kMetricName})
+          .set_server_selector([](const grpc_core::ChannelArgs& args) {
+            return args.GetString(GRPC_ARG_SERVER_SELECTOR_KEY) ==
+                   GRPC_ARG_SERVER_SELECTOR_VALUE;
+          })
+          .add_optional_label(kOptionalLabelKeys[0])
+          .add_optional_label(kOptionalLabelKeys[1])));
+  grpc_core::ChannelArgs args;
+  args = args.Set(GRPC_ARG_SERVER_SELECTOR_KEY, GRPC_ARG_SERVER_SELECTOR_VALUE);
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+  for (auto v : kHistogramValues) {
+    stats_plugins.RecordHistogram(handle, v, kLabelValues,
+                                  kOptionalLabelValues);
+  }
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  EXPECT_THAT(
+      data,
+      ::testing::ElementsAre(::testing::Pair(
+          kMetricName,
+          ::testing::ElementsAre(::testing::AllOf(
+              AttributesEq(kLabelKeys, kLabelValues, kActualOptionalLabelKeys,
+                           kActualOptionalLabelValues),
+              HistogramResultEq(kSum, kMin, kMax, kCount))))));
+}
+
+TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
+  grpc::internal::OpenTelemetryPluginBuilderImpl builder;
+  // First disable all metrics
+  builder.DisableAllMetrics();
+  EXPECT_TRUE(builder.TestOnlyEnabledMetrics().empty());
+  // Add in a few metrics
+  builder.EnableMetrics(
+      {"grpc.test.metric_1", "grpc.test.metric_2", "grpc.test.metric_3"});
+  EXPECT_THAT(
+      builder.TestOnlyEnabledMetrics(),
+      ::testing::UnorderedElementsAre(
+          "grpc.test.metric_1", "grpc.test.metric_2", "grpc.test.metric_3"));
+  // Now remove a few metrics
+  builder.DisableMetrics({"grpc.test.metric_1", "grpc.test.metric_2"});
+  EXPECT_THAT(builder.TestOnlyEnabledMetrics(),
+              ::testing::UnorderedElementsAre("grpc.test.metric_3"));
 }
 
 }  // namespace

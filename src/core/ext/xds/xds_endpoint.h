@@ -40,7 +40,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
 
@@ -71,7 +71,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   // 1. to initialize in the control plane combiner;
   // 2. to use in the data plane combiner.
   // So no additional synchronization is needed.
-  class DropConfig : public RefCounted<DropConfig> {
+  class DropConfig final : public RefCounted<DropConfig> {
    public:
     struct DropCategory {
       bool operator==(const DropCategory& other) const {
@@ -130,7 +130,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   std::string ToString() const;
 };
 
-class XdsEndpointResourceType
+class XdsEndpointResourceType final
     : public XdsResourceTypeImpl<XdsEndpointResourceType, XdsEndpointResource> {
  public:
   absl::string_view type_url() const override {

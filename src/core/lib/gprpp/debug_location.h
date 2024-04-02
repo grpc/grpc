@@ -65,6 +65,7 @@ class DebugLocation {
   DebugLocation(const char* file = GRPC_DEFAULT_FILE,
                 int line = GRPC_DEFAULT_LINE)
       : location_(file, line) {}
+  explicit DebugLocation(SourceLocation location) : location_(location) {}
   const char* file() const { return location_.file(); }
   int line() const { return location_.line(); }
 
@@ -75,6 +76,7 @@ class DebugLocation {
 class DebugLocation {
  public:
   DebugLocation() {}
+  explicit DebugLocation(SourceLocation) {}
   DebugLocation(const char* /* file */, int /* line */) {}
   const char* file() const { return nullptr; }
   int line() const { return -1; }

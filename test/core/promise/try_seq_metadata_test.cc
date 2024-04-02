@@ -19,12 +19,8 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_seq.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -34,17 +30,14 @@ struct TestMap : public MetadataMap<TestMap, GrpcStatusMetadata> {
 };
 
 TEST(PromiseTest, SucceedAndThenFail) {
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
   Poll<TestMap> r = TrySeq(
-      [&arena] {
-        TestMap m(arena.get());
+      [] {
+        TestMap m;
         m.Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
         return m;
       },
-      [&arena]() {
-        TestMap m(arena.get());
+      []() {
+        TestMap m;
         m.Set(GrpcStatusMetadata(), GRPC_STATUS_UNAVAILABLE);
         return m;
       })();

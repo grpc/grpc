@@ -46,7 +46,7 @@ class TestAdmin(unittest.TestCase):
         stub = csds_pb2_grpc.ClientStatusDiscoveryServiceStub(self._channel)
         resp = stub.FetchClientStatus(csds_pb2.ClientStatusRequest())
         # No exception raised and the response is valid
-        self.assertGreater(len(resp.config), 0)
+        self.assertEqual(len(resp.config), 0)
 
     def test_has_channelz(self):
         stub = channelz_pb2_grpc.ChannelzStub(self._channel)

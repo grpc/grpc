@@ -29,6 +29,7 @@ grpc_cc_library(
         ":fuzzing_event_engine_proto",
         "//:event_engine_base_hdrs",
         "//src/core:default_event_engine",
+        "//src/core:native_posix_dns_resolver",
         "//src/core:time",
         "//test/core/util:grpc_test_util",
     ],

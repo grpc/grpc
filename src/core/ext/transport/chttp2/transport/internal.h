@@ -546,7 +546,7 @@ typedef enum {
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data, grpc_core::Arena* arena);
+                     const void* server_data);
   ~grpc_chttp2_stream();
 
   void* context = nullptr;
@@ -639,6 +639,9 @@ struct grpc_chttp2_stream {
 
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
+
+  /// Number of times written
+  int64_t write_counter = 0;
 
   /// Only set when enabled.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
@@ -775,7 +778,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,
