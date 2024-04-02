@@ -80,9 +80,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
-    Options& set_target_selector(
-        absl::AnyInvocable<bool(absl::string_view /*target*/) const> func) {
-      target_selector = std::move(func);
+    Options& set_channel_scope_filter(
+        absl::AnyInvocable<bool(
+            const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+            func) {
+      channel_scope_filter = std::move(func);
       return *this;
     }
 
@@ -128,8 +130,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector;
     bool use_meter_provider = true;
     std::map<std::string, std::string> labels_to_inject;
-    absl::AnyInvocable<bool(absl::string_view /*target*/) const>
-        target_selector;
+    absl::AnyInvocable<bool(
+        const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
+        channel_scope_filter;
     absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*channel_args*/)
                            const>
         server_selector;
