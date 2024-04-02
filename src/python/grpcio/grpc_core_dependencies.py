@@ -35,7 +35,6 @@ CORE_SOURCE_FILES = [
     'src/core/client_channel/subchannel_stream_client.cc',
     'src/core/ext/filters/backend_metrics/backend_metric_filter.cc',
     'src/core/ext/filters/census/grpc_context.cc',
-    'src/core/ext/filters/channel_idle/channel_idle_filter.cc',
     'src/core/ext/filters/channel_idle/idle_filter_state.cc',
     'src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc',
     'src/core/ext/filters/deadline/deadline_filter.cc',

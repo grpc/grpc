@@ -42,7 +42,6 @@ extern void BuildClientChannelConfiguration(
 extern void SecurityRegisterHandshakerFactories(
     CoreConfiguration::Builder* builder);
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
-extern void RegisterChannelIdleFilters(CoreConfiguration::Builder* builder);
 extern void RegisterLegacyChannelIdleFilters(
     CoreConfiguration::Builder* builder);
 extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
@@ -107,7 +106,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
-  RegisterChannelIdleFilters(builder);
   RegisterLegacyChannelIdleFilters(builder);
   RegisterConnectedChannel(builder);
   RegisterGrpcLbPolicy(builder);
