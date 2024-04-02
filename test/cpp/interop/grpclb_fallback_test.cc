@@ -36,7 +36,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
-#include "third_party/absl/log/check.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

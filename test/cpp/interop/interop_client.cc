@@ -1013,7 +1013,7 @@ bool InteropClient::DoOrcaPerRpc() {
   CHECK(report->has_value());
   auto comparison_result = OrcaLoadReportsDiff(report->value(), *orca_report);
   if (comparison_result.has_value()) {
-    CHECKion_failed(__FILE__, __LINE__, comparison_result->c_str());
+    gpr_assertion_failed(__FILE__, __LINE__, comparison_result->c_str());
   }
   CHECK(!load_report_tracker_.GetNextLoadReport().has_value());
   gpr_log(GPR_DEBUG, "orca per rpc successfully finished");
