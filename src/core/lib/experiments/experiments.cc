@@ -128,9 +128,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -214,8 +211,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -333,9 +328,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -419,8 +411,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
@@ -538,9 +528,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -624,8 +611,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
