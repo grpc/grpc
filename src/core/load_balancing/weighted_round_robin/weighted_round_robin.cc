@@ -214,7 +214,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     Mutex mu_;
     float weight_ ABSL_GUARDED_BY(&mu_) = 0;
     Timestamp non_empty_since_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
-    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
+    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
   };
 
   class WrrEndpointList : public EndpointList {
@@ -483,8 +483,7 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
     return 0;
   }
   // If we don't have at least blackout_period worth of data, return 0.
-  if (blackout_period > Duration::Zero() &&
-      now - non_empty_since_ < blackout_period) {
+  if (now - non_empty_since_ < blackout_period) {
     ++*num_not_yet_usable;
     return 0;
   }
