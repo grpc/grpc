@@ -38,7 +38,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 
-#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
@@ -51,6 +50,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
@@ -275,7 +275,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     virtual PickResult Pick(PickArgs args) = 0;
 
-    void Orphan() override {}
+   protected:
+    void Orphaned() override {}
   };
 
   /// A proxy object implemented by the client channel and used by the
@@ -429,7 +430,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
-  class QueuePicker : public SubchannelPicker {
+  class QueuePicker final : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
@@ -444,7 +445,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   // A picker that returns PickResult::Fail for all picks.
-  class TransientFailurePicker : public SubchannelPicker {
+  class TransientFailurePicker final : public SubchannelPicker {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 

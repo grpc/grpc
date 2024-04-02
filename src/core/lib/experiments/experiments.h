@@ -57,8 +57,6 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -89,8 +87,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -100,16 +96,11 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3BackendMetricFilterEnabled() { return false; }
-inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
-inline bool IsV3CompressionFilterEnabled() { return false; }
-inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -141,8 +132,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -152,16 +141,11 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3BackendMetricFilterEnabled() { return false; }
-inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
-inline bool IsV3CompressionFilterEnabled() { return false; }
-inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #else
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() { return true; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 #endif
@@ -194,8 +178,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
 inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() { return true; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -205,9 +187,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTraceRecordCallopsEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 inline bool IsV3BackendMetricFilterEnabled() { return false; }
-inline bool IsV3ChannelIdleFiltersEnabled() { return false; }
-inline bool IsV3CompressionFilterEnabled() { return false; }
-inline bool IsV3ServerAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
@@ -216,7 +195,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return true; }
 
 #else
 enum ExperimentIds {
-  kExperimentIdAbslBase64,
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCallV3,
   kExperimentIdCanaryClientPrivacy,
@@ -235,7 +213,6 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdPromiseBasedServerCall,
   kExperimentIdChaoticGood,
-  kExperimentIdRegisteredMethodLookupInTransport,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
@@ -245,17 +222,10 @@ enum ExperimentIds {
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdV3BackendMetricFilter,
-  kExperimentIdV3ChannelIdleFilters,
-  kExperimentIdV3CompressionFilter,
-  kExperimentIdV3ServerAuthFilter,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
   kNumExperiments
 };
-#define GRPC_EXPERIMENT_IS_INCLUDED_ABSL_BASE64
-inline bool IsAbslBase64Enabled() {
-  return IsExperimentEnabled(kExperimentIdAbslBase64);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() {
   return IsExperimentEnabled(kExperimentIdCallStatusOverrideOnCancellation);
@@ -328,10 +298,6 @@ inline bool IsPromiseBasedServerCallEnabled() {
 inline bool IsChaoticGoodEnabled() {
   return IsExperimentEnabled(kExperimentIdChaoticGood);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_REGISTERED_METHOD_LOOKUP_IN_TRANSPORT
-inline bool IsRegisteredMethodLookupInTransportEnabled() {
-  return IsExperimentEnabled(kExperimentIdRegisteredMethodLookupInTransport);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedInprocTransport);
@@ -367,18 +333,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_V3_BACKEND_METRIC_FILTER
 inline bool IsV3BackendMetricFilterEnabled() {
   return IsExperimentEnabled(kExperimentIdV3BackendMetricFilter);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_V3_CHANNEL_IDLE_FILTERS
-inline bool IsV3ChannelIdleFiltersEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3ChannelIdleFilters);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_V3_COMPRESSION_FILTER
-inline bool IsV3CompressionFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3CompressionFilter);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_V3_SERVER_AUTH_FILTER
-inline bool IsV3ServerAuthFilterEnabled() {
-  return IsExperimentEnabled(kExperimentIdV3ServerAuthFilter);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() {

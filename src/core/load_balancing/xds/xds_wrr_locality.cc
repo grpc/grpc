@@ -61,7 +61,7 @@ namespace {
 constexpr absl::string_view kXdsWrrLocality = "xds_wrr_locality_experimental";
 
 // Config for xds_wrr_locality LB policy.
-class XdsWrrLocalityLbConfig : public LoadBalancingPolicy::Config {
+class XdsWrrLocalityLbConfig final : public LoadBalancingPolicy::Config {
  public:
   XdsWrrLocalityLbConfig() = default;
 
@@ -106,7 +106,7 @@ class XdsWrrLocalityLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // xds_wrr_locality LB policy.
-class XdsWrrLocalityLb : public LoadBalancingPolicy {
+class XdsWrrLocalityLb final : public LoadBalancingPolicy {
  public:
   explicit XdsWrrLocalityLb(Args args);
 
@@ -273,7 +273,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
 // factory
 //
 
-class XdsWrrLocalityLbFactory : public LoadBalancingPolicyFactory {
+class XdsWrrLocalityLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

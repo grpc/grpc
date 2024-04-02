@@ -61,7 +61,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
-    src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -71,7 +70,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
-    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
@@ -750,13 +748,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
@@ -1341,6 +1337,10 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/compat.c \
+    third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
@@ -1371,13 +1371,11 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
     third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
-    third_party/utf8_range/naive.c \
-    third_party/utf8_range/range2-neon.c \
-    third_party/utf8_range/range2-sse.c \
+    third_party/utf8_range/utf8_range.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -1682,6 +1680,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
@@ -1690,5 +1689,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
 fi

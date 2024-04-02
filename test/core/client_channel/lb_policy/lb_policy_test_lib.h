@@ -510,7 +510,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                 picker_.get());
       }
 
-      void Orphan() override {
+      void Orphaned() override {
         absl::Notification notification;
         ExecCtx exec_ctx;
         test_->work_serializer_->Run(

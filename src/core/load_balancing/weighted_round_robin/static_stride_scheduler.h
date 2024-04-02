@@ -39,7 +39,7 @@ namespace grpc_core {
 // Construction is O(|weights|).  Picking is O(1) if weights are similar, or
 // O(|weights|) if the mean of the non-zero weights is a small fraction of the
 // max. Stores two bytes per weight.
-class StaticStrideScheduler {
+class StaticStrideScheduler final {
  public:
   // Constructs and returns a new StaticStrideScheduler, or nullopt if all
   // wieghts are zero or |weights| <= 1. All weights must be >=0.

@@ -78,7 +78,7 @@ TraceFlag grpc_xds_client_refcount_trace(false, "xds_client_refcount");
 // An xds call wrapper that can restart a call upon failure. Holds a ref to
 // the xds channel. The template parameter is the kind of wrapped xds call.
 template <typename T>
-class XdsClient::XdsChannel::RetryableCall
+class XdsClient::XdsChannel::RetryableCall final
     : public InternallyRefCounted<RetryableCall<T>> {
  public:
   explicit RetryableCall(WeakRefCountedPtr<XdsChannel> xds_channel);
@@ -116,7 +116,8 @@ class XdsClient::XdsChannel::RetryableCall
 };
 
 // Contains an ADS call to the xds server.
-class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
+class XdsClient::XdsChannel::AdsCall final
+    : public InternallyRefCounted<AdsCall> {
  public:
   // The ctor and dtor should not be used directly.
   explicit AdsCall(RefCountedPtr<RetryableCall<AdsCall>> retryable_call);
@@ -142,7 +143,7 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
  private:
   class AdsReadDelayHandle;
 
-  class AdsResponseParser : public XdsApi::AdsResponseParserInterface {
+  class AdsResponseParser final : public XdsApi::AdsResponseParserInterface {
    public:
     struct Result {
       const XdsResourceType* type;
@@ -180,7 +181,7 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
     Result result_;
   };
 
-  class ResourceTimer : public InternallyRefCounted<ResourceTimer> {
+  class ResourceTimer final : public InternallyRefCounted<ResourceTimer> {
    public:
     ResourceTimer(const XdsResourceType* type, const XdsResourceName& name)
         : type_(type), name_(name) {}
@@ -293,7 +294,7 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
         ABSL_GUARDED_BY(&XdsClient::mu_);
   };
 
-  class StreamEventHandler
+  class StreamEventHandler final
       : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
    public:
     explicit StreamEventHandler(RefCountedPtr<AdsCall> ads_call)
@@ -356,7 +357,8 @@ class XdsClient::XdsChannel::AdsCall : public InternallyRefCounted<AdsCall> {
 };
 
 // Contains an LRS call to the xds server.
-class XdsClient::XdsChannel::LrsCall : public InternallyRefCounted<LrsCall> {
+class XdsClient::XdsChannel::LrsCall final
+    : public InternallyRefCounted<LrsCall> {
  public:
   // The ctor and dtor should not be used directly.
   explicit LrsCall(RefCountedPtr<RetryableCall<LrsCall>> retryable_call);
@@ -369,7 +371,7 @@ class XdsClient::XdsChannel::LrsCall : public InternallyRefCounted<LrsCall> {
   bool seen_response() const { return seen_response_; }
 
  private:
-  class StreamEventHandler
+  class StreamEventHandler final
       : public XdsTransportFactory::XdsTransport::StreamingCall::EventHandler {
    public:
     explicit StreamEventHandler(RefCountedPtr<LrsCall> lrs_call)
@@ -388,7 +390,7 @@ class XdsClient::XdsChannel::LrsCall : public InternallyRefCounted<LrsCall> {
   };
 
   // A repeating timer for a particular duration.
-  class Timer : public InternallyRefCounted<Timer> {
+  class Timer final : public InternallyRefCounted<Timer> {
    public:
     explicit Timer(RefCountedPtr<LrsCall> lrs_call)
         : lrs_call_(std::move(lrs_call)) {}
@@ -487,7 +489,7 @@ XdsClient::XdsChannel::~XdsChannel() {
 // use a ABSL_EXCLUSIVE_LOCKS_REQUIRED annotation, because Orphan() will be
 // called from DualRefCounted::Unref, which cannot have a lock annotation for
 // a lock in this subclass.
-void XdsClient::XdsChannel::Orphan() ABSL_NO_THREAD_SAFETY_ANALYSIS {
+void XdsClient::XdsChannel::Orphaned() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] orphaning xds channel %p for server %s",
             xds_client(), this, server_.server_uri().c_str());
@@ -768,7 +770,7 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnRetryTimer() {
 // XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle
 //
 
-class XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle
+class XdsClient::XdsChannel::AdsCall::AdsReadDelayHandle final
     : public XdsClient::ReadDelayHandle {
  public:
   explicit AdsReadDelayHandle(RefCountedPtr<AdsCall> ads_call)
@@ -1606,7 +1608,7 @@ XdsClient::~XdsClient() {
   }
 }
 
-void XdsClient::Orphan() {
+void XdsClient::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] shutting down xds client", this);
   }

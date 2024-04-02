@@ -149,7 +149,7 @@ static bool test_identity(const grpc_auth_context* ctx,
     return false;
   }
   if (strncmp(prop->value, expected_identity, prop->value_length) != 0) {
-    gpr_log(GPR_ERROR, "Expected peer identity %s and got got %s.",
+    gpr_log(GPR_ERROR, "Expected peer identity %s and got %s.",
             expected_identity, prop->value);
     return false;
   }

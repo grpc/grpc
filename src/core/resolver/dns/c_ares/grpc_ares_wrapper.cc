@@ -166,7 +166,7 @@ static void grpc_ares_request_unref_locked(grpc_ares_request* r)
 // organize per-query and per-resolution information in such a way
 // that doesn't involve allocating a number of different data
 // structures.
-class GrpcAresQuery {
+class GrpcAresQuery final {
  public:
   explicit GrpcAresQuery(grpc_ares_request* r, const std::string& name)
       : r_(r), name_(name) {

@@ -254,7 +254,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
         "Failed to parse bootstrap JSON string: ", json.status().ToString()));
   }
   // Validate JSON.
-  class XdsJsonArgs : public JsonArgs {
+  class XdsJsonArgs final : public JsonArgs {
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();

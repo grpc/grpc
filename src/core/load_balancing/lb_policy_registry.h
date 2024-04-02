@@ -33,12 +33,12 @@
 
 namespace grpc_core {
 
-class LoadBalancingPolicyRegistry {
+class LoadBalancingPolicyRegistry final {
  public:
   /// Methods used to create and populate the LoadBalancingPolicyRegistry.
   /// NOT THREAD SAFE -- to be used only during global gRPC
   /// initialization and shutdown.
-  class Builder {
+  class Builder final {
    public:
     /// Registers an LB policy factory.  The factory will be used to create an
     /// LB policy whose name matches that of the factory.

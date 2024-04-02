@@ -45,7 +45,7 @@ namespace grpc_core {
 class XdsClient;
 
 // Locality name.
-class XdsLocalityName : public RefCounted<XdsLocalityName> {
+class XdsLocalityName final : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
     bool operator()(const XdsLocalityName* lhs,
@@ -115,7 +115,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 };
 
 // Drop stats for an xds cluster.
-class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
+class XdsClusterDropStats final : public RefCounted<XdsClusterDropStats> {
  public:
   // The total number of requests dropped for any reason is the sum of
   // uncategorized_drops, and dropped_requests map.
@@ -169,7 +169,8 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 };
 
 // Locality stats for an xds cluster.
-class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
+class XdsClusterLocalityStats final
+    : public RefCounted<XdsClusterLocalityStats> {
  public:
   struct BackendMetric {
     uint64_t num_requests_finished_with_metric = 0;

@@ -207,7 +207,7 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
   std::string ToString() const;
 };
 
-class XdsListenerResourceType
+class XdsListenerResourceType final
     : public XdsResourceTypeImpl<XdsListenerResourceType, XdsListenerResource> {
  public:
   absl::string_view type_url() const override {

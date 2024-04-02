@@ -40,11 +40,6 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: absl_base64
-  description: Use abseil base64 functions.
-  expiry: 2024/06/01
-  owner: roth@google.com
-  test_tags: ["credential_token_tests"]
 - name: call_status_override_on_cancellation
   description:
     Avoid overriding call status of successfully finished calls if it races with
@@ -80,21 +75,21 @@
   allow_in_fuzzing_config: false
 - name: event_engine_client
   description: Use EventEngine clients instead of iomgr's grpc_tcp_client
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: hork@google.com
   test_tags: ["core_end2end_test", "event_engine_client_test"]
   uses_polling: true
 - name: event_engine_dns
   description:
     If set, use EventEngine DNSResolver for client channel resolution
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: yijiem@google.com
   test_tags: ["cancel_ares_query_test", "resolver_component_tests_runner_invoker"]
   allow_in_fuzzing_config: false
   uses_polling: true
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
@@ -170,7 +165,7 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
-  requires: [promise_based_client_call, promise_based_server_call, registered_method_lookup_in_transport]
+  requires: [promise_based_client_call, promise_based_server_call]
 - name: promise_based_server_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate
@@ -178,12 +173,6 @@
   expiry: 2024/06/14
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
-- name: registered_method_lookup_in_transport
-  description:
-    Change registered method's lookup point to transport
-  expiry: 2024/03/31
-  owner: yashkt@google.com
-  test_tags: ["surface_registered_method_lookup"]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
@@ -232,28 +221,10 @@
   expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: []
-- name: v3_channel_idle_filters
-  description:
-    Use the v3 filter API version of the idle filters.
-  expiry: 2024/04/04
-  owner: ctiller@google.com
-  test_tags: []
-- name: v3_compression_filter
-  description:
-    Use the compression filter utilizing the v3 filter api
-  expiry: 2024/04/04
-  owner: ctiller@google.com
-  test_tags: ["compression_test"]
-- name: v3_server_auth_filter
-  description:
-    Use the server auth filter utilizing the v3 filter api
-  expiry: 2024/04/04
-  owner: ctiller@google.com
-  test_tags: []
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.
-  expiry: 2024/04/01
+  expiry: 2024/07/01
   owner: ctiller@google.com
   test_tags: []
 - name: work_serializer_dispatch
@@ -261,6 +232,6 @@
     Have the work serializer dispatch work to event engine for every callback,
     instead of running things inline in the first thread that successfully
     enqueues work.
-  expiry: 2024/03/31
+  expiry: 2024/06/30
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]

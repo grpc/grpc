@@ -328,7 +328,7 @@ void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
 // Subchannel::ConnectedSubchannelStateWatcher
 //
 
-class Subchannel::ConnectedSubchannelStateWatcher
+class Subchannel::ConnectedSubchannelStateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
   // Must be instantiated while holding c->mu.
@@ -619,7 +619,7 @@ void Subchannel::ResetBackoff() {
   work_serializer_.DrainQueue();
 }
 
-void Subchannel::Orphan() {
+void Subchannel::Orphaned() {
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
   if (subchannel_pool_ != nullptr) {

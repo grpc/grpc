@@ -41,7 +41,7 @@
 
 namespace grpc_core {
 
-class GrpcXdsTransportFactory : public XdsTransportFactory {
+class GrpcXdsTransportFactory final : public XdsTransportFactory {
  public:
   class GrpcXdsTransport;
 
@@ -62,7 +62,7 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
   grpc_pollset_set* interested_parties_;
 };
 
-class GrpcXdsTransportFactory::GrpcXdsTransport
+class GrpcXdsTransportFactory::GrpcXdsTransport final
     : public XdsTransportFactory::XdsTransport {
  public:
   class GrpcStreamingCall;
@@ -88,7 +88,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
   StateWatcher* watcher_;
 };
 
-class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
+class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
     : public XdsTransportFactory::XdsTransport::StreamingCall {
  public:
   GrpcStreamingCall(RefCountedPtr<GrpcXdsTransportFactory> factory,

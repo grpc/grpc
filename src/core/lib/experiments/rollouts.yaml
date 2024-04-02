@@ -40,8 +40,6 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: absl_base64
-  default: true
 - name: call_status_override_on_cancellation
   default: debug
 - name: call_v3
@@ -98,8 +96,6 @@
     posix: false
 - name: promise_based_server_call
   default: false
-- name: registered_method_lookup_in_transport
-  default: true
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write

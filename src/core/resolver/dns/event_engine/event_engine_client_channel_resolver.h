@@ -23,7 +23,9 @@
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
-class EventEngineClientChannelDNSResolverFactory : public ResolverFactory {
+
+class EventEngineClientChannelDNSResolverFactory final
+    : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }
   bool IsValidUri(const URI& uri) const override;

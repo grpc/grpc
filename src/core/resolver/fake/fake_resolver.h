@@ -49,7 +49,7 @@ class FakeResolver;
 // instead of RefCounted, but external refs are currently needed to
 // encode this in channel args.  Once channel_args are converted to C++,
 // see if we can find a way to fix this.
-class FakeResolverResponseGenerator
+class FakeResolverResponseGenerator final
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
   static const grpc_arg_pointer_vtable kChannelArgPointerVtable;

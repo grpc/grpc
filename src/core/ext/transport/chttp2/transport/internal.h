@@ -546,7 +546,7 @@ typedef enum {
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data, grpc_core::Arena* arena);
+                     const void* server_data);
   ~grpc_chttp2_stream();
 
   void* context = nullptr;

@@ -928,8 +928,6 @@ src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
 src/core/ext/filters/backend_metrics/backend_metric_filter.h \
 src/core/ext/filters/backend_metrics/backend_metric_provider.h \
 src/core/ext/filters/census/grpc_context.cc \
-src/core/ext/filters/channel_idle/channel_idle_filter.cc \
-src/core/ext/filters/channel_idle/channel_idle_filter.h \
 src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
@@ -947,8 +945,6 @@ src/core/ext/filters/http/client_authority_filter.h \
 src/core/ext/filters/http/http_filters_plugin.cc \
 src/core/ext/filters/http/message_compress/compression_filter.cc \
 src/core/ext/filters/http/message_compress/compression_filter.h \
-src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
-src/core/ext/filters/http/message_compress/legacy_compression_filter.h \
 src/core/ext/filters/http/server/http_server_filter.cc \
 src/core/ext/filters/http/server/http_server_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \
@@ -1937,6 +1933,7 @@ src/core/lib/channel/metrics.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/server_call_tracer_filter.cc \
+src/core/lib/channel/server_call_tracer_filter.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/channel/tcp_tracer.h \
@@ -1979,6 +1976,7 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
+src/core/lib/event_engine/event_engine_context.h \
 src/core/lib/event_engine/extensions/can_track_errors.h \
 src/core/lib/event_engine/extensions/chaotic_good_extension.h \
 src/core/lib/event_engine/extensions/supports_fd.h \
@@ -2516,7 +2514,6 @@ src/core/lib/security/security_connector/tls/tls_security_connector.cc \
 src/core/lib/security/security_connector/tls/tls_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \
 src/core/lib/security/transport/client_auth_filter.cc \
-src/core/lib/security/transport/legacy_server_auth_filter.cc \
 src/core/lib/security/transport/secure_endpoint.cc \
 src/core/lib/security/transport/secure_endpoint.h \
 src/core/lib/security/transport/security_handshaker.cc \
@@ -2526,8 +2523,6 @@ src/core/lib/security/transport/tsi_error.cc \
 src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/json_util.cc \
 src/core/lib/security/util/json_util.h \
-src/core/lib/slice/b64.cc \
-src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \

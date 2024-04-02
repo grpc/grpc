@@ -44,7 +44,7 @@
 
 namespace grpc_core {
 
-class LegacyChannel : public Channel {
+class LegacyChannel final : public Channel {
  public:
   static absl::StatusOr<OrphanablePtr<Channel>> Create(
       std::string target, ChannelArgs args,

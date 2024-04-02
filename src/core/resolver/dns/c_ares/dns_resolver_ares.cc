@@ -82,7 +82,7 @@ namespace grpc_core {
 
 namespace {
 
-class AresClientChannelDNSResolver : public PollingResolver {
+class AresClientChannelDNSResolver final : public PollingResolver {
  public:
   AresClientChannelDNSResolver(ResolverArgs args,
                                Duration min_time_between_resolutions);
@@ -90,7 +90,8 @@ class AresClientChannelDNSResolver : public PollingResolver {
   OrphanablePtr<Orphanable> StartRequest() override;
 
  private:
-  class AresRequestWrapper : public InternallyRefCounted<AresRequestWrapper> {
+  class AresRequestWrapper final
+      : public InternallyRefCounted<AresRequestWrapper> {
    public:
     explicit AresRequestWrapper(
         RefCountedPtr<AresClientChannelDNSResolver> resolver)
@@ -342,7 +343,7 @@ AresClientChannelDNSResolver::AresRequestWrapper::OnResolvedLocked(
 // Factory
 //
 
-class AresClientChannelDNSResolverFactory : public ResolverFactory {
+class AresClientChannelDNSResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }
 
@@ -365,7 +366,7 @@ class AresClientChannelDNSResolverFactory : public ResolverFactory {
   }
 };
 
-class AresDNSResolver : public DNSResolver {
+class AresDNSResolver final : public DNSResolver {
  public:
   // Abstract class that centralizes common request handling logic via the
   // template method pattern.
@@ -485,7 +486,7 @@ class AresDNSResolver : public DNSResolver {
     grpc_pollset_set* pollset_set_;
   };
 
-  class AresHostnameRequest : public AresRequest {
+  class AresHostnameRequest final : public AresRequest {
    public:
     AresHostnameRequest(
         absl::string_view name, absl::string_view default_port,
@@ -538,7 +539,7 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<EndpointAddressesList> addresses_;
   };
 
-  class AresSRVRequest : public AresRequest {
+  class AresSRVRequest final : public AresRequest {
    public:
     AresSRVRequest(
         absl::string_view name, absl::string_view name_server, Duration timeout,
@@ -586,7 +587,7 @@ class AresDNSResolver : public DNSResolver {
     std::unique_ptr<EndpointAddressesList> balancer_addresses_;
   };
 
-  class AresTXTRequest : public AresRequest {
+  class AresTXTRequest final : public AresRequest {
    public:
     AresTXTRequest(absl::string_view name, absl::string_view name_server,
                    Duration timeout, grpc_pollset_set* interested_parties,

@@ -295,7 +295,6 @@ const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
         "max_age");
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
       ->RegisterFilter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()

@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-class GrpcXdsClient : public XdsClient {
+class GrpcXdsClient final : public XdsClient {
  public:
   // The key to pass to GetOrCreate() for gRPC servers.
   static constexpr absl::string_view kServerKey = "#server";
@@ -66,8 +66,6 @@ class GrpcXdsClient : public XdsClient {
                 const ChannelArgs& args,
                 OrphanablePtr<XdsTransportFactory> transport_factory);
 
-  void Orphan() override;
-
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_client";
@@ -91,6 +89,7 @@ class GrpcXdsClient : public XdsClient {
   class MetricsReporter;
 
   void ReportCallbackMetrics(CallbackMetricReporter& reporter);
+  void Orphaned() override;
 
   std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;

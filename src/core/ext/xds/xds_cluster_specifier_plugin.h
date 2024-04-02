@@ -49,7 +49,7 @@ class XdsClusterSpecifierPluginImpl {
       ValidationErrors* errors) const = 0;
 };
 
-class XdsRouteLookupClusterSpecifierPlugin
+class XdsRouteLookupClusterSpecifierPlugin final
     : public XdsClusterSpecifierPluginImpl {
   absl::string_view ConfigProtoName() const override;
 
@@ -60,7 +60,7 @@ class XdsRouteLookupClusterSpecifierPlugin
       ValidationErrors* errors) const override;
 };
 
-class XdsClusterSpecifierPluginRegistry {
+class XdsClusterSpecifierPluginRegistry final {
  public:
   XdsClusterSpecifierPluginRegistry();
 

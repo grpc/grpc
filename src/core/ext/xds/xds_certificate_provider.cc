@@ -35,7 +35,7 @@ namespace grpc_core {
 
 namespace {
 
-class RootCertificatesWatcher
+class RootCertificatesWatcher final
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
@@ -68,7 +68,7 @@ class RootCertificatesWatcher
   RefCountedPtr<grpc_tls_certificate_distributor> parent_;
 };
 
-class IdentityCertificatesWatcher
+class IdentityCertificatesWatcher final
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
