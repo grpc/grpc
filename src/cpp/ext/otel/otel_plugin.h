@@ -276,9 +276,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
 
   class ClientScopeConfig : public grpc_core::StatsPlugin::ScopeConfig {
    public:
-    ClientScopeConfig(
-        const OpenTelemetryPlugin* otel_plugin,
-        const grpc_core::experimental::StatsPluginChannelScope& scope)
+    ClientScopeConfig(const OpenTelemetryPlugin* otel_plugin,
+                      const OpenTelemetryPluginBuilder::ChannelScope& scope)
         : active_plugin_options_view_(ActivePluginOptionsView::MakeForClient(
               scope.target(), otel_plugin)),
           filtered_target_(
@@ -338,8 +337,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
 
   // StatsPlugin:
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
-  IsEnabledForChannel(const grpc_core::experimental::StatsPluginChannelScope&
-                          scope) const override;
+  IsEnabledForChannel(
+      const OpenTelemetryPluginBuilder::ChannelScope& scope) const override;
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForServer(const grpc_core::ChannelArgs& args) const override;
   void AddCounter(

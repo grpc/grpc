@@ -429,7 +429,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
 OpenTelemetryPlugin::IsEnabledForChannel(
-    const grpc_core::experimental::StatsPluginChannelScope& scope) const {
+    const OpenTelemetryPluginBuilder::ChannelScope& scope) const {
   if (channel_scope_filter_ == nullptr || channel_scope_filter_(scope)) {
     return {true, std::make_shared<ClientScopeConfig>(this, scope)};
   }
