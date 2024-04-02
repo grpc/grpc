@@ -7434,6 +7434,7 @@ target_include_directories(backend_metrics_lb_policy_test
 target_link_libraries(backend_metrics_lb_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++
   grpc_test_util
   grpc++_test_config
@@ -16976,6 +16977,7 @@ target_include_directories(http2_client
 
 target_link_libraries(http2_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -17812,6 +17814,7 @@ target_include_directories(interop_client
 
 target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -17866,6 +17869,7 @@ target_include_directories(interop_server
 
 target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -36152,6 +36156,7 @@ target_include_directories(xds_stats_watcher_test
 target_link_libraries(xds_stats_watcher_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_reflection
   grpcpp_channelz
   grpc_test_util

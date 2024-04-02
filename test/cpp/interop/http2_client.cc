@@ -117,8 +117,7 @@ bool Http2Client::DoGoaway() {
   gpr_log(GPR_DEBUG, "Sending two RPCs and expecting goaway");
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() ==
-             std::string(kLargeResponseSize, '\0'));
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
 
   // Sleep for one second to give time for client to receive goaway frame.
   gpr_timespec sleep_time = gpr_time_add(
@@ -127,8 +126,7 @@ bool Http2Client::DoGoaway() {
 
   response.Clear();
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() ==
-             std::string(kLargeResponseSize, '\0'));
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
   gpr_log(GPR_DEBUG, "Done testing goaway");
   return true;
 }
@@ -137,8 +135,7 @@ bool Http2Client::DoPing() {
   gpr_log(GPR_DEBUG, "Sending RPC and expecting ping");
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() ==
-             std::string(kLargeResponseSize, '\0'));
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
   gpr_log(GPR_DEBUG, "Done testing ping");
   return true;
 }
@@ -147,8 +144,7 @@ void Http2Client::MaxStreamsWorker(
     const std::shared_ptr<grpc::Channel>& /*channel*/) {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() ==
-             std::string(kLargeResponseSize, '\0'));
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
 }
 
 bool Http2Client::DoMaxStreams() {
@@ -158,8 +154,7 @@ bool Http2Client::DoMaxStreams() {
   // setting is received
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
-  CHECK(response.payload().body() ==
-             std::string(kLargeResponseSize, '\0'));
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
 
   std::vector<std::thread> test_threads;
   test_threads.reserve(10);

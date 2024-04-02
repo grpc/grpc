@@ -266,8 +266,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   custom_checks_fn(inspector, request, response);
 
   // Payload related checks.
-  CHECK(response->payload().body() ==
-             std::string(kLargeResponseSize, '\0'));
+  CHECK(response->payload().body() == std::string(kLargeResponseSize, '\0'));
   return true;
 }
 
@@ -522,7 +521,7 @@ bool InteropClient::DoResponseStreaming() {
   unsigned int i = 0;
   while (stream->Read(&response)) {
     CHECK(response.payload().body() ==
-               std::string(response_stream_sizes[i], '\0'));
+          std::string(response_stream_sizes[i], '\0'));
     ++i;
   }
 
@@ -634,7 +633,7 @@ bool InteropClient::DoServerCompressedStreaming() {
   while (stream->Read(&response)) {
     // Payload size checks.
     CHECK(response.payload().body() ==
-               std::string(request.response_parameters(k).size(), '\0'));
+          std::string(request.response_parameters(k).size(), '\0'));
 
     // Compression checks.
     CHECK(request.response_parameters(k).has_compressed());
@@ -678,8 +677,7 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
 
   int i = 0;
   while (stream->Read(&response)) {
-    CHECK(response.payload().body() ==
-               std::string(kResponseMessageSize, '\0'));
+    CHECK(response.payload().body() == std::string(kResponseMessageSize, '\0'));
     gpr_log(GPR_DEBUG, "received message %d", i);
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
@@ -729,7 +727,7 @@ bool InteropClient::DoHalfDuplex() {
   StreamingOutputCallResponse response;
   while (stream->Read(&response)) {
     CHECK(response.payload().body() ==
-               std::string(response_stream_sizes[i], '\0'));
+          std::string(response_stream_sizes[i], '\0'));
     ++i;
   }
 
@@ -780,7 +778,7 @@ bool InteropClient::DoPingPong() {
     }
 
     CHECK(response.payload().body() ==
-               std::string(response_stream_sizes[i], '\0'));
+          std::string(response_stream_sizes[i], '\0'));
   }
 
   stream->WritesDone();
@@ -1057,18 +1055,18 @@ bool InteropClient::DoOrcaOob() {
       return TransientFailureOrAbort();
     }
     CHECK(load_report_tracker_
-                   .WaitForOobLoadReport(
-                       [orca_report](const auto& actual) {
-                         auto value = OrcaLoadReportsDiff(*orca_report, actual);
-                         if (value.has_value()) {
-                           gpr_log(GPR_DEBUG, "Reports mismatch: %s",
-                                   value->c_str());
-                           return false;
-                         }
-                         return true;
-                       },
-                       kTimeout, 10)
-                   .has_value());
+              .WaitForOobLoadReport(
+                  [orca_report](const auto& actual) {
+                    auto value = OrcaLoadReportsDiff(*orca_report, actual);
+                    if (value.has_value()) {
+                      gpr_log(GPR_DEBUG, "Reports mismatch: %s",
+                              value->c_str());
+                      return false;
+                    }
+                    return true;
+                  },
+                  kTimeout, 10)
+              .has_value());
   }
   {
     StreamingOutputCallRequest request;
@@ -1130,7 +1128,7 @@ bool InteropClient::DoCustomMetadata() {
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     CHECK(iter != server_trailing_metadata.end());
     CHECK(std::string(iter->second.begin(), iter->second.end()) ==
-               kTrailingBinValue);
+          kTrailingBinValue);
 
     gpr_log(GPR_DEBUG, "Done testing RPC with custom metadata");
   }
@@ -1163,8 +1161,7 @@ bool InteropClient::DoCustomMetadata() {
       return TransientFailureOrAbort();
     }
 
-    CHECK(response.payload().body() ==
-               std::string(kLargeResponseSize, '\0'));
+    CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
 
     CHECK(!stream->Read(&response));
 
@@ -1181,7 +1178,7 @@ bool InteropClient::DoCustomMetadata() {
     iter = server_trailing_metadata.find(kEchoTrailingBinMetadataKey);
     CHECK(iter != server_trailing_metadata.end());
     CHECK(std::string(iter->second.begin(), iter->second.end()) ==
-               kTrailingBinValue);
+          kTrailingBinValue);
 
     gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
   }

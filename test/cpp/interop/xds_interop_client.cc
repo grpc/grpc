@@ -542,8 +542,8 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   // Validate the expect_status flag.
   grpc_status_code code;
-  CHECK(grpc_status_code_from_string(
-      absl::GetFlag(FLAGS_expect_status).c_str(), &code));
+  CHECK(grpc_status_code_from_string(absl::GetFlag(FLAGS_expect_status).c_str(),
+                                     &code));
   StatsWatchers stats_watchers;
   RpcConfigurationsQueue rpc_config_queue;
 

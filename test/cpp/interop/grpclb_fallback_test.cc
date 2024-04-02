@@ -34,9 +34,9 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
-#include "third_party/absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
+#include "third_party/absl/log/check.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -108,9 +108,9 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
     return GrpclbRouteType::GRPCLB_ROUTE_TYPE_UNKNOWN;
   }
   CHECK(response.grpclb_route_type() ==
-                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
-             response.grpclb_route_type() ==
-                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+            GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
+        response.grpclb_route_type() ==
+            GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
   gpr_log(GPR_INFO, "DoRPCAndGetPath done. grpclb_route_type:%d",
           response.grpclb_route_type());
   return response.grpclb_route_type();
@@ -210,8 +210,7 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   }
   for (int i = 0; i < 30; i++) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 20);
-    CHECK(grpclb_route_type ==
-               GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+    CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }
