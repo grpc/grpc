@@ -279,11 +279,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "31bf78bd91b96dd5e24fab3bb1d7f3f7453ccbaceec9afb86d6e4816a15ab109",
-            strip_prefix = "googletest-2dd1c131950043a8ad5ab0d2dda0e0970596586a",
+            sha256 = "bb786a5f9fe925cbcc47d00f31d3a74481c2cc5611e95508aab1c0907428a441",
+            strip_prefix = "googletest-ec7b38672c04c8af3cfb078214edf6751b841014",
             urls = [
-                # 2023-10-09
-                "https://github.com/google/googletest/archive/2dd1c131950043a8ad5ab0d2dda0e0970596586a.tar.gz",
+                # 2024-04-02
+                "https://github.com/google/googletest/archive/ec7b38672c04c8af3cfb078214edf6751b841014.tar.gz",
             ],
         )
 
