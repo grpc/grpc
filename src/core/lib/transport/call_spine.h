@@ -173,7 +173,7 @@ class PipeBasedCallSpine : public CallSpineInterface {
                 return std::move(*md);
               };
             }),
-        Map(WaitForCancel(),
+        Map(cancel_latch().Wait(),
             [this](ServerMetadataHandle md) -> ServerMetadataHandle {
               server_trailing_metadata().sender.CloseWithError();
               return md;
@@ -183,19 +183,18 @@ class PipeBasedCallSpine : public CallSpineInterface {
   Promise<ValueOrFailure<absl::optional<MessageHandle>>> PullMessage()
       override {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return spine_->server_to_client_messages().receiver.Next();
+    return server_to_client_messages().receiver.Next();
   }
 
   Promise<StatusFlag> PushMessage(MessageHandle message) override {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return Map(
-        spine_->client_to_server_messages().sender.Push(std::move(message)),
-        [](bool r) { return StatusFlag(r); });
+    return Map(client_to_server_messages().sender.Push(std::move(message)),
+               [](bool r) { return StatusFlag(r); });
   }
 
   void FinishSends() override {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    spine_->client_to_server_messages().sender.Close();
+    client_to_server_messages().sender.Close();
   }
 
   // Cancel the call with the given metadata.
@@ -219,11 +218,6 @@ class PipeBasedCallSpine : public CallSpineInterface {
     server_to_client_messages().sender.CloseWithError();
     server_trailing_metadata().sender.CloseWithError();
     return absl::nullopt;
-  }
-
-  auto WaitForCancel() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
-    return cancel_latch().Wait();
   }
 };
 
