@@ -10,11 +10,14 @@
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
-
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "upb/reflection/def.h"
+
+#include "upb/port/def.inc"
 
 extern _upb_DefPool_Init envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit;
 

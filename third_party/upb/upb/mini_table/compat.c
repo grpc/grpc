@@ -7,9 +7,6 @@
 
 #include "upb/mini_table/compat.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include "upb/base/descriptor_constants.h"
 #include "upb/hash/common.h"
 #include "upb/hash/int_table.h"
@@ -32,21 +29,19 @@ static upb_MiniTableEquals_Status upb_deep_check(const upb_MiniTable* src,
                                                  const upb_MiniTable* dst,
                                                  upb_inttable* table,
                                                  upb_Arena** arena) {
-  if (src->UPB_PRIVATE(field_count) != dst->UPB_PRIVATE(field_count))
+  if (src->field_count != dst->field_count)
     return kUpb_MiniTableEquals_NotEqual;
   bool marked_src = false;
-  for (int i = 0; i < upb_MiniTable_FieldCount(src); i++) {
-    const upb_MiniTableField* src_field = upb_MiniTable_GetFieldByIndex(src, i);
-    const upb_MiniTableField* dst_field = upb_MiniTable_FindFieldByNumber(
-        dst, upb_MiniTableField_Number(src_field));
+  for (int i = 0; i < src->field_count; i++) {
+    const upb_MiniTableField* src_field = &src->fields[i];
+    const upb_MiniTableField* dst_field =
+        upb_MiniTable_FindFieldByNumber(dst, src_field->number);
 
     if (upb_MiniTableField_CType(src_field) !=
         upb_MiniTableField_CType(dst_field))
       return false;
-    if (src_field->UPB_PRIVATE(mode) != dst_field->UPB_PRIVATE(mode))
-      return false;
-    if (src_field->UPB_PRIVATE(offset) != dst_field->UPB_PRIVATE(offset))
-      return false;
+    if (src_field->mode != dst_field->mode) return false;
+    if (src_field->offset != dst_field->offset) return false;
     if (src_field->presence != dst_field->presence) return false;
     if (src_field->UPB_PRIVATE(submsg_index) !=
         dst_field->UPB_PRIVATE(submsg_index))

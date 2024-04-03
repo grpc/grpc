@@ -24,8 +24,8 @@
 extern "C" {
 #endif
 
-typedef struct envoy_config_trace_v3_Tracing { upb_Message UPB_PRIVATE(base); } envoy_config_trace_v3_Tracing;
-typedef struct envoy_config_trace_v3_Tracing_Http { upb_Message UPB_PRIVATE(base); } envoy_config_trace_v3_Tracing_Http;
+typedef struct envoy_config_trace_v3_Tracing envoy_config_trace_v3_Tracing;
+typedef struct envoy_config_trace_v3_Tracing_Http envoy_config_trace_v3_Tracing_Http;
 struct google_protobuf_Any;
 
 
@@ -38,8 +38,7 @@ UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_new(upb_
 UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_config_trace_v3_Tracing* ret = envoy_config_trace_v3_Tracing_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__trace__v3__Tracing_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy__config__trace__v3__Tracing_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -49,43 +48,42 @@ UPB_INLINE envoy_config_trace_v3_Tracing* envoy_config_trace_v3_Tracing_parse_ex
                            int options, upb_Arena* arena) {
   envoy_config_trace_v3_Tracing* ret = envoy_config_trace_v3_Tracing_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__trace__v3__Tracing_msg_init, extreg, options,
-                 arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy__config__trace__v3__Tracing_msg_init, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_Tracing_serialize(const envoy_config_trace_v3_Tracing* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing_msg_init, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy__config__trace__v3__Tracing_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_Tracing_serialize_ex(const envoy_config_trace_v3_Tracing* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing_msg_init, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy__config__trace__v3__Tracing_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE void envoy_config_trace_v3_Tracing_clear_http(envoy_config_trace_v3_Tracing* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_http(const envoy_config_trace_v3_Tracing* msg) {
   const envoy_config_trace_v3_Tracing_Http* default_val = NULL;
   const envoy_config_trace_v3_Tracing_Http* ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_trace_v3_Tracing_has_http(const envoy_config_trace_v3_Tracing* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_config_trace_v3_Tracing_set_http(envoy_config_trace_v3_Tracing *msg, envoy_config_trace_v3_Tracing_Http* value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  const upb_MiniTableField field = {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_mutable_http(envoy_config_trace_v3_Tracing* msg, upb_Arena* arena) {
   struct envoy_config_trace_v3_Tracing_Http* sub = (struct envoy_config_trace_v3_Tracing_Http*)envoy_config_trace_v3_Tracing_http(msg);
@@ -104,8 +102,7 @@ UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Htt
 UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Http_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_config_trace_v3_Tracing_Http* ret = envoy_config_trace_v3_Tracing_Http_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__trace__v3__Tracing__Http_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy__config__trace__v3__Tracing__Http_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -115,21 +112,21 @@ UPB_INLINE envoy_config_trace_v3_Tracing_Http* envoy_config_trace_v3_Tracing_Htt
                            int options, upb_Arena* arena) {
   envoy_config_trace_v3_Tracing_Http* ret = envoy_config_trace_v3_Tracing_Http_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__config__trace__v3__Tracing__Http_msg_init, extreg, options,
-                 arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy__config__trace__v3__Tracing__Http_msg_init, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
 UPB_INLINE char* envoy_config_trace_v3_Tracing_Http_serialize(const envoy_config_trace_v3_Tracing_Http* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy__config__trace__v3__Tracing__Http_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_config_trace_v3_Tracing_Http_serialize_ex(const envoy_config_trace_v3_Tracing_Http* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy__config__trace__v3__Tracing__Http_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -137,46 +134,43 @@ typedef enum {
   envoy_config_trace_v3_Tracing_Http_config_type_NOT_SET = 0
 } envoy_config_trace_v3_Tracing_Http_config_type_oneofcases;
 UPB_INLINE envoy_config_trace_v3_Tracing_Http_config_type_oneofcases envoy_config_trace_v3_Tracing_Http_config_type_case(const envoy_config_trace_v3_Tracing_Http* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (envoy_config_trace_v3_Tracing_Http_config_type_oneofcases)upb_Message_WhichOneofFieldNumber(
-      UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (envoy_config_trace_v3_Tracing_Http_config_type_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
 UPB_INLINE void envoy_config_trace_v3_Tracing_Http_clear_name(envoy_config_trace_v3_Tracing_Http* msg) {
-  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE upb_StringView envoy_config_trace_v3_Tracing_Http_name(const envoy_config_trace_v3_Tracing_Http* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void envoy_config_trace_v3_Tracing_Http_clear_typed_config(envoy_config_trace_v3_Tracing_Http* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_typed_config(const envoy_config_trace_v3_Tracing_Http* msg) {
   const struct google_protobuf_Any* default_val = NULL;
   const struct google_protobuf_Any* ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_trace_v3_Tracing_Http_has_typed_config(const envoy_config_trace_v3_Tracing_Http* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_config_trace_v3_Tracing_Http_set_name(envoy_config_trace_v3_Tracing_Http *msg, upb_StringView value) {
-  const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_Tracing_Http_set_typed_config(envoy_config_trace_v3_Tracing_Http *msg, struct google_protobuf_Any* value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  const upb_MiniTableField field = {3, UPB_SIZE(4, 24), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* envoy_config_trace_v3_Tracing_Http_mutable_typed_config(envoy_config_trace_v3_Tracing_Http* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_trace_v3_Tracing_Http_typed_config(msg);

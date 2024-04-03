@@ -8,8 +8,6 @@
 #ifndef UPB_MEM_ARENA_HPP_
 #define UPB_MEM_ARENA_HPP_
 
-#ifdef __cplusplus
-
 #include <memory>
 
 #include "upb/mem/arena.h"
@@ -32,8 +30,8 @@ class Arena {
   std::unique_ptr<upb_Arena, decltype(&upb_Arena_Free)> ptr_;
 };
 
-// InlinedArena seeds the arenas with a predefined amount of memory. No heap
-// memory will be allocated until the initial block is exceeded.
+// InlinedArena seeds the arenas with a predefined amount of memory.  No
+// heap memory will be allocated until the initial block is exceeded.
 template <int N>
 class InlinedArena : public Arena {
  public:
@@ -45,14 +43,12 @@ class InlinedArena : public Arena {
   }
 
  private:
-  InlinedArena(const InlinedArena&) = delete;
-  InlinedArena& operator=(const InlinedArena&) = delete;
+  InlinedArena(const InlinedArena*) = delete;
+  InlinedArena& operator=(const InlinedArena*) = delete;
 
   char initial_block_[N];
 };
 
 }  // namespace upb
-
-#endif  // __cplusplus
 
 #endif  // UPB_MEM_ARENA_HPP_
