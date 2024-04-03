@@ -4419,11 +4419,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_channel_idle_filter",
     srcs = [
-        "ext/filters/channel_idle/channel_idle_filter.cc",
         "ext/filters/channel_idle/legacy_channel_idle_filter.cc",
     ],
     hdrs = [
-        "ext/filters/channel_idle/channel_idle_filter.h",
         "ext/filters/channel_idle/legacy_channel_idle_filter.h",
     ],
     external_deps = [
@@ -7226,26 +7224,6 @@ grpc_cc_library(
         "//:gpr",
         "//:promise",
         "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "call_factory",
-    srcs = [
-        "lib/transport/call_factory.cc",
-    ],
-    hdrs = [
-        "lib/transport/call_factory.h",
-    ],
-    deps = [
-        "arena",
-        "call_size_estimator",
-        "call_spine",
-        "channel_args",
-        "ref_counted",
-        "resource_quota",
-        "//:gpr_platform",
-        "//:stats",
     ],
 )
 

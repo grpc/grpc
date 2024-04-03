@@ -59,7 +59,7 @@ namespace {
 
 constexpr absl::string_view kRoundRobin = "round_robin";
 
-class RoundRobin : public LoadBalancingPolicy {
+class RoundRobin final : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(Args args);
 
@@ -69,7 +69,7 @@ class RoundRobin : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class RoundRobinEndpointList : public EndpointList {
+  class RoundRobinEndpointList final : public EndpointList {
    public:
     RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
                            EndpointAddressesIterator* endpoints,
@@ -88,7 +88,7 @@ class RoundRobin : public LoadBalancingPolicy {
     }
 
    private:
-    class RoundRobinEndpoint : public Endpoint {
+    class RoundRobinEndpoint final : public Endpoint {
      public:
       RoundRobinEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                          const EndpointAddresses& addresses,
@@ -135,7 +135,7 @@ class RoundRobin : public LoadBalancingPolicy {
     absl::Status last_failure_;
   };
 
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     Picker(RoundRobin* parent,
            std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>
@@ -431,12 +431,12 @@ void RoundRobin::RoundRobinEndpointList::
 // factory
 //
 
-class RoundRobinConfig : public LoadBalancingPolicy::Config {
+class RoundRobinConfig final : public LoadBalancingPolicy::Config {
  public:
   absl::string_view name() const override { return kRoundRobin; }
 };
 
-class RoundRobinFactory : public LoadBalancingPolicyFactory {
+class RoundRobinFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

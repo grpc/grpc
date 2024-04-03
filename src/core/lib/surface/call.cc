@@ -722,10 +722,10 @@ class FilterStackCall final : public Call {
   grpc_transport_stream_op_batch_payload stream_op_payload_;
 
   // first idx: is_receiving, second idx: is_trailing
-  grpc_metadata_batch send_initial_metadata_{arena()};
-  grpc_metadata_batch send_trailing_metadata_{arena()};
-  grpc_metadata_batch recv_initial_metadata_{arena()};
-  grpc_metadata_batch recv_trailing_metadata_{arena()};
+  grpc_metadata_batch send_initial_metadata_;
+  grpc_metadata_batch send_trailing_metadata_;
+  grpc_metadata_batch recv_initial_metadata_;
+  grpc_metadata_batch recv_trailing_metadata_;
 
   // Buffered read metadata waiting to be returned to the application.
   // Element 0 is initial metadata, element 1 is trailing metadata.
@@ -2740,8 +2740,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
         *args->path, args->registered_method, this->context());
-    send_initial_metadata_ =
-        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    send_initial_metadata_ = GetContext<Arena>()->MakePooled<ClientMetadata>();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
@@ -3147,7 +3146,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
           is_trailers_only_ = metadata->get(GrpcTrailersOnly()).value_or(false);
         } else {
           is_trailers_only_ = true;
-          metadata = arena()->MakePooled<ServerMetadata>(arena());
+          metadata = arena()->MakePooled<ServerMetadata>();
         }
         ProcessIncomingInitialMetadata(*metadata);
         PublishMetadataArray(metadata.get(), array, true);
@@ -3524,7 +3523,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
@@ -3564,7 +3563,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             client_to_server_messages_, true, spawner);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         CToMetadata(op.data.send_status_from_server.trailing_metadata,
                     op.data.send_status_from_server.trailing_metadata_count,
                     metadata.get());
@@ -4037,7 +4036,7 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
   if (!is_notify_tag_closure) grpc_cq_begin_op(cq(), notify_tag);
   auto send_initial_metadata = MaybeOp(
       ops, got_ops[GRPC_OP_SEND_INITIAL_METADATA], [this](const grpc_op& op) {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
@@ -4067,7 +4066,7 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
       });
   auto send_trailing_metadata = MaybeOp(
       ops, got_ops[GRPC_OP_SEND_STATUS_FROM_SERVER], [this](const grpc_op& op) {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         CToMetadata(op.data.send_status_from_server.trailing_metadata,
                     op.data.send_status_from_server.trailing_metadata_count,
                     metadata.get());

@@ -66,7 +66,7 @@ TraceFlag grpc_orca_client_trace(false, "orca_client");
 // OrcaProducer::ConnectivityWatcher
 //
 
-class OrcaProducer::ConnectivityWatcher
+class OrcaProducer::ConnectivityWatcher final
     : public Subchannel::ConnectivityStateWatcherInterface {
  public:
   explicit ConnectivityWatcher(WeakRefCountedPtr<OrcaProducer> producer)
@@ -97,7 +97,7 @@ class OrcaProducer::ConnectivityWatcher
 // OrcaProducer::OrcaStreamEventHandler
 //
 
-class OrcaProducer::OrcaStreamEventHandler
+class OrcaProducer::OrcaStreamEventHandler final
     : public SubchannelStreamClient::CallEventHandler {
  public:
   OrcaStreamEventHandler(WeakRefCountedPtr<OrcaProducer> producer,
@@ -168,7 +168,7 @@ class OrcaProducer::OrcaStreamEventHandler
   // notifications, which avoids lock inversion problems due to
   // acquiring producer_->mu_ while holding the lock from inside of
   // SubchannelStreamClient.
-  class BackendMetricAllocator : public BackendMetricAllocatorInterface {
+  class BackendMetricAllocator final : public BackendMetricAllocatorInterface {
    public:
     explicit BackendMetricAllocator(WeakRefCountedPtr<OrcaProducer> producer)
         : producer_(std::move(producer)) {}
@@ -221,7 +221,7 @@ void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   subchannel_->WatchConnectivityState(std::move(connectivity_watcher));
 }
 
-void OrcaProducer::Orphan() {
+void OrcaProducer::Orphaned() {
   {
     MutexLock lock(&mu_);
     stream_client_.reset();

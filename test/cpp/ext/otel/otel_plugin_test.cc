@@ -479,14 +479,17 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
   SendRPC();
 }
 
-// Test that a channel selector returning true records metrics on the channel.
-TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
-  Init(
-      std::move(Options()
-                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                           kClientAttemptStartedInstrumentName})
-                    .set_target_selector(
-                        [](absl::string_view /*target*/) { return true; })));
+// Test that a channel scope filter returning true records metrics on the
+// channel.
+TEST_F(OpenTelemetryPluginEnd2EndTest, ChannelScopeFilterReturnsTrue) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
+                return true;
+              })));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -513,15 +516,17 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsTrue) {
   EXPECT_EQ(*target_value, canonical_server_address_);
 }
 
-// Test that a target selector returning false does not record metrics on the
-// channel.
-TEST_F(OpenTelemetryPluginEnd2EndTest, TargetSelectorReturnsFalse) {
-  Init(
-      std::move(Options()
-                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                           kClientAttemptStartedInstrumentName})
-                    .set_target_selector(
-                        [](absl::string_view /*target*/) { return false; })));
+// Test that a channel scope filter returning false does not record metrics on
+// the channel.
+TEST_F(OpenTelemetryPluginEnd2EndTest, ChannelScopeFilterReturnsFalse) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_channel_scope_filter(
+              [](const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
+                return false;
+              })));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1119,14 +1124,18 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
       kOptionalLabelKeys, /*enable_by_default=*/true);
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
-                     .set_target_selector([](absl::string_view target) {
-                       return absl::StartsWith(target, "dns:///");
-                     })
+                     .set_channel_scope_filter(
+                         [](const OpenTelemetryPluginBuilder::ChannelScope&
+                                channel_scope) {
+                           return absl::StartsWith(channel_scope.target(),
+                                                   "dns:///");
+                         })
                      .add_optional_label(kOptionalLabelKeys[0])
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }
@@ -1160,14 +1169,18 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
       kOptionalLabelKeys, /*enable_by_default=*/false);
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
-                     .set_target_selector([](absl::string_view target) {
-                       return absl::StartsWith(target, "dns:///");
-                     })
+                     .set_channel_scope_filter(
+                         [](const OpenTelemetryPluginBuilder::ChannelScope&
+                                channel_scope) {
+                           return absl::StartsWith(channel_scope.target(),
+                                                   "dns:///");
+                         })
                      .add_optional_label(kOptionalLabelKeys[0])
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   for (auto v : kCounterValues) {
     stats_plugins.AddCounter(handle, v, kLabelValues, kOptionalLabelValues);
   }

@@ -140,8 +140,8 @@
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
-#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -165,7 +165,7 @@ using ::grpc_event_engine::experimental::EventEngine;
 
 constexpr absl::string_view kGrpclb = "grpclb";
 
-class GrpcLbConfig : public LoadBalancingPolicy::Config {
+class GrpcLbConfig final : public LoadBalancingPolicy::Config {
  public:
   GrpcLbConfig() = default;
 
@@ -222,7 +222,7 @@ class GrpcLbConfig : public LoadBalancingPolicy::Config {
   std::string service_name_;
 };
 
-class GrpcLb : public LoadBalancingPolicy {
+class GrpcLb final : public LoadBalancingPolicy {
  public:
   explicit GrpcLb(Args args);
 
@@ -233,7 +233,8 @@ class GrpcLb : public LoadBalancingPolicy {
 
  private:
   /// Contains a call to the LB server and all the data related to the call.
-  class BalancerCallState : public InternallyRefCounted<BalancerCallState> {
+  class BalancerCallState final
+      : public InternallyRefCounted<BalancerCallState> {
    public:
     explicit BalancerCallState(
         RefCountedPtr<LoadBalancingPolicy> parent_grpclb_policy);
@@ -307,7 +308,7 @@ class GrpcLb : public LoadBalancingPolicy {
     grpc_closure client_load_report_done_closure_;
   };
 
-  class SubchannelWrapper : public DelegatingSubchannel {
+  class SubchannelWrapper final : public DelegatingSubchannel {
    public:
     SubchannelWrapper(RefCountedPtr<SubchannelInterface> subchannel,
                       RefCountedPtr<GrpcLb> lb_policy, std::string lb_token,
@@ -317,7 +318,11 @@ class GrpcLb : public LoadBalancingPolicy {
           lb_token_(std::move(lb_token)),
           client_stats_(std::move(client_stats)) {}
 
-    void Orphan() override {
+    const std::string& lb_token() const { return lb_token_; }
+    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
+
+   private:
+    void Orphaned() override {
       if (!IsWorkSerializerDispatchEnabled()) {
         if (!lb_policy_->shutting_down_) {
           lb_policy_->CacheDeletedSubchannelLocked(wrapped_subchannel());
@@ -334,16 +339,13 @@ class GrpcLb : public LoadBalancingPolicy {
           DEBUG_LOCATION);
     }
 
-    const std::string& lb_token() const { return lb_token_; }
-    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
-
-   private:
     RefCountedPtr<GrpcLb> lb_policy_;
     std::string lb_token_;
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
-  class TokenAndClientStatsArg : public RefCounted<TokenAndClientStatsArg> {
+  class TokenAndClientStatsArg final
+      : public RefCounted<TokenAndClientStatsArg> {
    public:
     TokenAndClientStatsArg(std::string lb_token,
                            RefCountedPtr<GrpcLbClientStats> client_stats)
@@ -371,7 +373,7 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
-  class Serverlist : public RefCounted<Serverlist> {
+  class Serverlist final : public RefCounted<Serverlist> {
    public:
     // Takes ownership of serverlist.
     explicit Serverlist(std::vector<GrpcLbServer> serverlist)
@@ -408,7 +410,7 @@ class GrpcLb : public LoadBalancingPolicy {
     std::atomic<size_t> drop_index_{0};
   };
 
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     Picker(RefCountedPtr<Serverlist> serverlist,
            RefCountedPtr<SubchannelPicker> child_picker,
@@ -424,7 +426,7 @@ class GrpcLb : public LoadBalancingPolicy {
     // in the case where the subchannel call is never actually started,
     // since the client load reporting filter will not be able to do it
     // in that case.
-    class SubchannelCallTracker : public SubchannelCallTrackerInterface {
+    class SubchannelCallTracker final : public SubchannelCallTrackerInterface {
      public:
       SubchannelCallTracker(
           RefCountedPtr<GrpcLbClientStats> client_stats,
@@ -460,7 +462,8 @@ class GrpcLb : public LoadBalancingPolicy {
     RefCountedPtr<GrpcLbClientStats> client_stats_;
   };
 
-  class Helper : public ParentOwningDelegatingChannelControlHelper<GrpcLb> {
+  class Helper final
+      : public ParentOwningDelegatingChannelControlHelper<GrpcLb> {
    public:
     explicit Helper(RefCountedPtr<GrpcLb> parent)
         : ParentOwningDelegatingChannelControlHelper(std::move(parent)) {}
@@ -473,7 +476,7 @@ class GrpcLb : public LoadBalancingPolicy {
     void RequestReresolution() override;
   };
 
-  class StateWatcher : public AsyncConnectivityStateWatcherInterface {
+  class StateWatcher final : public AsyncConnectivityStateWatcherInterface {
    public:
     explicit StateWatcher(RefCountedPtr<GrpcLb> parent)
         : AsyncConnectivityStateWatcherInterface(parent->work_serializer()),
@@ -647,7 +650,8 @@ void ParseServer(const GrpcLbServer& server, grpc_resolved_address* addr) {
   }
 }
 
-class GrpcLb::Serverlist::AddressIterator : public EndpointAddressesIterator {
+class GrpcLb::Serverlist::AddressIterator final
+    : public EndpointAddressesIterator {
  public:
   AddressIterator(RefCountedPtr<Serverlist> serverlist,
                   RefCountedPtr<GrpcLbClientStats> client_stats)
@@ -1526,7 +1530,8 @@ void GrpcLb::ResetBackoffLocked() {
 }
 
 // Endpoint iterator wrapper to add null LB token attribute.
-class GrpcLb::NullLbTokenEndpointIterator : public EndpointAddressesIterator {
+class GrpcLb::NullLbTokenEndpointIterator final
+    : public EndpointAddressesIterator {
  public:
   explicit NullLbTokenEndpointIterator(
       std::shared_ptr<EndpointAddressesIterator> parent_it)
@@ -1627,10 +1632,9 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   if (lb_channel_ == nullptr) {
     std::string uri_str =
         absl::StrCat("fake:///", channel_control_helper()->GetAuthority());
-    lb_channel_.reset(
-        Channel::FromC(
-            grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
-                                lb_channel_args.ToC().get())));
+    lb_channel_.reset(Channel::FromC(
+        grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
+                            lb_channel_args.ToC().get())));
     GPR_ASSERT(lb_channel_ != nullptr);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
@@ -1893,7 +1897,7 @@ void GrpcLb::OnSubchannelCacheTimerLocked() {
 // factory
 //
 
-class GrpcLbFactory : public LoadBalancingPolicyFactory {
+class GrpcLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

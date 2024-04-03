@@ -48,6 +48,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -55,7 +56,6 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
-#include "src/core/lib/transport/call_factory.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
@@ -93,10 +93,11 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {
-    // TODO(roth): Figure out how to populate authority here.
-    // Or maybe just don't worry about this if no one needs it until after
-    // the call v3 stack lands.
-    StatsPlugin::ChannelScope scope(target, "");
+    experimental::StatsPluginChannelScope scope(
+        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                    .value_or(CoreConfiguration::Get()
+                                  .resolver_registry()
+                                  .GetDefaultAuthority(target)));
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }
@@ -104,18 +105,6 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
       builder.IsPromising(), std::move(target), args, std::move(*r));
 }
-
-namespace {
-
-class NotReallyACallFactory final : public CallFactory {
- public:
-  using CallFactory::CallFactory;
-  CallInitiator CreateCall(ClientMetadataHandle, Arena*) override {
-    Crash("NotReallyACallFactory::CreateCall should never be called");
-  }
-};
-
-}  // namespace
 
 LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
                              std::string target,
@@ -125,7 +114,9 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
       is_client_(is_client),
       is_promising_(is_promising),
       channel_stack_(std::move(channel_stack)),
-      call_factory_(MakeRefCounted<NotReallyACallFactory>(channel_args)) {
+      allocator_(channel_args.GetObject<ResourceQuota>()
+                     ->memory_quota()
+                     ->CreateMemoryOwner()) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -214,7 +205,7 @@ bool LegacyChannel::SupportsConnectivityWatcher() const {
 }
 
 // A fire-and-forget object to handle external connectivity state watches.
-class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
+class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
  public:
   StateWatcher(RefCountedPtr<LegacyChannel> channel, grpc_completion_queue* cq,
                void* tag, grpc_connectivity_state last_observed_state,
@@ -254,7 +245,7 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
  private:
   // A fire-and-forget object used to delay starting the timer until the
   // ClientChannelFilter actually starts the watch.
-  class WatcherTimerInitState {
+  class WatcherTimerInitState final {
    public:
     WatcherTimerInitState(StateWatcher* state_watcher, Timestamp deadline)
         : state_watcher_(state_watcher), deadline_(deadline) {
@@ -309,7 +300,7 @@ class LegacyChannel::StateWatcher : public DualRefCounted<StateWatcher> {
   }
 
   // Invoked when both strong refs are released.
-  void Orphan() override {
+  void Orphaned() override {
     WeakRef().release();  // Take a weak ref until completion is finished.
     grpc_error_handle error =
         timer_fired_

@@ -67,12 +67,12 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/endpoint_list.h"
-#include "src/core/load_balancing/oob_backend_metric.h"
-#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
-#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
+#include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
@@ -85,13 +85,12 @@ constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
-const auto kMetricRrFallback =
-    GlobalInstrumentsRegistry::RegisterUInt64Counter(
-        "grpc.lb.wrr.rr_fallback",
-        "EXPERIMENTAL.  Number of scheduler updates in which there were not "
-        "enough endpoints with valid weight, which caused the WRR policy to "
-        "fall back to RR behavior.",
-        "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+const auto kMetricRrFallback = GlobalInstrumentsRegistry::RegisterUInt64Counter(
+    "grpc.lb.wrr.rr_fallback",
+    "EXPERIMENTAL.  Number of scheduler updates in which there were not "
+    "enough endpoints with valid weight, which caused the WRR policy to "
+    "fall back to RR behavior.",
+    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -119,7 +118,7 @@ const auto kMetricEndpointWeights =
         "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
 
 // Config for WRR policy.
-class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
+class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
  public:
   WeightedRoundRobinConfig() = default;
 
@@ -180,7 +179,7 @@ class WeightedRoundRobinConfig : public LoadBalancingPolicy::Config {
 };
 
 // WRR LB policy
-class WeightedRoundRobin : public LoadBalancingPolicy {
+class WeightedRoundRobin final : public LoadBalancingPolicy {
  public:
   explicit WeightedRoundRobin(Args args);
 
@@ -191,7 +190,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
  private:
   // Represents the weight for a given address.
-  class EndpointWeight : public RefCounted<EndpointWeight> {
+  class EndpointWeight final : public RefCounted<EndpointWeight> {
    public:
     EndpointWeight(RefCountedPtr<WeightedRoundRobin> wrr,
                    EndpointAddressSet key)
@@ -214,12 +213,12 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
     Mutex mu_;
     float weight_ ABSL_GUARDED_BY(&mu_) = 0;
     Timestamp non_empty_since_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
-    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
+    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
   };
 
-  class WrrEndpointList : public EndpointList {
+  class WrrEndpointList final : public EndpointList {
    public:
-    class WrrEndpoint : public Endpoint {
+    class WrrEndpoint final : public Endpoint {
      public:
       WrrEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                   const EndpointAddresses& addresses, const ChannelArgs& args,
@@ -233,7 +232,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
 
      private:
-      class OobWatcher : public OobBackendMetricWatcher {
+      class OobWatcher final : public OobBackendMetricWatcher {
        public:
         OobWatcher(RefCountedPtr<EndpointWeight> weight,
                    float error_utilization_penalty)
@@ -310,7 +309,7 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
   // A picker that performs WRR picks with weights based on
   // endpoint-reported utilization and QPS.
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     Picker(RefCountedPtr<WeightedRoundRobin> wrr,
            WrrEndpointList* endpoint_list);
@@ -319,11 +318,9 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
 
     PickResult Pick(PickArgs args) override;
 
-    void Orphan() override;
-
    private:
     // A call tracker that collects per-call endpoint utilization reports.
-    class SubchannelCallTracker : public SubchannelCallTrackerInterface {
+    class SubchannelCallTracker final : public SubchannelCallTrackerInterface {
      public:
       SubchannelCallTracker(
           RefCountedPtr<EndpointWeight> weight, float error_utilization_penalty,
@@ -351,6 +348,8 @@ class WeightedRoundRobin : public LoadBalancingPolicy {
       RefCountedPtr<SubchannelPicker> picker;
       RefCountedPtr<EndpointWeight> weight;
     };
+
+    void Orphaned() override;
 
     // Returns the index into endpoints_ to be picked.
     size_t PickIndex();
@@ -556,7 +555,7 @@ WeightedRoundRobin::Picker::~Picker() {
   }
 }
 
-void WeightedRoundRobin::Picker::Orphan() {
+void WeightedRoundRobin::Picker::Orphaned() {
   MutexLock lock(&timer_mu_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] cancelling timer", wrr_.get(), this);
@@ -616,16 +615,16 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         now, config_->weight_expiration_period(), config_->blackout_period(),
         &num_not_yet_usable, &num_stale);
     weights.push_back(weight);
-    stats_plugins.RecordHistogram(
-        kMetricEndpointWeights, weight,
-        {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+    stats_plugins.RecordHistogram(kMetricEndpointWeights, weight,
+                                  {wrr_->channel_control_helper()->GetTarget()},
+                                  {wrr_->locality_name_});
   }
   stats_plugins.AddCounter(
       kMetricEndpointWeightNotYetUsable, num_not_yet_usable,
       {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
-  stats_plugins.AddCounter(
-      kMetricEndpointWeightStale, num_stale,
-      {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+  stats_plugins.AddCounter(kMetricEndpointWeightStale, num_stale,
+                           {wrr_->channel_control_helper()->GetTarget()},
+                           {wrr_->locality_name_});
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p picker %p] new weights: %s", wrr_.get(), this,
             absl::StrJoin(weights, " ").c_str());
@@ -645,9 +644,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
               wrr_.get(), this);
     }
-    stats_plugins.AddCounter(
-        kMetricRrFallback, 1, {wrr_->channel_control_helper()->GetTarget()},
-        {wrr_->locality_name_});
+    stats_plugins.AddCounter(kMetricRrFallback, 1,
+                             {wrr_->channel_control_helper()->GetTarget()},
+                             {wrr_->locality_name_});
   }
   {
     MutexLock lock(&scheduler_mu_);
@@ -998,7 +997,7 @@ void WeightedRoundRobin::WrrEndpointList::
 // factory
 //
 
-class WeightedRoundRobinFactory : public LoadBalancingPolicyFactory {
+class WeightedRoundRobinFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

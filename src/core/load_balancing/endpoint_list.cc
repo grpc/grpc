@@ -51,7 +51,7 @@ namespace grpc_core {
 // EndpointList::Endpoint::Helper
 //
 
-class EndpointList::Endpoint::Helper
+class EndpointList::Endpoint::Helper final
     : public LoadBalancingPolicy::DelegatingChannelControlHelper {
  public:
   explicit Helper(RefCountedPtr<Endpoint> endpoint)

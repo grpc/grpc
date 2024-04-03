@@ -140,7 +140,7 @@ const auto kMetricResources =
 // GrpcXdsClient::MetricsReporter
 //
 
-class GrpcXdsClient::MetricsReporter : public XdsMetricsReporter {
+class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
  public:
   explicit MetricsReporter(GrpcXdsClient& xds_client)
       : xds_client_(xds_client) {}
@@ -271,7 +271,7 @@ GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
     return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
   }
   // TODO(roth): How do we set the authority here?
-  StatsPlugin::ChannelScope scope(key, "");
+  experimental::StatsPluginChannelScope scope(key, "");
   return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 
@@ -305,9 +305,9 @@ GrpcXdsClient::GrpcXdsClient(
           },
           {kMetricConnected, kMetricResources})) {}
 
-void GrpcXdsClient::Orphan() {
+void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
-  XdsClient::Orphan();
+  XdsClient::Orphaned();
   MutexLock lock(g_mu);
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {

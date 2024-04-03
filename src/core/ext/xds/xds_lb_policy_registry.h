@@ -33,7 +33,7 @@ namespace grpc_core {
 
 // A registry that maintans a set of converters that are able to map xDS
 // loadbalancing policy configurations to gRPC's JSON format.
-class XdsLbPolicyRegistry {
+class XdsLbPolicyRegistry final {
  public:
   class ConfigFactory {
    public:

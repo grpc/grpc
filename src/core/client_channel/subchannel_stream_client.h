@@ -61,7 +61,7 @@ namespace grpc_core {
 //
 // Currently, this assumes server-side streaming, but it could be extended
 // to support full bidi streaming if there is a need in the future.
-class SubchannelStreamClient
+class SubchannelStreamClient final
     : public InternallyRefCounted<SubchannelStreamClient> {
  public:
   // Interface implemented by caller.  Thread safety is provided for the
@@ -112,7 +112,7 @@ class SubchannelStreamClient
 
  private:
   // Contains a call to the backend and all the data related to the call.
-  class CallState : public Orphanable {
+  class CallState final : public Orphanable {
    public:
     CallState(RefCountedPtr<SubchannelStreamClient> client,
               grpc_pollset_set* interested_parties);

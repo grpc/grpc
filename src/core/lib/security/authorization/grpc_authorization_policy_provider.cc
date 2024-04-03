@@ -179,7 +179,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   return absl::OkStatus();
 }
 
-void FileWatcherAuthorizationPolicyProvider::Orphan() {
+void FileWatcherAuthorizationPolicyProvider::Orphaned() {
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   if (refresh_thread_ != nullptr) {
     refresh_thread_->Join();

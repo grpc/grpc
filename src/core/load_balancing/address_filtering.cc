@@ -47,7 +47,7 @@ int HierarchicalPathArg::ChannelArgsCompare(const HierarchicalPathArg* a,
 
 namespace {
 
-class HierarchicalAddressIterator : public EndpointAddressesIterator {
+class HierarchicalAddressIterator final : public EndpointAddressesIterator {
  public:
   HierarchicalAddressIterator(
       std::shared_ptr<EndpointAddressesIterator> parent_it,
