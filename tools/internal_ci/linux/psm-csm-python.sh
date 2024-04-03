@@ -176,6 +176,7 @@ main() {
   local failed_tests=0
   test_suites=(
     "gamma.gamma_baseline_test"
+    "gamma.affinity_session_drain_test"
     "gamma.affinity_test"
   )
   for test in "${test_suites[@]}"; do
