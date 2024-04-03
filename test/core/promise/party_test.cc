@@ -231,17 +231,9 @@ TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
 ///////////////////////////////////////////////////////////////////////////////
 // PartyTest
 
-class AllocatorOwner {
- protected:
-  ~AllocatorOwner() { arena_->Destroy(); }
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  Arena* arena_ = Arena::Create(1024, &memory_allocator_);
-};
-
-class TestParty final : public AllocatorOwner, public Party {
+class TestParty final : public Party {
  public:
-  TestParty() : Party(AllocatorOwner::arena_, 1) {}
+  TestParty() : Party(1) {}
   ~TestParty() override {}
   std::string DebugTag() const override { return "TestParty"; }
 
