@@ -1611,10 +1611,12 @@ class CallFilters {
       }
       auto p = state().PollPull();
       auto* r = p.value_if_ready();
-      gpr_log(GPR_INFO, "%s",
-              r == nullptr
-                  ? "PENDING"
-                  : (r->ok() ? (r->value() ? "TRUE" : "FALSE") : "FAILURE"));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        gpr_log(GPR_INFO, "%s",
+                r == nullptr
+                    ? "PENDING"
+                    : (r->ok() ? (r->value() ? "TRUE" : "FALSE") : "FAILURE"));
+      }
       if (r == nullptr) return Pending{};
       if (!r->ok()) {
         filters_->CancelDueToFailedPipeOperation();
@@ -1665,29 +1667,35 @@ class CallFilters {
     Poll<ServerMetadataHandle> operator()() {
       if (executor_.IsRunning()) {
         auto r = executor_.Step(filters_->call_data_);
-        if (r.pending()) {
-          gpr_log(GPR_INFO,
-                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_);
-        } else {
-          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_,
-                  r.value()->DebugString().c_str());
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          if (r.pending()) {
+            gpr_log(GPR_INFO,
+                    "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                    GetContext<Activity>()->DebugTag().c_str(), filters_);
+          } else {
+            gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                    GetContext<Activity>()->DebugTag().c_str(), filters_,
+                    r.value()->DebugString().c_str());
+          }
         }
         return r;
       }
       if (filters_->server_trailing_metadata_ == nullptr) {
-        gpr_log(GPR_INFO,
-                "%s PullServerTrailingMetadata[%p]: Pending(not pushed)",
-                GetContext<Activity>()->DebugTag().c_str(), filters_);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(not pushed)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        }
         return filters_->server_trailing_metadata_waiter_.pending();
       }
       // If no stack has been set, we can just return the result of the call
       if (filters_->stack_ == nullptr) {
-        gpr_log(GPR_INFO,
-                "%s PullServerTrailingMetadata[%p]: Ready(no-stack): %s",
-                GetContext<Activity>()->DebugTag().c_str(), filters_,
-                filters_->server_trailing_metadata_->DebugString().c_str());
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Ready(no-stack): %s",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_,
+                  filters_->server_trailing_metadata_->DebugString().c_str());
+        }
         return std::move(filters_->server_trailing_metadata_);
       }
       // Otherwise we need to process it through all the filters.
