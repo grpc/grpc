@@ -19,6 +19,7 @@
 #import "GRPCSecureChannelFactory.h"
 
 #import <GRPCClient/GRPCTypes.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 #import "ChannelArgsUtil.h"
