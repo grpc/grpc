@@ -74,53 +74,45 @@ MATCHER_P4(AttributesEq, label_keys, label_values, optional_label_keys,
 }
 
 template <typename T>
-auto IntOrDoubleEq(T result) {
-  return ::testing::Eq(result);
-}
-template <>
-auto IntOrDoubleEq(double result) {
-  return ::testing::DoubleEq(result);
-}
-
-MATCHER_P(CounterResultEq, result, "") {
-  return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
-          ::testing::Field(
-              &opentelemetry::sdk::metrics::SumPointData::value_,
-              ::testing::VariantWith<std::remove_cv_t<decltype(result)>>(
-                  IntOrDoubleEq(result)))),
-      arg.point_data, result_listener);
-}
-
-MATCHER_P4(HistogramResultEq, sum, min, max, count, "") {
-  return ::testing::ExplainMatchResult(
-      ::testing::VariantWith<opentelemetry::sdk::metrics::HistogramPointData>(
-          ::testing::AllOf(
-              ::testing::Field(
-                  &opentelemetry::sdk::metrics::HistogramPointData::sum_,
-                  ::testing::VariantWith<std::remove_cv_t<decltype(sum)>>(
-                      IntOrDoubleEq(sum))),
-              ::testing::Field(
-                  &opentelemetry::sdk::metrics::HistogramPointData::min_,
-                  ::testing::VariantWith<std::remove_cv_t<decltype(min)>>(
-                      IntOrDoubleEq(min))),
-              ::testing::Field(
-                  &opentelemetry::sdk::metrics::HistogramPointData::max_,
-                  ::testing::VariantWith<std::remove_cv_t<decltype(max)>>(
-                      IntOrDoubleEq(max))),
-              ::testing::Field(
-                  &opentelemetry::sdk::metrics::HistogramPointData::count_,
-                  ::testing::Eq(count)))),
-      arg.point_data, result_listener);
-}
-
-template <typename T>
 struct Extract;
 
 template <template <typename> class T, typename U>
 struct Extract<const T<U>> {
   using Type = U;
 };
+
+MATCHER_P(CounterResultEq, value_matcher, "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<opentelemetry::sdk::metrics::SumPointData>(
+          ::testing::Field(&opentelemetry::sdk::metrics::SumPointData::value_,
+                           ::testing::VariantWith<
+                               typename Extract<decltype(value_matcher)>::Type>(
+                               value_matcher))),
+      arg.point_data, result_listener);
+}
+
+MATCHER_P4(HistogramResultEq, sum_matcher, min_matcher, max_matcher, count,
+           "") {
+  return ::testing::ExplainMatchResult(
+      ::testing::VariantWith<
+          opentelemetry::sdk::metrics::HistogramPointData>(::testing::AllOf(
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::sum_,
+              ::testing::VariantWith<
+                  typename Extract<decltype(sum_matcher)>::Type>(sum_matcher)),
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::min_,
+              ::testing::VariantWith<
+                  typename Extract<decltype(min_matcher)>::Type>(min_matcher)),
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::max_,
+              ::testing::VariantWith<
+                  typename Extract<decltype(max_matcher)>::Type>(max_matcher)),
+          ::testing::Field(
+              &opentelemetry::sdk::metrics::HistogramPointData::count_,
+              ::testing::Eq(count)))),
+      arg.point_data, result_listener);
+}
 
 MATCHER_P(GaugeResultIs, value_matcher, "") {
   return ::testing::ExplainMatchResult(
@@ -149,11 +141,6 @@ MATCHER_P(GaugeResultLaterThan, prev_timestamp, "") {
       arg.point_data, result_listener);
 }
 
-#define RETURN_IF_FALSE(expr)  \
-  do {                         \
-    if (!(expr)) return false; \
-  } while (0)
-
 MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
            label_key, label_value, optional_label_key, optional_label_value,
            default_value, greater_than, "") {
@@ -164,7 +151,10 @@ MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
   PopulateLabelMap(optional_label_key, optional_label_value, &label_map);
   opentelemetry::common::SystemTimestamp prev_timestamp;
   auto prev_value = default_value;
-  for (size_t i = 1; i < arg.at(metric_name).size(); ++i) {
+  size_t prev_index = 0;
+  auto& data = arg.at(metric_name);
+  bool result = true;
+  for (size_t i = 1; i < data.size(); ++i) {
     if (::testing::Matches(::testing::UnorderedElementsAreArray(
             arg.at(metric_name)[i - 1].attributes.GetAttributes()))(
             label_map)) {
@@ -174,6 +164,7 @@ MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
               opentelemetry::sdk::metrics::LastValuePointData>(
               arg.at(metric_name)[i - 1].point_data)
               .value_);
+      prev_index = i - 1;
       prev_timestamp = opentelemetry::nostd::get<
                            opentelemetry::sdk::metrics::LastValuePointData>(
                            arg.at(metric_name)[i - 1].point_data)
@@ -184,25 +175,27 @@ MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
       // Skip values that do not have the same associated label values.
       continue;
     }
+    *result_listener << " Comparing data[" << i << "] with data[" << prev_index
+                     << "] ";
     if (greater_than) {
-      RETURN_IF_FALSE(::testing::ExplainMatchResult(
+      result &= ::testing::ExplainMatchResult(
           ::testing::AllOf(
               AttributesEq(label_key, label_value, optional_label_key,
                            optional_label_value),
               GaugeResultIs(::testing::Gt(prev_value)),
               GaugeResultLaterThan(prev_timestamp)),
-          arg.at(metric_name)[i], result_listener));
+          arg.at(metric_name)[i], result_listener);
     } else {
-      RETURN_IF_FALSE(::testing::ExplainMatchResult(
+      result &= ::testing::ExplainMatchResult(
           ::testing::AllOf(
               AttributesEq(label_key, label_value, optional_label_key,
                            optional_label_value),
               GaugeResultIs(::testing::Ge(prev_value)),
               GaugeResultLaterThan(prev_timestamp)),
-          arg.at(metric_name)[i], result_listener));
+          arg.at(metric_name)[i], result_listener);
     }
   }
-  return true;
+  return result;
 }
 
 TEST(OpenTelemetryPluginBuildTest, ApiDependency) {
@@ -1144,12 +1137,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
-                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
-                                         AttributesEq(kLabelKeys, kLabelValues,
-                                                      kOptionalLabelKeys,
-                                                      kOptionalLabelValues),
-                                         CounterResultEq(kCounterResult))))));
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      CounterResultEq(::testing::Eq(kCounterResult)))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
@@ -1189,12 +1183,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  EXPECT_THAT(data, ::testing::ElementsAre(::testing::Pair(
-                        kMetricName, ::testing::ElementsAre(::testing::AllOf(
-                                         AttributesEq(kLabelKeys, kLabelValues,
-                                                      kOptionalLabelKeys,
-                                                      kOptionalLabelValues),
-                                         CounterResultEq(kCounterResult))))));
+  EXPECT_THAT(data,
+              ::testing::ElementsAre(::testing::Pair(
+                  kMetricName,
+                  ::testing::ElementsAre(::testing::AllOf(
+                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                   kOptionalLabelValues),
+                      CounterResultEq(::testing::DoubleEq(kCounterResult)))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
@@ -1237,13 +1232,14 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); });
-  EXPECT_THAT(data,
-              ::testing::ElementsAre(::testing::Pair(
-                  kMetricName,
-                  ::testing::ElementsAre(::testing::AllOf(
-                      AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
-                                   kOptionalLabelValues),
-                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+  EXPECT_THAT(
+      data, ::testing::ElementsAre(::testing::Pair(
+                kMetricName,
+                ::testing::ElementsAre(::testing::AllOf(
+                    AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
+                                 kOptionalLabelValues),
+                    HistogramResultEq(::testing::Eq(kSum), ::testing::Eq(kMin),
+                                      ::testing::Eq(kMax), kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
@@ -1293,7 +1289,9 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
                   ::testing::ElementsAre(::testing::AllOf(
                       AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
                                    kOptionalLabelValues),
-                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+                      HistogramResultEq(::testing::DoubleEq(kSum),
+                                        ::testing::DoubleEq(kMin),
+                                        ::testing::DoubleEq(kMax), kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest,
@@ -1349,7 +1347,9 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                   ::testing::ElementsAre(::testing::AllOf(
                       AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
                                    kOptionalLabelValues),
-                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+                      HistogramResultEq(::testing::DoubleEq(kSum),
+                                        ::testing::DoubleEq(kMin),
+                                        ::testing::DoubleEq(kMax), kCount))))));
   }
   // Now build and register another OpenTelemetryPlugin using the test fixture
   // and record histogram.
@@ -1385,7 +1385,9 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                   ::testing::ElementsAre(::testing::AllOf(
                       AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
                                    kOptionalLabelValues),
-                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+                      HistogramResultEq(::testing::DoubleEq(kSum),
+                                        ::testing::DoubleEq(kMin),
+                                        ::testing::DoubleEq(kMax), kCount))))));
   // Verify that the first plugin gets the data as well.
   data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -1399,7 +1401,9 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                   ::testing::ElementsAre(::testing::AllOf(
                       AttributesEq(kLabelKeys, kLabelValues, kOptionalLabelKeys,
                                    kOptionalLabelValues),
-                      HistogramResultEq(kSum, kMin, kMax, kCount))))));
+                      HistogramResultEq(::testing::DoubleEq(kSum),
+                                        ::testing::DoubleEq(kMin),
+                                        ::testing::DoubleEq(kMax), kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest,
@@ -1460,7 +1464,9 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
           ::testing::ElementsAre(::testing::AllOf(
               AttributesEq(kLabelKeys, kLabelValues, kActualOptionalLabelKeys,
                            kActualOptionalLabelValues),
-              HistogramResultEq(kSum, kMin, kMax, kCount))))));
+              HistogramResultEq(::testing::DoubleEq(kSum),
+                                ::testing::DoubleEq(kMin),
+                                ::testing::DoubleEq(kMax), kCount))))));
 }
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {

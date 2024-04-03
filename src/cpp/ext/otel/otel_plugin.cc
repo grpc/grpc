@@ -114,7 +114,7 @@ class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
     bool filtered = optional_label_values_.size() < optional_label_keys_.size();
     for (size_t i = 0, j = 0; i < optional_label_keys_.size(); ++i) {
       if (!optional_labels_bits_.test(i)) {
-        !filtered && ++j;
+        if (!filtered) ++j;
         continue;
       }
       if (!callback(
@@ -518,7 +518,12 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
   GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
   GPR_ASSERT(descriptor.optional_label_keys.size() == optional_values.size());
   auto& cell = (*callback_gauge_state)->caches.at(key_);
-  auto key = std::vector<std::string>(label_values.begin(), label_values.end());
+  std::vector<std::string> key;
+  key.reserve(label_values.size() +
+              instrument_data.optional_labels_bits.count());
+  for (const absl::string_view value : label_values) {
+    key.emplace_back(value);
+  }
   for (size_t i = 0; i < optional_values.size(); ++i) {
     if (instrument_data.optional_labels_bits.test(i)) {
       key.emplace_back(optional_values[i]);
@@ -542,7 +547,12 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
   GPR_ASSERT(descriptor.label_keys.size() == label_values.size());
   GPR_ASSERT(descriptor.optional_label_keys.size() == optional_values.size());
   auto& cell = (*callback_gauge_state)->caches.at(key_);
-  auto key = std::vector<std::string>(label_values.begin(), label_values.end());
+  std::vector<std::string> key;
+  key.reserve(label_values.size() +
+              instrument_data.optional_labels_bits.count());
+  for (const absl::string_view value : label_values) {
+    key.emplace_back(value);
+  }
   for (size_t i = 0; i < optional_values.size(); ++i) {
     if (instrument_data.optional_labels_bits.test(i)) {
       key.emplace_back(optional_values[i]);
@@ -687,7 +697,12 @@ void OpenTelemetryPlugin::SetGauge(
   auto* gauge_state = absl::get_if<std::unique_ptr<GaugeState<int64_t>>>(
       &instrument_data.instrument);
   GPR_ASSERT(gauge_state != nullptr);
-  auto key = std::vector<std::string>(label_values.begin(), label_values.end());
+  std::vector<std::string> key;
+  key.reserve(label_values.size() +
+              instrument_data.optional_labels_bits.count());
+  for (const absl::string_view value : label_values) {
+    key.emplace_back(value);
+  }
   for (size_t i = 0; i < optional_values.size(); ++i) {
     if (instrument_data.optional_labels_bits.test(i)) {
       key.emplace_back(optional_values[i]);
@@ -720,7 +735,12 @@ void OpenTelemetryPlugin::SetGauge(
   auto* gauge_state = absl::get_if<std::unique_ptr<GaugeState<double>>>(
       &instrument_data.instrument);
   GPR_ASSERT(gauge_state != nullptr);
-  auto key = std::vector<std::string>(label_values.begin(), label_values.end());
+  std::vector<std::string> key;
+  key.reserve(label_values.size() +
+              instrument_data.optional_labels_bits.count());
+  for (const absl::string_view value : label_values) {
+    key.emplace_back(value);
+  }
   for (size_t i = 0; i < optional_values.size(); ++i) {
     if (instrument_data.optional_labels_bits.test(i)) {
       key.emplace_back(optional_values[i]);
