@@ -32,7 +32,7 @@ grpc_cc_test(
     language = "C++",
     tags = [],
     deps = [
-        "//:grpc++_unsecure",
+        "//:grpc++",
         "//:grpcpp_chaotic_good",
         "//test/core/util:grpc_test_util",
     ],

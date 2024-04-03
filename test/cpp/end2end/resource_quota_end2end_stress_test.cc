@@ -34,11 +34,11 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/credentials.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -186,7 +186,9 @@ class End2EndConnectionQuotaTest : public ::testing::TestWithParam<int> {
 
     return EchoTestService::NewStub(CreateCustomChannel(
         connect_address_,
-        std::make_shared<FakeTransportSecurityChannelCredentials>(), args));
+        std::make_shared<SecureChannelCredentials>(
+            grpc_fake_transport_security_credentials_create()),
+        args));
   }
 
   void TestExceedingConnectionQuota() {

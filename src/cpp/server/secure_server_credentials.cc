@@ -18,6 +18,8 @@
 
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include <algorithm>
+#include <map>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -49,7 +51,6 @@ void AuthMetadataProcessorAsyncWrapper::Process(
     return;
   }
   if (w->processor_->IsBlocking()) {
-    // TODO(hork): replace with EventEngine::Run
     w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
       w->AuthMetadataProcessorAsyncWrapper::InvokeProcessor(context, md, num_md,
                                                             cb, user_data);
@@ -96,15 +97,17 @@ void AuthMetadataProcessorAsyncWrapper::InvokeProcessor(
      status.error_message().c_str());
 }
 
-SecureServerCredentials::SecureServerCredentials(grpc_server_credentials* creds)
-    : ServerCredentials(creds) {}
+int SecureServerCredentials::AddPortToServer(const std::string& addr,
+                                             grpc_server* server) {
+  return grpc_server_add_http2_port(server, addr.c_str(), creds_);
+}
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
     const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) {
   auto* wrapper = new grpc::AuthMetadataProcessorAsyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      c_creds(), {grpc::AuthMetadataProcessorAsyncWrapper::Process,
-                  grpc::AuthMetadataProcessorAsyncWrapper::Destroy, wrapper});
+      creds_, {grpc::AuthMetadataProcessorAsyncWrapper::Process,
+               grpc::AuthMetadataProcessorAsyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(

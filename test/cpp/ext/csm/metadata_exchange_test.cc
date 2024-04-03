@@ -182,8 +182,9 @@ class MetadataExchangeTest
             .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
                 GetParam().GetTestResource().GetAttributes()))
             .set_labels_to_inject(std::move(labels_to_inject))
-            .set_target_selector(
-                [enable_client_side_injector](absl::string_view /*target*/) {
+            .set_channel_scope_filter(
+                [enable_client_side_injector](
+                    const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
                   return enable_client_side_injector;
                 })));
   }
