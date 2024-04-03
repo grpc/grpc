@@ -113,10 +113,10 @@ grpc_cc_library(
         "benchmark",
     ],
     deps = [
-        "//:grpc++",
+        "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
+        "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
 )
