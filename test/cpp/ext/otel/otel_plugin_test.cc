@@ -1486,14 +1486,18 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetInt64Gauge) {
       /*enable_by_default=*/true);
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
-                     .set_target_selector([](absl::string_view target) {
-                       return absl::StartsWith(target, "dns:///");
-                     })
+                     .set_channel_scope_filter(
+                         [](const OpenTelemetryPluginBuilder::ChannelScope&
+                                channel_scope) {
+                           return absl::StartsWith(channel_scope.target(),
+                                                   "dns:///");
+                         })
                      .add_optional_label(kOptionalLabelKeys[0])
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   stats_plugins.SetGauge(handle, kInitialValue, kLabelValuesSet1,
                          kOptionalLabelValuesSet1);
   auto data = ReadCurrentMetricsData(
@@ -1562,14 +1566,18 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, SetDoubleGauge) {
       /*enable_by_default=*/true);
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
-                     .set_target_selector([](absl::string_view target) {
-                       return absl::StartsWith(target, "dns:///");
-                     })
+                     .set_channel_scope_filter(
+                         [](const OpenTelemetryPluginBuilder::ChannelScope&
+                                channel_scope) {
+                           return absl::StartsWith(channel_scope.target(),
+                                                   "dns:///");
+                         })
                      .add_optional_label(kOptionalLabelKeys[0])
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   stats_plugins.SetGauge(handle, kInitialValue, kLabelValuesSet1,
                          kOptionalLabelValuesSet1);
   auto data = ReadCurrentMetricsData(
@@ -1647,7 +1655,8 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, ThreadedSetInt64Gauge) {
               data) { return !data.contains(kMetricName); }};
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   constexpr int kIterations = 1000000;
   for (int i = 1; i < kIterations; ++i) {
     stats_plugins.SetGauge(handle, i, kLabelValuesSet1,
@@ -1715,7 +1724,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   // Multiple callbacks for the same metrics, each reporting different label
   // values.
   int report_count_1 = 0;
@@ -1845,7 +1855,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
                      .add_optional_label(kOptionalLabelKeys[1])));
   auto stats_plugins =
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          grpc_core::StatsPlugin::ChannelScope("dns:///localhost:8080", ""));
+          grpc_core::experimental::StatsPluginChannelScope(
+              "dns:///localhost:8080", ""));
   // Multiple callbacks for the same metrics, each reporting different label
   // values.
   int report_count_1 = 0;

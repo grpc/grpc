@@ -738,7 +738,7 @@ void OpenTelemetryPlugin::SetGauge(
 void OpenTelemetryPlugin::AddCallback(
     grpc_core::RegisteredMetricCallback* callback) {
   grpc_core::MutexLock lock(&mu_);
-  callback_timestamps_.emplace(callback, grpc_core::Timestamp{});
+  callback_timestamps_.emplace(callback, grpc_core::Timestamp::InfPast());
   for (const auto& handle : callback->metrics()) {
     grpc_core::Match(
         handle,
