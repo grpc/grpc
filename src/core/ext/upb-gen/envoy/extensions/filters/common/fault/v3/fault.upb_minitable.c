@@ -18,28 +18,28 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableSub envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init},
+  {.submsg = &google__protobuf__Duration_msg_init},
+  {.submsg = &envoy__type__v3__FractionalPercent_msg_init},
+  {.submsg = &envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_common_fault_v3_FaultDelay__fields[3] = {
-  {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {4, UPB_SIZE(12, 16), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {5, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(4, 8), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init = {
   &envoy_extensions_filters_common_fault_v3_FaultDelay_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultDelay__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0300001a, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0502002a, &upb_pom_1bt_max64b},
+    {0x001000040300001a, &upb_pom_1bt_maxmaxb},
+    {0x0008000001010022, &upb_psm_1bt_maxmaxb},
+    {0x001000040502002a, &upb_pom_1bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
@@ -48,51 +48,51 @@ const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay_ms
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultDelay__HeaderDelay_msg_init = {
   NULL,
   NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
 static const upb_MiniTableSub envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__type__v3__FractionalPercent_msg_init},
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init},
+  {.submsg = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init},
+  {.submsg = &envoy__type__v3__FractionalPercent_msg_init},
+  {.submsg = &envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[3] = {
-  {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), 1, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(12, 16), UPB_SIZE(-9, -5), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init = {
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_submsgs[0],
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0100000a, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0302001a, &upb_pom_1bt_max64b},
+    {0x001000040100000a, &upb_pom_1bt_max64b},
+    {0x0008000001010012, &upb_psm_1bt_maxmaxb},
+    {0x001000040302001a, &upb_pom_1bt_max64b},
   })
 };
 
 static const upb_MiniTableField envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[1] = {
-  {1, 8, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {1, 0, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimit__FixedLimit_msg_init = {
   NULL,
   &envoy_extensions_filters_common_fault_v3_FaultRateLimit_FixedLimit__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  8, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000008, &upb_psv8_1bt},
+    {0x000000003f000008, &upb_psv8_1bt},
   })
 };
 
 const upb_MiniTable envoy__extensions__filters__common__fault__v3__FaultRateLimit__HeaderLimit_msg_init = {
   NULL,
   NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
 static const upb_MiniTable *messages_layout[5] = {

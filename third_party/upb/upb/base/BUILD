@@ -17,7 +17,6 @@ cc_library(
         "status.h",
         "status.hpp",
         "string_view.h",
-        "upcast.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
@@ -29,7 +28,6 @@ cc_library(
 cc_library(
     name = "internal",
     hdrs = [
-        "internal/endian.h",
         "internal/log2.h",
     ],
     copts = UPB_DEFAULT_COPTS,
@@ -48,8 +46,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//python/dist:__pkg__",
         "//upb/cmake:__pkg__",
-    ],
+        "//python/dist:__pkg__",
+    ]
 )
 # end:github_only

@@ -18,7 +18,7 @@
 const upb_MiniTable envoy__service__discovery__v3__AdsDummy_msg_init = {
   NULL,
   NULL,
-  8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+  0, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 };
 
 static const upb_MiniTable *messages_layout[1] = {

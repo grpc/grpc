@@ -26,27 +26,25 @@ struct google_protobuf_MethodOptions;
 
 
 UPB_INLINE bool google_api_has_http(const struct google_protobuf_MethodOptions* msg) {
-  return upb_Message_HasExtension((upb_Message*)msg, &google_api_http_ext);
+  return _upb_Message_HasExtensionField(msg, &google_api_http_ext);
 }
 UPB_INLINE void google_api_clear_http(struct google_protobuf_MethodOptions* msg) {
-  upb_Message_ClearExtension((upb_Message*)msg, &google_api_http_ext);
+  _upb_Message_ClearExtensionField(msg, &google_api_http_ext);
 }
 UPB_INLINE const struct google_api_HttpRule* google_api_http(const struct google_protobuf_MethodOptions* msg) {
   const upb_MiniTableExtension* ext = &google_api_http_ext;
-  UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
-  UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
   const struct google_api_HttpRule* default_val = NULL;
   const struct google_api_HttpRule* ret;
-  _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
+  _upb_Message_GetExtensionField(msg, ext, &default_val, &ret);
   return ret;
 }
 UPB_INLINE void google_api_set_http(struct google_protobuf_MethodOptions* msg, const struct google_api_HttpRule* val, upb_Arena* arena) {
   const upb_MiniTableExtension* ext = &google_api_http_ext;
-  UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
-  UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  UPB_ASSUME(!upb_IsRepeatedOrMap(&ext->field));
+  UPB_ASSUME(_upb_MiniTableField_GetRep(&ext->field) == kUpb_FieldRep_8Byte);
+  bool ok = _upb_Message_SetExtensionField(msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
 #ifdef __cplusplus
