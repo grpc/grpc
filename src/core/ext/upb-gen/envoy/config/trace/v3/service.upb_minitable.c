@@ -17,17 +17,21 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableSub envoy_config_trace_v3_TraceServiceConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__GrpcService_msg_init},
+  {.submsg = &envoy__config__core__v3__GrpcService_msg_init},
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_TraceServiceConfig__fields[1] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__trace__v3__TraceServiceConfig_msg_init = {
   &envoy_config_trace_v3_TraceServiceConfig_submsgs[0],
   &envoy_config_trace_v3_TraceServiceConfig__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
+  })
 };
 
 static const upb_MiniTable *messages_layout[1] = {
