@@ -2515,6 +2515,7 @@ add_library(grpc
   src/core/lib/transport/call_size_estimator.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/endpoint_info_handshaker.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
   src/core/lib/transport/handshaker_registry.cc
@@ -3240,6 +3241,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_size_estimator.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/endpoint_info_handshaker.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
   src/core/lib/transport/handshaker_registry.cc
@@ -5340,6 +5342,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/endpoint_info_handshaker.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/handshaker.cc
   src/core/lib/transport/handshaker_registry.cc

@@ -88,17 +88,10 @@ absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE("No auth context found");
   }
-  auto* transport = args.GetObject<Transport>();
-  if (transport == nullptr) {
-    // This should never happen since the transport is always set on the server
-    // side.
-    return GRPC_ERROR_CREATE("No transport configured");
-  }
-  return RbacFilter(
-      grpc_channel_stack_filter_instance_number(
-          filter_args.channel_stack(),
-          filter_args.uninitialized_channel_element()),
-      EvaluateArgs::PerChannelArgs(auth_context, transport->GetEndpoint()));
+  return RbacFilter(grpc_channel_stack_filter_instance_number(
+                        filter_args.channel_stack(),
+                        filter_args.uninitialized_channel_element()),
+                    EvaluateArgs::PerChannelArgs(auth_context, args));
 }
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {
