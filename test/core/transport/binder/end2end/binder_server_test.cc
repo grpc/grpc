@@ -38,6 +38,8 @@ namespace {
 
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
+  BinderServerCredentialsImpl() : ServerCredentials(nullptr) {}
+
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
         addr, server,
@@ -49,14 +51,6 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
   }
-
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    grpc_core::Crash("unreachable");
-  }
-
- private:
-  bool IsInsecure() const override { return true; }
 };
 
 }  // namespace

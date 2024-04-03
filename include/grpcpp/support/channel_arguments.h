@@ -28,7 +28,7 @@
 #include <grpcpp/support/config.h>
 
 namespace grpc {
-class SecureChannelCredentials;
+class ChannelCredentials;
 namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
@@ -120,7 +120,7 @@ class ChannelArguments {
   }
 
  private:
-  friend class grpc::SecureChannelCredentials;
+  friend class grpc::ChannelCredentials;
   friend class grpc::testing::ChannelArgumentsTest;
 
   /// Default pointer argument operations.
