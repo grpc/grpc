@@ -6395,6 +6395,7 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
