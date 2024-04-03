@@ -637,6 +637,10 @@ cdef extern from "grpc/credentials.h":
       void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
       grpc_status_code status, const char *error_details) nogil
 
+  # Declare this as an enum, this is the only way to make it a const in
+  # cython
+  enum: GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX
+
   ctypedef struct grpc_metadata_credentials_plugin:
     int (*get_metadata)(
         void *state, grpc_auth_metadata_context context,
@@ -672,10 +676,6 @@ cdef extern from "grpc/credentials.h":
 
 
 cdef extern from "grpc/grpc_security.h":
-
-  # Declare this as an enum, this is the only way to make it a const in
-  # cython
-  enum: GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX
 
   ctypedef struct grpc_ssl_session_cache:
     # We don't care about the internals (and in fact don't know them)
