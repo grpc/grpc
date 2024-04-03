@@ -141,9 +141,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       GPR_ASSERT(registration->after_.empty());
       GPR_ASSERT(registration->before_.empty());
       GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(
-          registration->filter_, nullptr, std::move(registration->predicates_),
-          registration->skip_v3_, registration->registration_source_);
+      terminal_filters.emplace_back(registration->filter_, nullptr,
+                                    std::move(registration->predicates_),
+                                    registration->registration_source_);
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
@@ -223,9 +223,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
     auto* registration = filter_to_registration[filter];
-    filters.emplace_back(
-        filter, registration->vtable_, std::move(registration->predicates_),
-        registration->skip_v3_, registration->registration_source_);
+    filters.emplace_back(filter, registration->vtable_,
+                         std::move(registration->predicates_),
+                         registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
@@ -414,7 +414,6 @@ absl::StatusOr<ChannelInit::StackSegment> ChannelInit::CreateStackSegment(
   size_t channel_data_alignment = 0;
   // Based on predicates build a list of filters to include in this segment.
   for (const auto& filter : stack_config.filters) {
-    if (filter.skip_v3) continue;
     if (!filter.CheckPredicates(args)) continue;
     if (filter.vtable == nullptr) {
       return absl::InvalidArgumentError(

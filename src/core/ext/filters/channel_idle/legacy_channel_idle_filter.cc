@@ -296,13 +296,13 @@ const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterV2Filter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
+      ->RegisterFilter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
   builder->channel_init()
-      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      ->RegisterFilter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
