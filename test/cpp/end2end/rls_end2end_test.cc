@@ -32,6 +32,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
+#include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>

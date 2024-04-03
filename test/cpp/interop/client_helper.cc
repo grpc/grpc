@@ -27,6 +27,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

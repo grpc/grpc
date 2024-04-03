@@ -24,8 +24,10 @@
 
 #include <gmock/gmock.h>
 
-#include "src/core/lib/security/credentials/xds/xds_credentials.h"
+#include <grpc/credentials.h>
+
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+#include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -35,7 +37,8 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCertRequestType) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options_2->set_cert_request_type(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+  options_2->set_cert_request_type(
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -74,8 +77,10 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentMaxTlsVersion) {
 TEST(TlsCredentialsOptionsComparatorTest, DifferentCertificateVerifier) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_certificate_verifier(MakeRefCounted<HostNameCertificateVerifier>());
-  options_2->set_certificate_verifier(MakeRefCounted<XdsCertificateVerifier>(nullptr));
+  options_1->set_certificate_verifier(
+      MakeRefCounted<HostNameCertificateVerifier>());
+  options_2->set_certificate_verifier(
+      MakeRefCounted<XdsCertificateVerifier>(nullptr));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -94,8 +99,12 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentCheckCallHost) {
 TEST(TlsCredentialsOptionsComparatorTest, DifferentCertificateProvider) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
-  options_1->set_certificate_provider(MakeRefCounted<StaticDataCertificateProvider>("root_cert_1", PemKeyCertPairList()));
-  options_2->set_certificate_provider(MakeRefCounted<StaticDataCertificateProvider>("root_cert_2", PemKeyCertPairList()));
+  options_1->set_certificate_provider(
+      MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",
+                                                    PemKeyCertPairList()));
+  options_2->set_certificate_provider(
+      MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",
+                                                    PemKeyCertPairList()));
   EXPECT_FALSE(*options_1 == *options_2);
   EXPECT_FALSE(*options_2 == *options_1);
   delete options_1;
@@ -182,8 +191,8 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSendClientCaListValues) {
   delete options_2;
 }
 
-} // namespace
-} // namespace grpc_core
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
