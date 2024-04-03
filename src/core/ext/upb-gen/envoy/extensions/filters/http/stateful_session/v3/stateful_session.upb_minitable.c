@@ -16,43 +16,43 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableSub envoy_extensions_filters_http_stateful_session_v3_StatefulSession_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+  {.submsg = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[2] = {
-  {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), 1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(8, 1), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init = {
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession_submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[0],
-  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000010, &upb_psb1_1bt},
+    {0x000800000100000a, &upb_psm_1bt_maxmaxb},
+    {0x000100003f000010, &upb_psb1_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 
 static const upb_MiniTableSub envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init},
+  {.submsg = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__fields[2] = {
-  {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), -1, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init = {
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__fields[0],
-  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(8, 16), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000801000008, &upb_pob1_1bt},
-    {0x0010000802000012, &upb_pom_1bt_max64b},
+    {0x0008000001000008, &upb_pob1_1bt},
+    {0x0008000002000012, &upb_pom_1bt_max64b},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };

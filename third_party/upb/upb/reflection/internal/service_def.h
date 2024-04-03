@@ -20,11 +20,9 @@ extern "C" {
 upb_ServiceDef* _upb_ServiceDef_At(const upb_ServiceDef* s, int i);
 
 // Allocate and initialize an array of |n| service defs.
-upb_ServiceDef* _upb_ServiceDefs_New(upb_DefBuilder* ctx, int n,
-                                     const UPB_DESC(ServiceDescriptorProto*)
-                                         const* protos,
-                                     const UPB_DESC(FeatureSet*)
-                                         parent_features);
+upb_ServiceDef* _upb_ServiceDefs_New(
+    upb_DefBuilder* ctx, int n,
+    const UPB_DESC(ServiceDescriptorProto) * const* protos);
 
 #ifdef __cplusplus
 } /* extern "C" */

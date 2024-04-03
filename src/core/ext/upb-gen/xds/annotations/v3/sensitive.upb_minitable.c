@@ -16,7 +16,7 @@
 const upb_MiniTableExtension xds_annotations_v3_sensitive_ext = {
   {61008053, 0, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
   &google__protobuf__FieldOptions_msg_init,
-  {.UPB_PRIVATE(submsg) = NULL},
+  {.submsg = NULL},
 
 };
 
