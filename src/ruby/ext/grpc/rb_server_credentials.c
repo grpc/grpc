@@ -23,8 +23,8 @@
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
-#include <grpc/grpc.h>
 #include <grpc/credentials.h>
+#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
