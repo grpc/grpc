@@ -390,11 +390,11 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   void SetGauge(
       grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle /*handle*/,
       int64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override;
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void SetGauge(
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
       double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override;
+      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void RemoveCallback(grpc_core::RegisteredMetricCallback* /*callback*/)
@@ -423,26 +423,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   plugin_options() const {
     return plugin_options_;
   }
-
-  template <typename ValueType>
-  struct GaugeState {
-    grpc_core::GlobalInstrumentsRegistry::InstrumentID id;
-    opentelemetry::nostd::shared_ptr<
-        opentelemetry::metrics::ObservableInstrument>
-        instrument;
-    // Per-instrument mutex.
-    grpc_core::Mutex mu;
-    bool ot_callback_registered ABSL_GUARDED_BY(mu) = false;
-    // Cache, it's possible to set values for multiple sets of labels at the
-    // same time. Key is a vector of label values and enabled optional label
-    // values.
-    absl::flat_hash_map<std::vector<std::string>, ValueType> cache
-        ABSL_GUARDED_BY(mu);
-    OpenTelemetryPlugin* ot_plugin;
-
-    static void GaugeCallback(opentelemetry::metrics::ObserverResult result,
-                              void* arg) ABSL_LOCKS_EXCLUDED(mu);
-  };
 
   template <typename ValueType>
   struct CallbackGaugeState {
@@ -482,7 +462,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
-      std::unique_ptr<GaugeState<int64_t>>, std::unique_ptr<GaugeState<double>>,
       std::unique_ptr<CallbackGaugeState<int64_t>>,
       std::unique_ptr<CallbackGaugeState<double>>>;
   static constexpr int kOptionalLabelsSizeLimit = 64;
