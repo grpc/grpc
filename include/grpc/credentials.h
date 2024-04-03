@@ -870,4 +870,4 @@ GRPCAPI void grpc_tls_credentials_options_set_tls_session_key_log_file_path(
 }
 #endif
 
-#endif  // GRPC_CREDENTIALS_H
+#endif /* GRPC_CREDENTIALS_H */
