@@ -7332,7 +7332,6 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
-        "call_final_info",
         "for_each",
         "if",
         "latch",
@@ -7344,6 +7343,7 @@ grpc_cc_library(
         "status_flag",
         "try_seq",
         "//:gpr",
+        "//:promise",
     ],
 )
 

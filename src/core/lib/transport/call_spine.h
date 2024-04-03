@@ -26,6 +26,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/prioritized_race.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/message.h"
@@ -43,12 +44,6 @@ namespace grpc_core {
 class CallSpineInterface {
  public:
   virtual ~CallSpineInterface() = default;
-  virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
-  virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
-  virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
-  virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
-  virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
-  virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
   // Add a callback to be called when server trailing metadata is received.
   void OnDone(absl::AnyInvocable<void()> fn) {
     if (on_done_ == nullptr) {
@@ -68,33 +63,16 @@ class CallSpineInterface {
   virtual void IncrementRefCount() = 0;
   virtual void Unref() = 0;
 
-  // Cancel the call with the given metadata.
-  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
-  // Most cancellation calls right now happen in pipe interceptors;
-  // there `nullopt` indicates terminate processing of this pipe and close with
-  // error.
-  // It's convenient then to have the Cancel operation (setting the latch to
-  // terminate the call) be the last thing that occurs in a pipe interceptor,
-  // and this construction supports that (and has helped the author not write
-  // some bugs).
-  GRPC_MUST_USE_RESULT absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
-    auto& c = cancel_latch();
-    if (c.is_set()) return absl::nullopt;
-    c.Set(std::move(metadata));
-    CallOnDone();
-    client_initial_metadata().sender.CloseWithError();
-    server_initial_metadata().sender.CloseWithError();
-    client_to_server_messages().sender.CloseWithError();
-    server_to_client_messages().sender.CloseWithError();
-    server_trailing_metadata().sender.CloseWithError();
-    return absl::nullopt;
-  }
-
-  auto WaitForCancel() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
-    return cancel_latch().Wait();
-  }
+  virtual Promise<StatusFlag> PushClientInitialMetadata(
+      ClientMetadataHandle md) = 0;
+  virtual Promise<ValueOrFailure<absl::optional<ServerMetadata>>>
+  PullServerInitialMetadata() = 0;
+  virtual Promise<ServerMetadataHandle> PullServerTrailingMetadata() = 0;
+  virtual Promise<StatusFlag> PushMessage(MessageHandle message) = 0;
+  virtual Promise<ValueOrFailure<absl::optional<MessageHandle>>>
+  PullMessage() = 0;
+  virtual void PushServerTrailingMetadata(ServerMetadataHandle md) = 0;
+  virtual void FinishSends() = 0;
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -106,7 +84,7 @@ class CallSpineInterface {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(r));
+        PushServerTrailingMetadata(StatusCast<ServerMetadataHandle>(r));
       }
       return r;
     });
@@ -137,7 +115,8 @@ class CallSpineInterface {
           gpr_log(GPR_DEBUG, "SpawnGuarded sees failure: %s",
                   r.ToString().c_str());
         }
-        std::ignore = Cancel(StatusCast<ServerMetadataHandle>(std::move(r)));
+        PushServerTrailingMetadata(
+            StatusCast<ServerMetadataHandle>(std::move(r)));
       }
     });
   }
@@ -146,7 +125,109 @@ class CallSpineInterface {
   absl::AnyInvocable<void()> on_done_{nullptr};
 };
 
-class CallSpine final : public CallSpineInterface, public Party {
+// Implementation of CallSpine atop the v2 Pipe based arrangement.
+// This implementation will go away in favor of an implementation atop
+// CallFilters by the time v3 lands.
+class PipeBasedCallSpine : public CallSpineInterface {
+ public:
+  virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
+  virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
+  virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
+  virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
+  virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
+
+  Promise<StatusFlag> PushClientInitialMetadata(
+      ClientMetadataHandle md) override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return Map(client_initial_metadata().sender.Push(std::move(md)),
+               [](bool ok) { return StatusFlag(ok); });
+  }
+
+  Promise<ValueOrFailure<absl::optional<ServerMetadata>>>
+  PullServerInitialMetadata() override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return Map(server_initial_metadata().receiver.Next(),
+               [](NextResult<ServerMetadataHandle> md)
+                   -> ValueOrFailure<absl::optional<ServerMetadataHandle>> {
+                 if (!md.has_value()) {
+                   if (md.cancelled()) return Failure{};
+                   return absl::optional<ServerMetadataHandle>();
+                 }
+                 return absl::optional<ServerMetadataHandle>(std::move(*md));
+               });
+  }
+
+  Promise<ServerMetadataHandle> PullServerTrailingMetadata() override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return PrioritizedRace(
+        Seq(server_trailing_metadata().receiver.Next(),
+            [this](NextResult<ServerMetadataHandle> md) mutable {
+              return [md = std::move(md),
+                      this]() mutable -> Poll<ServerMetadataHandle> {
+                // If the pipe was closed at cancellation time, we'll see no
+                // value here. Return pending and allow the cancellation to win
+                // the race.
+                if (!md.has_value()) return Pending{};
+                server_trailing_metadata().sender.Close();
+                return std::move(*md);
+              };
+            }),
+        Map(WaitForCancel(),
+            [this](ServerMetadataHandle md) -> ServerMetadataHandle {
+              server_trailing_metadata().sender.CloseWithError();
+              return md;
+            }));
+  }
+
+  Promise<ValueOrFailure<absl::optional<MessageHandle>>> PullMessage()
+      override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    return spine_->server_to_client_messages().receiver.Next();
+  }
+
+  Promise<StatusFlag> PushMessage(MessageHandle message) override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    return Map(
+        spine_->client_to_server_messages().sender.Push(std::move(message)),
+        [](bool r) { return StatusFlag(r); });
+  }
+
+  void FinishSends() override {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+    spine_->client_to_server_messages().sender.Close();
+  }
+
+  // Cancel the call with the given metadata.
+  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
+  // Most cancellation calls right now happen in pipe interceptors;
+  // there `nullopt` indicates terminate processing of this pipe and close with
+  // error.
+  // It's convenient then to have the Cancel operation (setting the latch to
+  // terminate the call) be the last thing that occurs in a pipe interceptor,
+  // and this construction supports that (and has helped the author not write
+  // some bugs).
+  GRPC_MUST_USE_RESULT absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    auto& c = cancel_latch();
+    if (c.is_set()) return absl::nullopt;
+    c.Set(std::move(metadata));
+    CallOnDone();
+    client_initial_metadata().sender.CloseWithError();
+    server_initial_metadata().sender.CloseWithError();
+    client_to_server_messages().sender.CloseWithError();
+    server_to_client_messages().sender.CloseWithError();
+    server_trailing_metadata().sender.CloseWithError();
+    return absl::nullopt;
+  }
+
+  auto WaitForCancel() {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return cancel_latch().Wait();
+  }
+};
+
+class CallSpine final : public PipeBasedCallSpine, public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
       grpc_event_engine::experimental::EventEngine* event_engine,
@@ -229,64 +310,6 @@ class CallInitiator {
  public:
   explicit CallInitiator(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
-
-  auto PushClientInitialMetadata(ClientMetadataHandle md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return Map(spine_->client_initial_metadata().sender.Push(std::move(md)),
-               [](bool ok) { return StatusFlag(ok); });
-  }
-
-  auto PullServerInitialMetadata() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return Map(spine_->server_initial_metadata().receiver.Next(),
-               [](NextResult<ServerMetadataHandle> md)
-                   -> ValueOrFailure<absl::optional<ServerMetadataHandle>> {
-                 if (!md.has_value()) {
-                   if (md.cancelled()) return Failure{};
-                   return absl::optional<ServerMetadataHandle>();
-                 }
-                 return absl::optional<ServerMetadataHandle>(std::move(*md));
-               });
-  }
-
-  auto PullServerTrailingMetadata() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return PrioritizedRace(
-        Seq(spine_->server_trailing_metadata().receiver.Next(),
-            [spine = spine_](NextResult<ServerMetadataHandle> md) mutable {
-              return [md = std::move(md),
-                      spine]() mutable -> Poll<ServerMetadataHandle> {
-                // If the pipe was closed at cancellation time, we'll see no
-                // value here. Return pending and allow the cancellation to win
-                // the race.
-                if (!md.has_value()) return Pending{};
-                spine->server_trailing_metadata().sender.Close();
-                return std::move(*md);
-              };
-            }),
-        Map(spine_->WaitForCancel(),
-            [spine = spine_](ServerMetadataHandle md) -> ServerMetadataHandle {
-              spine->server_trailing_metadata().sender.CloseWithError();
-              return md;
-            }));
-  }
-
-  auto PullMessage() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return spine_->server_to_client_messages().receiver.Next();
-  }
-
-  auto PushMessage(MessageHandle message) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return Map(
-        spine_->client_to_server_messages().sender.Push(std::move(message)),
-        [](bool r) { return StatusFlag(r); });
-  }
-
-  void FinishSends() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    spine_->client_to_server_messages().sender.Close();
-  }
 
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
