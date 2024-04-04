@@ -23,7 +23,6 @@ tools/distrib/check_naked_includes.py --fix || true
 tools/distrib/check_copyright.py --fix
 tools/distrib/add-iwyu.py
 tools/distrib/check_trailing_newlines.sh --fix
-tools/run_tests/sanity/check_port_platform.py --fix
 tools/run_tests/sanity/check_include_style.py --fix || true
 tools/distrib/check_namespace_qualification.py --fix
 tools/distrib/black_code.sh
