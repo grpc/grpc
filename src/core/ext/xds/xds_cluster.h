@@ -101,8 +101,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  std::map<ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-           RefCountedStringValue>
+  std::vector<std::pair<ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+                        RefCountedStringValue>>
       telemetry_labels;
 
   bool operator==(const XdsClusterResource& other) const {

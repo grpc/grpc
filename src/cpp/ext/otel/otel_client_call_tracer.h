@@ -101,6 +101,8 @@ class OpenTelemetryPlugin::ClientCallTracer
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
+    // Preferring std::map<> over std::vector<std::pair<>> to account for
+    // possible duplicates additions.
     std::map<OptionalLabelKey, grpc_core::RefCountedStringValue>
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>

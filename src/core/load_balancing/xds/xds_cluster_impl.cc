@@ -241,8 +241,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
-    std::map<ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-             RefCountedStringValue>
+    std::vector<std::pair<ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+                          RefCountedStringValue>>
         service_labels_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
