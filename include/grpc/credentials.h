@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdbool.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 
