@@ -18,16 +18,7 @@
 
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata) {
-  // Send initial metadata.
-  call_initiator.SpawnGuarded(
-      "send_initial_metadata",
-      [client_initial_metadata = std::move(client_initial_metadata),
-       call_initiator]() mutable {
-        return call_initiator.PushClientInitialMetadata(
-            std::move(client_initial_metadata));
-      });
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   // Read messages from handler into initiator.
   call_handler.SpawnGuarded("read_messages", [call_handler,
                                               call_initiator]() mutable {
@@ -88,20 +79,19 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
             })),
         call_initiator.PullServerTrailingMetadata(),
         [call_handler](ServerMetadataHandle md) mutable {
-          call_handler.SpawnGuarded(
-              "recv_trailing_metadata",
-              [md = std::move(md), call_handler]() mutable {
-                return call_handler.PushServerTrailingMetadata(std::move(md));
-              });
+          call_handler.PushServerTrailingMetadata(std::move(md));
           return Empty{};
         });
   });
 }
 
 CallInitiatorAndHandler MakeCall(
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
-  auto spine = CallSpine::Create(event_engine, arena);
-  return {CallInitiator(spine), CallHandler(spine)};
+    ClientMetadataHandle client_initial_metadata,
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+    bool is_arena_owned) {
+  auto spine = CallSpine::Create(std::move(client_initial_metadata),
+                                 event_engine, arena, is_arena_owned);
+  return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 
 }  // namespace grpc_core

@@ -63,16 +63,23 @@ class CallSpineInterface {
   virtual void IncrementRefCount() = 0;
   virtual void Unref() = 0;
 
-  virtual Promise<StatusFlag> PushClientInitialMetadata(
-      ClientMetadataHandle md) = 0;
-  virtual Promise<ValueOrFailure<absl::optional<ServerMetadata>>>
+  virtual Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
   PullServerInitialMetadata() = 0;
   virtual Promise<ServerMetadataHandle> PullServerTrailingMetadata() = 0;
-  virtual Promise<StatusFlag> PushMessage(MessageHandle message) = 0;
+  virtual Promise<StatusFlag> PushClientToServerMessage(
+      MessageHandle message) = 0;
   virtual Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullMessage() = 0;
+  PullClientToServerMessage() = 0;
+  virtual Promise<StatusFlag> PushServerToClientMessage(
+      MessageHandle message) = 0;
+  virtual Promise<ValueOrFailure<absl::optional<MessageHandle>>>
+  PullServerToClientMessage() = 0;
   virtual void PushServerTrailingMetadata(ServerMetadataHandle md) = 0;
   virtual void FinishSends() = 0;
+  virtual Promise<ValueOrFailure<ClientMetadataHandle>>
+  PullClientInitialMetadata() = 0;
+  virtual Promise<StatusFlag> PushServerInitialMetadata(
+      absl::optional<ServerMetadataHandle> md) = 0;
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -134,18 +141,10 @@ class PipeBasedCallSpine : public CallSpineInterface {
   virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
   virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
   virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
-  virtual Pipe<ServerMetadataHandle>& server_trailing_metadata() = 0;
   virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
 
-  Promise<StatusFlag> PushClientInitialMetadata(
-      ClientMetadataHandle md) override {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
-    return Map(client_initial_metadata().sender.Push(std::move(md)),
-               [](bool ok) { return StatusFlag(ok); });
-  }
-
-  Promise<ValueOrFailure<absl::optional<ServerMetadata>>>
-  PullServerInitialMetadata() override {
+  Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
+  PullServerInitialMetadata() final {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
     return Map(server_initial_metadata().receiver.Next(),
                [](NextResult<ServerMetadataHandle> md)
@@ -158,75 +157,106 @@ class PipeBasedCallSpine : public CallSpineInterface {
                });
   }
 
-  Promise<ServerMetadataHandle> PullServerTrailingMetadata() override {
+  Promise<ServerMetadataHandle> PullServerTrailingMetadata() final {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
-    return PrioritizedRace(
-        Seq(server_trailing_metadata().receiver.Next(),
-            [this](NextResult<ServerMetadataHandle> md) mutable {
-              return [md = std::move(md),
-                      this]() mutable -> Poll<ServerMetadataHandle> {
-                // If the pipe was closed at cancellation time, we'll see no
-                // value here. Return pending and allow the cancellation to win
-                // the race.
-                if (!md.has_value()) return Pending{};
-                server_trailing_metadata().sender.Close();
-                return std::move(*md);
-              };
-            }),
-        Map(cancel_latch().Wait(),
-            [this](ServerMetadataHandle md) -> ServerMetadataHandle {
-              server_trailing_metadata().sender.CloseWithError();
-              return md;
-            }));
+    return cancel_latch().Wait();
   }
 
-  Promise<ValueOrFailure<absl::optional<MessageHandle>>> PullMessage()
-      override {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return server_to_client_messages().receiver.Next();
+  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
+  PullServerToClientMessage() final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return Map(server_to_client_messages().receiver.Next(), MapNextMessage);
   }
 
-  Promise<StatusFlag> PushMessage(MessageHandle message) override {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+  Promise<StatusFlag> PushClientToServerMessage(MessageHandle message) final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
     return Map(client_to_server_messages().sender.Push(std::move(message)),
                [](bool r) { return StatusFlag(r); });
   }
 
-  void FinishSends() override {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
+  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
+  PullClientToServerMessage() final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return Map(client_to_server_messages().receiver.Next(), MapNextMessage);
+  }
+
+  Promise<StatusFlag> PushServerToClientMessage(MessageHandle message) final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return Map(server_to_client_messages().sender.Push(std::move(message)),
+               [](bool r) { return StatusFlag(r); });
+  }
+
+  void FinishSends() final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
     client_to_server_messages().sender.Close();
   }
 
-  // Cancel the call with the given metadata.
-  // Regarding the `MUST_USE_RESULT absl::nullopt_t`:
-  // Most cancellation calls right now happen in pipe interceptors;
-  // there `nullopt` indicates terminate processing of this pipe and close with
-  // error.
-  // It's convenient then to have the Cancel operation (setting the latch to
-  // terminate the call) be the last thing that occurs in a pipe interceptor,
-  // and this construction supports that (and has helped the author not write
-  // some bugs).
-  GRPC_MUST_USE_RESULT absl::nullopt_t Cancel(ServerMetadataHandle metadata) {
+  void PushServerTrailingMetadata(ServerMetadataHandle metadata) final {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
     auto& c = cancel_latch();
-    if (c.is_set()) return absl::nullopt;
+    if (c.is_set()) return;
     c.Set(std::move(metadata));
     CallOnDone();
     client_initial_metadata().sender.CloseWithError();
     server_initial_metadata().sender.CloseWithError();
     client_to_server_messages().sender.CloseWithError();
     server_to_client_messages().sender.CloseWithError();
-    server_trailing_metadata().sender.CloseWithError();
-    return absl::nullopt;
+  }
+
+  Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
+      final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return Map(client_initial_metadata().receiver.Next(),
+               [](NextResult<ClientMetadataHandle> md)
+                   -> ValueOrFailure<ClientMetadataHandle> {
+                 if (!md.has_value()) return Failure{};
+                 return std::move(*md);
+               });
+  }
+
+  Promise<StatusFlag> PushServerInitialMetadata(
+      absl::optional<ServerMetadataHandle> md) final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return If(
+        md.has_value(),
+        [&md, this]() {
+          return Map(server_initial_metadata().sender.Push(std::move(*md)),
+                     [](bool ok) { return StatusFlag(ok); });
+        },
+        [this]() {
+          server_initial_metadata().sender.Close();
+          return []() -> StatusFlag { return Success{}; };
+        });
+  }
+
+ private:
+  static ValueOrFailure<absl::optional<MessageHandle>> MapNextMessage(
+      NextResult<MessageHandle> r) {
+    if (!r.has_value()) {
+      if (r.cancelled()) return Failure{};
+      return absl::optional<MessageHandle>();
+    }
+    return absl::optional<MessageHandle>(std::move(*r));
   }
 };
 
 class CallSpine final : public PipeBasedCallSpine, public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
-      grpc_event_engine::experimental::EventEngine* event_engine,
-      Arena* arena) {
-    return RefCountedPtr<CallSpine>(arena->New<CallSpine>(event_engine, arena));
+      ClientMetadataHandle client_initial_metadata,
+      grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+      bool is_arena_owned) {
+    auto spine = RefCountedPtr<CallSpine>(
+        arena->New<CallSpine>(event_engine, arena, is_arena_owned));
+    spine->SpawnInfallible(
+        "push_client_initial_metadata",
+        [spine = spine.get(), client_initial_metadata = std::move(
+                                  client_initial_metadata)]() mutable {
+          return Map(spine->client_initial_metadata_.sender.Push(
+                         std::move(client_initial_metadata)),
+                     [](bool) { return Empty{}; });
+        });
+    return spine;
   }
 
   Pipe<ClientMetadataHandle>& client_initial_metadata() override {
@@ -241,9 +271,6 @@ class CallSpine final : public PipeBasedCallSpine, public Party {
   Pipe<MessageHandle>& server_to_client_messages() override {
     return server_to_client_messages_;
   }
-  Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
-    return server_trailing_metadata_;
-  }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
   Party& party() override { return *this; }
   Arena* arena() override { return arena_; }
@@ -253,8 +280,11 @@ class CallSpine final : public PipeBasedCallSpine, public Party {
  private:
   friend class Arena;
   CallSpine(grpc_event_engine::experimental::EventEngine* event_engine,
-            Arena* arena)
-      : Party(1), arena_(arena), event_engine_(event_engine) {}
+            Arena* arena, bool is_arena_owned)
+      : Party(1),
+        arena_(arena),
+        is_arena_owned_(is_arena_owned),
+        event_engine_(event_engine) {}
 
   class ScopedContext : public ScopedActivity,
                         public promise_detail::Context<Arena> {
@@ -284,6 +314,7 @@ class CallSpine final : public PipeBasedCallSpine, public Party {
   }
 
   Arena* arena_;
+  bool is_arena_owned_;
   // Initial metadata from client to server
   Pipe<ClientMetadataHandle> client_initial_metadata_{arena()};
   // Initial metadata from server to client
@@ -292,8 +323,6 @@ class CallSpine final : public PipeBasedCallSpine, public Party {
   Pipe<MessageHandle> client_to_server_messages_{arena()};
   // Messages travelling from the transport to the application.
   Pipe<MessageHandle> server_to_client_messages_{arena()};
-  // Trailing metadata from server to client
-  Pipe<ServerMetadataHandle> server_trailing_metadata_{arena()};
   // Latch that can be set to terminate the call
   Latch<ServerMetadataHandle> cancel_latch_;
   // Event engine associated with this call
@@ -310,10 +339,25 @@ class CallInitiator {
     return spine_->CancelIfFails(std::move(promise));
   }
 
+  auto PullServerInitialMetadata() {
+    return spine_->PullServerInitialMetadata();
+  }
+
+  auto PushMessage(MessageHandle message) {
+    return spine_->PushClientToServerMessage(std::move(message));
+  }
+
+  void FinishSends() { spine_->FinishSends(); }
+
+  auto PullMessage() { return spine_->PullServerToClientMessage(); }
+
+  auto PullServerTrailingMetadata() {
+    return spine_->PullServerTrailingMetadata();
+  }
+
   void Cancel() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    std::ignore =
-        spine_->Cancel(ServerMetadataFromStatus(absl::CancelledError()));
+    spine_->PushServerTrailingMetadata(
+        ServerMetadataFromStatus(absl::CancelledError()));
   }
 
   void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
@@ -344,56 +388,55 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
-  auto PullClientInitialMetadata() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return Map(spine_->client_initial_metadata().receiver.Next(),
-               [](NextResult<ClientMetadataHandle> md)
-                   -> ValueOrFailure<ClientMetadataHandle> {
-                 if (!md.has_value()) return Failure{};
-                 return std::move(*md);
-               });
-  }
-
   auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return If(
-        md.has_value(),
-        [&md, this]() {
-          return Map(
-              spine_->server_initial_metadata().sender.Push(std::move(*md)),
-              [](bool ok) { return StatusFlag(ok); });
-        },
-        [this]() {
-          spine_->server_initial_metadata().sender.Close();
-          return []() -> StatusFlag { return Success{}; };
-        });
+    return spine_->PushServerInitialMetadata(std::move(md));
   }
 
-  auto PushServerTrailingMetadata(ServerMetadataHandle md) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    spine_->server_initial_metadata().sender.Close();
-    spine_->server_to_client_messages().sender.Close();
-    spine_->client_to_server_messages().receiver.CloseWithError();
-    spine_->CallOnDone();
-    return Map(spine_->server_trailing_metadata().sender.Push(std::move(md)),
-               [](bool ok) { return StatusFlag(ok); });
+  void PushServerTrailingMetadata(ServerMetadataHandle status) {
+    spine_->PushServerTrailingMetadata(std::move(status));
   }
 
-  auto PullMessage() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return spine_->client_to_server_messages().receiver.Next();
+  void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
+
+  template <typename Promise>
+  auto CancelIfFails(Promise promise) {
+    return spine_->CancelIfFails(std::move(promise));
   }
 
   auto PushMessage(MessageHandle message) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    return Map(
-        spine_->server_to_client_messages().sender.Push(std::move(message)),
-        [](bool ok) { return StatusFlag(ok); });
+    return spine_->PushServerToClientMessage(std::move(message));
   }
 
-  void Cancel(ServerMetadataHandle status) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &spine_->party());
-    std::ignore = spine_->Cancel(std::move(status));
+  auto PullMessage() { return spine_->PullClientToServerMessage(); }
+
+  template <typename PromiseFactory>
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
+    spine_->SpawnInfallible(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
+    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+  }
+
+  Arena* arena() { return spine_->arena(); }
+
+ private:
+  RefCountedPtr<CallSpineInterface> spine_;
+};
+
+class UnstartedCallHandler {
+ public:
+  explicit UnstartedCallHandler(RefCountedPtr<CallSpineInterface> spine)
+      : spine_(std::move(spine)) {}
+
+  void PushServerTrailingMetadata(ServerMetadataHandle status) {
+    spine_->PushServerTrailingMetadata(std::move(status));
   }
 
   void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }
@@ -426,11 +469,13 @@ class CallHandler {
 
 struct CallInitiatorAndHandler {
   CallInitiator initiator;
-  CallHandler handler;
+  UnstartedCallHandler handler;
 };
 
 CallInitiatorAndHandler MakeCall(
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena);
+    ClientMetadataHandle client_initial_metadata,
+    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
+    bool is_arena_owned);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {
@@ -443,8 +488,7 @@ auto OutgoingMessages(CallHalf h) {
 
 // Forward a call from `call_handler` to `call_initiator` (with initial metadata
 // `client_initial_metadata`)
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata);
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator);
 
 }  // namespace grpc_core
 
