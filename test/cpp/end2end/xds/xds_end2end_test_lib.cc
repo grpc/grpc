@@ -30,7 +30,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -42,10 +41,10 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/server.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/tls_utils.h"
+#include "test/cpp/util/credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 namespace grpc {
@@ -572,8 +571,7 @@ std::shared_ptr<Channel> XdsEnd2endTest::CreateChannel(
   std::shared_ptr<ChannelCredentials> channel_creds =
       GetParam().use_xds_credentials()
           ? XdsCredentials(CreateTlsFallbackCredentials())
-          : std::make_shared<SecureChannelCredentials>(
-                grpc_fake_transport_security_credentials_create());
+          : std::make_shared<FakeTransportSecurityChannelCredentials>();
   return grpc::CreateCustomChannel(uri, channel_creds, *args);
 }
 

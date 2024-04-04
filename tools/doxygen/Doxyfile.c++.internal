@@ -3012,7 +3012,9 @@ src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
 src/cpp/README.md \
+src/cpp/client/call_credentials.cc \
 src/cpp/client/channel_cc.cc \
+src/cpp/client/channel_credentials.cc \
 src/cpp/client/client_callback.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/client_interceptor.cc \
@@ -3034,7 +3036,6 @@ src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \
 src/cpp/common/secure_auth_context.cc \
 src/cpp/common/secure_auth_context.h \
-src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
 src/cpp/common/tls_certificate_provider.cc \
 src/cpp/common/tls_certificate_verifier.cc \
@@ -3060,6 +3061,7 @@ src/cpp/server/server_builder.cc \
 src/cpp/server/server_callback.cc \
 src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
+src/cpp/server/server_credentials.cc \
 src/cpp/server/server_posix.cc \
 src/cpp/server/thread_pool_interface.h \
 src/cpp/server/xds_server_builder.cc \
