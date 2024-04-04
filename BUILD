@@ -2313,6 +2313,7 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): split credentials types into their own source files and targets.
 grpc_cc_library(
     name = "grpc_core_credentials",
     hdrs = ["include/grpc/credentials.h"],

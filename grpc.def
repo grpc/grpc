@@ -50,6 +50,12 @@ EXPORTS
     grpc_alts_credentials_options_destroy
     grpc_alts_credentials_create
     grpc_alts_server_credentials_create
+    grpc_tls_identity_pairs_create
+    grpc_tls_identity_pairs_add_pair
+    grpc_tls_identity_pairs_destroy
+    grpc_tls_certificate_provider_static_data_create
+    grpc_tls_certificate_provider_file_watcher_create
+    grpc_tls_certificate_provider_release
     grpc_tls_credentials_options_create
     grpc_tls_credentials_options_set_min_tls_version
     grpc_tls_credentials_options_set_max_tls_version
@@ -169,12 +175,6 @@ EXPORTS
     grpc_set_ssl_roots_override_callback
     grpc_max_auth_token_lifetime
     grpc_call_set_credentials
-    grpc_tls_identity_pairs_create
-    grpc_tls_identity_pairs_add_pair
-    grpc_tls_identity_pairs_destroy
-    grpc_tls_certificate_provider_static_data_create
-    grpc_tls_certificate_provider_file_watcher_create
-    grpc_tls_certificate_provider_release
     grpc_authorization_policy_provider_static_data_create
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release
