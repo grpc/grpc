@@ -395,9 +395,9 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
       double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
       absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void AddCallback(grpc_core::RegisteredMetricCallback* /*callback*/)
+  void AddCallback(grpc_core::RegisteredMetricCallback* callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
-  void RemoveCallback(grpc_core::RegisteredMetricCallback* /*callback*/)
+  void RemoveCallback(grpc_core::RegisteredMetricCallback* callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   grpc_core::ClientCallTracer* GetClientCallTracer(
       const grpc_core::Slice& path, bool registered_method,
