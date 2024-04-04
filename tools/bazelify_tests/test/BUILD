@@ -393,18 +393,18 @@ test_suite(
 # Python distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_python_linux_x64_buster",
+    name = "distribtest_python_linux_x64_bullseye",
     artifact_deps = [
         "package_python_linux",
     ],
     build_script = "run_distribtest_python_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/python_buster_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/python_bullseye_x64.current_version",
 )
 
 test_suite(
     name = "python_distribtests_linux",
     tests = [
-        ":distribtest_python_linux_x64_buster",
+        ":distribtest_python_linux_x64_bullseye",
     ],
 )
 
