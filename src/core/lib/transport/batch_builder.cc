@@ -66,25 +66,16 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
 }
 
 BatchBuilder::Batch::~Batch() {
-  auto* arena = party->arena();
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
             GetContext<Activity>()->DebugTag().c_str(), this);
   }
-  if (pending_receive_message != nullptr) {
-    arena->DeletePooled(pending_receive_message);
-  }
-  if (pending_receive_initial_metadata != nullptr) {
-    arena->DeletePooled(pending_receive_initial_metadata);
-  }
-  if (pending_receive_trailing_metadata != nullptr) {
-    arena->DeletePooled(pending_receive_trailing_metadata);
-  }
-  if (pending_sends != nullptr) {
-    arena->DeletePooled(pending_sends);
-  }
+  delete pending_receive_message;
+  delete pending_receive_initial_metadata;
+  delete pending_receive_trailing_metadata;
+  delete pending_sends;
   if (batch.cancel_stream) {
-    arena->DeletePooled(batch.payload);
+    delete batch.payload;
   }
 #ifndef NDEBUG
   grpc_stream_unref(stream_refcount, "pending-batch");
@@ -171,8 +162,8 @@ BatchBuilder::Batch* BatchBuilder::MakeCancel(
 
 void BatchBuilder::Cancel(Target target, absl::Status status) {
   auto* batch = MakeCancel(target.stream_refcount, std::move(status));
-  batch->batch.on_complete = NewClosure(
-      [batch](absl::Status) { batch->party->arena()->DeletePooled(batch); });
+  batch->batch.on_complete =
+      NewClosure([batch](absl::Status) { delete batch; });
   batch->PerformWith(target);
 }
 

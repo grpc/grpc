@@ -75,9 +75,9 @@ MATCHER_P2(EqualsUpbProto, proto, msgdef_func,
       AddMessageDescriptor(msgdef, &pool);
   EXPECT_TRUE(desc != nullptr);
   std::unique_ptr<google::protobuf::Message> m1(
-      ToProto(UPB_UPCAST(proto), msgdef.ptr(), desc, &factory));
+      ToProto(proto, msgdef.ptr(), desc, &factory));
   std::unique_ptr<google::protobuf::Message> m2(
-      ToProto((upb_Message*)arg, msgdef.ptr(), desc, &factory));
+      ToProto(arg, msgdef.ptr(), desc, &factory));
   std::string differences;
   google::protobuf::util::MessageDifferencer differencer;
   differencer.ReportDifferencesToString(&differences);

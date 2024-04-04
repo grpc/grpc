@@ -11,9 +11,8 @@
 #include <string>
 #include <vector>
 
-#include "upb/mem/arena.h"
 #include "upb/mini_table/extension_registry.h"
-#include "upb/mini_table/message.h"
+// #include "upb/mini_table/types.h"
 
 namespace upb {
 namespace fuzz {

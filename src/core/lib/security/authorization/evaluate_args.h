@@ -25,13 +25,13 @@
 
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
-class EvaluateArgs {
+class EvaluateArgs final {
  public:
   // Caller is responsible for ensuring auth_context outlives PerChannelArgs
   // struct.
@@ -44,7 +44,7 @@ class EvaluateArgs {
       int port = 0;
     };
 
-    PerChannelArgs(grpc_auth_context* auth_context, grpc_endpoint* endpoint);
+    PerChannelArgs(grpc_auth_context* auth_context, const ChannelArgs& args);
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
