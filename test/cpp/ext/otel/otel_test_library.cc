@@ -207,7 +207,7 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
     meter_provider->AddMetricReader(reader);
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
-  ot_builder.SetTargetSelector(std::move(options.target_selector));
+  ot_builder.SetChannelScopeFilter(std::move(options.channel_scope_filter));
   ot_builder.SetServerSelector(std::move(options.server_selector));
   ot_builder.SetTargetAttributeFilter(
       std::move(options.target_attribute_filter));

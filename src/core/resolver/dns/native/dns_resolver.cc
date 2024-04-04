@@ -59,7 +59,7 @@ namespace {
 
 TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 
-class NativeClientChannelDNSResolver : public PollingResolver {
+class NativeClientChannelDNSResolver final : public PollingResolver {
  public:
   NativeClientChannelDNSResolver(ResolverArgs args,
                                  Duration min_time_between_resolutions);
@@ -71,7 +71,7 @@ class NativeClientChannelDNSResolver : public PollingResolver {
   // No-op request class, used so that the PollingResolver code knows
   // when there is a request in flight, even if the request is not
   // actually cancellable.
-  class Request : public Orphanable {
+  class Request final : public Orphanable {
    public:
     Request() = default;
 
@@ -145,7 +145,7 @@ void NativeClientChannelDNSResolver::OnResolved(
 // Factory
 //
 
-class NativeClientChannelDNSResolverFactory : public ResolverFactory {
+class NativeClientChannelDNSResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }
 

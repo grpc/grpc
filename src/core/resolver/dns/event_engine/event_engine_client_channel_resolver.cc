@@ -92,7 +92,7 @@ TraceFlag grpc_event_engine_client_channel_resolver_trace(
 // ----------------------------------------------------------------------------
 // EventEngineClientChannelDNSResolver
 // ----------------------------------------------------------------------------
-class EventEngineClientChannelDNSResolver : public PollingResolver {
+class EventEngineClientChannelDNSResolver final : public PollingResolver {
  public:
   EventEngineClientChannelDNSResolver(ResolverArgs args,
                                       Duration min_time_between_resolutions);
@@ -102,7 +102,7 @@ class EventEngineClientChannelDNSResolver : public PollingResolver {
   // ----------------------------------------------------------------------------
   // EventEngineDNSRequestWrapper declaration
   // ----------------------------------------------------------------------------
-  class EventEngineDNSRequestWrapper
+  class EventEngineDNSRequestWrapper final
       : public InternallyRefCounted<EventEngineDNSRequestWrapper> {
    public:
     EventEngineDNSRequestWrapper(

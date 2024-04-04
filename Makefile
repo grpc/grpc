@@ -686,7 +686,6 @@ LIBGRPC_SRC = \
     src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
-    src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -1408,12 +1407,12 @@ LIBGRPC_SRC = \
     src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_factory.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_size_estimator.cc \
     src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/endpoint_info_handshaker.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
@@ -1684,10 +1683,6 @@ LIBGRPC_SRC = \
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/array.c \
-    third_party/upb/upb/message/compat.c \
-    third_party/upb/upb/message/copy.c \
-    third_party/upb/upb/message/internal/extension.c \
-    third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
@@ -1718,11 +1713,13 @@ LIBGRPC_SRC = \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
     third_party/upb/upb/wire/decode.c \
+    third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
-    third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
-    third_party/utf8_range/utf8_range.c \
+    third_party/utf8_range/naive.c \
+    third_party/utf8_range/range2-neon.c \
+    third_party/utf8_range/range2-sse.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
@@ -1788,6 +1785,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/json.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
+    include/grpc/support/metrics.h \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
     include/grpc/support/sync.h \

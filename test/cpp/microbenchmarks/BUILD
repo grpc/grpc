@@ -306,7 +306,7 @@ grpc_cc_library(
     hdrs = [
         "fullstack_unary_ping_pong.h",
     ],
-    deps = [":helpers"],
+    deps = [":helpers_secure"],
 )
 
 grpc_cc_test(
@@ -384,19 +384,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "bm_pollset",
-    srcs = ["bm_pollset.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    deps = [
-        ":helpers",
-    ],
-)
-
 grpc_cc_library(
     name = "bm_callback_test_service_impl",
     testonly = 1,
@@ -408,7 +395,7 @@ grpc_cc_library(
     deps = [
         ":helpers",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/cpp/util:test_util_unsecure",
+        "//test/cpp/util:test_util",
     ],
 )
 

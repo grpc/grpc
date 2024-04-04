@@ -83,7 +83,7 @@ constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 constexpr Duration kDefaultChildFailoverTimeout = Duration::Seconds(10);
 
 // Config for priority LB policy.
-class PriorityLbConfig : public LoadBalancingPolicy::Config {
+class PriorityLbConfig final : public LoadBalancingPolicy::Config {
  public:
   struct PriorityLbChild {
     RefCountedPtr<LoadBalancingPolicy::Config> config;
@@ -119,7 +119,7 @@ class PriorityLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // priority LB policy.
-class PriorityLb : public LoadBalancingPolicy {
+class PriorityLb final : public LoadBalancingPolicy {
  public:
   explicit PriorityLb(Args args);
 
@@ -131,7 +131,7 @@ class PriorityLb : public LoadBalancingPolicy {
 
  private:
   // Each ChildPriority holds a ref to the PriorityLb.
-  class ChildPriority : public InternallyRefCounted<ChildPriority> {
+  class ChildPriority final : public InternallyRefCounted<ChildPriority> {
    public:
     ChildPriority(RefCountedPtr<PriorityLb> priority_policy, std::string name);
 
@@ -163,7 +163,7 @@ class PriorityLb : public LoadBalancingPolicy {
     bool FailoverTimerPending() const { return failover_timer_ != nullptr; }
 
    private:
-    class Helper : public DelegatingChannelControlHelper {
+    class Helper final : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<ChildPriority> priority)
           : priority_(std::move(priority)) {}
@@ -183,7 +183,8 @@ class PriorityLb : public LoadBalancingPolicy {
       RefCountedPtr<ChildPriority> priority_;
     };
 
-    class DeactivationTimer : public InternallyRefCounted<DeactivationTimer> {
+    class DeactivationTimer final
+        : public InternallyRefCounted<DeactivationTimer> {
      public:
       explicit DeactivationTimer(RefCountedPtr<ChildPriority> child_priority);
 
@@ -196,7 +197,7 @@ class PriorityLb : public LoadBalancingPolicy {
       absl::optional<EventEngine::TaskHandle> timer_handle_;
     };
 
-    class FailoverTimer : public InternallyRefCounted<FailoverTimer> {
+    class FailoverTimer final : public InternallyRefCounted<FailoverTimer> {
      public:
       explicit FailoverTimer(RefCountedPtr<ChildPriority> child_priority);
 
@@ -874,7 +875,7 @@ void PriorityLbConfig::JsonPostLoad(const Json& /*json*/, const JsonArgs&,
   }
 }
 
-class PriorityLbFactory : public LoadBalancingPolicyFactory {
+class PriorityLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

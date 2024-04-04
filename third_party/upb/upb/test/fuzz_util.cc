@@ -7,20 +7,11 @@
 
 #include "upb/test/fuzz_util.h"
 
-#include <stddef.h>
-
-#include <vector>
-
-#include "upb/base/descriptor_constants.h"
 #include "upb/base/status.hpp"
-#include "upb/mem/arena.h"
+#include "upb/message/message.h"
 #include "upb/mini_descriptor/decode.h"
-#include "upb/mini_table/enum.h"
 #include "upb/mini_table/extension.h"
 #include "upb/mini_table/extension_registry.h"
-#include "upb/mini_table/field.h"
-#include "upb/mini_table/message.h"
-#include "upb/mini_table/sub.h"
 
 // Must be last
 #include "upb/port/def.inc"
@@ -96,16 +87,16 @@ void Builder::BuildEnums() {
 }
 
 bool Builder::LinkExtension(upb_MiniTableExtension* ext) {
-  upb_MiniTableField* field = &ext->UPB_PRIVATE(field);
+  upb_MiniTableField* field = &ext->field;
   if (upb_MiniTableField_CType(field) == kUpb_CType_Message) {
     auto mt = NextMiniTable();
     if (!mt) field->UPB_PRIVATE(descriptortype) = kUpb_FieldType_Int32;
-    ext->UPB_PRIVATE(sub) = upb_MiniTableSub_FromMessage(mt);
+    ext->sub.submsg = mt;
   }
   if (upb_MiniTableField_IsClosedEnum(field)) {
     auto et = NextEnumTable();
     if (!et) field->UPB_PRIVATE(descriptortype) = kUpb_FieldType_Int32;
-    ext->UPB_PRIVATE(sub) = upb_MiniTableSub_FromEnum(et);
+    ext->sub.subenum = et;
   }
   return true;
 }
@@ -129,8 +120,7 @@ void Builder::BuildExtensions(upb_ExtensionRegistry** exts) {
                                         status.ptr());
       if (!ptr) break;
       if (!LinkExtension(ext)) continue;
-      if (upb_ExtensionRegistry_Lookup(*exts, ext->UPB_PRIVATE(extendee),
-                                       upb_MiniTableExtension_Number(ext)))
+      if (upb_ExtensionRegistry_Lookup(*exts, ext->extendee, ext->field.number))
         continue;
       upb_ExtensionRegistry_AddArray(
           *exts, const_cast<const upb_MiniTableExtension**>(&ext), 1);
@@ -142,9 +132,9 @@ bool Builder::LinkMessages() {
   for (auto* t : mini_tables_) {
     upb_MiniTable* table = const_cast<upb_MiniTable*>(t);
     // For each field that requires a sub-table, assign one as appropriate.
-    for (size_t i = 0; i < table->UPB_PRIVATE(field_count); i++) {
+    for (size_t i = 0; i < table->field_count; i++) {
       upb_MiniTableField* field =
-          const_cast<upb_MiniTableField*>(&table->UPB_PRIVATE(fields)[i]);
+          const_cast<upb_MiniTableField*>(&table->fields[i]);
       if (link_ == input_->links.size()) link_ = 0;
       if (upb_MiniTableField_CType(field) == kUpb_CType_Message &&
           !upb_MiniTable_SetSubMessage(table, field, NextMiniTable())) {

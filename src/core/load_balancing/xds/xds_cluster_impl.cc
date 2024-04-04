@@ -86,12 +86,12 @@ using XdsConfig = XdsDependencyManager::XdsConfig;
 // global circuit breaker atomic map
 //
 
-class CircuitBreakerCallCounterMap {
+class CircuitBreakerCallCounterMap final {
  public:
   using Key =
       std::pair<std::string /*cluster*/, std::string /*eds_service_name*/>;
 
-  class CallCounter : public RefCounted<CallCounter> {
+  class CallCounter final : public RefCounted<CallCounter> {
    public:
     explicit CallCounter(Key key) : key_(std::move(key)) {}
     ~CallCounter() override;
@@ -152,7 +152,7 @@ CircuitBreakerCallCounterMap::CallCounter::~CallCounter() {
 constexpr absl::string_view kXdsClusterImpl = "xds_cluster_impl_experimental";
 
 // Config for xDS Cluster Impl LB policy.
-class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
+class XdsClusterImplLbConfig final : public LoadBalancingPolicy::Config {
  public:
   XdsClusterImplLbConfig() = default;
 
@@ -179,7 +179,7 @@ class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // xDS Cluster Impl LB policy.
-class XdsClusterImplLb : public LoadBalancingPolicy {
+class XdsClusterImplLb final : public LoadBalancingPolicy {
  public:
   XdsClusterImplLb(RefCountedPtr<GrpcXdsClient> xds_client, Args args);
 
@@ -190,7 +190,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class StatsSubchannelWrapper : public DelegatingSubchannel {
+  class StatsSubchannelWrapper final : public DelegatingSubchannel {
    public:
     // If load reporting is enabled and we have an XdsClusterLocalityStats
     // object, that object already contains the locality labels.  We
@@ -235,7 +235,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
   };
 
   // A picker that wraps the picker from the child to perform drops.
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     Picker(XdsClusterImplLb* xds_cluster_impl_lb,
            RefCountedPtr<SubchannelPicker> picker);
@@ -253,7 +253,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelPicker> picker_;
   };
 
-  class Helper
+  class Helper final
       : public ParentOwningDelegatingChannelControlHelper<XdsClusterImplLb> {
    public:
     explicit Helper(RefCountedPtr<XdsClusterImplLb> xds_cluster_impl_policy)
@@ -315,7 +315,7 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 // XdsClusterImplLb::Picker::SubchannelCallTracker
 //
 
-class XdsClusterImplLb::Picker::SubchannelCallTracker
+class XdsClusterImplLb::Picker::SubchannelCallTracker final
     : public LoadBalancingPolicy::SubchannelCallTrackerInterface {
  public:
   SubchannelCallTracker(
@@ -866,7 +866,7 @@ void XdsClusterImplLbConfig::JsonPostLoad(const Json& json, const JsonArgs&,
   }
 }
 
-class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
+class XdsClusterImplLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

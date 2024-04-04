@@ -124,7 +124,7 @@ class XdsHttpFilterImpl {
   virtual bool IsTerminalFilter() const { return false; }
 };
 
-class XdsHttpRouterFilter : public XdsHttpFilterImpl {
+class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
@@ -147,7 +147,7 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   bool IsTerminalFilter() const override { return true; }
 };
 
-class XdsHttpFilterRegistry {
+class XdsHttpFilterRegistry final {
  public:
   explicit XdsHttpFilterRegistry(bool register_builtins = true);
 

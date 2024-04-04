@@ -48,7 +48,7 @@ class XdsClient;
 // - ADS request/response handling
 // - LRS request/response handling
 // - CSDS response generation
-class XdsApi {
+class XdsApi final {
  public:
   // Interface defined by caller and passed to ParseAdsResponse().
   class AdsResponseParserInterface {

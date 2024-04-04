@@ -64,6 +64,7 @@ class CallSpineInterface {
     if (on_done_ != nullptr) std::exchange(on_done_, nullptr)();
   }
   virtual Party& party() = 0;
+  virtual Arena* arena() = 0;
   virtual void IncrementRefCount() = 0;
   virtual void Unref() = 0;
 
@@ -170,6 +171,7 @@ class CallSpine final : public CallSpineInterface, public Party {
   }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
   Party& party() override { return *this; }
+  Arena* arena() override { return arena_; }
   void IncrementRefCount() override { Party::IncrementRefCount(); }
   void Unref() override { Party::Unref(); }
 
@@ -177,7 +179,7 @@ class CallSpine final : public CallSpineInterface, public Party {
   friend class Arena;
   CallSpine(grpc_event_engine::experimental::EventEngine* event_engine,
             Arena* arena)
-      : Party(arena, 1), event_engine_(event_engine) {}
+      : Party(1), arena_(arena), event_engine_(event_engine) {}
 
   class ScopedContext : public ScopedActivity,
                         public promise_detail::Context<Arena> {
@@ -206,6 +208,7 @@ class CallSpine final : public CallSpineInterface, public Party {
     return event_engine_;
   }
 
+  Arena* arena_;
   // Initial metadata from client to server
   Pipe<ClientMetadataHandle> client_initial_metadata_{arena()};
   // Initial metadata from server to client
@@ -313,7 +316,7 @@ class CallInitiator {
     return spine_->party().SpawnWaitable(name, std::move(promise_factory));
   }
 
-  Arena* arena() { return spine_->party().arena(); }
+  Arena* arena() { return spine_->arena(); }
 
  private:
   RefCountedPtr<CallSpineInterface> spine_;
@@ -398,7 +401,7 @@ class CallHandler {
     return spine_->party().SpawnWaitable(name, std::move(promise_factory));
   }
 
-  Arena* arena() { return spine_->party().arena(); }
+  Arena* arena() { return spine_->arena(); }
 
  private:
   RefCountedPtr<CallSpineInterface> spine_;

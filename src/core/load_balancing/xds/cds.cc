@@ -85,7 +85,7 @@ using XdsConfig = XdsDependencyManager::XdsConfig;
 constexpr absl::string_view kCds = "cds_experimental";
 
 // Config for this LB policy.
-class CdsLbConfig : public LoadBalancingPolicy::Config {
+class CdsLbConfig final : public LoadBalancingPolicy::Config {
  public:
   CdsLbConfig() = default;
 
@@ -115,7 +115,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // CDS LB policy.
-class CdsLb : public LoadBalancingPolicy {
+class CdsLb final : public LoadBalancingPolicy {
  public:
   explicit CdsLb(Args args);
 
@@ -232,7 +232,7 @@ std::string MakeChildPolicyName(absl::string_view cluster,
                       "}");
 }
 
-class PriorityEndpointIterator : public EndpointAddressesIterator {
+class PriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
   PriorityEndpointIterator(
       std::string cluster_name,
@@ -731,7 +731,7 @@ void CdsLb::ReportTransientFailure(absl::Status status) {
 // factory
 //
 
-class CdsLbFactory : public LoadBalancingPolicyFactory {
+class CdsLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

@@ -9,17 +9,13 @@
 
 #include <stdlib.h>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
 #include "upb/base/status.hpp"
-#include "upb/base/upcast.h"
 #include "upb/json/decode.h"
-#include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
-#include "upb/reflection/common.h"
 #include "upb/reflection/def.hpp"
-#include "upb/util/required_fields_editions_test.upb.h"
-#include "upb/util/required_fields_editions_test.upbdefs.h"
 #include "upb/util/required_fields_test.upb.h"
 #include "upb/util/required_fields_test.upbdefs.h"
 
@@ -44,63 +40,31 @@ std::vector<std::string> PathsToText(upb_FieldPathEntry* entry) {
   return ret;
 }
 
-template <typename T>
-class RequiredFieldsTest : public testing::Test {
- public:
-  void CheckRequired(absl::string_view json,
-                     const std::vector<std::string>& missing) {
-    upb::Arena arena;
-    upb::DefPool defpool;
-    auto* test_msg = T::NewMessage(arena.ptr());
-    upb::MessageDefPtr m = T::GetMessageDef(defpool.ptr());
-    upb::Status status;
-    EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), UPB_UPCAST(test_msg),
-                               m.ptr(), defpool.ptr(), 0, arena.ptr(),
-                               status.ptr()))
-        << status.error_message();
-    upb_FieldPathEntry* entries = nullptr;
-    EXPECT_EQ(!missing.empty(),
-              upb_util_HasUnsetRequired(UPB_UPCAST(test_msg), m.ptr(),
-                                        defpool.ptr(), &entries));
-    if (entries) {
-      EXPECT_EQ(missing, PathsToText(entries));
-      free(entries);
-    }
+void CheckRequired(absl::string_view json,
+                   const std::vector<std::string>& missing) {
+  upb::Arena arena;
+  upb::DefPool defpool;
+  upb_util_test_TestRequiredFields* test_msg =
+      upb_util_test_TestRequiredFields_new(arena.ptr());
+  upb::MessageDefPtr m(
+      upb_util_test_TestRequiredFields_getmsgdef(defpool.ptr()));
+  upb::Status status;
+  EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), test_msg, m.ptr(),
+                             defpool.ptr(), 0, arena.ptr(), status.ptr()))
+      << status.error_message();
+  upb_FieldPathEntry* entries = nullptr;
+  EXPECT_EQ(!missing.empty(), upb_util_HasUnsetRequired(
+                                  test_msg, m.ptr(), defpool.ptr(), &entries));
+  if (entries) {
+    EXPECT_EQ(missing, PathsToText(entries));
+    free(entries);
+  }
 
-    // Verify that we can pass a NULL pointer to entries when we don't care
-    // about them.
-    EXPECT_EQ(!missing.empty(),
-              upb_util_HasUnsetRequired(UPB_UPCAST(test_msg), m.ptr(),
-                                        defpool.ptr(), nullptr));
-  }
-};
-
-class Proto2Type {
- public:
-  using MessageType = upb_util_test_TestRequiredFields;
-  static MessageType* NewMessage(upb_Arena* arena) {
-    return upb_util_test_TestRequiredFields_new(arena);
-  }
-  static upb::MessageDefPtr GetMessageDef(upb_DefPool* defpool) {
-    return upb::MessageDefPtr(
-        upb_util_test_TestRequiredFields_getmsgdef(defpool));
-  }
-};
-
-class Edition2023Type {
- public:
-  using MessageType = upb_util_2023_test_TestRequiredFields;
-  static MessageType* NewMessage(upb_Arena* arena) {
-    return upb_util_2023_test_TestRequiredFields_new(arena);
-  }
-  static upb::MessageDefPtr GetMessageDef(upb_DefPool* defpool) {
-    return upb::MessageDefPtr(
-        upb_util_2023_test_TestRequiredFields_getmsgdef(defpool));
-  }
-};
-
-using MyTypes = ::testing::Types<Proto2Type, Edition2023Type>;
-TYPED_TEST_SUITE(RequiredFieldsTest, MyTypes);
+  // Verify that we can pass a NULL pointer to entries when we don't care about
+  // them.
+  EXPECT_EQ(!missing.empty(), upb_util_HasUnsetRequired(
+                                  test_msg, m.ptr(), defpool.ptr(), nullptr));
+}
 
 // message HasRequiredField {
 //   required int32 required_int32 = 1;
@@ -112,10 +76,10 @@ TYPED_TEST_SUITE(RequiredFieldsTest, MyTypes);
 //   repeated HasRequiredField repeated_message = 3;
 //   map<int32, HasRequiredField> map_int32_message = 4;
 // }
-TYPED_TEST(RequiredFieldsTest, TestRequired) {
-  TestFixture::CheckRequired(R"json({})json", {"required_message"});
-  TestFixture::CheckRequired(R"json({"required_message": {}})json", {});
-  TestFixture::CheckRequired(
+TEST(RequiredFieldsTest, TestRequired) {
+  CheckRequired(R"json({})json", {"required_message"});
+  CheckRequired(R"json({"required_message": {}}")json", {});
+  CheckRequired(
       R"json(
       {
         "optional_message": {}
@@ -124,7 +88,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
       {"required_message", "optional_message.required_message"});
 
   // Repeated field.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "optional_message": {
@@ -140,7 +104,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
        "optional_message.repeated_message[1].required_int32"});
 
   // Int32 map key.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -154,7 +118,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
       {"map_int32_message[5].required_int32"});
 
   // Int64 map key.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -168,7 +132,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
       {"map_int64_message[5].required_int32"});
 
   // Uint32 map key.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -182,7 +146,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
       {"map_uint32_message[5].required_int32"});
 
   // Uint64 map key.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -196,7 +160,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
       {"map_uint64_message[5].required_int32"});
 
   // Bool map key.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "required_message": {},
@@ -209,7 +173,7 @@ TYPED_TEST(RequiredFieldsTest, TestRequired) {
       {"map_bool_message[true].required_int32"});
 
   // String map key.
-  TestFixture::CheckRequired(
+  CheckRequired(
       R"json(
       {
         "required_message": {},

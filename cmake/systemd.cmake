@@ -12,9 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-find_package(systemd)
-if(TARGET systemd)
-  set(_gRPC_SYSTEMD_LIBRARIES systemd ${SYSTEMD_LINK_LIBRARIES})
-  add_definitions(-DHAVE_LIBSYSTEMD)
+set(gRPC_USE_SYSTEMD "AUTO" CACHE STRING "Build with libsystemd support if available. Can be ON, OFF or AUTO")
+
+if (NOT gRPC_USE_SYSTEMD STREQUAL "OFF")
+  if (gRPC_USE_SYSTEMD STREQUAL "ON")
+    find_package(systemd REQUIRED)
+  elseif (gRPC_USE_SYSTEMD STREQUAL "AUTO")
+    find_package(systemd)
+  else()
+    message(FATAL_ERROR "Unknown value for gRPC_USE_SYSTEMD = ${gRPC_USE_SYSTEMD}")
+  endif()
+
+  if(TARGET systemd)
+    set(_gRPC_SYSTEMD_LIBRARIES systemd ${SYSTEMD_LINK_LIBRARIES})
+    add_definitions(-DHAVE_LIBSYSTEMD)
+  endif()
+  set(_gRPC_FIND_SYSTEMD "if(NOT systemd_FOUND)\n  find_package(systemd)\nendif()")
 endif()
-set(_gRPC_FIND_SYSTEMD "if(NOT systemd_FOUND)\n  find_package(systemd)\nendif()")

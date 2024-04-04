@@ -156,7 +156,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       : engine_(std::move(engine)), poller_(poller) {
     WeakRef().release();
   }
-  void Orphan() override { signal.Notify(); }
+  void Orphaned() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     engine_->Run([this]() { Work(); });

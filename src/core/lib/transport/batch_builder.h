@@ -162,8 +162,7 @@ class BatchBuilder {
     using PendingCompletion::PendingCompletion;
 
     Arena::PoolPtr<grpc_metadata_batch> metadata =
-        GetContext<Arena>()->MakePooled<grpc_metadata_batch>(
-            GetContext<Arena>());
+        GetContext<Arena>()->MakePooled<grpc_metadata_batch>();
 
    protected:
     ~PendingReceiveMetadata() = default;
@@ -209,7 +208,7 @@ class BatchBuilder {
 
     void IncrementRefCount() { ++refs; }
     void Unref() {
-      if (--refs == 0) party->arena()->DeletePooled(this);
+      if (--refs == 0) delete this;
     }
     RefCountedPtr<Batch> Ref() {
       IncrementRefCount();
@@ -225,7 +224,7 @@ class BatchBuilder {
     template <typename T>
     T* GetInitializedCompletion(T*(Batch::*field)) {
       if (this->*field != nullptr) return this->*field;
-      this->*field = party->arena()->NewPooled<T>(Ref());
+      this->*field = new T(Ref());
       if (grpc_call_trace.enabled()) {
         gpr_log(GPR_DEBUG, "%sAdd batch closure for %s @ %s",
                 DebugPrefix().c_str(),
@@ -330,8 +329,7 @@ inline auto BatchBuilder::SendClientTrailingMetadata(Target target) {
   auto* pc = batch->GetInitializedCompletion(&Batch::pending_sends);
   batch->batch.on_complete = &pc->on_done_closure;
   batch->batch.send_trailing_metadata = true;
-  auto metadata =
-      GetContext<Arena>()->MakePooled<grpc_metadata_batch>(GetContext<Arena>());
+  auto metadata = GetContext<Arena>()->MakePooled<grpc_metadata_batch>();
   payload_->send_trailing_metadata.send_trailing_metadata = metadata.get();
   payload_->send_trailing_metadata.sent = nullptr;
   pc->send_trailing_metadata = std::move(metadata);

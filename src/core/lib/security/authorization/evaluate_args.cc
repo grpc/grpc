@@ -30,6 +30,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/endpoint_info_handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -70,7 +71,7 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
 }  // namespace
 
 EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
-                                             grpc_endpoint* endpoint) {
+                                             const ChannelArgs& args) {
   if (auth_context != nullptr) {
     transport_security_type = GetAuthPropertyValue(
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
@@ -83,10 +84,10 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
     subject =
         GetAuthPropertyValue(auth_context, GRPC_X509_SUBJECT_PROPERTY_NAME);
   }
-  if (endpoint != nullptr) {
-    local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
-    peer_address = ParseEndpointUri(grpc_endpoint_get_peer(endpoint));
-  }
+  local_address = ParseEndpointUri(
+      args.GetString(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS).value_or(""));
+  peer_address = ParseEndpointUri(
+      args.GetString(GRPC_ARG_ENDPOINT_PEER_ADDRESS).value_or(""));
 }
 
 absl::string_view EvaluateArgs::GetPath() const {

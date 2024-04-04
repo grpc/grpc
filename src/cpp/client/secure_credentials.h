@@ -40,6 +40,24 @@ grpc_sts_credentials_options StsCredentialsCppToCoreOptions(
 
 }  // namespace experimental
 
+/// ---- DEPRECATED ----
+/// This type is going away. Prefer creating a subclass of
+/// grpc::ChannelCredentials.
+class SecureChannelCredentials final : public grpc::ChannelCredentials {
+ public:
+  explicit SecureChannelCredentials(grpc_channel_credentials* c_creds)
+      : ChannelCredentials(c_creds) {}
+};
+
+/// ---- DEPRECATED ----
+/// This type is going away. Prefer creating a subclass of
+/// grpc::CallCredentials.
+class SecureCallCredentials final : public grpc::CallCredentials {
+ public:
+  explicit SecureCallCredentials(grpc_call_credentials* c_creds)
+      : CallCredentials(c_creds) {}
+};
+
 }  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_CLIENT_SECURE_CREDENTIALS_H
