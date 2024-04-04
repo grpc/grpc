@@ -1215,7 +1215,6 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "//src/core:grpc_insecure_credentials",
         "//src/core:xds_enabled_server",
     ],
 )
@@ -2435,7 +2434,6 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
-        "grpc_transport_chttp2",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
         "grpcpp_status",
