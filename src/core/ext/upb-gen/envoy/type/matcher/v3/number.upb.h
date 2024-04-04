@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-typedef struct envoy_type_matcher_v3_DoubleMatcher { upb_Message UPB_PRIVATE(base); } envoy_type_matcher_v3_DoubleMatcher;
+typedef struct envoy_type_matcher_v3_DoubleMatcher envoy_type_matcher_v3_DoubleMatcher;
 struct envoy_type_v3_DoubleRange;
 
 
@@ -37,8 +37,7 @@ UPB_INLINE envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_DoubleMatc
 UPB_INLINE envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_DoubleMatcher_parse(const char* buf, size_t size, upb_Arena* arena) {
   envoy_type_matcher_v3_DoubleMatcher* ret = envoy_type_matcher_v3_DoubleMatcher_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__type__matcher__v3__DoubleMatcher_msg_init, NULL, 0, arena) !=
-      kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy__type__matcher__v3__DoubleMatcher_msg_init, NULL, 0, arena) != kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
@@ -48,21 +47,21 @@ UPB_INLINE envoy_type_matcher_v3_DoubleMatcher* envoy_type_matcher_v3_DoubleMatc
                            int options, upb_Arena* arena) {
   envoy_type_matcher_v3_DoubleMatcher* ret = envoy_type_matcher_v3_DoubleMatcher_new(arena);
   if (!ret) return NULL;
-  if (upb_Decode(buf, size, UPB_UPCAST(ret), &envoy__type__matcher__v3__DoubleMatcher_msg_init, extreg, options,
-                 arena) != kUpb_DecodeStatus_Ok) {
+  if (upb_Decode(buf, size, ret, &envoy__type__matcher__v3__DoubleMatcher_msg_init, extreg, options, arena) !=
+      kUpb_DecodeStatus_Ok) {
     return NULL;
   }
   return ret;
 }
 UPB_INLINE char* envoy_type_matcher_v3_DoubleMatcher_serialize(const envoy_type_matcher_v3_DoubleMatcher* msg, upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__DoubleMatcher_msg_init, 0, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy__type__matcher__v3__DoubleMatcher_msg_init, 0, arena, &ptr, len);
   return ptr;
 }
 UPB_INLINE char* envoy_type_matcher_v3_DoubleMatcher_serialize_ex(const envoy_type_matcher_v3_DoubleMatcher* msg, int options,
                                  upb_Arena* arena, size_t* len) {
   char* ptr;
-  (void)upb_Encode(UPB_UPCAST(msg), &envoy__type__matcher__v3__DoubleMatcher_msg_init, options, arena, &ptr, len);
+  (void)upb_Encode(msg, &envoy__type__matcher__v3__DoubleMatcher_msg_init, options, arena, &ptr, len);
   return ptr;
 }
 typedef enum {
@@ -71,46 +70,43 @@ typedef enum {
   envoy_type_matcher_v3_DoubleMatcher_match_pattern_NOT_SET = 0
 } envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases;
 UPB_INLINE envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases envoy_type_matcher_v3_DoubleMatcher_match_pattern_case(const envoy_type_matcher_v3_DoubleMatcher* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return (envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
-      UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {1, 8, -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return (envoy_type_matcher_v3_DoubleMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(msg, &field);
 }
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_clear_range(envoy_type_matcher_v3_DoubleMatcher* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {1, 8, -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE const struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_range(const envoy_type_matcher_v3_DoubleMatcher* msg) {
   const struct envoy_type_v3_DoubleRange* default_val = NULL;
   const struct envoy_type_v3_DoubleRange* ret;
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
+  const upb_MiniTableField field = {1, 8, -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_range(const envoy_type_matcher_v3_DoubleMatcher* msg) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {1, 8, -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_clear_exact(envoy_type_matcher_v3_DoubleMatcher* msg) {
-  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {2, 8, -1, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_ClearNonExtensionField(msg, &field);
 }
 UPB_INLINE double envoy_type_matcher_v3_DoubleMatcher_exact(const envoy_type_matcher_v3_DoubleMatcher* msg) {
   double default_val = 0;
   double ret;
-  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
-                                    &default_val, &ret);
+  const upb_MiniTableField field = {2, 8, -1, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_GetNonExtensionField(msg, &field, &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_matcher_v3_DoubleMatcher_has_exact(const envoy_type_matcher_v3_DoubleMatcher* msg) {
-  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+  const upb_MiniTableField field = {2, 8, -1, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  return _upb_Message_HasNonExtensionField(msg, &field);
 }
 
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_range(envoy_type_matcher_v3_DoubleMatcher *msg, struct envoy_type_v3_DoubleRange* value) {
-  const upb_MiniTableField field = {1, 16, -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  const upb_MiniTableField field = {1, 8, -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher_mutable_range(envoy_type_matcher_v3_DoubleMatcher* msg, upb_Arena* arena) {
   struct envoy_type_v3_DoubleRange* sub = (struct envoy_type_v3_DoubleRange*)envoy_type_matcher_v3_DoubleMatcher_range(msg);
@@ -121,8 +117,8 @@ UPB_INLINE struct envoy_type_v3_DoubleRange* envoy_type_matcher_v3_DoubleMatcher
   return sub;
 }
 UPB_INLINE void envoy_type_matcher_v3_DoubleMatcher_set_exact(envoy_type_matcher_v3_DoubleMatcher *msg, double value) {
-  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  const upb_MiniTableField field = {2, 8, -1, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  _upb_Message_SetNonExtensionField(msg, &field, &value);
 }
 
 #ifdef __cplusplus

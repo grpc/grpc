@@ -16,16 +16,12 @@
 #include "upb/port/def.inc"
 
 struct upb_ServiceDef {
-  const UPB_DESC(ServiceOptions*) opts;
-  const UPB_DESC(FeatureSet*) resolved_features;
+  const UPB_DESC(ServiceOptions) * opts;
   const upb_FileDef* file;
   const char* full_name;
   upb_MethodDef* methods;
   int method_count;
   int index;
-#if UINTPTR_MAX == 0xffffffff
-  uint32_t padding;  // Increase size to a multiple of 8.
-#endif
 };
 
 upb_ServiceDef* _upb_ServiceDef_At(const upb_ServiceDef* s, int index) {
@@ -39,11 +35,6 @@ const UPB_DESC(ServiceOptions) *
 
 bool upb_ServiceDef_HasOptions(const upb_ServiceDef* s) {
   return s->opts != (void*)kUpbDefOptDefault;
-}
-
-const UPB_DESC(FeatureSet) *
-    upb_ServiceDef_ResolvedFeatures(const upb_ServiceDef* s) {
-  return s->resolved_features;
 }
 
 const char* upb_ServiceDef_FullName(const upb_ServiceDef* s) {
@@ -81,40 +72,37 @@ const upb_MethodDef* upb_ServiceDef_FindMethodByName(const upb_ServiceDef* s,
 }
 
 static void create_service(upb_DefBuilder* ctx,
-                           const UPB_DESC(ServiceDescriptorProto*) svc_proto,
-                           const UPB_DESC(FeatureSet*) parent_features,
+                           const UPB_DESC(ServiceDescriptorProto) * svc_proto,
                            upb_ServiceDef* s) {
-  UPB_DEF_SET_OPTIONS(s->opts, ServiceDescriptorProto, ServiceOptions,
-                      svc_proto);
-  s->resolved_features = _upb_DefBuilder_ResolveFeatures(
-      ctx, parent_features, UPB_DESC(ServiceOptions_features)(s->opts));
+  upb_StringView name;
+  size_t n;
 
   // Must happen before _upb_DefBuilder_Add()
   s->file = _upb_DefBuilder_File(ctx);
 
-  upb_StringView name = UPB_DESC(ServiceDescriptorProto_name)(svc_proto);
+  name = UPB_DESC(ServiceDescriptorProto_name)(svc_proto);
   const char* package = _upb_FileDef_RawPackage(s->file);
   s->full_name = _upb_DefBuilder_MakeFullName(ctx, package, name);
   _upb_DefBuilder_Add(ctx, s->full_name,
                       _upb_DefType_Pack(s, UPB_DEFTYPE_SERVICE));
 
-  size_t n;
   const UPB_DESC(MethodDescriptorProto)* const* methods =
       UPB_DESC(ServiceDescriptorProto_method)(svc_proto, &n);
   s->method_count = n;
-  s->methods = _upb_MethodDefs_New(ctx, n, methods, s->resolved_features, s);
+  s->methods = _upb_MethodDefs_New(ctx, n, methods, s);
+
+  UPB_DEF_SET_OPTIONS(s->opts, ServiceDescriptorProto, ServiceOptions,
+                      svc_proto);
 }
 
-upb_ServiceDef* _upb_ServiceDefs_New(upb_DefBuilder* ctx, int n,
-                                     const UPB_DESC(ServiceDescriptorProto*)
-                                         const* protos,
-                                     const UPB_DESC(FeatureSet*)
-                                         parent_features) {
+upb_ServiceDef* _upb_ServiceDefs_New(
+    upb_DefBuilder* ctx, int n,
+    const UPB_DESC(ServiceDescriptorProto) * const* protos) {
   _upb_DefType_CheckPadding(sizeof(upb_ServiceDef));
 
   upb_ServiceDef* s = _upb_DefBuilder_Alloc(ctx, sizeof(upb_ServiceDef) * n);
   for (int i = 0; i < n; i++) {
-    create_service(ctx, protos[i], parent_features, &s[i]);
+    create_service(ctx, protos[i], &s[i]);
     s[i].index = i;
   }
   return s;

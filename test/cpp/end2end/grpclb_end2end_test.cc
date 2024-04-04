@@ -59,7 +59,6 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -68,6 +67,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
 
 // TODO(dgq): Other scenarios in need of testing:
@@ -606,9 +606,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
         kCallCredsMdKey, kCallCredsMdValue);
-    std::shared_ptr<ChannelCredentials> creds(
-        new SecureChannelCredentials(grpc_composite_channel_credentials_create(
-            channel_creds, call_creds, nullptr)));
+    auto creds = std::make_shared<TestCompositeChannelCredentials>(
+        channel_creds, call_creds);
     call_creds->Unref();
     channel_creds->Unref();
     channel_ = grpc::CreateCustomChannel(
