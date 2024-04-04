@@ -73,6 +73,8 @@ EXPORTS
     grpc_ssl_session_cache_create_lru
     grpc_ssl_session_cache_destroy
     grpc_ssl_session_cache_create_channel_arg
+    grpc_set_ssl_roots_override_callback
+    grpc_max_auth_token_lifetime
     grpc_insecure_credentials_create
     grpc_insecure_server_credentials_create
     grpc_xds_credentials_create
@@ -172,8 +174,6 @@ EXPORTS
     grpc_auth_context_add_property
     grpc_auth_context_add_cstring_property
     grpc_auth_context_set_peer_identity_property_name
-    grpc_set_ssl_roots_override_callback
-    grpc_max_auth_token_lifetime
     grpc_call_set_credentials
     grpc_authorization_policy_provider_static_data_create
     grpc_authorization_policy_provider_file_watcher_create

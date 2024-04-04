@@ -104,25 +104,6 @@ GRPCAPI void grpc_auth_context_add_cstring_property(grpc_auth_context* ctx,
 GRPCAPI int grpc_auth_context_set_peer_identity_property_name(
     grpc_auth_context* ctx, const char* name);
 
-/** Callback for getting the SSL roots override from the application.
-   In case of success, *pem_roots_certs must be set to a NULL terminated string
-   containing the list of PEM encoded root certificates. The ownership is passed
-   to the core and freed (laster by the core) with gpr_free.
-   If this function fails and GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is
-   set to a valid path, it will override the roots specified this func */
-typedef grpc_ssl_roots_override_result (*grpc_ssl_roots_override_callback)(
-    char** pem_root_certs);
-
-/** Setup a callback to override the default TLS/SSL roots.
-   This function is not thread-safe and must be called at initialization time
-   before any ssl credentials are created to have the desired side effect.
-   If GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment is set to a valid path, the
-   callback will not be called. */
-GRPCAPI void grpc_set_ssl_roots_override_callback(
-    grpc_ssl_roots_override_callback cb);
-
-GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
-
 /** --- Call specific credentials. --- */
 
 /** Sets a credentials to a call. Can only be called on the client side before

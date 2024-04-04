@@ -35,6 +35,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
