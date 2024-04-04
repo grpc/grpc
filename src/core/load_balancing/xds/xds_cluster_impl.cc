@@ -403,7 +403,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
     for (const auto& pair : service_labels_) {
-      call_attempt_tracer->AddOptionalLabel(pair.first, pair.second);
+      call_attempt_tracer->SetOptionalLabel(pair.first, pair.second);
     }
   }
   // Handle EDS drops.
@@ -435,7 +435,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
     // Add locality label to per-call metrics if needed.
     if (call_attempt_tracer != nullptr) {
-      call_attempt_tracer->AddOptionalLabel(
+      call_attempt_tracer->SetOptionalLabel(
           ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality,
           subchannel_wrapper->locality());
     }

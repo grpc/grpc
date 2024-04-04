@@ -112,11 +112,8 @@ class OpenTelemetryPlugin::KeyValueIterable
           continue;
         }
         if (!callback(
-                AbslStrViewToOpenTelemetryStrView(
-                    grpc_core::ClientCallTracer::CallAttemptTracer::
-                        OptionalLabelKeyToString(
-                            static_cast<
-                                grpc_core::ClientCallTracer::CallAttemptTracer::
+                AbslStrViewToOpenTelemetryStrView(OptionalLabelKeyToString(
+                    static_cast<grpc_core::ClientCallTracer::CallAttemptTracer::
                                     OptionalLabelKey>(i))),
                 AbslStrViewToOpenTelemetryStrView(
                     optional_labels_[i].as_string_view()))) {

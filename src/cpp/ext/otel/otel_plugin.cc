@@ -330,8 +330,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
   }
   // Store optional label keys for per call metrics
   for (const auto& key : optional_label_keys) {
-    auto optional_key = grpc_core::ClientCallTracer::CallAttemptTracer::
-        OptionalLabelStringToKey(key);
+    auto optional_key = OptionalLabelStringToKey(key);
     if (optional_key.has_value()) {
       per_call_optional_label_bits_.set(
           static_cast<size_t>(optional_key.value()));
@@ -431,6 +430,30 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
           }
         }
       });
+}
+
+namespace {
+constexpr absl::string_view kLocality = "grpc.lb.locality";
+}
+
+absl::string_view OpenTelemetryPlugin::OptionalLabelKeyToString(
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key) {
+  switch (key) {
+    case grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        kLocality:
+      return kLocality;
+    default:
+      grpc_core::Crash("Illegal OptionalLabelKey index");
+  }
+}
+
+absl::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+OpenTelemetryPlugin::OptionalLabelStringToKey(absl::string_view key) {
+  if (key == kLocality) {
+    return grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        kLocality;
+  }
+  return absl::nullopt;
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>

@@ -722,16 +722,14 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         const google_protobuf_Value* value =
             google_protobuf_Struct_FieldsEntry_value(fields_entry);
         if (google_protobuf_Value_has_string_value(value)) {
-          if (UpbStringToAbsl(
-                  google_protobuf_Struct_FieldsEntry_key(fields_entry)) ==
-              ClientCallTracer::CallAttemptTracer::kXdsServiceName) {
+          if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
+                  fields_entry)) == "service_name") {
             cds_update->telemetry_labels.emplace_back(
                 ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
                     kXdsServiceName,
                 UpbStringToAbsl(google_protobuf_Value_string_value(value)));
           } else if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
-                         fields_entry)) == ClientCallTracer::CallAttemptTracer::
-                                               kXdsServiceNamespace) {
+                         fields_entry)) == "service_namespace") {
             cds_update->telemetry_labels.emplace_back(
                 ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
                     kXdsServiceNamespace,

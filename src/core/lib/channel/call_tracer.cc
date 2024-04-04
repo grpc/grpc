@@ -31,53 +31,6 @@
 
 namespace grpc_core {
 
-namespace {
-// Returns a map of the publicly available optional label on per-call metrics.
-const std::map<absl::string_view,
-               ClientCallTracer::CallAttemptTracer::OptionalLabelKey>&
-OptionalLabelKeyMap() {
-  static std::map<absl::string_view,
-                  ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
-      map = {
-          {ClientCallTracer::CallAttemptTracer::kLocality,
-           ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality}};
-  return map;
-}
-}  // namespace
-
-//
-// ClientCallTracer::CallAttemptTracer
-//
-constexpr absl::string_view
-    ClientCallTracer::CallAttemptTracer::kXdsServiceName;
-constexpr absl::string_view
-    ClientCallTracer::CallAttemptTracer::kXdsServiceNamespace;
-constexpr absl::string_view ClientCallTracer::CallAttemptTracer::kLocality;
-
-absl::string_view ClientCallTracer::CallAttemptTracer::OptionalLabelKeyToString(
-    OptionalLabelKey key) {
-  switch (key) {
-    case OptionalLabelKey::kXdsServiceName:
-      return kXdsServiceName;
-    case OptionalLabelKey::kXdsServiceNamespace:
-      return kXdsServiceNamespace;
-    case OptionalLabelKey::kLocality:
-      return kLocality;
-    default:
-      Crash("Illegal OptionalLabelKey index");
-  }
-}
-
-absl::optional<ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
-ClientCallTracer::CallAttemptTracer::OptionalLabelStringToKey(
-    absl::string_view key) {
-  auto it = OptionalLabelKeyMap().find(key);
-  if (it != OptionalLabelKeyMap().end()) {
-    return it->second;
-  }
-  return absl::nullopt;
-}
-
 //
 // ServerCallTracerFactory
 //
@@ -201,7 +154,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     void SetOptionalLabel(OptionalLabelKey key,
                           RefCountedStringValue value) override {
       for (auto* tracer : tracers_) {
-        tracer->AddOptionalLabel(key, value);
+        tracer->SetOptionalLabel(key, value);
       }
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }

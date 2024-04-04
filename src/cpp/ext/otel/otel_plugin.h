@@ -335,6 +335,17 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   };
 
   // StatsPlugin:
+
+  // Returns the string form of \a key
+  static absl::string_view OptionalLabelKeyToString(
+      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key);
+
+  // Returns the OptionalLabelKey form of \a key if \a key is recognized and
+  // is public, absl::nullopt otherwise.
+  static absl::optional<
+      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+  OptionalLabelStringToKey(absl::string_view key);
+
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForChannel(
       const OpenTelemetryPluginBuilder::ChannelScope& scope) const override;

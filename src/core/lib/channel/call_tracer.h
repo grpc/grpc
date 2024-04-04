@@ -135,21 +135,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
       kSize  // should be last
     };
 
-    static constexpr absl::string_view kXdsServiceName =
-        "service_name";  // not public
-    static constexpr absl::string_view kXdsServiceNamespace =
-        "service_namespace";  // not public
-    static constexpr absl::string_view kLocality = "grpc.lb.locality";
-
     ~CallAttemptTracer() override {}
-
-    // Returns the string form of \a key
-    static absl::string_view OptionalLabelKeyToString(OptionalLabelKey key);
-
-    // Returns the OptionalLabelKey form of \a key if \a key is recognized and
-    // is public, absl::nullopt otherwise.
-    static absl::optional<OptionalLabelKey> OptionalLabelStringToKey(
-        absl::string_view key);
 
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
     // and `RecordEnd` should be moved into CallTracerInterface.
