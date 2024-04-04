@@ -32,6 +32,7 @@
 namespace grpc_core {
 
 namespace {
+// Returns a map of the publicly available optional label on per-call metrics.
 const std::map<absl::string_view,
                ClientCallTracer::CallAttemptTracer::OptionalLabelKey>&
 OptionalLabelKeyMap() {
@@ -209,10 +210,10 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     bool IsDelegatingTracer() override { return true; }
 
    private:
-    // There is no additional synchronization needed since
-    // filters/interceptors will be adding call tracers to the context and
-    // these are already synchronized through promises/call combiners
-    // (single promise running per call at any moment).
+    // There is no additional synchronization needed since filters/interceptors
+    // will be adding call tracers to the context and these are already
+    // synchronized through promises/call combiners (single promise running per
+    // call at any moment).
     std::vector<CallAttemptTracer*> tracers_;
   };
   explicit DelegatingClientCallTracer(ClientCallTracer* tracer)
@@ -245,10 +246,10 @@ class DelegatingClientCallTracer : public ClientCallTracer {
   bool IsSampled() override { return tracers_[0]->IsSampled(); }
   bool IsDelegatingTracer() override { return true; }
 
-  // There is no additional synchronization needed since
-  // filters/interceptors will be adding call tracers to the context and
-  // these are already synchronized through promises/call combiners
-  // (single promise running per call at any moment).
+  // There is no additional synchronization needed since filters/interceptors
+  // will be adding call tracers to the context and these are already
+  // synchronized through promises/call combiners (single promise running per
+  // call at any moment).
   void AddTracer(ClientCallTracer* tracer) { tracers_.push_back(tracer); }
 
  private:
@@ -357,12 +358,12 @@ void AddClientCallTracerToContext(grpc_call_context_element* call_context,
     auto* orig_tracer = static_cast<ClientCallTracer*>(
         call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
     if (orig_tracer->IsDelegatingTracer()) {
-      // We already created a delegating tracer. Just add the new tracer
-      // to the list.
+      // We already created a delegating tracer. Just add the new tracer to the
+      // list.
       static_cast<DelegatingClientCallTracer*>(orig_tracer)->AddTracer(tracer);
     } else {
-      // Create a new delegating tracer and add the first tracer and the
-      // new tracer to the list.
+      // Create a new delegating tracer and add the first tracer and the new
+      // tracer to the list.
       auto* delegating_tracer =
           GetContext<Arena>()->ManagedNew<DelegatingClientCallTracer>(
               orig_tracer);
@@ -390,12 +391,12 @@ void AddServerCallTracerToContext(grpc_call_context_element* call_context,
     auto* orig_tracer = static_cast<ServerCallTracer*>(
         call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
     if (orig_tracer->IsDelegatingTracer()) {
-      // We already created a delegating tracer. Just add the new tracer
-      // to the list.
+      // We already created a delegating tracer. Just add the new tracer to the
+      // list.
       static_cast<DelegatingServerCallTracer*>(orig_tracer)->AddTracer(tracer);
     } else {
-      // Create a new delegating tracer and add the first tracer and the
-      // new tracer to the list.
+      // Create a new delegating tracer and add the first tracer and the new
+      // tracer to the list.
       auto* delegating_tracer =
           GetContext<Arena>()->ManagedNew<DelegatingServerCallTracer>(
               orig_tracer);
