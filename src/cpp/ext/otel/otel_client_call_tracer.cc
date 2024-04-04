@@ -212,7 +212,8 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::StartNewTcpTrace() {
 
 void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::AddOptionalLabel(
     OptionalLabelKey key, grpc_core::RefCountedStringValue value) {
-  optional_labels_[key] = std::move(value);
+  GPR_ASSERT(key < OptionalLabelKey::kSize);
+  optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }
 
 //

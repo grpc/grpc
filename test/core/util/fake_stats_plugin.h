@@ -91,7 +91,7 @@ class FakeClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabel(OptionalLabelKey key,
+    void SetOptionalLabel(OptionalLabelKey key,
                           RefCountedStringValue value) override {
       optional_labels_.emplace(key, std::move(value));
     }

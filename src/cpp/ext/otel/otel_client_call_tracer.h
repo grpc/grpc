@@ -92,7 +92,7 @@ class OpenTelemetryPlugin::ClientCallTracer
     void RecordAnnotation(absl::string_view /*annotation*/) override;
     void RecordAnnotation(const Annotation& /*annotation*/) override;
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
-    void AddOptionalLabel(OptionalLabelKey key,
+    void SetOptionalLabel(OptionalLabelKey key,
                           grpc_core::RefCountedStringValue value) override;
 
    private:
@@ -101,9 +101,9 @@ class OpenTelemetryPlugin::ClientCallTracer
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
-    // Preferring std::map<> over std::vector<std::pair<>> to account for
-    // possible duplicates additions.
-    std::map<OptionalLabelKey, grpc_core::RefCountedStringValue>
+    // Avoid std::map to avoid per-call allocations.
+    std::array<grpc_core::RefCountedStringValue,
+               static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;

@@ -64,7 +64,7 @@ absl::string_view ClientCallTracer::CallAttemptTracer::OptionalLabelKeyToString(
     case OptionalLabelKey::kLocality:
       return kLocality;
     default:
-      grpc_core::Crash("Illegal OptionalLabelKey index");
+      Crash("Illegal OptionalLabelKey index");
   }
 }
 
@@ -198,7 +198,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabel(OptionalLabelKey key,
+    void SetOptionalLabel(OptionalLabelKey key,
                           RefCountedStringValue value) override {
       for (auto* tracer : tracers_) {
         tracer->AddOptionalLabel(key, value);

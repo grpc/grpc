@@ -86,9 +86,7 @@ class LabelsInjector {
   // false when callback returns false.
   virtual bool AddOptionalLabels(
       bool is_client,
-      const std::map<
-          grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-          grpc_core::RefCountedStringValue>& optional_labels,
+      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -98,9 +96,8 @@ class LabelsInjector {
   // produce through the AddOptionalLabels method.
   virtual size_t GetOptionalLabelsSize(
       bool is_client,
-      const std::map<
-          grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-          grpc_core::RefCountedStringValue>& optional_labels_span) const = 0;
+      absl::Span<const grpc_core::RefCountedStringValue> optional_labels)
+      const = 0;
 };
 
 class InternalOpenTelemetryPluginOption
@@ -400,8 +397,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   // Instruments for per-call metrics.
   ClientMetrics client_;
   ServerMetrics server_;
-  std::vector<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
-      per_call_optional_label_keys_;
+  static constexpr int kOptionalLabelsSizeLimit = 64;
+  std::bitset<kOptionalLabelsSizeLimit> per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
   using Instrument = absl::variant<
@@ -409,7 +406,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
-  static constexpr int kOptionalLabelsSizeLimit = 64;
   using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
   struct InstrumentData {
     Instrument instrument;

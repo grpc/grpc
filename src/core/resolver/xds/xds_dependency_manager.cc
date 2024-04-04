@@ -639,7 +639,8 @@ void XdsDependencyManager::OnEndpointUpdate(
     for (const auto& priority : endpoint->priorities) {
       for (const auto& p : priority.localities) {
         if (p.second.endpoints.empty()) {
-          empty_localities.insert(p.first->AsHumanReadableString());
+          empty_localities.insert(
+              std::string(p.first->AsHumanReadableString().as_string_view()));
         }
       }
     }

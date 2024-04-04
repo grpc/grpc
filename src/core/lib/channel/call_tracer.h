@@ -131,7 +131,8 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     enum class OptionalLabelKey : std::uint8_t {
       kXdsServiceName,       // not public
       kXdsServiceNamespace,  // not public
-      kLocality
+      kLocality,
+      kSize  // should be last
     };
 
     static constexpr absl::string_view kXdsServiceName =
@@ -162,8 +163,9 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
 
-    // Adds optional labels to be reported by the underlying tracer in a call.
-    virtual void AddOptionalLabel(OptionalLabelKey key,
+    // Sets an optional labels to be reported by the underlying tracer in a
+    // call.
+    virtual void SetOptionalLabel(OptionalLabelKey key,
                                   RefCountedStringValue value) = 0;
   };
 

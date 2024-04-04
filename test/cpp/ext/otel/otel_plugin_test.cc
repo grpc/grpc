@@ -840,6 +840,34 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
       "");
 }
 
+// Tests that when locality label is injected but not enabled by the plugin, the
+// label is not recorded.
+TEST_F(OpenTelemetryPluginEnd2EndTest,
+       OptionalPerCallLocalityLabelNotRecordedWhenNotEnabled) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .set_labels_to_inject(
+              {{grpc_core::ClientCallTracer::CallAttemptTracer::
+                    OptionalLabelKey::kLocality,
+                grpc_core::RefCountedStringValue("locality")}})));
+  SendRPC();
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains("grpc.client.attempt.duration"); });
+  // Verify client side metric (grpc.client.attempt.duration) does not see the
+  // locality label.
+  ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
+  const auto& client_duration_attributes =
+      data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
+  EXPECT_THAT(
+      client_duration_attributes,
+      ::testing::Not(::testing::Contains(::testing::Key("grpc.lb.locality"))));
+}
+
 TEST_F(OpenTelemetryPluginEnd2EndTest,
        UnknownLabelDoesNotShowOnPerCallMetrics) {
   Init(
@@ -935,24 +963,18 @@ class CustomLabelInjector : public grpc::internal::LabelsInjector {
       grpc::internal::LabelsIterable* /*labels_from_incoming_metadata*/)
       const override {}
 
-  bool AddOptionalLabels(
-      bool /*is_client*/,
-      const std::map<
-          grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-          grpc_core::RefCountedStringValue>&
-      /*optional_labels*/,
-      opentelemetry::nostd::function_ref<
-          bool(opentelemetry::nostd::string_view,
-               opentelemetry::common::AttributeValue)>
-      /*callback*/) const override {
+  bool AddOptionalLabels(bool /*is_client*/,
+                         absl::Span<const grpc_core::RefCountedStringValue>
+                         /*optional_labels*/,
+                         opentelemetry::nostd::function_ref<
+                             bool(opentelemetry::nostd::string_view,
+                                  opentelemetry::common::AttributeValue)>
+                         /*callback*/) const override {
     return true;
   }
 
   size_t GetOptionalLabelsSize(
-      bool /*is_client*/,
-      const std::map<
-          grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-          grpc_core::RefCountedStringValue>&
+      bool /*is_client*/, absl::Span<const grpc_core::RefCountedStringValue>
       /*optional_labels_span*/) const override {
     return 0;
   }

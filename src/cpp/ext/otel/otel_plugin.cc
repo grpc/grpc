@@ -333,7 +333,8 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
     auto optional_key = grpc_core::ClientCallTracer::CallAttemptTracer::
         OptionalLabelStringToKey(key);
     if (optional_key.has_value()) {
-      per_call_optional_label_keys_.push_back(optional_key.value());
+      per_call_optional_label_bits_.set(
+          static_cast<size_t>(optional_key.value()));
     }
   }
   // Non-per-call metrics.

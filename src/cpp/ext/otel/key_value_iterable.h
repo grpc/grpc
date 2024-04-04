@@ -56,9 +56,7 @@ class OpenTelemetryPlugin::KeyValueIterable
           additional_labels,
       const OpenTelemetryPlugin::ActivePluginOptionsView*
           active_plugin_options_view,
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          optional_labels,
+      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
       bool record_optional_labels, bool is_client,
       const OpenTelemetryPlugin* otel_plugin)
       : injected_labels_from_plugin_options_(
@@ -105,16 +103,23 @@ class OpenTelemetryPlugin::KeyValueIterable
     }
     // Add per-call optional labels
     if (record_optional_labels_) {
-      for (const auto& optional_label_key :
-           otel_plugin_->per_call_optional_label_keys_) {
-        auto it = optional_labels_.find(optional_label_key);
-        if (!callback(AbslStrViewToOpenTelemetryStrView(
-                          grpc_core::ClientCallTracer::CallAttemptTracer::
-                              OptionalLabelKeyToString(optional_label_key)),
-                      it != optional_labels_.end()
-                          ? AbslStrViewToOpenTelemetryStrView(
-                                it->second.as_string_view())
-                          : "")) {
+      for (size_t i = 0;
+           i <
+           static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
+                                   OptionalLabelKey::kSize);
+           ++i) {
+        if (!otel_plugin_->per_call_optional_label_bits_.test(i)) {
+          continue;
+        }
+        if (!callback(
+                AbslStrViewToOpenTelemetryStrView(
+                    grpc_core::ClientCallTracer::CallAttemptTracer::
+                        OptionalLabelKeyToString(
+                            static_cast<
+                                grpc_core::ClientCallTracer::CallAttemptTracer::
+                                    OptionalLabelKey>(i))),
+                AbslStrViewToOpenTelemetryStrView(
+                    optional_labels_[i].as_string_view()))) {
           return false;
         }
       }
@@ -151,9 +156,7 @@ class OpenTelemetryPlugin::KeyValueIterable
       additional_labels_;
   const OpenTelemetryPlugin::ActivePluginOptionsView*
       active_plugin_options_view_;
-  std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-           grpc_core::RefCountedStringValue>
-      optional_labels_;
+  absl::Span<const grpc_core::RefCountedStringValue> optional_labels_;
   bool record_optional_labels_;
   bool is_client_;
   const OpenTelemetryPlugin* otel_plugin_;

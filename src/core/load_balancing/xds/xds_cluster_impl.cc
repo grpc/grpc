@@ -191,8 +191,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
   class StatsSubchannelWrapper final : public DelegatingSubchannel {
    public:
     // If load reporting is enabled and we have an XdsClusterLocalityStats
-    // object, that object already contains the locality labels.  We
-    // need to store the locality labels directly only in the case where
+    // object, that object already contains the locality label.  We
+    // need to store the locality label directly only in the case where
     // load reporting is disabled.
     using LocalityData = absl::variant<
         RefCountedStringValue /*locality*/,
@@ -209,7 +209,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           locality_data_,
           [](RefCountedStringValue locality) { return locality; },
           [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
-            return locality_stats->locality_name()->locality();
+            return locality_stats->locality_name()->AsHumanReadableString();
           });
     }
 
@@ -433,7 +433,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   if (complete_pick != nullptr) {
     auto* subchannel_wrapper =
         static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
-    // Add locality labels to per-call metrics if needed.
+    // Add locality label to per-call metrics if needed.
     if (call_attempt_tracer != nullptr) {
       call_attempt_tracer->AddOptionalLabel(
           ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality,
@@ -776,7 +776,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     const grpc_resolved_address& address, const ChannelArgs& per_address_args,
     const ChannelArgs& args) {
   if (parent()->shutting_down_) return nullptr;
-  // Wrap the subchannel so that we pass along the locality labels and
+  // Wrap the subchannel so that we pass along the locality label and
   // (if load reporting is enabled) the locality stats object, which
   // will be used by the picker.
   auto locality_name = per_address_args.GetObjectRef<XdsLocalityName>();
@@ -803,7 +803,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   if (locality_stats != nullptr) {
     locality_data = std::move(locality_stats);
   } else {
-    locality_data = locality_name->locality();
+    locality_data = locality_name->AsHumanReadableString();
   }
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
