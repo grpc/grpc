@@ -104,25 +104,6 @@ GRPCAPI void grpc_auth_context_add_cstring_property(grpc_auth_context* ctx,
 GRPCAPI int grpc_auth_context_set_peer_identity_property_name(
     grpc_auth_context* ctx, const char* name);
 
-/** --- SSL Session Cache. ---
-
-    A SSL session cache object represents a way to cache client sessions
-    between connections. Only ticket-based resumption is supported. */
-
-typedef struct grpc_ssl_session_cache grpc_ssl_session_cache;
-
-/** Create LRU cache for client-side SSL sessions with the given capacity.
-    If capacity is < 1, a default capacity is used instead. */
-GRPCAPI grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(
-    size_t capacity);
-
-/** Destroy SSL session cache. */
-GRPCAPI void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache);
-
-/** Create a channel arg with the given cache object. */
-GRPCAPI grpc_arg
-grpc_ssl_session_cache_create_channel_arg(grpc_ssl_session_cache* cache);
-
 /** Callback for getting the SSL roots override from the application.
    In case of success, *pem_roots_certs must be set to a NULL terminated string
    containing the list of PEM encoded root certificates. The ownership is passed

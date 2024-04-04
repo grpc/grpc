@@ -1053,6 +1053,27 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 GRPCAPI void grpc_tls_credentials_options_set_send_client_ca_list(
     grpc_tls_credentials_options* options, bool send_client_ca_list);
 
+/** --- SSL Session Cache. ---
+
+    A SSL session cache object represents a way to cache client sessions
+    between connections. Only ticket-based resumption is supported. */
+
+typedef struct grpc_ssl_session_cache grpc_ssl_session_cache;
+
+/** Create LRU cache for client-side SSL sessions with the given capacity.
+    If capacity is < 1, a default capacity is used instead. */
+GRPCAPI grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(
+    size_t capacity);
+
+/** Destroy SSL session cache. */
+GRPCAPI void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache);
+
+/** Create a channel arg with the given cache object. */
+GRPCAPI grpc_arg
+grpc_ssl_session_cache_create_channel_arg(grpc_ssl_session_cache* cache);
+
+/** --- insecure credentials --- */
+
 /**
  * EXPERIMENTAL API - Subject to change
  *

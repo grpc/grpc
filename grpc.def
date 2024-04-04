@@ -70,6 +70,9 @@ EXPORTS
     grpc_tls_credentials_options_set_crl_directory
     grpc_tls_credentials_options_set_verify_server_cert
     grpc_tls_credentials_options_set_send_client_ca_list
+    grpc_ssl_session_cache_create_lru
+    grpc_ssl_session_cache_destroy
+    grpc_ssl_session_cache_create_channel_arg
     grpc_insecure_credentials_create
     grpc_insecure_server_credentials_create
     grpc_xds_credentials_create
@@ -169,9 +172,6 @@ EXPORTS
     grpc_auth_context_add_property
     grpc_auth_context_add_cstring_property
     grpc_auth_context_set_peer_identity_property_name
-    grpc_ssl_session_cache_create_lru
-    grpc_ssl_session_cache_destroy
-    grpc_ssl_session_cache_create_channel_arg
     grpc_set_ssl_roots_override_callback
     grpc_max_auth_token_lifetime
     grpc_call_set_credentials
