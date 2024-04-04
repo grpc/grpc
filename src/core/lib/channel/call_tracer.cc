@@ -291,10 +291,10 @@ class DelegatingServerCallTracer : public ServerCallTracer {
   void AddTracer(ServerCallTracer* tracer) { tracers_.push_back(tracer); }
 
  private:
-  // The ServerCallTracerFilter will be responsible for making sure that
-  // the tracers are added in a thread-safe manner. It is imagined that
-  // the filter will just invoke the factories in the server call tracer
-  // factory list sequentially, removing the need for any synchronization.
+  // The ServerCallTracerFilter will be responsible for making sure that the
+  // tracers are added in a thread-safe manner. It is imagined that the filter
+  // will just invoke the factories in the server call tracer factory list
+  // sequentially, removing the need for any synchronization.
   std::vector<ServerCallTracer*> tracers_;
 };
 
