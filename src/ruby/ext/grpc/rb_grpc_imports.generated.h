@@ -429,6 +429,9 @@ extern grpc_call_ref_type grpc_call_ref_import;
 typedef void(*grpc_call_unref_type)(grpc_call* call);
 extern grpc_call_unref_type grpc_call_unref_import;
 #define grpc_call_unref grpc_call_unref_import
+typedef grpc_call_error(*grpc_call_set_credentials_type)(grpc_call* call, grpc_call_credentials* creds);
+extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
+#define grpc_call_set_credentials grpc_call_set_credentials_import
 typedef grpc_call_error(*grpc_server_request_call_type)(grpc_server* server, grpc_call** call, grpc_call_details* details, grpc_metadata_array* request_metadata, grpc_completion_queue* cq_bound_to_call, grpc_completion_queue* cq_for_notification, void* tag_new);
 extern grpc_server_request_call_type grpc_server_request_call_import;
 #define grpc_server_request_call grpc_server_request_call_import
@@ -567,9 +570,6 @@ extern grpc_auth_context_add_cstring_property_type grpc_auth_context_add_cstring
 typedef int(*grpc_auth_context_set_peer_identity_property_name_type)(grpc_auth_context* ctx, const char* name);
 extern grpc_auth_context_set_peer_identity_property_name_type grpc_auth_context_set_peer_identity_property_name_import;
 #define grpc_auth_context_set_peer_identity_property_name grpc_auth_context_set_peer_identity_property_name_import
-typedef grpc_call_error(*grpc_call_set_credentials_type)(grpc_call* call, grpc_call_credentials* creds);
-extern grpc_call_set_credentials_type grpc_call_set_credentials_import;
-#define grpc_call_set_credentials grpc_call_set_credentials_import
 typedef grpc_authorization_policy_provider*(*grpc_authorization_policy_provider_static_data_create_type)(const char* authz_policy, grpc_status_code* code, const char** error_details);
 extern grpc_authorization_policy_provider_static_data_create_type grpc_authorization_policy_provider_static_data_create_import;
 #define grpc_authorization_policy_provider_static_data_create grpc_authorization_policy_provider_static_data_create_import

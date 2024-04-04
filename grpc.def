@@ -128,6 +128,7 @@ EXPORTS
     grpc_call_failed_before_recv_message
     grpc_call_ref
     grpc_call_unref
+    grpc_call_set_credentials
     grpc_server_request_call
     grpc_server_register_method
     grpc_server_request_registered_call
@@ -174,7 +175,6 @@ EXPORTS
     grpc_auth_context_add_property
     grpc_auth_context_add_cstring_property
     grpc_auth_context_set_peer_identity_property_name
-    grpc_call_set_credentials
     grpc_authorization_policy_provider_static_data_create
     grpc_authorization_policy_provider_file_watcher_create
     grpc_authorization_policy_provider_release

@@ -48,8 +48,6 @@ typedef struct grpc_auth_property {
   size_t value_length;
 } grpc_auth_property;
 
-typedef struct grpc_call_credentials grpc_call_credentials;
-
 /** Returns NULL when the iterator is at the end. */
 GRPCAPI const grpc_auth_property* grpc_auth_property_iterator_next(
     grpc_auth_property_iterator* it);
@@ -103,13 +101,6 @@ GRPCAPI void grpc_auth_context_add_cstring_property(grpc_auth_context* ctx,
    (which means that no property with this name exists). */
 GRPCAPI int grpc_auth_context_set_peer_identity_property_name(
     grpc_auth_context* ctx, const char* name);
-
-/** --- Call specific credentials. --- */
-
-/** Sets a credentials to a call. Can only be called on the client side before
-   grpc_call_start_batch. */
-GRPCAPI grpc_call_error grpc_call_set_credentials(grpc_call* call,
-                                                  grpc_call_credentials* creds);
 
 /**
  * EXPERIMENTAL - Subject to change.
