@@ -329,6 +329,9 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
             "Compressed message bytes received per server call", "By");
   }
   // Store optional label keys for per call metrics
+  GPR_ASSERT(static_cast<size_t>(
+                 grpc_core::ClientCallTracer::CallAttemptTracer::
+                     OptionalLabelKey::kSize) <= kOptionalLabelsSizeLimit);
   for (const auto& key : optional_label_keys) {
     auto optional_key = OptionalLabelStringToKey(key);
     if (optional_key.has_value()) {

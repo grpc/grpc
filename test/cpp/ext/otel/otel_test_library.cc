@@ -65,7 +65,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
         call_context[GRPC_CONTEXT_CALL_TRACER].value);
     EXPECT_NE(call_tracer, nullptr);
     for (const auto& pair : labels_to_inject_) {
-      call_tracer->AddOptionalLabel(pair.first, pair.second);
+      call_tracer->SetOptionalLabel(pair.first, pair.second);
     }
     return next_promise_factory(std::move(call_args));
   }
