@@ -2819,7 +2819,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   }
 
   RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs call_args) final {
-    class WrappingCallSpine final : public CallSpineInterface {
+    class WrappingCallSpine final : public PipeBasedCallSpine {
      public:
       WrappingCallSpine(ClientPromiseBasedCall* call,
                         ClientMetadataHandle metadata)
@@ -2858,10 +2858,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
 
       Pipe<MessageHandle>& server_to_client_messages() override {
         return call_->server_to_client_messages_;
-      }
-
-      Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
-        return server_trailing_metadata_;
       }
 
       Latch<ServerMetadataHandle>& cancel_latch() override {
@@ -3701,7 +3697,7 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Server Call
 
-class ServerCallSpine final : public CallSpineInterface,
+class ServerCallSpine final : public PipeBasedCallSpine,
                               public ServerCallContext,
                               public BasicPromiseBasedCall {
  public:
@@ -3720,9 +3716,6 @@ class ServerCallSpine final : public CallSpineInterface,
   Pipe<MessageHandle>& server_to_client_messages() override {
     return server_to_client_messages_;
   }
-  Pipe<ServerMetadataHandle>& server_trailing_metadata() override {
-    return server_trailing_metadata_;
-  }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
   Party& party() override { return *this; }
   Arena* arena() override { return BasicPromiseBasedCall::arena(); }
@@ -3736,7 +3729,7 @@ class ServerCallSpine final : public CallSpineInterface,
   }
   void CancelWithError(grpc_error_handle error) override {
     SpawnInfallible("CancelWithError", [this, error = std::move(error)] {
-      std::ignore = Cancel(ServerMetadataFromStatus(error));
+      PushServerTrailingMetadata(ServerMetadataFromStatus(error));
       return Empty{};
     });
   }

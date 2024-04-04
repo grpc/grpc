@@ -889,18 +889,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
   auto spine = GetContext<CallContext>()->MakeCallSpine(std::move(call_args));
   transport->client_transport()->StartCall(CallHandler{spine});
-  return Map(spine->server_trailing_metadata().receiver.Next(),
-             [](NextResult<ServerMetadataHandle> r) {
-               if (r.has_value()) {
-                 auto md = std::move(r.value());
-                 md->Set(GrpcStatusFromWire(), true);
-                 return md;
-               }
-               auto m = GetContext<Arena>()->MakePooled<ServerMetadata>();
-               m->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-               m->Set(GrpcCallWasCancelled(), true);
-               return m;
-             });
+  return spine->PullServerTrailingMetadata();
 }
 
 const grpc_channel_filter kClientPromiseBasedTransportFilter =

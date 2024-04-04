@@ -90,7 +90,7 @@ class NextResult final {
   const T& operator*() const;
   T& operator*();
   // Only valid if !has_value()
-  bool cancelled() { return cancelled_; }
+  bool cancelled() const { return cancelled_; }
 
  private:
   RefCountedPtr<pipe_detail::Center<T>> center_;
