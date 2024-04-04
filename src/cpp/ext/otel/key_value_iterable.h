@@ -56,14 +56,17 @@ class OpenTelemetryPlugin::KeyValueIterable
           additional_labels,
       const OpenTelemetryPlugin::ActivePluginOptionsView*
           active_plugin_options_view,
-      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span,
-      bool is_client, const OpenTelemetryPlugin* otel_plugin)
+      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+               grpc_core::RefCountedStringValue>
+          optional_labels,
+      bool record_optional_labels, bool is_client,
+      const OpenTelemetryPlugin* otel_plugin)
       : injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
         active_plugin_options_view_(active_plugin_options_view),
-        optional_labels_(optional_labels_span),
+        optional_labels_(optional_labels),
+        record_optional_labels_(record_optional_labels),
         is_client_(is_client),
         otel_plugin_(otel_plugin) {}
 
@@ -100,6 +103,22 @@ class OpenTelemetryPlugin::KeyValueIterable
         return false;
       }
     }
+    // Add per-call optional labels
+    if (record_optional_labels_) {
+      for (const auto& optional_label_key :
+           otel_plugin_->per_call_optional_label_keys_) {
+        auto it = optional_labels_.find(optional_label_key);
+        if (!callback(AbslStrViewToOpenTelemetryStrView(
+                          grpc_core::ClientCallTracer::CallAttemptTracer::
+                              OptionalLabelKeyToString(optional_label_key)),
+                      it != optional_labels_.end()
+                          ? AbslStrViewToOpenTelemetryStrView(
+                                it->second.as_string_view())
+                          : "")) {
+          return false;
+        }
+      }
+    }
     return true;
   }
 
@@ -132,8 +151,10 @@ class OpenTelemetryPlugin::KeyValueIterable
       additional_labels_;
   const OpenTelemetryPlugin::ActivePluginOptionsView*
       active_plugin_options_view_;
-  absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+  std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+           grpc_core::RefCountedStringValue>
       optional_labels_;
+  bool record_optional_labels_;
   bool is_client_;
   const OpenTelemetryPlugin* otel_plugin_;
 };

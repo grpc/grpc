@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/time.h>
 
@@ -126,13 +127,29 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   // as transparent retry attempts.)
   class CallAttemptTracer : public CallTracerInterface {
    public:
-    enum class OptionalLabelComponent : std::uint8_t {
-      kXdsServiceLabels,
-      kXdsLocalityLabels,
-      kSize,  // keep last
+    // Note that not all of the optional label keys are exposed as public API.
+    enum class OptionalLabelKey : std::uint8_t {
+      kXdsServiceName,       // not public
+      kXdsServiceNamespace,  // not public
+      kLocality
     };
 
+    static constexpr absl::string_view kXdsServiceName =
+        "service_name";  // not public
+    static constexpr absl::string_view kXdsServiceNamespace =
+        "service_namespace";  // not public
+    static constexpr absl::string_view kLocality = "grpc.lb.locality";
+
     ~CallAttemptTracer() override {}
+
+    // Returns the string form of \a key
+    static absl::string_view OptionalLabelKeyToString(OptionalLabelKey key);
+
+    // Returns the OptionalLabelKey form of \a key if \a key is recognized and
+    // is public, absl::nullopt otherwise.
+    static absl::optional<OptionalLabelKey> OptionalLabelStringToKey(
+        absl::string_view key);
+
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
     // and `RecordEnd` should be moved into CallTracerInterface.
     // If the call was cancelled before the recv_trailing_metadata op
@@ -146,9 +163,8 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
 
     // Adds optional labels to be reported by the underlying tracer in a call.
-    virtual void AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> labels) = 0;
+    virtual void AddOptionalLabel(OptionalLabelKey key,
+                                  RefCountedStringValue value) = 0;
   };
 
   ~ClientCallTracer() override {}

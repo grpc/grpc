@@ -32,6 +32,7 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -64,10 +65,7 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
       : region_(std::move(region)),
         zone_(std::move(zone)),
         sub_zone_(std::move(sub_zone)),
-        locality_labels_(
-            std::make_shared<std::map<std::string, std::string>>()) {
-    locality_labels_->emplace("grpc.lb.locality", AsHumanReadableString());
-  }
+        locality_(AsHumanReadableString()) {}
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
@@ -89,9 +87,7 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
   const std::string& region() const { return region_; }
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
-  std::shared_ptr<std::map<std::string, std::string>> locality_labels() const {
-    return locality_labels_;
-  }
+  RefCountedStringValue locality() const { return locality_; }
 
   std::string AsHumanReadableString() const {
     return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
@@ -111,7 +107,7 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
-  std::shared_ptr<std::map<std::string, std::string>> locality_labels_;
+  RefCountedStringValue locality_;
 };
 
 // Drop stats for an xds cluster.

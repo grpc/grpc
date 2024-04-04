@@ -38,9 +38,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/load_balancing/backend_metric_data.h"
-#include "src/core/load_balancing/child_policy_handler.h"
-#include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -64,11 +61,14 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 
@@ -78,8 +78,6 @@ TraceFlag grpc_xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 
 namespace {
 
-using OptionalLabelComponent =
-    ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
 using XdsConfig = XdsDependencyManager::XdsConfig;
 
 //
@@ -197,7 +195,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
     // need to store the locality labels directly only in the case where
     // load reporting is disabled.
     using LocalityData = absl::variant<
-        std::shared_ptr<std::map<std::string, std::string>> /*locality_labels*/,
+        RefCountedStringValue /*locality*/,
         RefCountedPtr<XdsClusterLocalityStats> /*locality_stats*/>;
 
     StatsSubchannelWrapper(
@@ -206,23 +204,19 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
           locality_data_(std::move(locality_data)) {}
 
-    std::shared_ptr<std::map<std::string, std::string>> locality_labels()
-        const {
+    RefCountedStringValue locality() const {
       return Match(
           locality_data_,
-          [](const std::shared_ptr<std::map<std::string, std::string>>&
-                 locality_labels) {
-            return locality_labels;
-          },
+          [](RefCountedStringValue locality) { return locality; },
           [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
-            return locality_stats->locality_name()->locality_labels();
+            return locality_stats->locality_name()->locality();
           });
     }
 
     XdsClusterLocalityStats* locality_stats() const {
       return Match(
           locality_data_,
-          [](const std::shared_ptr<std::map<std::string, std::string>>&) {
+          [](const RefCountedStringValue&) {
             return static_cast<XdsClusterLocalityStats*>(nullptr);
           },
           [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
@@ -247,7 +241,9 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
-    std::shared_ptr<std::map<std::string, std::string>> service_labels_;
+    std::map<ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+             RefCountedStringValue>
+        service_labels_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
@@ -406,8 +402,9 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
-    call_attempt_tracer->AddOptionalLabels(
-        OptionalLabelComponent::kXdsServiceLabels, service_labels_);
+    for (const auto& pair : service_labels_) {
+      call_attempt_tracer->AddOptionalLabel(pair.first, pair.second);
+    }
   }
   // Handle EDS drops.
   const std::string* drop_category;
@@ -438,9 +435,9 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         static_cast<StatsSubchannelWrapper*>(complete_pick->subchannel.get());
     // Add locality labels to per-call metrics if needed.
     if (call_attempt_tracer != nullptr) {
-      call_attempt_tracer->AddOptionalLabels(
-          OptionalLabelComponent::kXdsLocalityLabels,
-          subchannel_wrapper->locality_labels());
+      call_attempt_tracer->AddOptionalLabel(
+          ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality,
+          subchannel_wrapper->locality());
     }
     // Handle load reporting.
     RefCountedPtr<XdsClusterLocalityStats> locality_stats;
@@ -806,7 +803,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   if (locality_stats != nullptr) {
     locality_data = std::move(locality_stats);
   } else {
-    locality_data = locality_name->locality_labels();
+    locality_data = locality_name->locality();
   }
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(

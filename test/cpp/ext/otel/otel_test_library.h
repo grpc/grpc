@@ -75,7 +75,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
-    Options& set_labels_to_inject(std::map<std::string, std::string> labels) {
+    Options& set_labels_to_inject(
+        std::map<
+            grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+            grpc_core::RefCountedStringValue>
+            labels) {
       labels_to_inject = std::move(labels);
       return *this;
     }
@@ -129,7 +133,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
             opentelemetry::sdk::resource::Resource::Create({}));
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector;
     bool use_meter_provider = true;
-    std::map<std::string, std::string> labels_to_inject;
+    std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+             grpc_core::RefCountedStringValue>
+        labels_to_inject;
     absl::AnyInvocable<bool(
         const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter;
@@ -173,7 +179,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
-  std::map<std::string, std::string> labels_to_inject_;
+  std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+           grpc_core::RefCountedStringValue>
+      labels_to_inject_;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader_;
   std::string server_address_;
   std::string canonical_server_address_;

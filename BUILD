@@ -1692,6 +1692,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -4250,6 +4251,7 @@ grpc_cc_library(
     visibility = ["@grpc:xds_client_core"],
     deps = [
         "backoff",
+        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",

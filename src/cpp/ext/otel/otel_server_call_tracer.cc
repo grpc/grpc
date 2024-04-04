@@ -76,6 +76,7 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
         1, KeyValueIterable(/*injected_labels_from_plugin_options=*/{},
                             additional_labels,
                             /*active_plugin_options_view=*/nullptr, {},
+                            /*record_optional_labels=*/false,
                             /*is_client=*/false, otel_plugin_));
   }
 }
@@ -113,7 +114,8 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
   // Currently we do not have any optional labels on the server side.
   KeyValueIterable labels(
       injected_labels_from_plugin_options_, additional_labels,
-      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
+      /*active_plugin_options_view=*/nullptr, /*optional_labels=*/{},
+      /*record_optional_labels=*/false,
       /*is_client=*/false, otel_plugin_);
   if (otel_plugin_->server_.call.duration != nullptr) {
     otel_plugin_->server_.call.duration->Record(
