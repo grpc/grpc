@@ -7,10 +7,6 @@
 
 load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 
-# begin:google_only
-# package(default_applicable_licenses = ["//upb:license"])
-# end:google_only
-
 cc_library(
     name = "lex",
     srcs = [
@@ -35,9 +31,8 @@ cc_test(
     srcs = ["atoi_test.cc"],
     deps = [
         ":lex",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -51,20 +46,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//python/dist:__pkg__",
         "//upb/cmake:__pkg__",
-    ],
-)
-# end:github_only
-
-# begin:github_only
-filegroup(
-    name = "test_srcs",
-    srcs = glob(
-        [
-            "**/*test.cc",
-        ],
-    ),
-    visibility = ["//pkg:__pkg__"],
+        "//python/dist:__pkg__",
+    ]
 )
 # end:github_only
