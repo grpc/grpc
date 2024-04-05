@@ -1758,7 +1758,7 @@ void XdsClient::WatchResource(const XdsResourceType* type,
     if (fetch_needed && (authority_state.xds_channels.empty() ||
                          !authority_state.xds_channels.back()->status().ok())) {
       for (size_t i = authority_state.xds_channels.size();
-           i < xds_servers.size(); i++) {
+           i < xds_servers.size(); ++i) {
         authority_state.xds_channels.emplace_back(
             GetOrCreateXdsChannelLocked(*(xds_servers[i]), "start watch"));
         if (authority_state.xds_channels.back()->status().ok()) {
