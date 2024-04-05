@@ -209,7 +209,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           locality_data_,
           [](RefCountedStringValue locality) { return locality; },
           [](const RefCountedPtr<XdsClusterLocalityStats>& locality_stats) {
-            return locality_stats->locality_name()->AsHumanReadableString();
+            return locality_stats->locality_name()->human_readable_string();
           });
     }
 
@@ -803,7 +803,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   if (locality_stats != nullptr) {
     locality_data = std::move(locality_stats);
   } else {
-    locality_data = locality_name->AsHumanReadableString();
+    locality_data = locality_name->human_readable_string();
   }
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(

@@ -82,7 +82,7 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
         1, KeyValueIterable(
                /*injected_labels_from_plugin_options=*/{}, additional_labels,
                /*active_plugin_options_view=*/nullptr,
-               /*optional_labels=*/{}, /*record_optional_labels=*/false,
+               /*optional_labels=*/{},
                /*is_client=*/true, parent_->otel_plugin_));
   }
 }
@@ -154,11 +154,10 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
            {OpenTelemetryStatusKey(),
             grpc_status_code_to_string(
                 static_cast<grpc_status_code>(status.code()))}}};
-  KeyValueIterable labels(injected_labels_from_plugin_options_,
-                          additional_labels,
-                          &parent_->scope_config_->active_plugin_options_view(),
-                          optional_labels_, /*record_optional_labels=*/true,
-                          /*is_client=*/true, parent_->otel_plugin_);
+  KeyValueIterable labels(
+      injected_labels_from_plugin_options_, additional_labels,
+      &parent_->scope_config_->active_plugin_options_view(), optional_labels_,
+      /*is_client=*/true, parent_->otel_plugin_);
   if (parent_->otel_plugin_->client_.attempt.duration != nullptr) {
     parent_->otel_plugin_->client_.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,

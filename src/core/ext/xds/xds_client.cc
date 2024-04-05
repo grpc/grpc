@@ -2026,7 +2026,7 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
                   "[xds_client %p] cluster=%s eds_service_name=%s "
                   "locality=%s locality_stats=%p",
                   this, cluster_key.first.c_str(), cluster_key.second.c_str(),
-                  locality_name->AsHumanReadableString().c_str(),
+                  locality_name->human_readable_string().c_str(),
                   locality_state.locality_stats);
         }
       }

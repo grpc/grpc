@@ -635,12 +635,12 @@ void XdsDependencyManager::OnEndpointUpdate(
     it->second.update.resolution_note =
         absl::StrCat("EDS resource ", name, " contains no localities");
   } else {
-    std::set<std::string> empty_localities;
+    std::set<absl::string_view> empty_localities;
     for (const auto& priority : endpoint->priorities) {
       for (const auto& p : priority.localities) {
         if (p.second.endpoints.empty()) {
           empty_localities.insert(
-              std::string(p.first->AsHumanReadableString().as_string_view()));
+              p.first->human_readable_string().as_string_view());
         }
       }
     }

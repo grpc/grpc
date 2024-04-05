@@ -175,7 +175,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
           endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
       if (locality_name != nullptr && weight > 0) {
         auto p = locality_weights.emplace(
-            locality_name->AsHumanReadableString(), weight);
+            locality_name->human_readable_string(), weight);
         if (!p.second && p.first->second != weight) {
           gpr_log(GPR_ERROR,
                   "INTERNAL ERROR: xds_wrr_locality found different weights "

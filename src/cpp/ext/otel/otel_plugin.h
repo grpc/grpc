@@ -409,7 +409,8 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   ClientMetrics client_;
   ServerMetrics server_;
   static constexpr int kOptionalLabelsSizeLimit = 64;
-  std::bitset<kOptionalLabelsSizeLimit> per_call_optional_label_bits_;
+  using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
+  OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
   using Instrument = absl::variant<
@@ -417,7 +418,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       std::unique_ptr<opentelemetry::metrics::Counter<double>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
       std::unique_ptr<opentelemetry::metrics::Histogram<double>>>;
-  using OptionalLabelsBitSet = std::bitset<kOptionalLabelsSizeLimit>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;

@@ -57,14 +57,12 @@ class OpenTelemetryPlugin::KeyValueIterable
       const OpenTelemetryPlugin::ActivePluginOptionsView*
           active_plugin_options_view,
       absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
-      bool record_optional_labels, bool is_client,
-      const OpenTelemetryPlugin* otel_plugin)
+      bool is_client, const OpenTelemetryPlugin* otel_plugin)
       : injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
         additional_labels_(additional_labels),
         active_plugin_options_view_(active_plugin_options_view),
         optional_labels_(optional_labels),
-        record_optional_labels_(record_optional_labels),
         is_client_(is_client),
         otel_plugin_(otel_plugin) {}
 
@@ -102,12 +100,12 @@ class OpenTelemetryPlugin::KeyValueIterable
       }
     }
     // Add per-call optional labels
-    if (record_optional_labels_) {
-      for (size_t i = 0;
-           i <
-           static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                   OptionalLabelKey::kSize);
-           ++i) {
+    if (!optional_labels_.empty()) {
+      GPR_ASSERT(
+          optional_labels_.size() ==
+          static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
+                                  OptionalLabelKey::kSize));
+      for (size_t i = 0; i < optional_labels_.size(); ++i) {
         if (!otel_plugin_->per_call_optional_label_bits_.test(i)) {
           continue;
         }
@@ -154,7 +152,6 @@ class OpenTelemetryPlugin::KeyValueIterable
   const OpenTelemetryPlugin::ActivePluginOptionsView*
       active_plugin_options_view_;
   absl::Span<const grpc_core::RefCountedStringValue> optional_labels_;
-  bool record_optional_labels_;
   bool is_client_;
   const OpenTelemetryPlugin* otel_plugin_;
 };

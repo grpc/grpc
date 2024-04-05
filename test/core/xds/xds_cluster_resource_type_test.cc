@@ -1657,7 +1657,7 @@ TEST_F(TelemetryLabelTest, MissingMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_TRUE(resource.telemetry_labels.empty());
+  EXPECT_THAT(resource.telemetry_labels, ::testing::ElementsAre());
 }
 
 TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
@@ -1675,7 +1675,7 @@ TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_TRUE(resource.telemetry_labels.empty());
+  EXPECT_THAT(resource.telemetry_labels, ::testing::ElementsAre());
 }
 
 TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {

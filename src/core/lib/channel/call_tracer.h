@@ -149,8 +149,8 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
 
-    // Sets an optional labels to be reported by the underlying tracer in a
-    // call.
+    // Sets an optional label on the per-attempt metrics recorded at the end of
+    // the attempt.
     virtual void SetOptionalLabel(OptionalLabelKey key,
                                   RefCountedStringValue value) = 0;
   };

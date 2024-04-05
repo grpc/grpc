@@ -64,7 +64,10 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
   XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
-        sub_zone_(std::move(sub_zone)) {}
+        sub_zone_(std::move(sub_zone)),
+        human_readable_string_(RefCountedStringValue(
+            absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                            region_, zone_, sub_zone_))) {}
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
@@ -87,10 +90,8 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
 
-  RefCountedStringValue AsHumanReadableString() const {
-    return RefCountedStringValue(
-        absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                        region_, zone_, sub_zone_));
+  const RefCountedStringValue& human_readable_string() const {
+    return human_readable_string_;
   }
 
   // Channel args traits.
@@ -106,6 +107,7 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
+  RefCountedStringValue human_readable_string_;
 };
 
 // Drop stats for an xds cluster.
