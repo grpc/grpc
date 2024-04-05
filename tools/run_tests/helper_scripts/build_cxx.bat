@@ -118,7 +118,8 @@ If "%GRPC_CMAKE_GENERATOR%" == "Ninja" (
   cmake -G "%GRPC_CMAKE_GENERATOR%" -A "%GRPC_CMAKE_ARCHITECTURE%" %CMAKE_SYSTEM_VERSION_ARG% -DCMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE=x64 -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUILD_TESTS=ON -DgRPC_BUILD_MSVC_MP_COUNT=%GRPC_RUN_TESTS_JOBS% -DCMAKE_INSTALL_PREFIX="%INSTALL_PATH%" %* ../.. || goto :error
 
   @rem GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
-  cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% -j%GRPC_RUN_TESTS_JOBS% || goto :error
+  @rem Don't add -j option here because it will disable gRPC_BUILD_MSVC_MP_COUNT option
+  cmake --build . --target buildtests_%GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX% --config %MSBUILD_CONFIG% || goto :error
 )
 
 endlocal
