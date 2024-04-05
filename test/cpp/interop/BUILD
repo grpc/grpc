@@ -82,10 +82,10 @@ grpc_cc_library(
     srcs = [
         "interop_server.cc",
     ],
-    language = "C++",
     external_deps = [
         "absl/log:check",
     ],
+    language = "C++",
     deps = [
         ":server_helper_lib",
         "//:grpcpp_orca_service",
