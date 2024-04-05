@@ -21,6 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
+#include <thread>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -144,6 +147,29 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
         std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
         plugin_options;
     absl::flat_hash_set<absl::string_view> optional_label_keys;
+  };
+
+  class MetricsCollectorThread {
+   public:
+    using ResultType = absl::flat_hash_map<
+        std::string,
+        std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>;
+    MetricsCollectorThread(OpenTelemetryPluginEnd2EndTest* test,
+                           grpc_core::Duration interval, int iterations,
+                           std::function<bool(const ResultType&)> predicate);
+    ~MetricsCollectorThread();
+    const ResultType& Stop();
+
+   private:
+    void Run();
+
+    OpenTelemetryPluginEnd2EndTest* test_;
+    grpc_core::Duration interval_;
+    int iterations_;
+    std::function<bool(const ResultType&)> predicate_;
+    ResultType data_points_;
+    std::atomic_bool finished_{false};
+    std::thread thread_;
   };
 
   // Note that we can't use SetUp() here since we want to send in parameters.
