@@ -274,9 +274,10 @@ grpc_build_artifact_task(
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
+# Building 39 here since default Python version in testing image is 3.9.
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp38",
-    build_script = "build_artifact_python_linux_x64_cp38.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp39",
+    build_script = "build_artifact_python_linux_x64_cp39.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
@@ -287,7 +288,7 @@ grpc_build_artifact_task(
     # TODO(jtattermusch): add more python artifacts once they are migrated from artifact_targets.py
     artifact_deps = [
         "artifact_python_linux_x64_manylinux2014_cp312",
-        "artifact_python_linux_x64_manylinux2014_cp38",
+        "artifact_python_linux_x64_manylinux2014_cp39",
     ],
     build_script = "build_package_python_linux.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
