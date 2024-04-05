@@ -241,9 +241,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
-    std::vector<std::pair<ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-                          RefCountedStringValue>>
-        service_labels_;
+    RefCountedStringValue service_telemetry_label;
+    RefCountedStringValue namespace_telemetry_label;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
@@ -387,7 +386,10 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
-      service_labels_(xds_cluster_impl_lb->cluster_resource_->telemetry_labels),
+      service_telemetry_label(
+          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label),
+      namespace_telemetry_label(
+          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
@@ -402,9 +404,14 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
-    for (const auto& pair : service_labels_) {
-      call_attempt_tracer->SetOptionalLabel(pair.first, pair.second);
-    }
+    call_attempt_tracer->SetOptionalLabel(
+        grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+            kXdsServiceName,
+        service_telemetry_label);
+    call_attempt_tracer->SetOptionalLabel(
+        grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+            kXdsServiceNamespace,
+        namespace_telemetry_label);
   }
   // Handle EDS drops.
   const std::string* drop_category;

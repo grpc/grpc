@@ -65,9 +65,9 @@ class XdsLocalityName final : public RefCounted<XdsLocalityName> {
       : region_(std::move(region)),
         zone_(std::move(zone)),
         sub_zone_(std::move(sub_zone)),
-        human_readable_string_(RefCountedStringValue(
+        human_readable_string_(
             absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                            region_, zone_, sub_zone_))) {}
+                            region_, zone_, sub_zone_)) {}
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&

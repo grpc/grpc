@@ -254,7 +254,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
         const auto& locality = p.second;
         std::vector<RefCountedStringValue> hierarchical_path = {
             RefCountedStringValue(priority_child_name),
-            RefCountedStringValue(locality_name->human_readable_string())};
+            locality_name->human_readable_string()};
         auto hierarchical_path_attr =
             MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
         for (const auto& endpoint : locality.endpoints) {
