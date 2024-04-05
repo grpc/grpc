@@ -17,7 +17,7 @@
 const upb_MiniTableExtension google_api_http_ext = {
   {72295728, 0, 0, 0, 11, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsExtension | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
   &google__protobuf__MethodOptions_msg_init,
-  {.UPB_PRIVATE(submsg) = &google__api__HttpRule_msg_init},
+  {.submsg = &google__api__HttpRule_msg_init},
 
 };
 

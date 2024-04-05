@@ -203,7 +203,7 @@ struct RbacConfig {
                           ValidationErrors* errors);
       };
 
-      int action;
+      int action = static_cast<int>(Rbac::Action::kDeny);
       std::map<std::string, Policy> policies;
       // Defaults to kNone since its json field is optional.
       Rbac::AuditCondition audit_condition = Rbac::AuditCondition::kNone;
@@ -801,7 +801,7 @@ void RbacConfig::RbacPolicy::Rules::JsonPostLoad(const Json& json,
   if (rbac_action != Rbac::Action::kAllow &&
       rbac_action != Rbac::Action::kDeny) {
     ValidationErrors::ScopedField field(errors, ".action");
-    errors->AddError("unknown action");
+    errors->AddError(absl::StrCat("unknown action ", rbac_action));
   }
   // Parse and validate audit_condition field.
   auto condition = LoadJsonObjectField<int>(json.object(), args,

@@ -1980,7 +1980,7 @@ class BasicPromiseBasedCall : public Call,
                         const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
              args.channel->Ref()),
-        Party(arena, initial_internal_refs),
+        Party(initial_internal_refs),
         external_refs_(initial_external_refs),
         cq_(args.cq) {
     if (args.cq != nullptr) {
@@ -2869,6 +2869,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       }
 
       Party& party() override { return *call_; }
+      Arena* arena() override { return call_->arena(); }
 
       void IncrementRefCount() override { refs_.Ref(); }
       void Unref() override {
@@ -3724,6 +3725,7 @@ class ServerCallSpine final : public CallSpineInterface,
   }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
   Party& party() override { return *this; }
+  Arena* arena() override { return BasicPromiseBasedCall::arena(); }
   void IncrementRefCount() override { InternalRef("CallSpine"); }
   void Unref() override { InternalUnref("CallSpine"); }
 

@@ -213,7 +213,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
     Mutex mu_;
     float weight_ ABSL_GUARDED_BY(&mu_) = 0;
     Timestamp non_empty_since_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
-    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfPast();
+    Timestamp last_update_time_ ABSL_GUARDED_BY(&mu_) = Timestamp::InfFuture();
   };
 
   class WrrEndpointList final : public EndpointList {

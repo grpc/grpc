@@ -8,8 +8,6 @@
 #ifndef UPB_MINI_TABLE_ENUM_H_
 #define UPB_MINI_TABLE_ENUM_H_
 
-#include <stdint.h>
-
 #include "upb/mini_table/internal/enum.h"
 
 // Must be last
@@ -22,9 +20,13 @@ extern "C" {
 #endif
 
 // Validates enum value against range defined by enum mini table.
-UPB_INLINE bool upb_MiniTableEnum_CheckValue(const upb_MiniTableEnum* e,
+UPB_INLINE bool upb_MiniTableEnum_CheckValue(const struct upb_MiniTableEnum* e,
                                              uint32_t val) {
-  return UPB_PRIVATE(_upb_MiniTableEnum_CheckValue)(e, val);
+  _kUpb_FastEnumCheck_Status status = _upb_MiniTable_CheckEnumValueFast(e, val);
+  if (UPB_UNLIKELY(status == _kUpb_FastEnumCheck_CannotCheckFast)) {
+    return _upb_MiniTable_CheckEnumValueSlow(e, val);
+  }
+  return status == _kUpb_FastEnumCheck_ValueIsInEnum ? true : false;
 }
 
 #ifdef __cplusplus

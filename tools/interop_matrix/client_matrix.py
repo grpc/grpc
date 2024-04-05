@@ -298,6 +298,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.60.1", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.61.0", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.62.1", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.63.0", ReleaseInfo(runtimes=["go1.19"])),
         ]
     ),
     "java": OrderedDict(

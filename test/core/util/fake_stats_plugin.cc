@@ -107,7 +107,7 @@ std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
     absl::string_view target_suffix) {
   return FakeStatsPluginBuilder()
       .SetChannelFilter(
-          [target_suffix](const StatsPlugin::ChannelScope& scope) {
+          [target_suffix](const experimental::StatsPluginChannelScope& scope) {
             return absl::EndsWith(scope.target(), target_suffix);
           })
       .BuildAndRegister();

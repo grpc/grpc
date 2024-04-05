@@ -55,7 +55,7 @@
 - name: canary_client_privacy
   description:
     If set, canary client privacy
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -69,7 +69,7 @@
 - name: client_privacy
   description:
     If set, client privacy
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -95,7 +95,7 @@
   uses_polling: true
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: http2_stats_fix
@@ -187,7 +187,7 @@
 - name: server_privacy
   description:
     If set, server privacy
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -215,12 +215,6 @@
   expiry: 2024/09/01
   owner: ctiller@google.com
   test_tags: [resource_quota_test]
-- name: v3_backend_metric_filter
-  description:
-    Use the backend metric filter utilizing the v3 filter api
-  expiry: 2024/05/05
-  owner: ctiller@google.com
-  test_tags: []
 - name: work_serializer_clears_time_cache
   description:
     Have the work serializer clear the time cache when it dispatches work.

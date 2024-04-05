@@ -306,7 +306,7 @@ grpc_cc_library(
     hdrs = [
         "fullstack_unary_ping_pong.h",
     ],
-    deps = [":helpers"],
+    deps = [":helpers_secure"],
 )
 
 grpc_cc_test(
@@ -395,7 +395,7 @@ grpc_cc_library(
     deps = [
         ":helpers",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/cpp/util:test_util_unsecure",
+        "//test/cpp/util:test_util",
     ],
 )
 

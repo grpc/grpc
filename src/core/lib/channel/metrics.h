@@ -28,6 +28,7 @@
 #include "absl/types/span.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/metrics.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -167,19 +168,6 @@ class RegisteredMetricCallback;
 // The StatsPlugin interface.
 class StatsPlugin {
  public:
-  // Configuration (scope) for a specific client channel.
-  class ChannelScope {
-   public:
-    ChannelScope(absl::string_view target, absl::string_view authority)
-        : target_(target), authority_(authority) {}
-
-    absl::string_view target() const { return target_; }
-    absl::string_view authority() const { return authority_; }
-
-   private:
-    absl::string_view target_;
-    absl::string_view authority_;
-  };
   // A general-purpose way for stats plugin to store per-channel or per-server
   // state.
   class ScopeConfig {
@@ -193,7 +181,7 @@ class StatsPlugin {
   // Returns true and a channel-specific ScopeConfig which may then be used to
   // configure the ClientCallTracer in GetClientCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
-      const ChannelScope& scope) const = 0;
+      const experimental::StatsPluginChannelScope& scope) const = 0;
   // Whether this stats plugin is enabled for the server specified by \a args.
   // Returns true and a server-specific ScopeConfig which may then be used to
   // configure the ServerCallTracer in GetServerCallTracer().
@@ -365,7 +353,7 @@ class GlobalStatsPluginRegistry {
   // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
   static StatsPluginGroup GetStatsPluginsForChannel(
-      const StatsPlugin::ChannelScope& scope);
+      const experimental::StatsPluginChannelScope& scope);
   static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
 
  private:
