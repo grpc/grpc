@@ -19,8 +19,7 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
 ## xDS test server/client Docker images
-## We're only testing Python client for now
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
@@ -48,7 +47,7 @@ build_test_app_docker_images() {
     .
 
   docker build \
-    -f tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server \
+    -f src/python/grpcio_tests/tests_py3_only/interop/Dockerfile.server \
     -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     .
 
@@ -176,7 +175,9 @@ main() {
   local failed_tests=0
   test_suites=(
     "gamma.gamma_baseline_test"
+    "gamma.affinity_session_drain_test"
     "gamma.affinity_test"
+    "app_net_ssa_test"
   )
   for test in "${test_suites[@]}"; do
     run_test $test || (( ++failed_tests ))

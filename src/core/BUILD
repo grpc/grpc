@@ -1207,6 +1207,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/transport/handshaker_factory.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "iomgr_fwd",
@@ -1223,6 +1224,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/transport/handshaker_registry.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "handshaker_factory",
@@ -1627,6 +1629,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/iomgr_fwd.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["//:gpr_platform"],
 )
 
