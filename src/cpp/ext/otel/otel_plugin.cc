@@ -111,6 +111,9 @@ class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
         return false;
       }
     }
+    // Since we are saving the optional label values as std::string for callback
+    // gauges, we want to minimize memory usage by filtering out the disabled
+    // optional label values.
     bool filtered = optional_label_values_.size() < optional_label_keys_.size();
     for (size_t i = 0, j = 0; i < optional_label_keys_.size(); ++i) {
       if (!optional_labels_bits_.test(i)) {
