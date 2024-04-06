@@ -405,11 +405,11 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
     call_attempt_tracer->SetOptionalLabel(
-        grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
             kXdsServiceName,
         service_telemetry_label);
     call_attempt_tracer->SetOptionalLabel(
-        grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
             kXdsServiceNamespace,
         namespace_telemetry_label);
   }
