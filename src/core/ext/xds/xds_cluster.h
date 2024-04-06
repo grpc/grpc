@@ -101,8 +101,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  RefCountedStringValue service_telemetry_label;
-  RefCountedStringValue namespace_telemetry_label;
+  RefCountedStringValue service_telemetry_label_;
+  RefCountedStringValue namespace_telemetry_label_;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&

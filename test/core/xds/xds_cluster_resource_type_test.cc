@@ -1635,8 +1635,8 @@ TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.service_telemetry_label.as_string_view(), "abc");
-  EXPECT_EQ(resource.namespace_telemetry_label.as_string_view(), "xyz");
+  EXPECT_EQ(resource.service_telemetry_label_.as_string_view(), "abc");
+  EXPECT_EQ(resource.namespace_telemetry_label_.as_string_view(), "xyz");
 }
 
 TEST_F(TelemetryLabelTest, MissingMetadataField) {
@@ -1651,9 +1651,9 @@ TEST_F(TelemetryLabelTest, MissingMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
+  EXPECT_THAT(resource.service_telemetry_label_.as_string_view(),
               ::testing::IsEmpty());
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
+  EXPECT_THAT(resource.namespace_telemetry_label_.as_string_view(),
               ::testing::IsEmpty());
 }
 
@@ -1672,9 +1672,9 @@ TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
+  EXPECT_THAT(resource.service_telemetry_label_.as_string_view(),
               ::testing::IsEmpty());
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
+  EXPECT_THAT(resource.namespace_telemetry_label_.as_string_view(),
               ::testing::IsEmpty());
 }
 
@@ -1705,8 +1705,8 @@ TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(resource.service_telemetry_label.as_string_view(), "service");
-  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
+  EXPECT_THAT(resource.service_telemetry_label_.as_string_view(), "service");
+  EXPECT_THAT(resource.namespace_telemetry_label_.as_string_view(),
               ::testing::IsEmpty());
 }
 

@@ -364,8 +364,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
     grpc_core::RegisteredMetricCallback* key_;
   };
 
-  // StatsPlugin:
-
   // Returns the string form of \a key
   static absl::string_view OptionalLabelKeyToString(
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key);
@@ -376,6 +374,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
   OptionalLabelStringToKey(absl::string_view key);
 
+  // StatsPlugin:
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForChannel(
       const OpenTelemetryPluginBuilder::ChannelScope& scope) const override;

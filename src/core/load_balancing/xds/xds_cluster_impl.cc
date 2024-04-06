@@ -241,8 +241,8 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
     uint32_t max_concurrent_requests_;
-    RefCountedStringValue service_telemetry_label;
-    RefCountedStringValue namespace_telemetry_label;
+    RefCountedStringValue service_telemetry_label_;
+    RefCountedStringValue namespace_telemetry_label_;
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
@@ -386,10 +386,10 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
     : call_counter_(xds_cluster_impl_lb->call_counter_),
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
-      service_telemetry_label(
-          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label),
-      namespace_telemetry_label(
-          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
+      service_telemetry_label_(
+          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label_),
+      namespace_telemetry_label_(
+          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label_),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
@@ -405,13 +405,12 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
-            kXdsServiceName,
-        service_telemetry_label);
+        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kXdsServiceName,
+        service_telemetry_label_);
     call_attempt_tracer->SetOptionalLabel(
         ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
             kXdsServiceNamespace,
-        namespace_telemetry_label);
+        namespace_telemetry_label_);
   }
   // Handle EDS drops.
   const std::string* drop_category;

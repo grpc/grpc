@@ -724,11 +724,11 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         if (google_protobuf_Value_has_string_value(value)) {
           if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
                   fields_entry)) == "service_name") {
-            cds_update->service_telemetry_label = RefCountedStringValue(
+            cds_update->service_telemetry_label_ = RefCountedStringValue(
                 UpbStringToAbsl(google_protobuf_Value_string_value(value)));
           } else if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
                          fields_entry)) == "service_namespace") {
-            cds_update->namespace_telemetry_label = RefCountedStringValue(
+            cds_update->namespace_telemetry_label_ = RefCountedStringValue(
                 UpbStringToAbsl(google_protobuf_Value_string_value(value)));
           }
         }
