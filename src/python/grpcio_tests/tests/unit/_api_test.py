@@ -14,6 +14,7 @@
 """Test of gRPC Python's application-layer API."""
 
 import logging
+import pytest
 import threading
 import unittest
 
@@ -117,12 +118,24 @@ class ChannelTest(unittest.TestCase):
         channel = grpc.secure_channel("google.com:443", channel_credentials)
         channel.close()
 
-    def test_multiple_secure_channel(self):
+    @pytest.mark.parametrize("use_compute_engine_credentials_in_test", [False, True])
+    def test_multiple_secure_channel(use_compute_engine_credentials_in_test):
         _THREAD_COUNT = 10
         wait_group = test_common.WaitGroup(_THREAD_COUNT)
 
-        def create_secure_channel():
-            channel_credentials = grpc.ssl_channel_credentials()
+        def create_secure_channel(use_compute_engine_credentials):
+            if use_compute_engine_credentials:
+                class TestCallCredentials(grpc.AuthMetadataPlugin):
+                    def __call__(self, context, callback):
+                        callback((), None)
+                test_call_credentials = TestCallCredentials()
+                call_credentials = grpc.metadata_call_credentials(
+                    test_call_credentials, "test call credentials"
+                )
+                channel_credentials = grpc.compute_engine_channel_credentials(call_credentials=call_credentials)
+            else:
+                channel_credentials = grpc.ssl_channel_credentials()
+
             wait_group.done()
             wait_group.wait()
             channel = grpc.secure_channel("google.com:443", channel_credentials)
@@ -130,7 +143,7 @@ class ChannelTest(unittest.TestCase):
 
         threads = []
         for _ in range(_THREAD_COUNT):
-            thread = threading.Thread(target=create_secure_channel)
+            thread = threading.Thread(target=create_secure_channel, args=(use_compute_engine_credentials_in_test,))
             thread.setDaemon(True)
             thread.start()
             threads.append(thread)
