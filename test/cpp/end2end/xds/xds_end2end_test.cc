@@ -32,6 +32,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -245,7 +246,7 @@ class FakeCertificateProviderFactory
       absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
-    GPR_ASSERT(cert_data_map != nullptr);
+    CHECK(cert_data_map != nullptr);
   }
 
   absl::string_view name() const override { return name_; }
@@ -262,7 +263,7 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
       /*config*/) override {
-    GPR_ASSERT(cert_data_map_ != nullptr);
+    CHECK(cert_data_map_ != nullptr);
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         cert_data_map_->Get());
   }
@@ -1005,7 +1006,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    GPR_ASSERT(channel_creds.get() != nullptr);
+    CHECK(channel_creds.get() != nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -1026,7 +1027,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    GPR_ASSERT(channel_creds.get() != nullptr);
+    CHECK(channel_creds.get() != nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
