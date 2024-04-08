@@ -847,7 +847,7 @@ XdsEnd2endTest::CreateTlsFallbackCredentials() {
   options.set_verify_server_certs(true);
   options.set_check_call_host(false);
   auto channel_creds = grpc::experimental::TlsCredentials(options);
-  CHECK(channel_creds.get() != nullptr);
+  CHECK_NE(channel_creds.get(), nullptr);
   return channel_creds;
 }
 
