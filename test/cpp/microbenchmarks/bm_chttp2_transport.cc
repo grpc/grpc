@@ -83,7 +83,7 @@ class PhonyEndpoint : public grpc_endpoint {
   grpc_slice buffered_slice_;
 
   void QueueRead(grpc_slice_buffer* slices, grpc_closure* cb) {
-    CHECK(read_cb_ == nullptr);
+    CHECK_EQ(read_cb_, nullptr);
     if (have_slice_) {
       have_slice_ = false;
       grpc_slice_buffer_add(slices, buffered_slice_);

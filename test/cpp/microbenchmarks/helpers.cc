@@ -25,7 +25,7 @@
 static LibraryInitializer* g_libraryInitializer;
 
 LibraryInitializer::LibraryInitializer() {
-  CHECK(g_libraryInitializer == nullptr);
+  CHECK_EQ(g_libraryInitializer, nullptr);
   g_libraryInitializer = this;
 }
 
