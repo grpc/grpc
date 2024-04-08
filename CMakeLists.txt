@@ -14250,6 +14250,7 @@ target_link_libraries(flow_control_test
   absl::config
   absl::function_ref
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   absl::span
@@ -14934,6 +14935,7 @@ target_include_directories(graceful_shutdown_test
 target_link_libraries(graceful_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -23235,6 +23237,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(remove_stream_from_stalled_lists_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -27431,6 +27434,7 @@ target_include_directories(settings_timeout_test
 target_link_libraries(settings_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -28716,6 +28720,7 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
 target_link_libraries(stream_leak_with_queued_flow_control_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -28896,6 +28901,7 @@ target_include_directories(streams_not_seen_test
 target_link_libraries(streams_not_seen_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -31166,6 +31172,7 @@ target_include_directories(too_many_pings_test
 target_link_libraries(too_many_pings_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )

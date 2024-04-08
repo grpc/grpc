@@ -9915,6 +9915,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -10319,6 +10320,7 @@ targets:
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: grpc_alts_credentials_options_test
   gtest: true
@@ -14553,6 +14555,7 @@ targets:
   - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -17694,6 +17697,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: shutdown_finishes_calls_test
   gtest: true
@@ -18332,6 +18336,7 @@ targets:
   - test/core/transport/chttp2/stream_leak_with_queued_flow_control_update_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: streaming_error_response_test
   gtest: true
@@ -18446,6 +18451,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: string_ref_test
   gtest: true
@@ -19437,6 +19443,7 @@ targets:
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: traced_buffer_list_test
