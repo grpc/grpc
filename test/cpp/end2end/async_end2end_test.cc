@@ -20,6 +20,7 @@
 #include <memory>
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"

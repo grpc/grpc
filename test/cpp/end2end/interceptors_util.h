@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpcpp/channel.h>

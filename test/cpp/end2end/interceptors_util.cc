@@ -18,6 +18,7 @@
 
 #include "test/cpp/end2end/interceptors_util.h"
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include "test/core/util/test_config.h"

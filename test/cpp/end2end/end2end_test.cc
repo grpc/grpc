@@ -19,6 +19,7 @@
 #include <mutex>
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
