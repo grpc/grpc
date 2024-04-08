@@ -245,12 +245,12 @@ static bool QpsDriver() {
   if (scfile) {
     // Read the json data from disk
     FILE* json_file = fopen(absl::GetFlag(FLAGS_scenarios_file).c_str(), "r");
-    CHECK(json_file != nullptr);
+    CHECK_NE(json_file, nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
     char* data = new char[len];
     fseek(json_file, 0, SEEK_SET);
-    CHECK(len == (long)fread(data, 1, len, json_file));
+    CHECK_EQ(len, (long)fread(data, 1, len, json_file));
     fclose(json_file);
     json = std::string(data, data + len);
     delete[] data;
@@ -267,7 +267,7 @@ static bool QpsDriver() {
   bool success = true;
 
   // Make sure that there is at least some valid scenario here
-  CHECK(scenarios.scenarios_size() > 0);
+  CHECK_GT(scenarios.scenarios_size(), 0);
 
   for (int i = 0; i < scenarios.scenarios_size(); i++) {
     if (absl::GetFlag(FLAGS_search_param).empty()) {

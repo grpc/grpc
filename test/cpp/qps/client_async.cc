@@ -476,7 +476,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
     messages_issued_ = 0;
     coalesce_ = coalesce;
     if (coalesce_) {
-      CHECK(messages_per_stream_ != 0);
+      CHECK_NE(messages_per_stream_, 0);
       context_.set_initial_metadata_corked(true);
     }
     stream_ = prepare_req_(stub_, &context_, cq);

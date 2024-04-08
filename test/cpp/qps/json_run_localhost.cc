@@ -136,5 +136,5 @@ int main(int argc, char** argv) {
       delete g_workers[i];
     }
   }
-  CHECK(driver_join_status == 0);
+  CHECK_EQ(driver_join_status, 0);
 }

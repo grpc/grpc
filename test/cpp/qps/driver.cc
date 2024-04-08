@@ -419,7 +419,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
-  CHECK(workers.size() >= num_clients + num_servers);
+  CHECK_GE(workers.size(), num_clients + num_servers);
 
   // Trim to just what we need
   workers.resize(num_clients + num_servers);
@@ -473,7 +473,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (qps_server_target_override.length() > 0) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
-    CHECK(num_servers <= 1);
+    CHECK_LE(num_servers, 1);
     client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }
