@@ -32,6 +32,6 @@ LibraryInitializer::LibraryInitializer() {
 LibraryInitializer::~LibraryInitializer() { g_libraryInitializer = nullptr; }
 
 LibraryInitializer& LibraryInitializer::get() {
-  CHECK(g_libraryInitializer, nullptr);
+  CHECK_NE(g_libraryInitializer, nullptr);
   return *g_libraryInitializer;
 }
