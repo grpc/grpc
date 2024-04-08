@@ -345,7 +345,7 @@ void VerifyChannelDisconnected(grpc_channel* channel,
       cq, grpc_timeout_seconds_to_deadline(5), nullptr);
   CHECK(ev.type == GRPC_OP_COMPLETE);
   CHECK(ev.tag == reinterpret_cast<void*>(2000));
-  CHECK(ev.success == 0);
+  CHECK_EQ(ev.success, 0);
   // We are intentionally not checking the connectivity state since it is
   // propagated in an asynchronous manner which means that we might see an older
   // state. We would eventually get the correct state, but since we have already
@@ -704,7 +704,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   CHECK(status == GRPC_STATUS_OK);
   CHECK(0 == grpc_slice_str_cmp(details, "xyz"));
   CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  CHECK(was_cancelled == 0);
+  CHECK_EQ(was_cancelled, 0);
   CHECK(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   grpc_slice_unref(details);

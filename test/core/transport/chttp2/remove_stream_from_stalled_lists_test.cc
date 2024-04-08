@@ -217,7 +217,7 @@ class TestServer {
         } else if (event.tag == this /* shutdown_and_notify tag */) {
           grpc_core::MutexLock lock(&shutdown_mu_);
           CHECK(shutdown_);
-          CHECK(call_cq == nullptr);
+          CHECK_EQ(call_cq, nullptr);
           got_shutdown_and_notify_tag = true;
         } else {
           CHECK(0);
