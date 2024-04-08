@@ -25,6 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "google/protobuf/timestamp.pb.h"
 
 #include <grpc/support/alloc.h>
@@ -271,7 +272,7 @@ static void ReceiveFinalStatusFromClients(
       // long on some scenarios (e.g. unconstrained streaming_from_server). See
       // https://github.com/grpc/grpc/blob/3bd0cd208ea549760a2daf595f79b91b247fe240/test/cpp/qps/server_async.cc#L176
       // where the shutdown delay pretty much determines the wait here.
-      GPR_ASSERT(!client->stream->Read(&client_status));
+      CHECK(!client->stream->Read(&client_status));
     } else {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get final status from client %zu", i));
@@ -323,7 +324,7 @@ static void ReceiveFinalStatusFromServer(const std::vector<ServerData>& servers,
       result.add_server_stats()->CopyFrom(server_status.stats());
       result.add_server_cores(server_status.cores());
       // That final status should be the last message on the server stream
-      GPR_ASSERT(!server->stream->Read(&server_status));
+      CHECK(!server->stream->Read(&server_status));
     } else {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get final status from server %zu", i));
@@ -407,7 +408,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       workers.push_back(addr);
     }
   }
-  GPR_ASSERT(!workers.empty());
+  CHECK(!workers.empty());
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -418,7 +419,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
-  GPR_ASSERT(workers.size() >= num_clients + num_servers);
+  CHECK(workers.size() >= num_clients + num_servers);
 
   // Trim to just what we need
   workers.resize(num_clients + num_servers);
@@ -472,7 +473,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (qps_server_target_override.length() > 0) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
-    GPR_ASSERT(num_servers <= 1);
+    CHECK(num_servers <= 1);
     client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }

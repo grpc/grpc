@@ -14326,6 +14326,7 @@ targets:
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: qps_worker
@@ -14359,6 +14360,7 @@ targets:
   - test/cpp/qps/usage_timer.cc
   - test/cpp/qps/worker.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: query_extensions_test
