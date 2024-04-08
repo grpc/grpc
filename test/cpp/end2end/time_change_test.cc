@@ -124,8 +124,8 @@ TEST(TimespecTest, GrpcNegativeMillisToTimespec) {
   gpr_timespec ts =
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(-1500)
           .as_timespec(GPR_CLOCK_MONOTONIC);
-  CHECK(ts.tv_sec = -2);
-  CHECK(ts.tv_nsec = 5e8);
+  CHECK(ts.tv_sec == -2);
+  CHECK(ts.tv_nsec == 5e8);
   CHECK(ts.clock_type == GPR_CLOCK_MONOTONIC);
 }
 
