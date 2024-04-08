@@ -19,8 +19,8 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
 ## xDS test server/client Docker images
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-server"
-readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
+readonly SERVER_IMAGE_NAME="us-docker.pkg.dev/grpc-testing/psm-interop/python-server"
+readonly CLIENT_IMAGE_NAME="us-docker.pkg.dev/grpc-testing/psm-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 
