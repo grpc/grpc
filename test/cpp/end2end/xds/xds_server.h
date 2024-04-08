@@ -357,7 +357,7 @@ class AdsServiceImpl
       int client_resource_type_version = 0;
       if (!request.version_info().empty()) {
         CHECK(absl::SimpleAtoi(request.version_info(),
-                                    &client_resource_type_version));
+                               &client_resource_type_version));
       }
       if (check_version_callack_ != nullptr) {
         check_version_callack_(request.type_url(),
