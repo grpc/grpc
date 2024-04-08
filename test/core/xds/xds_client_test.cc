@@ -600,12 +600,16 @@ class XdsClientTest : public ::testing::Test {
     using ResourceUpdateMap = std::map<
         std::pair<std::string /*xds_server*/, std::string /*resource_type*/>,
         uint64_t>;
+    using ServerFailureMap = std::map<std::string /*xds_server*/, uint64_t>;
 
     const ResourceUpdateMap& resource_updates_valid() const {
       return resource_updates_valid_;
     }
     const ResourceUpdateMap& resource_updates_invalid() const {
       return resource_updates_invalid_;
+    }
+    const ServerFailureMap& server_failures() const {
+      return server_failures_;
     }
 
    private:
@@ -623,8 +627,13 @@ class XdsClientTest : public ::testing::Test {
       }
     }
 
+    void ReportServerFailure(absl::string_view xds_server) override {
+      ++server_failures_[std::string(xds_server)];
+    }
+
     ResourceUpdateMap resource_updates_valid_;
     ResourceUpdateMap resource_updates_invalid_;
+    ServerFailureMap server_failures_;
   };
 
   using ResourceCounts =
@@ -851,6 +860,7 @@ TEST_F(XdsClientTest, BasicWatch) {
               ::testing::ElementsAre());
   EXPECT_THAT(GetResourceCounts(), ::testing::ElementsAre());
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Check metrics.
@@ -2277,6 +2287,7 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   // Check metric data.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", true)));
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // Watcher should initially not see any resource reported.
   EXPECT_FALSE(watcher->HasEvent());
   // XdsClient should have created an ADS stream.
@@ -2295,6 +2306,8 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   // Check metric data.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", false)));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair("default_xds_server", 1)));
   // XdsClient should report an error to the watcher.
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
@@ -2318,6 +2331,8 @@ TEST_F(XdsClientTest, StreamClosedByServerWithoutSeeingResponse) {
   // Connection still reported as unhappy until we get a response.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", false)));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair("default_xds_server", 1)));
   // Server now sends the requested resource.
   stream->SendMessageToClient(
       ResponseBuilder(XdsFooResourceType::Get()->type_url())
@@ -2354,6 +2369,7 @@ TEST_F(XdsClientTest, ConnectionFails) {
   transport_factory_->SetAutoCompleteMessagesFromClient(false);
   // Metrics should initially be empty.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre());
+  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre());
   // Start a watch for "foo1".
   auto watcher = StartFooWatch("foo1");
   // Check metric data.
@@ -2386,6 +2402,8 @@ TEST_F(XdsClientTest, ConnectionFails) {
   // Connection reported as unhappy.
   EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
                                           "default_xds_server", false)));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair("default_xds_server", 1)));
   // We should not see a resource-does-not-exist event, because the
   // timer should not be running while the channel is disconnected.
   EXPECT_TRUE(watcher->ExpectNoEvent(absl::Seconds(4)));
@@ -3685,6 +3703,9 @@ TEST_F(XdsClientTest, FederationChannelFailureReportedToWatchers) {
               ::testing::ElementsAre(
                   ::testing::Pair("default_xds_server", true),
                   ::testing::Pair(authority_server.server_uri(), false)));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(
+                  ::testing::Pair(authority_server.server_uri(), 1)));
   // Cancel watch for "foo1".
   CancelFooWatch(watcher.get(), "foo1");
   EXPECT_TRUE(stream->Orphaned());
