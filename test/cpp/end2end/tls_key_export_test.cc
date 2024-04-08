@@ -129,9 +129,9 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   std::string CreateTmpFile() {
     char* name = nullptr;
     FILE* file_descriptor = gpr_tmpfile("GrpcTlsKeyLoggerTest", &name);
-    CHECK(fclose(file_descriptor) == 0);
-    CHECK(file_descriptor != nullptr);
-    CHECK(name != nullptr);
+    CHECK_EQ(fclose(file_descriptor), 0);
+    CHECK_NE(file_descriptor, nullptr);
+    CHECK_NE(name, nullptr);
     std::string name_to_return = name;
     gpr_free(name);
     return name_to_return;

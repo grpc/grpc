@@ -92,7 +92,7 @@ ConnectionAttemptInjector::ConnectionAttemptInjector() {
   // grpc_init() to inject the vtable.
   CHECK(grpc_tcp_client_impl == &kDelayedConnectVTable);
   grpc_core::MutexLock lock(g_mu);
-  CHECK(g_injector == nullptr);
+  CHECK_EQ(g_injector, nullptr);
   g_injector = this;
 }
 
@@ -169,18 +169,18 @@ ConnectionAttemptInjector::QueuedAttempt::QueuedAttempt(
 }
 
 ConnectionAttemptInjector::QueuedAttempt::~QueuedAttempt() {
-  CHECK(closure_ == nullptr);
+  CHECK_EQ(closure_, nullptr);
 }
 
 void ConnectionAttemptInjector::QueuedAttempt::Resume() {
-  CHECK(closure_ != nullptr);
+  CHECK_NE(closure_, nullptr);
   g_original_vtable->connect(closure_, endpoint_, interested_parties_, config_,
                              &address_, deadline_);
   closure_ = nullptr;
 }
 
 void ConnectionAttemptInjector::QueuedAttempt::Fail(grpc_error_handle error) {
-  CHECK(closure_ != nullptr);
+  CHECK_NE(closure_, nullptr);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure_, error);
   closure_ = nullptr;
 }

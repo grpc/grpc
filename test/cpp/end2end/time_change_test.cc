@@ -57,7 +57,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
   if (clock != GPR_CLOCK_REALTIME) {
     return ts;
   }
-  CHECK(ts.tv_nsec >= 0);
+  CHECK_GE(ts.tv_nsec, 0);
   CHECK(ts.tv_nsec < GPR_NS_PER_SEC);
   gpr_mu_lock(&g_mu);
   ts.tv_sec += g_time_shift_sec;

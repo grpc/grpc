@@ -163,13 +163,13 @@ class BackendServiceImpl : public BackendService {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  CHECK(inet_pton(AF_INET, ip_str, &ip4) == 1);
+  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 std::string Ip6ToPackedString(const char* ip_str) {
   struct in6_addr ip6;
-  CHECK(inet_pton(AF_INET6, ip_str, &ip6) == 1);
+  CHECK_EQ(inet_pton(AF_INET6, ip_str, &ip6), 1);
   return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
 }
 
