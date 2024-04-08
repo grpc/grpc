@@ -309,6 +309,8 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /utf-8")
   # Inconsistent object sizes can cause stack corruption and should be treated as an error
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /we4789")
+  # To decrease the size of PDB files
+  set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
@@ -16137,6 +16139,7 @@ target_include_directories(grpclb_api_test
 target_link_libraries(grpclb_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 

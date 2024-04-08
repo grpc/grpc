@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/mem/arena.hpp"
 
@@ -45,7 +46,7 @@ class GrpclbTest : public ::testing::Test {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
+  CHECK(inet_pton(AF_INET, ip_str, &ip4) == 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
@@ -59,7 +60,7 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  GPR_ASSERT(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) != nullptr);
+  CHECK(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) != nullptr);
   return ip_str;
 }
 
