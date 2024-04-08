@@ -19,8 +19,9 @@
 // This benchmark exists to ensure that the benchmark integration is
 // working
 
-#include "absl/log/check.h"
 #include <benchmark/benchmark.h>
+
+#include "absl/log/check.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

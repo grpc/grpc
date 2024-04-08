@@ -20,8 +20,9 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
 #include <benchmark/benchmark.h>
+
+#include "absl/log/check.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>

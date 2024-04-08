@@ -15,8 +15,9 @@
 
 #include <deque>
 
-#include "absl/log/check.h"
 #include <benchmark/benchmark.h>
+
+#include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>

@@ -17,6 +17,7 @@
 //
 
 #include "test/cpp/microbenchmarks/callback_test_service.h"
+
 #include "absl/log/check.h"
 
 namespace grpc {

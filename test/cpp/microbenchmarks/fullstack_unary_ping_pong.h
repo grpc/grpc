@@ -22,9 +22,10 @@
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 
 #include <sstream>
-#include "absl/log/check.h"
 
 #include <benchmark/benchmark.h>
+
+#include "absl/log/check.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
