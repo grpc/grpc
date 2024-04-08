@@ -721,7 +721,7 @@ grpc_cc_binary(
     srcs = ["server_crash_test_client.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:check",
+        "absl/log",
         "gtest",
     ],
     deps = [

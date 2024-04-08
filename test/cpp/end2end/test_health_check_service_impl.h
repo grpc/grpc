@@ -21,6 +21,8 @@
 #include <map>
 #include <mutex>
 
+#include "absl/log/check.h"
+
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
 
