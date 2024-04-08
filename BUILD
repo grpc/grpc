@@ -887,6 +887,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
+    visibility = ["@grpc:grpc_public_hdrs"],
     deps = [
         "channel_arg_names",
         "gpr_public_hdrs",

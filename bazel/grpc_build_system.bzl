@@ -106,6 +106,7 @@ def _update_visibility(visibility):
         "grpclb": PRIVATE,
         "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpc_public_hdrs": PRIVATE,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
         "grpc++_test": PRIVATE,
