@@ -6781,6 +6781,8 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
