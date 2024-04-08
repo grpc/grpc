@@ -32,8 +32,8 @@ class Derived : public Base {
 TEST(DownCastTest, DownCast) {
   Derived d;
   Base* b = &d;
-  EXPECT_EQ(down_cast<Derived*>(b)->i, 3);
-  EXPECT_EQ(down_cast<Derived&>(*b).i, 3);
+  EXPECT_EQ(DownCast<Derived*>(b)->i, 3);
+  EXPECT_EQ(DownCast<Derived&>(*b).i, 3);
 }
 
 }  // namespace
