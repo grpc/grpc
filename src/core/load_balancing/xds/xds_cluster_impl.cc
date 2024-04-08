@@ -44,6 +44,7 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -52,6 +53,7 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -387,9 +389,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
       max_concurrent_requests_(
           xds_cluster_impl_lb->cluster_resource_->max_concurrent_requests),
       service_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label_),
+          xds_cluster_impl_lb->cluster_resource_->service_telemetry_label),
       namespace_telemetry_label_(
-          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label_),
+          xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {

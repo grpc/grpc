@@ -18,6 +18,8 @@
 
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 
+#include <set>
+
 #include "absl/strings/str_join.h"
 
 #include "src/core/ext/xds/xds_routing.h"

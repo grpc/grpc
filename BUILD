@@ -1720,6 +1720,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:metadata_batch",
+        "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
     ],
 )

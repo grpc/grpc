@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
