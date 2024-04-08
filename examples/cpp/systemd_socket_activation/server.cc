@@ -40,8 +40,8 @@ class GreeterServiceImpl final : public Greeter::Service {
   }
 };
 
-void RunServer() {
-  std::string server_address("unix:/tmp/server");
+void RunServer(const std::string addr) {
+  std::string server_address(addr);
   GreeterServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);
@@ -62,7 +62,30 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-  RunServer();
+  std::string target_str;
+  std::string arg_str("--target");
+
+  if (argc > 1) {
+    std::string arg_val = argv[1];
+    size_t start_pos = arg_val.find(arg_str);
+    if (start_pos != std::string::npos) {
+      start_pos += arg_str.size();
+      if (arg_val[start_pos] == '=') {
+        target_str = arg_val.substr(start_pos + 1);
+      } else {
+        std::cout << "The only correct argument syntax is --target="
+                  << std::endl;
+        return 0;
+      }
+    } else {
+      std::cout << "The only acceptable argument is --target=" << std::endl;
+      return 0;
+    }
+  } else {
+    target_str = "unix:/tmp/server";
+  }
+
+  RunServer(target_str);
 
   return 0;
 }

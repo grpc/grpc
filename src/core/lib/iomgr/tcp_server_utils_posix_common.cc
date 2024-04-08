@@ -165,7 +165,7 @@ grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
   fd = grpc_tcp_server_pre_allocated_fd(s);
 
   // Check if FD has been pre-allocated
-  if (fd > 0) {
+  if (fd >= 0) {
     int family = grpc_sockaddr_get_family(addr);
     // Set dsmode value
     if (family == AF_INET6) {
