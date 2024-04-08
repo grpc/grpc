@@ -23,7 +23,6 @@ grpc_cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
     external_deps = [
-        "absl/log:check",
         "benchmark",
     ],
     deps = ["//test/core/util:grpc_test_util"],
@@ -33,7 +32,6 @@ grpc_cc_test(
     name = "bm_channel_args",
     srcs = ["bm_channel_args.cc"],
     external_deps = [
-        "absl/log:check",
         "benchmark",
         "absl/container:btree",
     ],
@@ -48,7 +46,6 @@ grpc_cc_test(
     name = "bm_rng",
     srcs = ["bm_rng.cc"],
     external_deps = [
-        "absl/log:check",
         "benchmark",
         "absl/container:btree",
     ],
@@ -64,7 +61,6 @@ grpc_cc_test(
     srcs = ["bm_exec_ctx.cc"],
     args = grpc_benchmark_args(),
     external_deps = [
-        "absl/log:check",
         "benchmark",
     ],
     uses_event_engine = False,
