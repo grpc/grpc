@@ -160,7 +160,7 @@ class RefCountedPtr {
   template <typename Y,
             std::enable_if_t<std::is_base_of<T, Y>::value, bool> = true>
   RefCountedPtr<Y> TakeAsSubclass() {
-    return RefCountedPtr<Y>(down_cast<Y*>(release()));
+    return RefCountedPtr<Y>(DownCast<Y*>(release()));
   }
 
   template <typename Y,

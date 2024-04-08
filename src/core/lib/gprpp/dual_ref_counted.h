@@ -70,7 +70,7 @@ class DualRefCounted {
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
     return RefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -79,7 +79,7 @@ class DualRefCounted {
                                         const char* reason) {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void Unref() {
@@ -183,7 +183,7 @@ class DualRefCounted {
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass() {
     IncrementWeakRefCount();
     return WeakRefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -192,7 +192,7 @@ class DualRefCounted {
                                                 const char* reason) {
     IncrementWeakRefCount(location, reason);
     return WeakRefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void WeakUnref() {

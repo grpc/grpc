@@ -104,7 +104,7 @@ class InternallyRefCounted : public Orphanable {
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
     return RefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -113,7 +113,7 @@ class InternallyRefCounted : public Orphanable {
                                         const char* reason) {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   GRPC_MUST_USE_RESULT RefCountedPtr<Child> RefIfNonZero() {

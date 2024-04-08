@@ -312,7 +312,7 @@ class RefCounted : public Impl {
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
     return RefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -321,7 +321,7 @@ class RefCounted : public Impl {
                                         const char* reason) {
     IncrementRefCount(location, reason);
     return RefCountedPtr<Subclass>(
-        down_cast<Subclass*>(static_cast<Child*>(this)));
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   // RefIfNonZero() for mutable types.
