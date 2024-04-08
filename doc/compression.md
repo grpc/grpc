@@ -90,6 +90,15 @@ The inheritance of the compression configuration by child RPCs is left up to the
 implementation. Note that in the absence of changes to the parent channel, its
 configuration will be used.
 
+### Deflate Compression
+
+Like HTTP implementations, gRPC implementations MUST use the "deflate"
+compression to mean the zlib structure (defined in 
+[RFC 1950](https://datatracker.ietf.org/doc/html/rfc1950))
+with the deflate compression algorithm (defined in 
+[RFC 1951](https://datatracker.ietf.org/doc/html/rfc1951)).
+Servers and clients MUST NOT send raw deflate data.
+
 ### Test cases
 
 1. When a compression level is not specified for either the channel or the

@@ -42,7 +42,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -57,7 +56,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -208,7 +208,7 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 }
 
 int main(int argc, char** argv) {
-  // TODO(hork): rewrite this test with a custom EventEngine DNS Resolver
+  // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
   if (grpc_core::IsEventEngineDnsEnabled()) {
     gpr_log(
         GPR_ERROR,

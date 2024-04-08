@@ -230,6 +230,7 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:time",
+        "//test/core/util:build",
     ],
 )
 

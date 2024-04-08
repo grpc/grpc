@@ -1,20 +1,23 @@
 # gRPC-core BinderTransport example apps
 
-WIP.
-
 ## Build Instruction
 
-1. Install Android SDK and NDK. Currently we only support SDK version 30.0.3 and
-   NDK version 21.4.7075529 . Make sure you get these exact versions otherwise
-   Bazel might complain.
-
-2. Point environment variables to install locations of SDK and NDK
+1. Install Android SDK and NDK. Only NDK version >= 25 is supported. We tested against SDK Platform `33` and NDK `26.2.11394342`.
+2. Make sure Bazel is at least `7.0`. Use `export OVERRIDE_BAZEL_VERSION=7.1.0` to selected a supported version listed in `bazel/supported_versions.txt` if necessary.
+3. Point environment variables to install locations of SDK and NDK
     ```
-    export ANDROID_HOME=$HOME/Android/Sdk/
-    export ANDROID_NDK_HOME=$HOME/Android/Sdk/ndk/21.4.7075529
+    export ANDROID_HOME=$HOME/android-sdk
+    export ANDROID_NDK_HOME=$HOME/android-sdk/ndk/26.2.11394342
     ```
-3. `bazel build //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app`
-4. `bazel build //examples/android/binder/java/io/grpc/binder/cpp/exampleserver:app`
+4. To build a fat APK that supports `x86_64`, `armv7`, and `arm64`:
+    ```
+    bazel build \
+      --extra_toolchains=@androidndk//:all \
+      --android_platforms=//:android_x86_64,//:android_armv7,//:android_arm64 \
+      --copt=-Wno-unknown-warning-option \
+      //examples/android/binder/java/io/grpc/binder/cpp/exampleserver:app \
+      //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app
+    ```
 5. `adb install
    bazel-bin/examples/android/binder/java/io/grpc/binder/cpp/exampleclient/app.apk`
 6. `adb install

@@ -29,12 +29,11 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -79,42 +78,30 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const uint8_t required_experiments_promise_based_client_call[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
+const char* const description_chaotic_good =
+    "If set, enable the chaotic good load transport (this is mostly here for "
+    "testing)";
+const char* const additional_constraints_chaotic_good = "{}";
+const uint8_t required_experiments_chaotic_good[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
-const char* const description_rfc_max_concurrent_streams =
-    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2. See "
-    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
-const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -141,18 +128,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -162,18 +137,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_write_size_policy =
-    "Try to size writes such that they don't create too large of a backlog";
-const char* const additional_constraints_write_size_policy = "{}";
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -188,10 +153,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -216,29 +181,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
+     additional_constraints_promise_based_client_call,
+     required_experiments_promise_based_client_call, 2, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
+    {"chaotic_good", description_chaotic_good,
+     additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
-    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
-     additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
-     true},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -257,27 +211,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
-    {"write_size_policy", description_write_size_policy,
-     additional_constraints_write_size_policy, nullptr, 0, true, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -289,12 +229,11 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -339,42 +278,30 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const uint8_t required_experiments_promise_based_client_call[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
+const char* const description_chaotic_good =
+    "If set, enable the chaotic good load transport (this is mostly here for "
+    "testing)";
+const char* const additional_constraints_chaotic_good = "{}";
+const uint8_t required_experiments_chaotic_good[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
-const char* const description_rfc_max_concurrent_streams =
-    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2. See "
-    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
-const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -401,18 +328,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -422,18 +337,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_write_size_policy =
-    "Try to size writes such that they don't create too large of a backlog";
-const char* const additional_constraints_write_size_policy = "{}";
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -448,10 +353,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -476,29 +381,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
+     additional_constraints_promise_based_client_call,
+     required_experiments_promise_based_client_call, 2, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
+    {"chaotic_good", description_chaotic_good,
+     additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
-    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
-     additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
-     true},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -517,27 +411,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
-    {"write_size_policy", description_write_size_policy,
-     additional_constraints_write_size_policy, nullptr, 0, true, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -549,12 +429,11 @@ const char* const description_call_status_override_on_cancellation =
     "with cancellation.";
 const char* const additional_constraints_call_status_override_on_cancellation =
     "{}";
+const char* const description_call_v3 = "Promise-based call version 3.";
+const char* const additional_constraints_call_v3 = "{}";
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_client_idleness =
-    "If enabled, client channel idleness is enabled by default.";
-const char* const additional_constraints_client_idleness = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -599,42 +478,30 @@ const char* const description_pending_queue_cap =
     "grpc_server_request_call or grpc_server_request_registered_call (or their "
     "wrappers in the C++ API).";
 const char* const additional_constraints_pending_queue_cap = "{}";
-const char* const description_pick_first_happy_eyeballs =
-    "Use Happy Eyeballs in pick_first.";
-const char* const additional_constraints_pick_first_happy_eyeballs = "{}";
 const char* const description_promise_based_client_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_client_call = "{}";
+const uint8_t required_experiments_promise_based_client_call[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_promise_based_server_call =
     "If set, use the new gRPC promise based call code when it's appropriate "
     "(ie when all filters in a stack are promise based)";
 const char* const additional_constraints_promise_based_server_call = "{}";
-const char* const description_registered_method_lookup_in_transport =
-    "Change registered method's lookup point to transport";
-const char* const additional_constraints_registered_method_lookup_in_transport =
-    "{}";
+const char* const description_chaotic_good =
+    "If set, enable the chaotic good load transport (this is mostly here for "
+    "testing)";
+const char* const additional_constraints_chaotic_good = "{}";
+const uint8_t required_experiments_chaotic_good[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall),
-    static_cast<uint8_t>(
-        grpc_core::kExperimentIdRegisteredMethodLookupInTransport)};
-const char* const description_registered_methods_map =
-    "Use absl::flat_hash_map for registered methods.";
-const char* const additional_constraints_registered_methods_map = "{}";
-const char* const description_rfc_max_concurrent_streams =
-    "If set, enable rfc-compliant behavior (cancellation) in the advent that "
-    "max concurrent streams are exceeded in chttp2. See "
-    "https://www.rfc-editor.org/rfc/rfc9113.html#section-5.1.2.";
-const char* const additional_constraints_rfc_max_concurrent_streams = "{}";
-const char* const description_round_robin_delegate_to_pick_first =
-    "Change round_robin code to delegate to pick_first as per dualstack "
-    "backend design.";
-const char* const additional_constraints_round_robin_delegate_to_pick_first =
-    "{}";
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -661,18 +528,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_v3_backend_metric_filter =
-    "Use the backend metric filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_backend_metric_filter = "{}";
-const char* const description_v3_channel_idle_filters =
-    "Use the v3 filter API version of the idle filters.";
-const char* const additional_constraints_v3_channel_idle_filters = "{}";
-const char* const description_v3_compression_filter =
-    "Use the compression filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_compression_filter = "{}";
-const char* const description_v3_server_auth_filter =
-    "Use the server auth filter utilizing the v3 filter api";
-const char* const additional_constraints_v3_server_auth_filter = "{}";
 const char* const description_work_serializer_clears_time_cache =
     "Have the work serializer clear the time cache when it dispatches work.";
 const char* const additional_constraints_work_serializer_clears_time_cache =
@@ -682,18 +537,8 @@ const char* const description_work_serializer_dispatch =
     "callback, instead of running things inline in the first thread that "
     "successfully enqueues work.";
 const char* const additional_constraints_work_serializer_dispatch = "{}";
-const char* const description_write_size_policy =
-    "Try to size writes such that they don't create too large of a backlog";
-const char* const additional_constraints_write_size_policy = "{}";
-const char* const description_write_size_cap =
-    "Limit outgoing writes proportional to the target write size";
-const char* const additional_constraints_write_size_cap = "{}";
-const uint8_t required_experiments_write_size_cap[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdWriteSizePolicy)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
+const uint8_t required_experiments_work_serializer_dispatch[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -708,16 +553,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
      kDefaultForDebugOnly, true},
+    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
+     false, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"client_idleness", description_client_idleness,
-     additional_constraints_client_idleness, nullptr, 0, true, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
-     additional_constraints_event_engine_dns, nullptr, 0, false, false},
+     additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
@@ -736,29 +581,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
      additional_constraints_pending_queue_cap, nullptr, 0, true, true},
-    {"pick_first_happy_eyeballs", description_pick_first_happy_eyeballs,
-     additional_constraints_pick_first_happy_eyeballs, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call, nullptr, 0, false, true},
+     additional_constraints_promise_based_client_call,
+     required_experiments_promise_based_client_call, 2, false, true},
     {"promise_based_server_call", description_promise_based_server_call,
      additional_constraints_promise_based_server_call, nullptr, 0, false, true},
-    {"registered_method_lookup_in_transport",
-     description_registered_method_lookup_in_transport,
-     additional_constraints_registered_method_lookup_in_transport, nullptr, 0,
-     true, true},
+    {"chaotic_good", description_chaotic_good,
+     additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
+     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 3, false, false},
-    {"registered_methods_map", description_registered_methods_map,
-     additional_constraints_registered_methods_map, nullptr, 0, false, true},
-    {"rfc_max_concurrent_streams", description_rfc_max_concurrent_streams,
-     additional_constraints_rfc_max_concurrent_streams, nullptr, 0, false,
-     true},
-    {"round_robin_delegate_to_pick_first",
-     description_round_robin_delegate_to_pick_first,
-     additional_constraints_round_robin_delegate_to_pick_first, nullptr, 0,
-     true, true},
+     required_experiments_promise_based_inproc_transport, 2, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -777,27 +611,13 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"v3_backend_metric_filter", description_v3_backend_metric_filter,
-     additional_constraints_v3_backend_metric_filter, nullptr, 0, false, true},
-    {"v3_channel_idle_filters", description_v3_channel_idle_filters,
-     additional_constraints_v3_channel_idle_filters, nullptr, 0, false, true},
-    {"v3_compression_filter", description_v3_compression_filter,
-     additional_constraints_v3_compression_filter, nullptr, 0, false, true},
-    {"v3_server_auth_filter", description_v3_server_auth_filter,
-     additional_constraints_v3_server_auth_filter, nullptr, 0, false, true},
     {"work_serializer_clears_time_cache",
      description_work_serializer_clears_time_cache,
      additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
      true},
     {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch, nullptr, 0, false, true},
-    {"write_size_policy", description_write_size_policy,
-     additional_constraints_write_size_policy, nullptr, 0, true, true},
-    {"write_size_cap", description_write_size_cap,
-     additional_constraints_write_size_cap, required_experiments_write_size_cap,
-     1, true, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
+     additional_constraints_work_serializer_dispatch,
+     required_experiments_work_serializer_dispatch, 1, true, true},
 };
 
 }  // namespace grpc_core

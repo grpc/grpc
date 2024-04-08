@@ -81,7 +81,7 @@ class TestServiceImpl : public TestService::Service {
                            absl::string_view server_id)
       : hostname_(hostname), server_id_(server_id) {}
 
-  Status UnaryCall(ServerContext* context, const SimpleRequest* /*request*/,
+  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) override {
     response->set_server_id(server_id_);
     for (const auto& rpc_behavior : GetRpcBehaviorMetadata(context)) {
@@ -90,6 +90,11 @@ class TestServiceImpl : public TestService::Service {
       if (maybe_status.has_value()) {
         return *maybe_status;
       }
+    }
+    if (request->response_size() > 0) {
+      std::string payload(request->response_size(), '0');
+      response->mutable_payload()->set_body(payload.c_str(),
+                                            request->response_size());
     }
     response->set_hostname(hostname_);
     context->AddInitialMetadata("hostname", hostname_);
@@ -169,15 +174,11 @@ class MaintenanceServices {
         grpc::health::v1::HealthCheckResponse::SERVING);
   }
 
-  std::unique_ptr<ServerBuilder> InitializeServerBuilder(int port) {
-    auto builder = std::make_unique<ServerBuilder>();
+  void AddToServerBuilder(ServerBuilder* builder) {
     builder->RegisterService(&health_check_service_);
     builder->RegisterService(&update_health_service_);
     builder->RegisterService(&hook_service_);
-    grpc::AddAdminServices(builder.get());
-    builder->AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                              grpc::InsecureServerCredentials());
-    return builder;
+    grpc::AddAdminServices(builder);
   }
 
  private:
@@ -227,8 +228,9 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
   return absl::nullopt;
 }
 
-void RunServer(bool secure_mode, const int port, const int maintenance_port,
-               absl::string_view hostname, absl::string_view server_id,
+void RunServer(bool secure_mode, bool enable_csm_observability, int port,
+               const int maintenance_port, absl::string_view hostname,
+               absl::string_view server_id,
                const std::function<void(Server*)>& server_callback) {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
@@ -236,7 +238,6 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
 
   grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   MaintenanceServices maintenance_services;
-  ServerBuilder builder;
   if (secure_mode) {
     XdsServerBuilder xds_builder;
     xds_builder.RegisterService(&service);
@@ -245,13 +246,25 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
-    server = maintenance_services.InitializeServerBuilder(maintenance_port)
-                 ->BuildAndStart();
+    ServerBuilder builder;
+    maintenance_services.AddToServerBuilder(&builder);
+    server = builder
+                 .AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
+                                   grpc::InsecureServerCredentials())
+                 .BuildAndStart();
     gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d",
             maintenance_port);
   } else {
-    auto builder = maintenance_services.InitializeServerBuilder(port);
-    server = builder->RegisterService(&service).BuildAndStart();
+    // CSM Observability requires an xDS enabled server.
+    auto builder = enable_csm_observability
+                       ? std::make_unique<XdsServerBuilder>()
+                       : std::make_unique<ServerBuilder>();
+    maintenance_services.AddToServerBuilder(builder.get());
+    server = builder
+                 ->AddListeningPort(absl::StrCat("0.0.0.0:", port),
+                                    grpc::InsecureServerCredentials())
+                 .RegisterService(&service)
+                 .BuildAndStart();
     gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
   }
   server_callback(server.get());

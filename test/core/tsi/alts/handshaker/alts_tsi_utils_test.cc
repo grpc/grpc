@@ -20,7 +20,7 @@
 
 #include <gtest/gtest.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "test/core/util/test_config.h"

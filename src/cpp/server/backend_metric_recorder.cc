@@ -28,8 +28,8 @@
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 
 using grpc_core::BackendMetricData;
 

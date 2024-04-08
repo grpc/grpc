@@ -16,7 +16,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -24,6 +23,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/extensible.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
@@ -100,7 +100,8 @@ namespace experimental {
 /// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine : public std::enable_shared_from_this<EventEngine> {
+class EventEngine : public std::enable_shared_from_this<EventEngine>,
+                    public Extensible {
  public:
   /// A duration between two events.
   ///
@@ -176,7 +177,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint {
+  class Endpoint : public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -255,45 +256,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
-
-    /// A method which allows users to query whether an Endpoint implementation
-    /// supports a specified extension. The name of the extension is provided
-    /// as an input.
-    ///
-    /// An extension could be any type with a unique string id. Each extension
-    /// may support additional capabilities and if the Endpoint implementation
-    /// supports the queried extension, it should return a valid pointer to the
-    /// extension type.
-    ///
-    /// E.g., use case of an EventEngine::Endpoint supporting a custom
-    /// extension.
-    ///
-    /// class CustomEndpointExtension {
-    ///  public:
-    ///    static constexpr std::string name = "my.namespace.extension_name";
-    ///    void Process() { ... }
-    /// }
-    ///
-    ///
-    /// class CustomEndpoint :
-    ///        public EventEngine::Endpoint, CustomEndpointExtension {
-    ///   public:
-    ///     void* QueryExtension(absl::string_view id) override {
-    ///       if (id == CustomEndpointExtension::name) {
-    ///         return static_cast<CustomEndpointExtension*>(this);
-    ///       }
-    ///       return nullptr;
-    ///     }
-    ///     ...
-    /// }
-    ///
-    /// auto ext_ =
-    /// static_cast<CustomEndpointExtension*>(
-    ///   endpoint->QueryExtension(CustomrEndpointExtension::name));
-    /// if (ext_ != nullptr) { ext_->Process(); }
-    ///
-    ///
-    virtual void* QueryExtension(absl::string_view /*id*/) { return nullptr; }
   };
 
   /// Called when a new connection is established.
@@ -307,7 +269,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
-  class Listener {
+  class Listener : public Extensible {
    public:
     /// Called when the listener has accepted a new client connection.
     using AcceptCallback = absl::AnyInvocable<void(
@@ -482,6 +444,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine> {
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a RunAfter returns.
+  ///
+  /// Implementations may return a \a kInvalid handle if the callback can be
+  /// immediately executed, and is therefore not cancellable.
   virtual TaskHandle RunAfter(Duration when, Closure* closure) = 0;
   /// Synonymous with scheduling an alarm to run after duration \a when.
   ///

@@ -44,9 +44,9 @@
 
 namespace grpc_core {
 
-class GrpcXdsBootstrap : public XdsBootstrap {
+class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
-  class GrpcNode : public Node {
+  class GrpcNode final : public Node {
    public:
     const std::string& id() const override { return id_; }
     const std::string& cluster() const override { return cluster_; }
@@ -76,13 +76,15 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     Json::Object metadata_;
   };
 
-  class GrpcXdsServer : public XdsServer {
+  class GrpcXdsServer final : public XdsServer {
    public:
     const std::string& server_uri() const override { return server_uri_; }
 
     bool IgnoreResourceDeletion() const override;
 
     bool Equals(const XdsServer& other) const override;
+
+    std::string Key() const override;
 
     RefCountedPtr<ChannelCredsConfig> channel_creds_config() const {
       return channel_creds_config_;
@@ -100,10 +102,15 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     std::set<std::string> server_features_;
   };
 
-  class GrpcAuthority : public Authority {
+  class GrpcAuthority final : public Authority {
    public:
-    const XdsServer* server() const override {
-      return servers_.empty() ? nullptr : &servers_[0];
+    std::vector<const XdsServer*> servers() const override {
+      std::vector<const XdsServer*> servers;
+      servers.reserve(servers_.size());
+      for (const auto& server : servers_) {
+        servers.emplace_back(&server);
+      }
+      return servers;
     }
 
     const std::string& client_listener_resource_name_template() const {
@@ -111,6 +118,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
 
    private:
     std::vector<GrpcXdsServer> servers_;
@@ -127,12 +136,19 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
   std::string ToString() const override;
 
-  const XdsServer& server() const override { return servers_[0]; }
+  std::vector<const XdsServer*> servers() const override {
+    std::vector<const XdsServer*> servers;
+    servers.reserve(servers_.size());
+    for (const auto& server : servers_) {
+      servers.emplace_back(&server);
+    }
+    return servers;
+  }
+
   const Node* node() const override {
     return node_.has_value() ? &*node_ : nullptr;
   }
   const Authority* LookupAuthority(const std::string& name) const override;
-  const XdsServer* FindXdsServer(const XdsServer& server) const override;
 
   const std::string& client_default_listener_resource_name_template() const {
     return client_default_listener_resource_name_template_;

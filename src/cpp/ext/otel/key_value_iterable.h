@@ -46,31 +46,41 @@ inline opentelemetry::nostd::string_view AbslStrViewToOpenTelemetryStrView(
 // An iterable class based on opentelemetry::common::KeyValueIterable that
 // allows gRPC to iterate on its various sources of attributes and avoid an
 // allocation in cases wherever possible.
-class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
+class OpenTelemetryPlugin::KeyValueIterable
+    : public opentelemetry::common::KeyValueIterable {
  public:
-  explicit KeyValueIterable(
-      LabelsIterable* injected_labels_iterable,
+  KeyValueIterable(
       const std::vector<std::unique_ptr<LabelsIterable>>&
           injected_labels_from_plugin_options,
       absl::Span<const std::pair<absl::string_view, absl::string_view>>
-          additional_labels)
-      : injected_labels_iterable_(injected_labels_iterable),
-        injected_labels_from_plugin_options_(
+          additional_labels,
+      const OpenTelemetryPlugin::ActivePluginOptionsView*
+          active_plugin_options_view,
+      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+          optional_labels_span,
+      bool is_client, const OpenTelemetryPlugin* otel_plugin)
+      : injected_labels_from_plugin_options_(
             injected_labels_from_plugin_options),
-        additional_labels_(additional_labels) {}
+        additional_labels_(additional_labels),
+        active_plugin_options_view_(active_plugin_options_view),
+        optional_labels_(optional_labels_span),
+        is_client_(is_client),
+        otel_plugin_(otel_plugin) {}
 
   bool ForEachKeyValue(opentelemetry::nostd::function_ref<
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
                            callback) const noexcept override {
-    if (injected_labels_iterable_ != nullptr) {
-      injected_labels_iterable_->ResetIteratorPosition();
-      while (const auto& pair = injected_labels_iterable_->Next()) {
-        if (!callback(AbslStrViewToOpenTelemetryStrView(pair->first),
-                      AbslStrViewToOpenTelemetryStrView(pair->second))) {
-          return false;
-        }
-      }
+    if (active_plugin_options_view_ != nullptr &&
+        !active_plugin_options_view_->ForEach(
+            [callback, this](
+                const InternalOpenTelemetryPluginOption& plugin_option,
+                size_t /*index*/) {
+              return plugin_option.labels_injector()->AddOptionalLabels(
+                  is_client_, optional_labels_, callback);
+            },
+            otel_plugin_)) {
+      return false;
     }
     for (const auto& plugin_option_injected_iterable :
          injected_labels_from_plugin_options_) {
@@ -94,9 +104,7 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
   }
 
   size_t size() const noexcept override {
-    size_t size = injected_labels_iterable_ != nullptr
-                      ? injected_labels_iterable_->Size()
-                      : 0;
+    size_t size = 0;
     for (const auto& plugin_option_injected_iterable :
          injected_labels_from_plugin_options_) {
       if (plugin_option_injected_iterable != nullptr) {
@@ -104,15 +112,30 @@ class KeyValueIterable : public opentelemetry::common::KeyValueIterable {
       }
     }
     size += additional_labels_.size();
+    if (active_plugin_options_view_ != nullptr) {
+      active_plugin_options_view_->ForEach(
+          [&size, this](const InternalOpenTelemetryPluginOption& plugin_option,
+                        size_t /*index*/) {
+            size += plugin_option.labels_injector()->GetOptionalLabelsSize(
+                is_client_, optional_labels_);
+            return true;
+          },
+          otel_plugin_);
+    }
     return size;
   }
 
  private:
-  LabelsIterable* injected_labels_iterable_;
   const std::vector<std::unique_ptr<LabelsIterable>>&
       injected_labels_from_plugin_options_;
   absl::Span<const std::pair<absl::string_view, absl::string_view>>
       additional_labels_;
+  const OpenTelemetryPlugin::ActivePluginOptionsView*
+      active_plugin_options_view_;
+  absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
+      optional_labels_;
+  bool is_client_;
+  const OpenTelemetryPlugin* otel_plugin_;
 };
 
 }  // namespace internal

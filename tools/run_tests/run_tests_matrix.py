@@ -362,7 +362,7 @@ def _create_portability_test_jobs(
         "gcc12_openssl309",
         "gcc_musl",
         "clang6",
-        "clang16",
+        "clang17",
     ]:
         test_jobs += _generate_jobs(
             languages=["c", "c++"],
@@ -370,7 +370,8 @@ def _create_portability_test_jobs(
             platforms=["linux"],
             arch="x64",
             compiler=compiler,
-            labels=["portability", "corelang"],
+            labels=["portability", "corelang"]
+            + (["openssl"] if "openssl" in compiler else []),
             extra_args=extra_args,
             inner_jobs=inner_jobs,
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,

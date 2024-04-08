@@ -170,9 +170,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
   ~PosixEventEngine() override;
 
-  std::unique_ptr<PosixEndpointWithFdSupport> CreatePosixEndpointFromFd(
+  std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) override;
+  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
+      int fd, const EndpointConfig& config) override;
 
   absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept,
@@ -181,8 +183,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory)
       override;
 
-  absl::StatusOr<std::unique_ptr<PosixListenerWithFdSupport>>
-  CreatePosixListener(
+  absl::StatusOr<std::unique_ptr<EventEngine::Listener>> CreatePosixListener(
       PosixEventEngineWithFdSupport::PosixAcceptCallback on_accept,
       absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,

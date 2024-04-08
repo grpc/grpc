@@ -24,10 +24,9 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
 #include "test/core/util/test_config.h"
 
@@ -70,7 +69,6 @@ TEST_F(RoundRobinTest, AddressUpdates) {
 }
 
 TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
-  if (!IsRoundRobinDelegateToPickFirstEnabled()) return;
   constexpr std::array<absl::string_view, 2> kEndpoint1Addresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
   constexpr std::array<absl::string_view, 2> kEndpoint2Addresses = {

@@ -236,9 +236,9 @@ int main(int argc, char** argv) {
     auto meter_provider =
         std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
     meter_provider->AddMetricReader(std::move(prometheus_exporter));
-    grpc::experimental::OpenTelemetryPluginBuilder otel_builder;
+    grpc::OpenTelemetryPluginBuilder otel_builder;
     otel_builder.SetMeterProvider(std::move(meter_provider));
-    otel_builder.BuildAndRegisterGlobal();
+    assert(otel_builder.BuildAndRegisterGlobal().ok());
   }
 
   grpc::testing::ChannelCreationFunc channel_creation_func;

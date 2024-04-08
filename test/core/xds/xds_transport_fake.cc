@@ -81,7 +81,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
   MutexLock lock(&mu_);
   GPR_ASSERT(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
-  cv_.Signal();
+  cv_client_msg_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
     CompleteSendMessageFromClientLocked(/*ok=*/true);
   }
@@ -97,7 +97,8 @@ FakeXdsTransportFactory::FakeStreamingCall::WaitForMessageFromClient(
     absl::Duration timeout) {
   MutexLock lock(&mu_);
   while (from_client_messages_.empty()) {
-    if (cv_.WaitWithTimeout(&mu_, timeout * grpc_test_slowdown_factor())) {
+    if (cv_client_msg_.WaitWithTimeout(&mu_,
+                                       timeout * grpc_test_slowdown_factor())) {
       return absl::nullopt;
     }
   }
@@ -133,6 +134,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::StartRecvMessage() {
   }
   ++reads_started_;
   ++num_pending_reads_;
+  cv_reads_started_.SignalAll();
   if (!to_client_messages_.empty()) {
     // Dispatch pending message (if there's one) on a separate thread to avoid
     // recursion
@@ -209,7 +211,7 @@ void FakeXdsTransportFactory::FakeXdsTransport::TriggerConnectionFailure(
 void FakeXdsTransportFactory::FakeXdsTransport::Orphan() {
   {
     MutexLock lock(&factory_->mu_);
-    auto it = factory_->transport_map_.find(&server_);
+    auto it = factory_->transport_map_.find(server_.Key());
     if (it != factory_->transport_map_.end() && it->second == this) {
       factory_->transport_map_.erase(it);
     }
@@ -277,7 +279,7 @@ FakeXdsTransportFactory::Create(
     std::function<void(absl::Status)> on_connectivity_failure,
     absl::Status* /*status*/) {
   MutexLock lock(&mu_);
-  auto& entry = transport_map_[&server];
+  auto& entry = transport_map_[server.Key()];
   GPR_ASSERT(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
       RefAsSubclass<FakeXdsTransportFactory>(), server,
@@ -316,7 +318,7 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
 FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
   MutexLock lock(&mu_);
-  return transport_map_[&server];
+  return transport_map_[server.Key()];
 }
 
 }  // namespace grpc_core

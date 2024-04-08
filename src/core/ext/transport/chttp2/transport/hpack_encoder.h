@@ -331,6 +331,11 @@ class HPackCompressor {
   HPackCompressor() = default;
   ~HPackCompressor() = default;
 
+  HPackCompressor(const HPackCompressor&) = delete;
+  HPackCompressor& operator=(const HPackCompressor&) = delete;
+  HPackCompressor(HPackCompressor&&) = default;
+  HPackCompressor& operator=(HPackCompressor&&) = default;
+
   // Maximum table size we'll actually use.
   static constexpr uint32_t kMaxTableSize = 1024 * 1024;
 

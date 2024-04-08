@@ -41,7 +41,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
@@ -49,6 +48,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "test/core/http/httpcli_test_util.h"
 #include "test/core/util/fake_udp_and_tcp_server.h"
 #include "test/core/util/port.h"
@@ -160,10 +160,10 @@ void OnFinish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
-  GPR_ASSERT(error.ok());
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
+  GPR_ASSERT(error.ok());
   GPR_ASSERT(response.status == 200);
   GPR_ASSERT(response.body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
@@ -475,11 +475,19 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   http_request->Start();
   exec_ctx.Flush();
   http_request.reset();  // cancel the request
+  // With iomgr polling:
   // Since the request was cancelled, the on_done callback should be flushed
   // out on the ExecCtx flush below. When the on_done callback is ran, it will
-  // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. Thus, we
-  // can't poll on that pollset here.
+  // eagerly destroy 'request_state.pollset_set_to_destroy_eagerly'. PollUntil's
+  // predicate should return true immediately.
+  //
+  // With EventEngine polling:
+  // Since the callback will be run asynchronously in another thread, with an
+  // independent ExecCtx, PollUntil is used here to ensure this test does not
+  // finish before the callback is run.
   exec_ctx.Flush();
+  PollUntil([&request_state]() { return request_state.done; },
+            AbslDeadlineSeconds(60));
 }
 
 void CancelRequest(grpc_core::HttpRequest* req) {

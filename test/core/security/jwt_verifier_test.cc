@@ -22,6 +22,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/strings/escaping.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -32,7 +34,6 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
-#include "src/core/lib/slice/b64.h"
 #include "test/core/util/test_config.h"
 
 using grpc_core::Json;
@@ -536,23 +537,14 @@ TEST(JwtVerifierTest, JwtVerifierBadJsonKey) {
 }
 
 static void corrupt_jwt_sig(char* jwt) {
-  grpc_slice sig;
-  char* bad_b64_sig;
-  uint8_t* sig_bytes;
   char* last_dot = strrchr(jwt, '.');
   ASSERT_NE(last_dot, nullptr);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    sig = grpc_base64_decode(last_dot + 1, 1);
-  }
-  ASSERT_FALSE(GRPC_SLICE_IS_EMPTY(sig));
-  sig_bytes = GRPC_SLICE_START_PTR(sig);
-  (*sig_bytes)++;  // Corrupt first byte.
-  bad_b64_sig = grpc_base64_encode(GRPC_SLICE_START_PTR(sig),
-                                   GRPC_SLICE_LENGTH(sig), 1, 0);
-  memcpy(last_dot + 1, bad_b64_sig, strlen(bad_b64_sig));
-  gpr_free(bad_b64_sig);
-  grpc_slice_unref(sig);
+  std::string decoded;
+  absl::WebSafeBase64Unescape(last_dot + 1, &decoded);
+  ASSERT_FALSE(decoded.empty());
+  ++decoded[0];  // Corrupt first byte.
+  std::string bad_encoding = absl::WebSafeBase64Escape(decoded);
+  memcpy(last_dot + 1, bad_encoding.data(), bad_encoding.size());
 }
 
 static void on_verification_bad_signature(void* user_data,

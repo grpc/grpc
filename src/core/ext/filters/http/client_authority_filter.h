@@ -34,16 +34,24 @@
 
 namespace grpc_core {
 
-class ClientAuthorityFilter final : public ChannelFilter {
+class ClientAuthorityFilter final
+    : public ImplementChannelFilter<ClientAuthorityFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::StatusOr<ClientAuthorityFilter> Create(const ChannelArgs& args,
                                                       ChannelFilter::Args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& md,
+                                 ClientAuthorityFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 
  private:
   explicit ClientAuthorityFilter(Slice default_authority)

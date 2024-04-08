@@ -99,7 +99,7 @@ build_docker_images_if_needed() {
 #######################################
 run_test() {
   # Test driver usage:
-  # https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver#basic-usage
+  # https://github.com/grpc/psm-interop#basic-usage
   local test_name="${1:?Usage: run_test test_name}"
   local out_dir="${TEST_XML_OUTPUT_DIR}/${test_name}"
   mkdir -pv "${out_dir}"
@@ -161,6 +161,8 @@ main() {
   test_suites=(
     "gamma.gamma_baseline_test"
     "gamma.affinity_test"
+    "gamma.affinity_session_drain_test"
+    "gamma.csm_observability_test"
     "app_net_ssa_test"
   )
   for test in "${test_suites[@]}"; do

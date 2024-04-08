@@ -25,6 +25,7 @@ grpc_cc_library(
     name = "xds_server",
     srcs = ["xds_server.cc"],
     hdrs = ["xds_server.h"],
+    visibility = ["@grpc:xds_end2end_test_utils"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,6 +46,7 @@ grpc_cc_library(
     name = "xds_utils",
     srcs = ["xds_utils.cc"],
     hdrs = ["xds_utils.h"],
+    visibility = ["@grpc:xds_end2end_test_utils"],
     deps = [
         ":xds_server",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
@@ -169,6 +171,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
@@ -197,6 +200,7 @@ grpc_cc_test(
         "//:grpc_resolver_fake",
         "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
         "//test/cpp/end2end:connection_attempt_injector",
     ],
 )
@@ -221,6 +225,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],
@@ -327,6 +332,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:client_side_weighted_round_robin_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
+        "//test/core/util:fake_stats_plugin",
         "//test/core/util:grpc_test_util",
         "//test/core/util:scoped_env_var",
     ],

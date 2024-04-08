@@ -162,11 +162,4 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
 }  // namespace grpc_core
 
-// TODO(arjunroy): These are transitional to account for the new handshaker API
-// and will eventually be removed entirely.
-typedef grpc_core::HandshakeManager grpc_handshake_manager;
-typedef grpc_core::Handshaker grpc_handshaker;
-void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
-                                grpc_handshaker* handshaker);
-
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_H

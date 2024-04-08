@@ -47,8 +47,8 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -67,11 +67,18 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
+
+// HACK: If a filter has this type as a base class it will be skipped in
+// v3 filter stacks. This is a temporary measure to allow the v3 filter stack
+// to be bought up whilst some tests inadvertently rely on hard to convert
+// filters.
+class HackyHackyHackySkipInV3FilterStacks {};
 
 class ChannelFilter {
  public:
@@ -125,8 +132,6 @@ class ChannelFilter {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
-
-struct NoInterceptor {};
 
 namespace promise_filter_detail {
 
@@ -327,6 +332,16 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
   return Map(std::move(x), [call_data](ServerMetadataHandle md) {
     call_data->call.OnServerTrailingMetadata(*md);
+    return md;
+  });
+}
+
+template <typename Promise, typename Derived>
+auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
+               FilterCallData<Derived>* call_data) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
+    call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
     return md;
   });
 }
@@ -930,6 +945,19 @@ inline void InterceptServerTrailingMetadata(
 
 template <typename Derived>
 inline void InterceptServerTrailingMetadata(
+    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    typename Derived::Call* call, Derived* channel,
+    CallSpineInterface* call_spine) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
+  call_spine->server_trailing_metadata().sender.InterceptAndMap(
+      [call, channel](ServerMetadataHandle md) {
+        call->OnServerTrailingMetadata(*md, channel);
+        return md;
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerTrailingMetadata(
     absl::Status (Derived::Call::*fn)(ServerMetadata&),
     typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
@@ -941,15 +969,26 @@ inline void InterceptServerTrailingMetadata(
       });
 }
 
-inline void InterceptFinalize(const NoInterceptor*, void*) {}
+inline void InterceptFinalize(const NoInterceptor*, void*, void*) {}
 
 template <class Call>
 inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
-                              Call* call) {
+                              void*, Call* call) {
   GPR_DEBUG_ASSERT(fn == &Call::OnFinalize);
   GetContext<CallFinalization>()->Add(
       [call](const grpc_call_final_info* final_info) {
         call->OnFinalize(final_info);
+      });
+}
+
+template <class Derived>
+inline void InterceptFinalize(
+    void (Derived::Call::*fn)(const grpc_call_final_info*, Derived*),
+    Derived* channel, typename Derived::Call* call) {
+  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnFinalize);
+  GetContext<CallFinalization>()->Add(
+      [call, channel](const grpc_call_final_info* final_info) {
+        call->OnFinalize(final_info, channel);
       });
 }
 
@@ -1026,8 +1065,10 @@ MakeFilterCall(Derived* derived) {
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
+class ImplementChannelFilterTag {};
 template <typename Derived>
-class ImplementChannelFilter : public ChannelFilter {
+class ImplementChannelFilter : public ChannelFilter,
+                               public ImplementChannelFilterTag {
  public:
   // Natively construct a v3 call.
   void InitCall(CallSpineInterface* call_spine) {
@@ -1050,7 +1091,8 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerTrailingMetadata(
         &Derived::Call::OnServerTrailingMetadata, call,
         static_cast<Derived*>(this), call_spine);
-    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize, call);
+    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize,
+                                             static_cast<Derived*>(this), call);
   }
 
   // Polyfill for the original promise scheme.
@@ -1067,7 +1109,7 @@ class ImplementChannelFilter : public ChannelFilter {
     promise_filter_detail::InterceptServerToClientMessage(
         &Derived::Call::OnServerToClientMessage, call, call_args);
     promise_filter_detail::InterceptFinalize(
-        &Derived::Call::OnFinalize,
+        &Derived::Call::OnFinalize, static_cast<Derived*>(this),
         static_cast<typename Derived::Call*>(&call->call));
     return promise_filter_detail::MapResult(
         &Derived::Call::OnServerTrailingMetadata,
@@ -1872,9 +1914,11 @@ struct ChannelFilterWithFlagsMethods {
 //       ChannelArgs channel_args, ChannelFilter::Args filter_args);
 // };
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
-                      !std::is_base_of<ImplementChannelFilter<F>, F>::value,
-                  grpc_channel_filter>
+absl::enable_if_t<
+    std::is_base_of<ChannelFilter, F>::value &&
+        !std::is_base_of<ImplementChannelFilterTag, F>::value &&
+        !std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
+    grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
@@ -1913,7 +1957,53 @@ MakePromiseBasedFilter(const char* name) {
 }
 
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ImplementChannelFilter<F>, F>::value,
+absl::enable_if_t<
+    std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
+    grpc_channel_filter>
+MakePromiseBasedFilter(const char* name) {
+  using CallData = promise_filter_detail::CallData<kEndpoint>;
+
+  return grpc_channel_filter{
+      // start_transport_stream_op_batch
+      promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
+      // make_call_promise
+      promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
+      [](grpc_channel_element* elem, CallSpineInterface*) {
+        GRPC_LOG_EVERY_N_SEC(
+            1, GPR_ERROR,
+            "gRPC V3 call stack in use, with a filter ('%s') that is not V3.",
+            elem->filter->name);
+      },
+      // start_transport_op
+      promise_filter_detail::ChannelFilterMethods::StartTransportOp,
+      // sizeof_call_data
+      sizeof(CallData),
+      // init_call_elem
+      promise_filter_detail::CallDataFilterWithFlagsMethods<
+          CallData, kFlags>::InitCallElem,
+      // set_pollset_or_pollset_set
+      promise_filter_detail::BaseCallDataMethods::SetPollsetOrPollsetSet,
+      // destroy_call_elem
+      promise_filter_detail::CallDataFilterWithFlagsMethods<
+          CallData, kFlags>::DestroyCallElem,
+      // sizeof_channel_data
+      sizeof(F),
+      // init_channel_elem
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::InitChannelElem,
+      // post_init_channel_elem
+      promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
+      // destroy_channel_elem
+      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      // get_channel_info
+      promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
+      // name
+      name,
+  };
+}
+
+template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
+absl::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
                   grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<kEndpoint>;

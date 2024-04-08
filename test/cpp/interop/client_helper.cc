@@ -24,6 +24,7 @@
 
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
@@ -33,9 +34,6 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/slice/b64.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -68,11 +66,7 @@ std::string GetServiceAccountJsonKey() {
 
 std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
-  SecureCallCredentials* secure_creds =
-      dynamic_cast<SecureCallCredentials*>(creds.get());
-  GPR_ASSERT(secure_creds != nullptr);
-  grpc_call_credentials* c_creds = secure_creds->GetRawCreds();
-  char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
+  char* token = grpc_test_fetch_oauth2_token_with_credentials(creds->c_creds_);
   GPR_ASSERT(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
   std::string access_token(token + sizeof("Bearer ") - 1);
@@ -146,13 +140,10 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 static void log_metadata_entry(const std::string& prefix,
                                const grpc::string_ref& key,
                                const grpc::string_ref& value) {
-  auto key_str = std::string(key.begin(), key.end());
-  auto value_str = std::string(value.begin(), value.end());
+  std::string key_str(key.begin(), key.end());
+  std::string value_str(value.begin(), value.end());
   if (absl::EndsWith(key_str, "-bin")) {
-    auto converted =
-        grpc_base64_encode(value_str.c_str(), value_str.length(), 0, 0);
-    value_str = std::string(converted);
-    gpr_free(converted);
+    value_str = absl::Base64Escape(value_str);
   }
   gpr_log(GPR_ERROR, "%s %s: %s", prefix.c_str(), key_str.c_str(),
           value_str.c_str());

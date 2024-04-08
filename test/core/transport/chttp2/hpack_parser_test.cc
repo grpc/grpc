@@ -118,7 +118,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     size_t i;
     absl::BitGen bitgen;
 
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
 
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),

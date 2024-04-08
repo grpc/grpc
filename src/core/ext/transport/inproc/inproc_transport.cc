@@ -22,10 +22,12 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -112,17 +114,15 @@ class InprocClientTransport final : public Transport, public ClientTransport {
   void StartCall(CallHandler call_handler) override {
     call_handler.SpawnGuarded(
         "pull_initial_metadata",
-        TrySeq(
-            call_handler.PullClientInitialMetadata(),
-            [server_transport = server_transport_,
-             call_handler](ClientMetadataHandle md) {
-              auto call_initiator = server_transport->AcceptCall(*md);
-              if (!call_initiator.ok()) return call_initiator.status();
-              ForwardCall(call_handler, std::move(*call_initiator),
-                          std::move(md));
-              return absl::OkStatus();
-            },
-            ImmediateOkStatus()));
+        TrySeq(call_handler.PullClientInitialMetadata(),
+               [server_transport = server_transport_,
+                call_handler](ClientMetadataHandle md) {
+                 auto call_initiator = server_transport->AcceptCall(*md);
+                 if (!call_initiator.ok()) return call_initiator.status();
+                 ForwardCall(call_handler, std::move(*call_initiator),
+                             std::move(md));
+                 return absl::OkStatus();
+               }));
   }
 
   void Orphan() override { delete this; }
@@ -157,7 +157,7 @@ bool UsePromiseBasedTransport() {
   return true;
 }
 
-RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
+OrphanablePtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
           std::string(error.message()).c_str());
@@ -166,14 +166,15 @@ RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
     status = static_cast<grpc_status_code>(integer);
   }
-  return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
+  return OrphanablePtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }
 
-RefCountedPtr<Channel> MakeInprocChannel(Server* server,
+OrphanablePtr<Channel> MakeInprocChannel(Server* server,
                                          ChannelArgs client_channel_args) {
-  auto client_transport = MakeOrphanable<InprocClientTransport>();
-  auto server_transport = client_transport->GetServerTransport();
+  auto transports = MakeInProcessTransportPair();
+  auto client_transport = std::move(transports.first);
+  auto server_transport = std::move(transports.second);
   auto error =
       server->SetupTransport(server_transport.get(), nullptr,
                              server->channel_args()
@@ -184,7 +185,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
   std::ignore = server_transport.release();  // consumed by SetupTransport
-  auto channel = Channel::Create(
+  auto channel = ChannelCreate(
       "inproc",
       client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
       GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release());
@@ -194,6 +195,14 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
   return std::move(*channel);
 }
 }  // namespace
+
+std::pair<OrphanablePtr<Transport>, OrphanablePtr<Transport>>
+MakeInProcessTransportPair() {
+  auto client_transport = MakeOrphanable<InprocClientTransport>();
+  auto server_transport = client_transport->GetServerTransport();
+  return std::make_pair(std::move(client_transport),
+                        std::move(server_transport));
+}
 
 }  // namespace grpc_core
 

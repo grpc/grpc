@@ -60,7 +60,7 @@ struct FrameHeader {
            trailer_length == h.trailer_length;
   }
   // Frame header size is fixed to 24 bytes.
-  static constexpr size_t frame_header_size_ = 24;
+  static constexpr size_t kFrameHeaderSize = 24;
 };
 
 }  // namespace chaotic_good

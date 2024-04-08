@@ -67,7 +67,10 @@ grpc_fuzzer(
     external_deps = ["absl/status:statusor"],
     language = "C++",
     tags = ["no_windows"],
-    deps = ["//src/core:chaotic_good_frame_header"],
+    deps = [
+        "//:grpc",
+        "//src/core:chaotic_good_frame_header",
+    ],
 )
 
 grpc_cc_test(
@@ -79,7 +82,10 @@ grpc_cc_test(
         "absl/status:statusor",
         "gtest",
     ],
-    deps = ["//src/core:chaotic_good_frame"],
+    deps = [
+        "//:channel_create",
+        "//src/core:chaotic_good_frame",
+    ],
 )
 
 grpc_proto_fuzzer(
@@ -208,5 +214,36 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "chaotic_good_server_test",
+    srcs = ["chaotic_good_server_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "absl/time",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_public_hdrs",
+        "//:parse_address",
+        "//:uri_parser",
+        "//src/core:channel_args",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:time",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/util:grpc_test_util",
     ],
 )

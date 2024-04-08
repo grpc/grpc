@@ -42,6 +42,9 @@ bash -c "cp -r input_artifacts/python_*/* artifacts/ || true"
 @rem TODO(jtattermusch): Here we would normally run python windows distribtests, but currently no such tests are defined
 @rem in distribtest_targets.py
 
+@rem This step checks if any of the artifacts exceeds a per-file size limit.
+bash tools/internal_ci/helper_scripts/check_python_artifacts_size.sh
+
 bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
 
 if not "%FAILED%" == "" (

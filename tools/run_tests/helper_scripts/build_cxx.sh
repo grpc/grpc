@@ -15,13 +15,36 @@
 
 set -ex
 
+# Set install path to avoid installing to system paths
 cd "$(dirname "$0")/../../.."
+mkdir -p cmake/install
+INSTALL_PATH="$(pwd)/cmake/install"
 
+# Install abseil-cpp since opentelemetry CMake uses find_package to find it.
+cd third_party/abseil-cpp
+mkdir build
+cd build
+cmake -DCMAKE_CXX_STANDARD=14 -DABSL_BUILD_TESTING=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ..
+make -j"${GRPC_RUN_TESTS_JOBS}" install
+
+# Install opentelemetry-cpp since we only support "package" mode for opentelemetry at present.
+cd ../../..
+cd third_party/opentelemetry-cpp
+mkdir build
+cd build
+cmake -DCMAKE_CXX_STANDARD=14 -DWITH_ABSEIL=ON -DBUILD_TESTING=OFF -DWITH_BENCHMARK=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ..
+make -j"${GRPC_RUN_TESTS_JOBS}" install
+
+cd ../../..
 mkdir -p cmake/build
 cd cmake/build
 
-# MSBUILD_CONFIG's values are suitable for cmake as well
-cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" "$@" ../..
+# TODO(yashykt/veblush): Remove workaround after fixing b/332425004 
+if [ "${GRPC_RUNTESTS_ARCHITECTURE}" = "x86" ]; then
+cmake -DCMAKE_CXX_STANDARD=14 -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" "$@" ../..
+else
+cmake -DCMAKE_CXX_STANDARD=14 -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ../..
+fi
 
 # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
 make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"

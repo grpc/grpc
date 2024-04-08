@@ -42,12 +42,19 @@ struct BufferPair {
   SliceBuffer data;
 };
 
+struct FrameLimits {
+  size_t max_message_size = 1024 * 1024 * 1024;
+  size_t max_padding = 63;
+
+  absl::Status ValidateMessage(const FrameHeader& header);
+};
+
 class FrameInterface {
  public:
   virtual absl::Status Deserialize(HPackParser* parser,
                                    const FrameHeader& header,
                                    absl::BitGenRef bitsrc, Arena* arena,
-                                   BufferPair buffers) = 0;
+                                   BufferPair buffers, FrameLimits limits) = 0;
   virtual BufferPair Serialize(HPackCompressor* encoder) const = 0;
   virtual std::string ToString() const = 0;
 
@@ -68,8 +75,9 @@ class FrameInterface {
 struct SettingsFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers) override;
+                           BufferPair buffers, FrameLimits limits) override;
   BufferPair Serialize(HPackCompressor* encoder) const override;
+  ClientMetadataHandle headers;
   std::string ToString() const override;
 
   bool operator==(const SettingsFrame&) const { return true; }
@@ -91,14 +99,17 @@ struct FragmentMessage {
   }
 
   bool operator==(const FragmentMessage& other) const {
-    return EqVal(*message, *other.message) && length == other.length;
+    if (length != other.length) return false;
+    if (message == nullptr && other.message == nullptr) return true;
+    if (message == nullptr || other.message == nullptr) return false;
+    return EqVal(*message, *other.message);
   }
 };
 
 struct ClientFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers) override;
+                           BufferPair buffers, FrameLimits limits) override;
   BufferPair Serialize(HPackCompressor* encoder) const override;
   std::string ToString() const override;
 
@@ -116,7 +127,7 @@ struct ClientFragmentFrame final : public FrameInterface {
 struct ServerFragmentFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers) override;
+                           BufferPair buffers, FrameLimits limits) override;
   BufferPair Serialize(HPackCompressor* encoder) const override;
   std::string ToString() const override;
 
@@ -134,7 +145,7 @@ struct ServerFragmentFrame final : public FrameInterface {
 struct CancelFrame final : public FrameInterface {
   absl::Status Deserialize(HPackParser* parser, const FrameHeader& header,
                            absl::BitGenRef bitsrc, Arena* arena,
-                           BufferPair buffers) override;
+                           BufferPair buffers, FrameLimits limits) override;
   BufferPair Serialize(HPackCompressor* encoder) const override;
   std::string ToString() const override;
 

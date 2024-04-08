@@ -306,7 +306,7 @@ grpc_cc_library(
     hdrs = [
         "fullstack_unary_ping_pong.h",
     ],
-    deps = [":helpers"],
+    deps = [":helpers_secure"],
 )
 
 grpc_cc_test(
@@ -321,6 +321,23 @@ grpc_cc_test(
         "no_windows",
     ],
     deps = [":fullstack_unary_ping_pong_h"],
+)
+
+grpc_cc_test(
+    name = "bm_fullstack_unary_ping_pong_chaotic_good",
+    size = "large",
+    srcs = [
+        "bm_fullstack_unary_ping_pong_chaotic_good.cc",
+    ],
+    args = grpc_benchmark_args(),
+    tags = [
+        "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "no_windows",
+    ],
+    deps = [
+        ":fullstack_unary_ping_pong_h",
+        "//:grpcpp_chaotic_good",
+    ],
 )
 
 grpc_cc_test(
@@ -367,19 +384,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "bm_pollset",
-    srcs = ["bm_pollset.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
-    deps = [
-        ":helpers",
-    ],
-)
-
 grpc_cc_library(
     name = "bm_callback_test_service_impl",
     testonly = 1,
@@ -391,7 +395,7 @@ grpc_cc_library(
     deps = [
         ":helpers",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/cpp/util:test_util_unsecure",
+        "//test/cpp/util:test_util",
     ],
 )
 

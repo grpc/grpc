@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <limits>
+#include <random>
 #include <vector>
 
 namespace grpc_core {
@@ -39,21 +40,19 @@ class ProtoBitGen : public std::numeric_limits<uint64_t> {
   using result_type = uint64_t;
 
   uint64_t operator()() {
-    if (results_.empty()) {
-      ++current_;
-      return current_;
+    if (current_ < results_.size()) {
+      return results_[current_++];
     }
-    // We loop through but increment by one each round, to guarantee to see all
-    // values eventually.
-    uint64_t out =
-        results_[current_ % results_.size()] + (current_ / results_.size());
-    ++current_;
-    return out;
+    return generator_();
   }
 
  private:
   std::vector<uint64_t> results_;
   size_t current_ = 0;
+  std::mt19937_64 generator_ = [this]() {
+    std::seed_seq seq(results_.begin(), results_.end());
+    return std::mt19937_64(seq);
+  }();
 };
 
 }  // namespace grpc_core

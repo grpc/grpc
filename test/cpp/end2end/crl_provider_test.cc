@@ -61,7 +61,8 @@ const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
 const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
 const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
 const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
-const char* kCrlDirectoryPath = "test/core/tsi/test_creds/crl_data/crls/";
+const char* kCrlDirectoryPath =
+    "test/core/tsi/test_creds/crl_data/crl_provider_test_dir/";
 constexpr char kMessage[] = "Hello";
 
 // This test must be at the top of the file because the

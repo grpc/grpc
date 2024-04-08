@@ -216,6 +216,8 @@ grpc_cc_library(
         "//:grpc_public_hdrs",
         "//:grpc_trace",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
         "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_fake_credentials",
@@ -244,6 +246,32 @@ grpc_cc_library(
         "end2end_test_suites",
         "fixture_support",
         "//:config_vars",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "end2end_test_fuzzer",
+    testonly = 1,
+    srcs = [
+        "end2end_test_fuzzer.cc",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/types:optional",
+        "gtest",
+        "libprotobuf_mutator",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "end2end_test_fuzzer_proto",
+        "end2end_test_lib",
+        "end2end_test_suites",
+        "fixture_support",
+        "//:config_vars",
+        "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/util:fuzz_config_vars",
         "//test/core/util:grpc_test_util",
     ],
 )

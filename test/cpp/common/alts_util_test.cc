@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>

@@ -40,6 +40,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/credentials.h>
 
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -1022,8 +1023,13 @@ bool InteropClient::DoOrcaPerRpc() {
 
 bool InteropClient::DoOrcaOob() {
   static constexpr auto kTimeout = absl::Seconds(10);
-  gpr_log(GPR_DEBUG, "testing orca oob");
+  gpr_log(GPR_INFO, "testing orca oob");
   load_report_tracker_.ResetCollectedLoadReports();
+  // Make the backup poller poll very frequently in order to pick up
+  // updates from all the subchannels's FDs.
+  grpc_core::ConfigVars::Overrides overrides;
+  overrides.client_channel_backup_poll_interval_ms = 250;
+  grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
@@ -1088,7 +1094,7 @@ bool InteropClient::DoOrcaOob() {
                 kTimeout, 10)
             .has_value());
   }
-  gpr_log(GPR_DEBUG, "orca oob successfully finished");
+  gpr_log(GPR_INFO, "orca oob successfully finished");
   return true;
 }
 
@@ -1250,7 +1256,7 @@ void InteropClient::PerformSoakTest(
     std::string peer = std::get<3>(result);
     results.push_back(result);
     if (!success) {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s "
               "failed: %s",
               i, elapsed_ms, peer.c_str(), server_uri.c_str(),
@@ -1258,7 +1264,7 @@ void InteropClient::PerformSoakTest(
       total_failures++;
     } else {
       gpr_log(
-          GPR_DEBUG,
+          GPR_INFO,
           "soak iteration: %d elapsed_ms: %d peer: %s server_uri: %s succeeded",
           i, elapsed_ms, peer.c_str(), server_uri.c_str());
     }

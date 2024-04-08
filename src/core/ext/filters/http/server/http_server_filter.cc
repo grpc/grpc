@@ -67,7 +67,7 @@ void FilterOutgoingMetadata(ServerMetadata* md) {
 
 ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
   auto* arena = GetContext<Arena>();
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  auto hdl = arena->MakePooled<ServerMetadata>();
   hdl->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
   hdl->Set(GrpcMessageMetadata(), Slice::FromStaticString(explanation));
   hdl->Set(GrpcTarPit(), Empty());
@@ -141,7 +141,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO, "%s[http-server] Write metadata",
-            Activity::current()->DebugTag().c_str());
+            GetContext<Activity>()->DebugTag().c_str());
   }
   FilterOutgoingMetadata(&md);
   md.Set(HttpStatusMetadata(), 200);

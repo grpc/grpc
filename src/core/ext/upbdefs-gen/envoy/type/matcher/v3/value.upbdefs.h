@@ -36,6 +36,11 @@ UPB_INLINE const upb_MessageDef *envoy_type_matcher_v3_ListMatcher_getmsgdef(upb
   return upb_DefPool_FindMessageByName(s, "envoy.type.matcher.v3.ListMatcher");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_type_matcher_v3_OrMatcher_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_type_matcher_v3_value_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.type.matcher.v3.OrMatcher");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
