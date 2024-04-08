@@ -19,6 +19,7 @@ set -eo pipefail
 readonly GITHUB_REPOSITORY_NAME="grpc"
 readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
 ## xDS test server/client Docker images
+readonly DOCKER_REGISTRY="us-docker.pkg.dev"
 readonly SERVER_IMAGE_NAME="us-docker.pkg.dev/grpc-testing/psm-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="us-docker.pkg.dev/grpc-testing/psm-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
@@ -41,7 +42,7 @@ build_test_app_docker_images() {
   echo "Building C++ xDS interop test app Docker images"
   docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
   docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
-  gcloud -q auth configure-docker
+  gcloud -q auth configure-docker "${DOCKER_REGISTRY}"
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
   if is_version_branch "${TESTING_VERSION}"; then

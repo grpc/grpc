@@ -46,7 +46,7 @@ build_test_app_docker_images() {
 
   popd
 
-  gcloud -q auth configure-docker
+  gcloud -q auth configure-docker "${DOCKER_REGISTRY}"
 
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   if is_version_branch "${TESTING_VERSION}"; then
