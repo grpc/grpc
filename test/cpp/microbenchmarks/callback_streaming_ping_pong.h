@@ -71,7 +71,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnDone(const Status& s) override {
     CHECK(s.ok());
-    CHECK(writes_complete_ == msgs_to_send_);
+    CHECK_EQ(writes_complete_, msgs_to_send_);
     if (state_->KeepRunning()) {
       writes_complete_ = 0;
       StartNewRpc();
