@@ -1209,6 +1209,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/transport/handshaker_factory.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "iomgr_fwd",
@@ -1225,6 +1226,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/transport/handshaker_registry.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "handshaker_factory",
@@ -1269,6 +1271,33 @@ grpc_cc_library(
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:uri_parser",
+    ],
+)
+
+grpc_cc_library(
+    name = "endpoint_info_handshaker",
+    srcs = [
+        "lib/transport/endpoint_info_handshaker.cc",
+    ],
+    hdrs = [
+        "lib/transport/endpoint_info_handshaker.h",
+    ],
+    external_deps = [
+        "absl/status",
+    ],
+    language = "c++",
+    deps = [
+        "channel_args",
+        "closure",
+        "handshaker_factory",
+        "handshaker_registry",
+        "//:config",
+        "//:debug_location",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:handshaker",
+        "//:iomgr",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -1602,6 +1631,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/iomgr_fwd.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["//:gpr_platform"],
 )
 
@@ -3693,6 +3723,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "dual_ref_counted",
+        "endpoint_info_handshaker",
         "load_file",
         "metadata_batch",
         "ref_counted",
@@ -3705,7 +3736,6 @@ grpc_cc_library(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//:grpc_trace",
-        "//:iomgr",
         "//:parse_address",
         "//:promise",
         "//:ref_counted_ptr",

@@ -25,6 +25,7 @@ grpc_cc_test(
     name = "grpclb_api_test",
     srcs = ["grpclb_api_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     deps = [

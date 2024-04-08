@@ -174,7 +174,8 @@ TEST(ChannelInitTest, CanAddBeforeAllOnce) {
             std::vector<std::string>({"foo", "bar", "baz", "aaa"}));
 }
 
-TEST(ChannelInitTest, CanAddBeforeAllTwice) {
+TEST(ChannelInitDeathTest, CanAddBeforeAllTwice) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar")).BeforeAll();
