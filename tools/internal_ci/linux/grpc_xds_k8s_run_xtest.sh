@@ -17,7 +17,6 @@
 readonly IMAGE_REPO="us-docker.pkg.dev/grpc-testing/psm-interop"
 
 find_latest() {
-  # todo
   gcloud container images list-tags --filter='tags~v1\.\d+\.x' "${IMAGE_REPO}/${1}-${2}" --flatten='tags[]' --format='value(tags)' | sort --version-sort | tail -n 1
 }
 
