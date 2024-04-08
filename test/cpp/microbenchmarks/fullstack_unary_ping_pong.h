@@ -22,6 +22,7 @@
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_UNARY_PING_PONG_H
 
 #include <sstream>
+#include "absl/log/check.h"
 
 #include <benchmark/benchmark.h>
 
@@ -81,21 +82,21 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     void* t;
     bool ok;
-    GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-    GPR_ASSERT(ok);
-    GPR_ASSERT(t == tag(0) || t == tag(1));
+    CHECK(fixture->cq()->Next(&t, &ok));
+    CHECK(ok);
+    CHECK(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      GPR_ASSERT(ok);
+      CHECK(fixture->cq()->Next(&t, &ok));
+      CHECK(ok);
       int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-      GPR_ASSERT(i & (1 << tagnum));
+      CHECK(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
-    GPR_ASSERT(recv_status.ok());
+    CHECK(recv_status.ok());
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();

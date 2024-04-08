@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include <benchmark/benchmark.h>
 
 #include <grpc/byte_buffer.h>
@@ -62,12 +63,12 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   }
   grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
+  CHECK(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
       grpc_byte_buffer_reader_destroy(&reader);
-      GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
+      CHECK(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }
@@ -90,12 +91,12 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   }
   grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(slices.data(), num_slices);
   grpc_byte_buffer_reader reader;
-  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
+  CHECK(grpc_byte_buffer_reader_init(&reader, bb));
   for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!grpc_byte_buffer_reader_peek(&reader, &slice))) {
       grpc_byte_buffer_reader_destroy(&reader);
-      GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, bb));
+      CHECK(grpc_byte_buffer_reader_init(&reader, bb));
       continue;
     }
   }

@@ -23,6 +23,7 @@ grpc_cc_test(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = ["//test/core/util:grpc_test_util"],
@@ -32,6 +33,7 @@ grpc_cc_test(
     name = "bm_channel_args",
     srcs = ["bm_channel_args.cc"],
     external_deps = [
+        "absl/log:check",
         "benchmark",
         "absl/container:btree",
     ],
@@ -46,6 +48,7 @@ grpc_cc_test(
     name = "bm_rng",
     srcs = ["bm_rng.cc"],
     external_deps = [
+        "absl/log:check",
         "benchmark",
         "absl/container:btree",
     ],
@@ -61,6 +64,7 @@ grpc_cc_test(
     srcs = ["bm_exec_ctx.cc"],
     args = grpc_benchmark_args(),
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     uses_event_engine = False,
@@ -74,6 +78,7 @@ grpc_cc_test(
     srcs = ["bm_event_engine_run.cc"],
     args = grpc_benchmark_args(),
     external_deps = [
+        "absl/log:check",
         "absl/debugging:leak_check",
         "benchmark",
     ],
@@ -90,6 +95,7 @@ grpc_cc_test(
     srcs = ["bm_thread_pool.cc"],
     args = grpc_benchmark_args(),
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     uses_event_engine = False,
@@ -110,6 +116,7 @@ grpc_cc_library(
         "helpers.h",
     ],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = [
@@ -132,6 +139,7 @@ grpc_cc_library(
         "helpers.h",
     ],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = [
@@ -208,6 +216,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
@@ -234,6 +245,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [":helpers"],
 )
 
@@ -245,6 +259,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [":helpers"],
@@ -255,6 +272,9 @@ grpc_cc_library(
     testonly = 1,
     hdrs = [
         "fullstack_streaming_ping_pong.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     tags = [
         "no_mac",
@@ -284,6 +304,9 @@ grpc_cc_library(
     hdrs = [
         "fullstack_streaming_pump.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [":helpers"],
 )
 
@@ -305,6 +328,9 @@ grpc_cc_library(
     testonly = 1,
     hdrs = [
         "fullstack_unary_ping_pong.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [":helpers_secure"],
 )
@@ -348,6 +374,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -364,6 +393,9 @@ grpc_cc_test(
         "no_mac",
         "no_windows",
         "nomsan",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         ":helpers",
@@ -390,6 +422,7 @@ grpc_cc_library(
     srcs = ["callback_test_service.cc"],
     hdrs = ["callback_test_service.h"],
     external_deps = [
+        "absl/log:check",
         "benchmark",
     ],
     deps = [
@@ -404,6 +437,9 @@ grpc_cc_library(
     testonly = 1,
     hdrs = [
         "callback_unary_ping_pong.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         ":bm_callback_test_service_impl",
@@ -433,6 +469,9 @@ grpc_cc_library(
     hdrs = [
         "callback_streaming_ping_pong.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         ":bm_callback_test_service_impl",
         ":helpers",
@@ -460,7 +499,10 @@ grpc_cc_test(
     name = "bm_basic_work_queue",
     srcs = ["bm_basic_work_queue.cc"],
     args = grpc_benchmark_args(),
-    external_deps = ["benchmark"],
+    external_deps = [
+        "absl/log:check",
+        "benchmark"
+    ],
     tags = [
         "manual",
         "no_windows",

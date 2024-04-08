@@ -15,6 +15,7 @@
 
 #include <deque>
 
+#include "absl/log/check.h"
 #include <benchmark/benchmark.h>
 
 #include <grpc/event_engine/event_engine.h>
@@ -69,7 +70,7 @@ void BM_MultithreadedWorkQueuePopOldest(benchmark::State& state) {
       benchmark::Counter(element_count * state.iterations() / pop_attempts,
                          benchmark::Counter::kAvgThreads);
   if (state.thread_index() == 0) {
-    GPR_ASSERT(globalWorkQueue.Empty());
+    CHECK(globalWorkQueue.Empty());
   }
 }
 BENCHMARK(BM_MultithreadedWorkQueuePopOldest)
@@ -94,7 +95,7 @@ void BM_MultithreadedWorkQueuePopMostRecent(benchmark::State& state) {
       benchmark::Counter(element_count * state.iterations() / pop_attempts,
                          benchmark::Counter::kAvgThreads);
   if (state.thread_index() == 0) {
-    GPR_ASSERT(globalWorkQueue.Empty());
+    CHECK(globalWorkQueue.Empty());
   }
 }
 BENCHMARK(BM_MultithreadedWorkQueuePopMostRecent)
@@ -112,7 +113,7 @@ void BM_MultithreadedStdDequeLIFO(benchmark::State& state) {
       grpc_core::MutexLock lock(&globalMu);
       EventEngine::Closure* popped = globalDeque.back();
       globalDeque.pop_back();
-      GPR_ASSERT(popped != nullptr);
+      CHECK(popped != nullptr);
     }
   }
   state.counters["added"] = element_count * state.iterations();
