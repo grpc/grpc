@@ -214,10 +214,7 @@ OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
 OpenTelemetryPluginBuilderImpl&
 OpenTelemetryPluginBuilderImpl::AddOptionalLabel(
     absl::string_view optional_label_key) {
-  if (optional_label_keys_ == nullptr) {
-    optional_label_keys_ = std::make_shared<std::set<absl::string_view>>();
-  }
-  optional_label_keys_->emplace(optional_label_key);
+  optional_label_keys_.emplace(optional_label_key);
   return *this;
 }
 
@@ -340,7 +337,7 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
         server_selector,
     std::vector<std::unique_ptr<InternalOpenTelemetryPluginOption>>
         plugin_options,
-    std::shared_ptr<std::set<absl::string_view>> optional_label_keys,
+    const std::set<absl::string_view>& optional_label_keys,
     absl::AnyInvocable<
         bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter)
@@ -422,6 +419,17 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                 grpc::OpenTelemetryPluginBuilder::
                     kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
             "Compressed message bytes received per server call", "By");
+  }
+  // Store optional label keys for per call metrics
+  GPR_ASSERT(static_cast<size_t>(
+                 grpc_core::ClientCallTracer::CallAttemptTracer::
+                     OptionalLabelKey::kSize) <= kOptionalLabelsSizeLimit);
+  for (const auto& key : optional_label_keys) {
+    auto optional_key = OptionalLabelStringToKey(key);
+    if (optional_key.has_value()) {
+      per_call_optional_label_bits_.set(
+          static_cast<size_t>(optional_key.value()));
+    }
   }
   // Non-per-call metrics.
   grpc_core::GlobalInstrumentsRegistry::ForEach(
@@ -527,12 +535,36 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                                              descriptor.instrument_type));
         }
         for (size_t i = 0; i < descriptor.optional_label_keys.size(); ++i) {
-          if (optional_label_keys->find(descriptor.optional_label_keys[i]) !=
-              optional_label_keys->end()) {
+          if (optional_label_keys.find(descriptor.optional_label_keys[i]) !=
+              optional_label_keys.end()) {
             instruments_data_[descriptor.index].optional_labels_bits.set(i);
           }
         }
       });
+}
+
+namespace {
+constexpr absl::string_view kLocality = "grpc.lb.locality";
+}
+
+absl::string_view OpenTelemetryPlugin::OptionalLabelKeyToString(
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key) {
+  switch (key) {
+    case grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        kLocality:
+      return kLocality;
+    default:
+      grpc_core::Crash("Illegal OptionalLabelKey index");
+  }
+}
+
+absl::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+OpenTelemetryPlugin::OptionalLabelStringToKey(absl::string_view key) {
+  if (key == kLocality) {
+    return grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        kLocality;
+  }
+  return absl::nullopt;
 }
 
 std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
