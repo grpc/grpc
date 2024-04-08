@@ -23,6 +23,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
