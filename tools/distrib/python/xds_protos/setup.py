@@ -55,7 +55,7 @@ setuptools.setup(
     author_email="grpc-io@googlegroups.com",
     url="https://grpc.io",
     license="Apache License 2.0",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     classifiers=CLASSIFIERS,
