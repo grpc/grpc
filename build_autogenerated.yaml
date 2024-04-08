@@ -10853,6 +10853,7 @@ targets:
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: grpclb_end2end_test
   gtest: true
