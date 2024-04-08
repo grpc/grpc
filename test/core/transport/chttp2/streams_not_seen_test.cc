@@ -488,7 +488,7 @@ TEST_F(StreamsNotSeenTest, StartStreamBeforeGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(102), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -561,7 +561,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(102),
                                 nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(102), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -626,7 +626,7 @@ TEST_F(StreamsNotSeenTest, StartStreamAfterGoaway) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -704,7 +704,7 @@ TEST_F(ZeroConcurrencyTest, StartStreamBeforeGoaway) {
   // the transport. If that no longer holds true, we might need to drive the cq
   // for some time to make sure that the RPC reaches the HTTP2 layer.
   SendGoaway(0);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata
@@ -769,7 +769,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
   grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Verify status and metadata

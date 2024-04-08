@@ -142,7 +142,7 @@ void StartCallAndCloseWrites(grpc_call* call, grpc_completion_queue* cq) {
   void* tag = call;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   grpc_event event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   CHECK(event.type == GRPC_OP_COMPLETE);
@@ -180,7 +180,7 @@ void FinishCall(grpc_call* call, grpc_completion_queue* cq) {
   op++;
   grpc_call_error error = grpc_call_start_batch(
       call, ops, static_cast<size_t>(op - ops), tag, nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   grpc_event event = grpc_completion_queue_next(
       cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   CHECK(event.type == GRPC_OP_COMPLETE);

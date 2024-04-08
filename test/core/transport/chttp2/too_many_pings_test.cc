@@ -154,12 +154,12 @@ grpc_status_code PerformCall(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   grpc_call_cancel_with_status(s, GRPC_STATUS_PERMISSION_DENIED, "test status",
@@ -284,12 +284,12 @@ grpc_status_code PerformWaitingCall(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   // Request a call on the server
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
   // Since the server is configured to allow only a single ping strike, it would
@@ -650,12 +650,12 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
@@ -668,7 +668,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(102), nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102), true);
   cqv.Verify();
@@ -695,7 +695,7 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);

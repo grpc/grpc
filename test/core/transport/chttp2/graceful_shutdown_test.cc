@@ -315,7 +315,7 @@ TEST_F(GracefulShutdownTest, RequestStartedBeforeFinalGoaway) {
   grpc_metadata_array_init(&request_metadata_recv);
   error = grpc_server_request_call(server_, &s, &call_details,
                                    &request_metadata_recv, cq_, cq_, Tag(100));
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   // Initiate shutdown on the server
   grpc_server_shutdown_and_notify(server_, cq_, Tag(1));
   // Wait for first goaway
@@ -362,7 +362,7 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   grpc_metadata_array_init(&request_metadata_recv);
   error = grpc_server_request_call(server_, &s, &call_details,
                                    &request_metadata_recv, cq_, cq_, Tag(100));
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   // Send the request from the client.
   constexpr char kRequestFrame[] =
       "\x00\x00\xbe\x01\x05\x00\x00\x00\x01"
@@ -432,7 +432,7 @@ TEST_F(GracefulShutdownTest, RequestStartedAfterFinalGoawayIsIgnored) {
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  CHECK(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   // The shutdown should successfully complete.
   cqv_->Expect(Tag(1), true);
