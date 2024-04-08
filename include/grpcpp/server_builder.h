@@ -300,7 +300,7 @@ class ServerBuilder {
     // Creates a passive listener for Server Endpoint injection.
     ///
     /// \a PasiveListener lets applications provide pre-established connections
-    /// to gRPC Servers. The server will behave as if it accepted the onnection
+    /// to gRPC Servers. The server will behave as if it accepted the connection
     /// itself on its own listening addresses.
     ///
     /// This can be called multiple times to create passive listeners with

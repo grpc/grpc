@@ -1211,11 +1211,12 @@ absl::Status grpc_server_add_passive_listener(
                  2, (server, credentials));
   // Create security context.
   if (credentials == nullptr) {
-    return GRPC_ERROR_CREATE("No credentials specified for passive listener");
+    return absl::UnavailableError(
+        "No credentials specified for passive listener");
   }
   auto sc = credentials->create_security_connector(grpc_core::ChannelArgs());
   if (sc == nullptr) {
-    return GRPC_ERROR_CREATE(
+    return absl::UnavailableError(
         absl::StrCat("Unable to create secure server with credentials of type ",
                      credentials->type().name()));
   }
@@ -1226,6 +1227,5 @@ absl::Status grpc_server_add_passive_listener(
       grpc_core::Chttp2ServerListener::CreateForPassiveListener(
           server, args, passive_listener);
   passive_listener->server_ = server->Ref();
-
   return absl::OkStatus();
 }
