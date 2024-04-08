@@ -24,6 +24,9 @@ grpc_proto_fuzzer(
     name = "hpack_parser_fuzzer",
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
+    external_deps = [
+        "absl/log:check",
+    ],
     proto = "hpack_parser_fuzzer.proto",
     proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
