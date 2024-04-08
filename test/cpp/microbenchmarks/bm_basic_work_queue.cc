@@ -114,7 +114,7 @@ void BM_MultithreadedStdDequeLIFO(benchmark::State& state) {
       grpc_core::MutexLock lock(&globalMu);
       EventEngine::Closure* popped = globalDeque.back();
       globalDeque.pop_back();
-      CHECK(popped != nullptr);
+      CHECK(popped, nullptr);
     }
   }
   state.counters["added"] = element_count * state.iterations();
