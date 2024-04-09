@@ -19,14 +19,13 @@
 #ifndef GRPCPP_SERVER_H
 #define GRPCPP_SERVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <list>
 #include <memory>
 #include <vector>
 
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/health_check_service_interface.h>

@@ -19,8 +19,6 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -32,6 +30,7 @@
 #include "opentelemetry/metrics/meter_provider.h"
 
 #include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc {
 
