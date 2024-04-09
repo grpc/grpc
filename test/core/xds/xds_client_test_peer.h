@@ -17,12 +17,12 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_CLIENT_TEST_PEER_H
 #define GRPC_TEST_CORE_XDS_XDS_CLIENT_TEST_PEER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <set>
 
 #include "absl/functional/function_ref.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_client.h"
 

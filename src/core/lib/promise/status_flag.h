@@ -175,6 +175,14 @@ class ValueOrFailure {
     return value_ == other.value_;
   }
 
+  bool operator!=(const ValueOrFailure& other) const {
+    return value_ != other.value_;
+  }
+
+  bool operator==(const T& other) const { return value_ == other; }
+
+  bool operator!=(const T& other) const { return value_ != other; }
+
  private:
   absl::optional<T> value_;
 };

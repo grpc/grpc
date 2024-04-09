@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 #define GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <thread>
 
@@ -31,6 +29,7 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/grpcpp.h>
 

@@ -422,7 +422,7 @@ test_suite(
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp312_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp38_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp39_build_test",
         ":package_csharp_linux_build_test",
         ":package_python_linux_build_test",
     ],
