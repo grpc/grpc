@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/core/xds/xds_transport_fake.h"
 
 #include <functional>
@@ -27,6 +25,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/event_engine/default_event_engine.h"

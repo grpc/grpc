@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json_args.h"
