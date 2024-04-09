@@ -131,7 +131,7 @@ class ChannelTest(unittest.TestCase):
         channel = grpc.secure_channel("google.com:443", self.ssl_channel_credentials)
         channel.close()
 
-    def test_compute_secure_channel(self):
+    def test_compute_engine_secure_channel(self):
         channel = grpc.secure_channel("google.com:443", self.compute_engine_channel_credentials)
         channel.close()
 
