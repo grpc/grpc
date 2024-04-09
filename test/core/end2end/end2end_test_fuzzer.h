@@ -21,4 +21,4 @@ namespace grpc_core {
 void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg);
 }
 
-#endif
+#endif  // GRPC_TEST_CORE_END2END_END2END_TEST_FUZZER_H
