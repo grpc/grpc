@@ -1088,7 +1088,7 @@ class ImplementChannelFilter : public ChannelFilter,
         GetContext<Arena>()
             ->ManagedNew<promise_filter_detail::CallWrapper<Derived>>(
                 static_cast<Derived*>(this));
-    auto* c = down_cast<PipeBasedCallSpine*>(call_spine);
+    auto* c = DownCast<PipeBasedCallSpine*>(call_spine);
     auto* d = static_cast<Derived*>(this);
     promise_filter_detail::InterceptClientInitialMetadata(
         &Derived::Call::OnClientInitialMetadata, call, d, c);

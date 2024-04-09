@@ -96,7 +96,7 @@ const grpc_channel_filter* PromiseTracingFilterFor(
               },
               /* init_call: */
               [](grpc_channel_element* elem, CallSpineInterface* call) {
-                auto* c = down_cast<PipeBasedCallSpine*>(call);
+                auto* c = DownCast<PipeBasedCallSpine*>(call);
                 auto* source_filter =
                     static_cast<const DerivedFilter*>(elem->filter)->filter;
                 c->client_initial_metadata().receiver.InterceptAndMap(
