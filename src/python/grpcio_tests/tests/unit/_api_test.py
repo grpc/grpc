@@ -155,7 +155,7 @@ class ChannelTest(unittest.TestCase):
         for thread in threads:
             thread.join()
 
-    def test_multiple_compute_secure_channel(self):
+    def test_multiple_compute_engine_secure_channel(self):
         _THREAD_COUNT = 10
         wait_group = test_common.WaitGroup(_THREAD_COUNT)
 
