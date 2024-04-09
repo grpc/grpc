@@ -247,7 +247,7 @@ class Server : public ServerInterface,
 
     Arena* CreateArena() override;
     absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
+        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;

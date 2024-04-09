@@ -388,6 +388,10 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
+  auto PullClientInitialMetadata() {
+    return spine_->PullClientInitialMetadata();
+  }
+
   auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
     return spine_->PushServerInitialMetadata(std::move(md));
   }
