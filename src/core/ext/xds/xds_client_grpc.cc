@@ -271,8 +271,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "xDS client for key: %s was created",
-            std::string(key).c_str());
+    gpr_log(GPR_INFO, "[xds_client %p] Created xDS client for key %s",
+            xds_client.get(), std::string(key).c_str());
   }
   return xds_client;
 }

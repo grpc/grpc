@@ -291,7 +291,6 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
-    "include/grpc/passive_listener.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
@@ -453,7 +452,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
-    "include/grpcpp/passive_listener.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/tls_crl_provider.h",
@@ -1708,6 +1706,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -1721,6 +1720,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:metadata_batch",
+        "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
     ],
 )
@@ -2458,7 +2458,6 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
-        "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
         "//src/core:json_reader",
@@ -2515,7 +2514,6 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
-        "grpc_transport_chttp2",
         "grpc_unsecure",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
@@ -2537,7 +2535,6 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
-        "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
@@ -3029,6 +3026,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_platform",
         "ref_counted_ptr",
+        "//src/core:down_cast",
         "//src/core:ref_counted",
     ],
 )
@@ -3061,6 +3059,7 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "gpr_platform",
+        "//src/core:down_cast",
     ],
 )
 
@@ -4269,6 +4268,7 @@ grpc_cc_library(
     visibility = ["@grpc:xds_client_core"],
     deps = [
         "backoff",
+        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",

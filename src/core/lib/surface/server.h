@@ -41,7 +41,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
-#include <grpc/passive_listener.h>
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
@@ -76,9 +75,6 @@
   "grpc.server.max_pending_requests_hard_limit"
 
 namespace grpc_core {
-namespace experimental {
-class PassiveListenerImpl;
-}  // namespace experimental
 
 extern TraceFlag grpc_server_channel_trace;
 
@@ -117,7 +113,7 @@ class Server : public ServerInterface,
   /// Interface for listeners.
   /// Implementations must override the Orphan() method, which should stop
   /// listening and initiate destruction of the listener.
-  class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
+  class ListenerInterface : public Orphanable {
    public:
     ~ListenerInterface() override = default;
 
@@ -217,14 +213,6 @@ class Server : public ServerInterface,
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
  private:
-  // note: the grpc_core::Server redundant namespace qualification is
-  // required for older gcc versions.
-  // TODO(yashykt): eliminate this friend statement as part of your upcoming
-  // server listener refactoring.
-  friend absl::Status(::grpc_server_add_passive_listener)(
-      grpc_core::Server* server, grpc_server_credentials* credentials,
-      std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
-          passive_listener);
   struct RequestedCall;
 
   class RequestMatcherInterface;

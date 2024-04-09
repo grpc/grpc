@@ -82,8 +82,8 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
         1, KeyValueIterable(
                /*injected_labels_from_plugin_options=*/{}, additional_labels,
                /*active_plugin_options_view=*/nullptr,
-               /*optional_labels_span=*/{}, /*is_client=*/true,
-               parent_->otel_plugin_));
+               /*optional_labels=*/{},
+               /*is_client=*/true, parent_->otel_plugin_));
   }
 }
 
@@ -156,8 +156,8 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
                 static_cast<grpc_status_code>(status.code()))}}};
   KeyValueIterable labels(
       injected_labels_from_plugin_options_, additional_labels,
-      &parent_->scope_config_->active_plugin_options_view(),
-      optional_labels_array_, /*is_client=*/true, parent_->otel_plugin_);
+      &parent_->scope_config_->active_plugin_options_view(), optional_labels_,
+      /*is_client=*/true, parent_->otel_plugin_);
   if (parent_->otel_plugin_->client_.attempt.duration != nullptr) {
     parent_->otel_plugin_->client_.attempt.duration->Record(
         absl::ToDoubleSeconds(absl::Now() - start_time_), labels,
@@ -209,12 +209,10 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }
 
-void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
-    AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> optional_labels) {
-  optional_labels_array_[static_cast<std::size_t>(component)] =
-      std::move(optional_labels);
+void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::SetOptionalLabel(
+    OptionalLabelKey key, grpc_core::RefCountedStringValue value) {
+  GPR_ASSERT(key < OptionalLabelKey::kSize);
+  optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }
 
 //

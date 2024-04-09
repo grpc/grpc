@@ -196,7 +196,6 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
-  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -2184,7 +2183,6 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
-  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -3793,7 +3791,6 @@ libs:
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
-  - include/grpcpp/passive_listener.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4222,7 +4219,6 @@ libs:
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
-  - include/grpcpp/passive_listener.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4370,7 +4366,6 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
-  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -5742,12 +5737,14 @@ targets:
   headers:
   - src/core/lib/avl/avl.h
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   src:
   - test/core/avl/avl_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -6414,6 +6411,7 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
@@ -8944,6 +8942,7 @@ targets:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -8960,6 +8959,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -17291,7 +17291,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -17308,7 +17307,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
-  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -19159,6 +19157,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/resource_quota/thread_quota.h
@@ -19167,6 +19166,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -20861,6 +20861,63 @@ targets:
   - protobuf
   - grpc_test_util
   uses_polling: false
+- name: xds_fallback_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/scoped_env_var.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_fallback_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
