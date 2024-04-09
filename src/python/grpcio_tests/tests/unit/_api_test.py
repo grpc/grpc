@@ -113,7 +113,7 @@ class ChannelConnectivityTest(unittest.TestCase):
 
 
 @pytest.fixture(scope="class")
-def channel_credentials(request):
+def compute_engine_channel_credentials(request):
     class TestCallCredentials(grpc.AuthMetadataPlugin):
         def __call__(self, context, callback):
             callback((), None)
@@ -122,13 +122,12 @@ def channel_credentials(request):
         test_call_credentials, "test call credentials"
     )
     request.cls.compute_engine_channel_credentials = grpc.compute_engine_channel_credentials(call_credentials)
-    request.cls.ssl_channel_credentials = grpc.ssl_channel_credentials()
 
 
 @pytest.mark.usefixtures("channel_credentials")
 class ChannelTest(unittest.TestCase):
     def test_ssl_secure_channel(self):
-        channel = grpc.secure_channel("google.com:443", self.ssl_channel_credentials)
+        channel = grpc.secure_channel("google.com:443", grpc.ssl_channel_credentials())
         channel.close()
 
     def test_compute_engine_secure_channel(self):
@@ -142,7 +141,7 @@ class ChannelTest(unittest.TestCase):
         def create_secure_channel():
             wait_group.done()
             wait_group.wait()
-            channel = grpc.secure_channel("google.com:443", self.ssl_channel_credentials)
+            channel = grpc.secure_channel("google.com:443", grpc.ssl_channel_credentials())
             channel.close()
 
         threads = []
