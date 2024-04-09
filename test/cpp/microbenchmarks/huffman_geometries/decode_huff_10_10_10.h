@@ -17,10 +17,10 @@
 
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_HUFFMAN_GEOMETRIES_DECODE_HUFF_10_10_10_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_HUFFMAN_GEOMETRIES_DECODE_HUFF_10_10_10_H
-#include <grpc/support/port_platform.h>
-
 #include <cstddef>
 #include <cstdint>
+
+#include <grpc/support/port_platform.h>
 namespace grpc_core {
 namespace geometry_10_10_10 {
 class HuffDecoderCommon {

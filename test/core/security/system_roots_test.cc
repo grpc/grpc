@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <stdio.h>
+
+#include <grpc/support/port_platform.h>
 
 #if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
     defined(GPR_WINDOWS)

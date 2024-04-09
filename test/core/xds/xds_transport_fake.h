@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 #define GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <deque>
@@ -33,6 +31,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
