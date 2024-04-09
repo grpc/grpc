@@ -124,7 +124,7 @@ def compute_engine_channel_credentials(request):
     request.cls.compute_engine_channel_credentials = grpc.compute_engine_channel_credentials(call_credentials)
 
 
-@pytest.mark.usefixtures("channel_credentials")
+@pytest.mark.usefixtures("compute_engine_channel_credentials")
 class ChannelTest(unittest.TestCase):
     def test_ssl_secure_channel(self):
         channel = grpc.secure_channel("google.com:443", grpc.ssl_channel_credentials())
