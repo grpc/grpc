@@ -1,4 +1,4 @@
-// Copyright 2024 The gRPC Authors
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,17 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPCPP_PASSIVE_LISTENER_H
-#define GRPCPP_PASSIVE_LISTENER_H
 
-#include <grpc/passive_listener.h>
+#ifndef GRPC_TEST_CORE_END2END_END2END_TEST_FUZZER_H
+#define GRPC_TEST_CORE_END2END_END2END_TEST_FUZZER_H
 
-namespace grpc {
-namespace experimental {
+#include "test/core/end2end/end2end_test_fuzzer.pb.h"
 
-using grpc_core::experimental::PassiveListener;
+namespace grpc_core {
+void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg);
+}
 
-}  // namespace experimental
-}  // namespace grpc
-
-#endif  // GRPCPP_PASSIVE_LISTENER_H
+#endif

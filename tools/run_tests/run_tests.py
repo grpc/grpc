@@ -284,6 +284,7 @@ class CLanguage(object):
                     "default",
                     "cmake",
                     "cmake_ninja_vs2019",
+                    "cmake_ninja_vs2022",
                     "cmake_vs2019",
                     "cmake_vs2022",
                 ],
@@ -300,6 +301,9 @@ class CLanguage(object):
                 # the compiler used is exactly the same as for cmake_vs2017
                 cmake_generator = "Ninja"
                 activate_vs_tools = "2019"
+            elif self.args.compiler == "cmake_ninja_vs2022":
+                cmake_generator = "Ninja"
+                activate_vs_tools = "2022"
             elif self.args.compiler == "cmake_vs2019":
                 cmake_generator = "Visual Studio 16 2019"
             elif self.args.compiler == "cmake_vs2022":
@@ -1678,6 +1682,7 @@ argp.add_argument(
         "coreclr",
         "cmake",
         "cmake_ninja_vs2019",
+        "cmake_ninja_vs2022",
         "cmake_vs2019",
         "cmake_vs2022",
         "mono",
