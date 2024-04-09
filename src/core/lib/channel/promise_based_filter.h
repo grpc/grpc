@@ -576,7 +576,8 @@ inline void InterceptClientToServerMessage(
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto r = call->OnClientToServerMessage(std::move(msg), channel);
         if (r.ok()) return std::move(*r);
-        call_spine->PushServerTrailingMetadata(std::move(r.status()));
+        call_spine->PushServerTrailingMetadata(
+            ServerMetadataFromStatus(r.status()));
         return absl::nullopt;
       });
 }
