@@ -309,6 +309,7 @@ Poll<bool> filters_detail::PipeState::PollClosed() {
     case ValueState::kError:
       return true;
   }
+  GPR_UNREACHABLE_CODE(return Pending{});
 }
 
 void filters_detail::PipeState::CloseSending() {

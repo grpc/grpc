@@ -131,8 +131,12 @@ class TcpTracerInterface {
   };
 
   virtual ~TcpTracerInterface() = default;
+  // Records a per-message event with an optional snapshot of connection
+  // metrics.
   virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
                            absl::optional<ConnectionMetrics> metrics) = 0;
+  // Records a snapshot of connection metrics.
+  virtual void RecordConnectionMetrics(ConnectionMetrics metrics) = 0;
 };
 
 }  // namespace grpc_core

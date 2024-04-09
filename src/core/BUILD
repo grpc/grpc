@@ -1157,6 +1157,7 @@ grpc_cc_library(
     public_hdrs = ["lib/gprpp/ref_counted.h"],
     deps = [
         "atomic_utils",
+        "down_cast",
         "//:debug_location",
         "//:gpr",
         "//:ref_counted_ptr",
@@ -1168,6 +1169,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["lib/gprpp/dual_ref_counted.h"],
     deps = [
+        "down_cast",
         "//:debug_location",
         "//:gpr",
         "//:orphanable",
@@ -1207,6 +1209,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/transport/handshaker_factory.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "iomgr_fwd",
@@ -1223,6 +1226,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/transport/handshaker_registry.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "channel_args",
         "handshaker_factory",
@@ -1627,6 +1631,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/iomgr_fwd.h",
     ],
+    visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = ["//:gpr_platform"],
 )
 
@@ -5345,10 +5350,12 @@ grpc_cc_library(
         "match",
         "pollset_set",
         "ref_counted",
+        "ref_counted_string",
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
         "xds_dependency_manager",
+        "//:call_tracer",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -5430,6 +5437,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
+        "ref_counted_string",
         "validation_errors",
         "//:config",
         "//:debug_location",

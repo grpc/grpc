@@ -87,9 +87,10 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
   struct GlobalInt64GaugeHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleGaugeHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackInt64GaugeHandle : public GlobalCallbackHandle {};
-  struct GlobalCallbackDoubleGaugeHandle : public GlobalCallbackHandle {};
+  struct GlobalCallbackInt64GaugeHandle : public GlobalInstrumentHandle {};
+  struct GlobalCallbackDoubleGaugeHandle : public GlobalInstrumentHandle {};
+  using GlobalCallbackHandle = absl::variant<GlobalCallbackInt64GaugeHandle,
+                                             GlobalCallbackDoubleGaugeHandle>;
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   static GlobalUInt64CounterHandle RegisterUInt64Counter(
@@ -317,13 +318,16 @@ class GlobalStatsPluginRegistry {
 
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
-    // will be invoked no more often than min_interval.
+    // will be invoked no more often than min_interval.  Multiple callbacks may
+    // be registered for the same metrics, as long as no two callbacks report
+    // data for the same set of labels in which case the behavior is undefined.
     //
     // The returned object is a handle that allows the caller to control
     // the lifetime of the callback; when the returned object is
     // destroyed, the callback is de-registered.  The returned object
     // must not outlive the StatsPluginGroup object that created it.
-    std::unique_ptr<RegisteredMetricCallback> RegisterCallback(
+    GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
+    RegisterCallback(
         absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
         std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
