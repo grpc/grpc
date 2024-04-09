@@ -368,7 +368,8 @@ TEST_F(ServiceConfigTest, Parser2ErrorInvalidValue) {
       << service_config.status();
 }
 
-TEST(ServiceConfigParserTest, DoubleRegistration) {
+TEST(ServiceConfigParserDeathTest, DoubleRegistration) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   CoreConfiguration::Reset();
   ASSERT_DEATH_IF_SUPPORTED(
       CoreConfiguration::WithSubstituteBuilder builder(

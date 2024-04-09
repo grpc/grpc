@@ -1706,6 +1706,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -1719,6 +1720,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:metadata_batch",
+        "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
     ],
 )
@@ -3024,6 +3026,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_platform",
         "ref_counted_ptr",
+        "//src/core:down_cast",
         "//src/core:ref_counted",
     ],
 )
@@ -3056,6 +3059,7 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "gpr_platform",
+        "//src/core:down_cast",
     ],
 )
 
@@ -4264,6 +4268,7 @@ grpc_cc_library(
     visibility = ["@grpc:xds_client_core"],
     deps = [
         "backoff",
+        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",
