@@ -608,9 +608,7 @@ class XdsClientTest : public ::testing::Test {
     const ResourceUpdateMap& resource_updates_invalid() const {
       return resource_updates_invalid_;
     }
-    const ServerFailureMap& server_failures() const {
-      return server_failures_;
-    }
+    const ServerFailureMap& server_failures() const { return server_failures_; }
 
    private:
     void ReportResourceUpdates(absl::string_view xds_server,
