@@ -214,6 +214,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
+    const XdsBootstrap::XdsServer* server() const { return &server_; }
+
    private:
     class RefCountedOnConnectivityFailure
         : public RefCounted<RefCountedOnConnectivityFailure> {
