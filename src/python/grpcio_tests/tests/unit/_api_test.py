@@ -14,11 +14,11 @@
 """Test of gRPC Python's application-layer API."""
 
 import logging
-import pytest
 import threading
 import unittest
 
 import grpc
+import pytest
 
 from tests.unit import _from_grpc_import_star
 from tests.unit import test_common
