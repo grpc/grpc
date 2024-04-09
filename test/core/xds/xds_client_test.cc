@@ -4096,9 +4096,10 @@ TEST_F(XdsClientTest, FallbackReportsError) {
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, false),
                   ::testing::Pair(fallback_server.server_uri(), false)));
-  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre(
-      ::testing::Pair(kDefaultXdsServerUrl, 1),
-      ::testing::Pair(fallback_server.server_uri(), 1)));
+  EXPECT_THAT(
+      metrics_reporter_->server_failures(),
+      ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1),
+                             ::testing::Pair(fallback_server.server_uri(), 1)));
   auto error = watcher->WaitForNextError();
   ASSERT_TRUE(error.has_value());
   EXPECT_THAT(error->code(), absl::StatusCode::kUnavailable);
@@ -4148,8 +4149,8 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
               ::testing::ElementsAre(
                   ::testing::Pair(kDefaultXdsServerUrl, false),
                   ::testing::Pair(fallback_server.server_uri(), true)));
-  EXPECT_THAT(metrics_reporter_->server_failures(), ::testing::ElementsAre(
-      ::testing::Pair(kDefaultXdsServerUrl, 1)));
+  EXPECT_THAT(metrics_reporter_->server_failures(),
+              ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1)));
   // XdsClient should have delivered the response to the watcher.
   auto resource = watcher->WaitForNextResource();
   ASSERT_NE(resource, nullptr);
