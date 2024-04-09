@@ -18,7 +18,6 @@ import threading
 import unittest
 
 import grpc
-import pytest
 
 from tests.unit import _from_grpc_import_star
 from tests.unit import test_common
@@ -112,23 +111,18 @@ class ChannelConnectivityTest(unittest.TestCase):
         )
 
 
-@pytest.fixture(scope="class")
-def compute_engine_channel_credentials(request):
-    class TestCallCredentials(grpc.AuthMetadataPlugin):
-        def __call__(self, context, callback):
-            callback((), None)
-
-    test_call_credentials = TestCallCredentials()
-    call_credentials = grpc.metadata_call_credentials(
-        test_call_credentials, "test call credentials"
-    )
-    request.cls.compute_engine_channel_credentials = (
-        grpc.compute_engine_channel_credentials(call_credentials)
-    )
-
-
-@pytest.mark.usefixtures("compute_engine_channel_credentials")
 class ChannelTest(unittest.TestCase):
+    def compute_engine_channel_credentials(self):
+        class TestCallCredentials(grpc.AuthMetadataPlugin):
+            def __call__(self, context, callback):
+                callback((), None)
+
+        test_call_credentials = TestCallCredentials()
+        call_credentials = grpc.metadata_call_credentials(
+            test_call_credentials, "test call credentials"
+        )
+        return grpc.compute_engine_channel_credentials(call_credentials)
+
     def test_ssl_secure_channel(self):
         channel = grpc.secure_channel(
             "google.com:443", grpc.ssl_channel_credentials()
@@ -137,7 +131,7 @@ class ChannelTest(unittest.TestCase):
 
     def test_compute_engine_secure_channel(self):
         channel = grpc.secure_channel(
-            "google.com:443", self.compute_engine_channel_credentials
+            "google.com:443", self.compute_engine_channel_credentials()
         )
         channel.close()
 
@@ -171,7 +165,7 @@ class ChannelTest(unittest.TestCase):
             wait_group.done()
             wait_group.wait()
             channel = grpc.secure_channel(
-                "google.com:443", self.compute_engine_channel_credentials
+                "google.com:443", self.compute_engine_channel_credentials()
             )
             channel.close()
 
