@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 
 #include <atomic>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/promise/trace.h"

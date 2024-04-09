@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <type_traits>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

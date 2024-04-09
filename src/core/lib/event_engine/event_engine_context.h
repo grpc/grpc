@@ -15,9 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/context.h"
 

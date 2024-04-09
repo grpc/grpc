@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -29,6 +27,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"

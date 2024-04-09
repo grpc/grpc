@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
@@ -28,6 +26,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

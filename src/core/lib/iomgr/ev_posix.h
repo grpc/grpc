@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
 #define GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
 
-#include <grpc/support/port_platform.h>
-
 #include <poll.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

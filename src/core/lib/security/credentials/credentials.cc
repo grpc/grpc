@@ -16,14 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 
 #include <stdint.h>
 #include <string.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"

@@ -16,9 +16,8 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
