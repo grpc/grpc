@@ -4138,11 +4138,11 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
           .Serialize());
   EXPECT_TRUE(fallback_stream->Orphaned());
   resource = watcher->WaitForNextResource();
-  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
-                                          kDefaultXdsServerUrl, true)));
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->name, "foo1");
   EXPECT_EQ(resource->value, 42);
+  EXPECT_THAT(GetServerConnections(), ::testing::ElementsAre(::testing::Pair(
+                                          kDefaultXdsServerUrl, true)));
   request = WaitForRequest(primary_stream.get());
   ASSERT_TRUE(request.has_value());
   CheckRequest(*request, XdsFooResourceType::Get()->type_url(),
