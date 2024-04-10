@@ -5869,6 +5869,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6097,6 +6098,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6362,6 +6364,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6607,6 +6610,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6683,6 +6687,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6746,6 +6751,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6809,6 +6815,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6872,6 +6879,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6952,6 +6960,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7030,6 +7039,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7093,6 +7103,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7452,6 +7463,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -7839,6 +7851,7 @@ targets:
   - test/core/filters/filter_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -7856,6 +7869,7 @@ targets:
   - test/core/filters/filter_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -8053,6 +8067,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8229,6 +8244,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8369,6 +8385,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8540,6 +8557,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8641,6 +8659,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8777,6 +8796,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9572,6 +9592,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9635,6 +9656,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9698,6 +9720,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9715,6 +9738,7 @@ targets:
   - test/core/filters/filter_test_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_unsecure
   - protobuf
   - grpc_test_util
@@ -9779,6 +9803,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10206,6 +10231,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   platforms:
@@ -10224,6 +10250,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
 - name: generic_end2end_test
@@ -10325,6 +10352,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10525,6 +10553,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10827,6 +10856,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
 - name: grpc_tool_test
@@ -10930,6 +10960,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -11091,6 +11122,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11289,6 +11321,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11377,6 +11410,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11532,6 +11566,7 @@ targets:
   - test/core/transport/test_suite/test_main.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   platforms:
@@ -11862,6 +11897,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11876,6 +11912,7 @@ targets:
   - test/core/event_engine/windows/iocp_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -12064,6 +12101,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12139,6 +12177,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12554,6 +12593,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12617,6 +12657,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12680,6 +12721,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12743,6 +12785,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13029,6 +13072,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13104,6 +13148,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13167,6 +13212,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13270,6 +13316,7 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -13381,6 +13428,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -13539,6 +13587,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13664,6 +13713,7 @@ targets:
   - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -13801,6 +13851,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13895,6 +13946,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13957,6 +14009,7 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -13991,6 +14044,7 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -14018,6 +14072,7 @@ targets:
   - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -14051,6 +14106,7 @@ targets:
   - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -14316,6 +14372,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14575,6 +14632,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14653,6 +14711,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14716,6 +14775,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14931,6 +14991,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15005,6 +15066,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15068,6 +15130,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15131,6 +15194,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15194,6 +15258,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15257,6 +15322,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15320,6 +15386,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15383,6 +15450,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15446,6 +15514,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15509,6 +15578,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15572,6 +15642,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15635,6 +15706,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15698,6 +15770,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15761,6 +15834,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15824,6 +15898,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15887,6 +15962,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15950,6 +16026,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16013,6 +16090,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16076,6 +16154,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16139,6 +16218,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16202,6 +16282,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16265,6 +16346,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16328,6 +16410,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16391,6 +16474,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16465,6 +16549,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16528,6 +16613,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16591,6 +16677,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16654,6 +16741,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16728,6 +16816,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16791,6 +16880,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16854,6 +16944,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16917,6 +17008,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16980,6 +17072,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17043,6 +17136,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17106,6 +17200,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17124,6 +17219,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -17181,6 +17277,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -17512,6 +17609,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17663,6 +17761,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17795,6 +17894,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17858,6 +17958,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17937,6 +18038,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18000,6 +18102,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18077,6 +18180,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18435,6 +18539,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18714,6 +18819,7 @@ targets:
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc
   uses_polling: false
 - name: test_core_channel_channelz_test
@@ -18730,6 +18836,7 @@ targets:
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_core_end2end_channelz_test
@@ -18792,6 +18899,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18813,6 +18921,7 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -18866,6 +18975,7 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
+  - absl/log:check
   - absl/status:statusor
   - absl/utility:utility
   - gpr
@@ -19048,6 +19158,7 @@ targets:
   - test/core/transport/test_suite/test_main.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   platforms:
@@ -19249,6 +19360,7 @@ targets:
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19341,6 +19453,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19497,6 +19610,7 @@ targets:
   - test/core/event_engine/posix/traced_buffer_list_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19563,6 +19677,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19911,6 +20026,7 @@ targets:
   - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -19925,6 +20041,7 @@ targets:
   - test/core/event_engine/windows/win_socket_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19956,6 +20073,7 @@ targets:
   - test/core/event_engine/windows/windows_endpoint_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -20192,6 +20310,7 @@ targets:
   - test/core/gprpp/work_serializer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -20257,6 +20376,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -20320,6 +20440,7 @@ targets:
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -20377,6 +20498,7 @@ targets:
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -21309,6 +21431,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false

@@ -17,6 +17,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/slice.h>
@@ -32,7 +33,7 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
-  GPR_ASSERT(len > 0);
+  CHECK(len > 0);
   unsigned char* contents = static_cast<unsigned char*>(gpr_malloc(len));
   memset(contents, 'a', len);
   return Slice(grpc_slice_new(contents, len, gpr_free));

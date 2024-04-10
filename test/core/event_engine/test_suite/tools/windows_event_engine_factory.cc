@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
@@ -38,7 +39,7 @@ CustomEventEngineFactory() {
 absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
-  GPR_ASSERT(false && "This tool was not built for Windows.");
+  CHECK(false && "This tool was not built for Windows.");
 }
 
 #endif

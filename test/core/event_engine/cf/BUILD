@@ -20,7 +20,10 @@ grpc_cc_library(
     name = "cf_engine_unit_test_lib",
     testonly = True,
     srcs = ["cf_engine_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "no_linux",
