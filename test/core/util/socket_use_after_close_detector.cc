@@ -16,13 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/core/util/socket_use_after_close_detector.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <unistd.h>

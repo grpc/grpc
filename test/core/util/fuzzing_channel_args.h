@@ -15,9 +15,9 @@
 #ifndef GRPC_TEST_CORE_UTIL_FUZZING_CHANNEL_ARGS_H
 #define GRPC_TEST_CORE_UTIL_FUZZING_CHANNEL_ARGS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

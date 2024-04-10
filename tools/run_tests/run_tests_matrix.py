@@ -377,61 +377,32 @@ def _create_portability_test_jobs(
             timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
         )
 
-    # portability C on Windows 64-bit (x86 is the default)
+    # portability C & C++ on Windows 64-bit
     test_jobs += _generate_jobs(
-        languages=["c"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="x64",
-        compiler="default",
-        labels=["portability", "corelang"],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs,
-    )
-
-    # portability C on Windows with the "Visual Studio" cmake
-    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
-    test_jobs += _generate_jobs(
-        languages=["c"],
+        languages=["c", "c++"],
         configs=["dbg"],
         platforms=["windows"],
         arch="default",
-        compiler="cmake_vs2019",
+        compiler="cmake_ninja_vs2019",
         labels=["portability", "corelang"],
         extra_args=extra_args,
-        inner_jobs=inner_jobs,
-    )
-
-    # portability C++ on Windows
-    # TODO(jtattermusch): some of the tests are failing, so we force --build_only
-    test_jobs += _generate_jobs(
-        languages=["c++"],
-        configs=["dbg"],
-        platforms=["windows"],
-        arch="default",
-        compiler="default",
-        labels=["portability", "corelang"],
-        extra_args=extra_args + ["--build_only"],
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
     )
 
-    # portability C and C++ on Windows using VS2019 (build only)
-    # TODO(jtattermusch): The C tests with exactly the same config are already running as part of the
-    # basictests_c suite (so we force --build_only to avoid running them twice).
-    # The C++ tests aren't all passing, so also force --build_only.
-    # NOTE(veblush): This is not neded as default=cmake_ninja_vs2019
-    # test_jobs += _generate_jobs(
-    #     languages=["c", "c++"],
-    #     configs=["dbg"],
-    #     platforms=["windows"],
-    #     arch="x64",
-    #     compiler="cmake_ninja_vs2019",
-    #     labels=["portability", "corelang"],
-    #     extra_args=extra_args + ["--build_only"],
-    #     inner_jobs=inner_jobs,
-    #     timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
-    # )
+    # portability C and C++ on Windows with the "Visual Studio 2022" cmake
+    # generator, i.e. not using Ninja (to verify that we can still build with msbuild)
+    test_jobs += _generate_jobs(
+        languages=["c", "c++"],
+        configs=["dbg"],
+        platforms=["windows"],
+        arch="x64",
+        compiler="cmake_vs2022",
+        labels=["portability", "corelang"],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT,
+    )
 
     # C and C++ with no-exceptions on Linux
     test_jobs += _generate_jobs(

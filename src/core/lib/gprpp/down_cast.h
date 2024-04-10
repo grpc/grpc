@@ -26,10 +26,10 @@
 namespace grpc_core {
 
 template <typename To, typename From>
-inline To down_cast(From* f) {
+inline To DownCast(From* f) {
   static_assert(
       std::is_base_of<From, typename std::remove_pointer<To>::type>::value,
-      "down_cast requires a base-to-derived relationship");
+      "DownCast requires a base-to-derived relationship");
 // If we have RTTI & we're in debug, assert that the cast is legal.
 #if ABSL_INTERNAL_HAS_RTTI
 #ifndef NDEBUG
@@ -40,8 +40,8 @@ inline To down_cast(From* f) {
 }
 
 template <typename To, typename From>
-inline To down_cast(From& f) {
-  return *down_cast<typename std::remove_reference<To>::type*>(&f);
+inline To DownCast(From& f) {
+  return *DownCast<typename std::remove_reference<To>::type*>(&f);
 }
 
 }  // namespace grpc_core

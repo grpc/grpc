@@ -256,12 +256,14 @@ grpc_cc_library(
     srcs = [
         "end2end_test_fuzzer.cc",
     ],
+    hdrs = [
+        "end2end_test_fuzzer.h",
+    ],
     external_deps = [
         "absl/functional:any_invocable",
         "absl/strings",
         "absl/types:optional",
         "gtest",
-        "libprotobuf_mutator",
     ],
     tags = ["nofixdeps"],
     deps = [

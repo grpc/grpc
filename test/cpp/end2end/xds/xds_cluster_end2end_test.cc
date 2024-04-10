@@ -44,8 +44,8 @@ using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
-using OptionalLabelComponent =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
+using OptionalLabelKey =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -336,38 +336,31 @@ TEST_P(CdsTest, MetricLabels) {
           ->GetLastCallAttemptTracer()
           ->GetOptionalLabels(),
       ::testing::ElementsAre(
-          ::testing::Pair(
-              OptionalLabelComponent::kXdsServiceLabels,
-              ::testing::Pointee(::testing::ElementsAre(
-                  ::testing::Pair("service_name", "myservice"),
-                  ::testing::Pair("service_namespace", "mynamespace")))),
-          ::testing::Pair(
-              OptionalLabelComponent::kXdsLocalityLabels,
-              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
-                  "grpc.lb.locality", LocalityNameString("locality0")))))));
+          ::testing::Pair(OptionalLabelKey::kXdsServiceName, "myservice"),
+          ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
+                          "mynamespace"),
+          ::testing::Pair(OptionalLabelKey::kLocality,
+                          LocalityNameString("locality0"))));
   // Send an RPC to backend 1.
   WaitForBackend(DEBUG_LOCATION, 1);
-  // Verify that the optional labels are recorded in the call tracer.
+  // Verify that the optional labels are recorded in the call
+  // tracer.
   EXPECT_THAT(
       fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
           ->GetLastCallAttemptTracer()
           ->GetOptionalLabels(),
       ::testing::ElementsAre(
-          ::testing::Pair(
-              OptionalLabelComponent::kXdsServiceLabels,
-              ::testing::Pointee(::testing::ElementsAre(
-                  ::testing::Pair("service_name", "myservice"),
-                  ::testing::Pair("service_namespace", "mynamespace")))),
-          ::testing::Pair(
-              OptionalLabelComponent::kXdsLocalityLabels,
-              ::testing::Pointee(::testing::ElementsAre(::testing::Pair(
-                  "grpc.lb.locality", LocalityNameString("locality1")))))));
-  // TODO(yashkt, yijiem): This shutdown shouldn't actually be necessary.
-  // The only reason it's here is to add a delay before
-  // fake_client_call_tracer_factory goes out of scope, since there may
-  // be lingering callbacks in the call stack that are using the
-  // CallAttemptTracer even after we get here, which would then cause a
-  // crash.  Find a cleaner way to fix this.
+          ::testing::Pair(OptionalLabelKey::kXdsServiceName, "myservice"),
+          ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
+                          "mynamespace"),
+          ::testing::Pair(OptionalLabelKey::kLocality,
+                          LocalityNameString("locality1"))));
+  // TODO(yashkt, yijiem): This shutdown shouldn't actually be necessary. The
+  // only reason it's here is to add a delay before
+  // fake_client_call_tracer_factory goes out of scope, since there may be
+  // lingering callbacks in the call stack that are using the CallAttemptTracer
+  // even after we get here, which would then cause a crash.  Find a cleaner way
+  // to fix this.
   balancer_->Shutdown();
 }
 
