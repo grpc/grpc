@@ -139,7 +139,7 @@ std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
                               num_expected_bytes - read_data.length());
     if (saved_errno == EAGAIN &&
         read_data.length() < static_cast<size_t>(num_expected_bytes)) {
-      CHECK_OK(BlockUntilReadable(sockfd).ok());
+      CHECK_OK(BlockUntilReadable(sockfd));
     } else if (saved_errno != 0 && num_expected_bytes > 0) {
       read_data.clear();
       break;
@@ -179,7 +179,7 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
     ret = TryWriteBytes(sockfd, saved_errno, write_bytes);
     if (saved_errno == EAGAIN && ret < static_cast<int>(write_bytes.length())) {
       CHECK_GE(ret, 0);
-      CHECK_OK(BlockUntilWritable(sockfd).ok());
+      CHECK_OK(BlockUntilWritable(sockfd));
     } else if (saved_errno != 0) {
       CHECK_LT(ret, 0);
       return ret;

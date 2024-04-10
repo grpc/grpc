@@ -80,7 +80,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification write_done;
   endpoint->Write(
       [&](absl::Status status) {
-        CHECK_OK(status.ok());
+        CHECK_OK(status);
         write_done.Notify();
       },
       &buf, nullptr);
@@ -120,7 +120,7 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  CHECK_OK(addr.ok());
+  CHECK_OK(addr);
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {

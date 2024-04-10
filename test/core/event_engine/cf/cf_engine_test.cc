@@ -42,7 +42,7 @@ namespace experimental {
 TEST(CFEventEngineTest, TestConnectionTimeout) {
   // use a non-routable IP so connection will timeout
   auto resolved_addr = URIToResolvedAddress("ipv4:10.255.255.255:1234");
-  CHECK_OK(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
 
   grpc_core::MemoryQuota memory_quota("cf_engine_test");
   grpc_core::Notification client_signal;
@@ -64,7 +64,7 @@ TEST(CFEventEngineTest, TestConnectionTimeout) {
 TEST(CFEventEngineTest, TestConnectionCancelled) {
   // use a non-routable IP so to cancel connection before timeout
   auto resolved_addr = URIToResolvedAddress("ipv4:10.255.255.255:1234");
-  CHECK_OK(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
 
   grpc_core::MemoryQuota memory_quota("cf_engine_test");
   grpc_core::Notification client_signal;

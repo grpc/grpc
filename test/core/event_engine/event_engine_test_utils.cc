@@ -121,7 +121,7 @@ absl::Status SendValidatePayload(absl::string_view data,
   std::function<void(absl::Status)> read_cb;
   read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
              &read_signal, &args](absl::Status status) {
-    CHECK_OK(status.ok());
+    CHECK_OK(status);
     if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
       read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                     read_store_buf);
@@ -143,7 +143,7 @@ absl::Status SendValidatePayload(absl::string_view data,
   // Start asynchronous writing at the send_endpoint.
   if (send_endpoint->Write(
           [&write_signal](absl::Status status) {
-            CHECK_OK(status.ok());
+            CHECK_OK(status);
             write_signal.Notify();
           },
           &write_slice_buf, nullptr)) {
@@ -186,7 +186,7 @@ absl::Status ConnectionManager::BindAndStartListener(
 
   ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
-      std::move(accept_cb), [](absl::Status status) { CHECK_OK(status.ok()); },
+      std::move(accept_cb), [](absl::Status status) { CHECK_OK(status); },
       config, std::make_unique<grpc_core::MemoryQuota>("foo"));
   if (!status.ok()) {
     return status.status();
@@ -201,7 +201,7 @@ absl::Status ConnectionManager::BindAndStartListener(
       return bind_status.status();
     }
   }
-  CHECK_OK(listener->Start().ok());
+  CHECK_OK(listener->Start());
   // Insert same listener pointer for all bind addresses after the listener
   // has started successfully.
   for (auto& addr : addrs) {
