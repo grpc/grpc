@@ -209,7 +209,7 @@ TRANSPORT_TEST(UnaryRequest) {
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -230,12 +230,13 @@ TRANSPORT_TEST(UnaryRequest) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         auto md = Arena::MakePooled<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
@@ -303,7 +304,8 @@ TRANSPORT_TEST(UnaryRequestOmitCheckEndOfStream) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world");
         auto md = Arena::MakePooled<ServerMetadata>();
         md->Set(ContentTypeMetadata(), ContentTypeMetadata::kApplicationGrpc);
         return handler.PushServerInitialMetadata(std::move(md));
@@ -347,13 +349,13 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -381,12 +383,13 @@ TRANSPORT_TEST(UnaryRequestWaitForServerInitialMetadataBeforeSendingPayload) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         return handler.PushMessage(Arena::MakePooled<Message>(
             SliceBuffer(Slice::FromCopiedString("why hello neighbor")), 0));
       },
@@ -443,7 +446,7 @@ TRANSPORT_TEST(ClientStreamingRequest) {
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -471,36 +474,41 @@ TRANSPORT_TEST(ClientStreamingRequest) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world (2)");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world (2)");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world (3)");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world (3)");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world (4)");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world (4)");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "hello world (5)");
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  "hello world (5)");
         return handler.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         auto md = Arena::MakePooled<ServerMetadata>();
         md->Set(GrpcStatusMetadata(), GRPC_STATUS_UNIMPLEMENTED);
         handler.PushServerTrailingMetadata(std::move(md));
@@ -528,48 +536,48 @@ TRANSPORT_TEST(ServerStreamingRequest) {
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor (2)");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor (3)");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor (4)");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor (5)");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
         EXPECT_TRUE(msg.value().has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(),
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
                   "why hello neighbor (6)");
         return initiator.PullMessage();
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -596,7 +604,7 @@ TRANSPORT_TEST(ServerStreamingRequest) {
       },
       [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
         EXPECT_TRUE(msg.ok());
-        EXPECT_FALSE(msg.value().has_Value());
+        EXPECT_FALSE(msg.value().has_value());
         return handler.PushMessage(Arena::MakePooled<Message>(
             SliceBuffer(Slice::FromCopiedString("why hello neighbor")), 0));
       },
