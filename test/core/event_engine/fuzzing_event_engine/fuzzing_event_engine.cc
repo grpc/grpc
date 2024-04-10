@@ -112,7 +112,7 @@ FuzzingEventEngine::FuzzingEventEngine(
   // Whilst a fuzzing EventEngine is active we override grpc's now function.
   g_orig_gpr_now_impl = gpr_now_impl;
   gpr_now_impl = GlobalNowImpl;
-  CHECK(g_fuzzing_event_engine == nullptr);
+  CHECK_EQ(g_fuzzing_event_engine, nullptr);
   g_fuzzing_event_engine = this;
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
@@ -610,7 +610,7 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
   if (g_fuzzing_event_engine == nullptr) {
     return gpr_inf_future(clock_type);
   }
-  CHECK(g_fuzzing_event_engine != nullptr);
+  CHECK_NE(g_fuzzing_event_engine, nullptr);
   grpc_core::MutexLock lock(&*now_mu_);
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
@@ -624,7 +624,7 @@ void FuzzingEventEngine::UnsetGlobalHooks() {
 }
 
 FuzzingEventEngine::ListenerInfo::~ListenerInfo() {
-  CHECK(g_fuzzing_event_engine != nullptr);
+  CHECK_NE(g_fuzzing_event_engine, nullptr);
   g_fuzzing_event_engine->Run(
       [on_shutdown = std::move(on_shutdown),
        shutdown_status = std::move(shutdown_status)]() mutable {

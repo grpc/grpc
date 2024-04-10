@@ -139,7 +139,7 @@ std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
                               num_expected_bytes - read_data.length());
     if (saved_errno == EAGAIN &&
         read_data.length() < static_cast<size_t>(num_expected_bytes)) {
-      CHECK(BlockUntilReadable(sockfd).ok());
+      CHECK_OK(BlockUntilReadable(sockfd).ok());
     } else if (saved_errno != 0 && num_expected_bytes > 0) {
       read_data.clear();
       break;
@@ -179,7 +179,7 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
     ret = TryWriteBytes(sockfd, saved_errno, write_bytes);
     if (saved_errno == EAGAIN && ret < static_cast<int>(write_bytes.length())) {
       CHECK(ret >= 0);
-      CHECK(BlockUntilWritable(sockfd).ok());
+      CHECK_OK(BlockUntilWritable(sockfd).ok());
     } else if (saved_errno != 0) {
       CHECK(ret < 0);
       return ret;
@@ -234,7 +234,7 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
 bool PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, const ReadArgs* args) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(buffer != nullptr);
+  CHECK_NE(buffer, nullptr);
   int read_hint_bytes =
       args != nullptr ? std::max(1, static_cast<int>(args->read_hint_bytes))
                       : 0;
@@ -248,7 +248,7 @@ bool PosixOracleEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs* /*args*/) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(data != nullptr);
+  CHECK_NE(data, nullptr);
   write_ops_channel_ = WriteOperation(data, std::move(on_writable));
   write_op_signal_->Notify();
   return false;

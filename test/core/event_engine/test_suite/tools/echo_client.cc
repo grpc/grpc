@@ -80,7 +80,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification write_done;
   endpoint->Write(
       [&](absl::Status status) {
-        CHECK(status.ok());
+        CHECK_OK(status.ok());
         write_done.Notify();
       },
       &buf, nullptr);
@@ -120,7 +120,7 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  CHECK(addr.ok());
+  CHECK_OK(addr.ok());
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
@@ -133,7 +133,7 @@ void RunUntilInterrupted() {
       },
       *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
-  CHECK(endpoint.get() != nullptr);
+  CHECK_NE(endpoint.get(), nullptr);
   gpr_log(GPR_DEBUG, "peer addr: %s",
           ResolvedAddressToString(endpoint->GetPeerAddress())->c_str());
   gpr_log(GPR_DEBUG, "local addr: %s",

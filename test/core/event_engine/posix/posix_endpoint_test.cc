@@ -81,7 +81,7 @@ std::list<Connection> CreateConnectedEndpoints(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK(resolved_addr.ok());
+  CHECK_OK(resolved_addr.ok());
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification* server_signal = new grpc_core::Notification();
 
@@ -105,7 +105,7 @@ std::list<Connection> CreateConnectedEndpoints(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  CHECK(listener.ok());
+  CHECK_OK(listener.ok());
 
   EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
   EXPECT_TRUE((*listener)->Start().ok());
