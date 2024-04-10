@@ -83,6 +83,9 @@ def json_run_localhost_batch():
                 "//test/cpp/qps:qps_json_driver",
                 "//test/cpp/qps:qps_worker",
             ],
+            external_deps = [
+                "absl/log:check",
+            ],
             deps = [
                 "//:gpr",
                 "//test/core/util:grpc_test_util",
