@@ -23,6 +23,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
