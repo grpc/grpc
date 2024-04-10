@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include <random>
 #include <unordered_map>
 
 #include <gtest/gtest.h>
 
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
 namespace grpc_core {

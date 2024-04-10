@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include <algorithm>
@@ -41,6 +39,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"

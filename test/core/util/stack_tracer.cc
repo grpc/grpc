@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/core/util/stack_tracer.h"
 
 #include <cstdio>
@@ -25,6 +23,8 @@
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/examine_stack.h"
 

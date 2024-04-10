@@ -91,26 +91,22 @@ class FakeClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> labels) override {
-      optional_labels_.emplace(component, std::move(labels));
+    void SetOptionalLabel(OptionalLabelKey key,
+                          RefCountedStringValue value) override {
+      optional_labels_.emplace(key, std::move(value));
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
 
-    const std::map<OptionalLabelComponent,
-                   std::shared_ptr<std::map<std::string, std::string>>>&
-    GetOptionalLabels() const {
+    const std::map<OptionalLabelKey, RefCountedStringValue>& GetOptionalLabels()
+        const {
       return optional_labels_;
     }
 
    private:
     std::vector<std::string>* annotation_logger_;
-    std::map<OptionalLabelComponent,
-             std::shared_ptr<std::map<std::string, std::string>>>
-        optional_labels_;
+    std::map<OptionalLabelKey, RefCountedStringValue> optional_labels_;
   };
 
   explicit FakeClientCallTracer(std::vector<std::string>* annotation_logger)

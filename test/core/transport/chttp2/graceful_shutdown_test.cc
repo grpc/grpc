@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -44,6 +42,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
