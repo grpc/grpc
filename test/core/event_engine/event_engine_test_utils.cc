@@ -102,7 +102,8 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
                                  EventEngine::Endpoint* receive_endpoint) {
-  CHECK_NE(receive_endpoint != nullptr && send_endpoint, nullptr);
+  CHECK_NE(receive_endpoint, nullptr);
+  CHECK_NE(send_endpoint, nullptr);
   int num_bytes_written = data.size();
   grpc_core::Notification read_signal;
   grpc_core::Notification write_signal;
