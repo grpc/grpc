@@ -55,6 +55,48 @@ def if_windows(a):
         "//conditions:default": [],
     })
 
+_EXTERNAL_DEPS = {
+    "upb_amalgamation_lib": "@com_google_protobuf//upb:amalgamation",
+    "upb_base_lib": "@com_google_protobuf//upb/base",
+    "upb_message_lib": "@com_google_protobuf//upb:message",
+    "upb_mem_lib": "@com_google_protobuf//upb/mem",
+    "upb_reflection": "@com_google_protobuf//upb:reflection",
+    "upb_lib_descriptor": "@com_google_protobuf//upb:descriptor_upb_proto",
+    "upb_lib_descriptor_reflection": "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
+    "upb_textformat_lib": "@com_google_protobuf//upb/text",
+    "upb_json_lib": "@com_google_protobuf//upb/json",
+    "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me": "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+    "libssl": "@boringssl//:ssl",
+    "libcrypto": "@boringssl//:crypto",
+    "madler_zlib": "@zlib//:zlib",
+    "cares": "@com_github_cares_cares//:ares",
+    "gtest": "@com_google_googletest//:gtest",
+    "fuzztest": "@com_google_fuzztest//fuzztest",
+    "fuzztest_main": "@com_google_fuzztest//fuzztest:fuzztest_gtest_main",
+    "benchmark": "@com_github_google_benchmark//:benchmark",
+    "re2": "@com_googlesource_code_re2//:re2",
+    "grpc_cpp_plugin": "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
+    "grpc++_codegen_proto": "@com_github_grpc_grpc//:grpc++_codegen_proto",
+    "opencensus-context": "@io_opencensus_cpp//opencensus/context:context",
+    "opencensus-trace": "@io_opencensus_cpp//opencensus/trace:trace",
+    "opencensus-trace-context_util": "@io_opencensus_cpp//opencensus/trace:context_util",
+    "opencensus-trace-propagation": "@io_opencensus_cpp//opencensus/trace:grpc_trace_bin",
+    "opencensus-trace-span_context": "@io_opencensus_cpp//opencensus/trace:span_context",
+    "opencensus-stats": "@io_opencensus_cpp//opencensus/stats:stats",
+    "opencensus-stats-test": "@io_opencensus_cpp//opencensus/stats:test_utils",
+    "opencensus-with-tag-map": "@io_opencensus_cpp//opencensus/tags:with_tag_map",
+    "opencensus-tags": "@io_opencensus_cpp//opencensus/tags:tags",
+    "opencensus-tags-context_util": "@io_opencensus_cpp//opencensus/tags:context_util",
+    "opencensus-trace-stackdriver_exporter": "@io_opencensus_cpp//opencensus/exporters/trace/stackdriver:stackdriver_exporter",
+    "opencensus-stats-stackdriver_exporter": "@io_opencensus_cpp//opencensus/exporters/stats/stackdriver:stackdriver_exporter",
+    "googleapis_trace_grpc_service": "@com_google_googleapis//google/devtools/cloudtrace/v2:cloudtrace_cc_grpc",
+    "googleapis_monitoring_grpc_service": "@com_google_googleapis//google/monitoring/v3:monitoring_cc_grpc",
+    "googleapis_logging_grpc_service": "@com_google_googleapis//google/logging/v2:logging_cc_grpc",
+    "googleapis_logging_cc_proto": "@com_google_googleapis//google/logging/v2:logging_cc_proto",
+    "twisted": "@com_github_twisted_twisted//:twisted",
+    "yaml": "@com_github_yaml_pyyaml//:yaml",
+}
+
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
@@ -79,8 +121,12 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
         elif dep == "libprotobuf_mutator":
             ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
+        elif dep == "protobuf" or dep.startswith("protobuf_") or dep.startswith("protoc_"):
+            ret.append("@com_google_protobuf//:" + dep)
+        elif dep in _EXTERNAL_DEPS:
+            ret.append(_EXTERNAL_DEPS[dep])
         else:
-            ret.append("//external:" + dep)
+            fail("Unhandled external dep: %s" % dep)
     return ret
 
 def _update_visibility(visibility):
