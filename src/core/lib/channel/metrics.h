@@ -68,6 +68,7 @@ class GlobalInstrumentsRegistry {
     InstrumentType instrument_type;
     InstrumentID index;
     bool enable_by_default;
+    bool experimental;
     absl::string_view name;
     absl::string_view description;
     absl::string_view unit;
@@ -97,47 +98,61 @@ class GlobalInstrumentsRegistry {
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalDoubleCounterHandle RegisterDoubleCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalUInt64HistogramHandle RegisterUInt64Histogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalDoubleHistogramHandle RegisterDoubleHistogram(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalInt64GaugeHandle RegisterInt64Gauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalDoubleGaugeHandle RegisterDoubleGauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalCallbackInt64GaugeHandle RegisterCallbackInt64Gauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
   static GlobalCallbackDoubleGaugeHandle RegisterCallbackDoubleGauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
+      bool enable_by_default, bool experimental);
 
   static void ForEach(
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
+
+  // Returns all instruments that have the namespace \a namespace_prefix. An
+  // empty If \a stable_instruments_only is set, only
+  // stable/non-experimental instruments are returned. Examples -
+  // `LookUpInstrumentsByNamespace("grpc.lb.pick_first", false)` returns all
+  // instruments within the "grpc.lb.pick_first" namespace.
+  // Note that "grpc.lb.pick" namespace_prefix will not match instruments under
+  // the "grpc.lb.pick_first" namespace. (Namespaces are separated by '.'.)
+  // `LookUpInstrumentsByNamespace("grpc.lb.pick_first", false)` returns stable
+  // instruments within the "grpc.lb.pick_first" namespace.
+  // `LookUpInstrumentsByNamespace("", false)` returns all registered
+  // instruments.
+  static std::vector<absl::string_view> LookUpInstrumentsByNamespace(
+      absl::string_view namespace_prefix, bool stable_instruments_only);
 
  private:
   friend class GlobalInstrumentsRegistryTestPeer;

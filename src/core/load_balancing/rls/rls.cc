@@ -130,7 +130,7 @@ const auto kMetricCacheSize =
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.", "By",
         {kMetricLabelTarget, kMetricLabelRlsServerTarget,
          kMetricLabelRlsInstanceUuid},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 const auto kMetricCacheEntries =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -138,7 +138,7 @@ const auto kMetricCacheEntries =
         "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}",
         {kMetricLabelTarget, kMetricLabelRlsServerTarget,
          kMetricLabelRlsInstanceUuid},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 const auto kMetricDefaultTargetPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -147,7 +147,7 @@ const auto kMetricDefaultTargetPicks =
         "{pick}",
         {kMetricLabelTarget, kMetricLabelRlsServerTarget,
          kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 const auto kMetricTargetPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -159,14 +159,15 @@ const auto kMetricTargetPicks =
         "{pick}",
         {kMetricLabelTarget, kMetricLabelRlsServerTarget,
          kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 const auto kMetricFailedPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.failed_picks",
         "EXPERIMENTAL.  Number of LB picks failed due to either a failed RLS "
         "request or the RLS channel being throttled.",
-        "{pick}", {kMetricLabelTarget, kMetricLabelRlsServerTarget}, {}, false);
+        "{pick}", {kMetricLabelTarget, kMetricLabelRlsServerTarget}, {}, false,
+        /*experimental=*/true);
 
 constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";

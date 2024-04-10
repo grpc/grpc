@@ -90,7 +90,8 @@ const auto kMetricRrFallback = GlobalInstrumentsRegistry::RegisterUInt64Counter(
     "EXPERIMENTAL.  Number of scheduler updates in which there were not "
     "enough endpoints with valid weight, which caused the WRR policy to "
     "fall back to RR behavior.",
-    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false,
+    /*experimental=*/true);
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -99,14 +100,16 @@ const auto kMetricEndpointWeightNotYetUsable =
         "don't yet have usable weight information (i.e., either the load "
         "report has not yet been received, or it is within the blackout "
         "period).",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false,
+        /*experimental=*/true);
 
 const auto kMetricEndpointWeightStale =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_stale",
         "EXPERIMENTAL.  Number of endpoints from each scheduler update whose "
         "latest weight is older than the expiration period.",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false,
+        /*experimental=*/true);
 
 const auto kMetricEndpointWeights =
     GlobalInstrumentsRegistry::RegisterDoubleHistogram(
@@ -115,7 +118,8 @@ const auto kMetricEndpointWeights =
         "Each bucket will be a counter that is incremented once for every "
         "endpoint whose weight is within that range. Note that endpoints "
         "without usable weights will have weight 0.",
-        "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false,
+        /*experimental=*/true);
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {

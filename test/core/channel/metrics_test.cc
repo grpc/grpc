@@ -45,7 +45,7 @@ TEST_F(MetricsTest, UInt64Counter) {
                                                   "optional_label_key_2"};
   auto uint64_counter_handle = GlobalInstrumentsRegistry::RegisterUInt64Counter(
       "uint64_counter", "A simple uint64 counter.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
+      kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -82,7 +82,7 @@ TEST_F(MetricsTest, DoubleCounter) {
                                                   "optional_label_key_2"};
   auto double_counter_handle = GlobalInstrumentsRegistry::RegisterDoubleCounter(
       "double_counter", "A simple double counter.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
+      kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -123,7 +123,7 @@ TEST_F(MetricsTest, UInt64Histogram) {
   auto uint64_histogram_handle =
       GlobalInstrumentsRegistry::RegisterUInt64Histogram(
           "uint64_histogram", "A simple uint64 histogram.", "unit", kLabelKeys,
-          kOptionalLabelKeys, true);
+          kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -164,7 +164,7 @@ TEST_F(MetricsTest, DoubleHistogram) {
   auto double_histogram_handle =
       GlobalInstrumentsRegistry::RegisterDoubleHistogram(
           "double_histogram", "A simple double histogram.", "unit", kLabelKeys,
-          kOptionalLabelKeys, true);
+          kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -205,7 +205,7 @@ TEST_F(MetricsTest, Int64Gauge) {
                                                   "optional_label_key_2"};
   auto int64_gauge_handle = GlobalInstrumentsRegistry::RegisterInt64Gauge(
       "int64_gauge", "A simple int64 gauge.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
+      kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -242,7 +242,7 @@ TEST_F(MetricsTest, DoubleGauge) {
                                                   "optional_label_key_2"};
   auto double_gauge_handle = GlobalInstrumentsRegistry::RegisterDoubleGauge(
       "double_gauge", "A simple double gauge.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
+      kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -280,7 +280,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   auto int64_gauge_handle =
       GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
           "int64_gauge", "A simple int64 gauge.", "unit", kLabelKeys,
-          kOptionalLabelKeys, true);
+          kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kLabelValues2[] = {"label_value_3",
@@ -486,7 +486,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   auto double_gauge_handle =
       GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
           "double_gauge", "A simple double gauge.", "unit", kLabelKeys,
-          kOptionalLabelKeys, true);
+          kOptionalLabelKeys, true, /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kLabelValues2[] = {"label_value_3",
@@ -692,7 +692,8 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
   auto double_histogram_handle =
       GlobalInstrumentsRegistry::RegisterDoubleHistogram(
           "double_histogram", "A simple double histogram.", "unit", kLabelKeys,
-          kOptionalLabelKeys, /*enable_by_default=*/false);
+          kOptionalLabelKeys, /*enable_by_default=*/false,
+          /*experimental=*/false);
   constexpr absl::string_view kLabelValues[] = {"label_value_1",
                                                 "label_value_2"};
   constexpr absl::string_view kOptionalLabelValues[] = {
@@ -716,11 +717,105 @@ TEST_F(MetricsDeathTest, RegisterTheSameMetricNameWouldCrash) {
                                                   "optional_label_key_2"};
   (void)GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       "double_histogram", "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
-  EXPECT_DEATH(GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-                   "double_histogram", "A simple double histogram.", "unit",
-                   kLabelKeys, kOptionalLabelKeys, true),
-               "Metric name double_histogram has already been registered.");
+      kOptionalLabelKeys, true, /*experimental=*/false);
+  EXPECT_DEATH(
+      GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          "double_histogram", "A simple double histogram.", "unit", kLabelKeys,
+          kOptionalLabelKeys, true, /*experimental=*/false),
+      "Metric name double_histogram has already been registered.");
+}
+
+using MetricsQueryTest = MetricsTest;
+
+TEST_F(MetricsQueryTest, Basic) {
+  (void)GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      "grpc.counter.uint64.stable", "description", "unit", {}, {}, true,
+      /*experimental=*/false);
+  (void)GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      "grpc.counter.uint64.experimental", "description", "unit", {}, {}, true,
+      /*experimental=*/true);
+  (void)GlobalInstrumentsRegistry::RegisterDoubleCounter(
+      "grpc.counter.double.stable", "description", "unit", {}, {}, true,
+      /*experimental=*/false);
+  (void)GlobalInstrumentsRegistry::RegisterDoubleCounter(
+      "grpc.counter.double.experimental", "description", "unit", {}, {}, true,
+      /*experimental=*/true);
+  (void)GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      "grpc.histogram.double.stable", "description", "unit", {}, {}, true,
+      /*experimental=*/false);
+  (void)GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+      "grpc.histogram.double.experimental", "description", "unit", {}, {}, true,
+      /*experimental=*/true);
+  (void)GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+      "grpc.gauge.int64.stable", "description", "unit", {}, {}, true,
+      /*experimental=*/false);
+  (void)GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
+      "grpc.gauge.int64.experimental", "description", "unit", {}, {}, true,
+      /*experimental=*/true);
+  (void)GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+      "grpc.gauge.double.stable", "description", "unit", {}, {}, true,
+      /*experimental=*/false);
+  (void)GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
+      "grpc.gauge.double.experimental", "description", "unit", {}, {}, true,
+      /*experimental=*/true);
+  EXPECT_THAT(
+      GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+          "", /*stable_instruments_only=*/false),
+      ::testing::ElementsAre(
+          "grpc.counter.uint64.stable", "grpc.counter.uint64.experimental",
+          "grpc.counter.double.stable", "grpc.counter.double.experimental",
+          "grpc.histogram.double.stable", "grpc.histogram.double.experimental",
+          "grpc.gauge.int64.stable", "grpc.gauge.int64.experimental",
+          "grpc.gauge.double.stable", "grpc.gauge.double.experimental"));
+  EXPECT_THAT(
+      GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+          "grpc", /*stable_instruments_only=*/false),
+      ::testing::ElementsAre(
+          "grpc.counter.uint64.stable", "grpc.counter.uint64.experimental",
+          "grpc.counter.double.stable", "grpc.counter.double.experimental",
+          "grpc.histogram.double.stable", "grpc.histogram.double.experimental",
+          "grpc.gauge.int64.stable", "grpc.gauge.int64.experimental",
+          "grpc.gauge.double.stable", "grpc.gauge.double.experimental"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc.counter", /*stable_instruments_only=*/false),
+              ::testing::ElementsAre("grpc.counter.uint64.stable",
+                                     "grpc.counter.uint64.experimental",
+                                     "grpc.counter.double.stable",
+                                     "grpc.counter.double.experimental"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc.histogram", /*stable_instruments_only=*/false),
+              ::testing::ElementsAre("grpc.histogram.double.stable",
+                                     "grpc.histogram.double.experimental"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc.gauge", /*stable_instruments_only=*/false),
+              ::testing::ElementsAre("grpc.gauge.int64.stable",
+                                     "grpc.gauge.int64.experimental",
+                                     "grpc.gauge.double.stable",
+                                     "grpc.gauge.double.experimental"));
+  // Test looking up stable metrics only
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "", /*stable_instruments_only=*/true),
+              ::testing::ElementsAre(
+                  "grpc.counter.uint64.stable", "grpc.counter.double.stable",
+                  "grpc.histogram.double.stable", "grpc.gauge.int64.stable",
+                  "grpc.gauge.double.stable"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc", /*stable_instruments_only=*/true),
+              ::testing::ElementsAre(
+                  "grpc.counter.uint64.stable", "grpc.counter.double.stable",
+                  "grpc.histogram.double.stable", "grpc.gauge.int64.stable",
+                  "grpc.gauge.double.stable"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc.counter", /*stable_instruments_only=*/true),
+              ::testing::ElementsAre("grpc.counter.uint64.stable",
+                                     "grpc.counter.double.stable"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc.histogram", /*stable_instruments_only=*/true),
+              ::testing::ElementsAre("grpc.histogram.double.stable"));
+  EXPECT_THAT(GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+                  "grpc.gauge", /*stable_instruments_only=*/true),
+              ::testing::ElementsAre("grpc.gauge.int64.stable",
+                                     "grpc.gauge.double.stable"));
 }
 
 }  // namespace

@@ -103,7 +103,7 @@ const auto kMetricResourceUpdatesValid =
         "{resource}",
         {kMetricLabelTarget, kMetricLabelXdsServer,
          kMetricLabelXdsResourceType},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 const auto kMetricResourceUpdatesInvalid =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -113,7 +113,7 @@ const auto kMetricResourceUpdatesInvalid =
         "{resource}",
         {kMetricLabelTarget, kMetricLabelXdsServer,
          kMetricLabelXdsResourceType},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 const auto kMetricConnected =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -124,7 +124,8 @@ const auto kMetricConnected =
         "ADS stream fails without seeing a response message, as per gRFC "
         "A57.  It will be set to 1 when we receive the first response on "
         "an ADS stream.",
-        "{bool}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
+        "{bool}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false,
+        /*experimental=*/true);
 
 const auto kMetricResources =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -132,7 +133,7 @@ const auto kMetricResources =
         "{resource}",
         {kMetricLabelTarget, kMetricLabelXdsAuthority,
          kMetricLabelXdsResourceType, kMetricLabelXdsCacheState},
-        {}, false);
+        {}, false, /*experimental=*/true);
 
 }  // namespace
 

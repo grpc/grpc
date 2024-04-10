@@ -178,6 +178,9 @@ class OpenTelemetryPluginBuilderImpl {
           channel_scope_filter);
   absl::Status BuildAndRegisterGlobal();
 
+  static std::vector<absl::string_view> LookUpInstrumentsByNamespace(
+      absl::string_view namespace_prefix, bool stable_instruments_only);
+
   const absl::flat_hash_set<std::string>& TestOnlyEnabledMetrics() {
     return metrics_;
   }

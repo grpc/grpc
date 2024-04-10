@@ -41,7 +41,6 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
 
-#include "src/core/load_balancing/health_check_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/metrics.h"
@@ -61,6 +60,7 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/health_check_client.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/subchannel_interface.h"
@@ -83,19 +83,20 @@ const auto kMetricDisconnections =
         "grpc.lb.pick_first.disconnections",
         "EXPERIMENTAL.  Number of times the selected subchannel becomes "
         "disconnected.",
-        "{disconnection}", {kMetricLabelTarget}, {}, false);
+        "{disconnection}", {kMetricLabelTarget}, {}, false,
+        /*experimental=*/true);
 
 const auto kMetricConnectionAttemptsSucceeded =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_succeeded",
-        "EXPERIMENTAL.  Number of successful connection attempts.",
-        "{attempt}", {kMetricLabelTarget}, {}, false);
+        "EXPERIMENTAL.  Number of successful connection attempts.", "{attempt}",
+        {kMetricLabelTarget}, {}, false, /*experimental=*/true);
 
 const auto kMetricConnectionAttemptsFailed =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_failed",
-        "EXPERIMENTAL.  Number of failed connection attempts.",
-        "{attempt}", {kMetricLabelTarget}, {}, false);
+        "EXPERIMENTAL.  Number of failed connection attempts.", "{attempt}",
+        {kMetricLabelTarget}, {}, false, /*experimental=*/true);
 
 class PickFirstConfig final : public LoadBalancingPolicy::Config {
  public:
@@ -683,9 +684,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         p->latest_pending_subchannel_list_.get());
   }
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
-  auto& stats_plugins =
-      subchannel_list_->policy_->channel_control_helper()
-          ->GetStatsPluginGroup();
+  auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
+                            ->GetStatsPluginGroup();
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get() ||

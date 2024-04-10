@@ -39,6 +39,7 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
@@ -1275,7 +1276,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
       kMetricName, "A simple uint64 counter.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+      kOptionalLabelKeys, /*enable_by_default=*/true, /*experimental=*/false);
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
                      .set_channel_scope_filter(
@@ -1321,7 +1322,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
       kMetricName, "A simple double counter.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/false);
+      kOptionalLabelKeys, /*enable_by_default=*/false, /*experimental=*/false);
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
                      .set_channel_scope_filter(
@@ -1370,7 +1371,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
       kMetricName, "A simple uint64 histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+      kOptionalLabelKeys, /*enable_by_default=*/true, /*experimental=*/false);
   Init(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1421,7 +1422,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+      kOptionalLabelKeys, /*enable_by_default=*/true, /*experimental=*/false);
   Init(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1468,7 +1469,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       "optional_label_value_1", "optional_label_value_2"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+      kOptionalLabelKeys, /*enable_by_default=*/true, /*experimental=*/false);
   // Build and register a separate OpenTelemetryPlugin and verify its histogram
   // recording.
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
@@ -1594,7 +1595,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
       "optional_label_value_4"};
   auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
       kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+      kOptionalLabelKeys, /*enable_by_default=*/true, /*experimental=*/false);
   Init(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1656,12 +1657,12 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
           kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
           kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true, /*experimental=*/false);
   auto double_gauge_handle =
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
           kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
           kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true, /*experimental=*/false);
   Init(std::move(Options()
                      .set_metric_names({kInt64CallbackGaugeMetric,
                                         kDoubleCallbackGaugeMetric})
@@ -1787,12 +1788,12 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
           kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
           kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true, /*experimental=*/false);
   auto double_gauge_handle =
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
           kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
           kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true, /*experimental=*/false);
   Init(std::move(Options()
                      .set_metric_names({kInt64CallbackGaugeMetric,
                                         kDoubleCallbackGaugeMetric})
@@ -1911,6 +1912,95 @@ TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
   builder.DisableMetrics({"grpc.test.metric_1", "grpc.test.metric_2"});
   EXPECT_THAT(builder.TestOnlyEnabledMetrics(),
               ::testing::UnorderedElementsAre("grpc.test.metric_3"));
+}
+
+class OpenTelemetryLookUpInstruments : public ::testing::Test {
+ public:
+  OpenTelemetryLookUpInstruments() {
+    grpc_core::GlobalInstrumentsRegistryTestPeer::
+        ResetGlobalInstrumentsRegistry();
+  }
+};
+
+TEST_F(OpenTelemetryLookUpInstruments, PerCallMetricsAreExported) {
+  auto instruments = OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+      "", /*stable_instruments_only=*/false);
+  EXPECT_THAT(instruments,
+              ::testing::UnorderedElementsAre(
+                  "grpc.client.attempt.started", "grpc.client.attempt.duration",
+                  "grpc.client.attempt.sent_total_compressed_message_size",
+                  "grpc.client.attempt.rcvd_total_compressed_message_size",
+                  "grpc.server.call.started", "grpc.server.call.duration",
+                  "grpc.server.call.sent_total_compressed_message_size",
+                  "grpc.server.call.rcvd_total_compressed_message_size"));
+  // All per-call metrics are stable at present.
+  EXPECT_EQ(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                "", /*stable_instruments_only=*/true),
+            instruments);
+}
+
+TEST_F(OpenTelemetryLookUpInstruments, PerCallMetricsFilteringByNamespace) {
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc", /*stable_instruments_only=*/false),
+              ::testing::UnorderedElementsAre(
+                  "grpc.client.attempt.started", "grpc.client.attempt.duration",
+                  "grpc.client.attempt.sent_total_compressed_message_size",
+                  "grpc.client.attempt.rcvd_total_compressed_message_size",
+                  "grpc.server.call.started", "grpc.server.call.duration",
+                  "grpc.server.call.sent_total_compressed_message_size",
+                  "grpc.server.call.rcvd_total_compressed_message_size"));
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc.client", /*stable_instruments_only=*/false),
+              ::testing::UnorderedElementsAre(
+                  "grpc.client.attempt.started", "grpc.client.attempt.duration",
+                  "grpc.client.attempt.sent_total_compressed_message_size",
+                  "grpc.client.attempt.rcvd_total_compressed_message_size"));
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc.client.attempt", /*stable_instruments_only=*/false),
+              ::testing::UnorderedElementsAre(
+                  "grpc.client.attempt.started", "grpc.client.attempt.duration",
+                  "grpc.client.attempt.sent_total_compressed_message_size",
+                  "grpc.client.attempt.rcvd_total_compressed_message_size"));
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc.server", /*stable_instruments_only=*/false),
+              ::testing::UnorderedElementsAre(
+                  "grpc.server.call.started", "grpc.server.call.duration",
+                  "grpc.server.call.sent_total_compressed_message_size",
+                  "grpc.server.call.rcvd_total_compressed_message_size"));
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc.server.call", /*stable_instruments_only=*/false),
+              ::testing::UnorderedElementsAre(
+                  "grpc.server.call.started", "grpc.server.call.duration",
+                  "grpc.server.call.sent_total_compressed_message_size",
+                  "grpc.server.call.rcvd_total_compressed_message_size"));
+}
+
+TEST_F(OpenTelemetryLookUpInstruments, NonPerCallMetricsAreAvailableAsWell) {
+  (void)grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      "grpc.counter.uint64.stable", "description", "unit", {}, {}, true,
+      /*experimental=*/false);
+  (void)grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+      "grpc.counter.uint64.experimental", "description", "unit", {}, {}, true,
+      /*experimental=*/true);
+  EXPECT_THAT(
+      OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+          "grpc", /*stable_instruments_only=*/false),
+      ::testing::UnorderedElementsAre(
+          "grpc.counter.uint64.stable", "grpc.counter.uint64.experimental",
+          "grpc.client.attempt.started", "grpc.client.attempt.duration",
+          "grpc.client.attempt.sent_total_compressed_message_size",
+          "grpc.client.attempt.rcvd_total_compressed_message_size",
+          "grpc.server.call.started", "grpc.server.call.duration",
+          "grpc.server.call.sent_total_compressed_message_size",
+          "grpc.server.call.rcvd_total_compressed_message_size"));
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc.counter", /*stable_instruments_only=*/false),
+              ::testing::ElementsAre("grpc.counter.uint64.stable",
+                                     "grpc.counter.uint64.experimental"));
+  // Test looking up stable metrics only
+  EXPECT_THAT(OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+                  "grpc.counter", /*stable_instruments_only=*/true),
+              ::testing::ElementsAre("grpc.counter.uint64.stable"));
 }
 
 }  // namespace

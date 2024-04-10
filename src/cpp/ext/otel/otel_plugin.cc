@@ -55,26 +55,26 @@ absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
 absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 
 namespace {
+
+std::vector<absl::string_view> PerCallMetrics() {
+  return {OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName,
+          OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName,
+          OpenTelemetryPluginBuilder::
+              kClientAttemptSentTotalCompressedMessageSizeInstrumentName,
+          OpenTelemetryPluginBuilder::
+              kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName,
+          OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName,
+          OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName,
+          OpenTelemetryPluginBuilder::
+              kServerCallSentTotalCompressedMessageSizeInstrumentName,
+          OpenTelemetryPluginBuilder::
+              kServerCallRcvdTotalCompressedMessageSizeInstrumentName};
+}
+
 absl::flat_hash_set<std::string> BaseMetrics() {
-  absl::flat_hash_set<std::string> base_metrics{
-      std::string(grpc::OpenTelemetryPluginBuilder::
-                      kClientAttemptStartedInstrumentName),
-      std::string(grpc::OpenTelemetryPluginBuilder::
-                      kClientAttemptDurationInstrumentName),
-      std::string(
-          grpc::OpenTelemetryPluginBuilder::
-              kClientAttemptSentTotalCompressedMessageSizeInstrumentName),
-      std::string(
-          grpc::OpenTelemetryPluginBuilder::
-              kClientAttemptRcvdTotalCompressedMessageSizeInstrumentName),
-      std::string(
-          grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName),
-      std::string(
-          grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName),
-      std::string(grpc::OpenTelemetryPluginBuilder::
-                      kServerCallSentTotalCompressedMessageSizeInstrumentName),
-      std::string(grpc::OpenTelemetryPluginBuilder::
-                      kServerCallRcvdTotalCompressedMessageSizeInstrumentName)};
+  auto per_call_metrics = PerCallMetrics();
+  absl::flat_hash_set<std::string> base_metrics(per_call_metrics.begin(),
+                                                per_call_metrics.end());
   grpc_core::GlobalInstrumentsRegistry::ForEach(
       [&](const grpc_core::GlobalInstrumentsRegistry::
               GlobalInstrumentDescriptor& descriptor) {
@@ -238,6 +238,23 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
           std::move(server_selector_), std::move(plugin_options_),
           std::move(optional_label_keys_), std::move(channel_scope_filter_)));
   return absl::OkStatus();
+}
+
+std::vector<absl::string_view>
+OpenTelemetryPluginBuilderImpl::LookUpInstrumentsByNamespace(
+    absl::string_view namespace_prefix, bool stable_instruments_only) {
+  std::vector<absl::string_view> instruments =
+      grpc_core::GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+          namespace_prefix, stable_instruments_only);
+  std::string prefix = namespace_prefix.empty()
+                           ? std::string(namespace_prefix)
+                           : absl::StrCat(namespace_prefix, ".");
+  for (absl::string_view instrument : PerCallMetrics()) {
+    if (absl::StartsWith(instrument, prefix)) {
+      instruments.push_back(instrument);
+    }
+  }
+  return instruments;
 }
 
 OpenTelemetryPlugin::CallbackMetricReporter::CallbackMetricReporter(
@@ -986,6 +1003,13 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetChannelScopeFilter(
 
 absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   return impl_->BuildAndRegisterGlobal();
+}
+
+std::vector<absl::string_view>
+OpenTelemetryPluginBuilder::LookUpInstrumentsByNamespace(
+    absl::string_view namespace_prefix, bool stable_instruments_only) {
+  return internal::OpenTelemetryPluginBuilderImpl::LookUpInstrumentsByNamespace(
+      namespace_prefix, stable_instruments_only);
 }
 
 }  // namespace grpc

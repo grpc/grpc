@@ -130,6 +130,26 @@ class OpenTelemetryPluginBuilder {
   /// the process.
   absl::Status BuildAndRegisterGlobal();
 
+  /// EXPERIMENTAL API Subject to change
+  /// Returns all instruments that have the namespace \a namespace_prefix. An
+  /// empty If \a stable_instruments_only is set, only
+  /// stable/non-experimental instruments are returned.
+  ///
+  /// Examples -
+  /// `LookUpInstrumentsByNamespace("grpc.lb.pick_first", false)` returns all
+  /// instruments within the "grpc.lb.pick_first" namespace.
+  ///
+  /// Note that "grpc.lb.pick" namespace_prefix will not match instruments under
+  /// the "grpc.lb.pick_first" namespace. (Namespaces are separated by '.'.)
+  ///
+  /// `LookUpInstrumentsByNamespace("grpc.lb.pick_first", false)` returns stable
+  /// instruments within the "grpc.lb.pick_first" namespace.
+  ///
+  /// `LookUpInstrumentsByNamespace("", false)` returns all registered
+  /// instruments.
+  static std::vector<absl::string_view> LookUpInstrumentsByNamespace(
+      absl::string_view namespace_prefix, bool stable_instruments_only);
+
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
 };

@@ -37,7 +37,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -52,6 +52,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
   descriptor.instrument_type = InstrumentType::kCounter;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -69,7 +70,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -84,6 +85,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
   descriptor.instrument_type = InstrumentType::kCounter;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -101,7 +103,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -116,6 +118,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
   descriptor.instrument_type = InstrumentType::kHistogram;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -133,7 +136,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -148,6 +151,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
   descriptor.instrument_type = InstrumentType::kHistogram;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -165,7 +169,7 @@ GlobalInstrumentsRegistry::RegisterInt64Gauge(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -180,6 +184,7 @@ GlobalInstrumentsRegistry::RegisterInt64Gauge(
   descriptor.instrument_type = InstrumentType::kGauge;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -197,7 +202,7 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -212,6 +217,7 @@ GlobalInstrumentsRegistry::RegisterDoubleGauge(
   descriptor.instrument_type = InstrumentType::kGauge;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -229,7 +235,7 @@ GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -244,6 +250,7 @@ GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
   descriptor.instrument_type = InstrumentType::kCallbackGauge;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -261,7 +268,7 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, absl::Span<const absl::string_view> label_keys,
     absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
+    bool enable_by_default, bool experimental) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
     if (descriptor.name == name) {
@@ -276,6 +283,7 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
   descriptor.instrument_type = InstrumentType::kCallbackGauge;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
+  descriptor.experimental = experimental;
   descriptor.name = name;
   descriptor.description = description;
   descriptor.unit = unit;
@@ -299,6 +307,22 @@ const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
 GlobalInstrumentsRegistry::GetInstrumentDescriptor(
     GlobalInstrumentHandle handle) {
   return GetInstrumentList().at(handle.index);
+}
+
+std::vector<absl::string_view>
+GlobalInstrumentsRegistry::LookUpInstrumentsByNamespace(
+    absl::string_view namespace_prefix, bool stable_instruments_only) {
+  std::vector<absl::string_view> instruments;
+  std::string prefix = namespace_prefix.empty()
+                           ? std::string(namespace_prefix)
+                           : absl::StrCat(namespace_prefix, ".");
+  ForEach([&](const GlobalInstrumentDescriptor& descriptor) {
+    if (!(stable_instruments_only && descriptor.experimental) &&
+        absl::StartsWith(descriptor.name, prefix)) {
+      instruments.push_back(descriptor.name);
+    }
+  });
+  return instruments;
 }
 
 RegisteredMetricCallback::RegisteredMetricCallback(
