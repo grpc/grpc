@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include <random>
 #include <unordered_map>
 
 #include <gtest/gtest.h>
+
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_index.h"
 
@@ -31,7 +33,7 @@ static void VerifyAsciiHeaderSize(const char* key, const char* value,
       maybe_intern(grpc_slice_from_static_string(value), intern_value));
   size_t elem_size = MetadataSizeInHPackTable(elem, false);
   size_t expected_size = 32 + strlen(key) + strlen(value);
-  GPR_ASSERT(expected_size == elem_size);
+  CHECK(expected_size == elem_size);
   GRPC_MDELEM_UNREF(elem);
 }
 
@@ -42,13 +44,13 @@ static void VerifyBinaryHeaderSize(const char* key, const uint8_t* value,
       maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_buffer(value, value_len),
                    intern_value));
-  GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
+  CHECK(grpc_is_binary_header(GRPC_MDKEY(elem)));
   size_t elem_size = MetadataSizeInHPackTable(elem, false);
   grpc_slice value_slice = grpc_slice_from_copied_buffer(
       reinterpret_cast<const char*>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
   size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
-  GPR_ASSERT(expected_size == elem_size);
+  CHECK(expected_size == elem_size);
   grpc_slice_unref(value_slice);
   grpc_slice_unref(base64_encoded);
   GRPC_MDELEM_UNREF(elem);

@@ -15,8 +15,6 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include <unistd.h>
 
 #include <cstdlib>
@@ -34,6 +32,7 @@
 #include "google/protobuf/text_format.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>

@@ -32,7 +32,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/json/json.h"
@@ -50,6 +50,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
@@ -167,7 +168,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   }
   auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
   // Scan the addresses to find the weight for each locality.
-  std::map<std::string, uint32_t> locality_weights;
+  std::map<RefCountedStringValue, uint32_t> locality_weights;
   if (args.addresses.ok()) {
     (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
       auto* locality_name = endpoint.args().GetObject<XdsLocalityName>();
@@ -175,7 +176,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
           endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
       if (locality_name != nullptr && weight > 0) {
         auto p = locality_weights.emplace(
-            locality_name->AsHumanReadableString(), weight);
+            locality_name->human_readable_string(), weight);
         if (!p.second && p.first->second != weight) {
           gpr_log(GPR_ERROR,
                   "INTERNAL ERROR: xds_wrr_locality found different weights "
@@ -188,10 +189,10 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   // Construct the config for the weighted_target policy.
   Json::Object weighted_targets;
   for (const auto& p : locality_weights) {
-    const std::string& locality_name = p.first;
+    absl::string_view locality_name = p.first.as_string_view();
     uint32_t weight = p.second;
     // Add weighted target entry.
-    weighted_targets[locality_name] = Json::FromObject({
+    weighted_targets[std::string(locality_name)] = Json::FromObject({
         {"weight", Json::FromNumber(weight)},
         {"childPolicy", config->child_config()},
     });

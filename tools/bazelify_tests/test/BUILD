@@ -14,8 +14,8 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
 load("//tools/bazelify_tests:build_defs.bzl", "grpc_build_artifact_task", "grpc_run_cpp_distribtest_test", "grpc_run_distribtest_test", "grpc_run_simple_command_test", "grpc_run_tests_harness_test")
-load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":bazel_distribtests.bzl", "generate_bazel_distribtests")
+load(":portability_tests.bzl", "generate_run_tests_portability_tests")
 load(":strict_tests.bzl", "generate_strict_tests")
 
 licenses(["notice"])
@@ -269,14 +269,15 @@ grpc_build_artifact_task(
 # Python artifact build tasks
 
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp311",
-    build_script = "build_artifact_python_linux_x64_cp311.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp312",
+    build_script = "build_artifact_python_linux_x64_cp312.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
+# Building 39 here since default Python version in testing image is 3.9.
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp37",
-    build_script = "build_artifact_python_linux_x64_cp37.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp39",
+    build_script = "build_artifact_python_linux_x64_cp39.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
@@ -286,8 +287,8 @@ grpc_build_artifact_task(
     name = "package_python_linux",
     # TODO(jtattermusch): add more python artifacts once they are migrated from artifact_targets.py
     artifact_deps = [
-        "artifact_python_linux_x64_manylinux2014_cp311",
-        "artifact_python_linux_x64_manylinux2014_cp37",
+        "artifact_python_linux_x64_manylinux2014_cp312",
+        "artifact_python_linux_x64_manylinux2014_cp39",
     ],
     build_script = "build_package_python_linux.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
@@ -393,18 +394,18 @@ test_suite(
 # Python distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_python_linux_x64_buster",
+    name = "distribtest_python_linux_x64_bullseye",
     artifact_deps = [
         "package_python_linux",
     ],
     build_script = "run_distribtest_python_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/python_buster_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/python_bullseye_x64.current_version",
 )
 
 test_suite(
     name = "python_distribtests_linux",
     tests = [
-        ":distribtest_python_linux_x64_buster",
+        ":distribtest_python_linux_x64_bullseye",
     ],
 )
 
@@ -420,8 +421,8 @@ test_suite(
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp311_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp37_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp312_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp39_build_test",
         ":package_csharp_linux_build_test",
         ":package_python_linux_build_test",
     ],
