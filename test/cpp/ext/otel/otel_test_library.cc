@@ -18,6 +18,8 @@
 
 #include "test/cpp/ext/otel/otel_test_library.h"
 
+#include <atomic>
+
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -44,15 +46,16 @@ namespace testing {
 
 // A subchannel filter that adds the service labels for test to the
 // CallAttemptTracer in a call.
-class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
+class AddLabelsFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<AddServiceLabelsFilter> Create(
+  static absl::StatusOr<AddLabelsFilter> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
-    return AddServiceLabelsFilter(
-        args.GetPointer<const std::map<std::string, std::string>>(
-            GRPC_ARG_LABELS_TO_INJECT));
+    return AddLabelsFilter(
+        *args.GetPointer<std::map<
+             grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+             grpc_core::RefCountedStringValue>>(GRPC_ARG_LABELS_TO_INJECT));
   }
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
@@ -63,35 +66,85 @@ class AddServiceLabelsFilter : public grpc_core::ChannelFilter {
     auto* call_tracer = static_cast<CallAttemptTracer*>(
         call_context[GRPC_CONTEXT_CALL_TRACER].value);
     EXPECT_NE(call_tracer, nullptr);
-    call_tracer->AddOptionalLabels(
-        CallAttemptTracer::OptionalLabelComponent::kXdsServiceLabels,
-        std::make_shared<std::map<std::string, std::string>>(
-            *labels_to_inject_));
+    for (const auto& pair : labels_to_inject_) {
+      call_tracer->SetOptionalLabel(pair.first, pair.second);
+    }
     return next_promise_factory(std::move(call_args));
   }
 
  private:
-  explicit AddServiceLabelsFilter(
-      const std::map<std::string, std::string>* labels_to_inject)
-      : labels_to_inject_(labels_to_inject) {}
+  explicit AddLabelsFilter(
+      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+               grpc_core::RefCountedStringValue>
+          labels_to_inject)
+      : labels_to_inject_(std::move(labels_to_inject)) {}
 
-  const std::map<std::string, std::string>* labels_to_inject_;
+  const std::map<
+      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+      grpc_core::RefCountedStringValue>
+      labels_to_inject_;
 };
 
-const grpc_channel_filter AddServiceLabelsFilter::kFilter =
-    grpc_core::MakePromiseBasedFilter<AddServiceLabelsFilter,
+const grpc_channel_filter AddLabelsFilter::kFilter =
+    grpc_core::MakePromiseBasedFilter<AddLabelsFilter,
                                       grpc_core::FilterEndpoint::kClient>(
         "add_service_labels_filter");
+
+OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::MetricsCollectorThread(
+    OpenTelemetryPluginEnd2EndTest* test, grpc_core::Duration interval,
+    int iterations,
+    std::function<
+        bool(const absl::flat_hash_map<
+             std::string,
+             std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&)>
+        predicate)
+    : test_(test),
+      interval_(interval),
+      iterations_(iterations),
+      predicate_(std::move(predicate)),
+      thread_(&MetricsCollectorThread::Run, this) {}
+
+OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::
+    ~MetricsCollectorThread() {
+  if (!finished_) {
+    thread_.join();
+  }
+}
+
+void OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Run() {
+  int i = 0;
+  while (i++ < iterations_ || (iterations_ == -1 && !finished_)) {
+    auto data_points = test_->ReadCurrentMetricsData(predicate_);
+    for (auto data : data_points) {
+      auto iter = data_points_.find(data.first);
+      if (iter == data_points_.end()) {
+        data_points_[data.first] = std::move(data.second);
+      } else {
+        for (auto point : data.second) {
+          iter->second.push_back(std::move(point));
+        }
+      }
+    }
+    absl::SleepFor(absl::Milliseconds(interval_.millis()));
+  }
+}
+
+const OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::ResultType&
+OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
+  finished_ = true;
+  thread_.join();
+  return data_points_;
+}
 
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   grpc_core::CoreConfiguration::Reset();
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
-    labels_to_inject_ = config.labels_to_inject;
+    labels_to_inject_ = std::move(config.labels_to_inject);
     grpc_core::CoreConfiguration::RegisterBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) mutable {
-          builder->channel_init()->RegisterFilter(
-              GRPC_CLIENT_SUBCHANNEL, &AddServiceLabelsFilter::kFilter);
+          builder->channel_init()->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                                                  &AddLabelsFilter::kFilter);
         });
     channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
   }
@@ -207,7 +260,7 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
     meter_provider->AddMetricReader(reader);
     ot_builder.SetMeterProvider(std::move(meter_provider));
   }
-  ot_builder.SetTargetSelector(std::move(options.target_selector));
+  ot_builder.SetChannelScopeFilter(std::move(options.channel_scope_filter));
   ot_builder.SetServerSelector(std::move(options.server_selector));
   ot_builder.SetTargetAttributeFilter(
       std::move(options.target_attribute_filter));

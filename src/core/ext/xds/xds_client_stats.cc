@@ -111,7 +111,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
             xds_client_.get(), this, std::string(lrs_server_).c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
-            name_->AsHumanReadableString().c_str());
+            name_->human_readable_string().c_str());
   }
 }
 
@@ -122,7 +122,7 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
             xds_client_.get(), this, std::string(lrs_server_).c_str(),
             std::string(cluster_name_).c_str(),
             std::string(eds_service_name_).c_str(),
-            name_->AsHumanReadableString().c_str());
+            name_->human_readable_string().c_str());
   }
   xds_client_->RemoveClusterLocalityStats(lrs_server_, cluster_name_,
                                           eds_service_name_, name_, this);

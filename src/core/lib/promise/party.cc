@@ -182,7 +182,6 @@ Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
   ScopedActivity activity(this);
-  promise_detail::Context<Arena> arena_ctx(arena_);
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (auto* p =
             participants_[i].exchange(nullptr, std::memory_order_acquire)) {
@@ -265,7 +264,6 @@ void Party::RunLocked() {
 
 bool Party::RunParty() {
   ScopedActivity activity(this);
-  promise_detail::Context<Arena> arena_ctx(arena_);
   return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
 }
 

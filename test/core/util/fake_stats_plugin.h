@@ -91,26 +91,22 @@ class FakeClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> labels) override {
-      optional_labels_.emplace(component, std::move(labels));
+    void SetOptionalLabel(OptionalLabelKey key,
+                          RefCountedStringValue value) override {
+      optional_labels_.emplace(key, std::move(value));
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
 
-    const std::map<OptionalLabelComponent,
-                   std::shared_ptr<std::map<std::string, std::string>>>&
-    GetOptionalLabels() const {
+    const std::map<OptionalLabelKey, RefCountedStringValue>& GetOptionalLabels()
+        const {
       return optional_labels_;
     }
 
    private:
     std::vector<std::string>* annotation_logger_;
-    std::map<OptionalLabelComponent,
-             std::shared_ptr<std::map<std::string, std::string>>>
-        optional_labels_;
+    std::map<OptionalLabelKey, RefCountedStringValue> optional_labels_;
   };
 
   explicit FakeClientCallTracer(std::vector<std::string>* annotation_logger)
@@ -207,7 +203,8 @@ class FakeStatsPlugin : public StatsPlugin {
   class ScopeConfig : public StatsPlugin::ScopeConfig {};
 
   explicit FakeStatsPlugin(
-      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+      absl::AnyInvocable<
+          bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
           channel_filter = nullptr,
       bool use_disabled_by_default_metrics = false)
       : channel_filter_(std::move(channel_filter)) {
@@ -269,7 +266,8 @@ class FakeStatsPlugin : public StatsPlugin {
   }
 
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
-  IsEnabledForChannel(const ChannelScope& scope) const override {
+  IsEnabledForChannel(
+      const experimental::StatsPluginChannelScope& scope) const override {
     if (channel_filter_ == nullptr || channel_filter_(scope)) {
       return {true, nullptr};
     }
@@ -658,7 +656,9 @@ class FakeStatsPlugin : public StatsPlugin {
     absl::flat_hash_map<std::string, T> storage_;
   };
 
-  absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const> channel_filter_;
+  absl::AnyInvocable<bool(
+      const experimental::StatsPluginChannelScope& /*scope*/) const>
+      channel_filter_;
   // Instruments.
   Mutex mu_;
   absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_
@@ -684,7 +684,8 @@ class FakeStatsPlugin : public StatsPlugin {
 class FakeStatsPluginBuilder {
  public:
   FakeStatsPluginBuilder& SetChannelFilter(
-      absl::AnyInvocable<bool(const StatsPlugin::ChannelScope& /*scope*/) const>
+      absl::AnyInvocable<
+          bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
           channel_filter) {
     channel_filter_ = std::move(channel_filter);
     return *this;
@@ -703,7 +704,8 @@ class FakeStatsPluginBuilder {
   }
 
  private:
-  absl::AnyInvocable<bool(const StatsPlugin::ChannelScope& /*scope*/) const>
+  absl::AnyInvocable<bool(
+      const experimental::StatsPluginChannelScope& /*scope*/) const>
       channel_filter_;
   bool use_disabled_by_default_metrics_ = false;
 };

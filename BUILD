@@ -239,7 +239,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "giggle"  # @unused
 
-core_version = "39.0.0"  # @unused
+core_version = "40.0.0"  # @unused
 
 version = "1.63.0-dev"  # @unused
 
@@ -252,6 +252,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/json.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
+    "include/grpc/support/metrics.h",
     "include/grpc/support/port_platform.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",
@@ -324,7 +325,9 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
 ]
 
 GRPCXX_SRCS = [
+    "src/cpp/client/call_credentials.cc",
     "src/cpp/client/channel_cc.cc",
+    "src/cpp/client/channel_credentials.cc",
     "src/cpp/client/client_callback.cc",
     "src/cpp/client/client_context.cc",
     "src/cpp/client/client_interceptor.cc",
@@ -350,6 +353,7 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_callback.cc",
     "src/cpp/server/server_cc.cc",
     "src/cpp/server/server_context.cc",
+    "src/cpp/server/server_credentials.cc",
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
@@ -600,6 +604,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
+        "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
         "//src/core:forkable",
         "//src/core:grpc_authorization_base",
@@ -688,6 +693,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
+        "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
         "//src/core:forkable",
         "//src/core:grpc_authorization_base",
@@ -938,9 +944,7 @@ grpc_cc_library(
         },
     ],
     tags = ["nofixdeps"],
-    visibility = [
-        "@grpc:public",
-    ],
+    visibility = ["@grpc:public"],
     deps = [
         "grpc++_base",
         "//src/core:gpr_atm",
@@ -1213,6 +1217,9 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): restructure the grpc++_unsecure and grpc++ build targets in a
+# similar way to how the grpc_unsecure and grpc targets were restructured in
+# #25586
 grpc_cc_library(
     name = "grpc++_unsecure",
     srcs = [
@@ -1220,18 +1227,26 @@ grpc_cc_library(
         "src/cpp/common/insecure_create_auth_context.cc",
         "src/cpp/server/insecure_server_credentials.cc",
     ],
+    external_deps = [
+        "absl/strings",
+        "absl/synchronization",
+    ],
     language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     tags = [
         "avoid_dep",
         "nofixdeps",
     ],
     visibility = ["@grpc:public"],
     deps = [
+        "channel_arg_names",
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
         "grpc_public_hdrs",
+        "grpc_security_base",
         "grpc_unsecure",
+        "//src/core:gpr_atm",
         "//src/core:grpc_insecure_credentials",
     ],
 )
@@ -1691,6 +1706,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status",
         "absl/strings",
+        "absl/types:optional",
     ],
     language = "c++",
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -1704,6 +1720,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:metadata_batch",
+        "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
     ],
 )
@@ -1778,7 +1795,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
-        "//src/core:call_factory",
+        "//src/core:call_size_estimator",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -1789,6 +1806,7 @@ grpc_cc_library(
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:metrics",
+        "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:stats_data",
         "//src/core:time",
@@ -2370,7 +2388,6 @@ grpc_cc_library(
         "src/cpp/client/secure_credentials.cc",
         "src/cpp/common/auth_property_iterator.cc",
         "src/cpp/common/secure_auth_context.cc",
-        "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/common/tls_certificate_provider.cc",
         "src/cpp/common/tls_certificate_verifier.cc",
@@ -2494,6 +2511,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_health_upb",
         "grpc_public_hdrs",
+        "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
         "grpc_unsecure",
@@ -3008,6 +3026,7 @@ grpc_cc_library(
         "debug_location",
         "gpr_platform",
         "ref_counted_ptr",
+        "//src/core:down_cast",
         "//src/core:ref_counted",
     ],
 )
@@ -3040,6 +3059,7 @@ grpc_cc_library(
     deps = [
         "debug_location",
         "gpr_platform",
+        "//src/core:down_cast",
     ],
 )
 
@@ -4248,6 +4268,7 @@ grpc_cc_library(
     visibility = ["@grpc:xds_client_core"],
     deps = [
         "backoff",
+        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",
@@ -4700,7 +4721,7 @@ grpc_cc_library(
     visibility = ["@grpc:chaotic_good"],
     deps = [
         "gpr",
-        "grpc++_public_hdrs",
+        "grpc++_base",
         "grpc_public_hdrs",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",

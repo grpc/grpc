@@ -19,8 +19,6 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,10 +29,14 @@
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+
 namespace grpc {
 
 namespace internal {
 class OpenTelemetryPluginBuilderImpl;
+class OpenTelemetryPlugin;
 }  // namespace internal
 
 class OpenTelemetryPluginOption {
@@ -57,6 +59,8 @@ class OpenTelemetryPluginOption {
 /// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
+  using ChannelScope = grpc_core::experimental::StatsPluginChannelScope;
+
   /// Metrics
   static constexpr absl::string_view kClientAttemptStartedInstrumentName =
       "grpc.client.attempt.started";
@@ -113,9 +117,14 @@ class OpenTelemetryPluginBuilder {
   /// options can be added.
   OpenTelemetryPluginBuilder& AddPluginOption(
       std::unique_ptr<OpenTelemetryPluginOption> option);
-  // Records \a optional_label_key on all metrics that provide it.
+  /// Records \a optional_label_key on all metrics that provide it.
   OpenTelemetryPluginBuilder& AddOptionalLabel(
       absl::string_view optional_label_key);
+  /// Set scope filter to choose which channels are recorded by this plugin.
+  /// Server-side recording remains unaffected.
+  OpenTelemetryPluginBuilder& SetChannelScopeFilter(
+      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+          channel_scope_filter);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
   absl::Status BuildAndRegisterGlobal();

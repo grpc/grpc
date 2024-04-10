@@ -10,53 +10,79 @@ load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 cc_library(
     name = "wire",
     srcs = [
-        "decode.c",
-        "encode.c",
-        "internal/constants.h",
-        "internal/decode_fast.c",
-        "internal/decoder.h",
     ],
     hdrs = [
         "decode.h",
         "encode.h",
-        "internal/decode_fast.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":internal",
+        ":types",
+        "//upb:mem",
+        "//upb:message",
+        "//upb:mini_table",
+        "//upb:port",
+    ],
+)
+
+cc_library(
+    name = "internal",
+    srcs = [
+        "decode.c",
+        "decode.h",
+        "decode_fast.c",
+        "encode.c",
+        "encode.h",
+    ],
+    hdrs = [
+        "decode_fast.h",
+        "internal/constants.h",
+        "internal/decode.h",
+        "internal/swap.h",
     ],
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":eps_copy_input_stream",
         ":reader",
-        "//third_party/utf8_range",
+        ":types",
         "//upb:base",
+        "//upb:hash",
         "//upb:mem",
+        "//upb:mem_internal",
         "//upb:message",
+        "//upb:message_accessors_internal",
+        "//upb:message_internal",
+        "//upb:message_internal_types",
+        "//upb:message_tagged_ptr",
         "//upb:mini_table",
+        "//upb:mini_table_internal",
         "//upb:port",
-        "//upb/base:internal",
-        "//upb/hash",
-        "//upb/mem:internal",
-        "//upb/message:internal",
-        "//upb/message:types",
-        "//upb/mini_table:internal",
+        "@utf8_range",
     ],
 )
 
 cc_library(
     name = "reader",
     srcs = [
-        "internal/reader.h",
+        "internal/swap.h",
         "reader.c",
     ],
-    hdrs = [
-        "reader.h",
-        "types.h",
-    ],
+    hdrs = ["reader.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":eps_copy_input_stream",
+        ":types",
         "//upb:port",
-        "//upb/base:internal",
     ],
+)
+
+cc_library(
+    name = "types",
+    hdrs = ["types.h"],
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -75,9 +101,8 @@ cc_test(
     srcs = ["eps_copy_input_stream_test.cc"],
     deps = [
         ":eps_copy_input_stream",
-        "//upb:mem",
-        "@com_google_googletest//:gtest",
         "@com_google_googletest//:gtest_main",
+        "//upb:mem",
     ],
 )
 
@@ -91,20 +116,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//python/dist:__pkg__",
         "//upb/cmake:__pkg__",
-    ],
-)
-# end:github_only
-
-# begin:github_only
-filegroup(
-    name = "test_srcs",
-    srcs = glob(
-        [
-            "**/*test.cc",
-        ],
-    ),
-    visibility = ["//pkg:__pkg__"],
+        "//python/dist:__pkg__",
+    ]
 )
 # end:github_only

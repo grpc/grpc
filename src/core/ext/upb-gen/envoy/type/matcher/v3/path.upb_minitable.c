@@ -17,20 +17,20 @@
 #include "upb/port/def.inc"
 
 static const upb_MiniTableSub envoy_type_matcher_v3_PathMatcher_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__type__matcher__v3__StringMatcher_msg_init},
+  {.submsg = &envoy__type__matcher__v3__StringMatcher_msg_init},
 };
 
 static const upb_MiniTableField envoy_type_matcher_v3_PathMatcher__fields[1] = {
-  {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, UPB_SIZE(4, 8), -1, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__type__matcher__v3__PathMatcher_msg_init = {
   &envoy_type_matcher_v3_PathMatcher_submsgs[0],
   &envoy_type_matcher_v3_PathMatcher__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(8, 16), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pom_1bt_maxmaxb},
+    {0x000800000100000a, &upb_pom_1bt_maxmaxb},
   })
 };
 

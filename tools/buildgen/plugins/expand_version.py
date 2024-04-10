@@ -134,3 +134,6 @@ def mako_plugin(dictionary):
             settings[version_tag] = Version(
                 version_str, override_major=override_major
             )
+    settings["protobuf_major_minor_version"] = ".".join(
+        settings["protobuf_version"].split(".")[:2]
+    )
