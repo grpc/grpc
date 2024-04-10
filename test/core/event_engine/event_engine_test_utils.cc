@@ -242,7 +242,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
     // There is a listener for the specified address. Wait until it
     // creates a ServerEndpoint after accepting the connection.
     auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
-    CHECK_NE(server_endpoint, nullptr);
+    CHECK(server_endpoint != nullptr);
     // Set last_in_progress_connection_ to nullptr
     return std::make_tuple(std::move(client_endpoint),
                            std::move(server_endpoint));
