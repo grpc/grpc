@@ -26,6 +26,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -64,7 +66,7 @@ class PhonyEndpoint : public grpc_endpoint {
 
   void PushInput(grpc_slice slice) {
     if (read_cb_ == nullptr) {
-      GPR_ASSERT(!have_slice_);
+      CHECK(!have_slice_);
       buffered_slice_ = slice;
       have_slice_ = true;
       return;
@@ -81,7 +83,7 @@ class PhonyEndpoint : public grpc_endpoint {
   grpc_slice buffered_slice_;
 
   void QueueRead(grpc_slice_buffer* slices, grpc_closure* cb) {
-    GPR_ASSERT(read_cb_ == nullptr);
+    CHECK_EQ(read_cb_, nullptr);
     if (have_slice_) {
       have_slice_ = false;
       grpc_slice_buffer_add(slices, buffered_slice_);
@@ -393,7 +395,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   gpr_event_init(stream_cancel_done);
   std::unique_ptr<TestClosure> stream_cancel_closure =
       MakeTestClosure([&](grpc_error_handle error) {
-        GPR_ASSERT(error.ok());
+        CHECK(error.ok());
         gpr_event_set(stream_cancel_done, reinterpret_cast<void*>(1));
       });
   op.on_complete = stream_cancel_closure.get();

@@ -3620,6 +3620,7 @@ libs:
   - test/core/util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
+  - absl/log:check
   - benchmark
   - grpc++_unsecure
   - grpc_test_util_unsecure
