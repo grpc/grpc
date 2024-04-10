@@ -133,7 +133,7 @@ absl::Status SendValidatePayload(absl::string_view data,
     read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                   read_store_buf);
     if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
-      CHECK_NE(read_slice_buf.Length(), 0);
+      CHECK_NE(read_slice_buf.Length(), 0u);
       read_cb(absl::OkStatus());
     }
   };
