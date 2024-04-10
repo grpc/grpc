@@ -73,14 +73,8 @@ auto ChaoticGoodServerTransport::TransportWriteLoop(
 auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
-  auto& headers = frame.headers;
+  GPR_DEBUG_ASSERT(frame.headers == nullptr);
   return TrySeq(
-      If(
-          headers != nullptr,
-          [call_initiator, &headers]() mutable {
-            return call_initiator.PushClientInitialMetadata(std::move(headers));
-          },
-          []() -> StatusFlag { return Success{}; }),
       [call_initiator, message = std::move(frame.message)]() mutable {
         return If(
             message.has_value(),
@@ -245,8 +239,8 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
-    auto create_call_result =
-        acceptor_->CreateCall(*fragment_frame.headers, arena.release());
+    auto create_call_result = acceptor_->CreateCall(
+        std::move(fragment_frame.headers), arena.release());
     if (grpc_chaotic_good_trace.enabled()) {
       gpr_log(GPR_INFO,
               "CHAOTIC_GOOD: DeserializeAndPushFragmentToNewCall: "
