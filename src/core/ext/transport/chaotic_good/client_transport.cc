@@ -103,7 +103,8 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
             },
             []() -> StatusFlag { return Success{}; });
       },
-      [call_handler, trailers = std::move(frame.trailers)]() mutable {
+      [call_handler,
+       trailers = std::move(frame.trailers)]() mutable -> StatusFlag {
         if (trailers != nullptr) {
           call_handler.PushServerTrailingMetadata(std::move(trailers));
         }

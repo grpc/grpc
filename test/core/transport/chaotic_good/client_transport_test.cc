@@ -200,9 +200,9 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call.handler));
+  auto call = MakeCall(TestInitialMetadata(), event_engine().get(),
+                       Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -223,11 +223,10 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       {EventEngineSlice::FromCopiedString("1"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 2));
-  });
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 2);
+                              });
   call.initiator.SpawnInfallible(
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
