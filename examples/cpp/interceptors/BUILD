@@ -21,6 +21,7 @@ cc_binary(
         "client.cc",
     ],
     defines = ["BAZEL_BUILD"],
+    external_deps = ["absl/log:check"],
     deps = [
         "//:grpc++",
         "//examples/protos:keyvaluestore",
