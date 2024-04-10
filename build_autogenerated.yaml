@@ -20929,6 +20929,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
