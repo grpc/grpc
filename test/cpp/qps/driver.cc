@@ -473,7 +473,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (qps_server_target_override.length() > 0) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
-    CHECK_LE(num_servers, 1);
+    CHECK(num_servers <= 1);
     client_config.clear_server_targets();
     client_config.add_server_targets(qps_server_target_override);
   }
