@@ -52,7 +52,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "re2/re2.h"
 #include "upb/base/string_view.h"
-#include "upb/collections/map.h"
+#include "upb/message/map.h"
 #include "upb/text/encode.h"
 
 #include <grpc/status.h>
@@ -74,8 +74,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/lib/load_balancing/lb_policy_registry.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 
 namespace grpc_core {
 

@@ -19,6 +19,7 @@
 #include <cstdint>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
 
@@ -45,8 +46,6 @@ uint32_t ReadLittleEndianUint32(const uint8_t* data) {
 void FrameHeader::Serialize(uint8_t* data) const {
   WriteLittleEndianUint32(
       static_cast<uint32_t>(type) | (flags.ToInt<uint32_t>() << 8), data);
-  if (flags.is_set(0)) GPR_ASSERT(header_length > 0);
-  if (flags.is_set(1)) GPR_ASSERT(trailer_length > 0);
   WriteLittleEndianUint32(stream_id, data + 4);
   WriteLittleEndianUint32(header_length, data + 8);
   WriteLittleEndianUint32(message_length, data + 12);
@@ -60,21 +59,13 @@ absl::StatusOr<FrameHeader> FrameHeader::Parse(const uint8_t* data) {
   const uint32_t type_and_flags = ReadLittleEndianUint32(data);
   header.type = static_cast<FrameType>(type_and_flags & 0xff);
   const uint32_t flags = type_and_flags >> 8;
-  if (flags > 3) return absl::InvalidArgumentError("Invalid flags");
-  header.flags = BitSet<2>::FromInt(flags);
+  if (flags > 7) return absl::InvalidArgumentError("Invalid flags");
+  header.flags = BitSet<3>::FromInt(flags);
   header.stream_id = ReadLittleEndianUint32(data + 4);
   header.header_length = ReadLittleEndianUint32(data + 8);
-  if (header.flags.is_set(0) && header.header_length <= 0) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Invalid header length: ", header.header_length));
-  }
   header.message_length = ReadLittleEndianUint32(data + 12);
   header.message_padding = ReadLittleEndianUint32(data + 16);
   header.trailer_length = ReadLittleEndianUint32(data + 20);
-  if (header.flags.is_set(1) && header.trailer_length <= 0) {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Invalid trailer length", header.trailer_length));
-  }
   return header;
 }
 

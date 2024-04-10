@@ -29,14 +29,11 @@ DIRS=(
     'src/python/grpcio_testing/grpc_testing'
     'src/python/grpcio_status/grpc_status'
     'src/python/grpcio_observability/grpc_observability'
-    'tools/run_tests/xds_k8s_test_driver/bin'
-    'tools/run_tests/xds_k8s_test_driver/framework'
 )
 
 TEST_DIRS=(
     'src/python/grpcio_tests/tests'
     'src/python/grpcio_tests/tests_gevent'
-    'tools/run_tests/xds_k8s_test_driver/tests'
 )
 
 VIRTUALENV=python_pylint_venv

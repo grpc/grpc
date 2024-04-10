@@ -31,6 +31,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
@@ -132,6 +133,9 @@ class WorkStealingThreadPool final : public ThreadPool {
     // Postfork parent and child have the same behavior.
     void PrepareFork();
     void Postfork();
+    // Thread ID tracking
+    void TrackThread(gpr_thd_id tid);
+    void UntrackThread(gpr_thd_id tid);
     // Accessor methods
     bool IsShutdown();
     bool IsForking();
@@ -172,6 +176,8 @@ class WorkStealingThreadPool final : public ThreadPool {
       std::atomic<bool> lifeguard_running_{false};
     };
 
+    void DumpStacksAndCrash();
+
     const size_t reserve_threads_;
     BusyThreadCount busy_thread_count_;
     LivingThreadCount living_thread_count_;
@@ -190,6 +196,9 @@ class WorkStealingThreadPool final : public ThreadPool {
     std::atomic<bool> throttled_{false};
     WorkSignal work_signal_;
     Lifeguard lifeguard_;
+    // Set of threads for verbose failure debugging
+    grpc_core::Mutex thd_set_mu_;
+    absl::flat_hash_set<gpr_thd_id> thds_ ABSL_GUARDED_BY(thd_set_mu_);
   };
 
   class ThreadState {

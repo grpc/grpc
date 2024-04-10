@@ -19,6 +19,9 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
+#include "absl/log/check.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -37,10 +40,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/create_channel_internal.h"
-#include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
@@ -54,6 +57,7 @@ class FixtureConfiguration {
   virtual void ApplyCommonChannelArguments(ChannelArguments* c) const {
     c->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX);
     c->SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX);
+    c->SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
     c->SetResourceQuota(ResourceQuota());
   }
 
@@ -181,10 +185,9 @@ class EndpointPairFixture : public BaseFixture {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
-          "SetupTransport",
-          core_server->SetupTransport(server_transport_, nullptr, server_args,
-                                      nullptr)));
+      CHECK(GRPC_LOG_IF_ERROR("SetupTransport", core_server->SetupTransport(
+                                                    server_transport_, nullptr,
+                                                    server_args, nullptr)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
                                           nullptr);
     }
@@ -205,10 +208,10 @@ class EndpointPairFixture : public BaseFixture {
       }
       client_transport_ =
           grpc_create_chttp2_transport(c_args, endpoints.client, true);
-      GPR_ASSERT(client_transport_);
+      CHECK(client_transport_);
       grpc_channel* channel =
-          grpc_core::Channel::Create(
-              "target", c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_)
+          grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                   client_transport_)
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
@@ -254,45 +257,6 @@ class SockPair : public EndpointPairFixture {
                             fixture_configuration) {}
 };
 
-// Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
-// is here only to be able to initialize both the base class and stats_ with the
-// same stats instance without accessing the stats_ fields before the object is
-// properly initialized.
-class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
- public:
-  InProcessCHTTP2WithExplicitStats(
-      Service* service, grpc_passthru_endpoint_stats* stats,
-      const FixtureConfiguration& fixture_configuration)
-      : EndpointPairFixture(service, MakeEndpoints(stats),
-                            fixture_configuration),
-        stats_(stats) {}
-
-  ~InProcessCHTTP2WithExplicitStats() override {
-    if (stats_ != nullptr) {
-      grpc_passthru_endpoint_stats_destroy(stats_);
-    }
-  }
-
- private:
-  grpc_passthru_endpoint_stats* stats_;
-
-  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
-    grpc_endpoint_pair p;
-    grpc_passthru_endpoint_create(&p.client, &p.server, stats);
-    return p;
-  }
-};
-
-class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
- public:
-  explicit InProcessCHTTP2(Service* service,
-                           const FixtureConfiguration& fixture_configuration =
-                               FixtureConfiguration())
-      : InProcessCHTTP2WithExplicitStats(service,
-                                         grpc_passthru_endpoint_stats_create(),
-                                         fixture_configuration) {}
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 // Minimal stack fixtures
 
@@ -319,7 +283,6 @@ typedef MinStackize<TCP> MinTCP;
 typedef MinStackize<UDS> MinUDS;
 typedef MinStackize<InProcess> MinInProcess;
 typedef MinStackize<SockPair> MinSockPair;
-typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 
 }  // namespace testing
 }  // namespace grpc

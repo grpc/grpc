@@ -11,11 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
 #include <grpc/event_engine/slice.h>
+#include <grpc/support/port_platform.h>
 
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your
@@ -53,8 +52,8 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/resolver/resolver_registry.h"
 
 extern absl::AnyInvocable<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>

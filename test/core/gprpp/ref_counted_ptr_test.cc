@@ -276,7 +276,7 @@ class Bar : public DualRefCounted<Bar> {
 
   ~Bar() override { GPR_ASSERT(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
   int value() const { return value_; }
 
@@ -432,7 +432,7 @@ class BarWithTracing : public DualRefCounted<BarWithTracing> {
 
   ~BarWithTracing() override { GPR_ASSERT(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
  private:
   bool shutting_down_ = false;
@@ -455,7 +455,7 @@ class WeakBaseClass : public DualRefCounted<WeakBaseClass> {
 
   ~WeakBaseClass() override { GPR_ASSERT(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
  private:
   bool shutting_down_ = false;

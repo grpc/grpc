@@ -19,8 +19,6 @@
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <grpc/byte_buffer.h>
@@ -29,6 +27,7 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #ifdef __cplusplus
@@ -176,12 +175,6 @@ GRPCAPI int grpc_completion_queue_thread_local_cache_flush(
 /** Check the connectivity state of a channel. */
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect);
-
-/** Number of active "external connectivity state watchers" attached to a
- * channel.
- * Useful for testing. **/
-GRPCAPI int grpc_channel_num_external_connectivity_watchers(
-    grpc_channel* channel);
 
 /** Watch for a change in connectivity state.
     Once the channel connectivity state is different from last_observed_state,

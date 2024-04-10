@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -37,6 +38,8 @@
 #include <grpc/support/json.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_object_loader.h"
@@ -45,6 +48,17 @@
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 
 namespace grpc_core {
+
+namespace {
+bool IsFallbackExperimentEnabled() {
+  auto fallback_enabled = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK");
+  bool enabled = false;
+  return gpr_parse_bool_value(fallback_enabled.value_or("0").c_str(),
+                              &enabled) &&
+         enabled;
+}
+
+}  // namespace
 
 //
 // GrpcXdsBootstrap::GrpcNode::Locality
@@ -99,6 +113,10 @@ bool GrpcXdsBootstrap::GrpcXdsServer::Equals(const XdsServer& other) const {
           channel_creds_config_->type() == o.channel_creds_config_->type() &&
           channel_creds_config_->Equals(*o.channel_creds_config_) &&
           server_features_ == o.server_features_);
+}
+
+std::string GrpcXdsBootstrap::GrpcXdsServer::Key() const {
+  return JsonDump(ToJson());
 }
 
 const JsonLoaderInterface* GrpcXdsBootstrap::GrpcXdsServer::JsonLoader(
@@ -214,6 +232,16 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
   return loader;
 }
 
+void GrpcXdsBootstrap::GrpcAuthority::JsonPostLoad(
+    const Json& /*json*/, const JsonArgs& /*args*/,
+    ValidationErrors* /*errors*/) {
+  if (!IsFallbackExperimentEnabled()) {
+    if (servers_.size() > 1) {
+      servers_.resize(1);
+    }
+  }
+}
+
 //
 // GrpcXdsBootstrap
 //
@@ -226,7 +254,7 @@ absl::StatusOr<std::unique_ptr<GrpcXdsBootstrap>> GrpcXdsBootstrap::Create(
         "Failed to parse bootstrap JSON string: ", json.status().ToString()));
   }
   // Validate JSON.
-  class XdsJsonArgs : public JsonArgs {
+  class XdsJsonArgs final : public JsonArgs {
    public:
     bool IsEnabled(absl::string_view key) const override {
       if (key == "federation") return XdsFederationEnabled();
@@ -288,6 +316,11 @@ void GrpcXdsBootstrap::JsonPostLoad(const Json& /*json*/,
       }
     }
   }
+  if (!IsFallbackExperimentEnabled()) {
+    if (servers_.size() > 1) {
+      servers_.resize(1);
+    }
+  }
 }
 
 std::string GrpcXdsBootstrap::ToString() const {
@@ -326,11 +359,14 @@ std::string GrpcXdsBootstrap::ToString() const {
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         entry.second.client_listener_resource_name_template()));
-    if (entry.second.server() != nullptr) {
-      parts.push_back(absl::StrFormat(
-          "    servers=[\n%s\n],\n",
-          JsonDump(static_cast<const GrpcXdsServer*>(entry.second.server())
-                       ->ToJson())));
+    std::vector<std::string> server_jsons;
+    for (const XdsServer* server : entry.second.servers()) {
+      server_jsons.emplace_back(
+          JsonDump(static_cast<const GrpcXdsServer*>(server)->ToJson()));
+    }
+    if (!server_jsons.empty()) {
+      parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                      absl::StrJoin(server_jsons, ",\n")));
     }
     parts.push_back("      },\n");
   }
@@ -354,21 +390,6 @@ const XdsBootstrap::Authority* GrpcXdsBootstrap::LookupAuthority(
   auto it = authorities_.find(name);
   if (it != authorities_.end()) {
     return &it->second;
-  }
-  return nullptr;
-}
-
-const XdsBootstrap::XdsServer* GrpcXdsBootstrap::FindXdsServer(
-    const XdsBootstrap::XdsServer& server) const {
-  if (static_cast<const GrpcXdsServer&>(server) == servers_[0]) {
-    return &servers_[0];
-  }
-  for (auto& p : authorities_) {
-    const auto* authority_server =
-        static_cast<const GrpcXdsServer*>(p.second.server());
-    if (authority_server != nullptr && *authority_server == server) {
-      return authority_server;
-    }
   }
   return nullptr;
 }

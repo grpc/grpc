@@ -46,6 +46,22 @@ Generate a chain with a leaf cert signed by an intermediate CA and revoke the in
 
 Run `intermediate_gen.sh` from the `test/core/tsi/test_creds/crl_data` directory
 
+Generate a CA with the same issuer name but a different public key than the base CA
+----------------------------------------------------------------------------
+
+Run `evil_ca_gen.sh` from the `test/core/tsi/test_creds/crl_data` directory
+
+Generate a CA and CRL with an Authority Key Identifier 
+----------------------------------------------------------------------------
+Run `ca_with_akid_gen.sh` from the `test/core/tsi/test_creds/crl_data` directory
+
+Create CRLs with modified signatures and content
+----------------------------------------------------------------------------
+Make a directory `test/core/tsi/test_creds/crl_data/bad_crls
+Make two copies of `test/core/tsi/test_creds/crl_data/crls/current.crl` in the bad_crls directory named `test/core/tsi/test_creds/crl_data/bad_crls/invalid_content.crl` and `test/core/tsi/test_creds/crl_data/bad_crls/invalid_signature.crl`.
+In `invalid_content.crl`, change the first letter on the second line.
+In `invalid_signature.crl`, change the last letter before the `=` on the second to last line.
+
 
 Clean up:
 ---------

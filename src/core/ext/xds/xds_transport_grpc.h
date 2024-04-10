@@ -37,10 +37,11 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/surface/channel.h"
 
 namespace grpc_core {
 
-class GrpcXdsTransportFactory : public XdsTransportFactory {
+class GrpcXdsTransportFactory final : public XdsTransportFactory {
  public:
   class GrpcXdsTransport;
 
@@ -61,7 +62,7 @@ class GrpcXdsTransportFactory : public XdsTransportFactory {
   grpc_pollset_set* interested_parties_;
 };
 
-class GrpcXdsTransportFactory::GrpcXdsTransport
+class GrpcXdsTransportFactory::GrpcXdsTransport final
     : public XdsTransportFactory::XdsTransport {
  public:
   class GrpcStreamingCall;
@@ -70,7 +71,6 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
                    const XdsBootstrap::XdsServer& server,
                    std::function<void(absl::Status)> on_connectivity_failure,
                    absl::Status* status);
-  ~GrpcXdsTransport() override;
 
   void Orphan() override;
 
@@ -84,15 +84,15 @@ class GrpcXdsTransportFactory::GrpcXdsTransport
   class StateWatcher;
 
   GrpcXdsTransportFactory* factory_;  // Not owned.
-  grpc_channel* channel_;
+  OrphanablePtr<Channel> channel_;
   StateWatcher* watcher_;
 };
 
-class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall
+class GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall final
     : public XdsTransportFactory::XdsTransport::StreamingCall {
  public:
   GrpcStreamingCall(RefCountedPtr<GrpcXdsTransportFactory> factory,
-                    grpc_channel* channel, const char* method,
+                    Channel* channel, const char* method,
                     std::unique_ptr<StreamingCall::EventHandler> event_handler);
   ~GrpcStreamingCall() override;
 

@@ -50,6 +50,9 @@ class XdsBootstrap {
 
     virtual bool Equals(const XdsServer& other) const = 0;
 
+    // Returns a key to be used for uniquely identifying this XdsServer.
+    virtual std::string Key() const = 0;
+
     friend bool operator==(const XdsServer& a, const XdsServer& b) {
       return a.Equals(b);
     }
@@ -62,16 +65,14 @@ class XdsBootstrap {
    public:
     virtual ~Authority() = default;
 
-    virtual const XdsServer* server() const = 0;
+    virtual std::vector<const XdsServer*> servers() const = 0;
   };
 
   virtual ~XdsBootstrap() = default;
 
   virtual std::string ToString() const = 0;
 
-  // TODO(roth): We currently support only one server. Fix this when we
-  // add support for fallback for the xds channel.
-  virtual const XdsServer& server() const = 0;
+  virtual std::vector<const XdsServer*> servers() const = 0;
 
   // Returns the node information, or null if not present in the bootstrap
   // config.
@@ -80,10 +81,6 @@ class XdsBootstrap {
   // Returns a pointer to the specified authority, or null if it does
   // not exist in this bootstrap config.
   virtual const Authority* LookupAuthority(const std::string& name) const = 0;
-
-  // If the server exists in the bootstrap config, returns a pointer to
-  // the XdsServer instance in the config.  Otherwise, returns null.
-  virtual const XdsServer* FindXdsServer(const XdsServer& server) const = 0;
 };
 
 }  // namespace grpc_core

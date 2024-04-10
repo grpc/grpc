@@ -23,12 +23,6 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/promise/context.h"
-
-namespace grpc_core {
-template <>
-struct ContextType<grpc_event_engine::experimental::EventEngine> {};
-}  // namespace grpc_core
 
 namespace grpc_event_engine {
 namespace experimental {

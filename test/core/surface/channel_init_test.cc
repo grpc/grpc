@@ -174,7 +174,8 @@ TEST(ChannelInitTest, CanAddBeforeAllOnce) {
             std::vector<std::string>({"foo", "bar", "baz", "aaa"}));
 }
 
-TEST(ChannelInitTest, CanAddBeforeAllTwice) {
+TEST(ChannelInitDeathTest, CanAddBeforeAllTwice) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar")).BeforeAll();
@@ -199,6 +200,67 @@ TEST(ChannelInitTest, CanPostProcessFilters) {
   EXPECT_EQ(called_post_processor, 0);
   EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
             std::vector<std::string>({"foo", "aaa", "bar"}));
+}
+
+class TestFilter1 {
+ public:
+  explicit TestFilter1(int* p) : p_(p) {}
+
+  static absl::StatusOr<TestFilter1> Create(const ChannelArgs& args, Empty) {
+    EXPECT_EQ(args.GetInt("foo"), 1);
+    return TestFilter1(args.GetPointer<int>("p"));
+  }
+
+  static const grpc_channel_filter kFilter;
+
+  class Call {
+   public:
+    explicit Call(TestFilter1* filter) {
+      EXPECT_EQ(*filter->x_, 0);
+      *filter->x_ = 1;
+      ++*filter->p_;
+    }
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
+
+ private:
+  std::unique_ptr<int> x_ = std::make_unique<int>(0);
+  int* const p_;
+};
+
+const grpc_channel_filter TestFilter1::kFilter = {
+    nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+    nullptr, 0,       nullptr, nullptr, nullptr, nullptr, "test_filter1"};
+const NoInterceptor TestFilter1::Call::OnClientInitialMetadata;
+const NoInterceptor TestFilter1::Call::OnServerInitialMetadata;
+const NoInterceptor TestFilter1::Call::OnServerTrailingMetadata;
+const NoInterceptor TestFilter1::Call::OnClientToServerMessage;
+const NoInterceptor TestFilter1::Call::OnServerToClientMessage;
+const NoInterceptor TestFilter1::Call::OnFinalize;
+
+TEST(ChannelInitTest, CanCreateFilterWithCall) {
+  ChannelInit::Builder b;
+  b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
+  auto init = b.Build();
+  int p = 0;
+  auto segment = init.CreateStackSegment(
+      GRPC_CLIENT_CHANNEL,
+      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p)));
+  ASSERT_TRUE(segment.ok()) << segment.status();
+  CallFilters::StackBuilder stack_builder;
+  segment->AddToCallFilterStack(stack_builder);
+  segment = absl::CancelledError();  // force the segment to be destroyed
+  auto stack = stack_builder.Build();
+  {
+    CallFilters call_filters(Arena::MakePooled<ClientMetadata>());
+    call_filters.SetStack(std::move(stack));
+  }
+  EXPECT_EQ(p, 1);
 }
 
 }  // namespace

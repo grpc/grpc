@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "envoy/service/status/v3/csds.upb.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.hpp"
 
@@ -47,7 +48,7 @@ class XdsClient;
 // - ADS request/response handling
 // - LRS request/response handling
 // - CSDS response generation
-class XdsApi {
+class XdsApi final {
  public:
   // Interface defined by caller and passed to ParseAdsResponse().
   class AdsResponseParserInterface {
@@ -126,10 +127,6 @@ class XdsApi {
     // Timestamp of the last failed update attempt.
     Timestamp failed_update_time;
   };
-  using ResourceMetadataMap =
-      std::map<std::string /*resource_name*/, const ResourceMetadata*>;
-  using ResourceTypeMetadataMap =
-      std::map<absl::string_view /*type_url*/, ResourceMetadataMap>;
   static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
                     envoy_admin_v3_REQUESTED) ==
                     ResourceMetadata::ClientResourceStatus::REQUESTED,
@@ -176,9 +173,7 @@ class XdsApi {
                                 std::set<std::string>* cluster_names,
                                 Duration* load_reporting_interval);
 
-  // Assemble the client config proto message and return the serialized result.
-  std::string AssembleClientConfig(
-      const ResourceTypeMetadataMap& resource_type_metadata_map);
+  void PopulateNode(envoy_config_core_v3_Node* node_msg, upb_Arena* arena);
 
  private:
   XdsClient* client_;

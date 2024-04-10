@@ -14,9 +14,7 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/resolver/endpoint_addresses.h"
 
 #include <set>
 
@@ -26,6 +24,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

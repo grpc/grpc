@@ -65,6 +65,7 @@ class DebugLocation {
   DebugLocation(const char* file = GRPC_DEFAULT_FILE,
                 int line = GRPC_DEFAULT_LINE)
       : location_(file, line) {}
+  explicit DebugLocation(SourceLocation location) : location_(location) {}
   const char* file() const { return location_.file(); }
   int line() const { return location_.line(); }
 
@@ -75,11 +76,21 @@ class DebugLocation {
 class DebugLocation {
  public:
   DebugLocation() {}
+  explicit DebugLocation(SourceLocation) {}
   DebugLocation(const char* /* file */, int /* line */) {}
   const char* file() const { return nullptr; }
   int line() const { return -1; }
 };
 #endif
+
+template <typename T>
+struct ValueWithDebugLocation {
+  // NOLINTNEXTLINE
+  ValueWithDebugLocation(T&& value, DebugLocation debug_location = {})
+      : value(std::forward<T>(value)), debug_location(debug_location) {}
+  T value;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation debug_location;
+};
 
 #define DEBUG_LOCATION ::grpc_core::DebugLocation(__FILE__, __LINE__)
 

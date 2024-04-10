@@ -27,13 +27,13 @@
 Contains macros used throughout the repo.
 """
 
-load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
-load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES")
-load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
+load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
+load("//bazel:test_experiments.bzl", "TEST_EXPERIMENTS", "TEST_EXPERIMENT_ENABLES", "TEST_EXPERIMENT_POLLERS")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epoll1", "poll"]
@@ -77,6 +77,8 @@ def _get_external_deps(external_deps):
             ret.append(dep.replace("otel/", "@io_opentelemetry_cpp//"))
         elif dep.startswith("google_cloud_cpp"):
             ret.append(dep.replace("google_cloud_cpp", "@google_cloud_cpp//"))
+        elif dep == "libprotobuf_mutator":
+            ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
             ret.append("//external:" + dep)
     return ret
@@ -95,6 +97,7 @@ def _update_visibility(visibility):
         "alt_grpc++_base_unsecure_legacy": PRIVATE,
         "alts_frame_protector": PRIVATE,
         "channelz": PRIVATE,
+        "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
         "debug_location": PRIVATE,
@@ -119,6 +122,7 @@ def _update_visibility(visibility):
         "tsi": PRIVATE,
         "xds": PRIVATE,
         "xds_client_core": PRIVATE,
+        "xds_end2end_test_utils": PRIVATE,
         "grpc_python_observability": PRIVATE,
         "event_engine_base_hdrs": PRIVATE,
         "useful": PRIVATE,
@@ -203,7 +207,6 @@ def grpc_cc_library(
         testonly = testonly,
         linkopts = linkopts,
         includes = [
-            "api/include",
             "include",
             "src/core/ext/upb-gen",  # Once upb code-gen issue is resolved, remove this.
             "src/core/ext/upbdefs-gen",  # Once upb code-gen issue is resolved, remove this.
@@ -279,8 +282,10 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
-    """Common logic used to parameterize tests for every poller and EventEngine and experiment.
+def expand_poller_config(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+    """Common logic used to parameterize tests for every poller and EventEngine.
+
+    Used by expand_tests (repeatedly) to form base lists of pollers for each experiment.
 
     Args:
         name: base name of the test
@@ -297,7 +302,11 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
     Returns:
         A list of dictionaries containing modified values of name, srcs, deps, tags, and args.
     """
+
     poller_config = []
+
+    # See work_stealing_thread_pool.cc for details.
+    default_env = {"GRPC_THREAD_POOL_VERBOSE_FAILURES": "true"}
 
     if not uses_polling:
         tags = tags + ["no_uses_polling"]
@@ -309,7 +318,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
             "tags": tags,
             "args": args,
             "flaky": flaky,
-            "env": {},
+            "env": default_env,
         })
     else:
         # On linux we run the same test with the default EventEngine, once for each
@@ -329,7 +338,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "args": args,
                 "env": {
                     "GRPC_POLL_STRATEGY": poller,
-                },
+                } | default_env,
                 "flaky": flaky,
             })
 
@@ -346,7 +355,7 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 "deps": deps,
                 "tags": tags + ["no_linux"],
                 "args": args,
-                "env": {},
+                "env": default_env,
                 "flaky": flaky,
             })
         else:
@@ -366,9 +375,30 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     "deps": deps,
                     "tags": test_tags,
                     "args": test_args,
-                    "env": {},
+                    "env": default_env,
                     "flaky": flaky,
                 })
+
+    return poller_config
+
+def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+    """Common logic used to parameterize tests for every poller and EventEngine and experiment.
+
+    Args:
+        name: base name of the test
+        srcs: source files
+        deps: base deps
+        tags: base tags
+        args: base args
+        flaky: base flaky
+        exclude_pollers: list of poller names to exclude for this set of tests.
+        uses_polling: set to False if the test is not sensitive to polling methodology.
+        uses_event_engine: set to False if the test is not sensitive to
+            EventEngine implementation differences
+
+    Returns:
+        A list of dictionaries containing modified values of name, srcs, deps, tags, and args.
+    """
 
     experiments = {}
 
@@ -418,13 +448,28 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                 tags.append("no_test_ios")
         return tags
 
-    experiment_config = list(poller_config)
+    base_params = {
+        "name": name,
+        "srcs": srcs,
+        "deps": deps,
+        "tags": tags,
+        "args": args,
+        "exclude_pollers": exclude_pollers,
+        "uses_polling": uses_polling,
+        "uses_event_engine": uses_event_engine,
+        "flaky": flaky,
+    }
+
+    experiment_config = expand_poller_config(**base_params)
     experiment_enables = {k: v for k, v in EXPERIMENT_ENABLES.items() + TEST_EXPERIMENT_ENABLES.items()}
+    experiment_pollers = EXPERIMENT_POLLERS + TEST_EXPERIMENT_POLLERS
     for mode, config in mode_config.items():
         enabled_tags, disabled_tags = config
         if enabled_tags != None:
             for experiment in experiments[mode].keys():
-                for config in poller_config:
+                experiment_params = dict(base_params)
+                experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
+                for config in expand_poller_config(**experiment_params):
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=" + experiment
                     env = dict(config["env"])
@@ -440,7 +485,9 @@ def expand_tests(name, srcs, deps, tags, args, exclude_pollers, uses_polling, us
                     experiment_config.append(config)
         if disabled_tags != None:
             for experiment in experiments[mode].keys():
-                for config in poller_config:
+                experiment_params = dict(base_params)
+                experiment_params["uses_polling"] = uses_polling and (experiment in experiment_pollers)
+                for config in expand_poller_config(**experiment_params):
                     config = dict(config)
                     config["name"] = config["name"] + "@experiment=no_" + experiment
                     env = dict(config["env"])
@@ -511,11 +558,22 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             **test_args
         )
 
+    native.cc_library(
+        name = "%s_TEST_LIBRARY" % name,
+        testonly = 1,
+        srcs = srcs,
+        deps = core_deps,
+        tags = tags,
+    )
+
     for poller_config in expand_tests(name, srcs, core_deps, tags, args, exclude_pollers, uses_polling, uses_event_engine, flaky):
+        if poller_config["srcs"] != srcs:
+            fail("srcs changed")
+        if poller_config["deps"] != core_deps:
+            fail("deps changed: %r --> %r" % (deps, poller_config["deps"]))
         native.cc_test(
             name = poller_config["name"],
-            srcs = poller_config["srcs"],
-            deps = poller_config["deps"],
+            deps = ["%s_TEST_LIBRARY" % name],
             tags = poller_config["tags"],
             args = poller_config["args"],
             env = poller_config["env"],

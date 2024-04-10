@@ -219,7 +219,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           events().ForwardedMessageServerToClient(call_, *p->value());
         }
         next_server_to_client_messages_.reset();
-        Activity::current()->ForceImmediateRepoll();
+        GetContext<Activity>()->ForceImmediateRepoll();
       }
     }
 
@@ -229,7 +229,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           server_to_client_messages_sender_->Push(
               std::move(forward_server_to_client_messages_.front())));
       forward_server_to_client_messages_.pop();
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
     }
   }
 
@@ -251,7 +251,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           events().ForwardedMessageClientToServer(call_, *p->value());
         }
         next_client_to_server_messages_.reset();
-        Activity::current()->ForceImmediateRepoll();
+        GetContext<Activity>()->ForceImmediateRepoll();
       }
     }
 
@@ -261,7 +261,7 @@ bool FilterTestBase::Call::Impl::StepOnce() {
           pipe_client_to_server_messages_.sender.Push(
               std::move(forward_client_to_server_messages_.front())));
       forward_client_to_server_messages_.pop();
-      Activity::current()->ForceImmediateRepoll();
+      GetContext<Activity>()->ForceImmediateRepoll();
     }
   }
 
@@ -354,7 +354,7 @@ Arena* FilterTestBase::Call::arena() { return impl_->arena(); }
 ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
-  auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
+  auto md = impl_->arena()->MakePooled<ClientMetadata>();
   for (auto& p : init) {
     auto parsed = ClientMetadata::Parse(
         p.first, Slice::FromCopiedString(p.second), false,
@@ -371,7 +371,7 @@ ClientMetadataHandle FilterTestBase::Call::NewClientMetadata(
 ServerMetadataHandle FilterTestBase::Call::NewServerMetadata(
     std::initializer_list<std::pair<absl::string_view, absl::string_view>>
         init) {
-  auto md = impl_->arena()->MakePooled<ClientMetadata>(impl_->arena());
+  auto md = impl_->arena()->MakePooled<ClientMetadata>();
   for (auto& p : init) {
     auto parsed = ServerMetadata::Parse(
         p.first, Slice::FromCopiedString(p.second), false,

@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from grpc_observability._open_telemetry_observability import (
-    OpenTelemetryObservability,
-)
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 
-__all__ = ("OpenTelemetryObservability", "OpenTelemetryPlugin")
+__all__ = ("OpenTelemetryPlugin",)

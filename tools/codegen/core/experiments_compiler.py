@@ -192,6 +192,7 @@ class ExperimentDefinition(object):
             print("Failed to create experiment definition")
             return
         self._allow_in_fuzzing_config = True
+        self._uses_polling = False
         self._name = attributes["name"]
         self._description = attributes["description"]
         self._expiry = attributes["expiry"]
@@ -199,6 +200,9 @@ class ExperimentDefinition(object):
         self._additional_constraints = {}
         self._test_tags = []
         self._requires = set()
+
+        if "uses_polling" in attributes:
+            self._uses_polling = attributes["uses_polling"]
 
         if "allow_in_fuzzing_config" in attributes:
             self._allow_in_fuzzing_config = attributes[
@@ -625,6 +629,14 @@ class ExperimentsCompiler(object):
                 test_body += _EXPERIMENT_CHECK_TEXT(SnakeToPascal(exp.name))
             print(_EXPERIMENTS_TEST_SKELETON(defs, test_body), file=C)
 
+    def _ExperimentEnableSet(self, name):
+        s = set()
+        s.add(name)
+        for exp in self._experiment_definitions[name]._requires:
+            for req in self._ExperimentEnableSet(exp):
+                s.add(req)
+        return s
+
     def GenExperimentsBzl(self, mode, output_file):
         assert self._FinalizeExperiments()
         if self._bzl_list_for_defaults is None:
@@ -676,12 +688,22 @@ class ExperimentsCompiler(object):
             else:
                 print("EXPERIMENT_ENABLES = {", file=B)
             for name, exp in self._experiment_definitions.items():
-                enables = exp._requires.copy()
-                enables.add(name)
                 print(
-                    f"    \"{name}\": \"{','.join(sorted(enables))}\",", file=B
+                    f"    \"{name}\": \"{','.join(sorted(self._ExperimentEnableSet(name)))}\",",
+                    file=B,
                 )
             print("}", file=B)
+
+            # Generate a list of experiments that use polling.
+            print(file=B)
+            if mode == "test":
+                print("TEST_EXPERIMENT_POLLERS = [", file=B)
+            else:
+                print("EXPERIMENT_POLLERS = [", file=B)
+            for name, exp in self._experiment_definitions.items():
+                if exp._uses_polling:
+                    print(f'    "{name}",', file=B)
+            print("]", file=B)
 
             print(file=B)
             if mode == "test":

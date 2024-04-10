@@ -31,6 +31,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -280,6 +281,12 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
 
  private:
   std::unique_ptr<Context, Deleter> value_;
+};
+
+template <>
+class Context<Activity> {
+ public:
+  static Activity* get() { return Activity::current(); }
 };
 
 template <typename HeldContext>
@@ -632,13 +639,13 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 inline Pending IntraActivityWaiter::pending() {
-  wakeups_ |= Activity::current()->CurrentParticipant();
+  wakeups_ |= GetContext<Activity>()->CurrentParticipant();
   return Pending();
 }
 
 inline void IntraActivityWaiter::Wake() {
   if (wakeups_ == 0) return;
-  Activity::current()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
+  GetContext<Activity>()->ForceImmediateRepoll(std::exchange(wakeups_, 0));
 }
 
 }  // namespace grpc_core

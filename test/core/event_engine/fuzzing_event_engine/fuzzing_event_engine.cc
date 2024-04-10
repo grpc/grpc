@@ -20,8 +20,6 @@
 #include <algorithm>
 #include <chrono>
 #include <limits>
-#include <ratio>
-#include <type_traits>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -31,13 +29,20 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/iomgr/port.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/util/port.h"
 
+#if defined(GRPC_POSIX_SOCKET_TCP)
+#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
+#else
+#include "src/core/lib/gprpp/crash.h"
+#endif
 // IWYU pragma: no_include <sys/socket.h>
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
@@ -338,6 +343,7 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
 bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     const WriteArgs*) {
+  grpc_core::global_stats().IncrementSyscallWrite();
   grpc_core::MutexLock lock(&*mu_);
   GPR_ASSERT(!middle_->closed[my_index()]);
   GPR_ASSERT(!middle_->writing[my_index()]);
@@ -497,7 +503,11 @@ bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
-  abort();
+#if defined(GRPC_POSIX_SOCKET_TCP)
+  return std::make_unique<NativePosixDNSResolver>(shared_from_this());
+#else
+  grpc_core::Crash("FuzzingEventEngine::GetDNSResolver Not implemented");
+#endif
 }
 
 void FuzzingEventEngine::Run(Closure* closure) {

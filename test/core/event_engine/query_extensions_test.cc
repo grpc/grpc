@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/query_extensions.h"
 
 #include <string>
@@ -23,6 +21,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -47,8 +46,8 @@ class TestExtension {
 };
 
 class ExtendedTestEndpoint
-    : public ExtendedEndpoint<TestExtension<0>, TestExtension<1>,
-                              TestExtension<2>> {
+    : public ExtendedType<EventEngine::Endpoint, TestExtension<0>,
+                          TestExtension<1>, TestExtension<2>> {
  public:
   ExtendedTestEndpoint() = default;
   ~ExtendedTestEndpoint() override = default;

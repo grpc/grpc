@@ -77,7 +77,10 @@ class SSLSessionCacheTest(unittest.TestCase):
         channel = grpc.secure_channel(
             "localhost:{}".format(port), channel_creds, options=channel_options
         )
-        response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        response = channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )(_REQUEST)
         auth_data = pickle.loads(response)
         self.assertEqual(
             expect_ssl_session_reused,

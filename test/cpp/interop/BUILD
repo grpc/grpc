@@ -45,6 +45,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "absl/time:time",
     ],
     language = "C++",
@@ -66,6 +67,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -79,6 +81,9 @@ grpc_cc_library(
     name = "interop_server_lib",
     srcs = [
         "interop_server.cc",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -103,6 +108,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -161,6 +167,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         ":client_helper_lib",
@@ -176,6 +183,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -194,6 +202,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         ":client_helper_lib",
@@ -239,6 +248,9 @@ grpc_cc_library(
     name = "xds_stats_watcher",
     srcs = ["xds_stats_watcher.cc"],
     hdrs = ["xds_stats_watcher.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         ":rpc_behavior_lb_policy",
         "//:grpc++",
@@ -413,6 +425,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         "//:grpc++",
@@ -432,6 +445,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     language = "C++",
     deps = [
@@ -522,6 +536,7 @@ grpc_cc_library(
         "backend_metrics_lb_policy.h",
     ],
     external_deps = [
+        "absl/log:check",
     ],
     language = "C++",
     tags = ["nobuilder"],
@@ -529,6 +544,22 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:messages_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "backend_metrics_lb_policy_test",
+    srcs = [
+        "backend_metrics_lb_policy_test.cc",
+    ],
+    external_deps = ["gtest"],
+    deps = [
+        ":backend_metrics_lb_policy",
+        "//:grpc++",
+        "//:grpcpp_orca_service",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -541,6 +572,7 @@ grpc_cc_library(
         "rpc_behavior_lb_policy.h",
     ],
     external_deps = [
+        "absl/log:check",
     ],
     language = "C++",
     tags = ["nobuilder"],

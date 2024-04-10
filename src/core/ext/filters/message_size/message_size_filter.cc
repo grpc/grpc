@@ -40,13 +40,13 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
@@ -160,20 +160,21 @@ absl::StatusOr<ServerMessageSizeFilter> ServerMessageSizeFilter::Create(
 namespace {
 ServerMetadataHandle CheckPayload(const Message& msg,
                                   absl::optional<uint32_t> max_length,
-                                  bool is_send) {
+                                  bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
     gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
-            Activity::current()->DebugTag().c_str(), is_send ? "send" : "recv",
-            msg.payload()->Length(), *max_length);
+            GetContext<Activity>()->DebugTag().c_str(),
+            is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  auto r = GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto r = GetContext<Arena>()->MakePooled<ServerMetadata>();
   r->Set(GrpcStatusMetadata(), GRPC_STATUS_RESOURCE_EXHAUSTED);
-  r->Set(GrpcMessageMetadata(), Slice::FromCopiedString(absl::StrFormat(
-                                    "%s message larger than max (%u vs. %d)",
-                                    is_send ? "Sent" : "Received",
-                                    msg.payload()->Length(), *max_length)));
+  r->Set(GrpcMessageMetadata(),
+         Slice::FromCopiedString(absl::StrFormat(
+             "%s: %s message larger than max (%u vs. %d)",
+             is_client ? "CLIENT" : "SERVER", is_send ? "Sent" : "Received",
+             msg.payload()->Length(), *max_length)));
   return r;
 }
 }  // namespace
@@ -207,22 +208,26 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  return CheckPayload(message, filter->parsed_config_.max_recv_size(), false);
+  return CheckPayload(message, filter->parsed_config_.max_recv_size(),
+                      /*is_client=*/false, false);
 }
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  return CheckPayload(message, filter->parsed_config_.max_send_size(), true);
+  return CheckPayload(message, filter->parsed_config_.max_send_size(),
+                      /*is_client=*/false, true);
 }
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message) {
-  return CheckPayload(message, limits_.max_send_size(), true);
+  return CheckPayload(message, limits_.max_send_size(), /*is_client=*/true,
+                      true);
 }
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message) {
-  return CheckPayload(message, limits_.max_recv_size(), false);
+  return CheckPayload(message, limits_.max_recv_size(), /*is_client=*/true,
+                      false);
 }
 
 namespace {

@@ -18,20 +18,22 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -62,9 +64,9 @@ class ClusterTypeTest : public XdsEnd2endTest {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      GPR_ASSERT(lb_uri.ok());
+      CHECK(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
+      CHECK(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;
@@ -170,6 +172,144 @@ TEST_P(AggregateClusterTest, Basic) {
   ShutdownBackend(0);
   StartBackend(0);
   WaitForBackend(DEBUG_LOCATION, 0);
+}
+
+TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromUnderlyingCluster) {
+  CreateAndStartBackends(4);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  // First cluster uses RING_HASH, second cluster uses ROUND_ROBIN.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  new_cluster1.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set up route with channel id hashing
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // Traffic should all go to one of the two backends in the first
+  // cluster, because we're using RING_HASH.
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  bool found = false;
+  for (size_t i = 0; i < 2; ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  // Now shut down backends 0 and 1, so that we fail over to the second cluster.
+  backends_[0]->StopListeningAndSendGoaways();
+  backends_[1]->StopListeningAndSendGoaways();
+  WaitForAllBackends(DEBUG_LOCATION, 2, 4);
+  // Traffic should be evenly split between the two backends, since the
+  // second cluster uses ROUND_ROBIN.
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 50);
+  EXPECT_EQ(backends_[3]->backend_service()->request_count(), 50);
+}
+
+// TODO(roth): Remove this after the 1.63 release.
+TEST_P(AggregateClusterTest, LoadBalancingPolicyComesFromAggregateCluster) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_XDS_AGGREGATE_CLUSTER_BACKWARD_COMPAT");
+  CreateAndStartBackends(4);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  const char* kNewEdsService2Name = "new_eds_service_name_2";
+  // Populate new EDS resources.
+  EdsResourceArgs args1({
+      {"locality0", CreateEndpointsForBackends(0, 2)},
+  });
+  EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(2, 4)},
+  });
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsService2Name));
+  // Populate new CDS resources.
+  // First cluster uses RING_HASH, second cluster uses ROUND_ROBIN.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  new_cluster1.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  Cluster new_cluster2 = default_cluster_;
+  new_cluster2.set_name(kNewCluster2Name);
+  new_cluster2.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService2Name);
+  new_cluster2.set_lb_policy(Cluster::RING_HASH);
+  balancer_->ads_service()->SetCdsResource(new_cluster2);
+  // Create Aggregate Cluster
+  auto cluster = default_cluster_;
+  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  cluster.set_lb_policy(Cluster::ROUND_ROBIN);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Set up route with channel id hashing, so that if we use ring_hash,
+  // all RPCs will go to the same endpoint.
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetRouteConfiguration(balancer_.get(), new_route_config);
+  // We should initially use the first cluster.
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // Traffic should be evenly split between the two backends in the
+  // first cluster, because we're using ROUND_ROBIN.
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 50);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 50);
+  // Now shut down backends 0 and 1, so that we fail over to the second cluster.
+  backends_[0]->StopListeningAndSendGoaways();
+  backends_[1]->StopListeningAndSendGoaways();
+  WaitForAllBackends(DEBUG_LOCATION, 2, 4);
+  // Traffic should be evenly split between the two backends in the
+  // second cluster as well.
+  CheckRpcSendOk(DEBUG_LOCATION, 100);
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 50);
+  EXPECT_EQ(backends_[3]->backend_service()->request_count(), 50);
 }
 
 // This test covers a bug found in the following scenario:

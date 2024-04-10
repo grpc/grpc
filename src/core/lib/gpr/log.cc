@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/log.h"
+
 #include <stdio.h>
 #include <string.h>
 
@@ -40,6 +42,7 @@ static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
 void gpr_default_log(gpr_log_func_args* args);
+void gpr_platform_log(gpr_log_func_args* args);
 static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
 static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
@@ -71,6 +74,29 @@ int gpr_should_log(gpr_log_severity severity) {
                  gpr_atm_no_barrier_load(&g_min_severity_to_print)
              ? 1
              : 0;
+}
+
+void gpr_default_log(gpr_log_func_args* args) {
+  if (!grpc_core::ConfigVars::Get().AbslLogging()) {
+    gpr_platform_log(args);
+    return;
+  }
+  switch (args->severity) {
+    case GPR_LOG_SEVERITY_DEBUG:
+      //  Log DEBUG messages as VLOG(2).
+      VLOG(2).AtLocation(args->file, args->line) << args->message;
+      return;
+    case GPR_LOG_SEVERITY_INFO:
+      LOG(INFO).AtLocation(args->file, args->line) << args->message;
+      return;
+    case GPR_LOG_SEVERITY_ERROR:
+      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
+      return;
+    default:
+      LOG(ERROR) << __func__ << ": unknown gpr log severity(" << args->severity
+                 << "), using ERROR";
+      LOG(ERROR).AtLocation(args->file, args->line) << args->message;
+  }
 }
 
 int gpr_should_log_stacktrace(gpr_log_severity severity) {

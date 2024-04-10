@@ -63,7 +63,6 @@ grpc_cc_library(
         "histogram.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
-        "passthru_endpoint.cc",
         "resolve_localhost_ip46.cc",
         "slice_splitter.cc",
         "tracer_util.cc",
@@ -77,7 +76,6 @@ grpc_cc_library(
         "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
-        "passthru_endpoint.h",
         "resolve_localhost_ip46.h",
         "slice_splitter.h",
         "tracer_util.h",
@@ -148,6 +146,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:load_file",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -310,6 +309,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc_client_channel",
+        "//:oob_backend_metric",
         "//:orphanable",
         "//:parse_address",
         "//:ref_counted_ptr",
@@ -489,5 +489,26 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:resource_quota",
+    ],
+)
+
+grpc_cc_library(
+    name = "fake_stats_plugin",
+    testonly = True,
+    srcs = ["fake_stats_plugin.cc"],
+    hdrs = ["fake_stats_plugin.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+        "gtest",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:examine_stack",
+        "//src/core:metrics",
     ],
 )

@@ -28,6 +28,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+load(":address_sorting.bzl", "address_sorting_cc_library")
+
 package(
     default_visibility = ["//visibility:public"],
     features = [
@@ -35,8 +37,6 @@ package(
         "-parse_headers",
     ],
 )
-
-load(":address_sorting.bzl", "address_sorting_cc_library")
 
 licenses(["notice"])
 

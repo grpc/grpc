@@ -31,7 +31,7 @@ class Foo : public DualRefCounted<Foo> {
   Foo() = default;
   ~Foo() override { GPR_ASSERT(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
  private:
   bool shutting_down_ = false;
@@ -94,7 +94,7 @@ class FooWithTracing : public DualRefCounted<FooWithTracing> {
   FooWithTracing() : DualRefCounted("FooWithTracing") {}
   ~FooWithTracing() override { GPR_ASSERT(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
  private:
   bool shutting_down_ = false;

@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include "src/core/load_balancing/pick_first/pick_first.h"
+
 #include <stddef.h>
 
 #include <algorithm>
@@ -35,7 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -43,9 +45,10 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
-#include "src/core/lib/load_balancing/lb_policy.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
+#include "src/core/load_balancing/lb_policy.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -54,7 +57,8 @@ namespace {
 
 class PickFirstTest : public LoadBalancingPolicyTest {
  protected:
-  PickFirstTest() : LoadBalancingPolicyTest("pick_first") {}
+  explicit PickFirstTest(ChannelArgs channel_args = ChannelArgs())
+      : LoadBalancingPolicyTest("pick_first", channel_args) {}
 
   void SetUp() override {
     LoadBalancingPolicyTest::SetUp();
@@ -76,20 +80,8 @@ class PickFirstTest : public LoadBalancingPolicyTest {
   void GetOrderAddressesArePicked(
       absl::Span<const absl::string_view> addresses,
       std::vector<absl::string_view>* out_address_order) {
-    ExecCtx exec_ctx;
     out_address_order->clear();
-    // Note: ExitIdle() will enqueue a bunch of connectivity state
-    // notifications on the WorkSerializer, and we want to wait until
-    // those are delivered to the LB policy.
-    absl::Notification notification;
-    work_serializer_->Run(
-        [&]() {
-          lb_policy()->ExitIdleLocked();
-          work_serializer_->Run([&]() { notification.Notify(); },
-                                DEBUG_LOCATION);
-        },
-        DEBUG_LOCATION);
-    notification.WaitForNotification();
+    ExitIdle();
     // Construct a map of subchannel to address.
     // We will remove entries as each subchannel starts to connect.
     std::map<SubchannelState*, absl::string_view> subchannels;
@@ -520,7 +512,6 @@ TEST_F(PickFirstTest, ResolverUpdateBeforeLeavingIdle) {
 }
 
 TEST_F(PickFirstTest, HappyEyeballs) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing three addresses.
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
@@ -575,7 +566,6 @@ TEST_F(PickFirstTest, HappyEyeballs) {
 }
 
 TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing three addresses.
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
@@ -696,7 +686,6 @@ TEST_F(PickFirstTest, HappyEyeballsCompletesWithoutSuccess) {
 
 TEST_F(PickFirstTest,
        HappyEyeballsLastSubchannelFailsWhileAnotherIsStillPending) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing three addresses.
   constexpr std::array<absl::string_view, 2> kAddresses = {
       "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
@@ -765,7 +754,6 @@ TEST_F(PickFirstTest,
 }
 
 TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing four IPv4 addresses followed by two
   // IPv6 addresses.
   constexpr std::array<absl::string_view, 6> kAddresses = {
@@ -858,7 +846,6 @@ TEST_F(PickFirstTest, HappyEyeballsAddressInterleaving) {
 
 TEST_F(PickFirstTest,
        HappyEyeballsAddressInterleavingSecondFamilyHasMoreAddresses) {
-  if (!IsPickFirstHappyEyeballsEnabled()) return;
   // Send an update containing two IPv6 addresses followed by four IPv4
   // addresses.
   constexpr std::array<absl::string_view, 6> kAddresses = {
@@ -1227,6 +1214,168 @@ TEST_F(PickFirstTest, ShufflingDisabled) {
     EXPECT_THAT(address_order, ::testing::ElementsAreArray(kAddresses));
   }
 }
+
+TEST_F(PickFirstTest, MetricDefinitionDisconnections) {
+  const auto* descriptor =
+      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.lb.pick_first.disconnections");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.lb.pick_first.disconnections");
+  EXPECT_EQ(descriptor->unit, "{disconnection}");
+  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_F(PickFirstTest, MetricDefinitionConnectionAttemptsSucceeded) {
+  const auto* descriptor =
+      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.lb.pick_first.connection_attempts_succeeded");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name,
+            "grpc.lb.pick_first.connection_attempts_succeeded");
+  EXPECT_EQ(descriptor->unit, "{attempt}");
+  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_F(PickFirstTest, MetricDefinitionConnectionAttemptsFailed) {
+  const auto* descriptor =
+      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.lb.pick_first.connection_attempts_failed");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.lb.pick_first.connection_attempts_failed");
+  EXPECT_EQ(descriptor->unit, "{attempt}");
+  EXPECT_THAT(descriptor->label_keys, ::testing::ElementsAre("grpc.target"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_F(PickFirstTest, MetricValues) {
+  const auto kDisconnections =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.pick_first.disconnections")
+          .value();
+  const auto kConnectionAttemptsSucceeded =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.pick_first.connection_attempts_succeeded")
+          .value();
+  const auto kConnectionAttemptsFailed =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.pick_first.connection_attempts_failed")
+          .value();
+  const absl::string_view kLabelValues[] = {target_};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+  // Send an update containing two addresses.
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // The second subchannel should not be connecting.
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  // The first subchannel's connection attempt fails.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("failed to connect"));
+  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsFailed,
+                                            kLabelValues, {}),
+              ::testing::Optional(1));
+  // The LB policy will start a connection attempt on the second subchannel.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports
+  // CONNECTING.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // The connection attempt succeeds.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
+  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsSucceeded,
+                                            kLabelValues, {}),
+              ::testing::Optional(1));
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[1]);
+  }
+  // Now the subchannel becomes disconnected.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  ExpectReresolutionRequest();
+  ExpectState(GRPC_CHANNEL_IDLE);
+  EXPECT_THAT(stats_plugin->GetCounterValue(kDisconnections, kLabelValues, {}),
+              ::testing::Optional(1));
+}
+
+class PickFirstHealthCheckingEnabledTest : public PickFirstTest {
+ protected:
+  PickFirstHealthCheckingEnabledTest()
+      : PickFirstTest(ChannelArgs().Set(
+            GRPC_ARG_INTERNAL_PICK_FIRST_ENABLE_HEALTH_CHECKING, true)) {}
+};
+
+TEST_F(PickFirstHealthCheckingEnabledTest, UpdateWithReadyChannel) {
+  constexpr absl::string_view kAddress = "ipv4:127.0.0.1:443";
+  LoadBalancingPolicy::UpdateArgs update =
+      BuildUpdate({kAddress}, MakePickFirstConfig());
+  absl::Status status = ApplyUpdate(update, lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for the address.
+  auto* subchannel = FindSubchannel(kAddress);
+  ASSERT_NE(subchannel, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // When the subchannel becomes connected, it reports READY.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddress);
+  // Reapply the same update we did before. The the underlying
+  // subchannel will immediately become ready.
+  status =
+      ApplyUpdate(BuildUpdate({kAddress}, MakePickFirstConfig()), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  EXPECT_EQ(ExpectPickComplete(picker.get()), kAddress);
+  // At this point, NumWatchers() should account for our
+  // subchannel connectivity watcher and our health watcher.
+  EXPECT_EQ(subchannel->NumWatchers(), 2);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

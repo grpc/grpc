@@ -58,51 +58,53 @@ PromiseEndpoint::GetLocalAddress() const {
 }
 
 void PromiseEndpoint::ReadState::Complete(absl::Status status,
-                                          size_t num_bytes_requested) {
-  gpr_log(GPR_ERROR, "PromiseEndpoint::ReadState::Complete: status:%s",
-          status.ToString().c_str());
-
-  if (!status.ok()) {
-    // Invalidates all previous reads.
-    pending_buffer.Clear();
-    buffer.Clear();
+                                          const size_t num_bytes_requested) {
+  while (true) {
+    if (!status.ok()) {
+      // Invalidates all previous reads.
+      pending_buffer.Clear();
+      buffer.Clear();
+      result = status;
+      auto w = std::move(waker);
+      complete.store(true, std::memory_order_release);
+      w.Wakeup();
+      return;
+    }
+    // Appends `pending_buffer` to `buffer`.
+    pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
+                                                  buffer);
+    GPR_DEBUG_ASSERT(pending_buffer.Count() == 0u);
+    if (buffer.Length() < num_bytes_requested) {
+      // A further read is needed.
+      // Set read args with number of bytes needed as hint.
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
+          read_args = {
+              static_cast<int64_t>(num_bytes_requested - buffer.Length())};
+      // If `Read()` returns true immediately, the callback will not be
+      // called. We still need to call our callback to pick up the result and
+      // maybe do further reads.
+      auto ep = endpoint.lock();
+      if (ep == nullptr) {
+        status = absl::UnavailableError("Endpoint closed during read.");
+        continue;
+      }
+      if (ep->Read(
+              [self = Ref(), num_bytes_requested](absl::Status status) {
+                ApplicationCallbackExecCtx callback_exec_ctx;
+                ExecCtx exec_ctx;
+                self->Complete(std::move(status), num_bytes_requested);
+              },
+              &pending_buffer, &read_args)) {
+        continue;
+      }
+      return;
+    }
     result = status;
     auto w = std::move(waker);
     complete.store(true, std::memory_order_release);
     w.Wakeup();
     return;
   }
-  // Appends `pending_buffer` to `buffer`.
-  pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
-                                                buffer);
-  GPR_DEBUG_ASSERT(pending_buffer.Count() == 0u);
-  if (buffer.Length() < num_bytes_requested) {
-    // A further read is needed.
-    // Set read args with number of bytes needed as hint.
-    grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs read_args =
-        {static_cast<int64_t>(num_bytes_requested - buffer.Length())};
-    // If `Read()` returns true immediately, the callback will not be
-    // called. We still need to call our callback to pick up the result and
-    // maybe do further reads.
-    auto ep = endpoint.lock();
-    if (ep == nullptr) {
-      Complete(absl::UnavailableError("Endpoint closed during read."),
-               num_bytes_requested);
-      return;
-    }
-    if (ep->Read(
-            [self = Ref(), num_bytes_requested](absl::Status status) {
-              self->Complete(std::move(status), num_bytes_requested);
-            },
-            &pending_buffer, &read_args)) {
-      Complete(std::move(status), num_bytes_requested);
-    }
-    return;
-  }
-  result = status;
-  auto w = std::move(waker);
-  complete.store(true, std::memory_order_release);
-  w.Wakeup();
 }
 
 }  // namespace grpc_core

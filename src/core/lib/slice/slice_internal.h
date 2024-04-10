@@ -67,6 +67,13 @@ grpc_slice grpc_slice_from_cpp_string(std::string str);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
+grpc_slice grpc_slice_split_tail_maybe_ref_no_inline(
+    grpc_slice* source, size_t split, grpc_slice_ref_whom ref_whom);
+
+grpc_slice grpc_slice_split_tail_no_inline(grpc_slice* source, size_t split);
+
+grpc_slice grpc_slice_split_head_no_inline(grpc_slice* source, size_t split);
+
 namespace grpc_core {
 
 // Converts grpc_slice to absl::string_view.

@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 #define GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <deque>
@@ -33,6 +31,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_transport.h"
@@ -88,9 +88,15 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     bool Orphaned();
 
-    size_t reads_started() {
+    bool WaitForReadsStarted(size_t expected, absl::Duration timeout) {
       MutexLock lock(&mu_);
-      return reads_started_;
+      const absl::Time deadline = absl::Now() + timeout;
+      do {
+        if (reads_started_ == expected) {
+          return true;
+        }
+      } while (!cv_reads_started_.WaitWithDeadline(&mu_, deadline));
+      return false;
     }
 
    private:
@@ -122,7 +128,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     const char* method_;
 
     Mutex mu_;
-    CondVar cv_;
+    CondVar cv_reads_started_;
+    CondVar cv_client_msg_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
@@ -207,6 +214,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
 
+    const XdsBootstrap::XdsServer* server() const { return &server_; }
+
    private:
     class RefCountedOnConnectivityFailure
         : public RefCounted<RefCountedOnConnectivityFailure> {
@@ -251,7 +260,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server);
 
   Mutex mu_;
-  std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
+  std::map<std::string /*XdsServer key*/, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
   bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;

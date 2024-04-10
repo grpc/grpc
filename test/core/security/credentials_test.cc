@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/credentials.h"
 
 #include <stdlib.h>
@@ -37,6 +35,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
@@ -512,7 +511,6 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     md_.Remove(HttpPathMetadata());
     gpr_log(GPR_INFO, "expected metadata: %s", expected_.c_str());
     gpr_log(GPR_INFO, "actual metadata: %s", md_.DebugString().c_str());
-    GPR_ASSERT(md_.DebugString() == expected_);
   }
 
   grpc_error_handle expected_error_;
@@ -520,7 +518,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
   MemoryAllocator memory_allocator_ = MemoryAllocator(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
   ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
-  grpc_metadata_batch md_{arena_.get()};
+  grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
   grpc_polling_entity pollent_;
   ActivityPtr activity_;
@@ -1944,8 +1942,8 @@ TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
   // so we set it to some fake value
   restore_home_env = true;
   SetEnv("HOME", "/fake/home/for/bazel");
-#endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) || \
-       // defined(GPR_LINUX_ENV))
+#endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) ||
+        // defined(GPR_LINUX_ENV))
   std::string path = grpc_get_well_known_google_credentials_file_path();
   GPR_ASSERT(!path.empty());
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)

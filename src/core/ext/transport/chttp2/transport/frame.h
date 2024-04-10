@@ -102,6 +102,8 @@ struct Http2RstStreamFrame {
 // SETTINGS frame
 struct Http2SettingsFrame {
   struct Setting {
+    Setting(uint16_t id, uint32_t value) : id(id), value(value) {}
+
     uint16_t id;
     uint32_t value;
 

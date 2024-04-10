@@ -133,6 +133,9 @@ class WinSocket {
 // Attempt to configure default socket settings
 absl::Status PrepareSocket(SOCKET sock);
 
+// Set non block option for socket.
+absl::Status SetSocketNonBlock(SOCKET sock);
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

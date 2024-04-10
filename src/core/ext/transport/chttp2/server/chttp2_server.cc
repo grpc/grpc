@@ -72,6 +72,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
+#include "src/core/lib/resource_quota/connection_quota.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -283,6 +284,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<channelz::ListenSocketNode> channelz_listen_socket_;
   MemoryQuotaRefPtr memory_quota_;
+  ConnectionQuotaRefPtr connection_quota_;
 };
 
 //
@@ -450,11 +452,13 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
   bool cleanup_connection = false;
+  bool release_connection = false;
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (!error.ok() || self->connection_->shutdown_) {
       std::string error_str = StatusToString(error);
       cleanup_connection = true;
+      release_connection = true;
       if (error.ok() && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
@@ -504,6 +508,18 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           } else {
             // Remove the connection from the connections_ map since OnClose()
             // will not be invoked when a config fetcher is set.
+            auto connection_quota =
+                self->connection_->listener_->connection_quota_->Ref()
+                    .release();
+            auto on_close_transport = [](void* arg,
+                                         grpc_error_handle /*handle*/) {
+              ConnectionQuota* connection_quota =
+                  static_cast<ConnectionQuota*>(arg);
+              connection_quota->ReleaseConnections(1);
+              connection_quota->Unref();
+            };
+            on_close = GRPC_CLOSURE_CREATE(on_close_transport, connection_quota,
+                                           grpc_schedule_on_exec_ctx_);
             cleanup_connection = true;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
@@ -526,9 +542,11 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
           cleanup_connection = true;
+          release_connection = true;
         }
       } else {
         cleanup_connection = true;
+        release_connection = true;
       }
     }
     // Since the handshake manager is done, the connection no longer needs to
@@ -543,6 +561,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   OrphanablePtr<ActiveConnection> connection;
   if (cleanup_connection) {
     MutexLock listener_lock(&self->connection_->listener_->mu_);
+    if (release_connection) {
+      self->connection_->listener_->connection_quota_->ReleaseConnections(1);
+    }
     auto it = self->connection_->listener_->connections_.find(
         self->connection_.get());
     if (it != self->connection_->listener_->connections_.end()) {
@@ -617,8 +638,17 @@ void Chttp2ServerListener::ActiveConnection::Start(
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   listener_ = std::move(listener);
   {
-    MutexLock lock(&mu_);
-    if (shutdown_) return;
+    ReleasableMutexLock lock(&mu_);
+    if (shutdown_) {
+      lock.Release();
+      // If the Connection is already shutdown at this point, it implies the
+      // owning Chttp2ServerListener and all associated ActiveConnections have
+      // been orphaned. The generated endpoints need to be shutdown here to
+      // ensure the tcp connections are closed appropriately.
+      grpc_endpoint_shutdown(endpoint, absl::OkStatus());
+      grpc_endpoint_destroy(endpoint);
+      return;
+    }
     // Hold a ref to HandshakingState to allow starting the handshake outside
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
@@ -649,6 +679,7 @@ void Chttp2ServerListener::ActiveConnection::OnClose(
       self->drain_grace_timer_handle_.reset();
     }
   }
+  self->listener_->connection_quota_->ReleaseConnections(1);
   self->Unref();
 }
 
@@ -753,7 +784,14 @@ Chttp2ServerListener::Chttp2ServerListener(
     : server_(server),
       args_modifier_(args_modifier),
       args_(args),
-      memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()) {
+      memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
+      connection_quota_(MakeRefCounted<ConnectionQuota>()) {
+  auto max_allowed_incoming_connections =
+      args.GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
+  if (max_allowed_incoming_connections.has_value()) {
+    connection_quota_->SetMaxIncomingConnections(
+        max_allowed_incoming_connections.value());
+  }
   GRPC_CLOSURE_INIT(&tcp_server_shutdown_complete_, TcpServerShutdownComplete,
                     this, grpc_schedule_on_exec_ctx);
 }
@@ -812,6 +850,14 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     grpc_endpoint_destroy(tcp);
     gpr_free(acceptor);
   };
+  if (!self->connection_quota_->AllowIncomingConnection(
+          self->memory_quota_, grpc_endpoint_get_peer(tcp))) {
+    grpc_error_handle error = GRPC_ERROR_CREATE(
+        "Rejected incoming connection because configured connection quota "
+        "limits have been exceeded.");
+    endpoint_cleanup(error);
+    return;
+  }
   if (self->server_->config_fetcher() != nullptr) {
     if (connection_manager == nullptr) {
       grpc_error_handle error = GRPC_ERROR_CREATE(

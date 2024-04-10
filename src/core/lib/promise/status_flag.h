@@ -27,8 +27,18 @@
 
 namespace grpc_core {
 
-struct Failure {};
-struct Success {};
+struct Failure {
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Failure) {
+    sink.Append("failed");
+  }
+};
+struct Success {
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Success) {
+    sink.Append("ok");
+  }
+};
 
 inline bool IsStatusOk(Failure) { return false; }
 inline bool IsStatusOk(Success) { return true; }
@@ -67,10 +77,30 @@ class StatusFlag {
   bool ok() const { return value_; }
 
   bool operator==(StatusFlag other) const { return value_ == other.value_; }
+  std::string ToString() const { return value_ ? "ok" : "failed"; }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, StatusFlag flag) {
+    if (flag.ok()) {
+      sink.Append("ok");
+    } else {
+      sink.Append("failed");
+    }
+  }
 
  private:
   bool value_;
 };
+
+inline bool operator==(StatusFlag flag, Failure) { return !flag.ok(); }
+inline bool operator==(Failure, StatusFlag flag) { return !flag.ok(); }
+inline bool operator==(StatusFlag flag, Success) { return flag.ok(); }
+inline bool operator==(Success, StatusFlag flag) { return flag.ok(); }
+
+inline bool operator!=(StatusFlag flag, Failure) { return flag.ok(); }
+inline bool operator!=(Failure, StatusFlag flag) { return flag.ok(); }
+inline bool operator!=(StatusFlag flag, Success) { return !flag.ok(); }
+inline bool operator!=(Success, StatusFlag flag) { return !flag.ok(); }
 
 inline bool IsStatusOk(const StatusFlag& flag) { return flag.ok(); }
 
@@ -92,6 +122,30 @@ template <>
 struct StatusCastImpl<absl::Status, const StatusFlag&> {
   static absl::Status Cast(StatusFlag flag) {
     return flag.ok() ? absl::OkStatus() : absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
+  static absl::StatusOr<T> Cast(StatusFlag flag) {
+    GPR_DEBUG_ASSERT(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
+  static absl::StatusOr<T> Cast(StatusFlag flag) {
+    GPR_DEBUG_ASSERT(!flag.ok());
+    return absl::CancelledError();
+  }
+};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
+  static absl::StatusOr<T> Cast(StatusFlag flag) {
+    GPR_DEBUG_ASSERT(!flag.ok());
+    return absl::CancelledError();
   }
 };
 
@@ -121,6 +175,14 @@ class ValueOrFailure {
   bool operator==(const ValueOrFailure& other) const {
     return value_ == other.value_;
   }
+
+  bool operator!=(const ValueOrFailure& other) const {
+    return value_ != other.value_;
+  }
+
+  bool operator==(const T& other) const { return value_ == other; }
+
+  bool operator!=(const T& other) const { return value_ != other; }
 
  private:
   absl::optional<T> value_;

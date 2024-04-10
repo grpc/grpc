@@ -22,6 +22,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -77,7 +79,7 @@ class Verifier {
   // Verify keeps calling Next until all currently set
   // expected tags are complete
   void Verify(CompletionQueue* cq) {
-    GPR_ASSERT(!expectations_.empty());
+    CHECK(!expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, false);
     }
