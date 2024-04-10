@@ -47,6 +47,7 @@
 #include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -113,35 +114,6 @@ class PickFirstConfig final : public LoadBalancingPolicy::Config {
 
  private:
   bool shuffle_addresses_ = false;
-};
-
-absl::string_view GetAddressFamily(const grpc_resolved_address& address) {
-  const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
-  return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
-};
-
-// An endpoint list iterator that returns only entries for a specific
-// address family, as indicated by the URI scheme.
-class AddressFamilyIterator final {
- public:
-  AddressFamilyIterator(absl::string_view scheme, size_t index)
-      : scheme_(scheme), index_(index) {}
-
-  EndpointAddresses* Next(EndpointAddressesList& endpoints,
-                          std::vector<bool>* endpoints_moved) {
-    for (; index_ < endpoints.size(); ++index_) {
-      if (!(*endpoints_moved)[index_] &&
-          GetAddressFamily(endpoints[index_].address()) == scheme_) {
-        (*endpoints_moved)[index_] = true;
-        return &endpoints[index_++];
-      }
-    }
-    return nullptr;
-  }
-
- private:
-  absl::string_view scheme_;
-  size_t index_;
 };
 
 class PickFirst final : public LoadBalancingPolicy {
@@ -509,6 +481,35 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     UnsetSelectedSubchannel();
   }
 }
+
+absl::string_view GetAddressFamily(const grpc_resolved_address& address) {
+  const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
+  return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
+};
+
+// An endpoint list iterator that returns only entries for a specific
+// address family, as indicated by the URI scheme.
+class AddressFamilyIterator final {
+ public:
+  AddressFamilyIterator(absl::string_view scheme, size_t index)
+      : scheme_(scheme), index_(index) {}
+
+  EndpointAddresses* Next(EndpointAddressesList& endpoints,
+                          std::vector<bool>* endpoints_moved) {
+    for (; index_ < endpoints.size(); ++index_) {
+      if (!(*endpoints_moved)[index_] &&
+          GetAddressFamily(endpoints[index_].address()) == scheme_) {
+        (*endpoints_moved)[index_] = true;
+        return &endpoints[index_++];
+      }
+    }
+    return nullptr;
+  }
+
+ private:
+  absl::string_view scheme_;
+  size_t index_;
+};
 
 absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
@@ -1124,9 +1125,7 @@ void PickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
   }
 }
 
-// FIXME
-#if 0
-// TODO(roth): Remove this when the experiment is removed.
+// TODO(roth): Remove this when the pick_first_new experiment is removed.
 class OldPickFirst final : public LoadBalancingPolicy {
  public:
   explicit OldPickFirst(Args args);
@@ -1471,11 +1470,6 @@ void OldPickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   }
 }
-
-absl::string_view GetAddressFamily(const grpc_resolved_address& address) {
-  const char* uri_scheme = grpc_sockaddr_get_uri_scheme(&address);
-  return absl::string_view(uri_scheme == nullptr ? "other" : uri_scheme);
-};
 
 absl::Status OldPickFirst::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
@@ -2111,7 +2105,6 @@ void OldPickFirst::SubchannelList::MaybeFinishHappyEyeballsPass() {
     }
   }
 }
-#endif
 
 //
 // factory
@@ -2121,6 +2114,9 @@ class PickFirstFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
+    if (!IsPickFirstNewEnabled()) {
+      return MakeOrphanable<OldPickFirst>(std::move(args));
+    }
     return MakeOrphanable<PickFirst>(std::move(args));
   }
 
