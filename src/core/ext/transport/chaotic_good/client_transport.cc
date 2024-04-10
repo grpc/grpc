@@ -104,13 +104,10 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
             []() -> StatusFlag { return Success{}; });
       },
       [call_handler, trailers = std::move(frame.trailers)]() mutable {
-        return If(
-            trailers != nullptr,
-            [&call_handler, &trailers]() mutable {
-              return call_handler.PushServerTrailingMetadata(
-                  std::move(trailers));
-            },
-            []() -> StatusFlag { return Success{}; });
+        if (trailers != nullptr) {
+          call_handler.PushServerTrailingMetadata(std::move(trailers));
+        }
+        return Success{};
       });
   // Wrap the actual sequence with something that owns the call handler so that
   // its lifetime extends until the push completes.
@@ -224,7 +221,7 @@ void ChaoticGoodClientTransport::AbortWithError() {
   for (const auto& pair : stream_map) {
     auto call_handler = pair.second;
     call_handler.SpawnInfallible("cancel", [call_handler]() mutable {
-      call_handler.Cancel(ServerMetadataFromStatus(
+      call_handler.PushServerTrailingMetadata(ServerMetadataFromStatus(
           absl::UnavailableError("Transport closed.")));
       return Empty{};
     });

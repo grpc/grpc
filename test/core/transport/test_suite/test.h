@@ -221,7 +221,7 @@ class TransportTest : public ::testing::Test {
         rng_(rng) {}
 
   void SetServerAcceptor();
-  CallInitiator CreateCall();
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
 
   std::string RandomString(int min_length, int max_length,
                            absl::string_view character_set);
@@ -272,7 +272,7 @@ class TransportTest : public ::testing::Test {
 
     Arena* CreateArena() override;
     absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
+        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
     absl::optional<CallHandler> PopHandler();
 
    private:

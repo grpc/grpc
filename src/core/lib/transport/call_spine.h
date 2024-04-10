@@ -465,6 +465,11 @@ class UnstartedCallHandler {
     return spine_->party().SpawnWaitable(name, std::move(promise_factory));
   }
 
+  CallHandler V2HackToStartCallWithoutACallFilterStack() {
+    GPR_ASSERT(DownCast<PipeBasedCallSpine*>(spine_.get()) != nullptr);
+    return CallHandler(std::move(spine_));
+  }
+
   Arena* arena() { return spine_->arena(); }
 
  private:

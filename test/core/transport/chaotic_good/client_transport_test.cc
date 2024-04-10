@@ -115,9 +115,9 @@ TEST_F(TransportTest, AddOneStream) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call =
-      MakeCall(event_engine().get(), Arena::Create(1024, memory_allocator()));
-  transport->StartCall(std::move(call.handler));
+  auto call = MakeCall(TestInitialMetadata(), event_engine().get(),
+                       Arena::Create(1024, memory_allocator()), true);
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -133,11 +133,10 @@ TEST_F(TransportTest, AddOneStream) {
       {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 1);
+                              });
   call.initiator.SpawnInfallible(
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
@@ -153,14 +152,17 @@ TEST_F(TransportTest, AddOneStream) {
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "12345678");
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_TRUE(msg.value().has_value());
+              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                        "12345678");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_FALSE(msg.has_value());
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_FALSE(msg.value().has_value());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -241,20 +243,25 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "12345678");
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_TRUE(msg.value().has_value());
+              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                        "12345678");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "87654321");
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_TRUE(msg.value().has_value());
+              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                        "87654321");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_FALSE(msg.has_value());
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_FALSE(msg.value().has_value());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
