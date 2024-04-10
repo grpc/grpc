@@ -178,10 +178,10 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
     saved_errno = 0;
     ret = TryWriteBytes(sockfd, saved_errno, write_bytes);
     if (saved_errno == EAGAIN && ret < static_cast<int>(write_bytes.length())) {
-      CHECK(ret >= 0);
+      CHECK_GE(ret, 0);
       CHECK_OK(BlockUntilWritable(sockfd).ok());
     } else if (saved_errno != 0) {
-      CHECK(ret < 0);
+      CHECK_LT(ret, 0);
       return ret;
     }
     write_bytes = write_bytes.substr(ret, std::string::npos);
