@@ -7439,6 +7439,7 @@ targets:
   - test/core/event_engine/cf/cf_engine_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
