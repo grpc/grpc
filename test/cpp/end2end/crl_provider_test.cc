@@ -21,6 +21,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -101,7 +102,7 @@ class CrlProviderTest : public ::testing::Test {
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-    GPR_ASSERT(server_credentials.get() != nullptr);
+    CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;

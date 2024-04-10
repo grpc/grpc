@@ -7111,6 +7111,7 @@ target_include_directories(async_end2end_test
 target_link_libraries(async_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -8140,6 +8141,7 @@ target_include_directories(binder_server_test
 target_link_libraries(binder_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -9636,6 +9638,7 @@ target_include_directories(cfstream_test
 target_link_libraries(cfstream_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -10053,6 +10056,7 @@ target_include_directories(channelz_service_test
 target_link_libraries(channelz_service_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpcpp_channelz
   grpc++_test_util
 )
@@ -10471,6 +10475,7 @@ target_include_directories(client_callback_end2end_test
 target_link_libraries(client_callback_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -10726,6 +10731,7 @@ target_include_directories(client_interceptors_end2end_test
 target_link_libraries(client_interceptors_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -10798,6 +10804,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_lb_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_test_util
   )
 
@@ -11590,6 +11597,7 @@ target_include_directories(context_allocator_end2end_test
 target_link_libraries(context_allocator_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -11809,6 +11817,7 @@ target_include_directories(crl_provider_test
 target_link_libraries(crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -12019,6 +12028,7 @@ target_include_directories(delegating_channel_test
 target_link_libraries(delegating_channel_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -12550,6 +12560,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(end2end_binder_transport_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_test_util
   )
 
@@ -12615,6 +12626,7 @@ target_include_directories(end2end_test
 
 target_link_libraries(end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc++_test
   grpc++_test_util
 )
@@ -14168,6 +14180,7 @@ target_include_directories(flaky_network_test
 target_link_libraries(flaky_network_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -15199,6 +15212,7 @@ target_include_directories(grpc_authz_end2end_test
 target_link_libraries(grpc_authz_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_authorization_provider
   grpc++_test_util
 )
@@ -16210,6 +16224,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(grpclb_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_test_config
     grpc++_test_util
   )
@@ -16592,6 +16607,7 @@ target_include_directories(health_service_end2end_test
 target_link_libraries(health_service_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -17321,6 +17337,7 @@ target_include_directories(hybrid_end2end_test
 target_link_libraries(hybrid_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -19519,6 +19536,7 @@ target_include_directories(message_allocator_end2end_test
 target_link_libraries(message_allocator_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -20315,6 +20333,7 @@ target_include_directories(nonblocking_test
 target_link_libraries(nonblocking_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -20685,6 +20704,7 @@ target_include_directories(otel_plugin_test
 target_link_libraries(otel_plugin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   opentelemetry-cpp::api
   opentelemetry-cpp::metrics
   grpc++_test_util
@@ -21774,6 +21794,7 @@ target_include_directories(port_sharing_end2end_test
 target_link_libraries(port_sharing_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -22517,6 +22538,7 @@ target_include_directories(proto_server_reflection_test
 target_link_libraries(proto_server_reflection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_reflection
   grpc++_test_util
 )
@@ -22960,6 +22982,7 @@ target_include_directories(raw_end2end_test
 target_link_libraries(raw_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -26093,6 +26116,7 @@ target_include_directories(rls_end2end_test
 target_link_libraries(rls_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -26524,6 +26548,7 @@ target_include_directories(server_builder_plugin_test
 target_link_libraries(server_builder_plugin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -27018,6 +27043,7 @@ target_include_directories(server_interceptors_end2end_test
 target_link_libraries(server_interceptors_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -27347,6 +27373,7 @@ target_include_directories(service_config_end2end_test
 target_link_libraries(service_config_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -27629,6 +27656,7 @@ target_include_directories(shutdown_test
 target_link_libraries(shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -30156,6 +30184,7 @@ target_include_directories(test_cpp_end2end_ssl_credentials_test
 target_link_libraries(test_cpp_end2end_ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -31022,6 +31051,7 @@ target_include_directories(tls_credentials_test
 target_link_libraries(tls_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -31081,6 +31111,7 @@ target_include_directories(tls_key_export_test
 target_link_libraries(tls_key_export_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -33756,6 +33787,7 @@ target_include_directories(xds_credentials_end2end_test
 target_link_libraries(xds_credentials_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_util
 )
 
@@ -34425,6 +34457,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_fallback_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_test_util
   )
 
