@@ -14,15 +14,15 @@
 
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y apt-transport-https ca-certificates gnupg wget unzip && apt-get clean
+RUN apt update && apt -y upgrade
+RUN apt install -y apt-transport-https ca-certificates gnupg wget unzip && apt clean
 
+# Install .net
 RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-
 RUN dpkg -i packages-microsoft-prod.deb
-
 RUN rm packages-microsoft-prod.deb
+RUN apt update && apt install -y dotnet-sdk-7.0
 
-RUN apt-get update && apt-get install -y dotnet-sdk-7.0
 # Set up links so that the dotnet command can find the installed SDK
 RUN for f in /usr/share/dotnet/* ; do ln -s $f /usr/lib/dotnet ; done
 
