@@ -26,6 +26,7 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -179,8 +180,8 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  GPR_ASSERT(absl::GetFlag(FLAGS_control_port) != 0);
-  GPR_ASSERT(absl::GetFlag(FLAGS_retry_port) != 0);
+  CHECK(absl::GetFlag(FLAGS_control_port) != 0);
+  CHECK(absl::GetFlag(FLAGS_retry_port) != 0);
   RunServer();
 
   return 0;

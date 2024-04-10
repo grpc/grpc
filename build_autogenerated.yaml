@@ -5793,6 +5793,7 @@ targets:
   - test/cpp/interop/backend_metrics_lb_policy_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   - grpc++_test_config
@@ -11285,6 +11286,7 @@ targets:
   - src/proto/grpc/testing/test.proto
   - test/cpp/interop/http2_client.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: http2_settings_test
@@ -11748,6 +11750,7 @@ targets:
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
@@ -11765,6 +11768,7 @@ targets:
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/server_helper.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: invalid_call_argument_test
@@ -21579,6 +21583,7 @@ targets:
   - test/cpp/interop/xds_stats_watcher_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
