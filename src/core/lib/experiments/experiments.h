@@ -57,16 +57,7 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
-#ifndef NDEBUG
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-#endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return false; }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
@@ -100,16 +91,7 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
-#ifndef NDEBUG
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-#endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return false; }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
@@ -144,16 +126,7 @@ inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
 inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #else
-#ifndef NDEBUG
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
-#endif
-inline bool IsCallStatusOverrideOnCancellationEnabled() {
-#ifdef NDEBUG
-  return false;
-#else
-  return true;
-#endif
-}
+inline bool IsCallStatusOverrideOnCancellationEnabled() { return false; }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
