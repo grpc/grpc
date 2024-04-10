@@ -744,6 +744,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::
     OnConnectivityStateChange(grpc_connectivity_state new_state,
                               absl::Status status) {
+  if (watcher_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
             "[PF %p] subchannel state %p (subchannel %p): connectivity "
@@ -753,7 +754,6 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
             ConnectivityStateName(new_state), status.ToString().c_str(),
             watcher_, subchannel_data_, pick_first_->selected_.get());
   }
-  if (watcher_ == nullptr) return;
   // If we're still part of a subchannel list trying to connect, check
   // if we're connected.
   if (subchannel_data_ != nullptr) {
