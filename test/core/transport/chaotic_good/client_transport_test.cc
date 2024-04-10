@@ -67,7 +67,7 @@ const uint8_t kGrpcStatus0[] = {0x10, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
                                 0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md = GetContext<Arena>()->MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
@@ -78,7 +78,7 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
     bool has_message = (i < num_messages);
     return If(
         has_message,
-        Seq(initiator.PushMessage(GetContext<Arena>()->MakePooled<Message>(
+        Seq(initiator.PushMessage(Arena::MakePooled<Message>(
                 SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
             [&i]() -> LoopCtl<absl::Status> {
               ++i;
@@ -151,7 +151,7 @@ TEST_F(TransportTest, AddOneStream) {
                         "/demo.Service/Step");
               return Empty{};
             },
-            initiator.PullMessage(),
+            [initiator]() mutable { return initiator.PullMessage(); },
             [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_TRUE(msg.value().has_value());
@@ -159,13 +159,15 @@ TEST_F(TransportTest, AddOneStream) {
                         "12345678");
               return Empty{};
             },
-            initiator.PullMessage(),
+            [initiator]() mutable { return initiator.PullMessage(); },
             [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
               EXPECT_TRUE(msg.ok());
               EXPECT_FALSE(msg.value().has_value());
               return Empty{};
             },
-            initiator.PullServerTrailingMetadata(),
+            [initiator]() mutable {
+              return initiator.PullServerTrailingMetadata();
+            },
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
               on_done.Call();

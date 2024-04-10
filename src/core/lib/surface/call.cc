@@ -2740,7 +2740,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
         *args->path, args->registered_method, this->context());
-    send_initial_metadata_ = GetContext<Arena>()->MakePooled<ClientMetadata>();
+    send_initial_metadata_ = Arena::MakePooled<ClientMetadata>();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),

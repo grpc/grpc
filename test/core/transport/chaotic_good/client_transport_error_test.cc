@@ -105,22 +105,21 @@ struct MockPromiseEndpoint {
 auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   return Loop([initiator, num_messages]() mutable {
     bool has_message = (num_messages > 0);
-    return If(
-        has_message,
-        Seq(initiator.PushMessage(GetContext<Arena>()->MakePooled<Message>()),
-            [&num_messages]() -> LoopCtl<absl::Status> {
-              --num_messages;
-              return Continue();
-            }),
-        [initiator]() mutable -> LoopCtl<absl::Status> {
-          initiator.FinishSends();
-          return absl::OkStatus();
-        });
+    return If(has_message,
+              Seq(initiator.PushMessage(Arena::MakePooled<Message>()),
+                  [&num_messages]() -> LoopCtl<absl::Status> {
+                    --num_messages;
+                    return Continue();
+                  }),
+              [initiator]() mutable -> LoopCtl<absl::Status> {
+                initiator.FinishSends();
+                return absl::OkStatus();
+              });
   });
 }
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md = GetContext<Arena>()->MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/test"));
   return md;
 }
