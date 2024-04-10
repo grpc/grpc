@@ -27,6 +27,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
@@ -169,7 +171,7 @@ class TestMultipleServiceImpl : public RpcService {
 
     if (request->has_param() && request->param().server_die()) {
       gpr_log(GPR_ERROR, "The request should not reach application handler.");
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     if (request->has_param() && request->param().has_expected_error()) {
       const auto& error = request->param().expected_error();

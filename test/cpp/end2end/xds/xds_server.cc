@@ -22,6 +22,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -126,7 +127,7 @@ void AdsServiceImpl::ProcessUnsubscriptions(
             debug_label_.c_str(), resource_type.c_str(), resource_name.c_str(),
             &subscription_state);
     auto resource_it = resource_name_map->find(resource_name);
-    GPR_ASSERT(resource_it != resource_name_map->end());
+    CHECK(resource_it != resource_name_map->end());
     auto& resource_state = resource_it->second;
     resource_state.subscriptions.erase(&subscription_state);
     if (resource_state.subscriptions.empty() &&
@@ -193,7 +194,7 @@ uint64_t LrsServiceImpl::ClientStats::total_issued_requests() const {
 uint64_t LrsServiceImpl::ClientStats::dropped_requests(
     const std::string& category) const {
   auto iter = dropped_requests_.find(category);
-  GPR_ASSERT(iter != dropped_requests_.end());
+  CHECK(iter != dropped_requests_.end());
   return iter->second;
 }
 

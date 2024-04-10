@@ -25,6 +25,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -180,7 +181,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   void ReleaseInstance() {
     std::lock_guard<std::mutex> g(mu_);
-    GPR_ASSERT(acquired_);
+    CHECK(acquired_);
     acquired_ = false;
   }
 

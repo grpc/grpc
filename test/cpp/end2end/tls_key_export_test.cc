@@ -17,6 +17,7 @@
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -128,9 +129,9 @@ class TlsKeyLoggingEnd2EndTest : public ::testing::TestWithParam<TestScenario> {
   std::string CreateTmpFile() {
     char* name = nullptr;
     FILE* file_descriptor = gpr_tmpfile("GrpcTlsKeyLoggerTest", &name);
-    GPR_ASSERT(fclose(file_descriptor) == 0);
-    GPR_ASSERT(file_descriptor != nullptr);
-    GPR_ASSERT(name != nullptr);
+    CHECK_EQ(fclose(file_descriptor), 0);
+    CHECK_NE(file_descriptor, nullptr);
+    CHECK_NE(name, nullptr);
     std::string name_to_return = name;
     gpr_free(name);
     return name_to_return;
