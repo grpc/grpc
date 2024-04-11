@@ -18,6 +18,8 @@
 
 #include <map>
 
+#include "absl/log/check.h"
+
 #include <grpcpp/support/client_interceptor.h>
 
 #ifdef BAZEL_BUILD
@@ -62,10 +64,9 @@ class CachingInterceptor : public grpc::experimental::Interceptor {
         keyvaluestore::Request req_msg;
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
-        GPR_ASSERT(
-            grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(
-                &copied_buffer, &req_msg)
-                .ok());
+        CHECK(grpc::SerializationTraits<keyvaluestore::Request>::Deserialize(
+                  &copied_buffer, &req_msg)
+                  .ok());
         requested_key = req_msg.key();
       }
 
