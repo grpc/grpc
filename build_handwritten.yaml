@@ -14,9 +14,9 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 40.0.0
   csharp_major_version: 2
-  g_stands_for: giggle
+  g_stands_for: grateful
   protobuf_version: 3.26.1
-  version: 1.63.0-dev
+  version: 1.64.0-dev
 configs:
   asan:
     CC: clang

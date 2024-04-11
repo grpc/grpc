@@ -237,11 +237,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "giggle"  # @unused
+g_stands_for = "grateful"  # @unused
 
 core_version = "40.0.0"  # @unused
 
-version = "1.63.0-dev"  # @unused
+version = "1.64.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
