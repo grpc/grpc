@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -32,6 +30,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/channel_stack.h"
