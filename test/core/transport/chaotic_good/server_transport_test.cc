@@ -136,7 +136,7 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                           "/demo.Service/Step");
                 return Empty{};
               },
-              handler.PullMessage(),
+              [handler]() mutable { return handler.PullMessage(); },
               [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
                 EXPECT_TRUE(msg.ok());
                 EXPECT_TRUE(msg.value().has_value());
@@ -144,15 +144,19 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                           "12345678");
                 return Empty{};
               },
-              handler.PullMessage(),
+              [handler]() mutable { return handler.PullMessage(); },
               [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
                 EXPECT_TRUE(msg.ok());
                 EXPECT_FALSE(msg.value().has_value());
                 return Empty{};
               },
-              handler.PushServerInitialMetadata(TestInitialMetadata()),
-              handler.PushMessage(Arena::MakePooled<Message>(
-                  SliceBuffer(Slice::FromCopiedString("87654321")), 0)),
+              [handler]() mutable {
+                return handler.PushServerInitialMetadata(TestInitialMetadata());
+              },
+              [handler]() mutable {
+                return handler.PushMessage(Arena::MakePooled<Message>(
+                    SliceBuffer(Slice::FromCopiedString("87654321")), 0));
+              },
               [handler, &on_done]() mutable {
                 handler.PushServerTrailingMetadata(TestTrailingMetadata());
                 on_done.Call();

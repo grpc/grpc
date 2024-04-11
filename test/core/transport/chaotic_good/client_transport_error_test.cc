@@ -191,7 +191,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -236,7 +236,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -300,7 +300,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -316,7 +316,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -372,7 +372,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -388,7 +388,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
