@@ -30,12 +30,12 @@ cc_binary(
     name = "greeter_async_client",
     srcs = ["greeter_async_client.cc"],
     defines = ["BAZEL_BUILD"],
-    external_deps = ["absl/log:check"],
     deps = [
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:check",
     ],
 )
 
@@ -43,12 +43,12 @@ cc_binary(
     name = "greeter_async_client2",
     srcs = ["greeter_async_client2.cc"],
     defines = ["BAZEL_BUILD"],
-    external_deps = ["absl/log:check"],
     deps = [
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:check",
     ],
 )
 
@@ -94,12 +94,12 @@ cc_binary(
     name = "greeter_async_server",
     srcs = ["greeter_async_server.cc"],
     defines = ["BAZEL_BUILD"],
-    external_deps = ["absl/log:check"],
     deps = [
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
