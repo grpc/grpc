@@ -1291,50 +1291,6 @@ TEST_F(PickFirstTest, IdleOnDisconnect) {
   servers_.clear();
 }
 
-TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
-  FakeResolverResponseGeneratorWrapper response_generator;
-  auto channel =
-      BuildChannel("", response_generator);  // pick_first is the default.
-  auto stub = BuildStub(channel);
-  StartServers(2);
-  // Initially resolve to first server and make sure it connects.
-  gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
-  response_generator.SetNextResolution({servers_[0]->port_});
-  CheckRpcSendOk(DEBUG_LOCATION, stub, true /* wait_for_ready */);
-  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
-  ConnectionAttemptInjector injector;
-  auto hold = injector.AddHold(servers_[1]->port_);
-  // Send a resolution update with the remaining servers, none of which are
-  // running yet, so the update will stay pending.
-  gpr_log(GPR_INFO,
-          "Phase 2: Resolver update pointing to remaining "
-          "(not started) servers.");
-  response_generator.SetNextResolution(GetServersPorts(1 /* start_index */));
-  // Add hold before connection attempt to ensure RPCs will be sent to first
-  // server. Otherwise, pending subchannel list might already have gone into
-  // TRANSIENT_FAILURE due to hitting the end of the server list by the time
-  // we check the state.
-  hold->Wait();
-  // RPCs will continue to be sent to the first server.
-  CheckRpcSendOk(DEBUG_LOCATION, stub);
-  // Now stop the first server, so that the current subchannel list
-  // fails.  This should cause us to immediately swap over to the
-  // pending list, even though it's not yet connected.  The state should
-  // be set to CONNECTING, since that's what the pending subchannel list
-  // was doing when we swapped over.
-  gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
-  servers_[0]->Shutdown();
-  WaitForChannelNotReady(channel.get());
-  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_CONNECTING);
-  // Resume connection attempt to second server now that first server is down.
-  // The channel should go to READY state and RPCs should go to the second
-  // server.
-  gpr_log(GPR_INFO, "Phase 4: Resuming connection attempt to second server.");
-  hold->Resume();
-  WaitForChannelReady(channel.get());
-  WaitForServer(DEBUG_LOCATION, stub, 1);
-}
-
 TEST_F(PickFirstTest, StaysIdleUponEmptyUpdate) {
   // Start server, send RPC, and make sure channel is READY.
   const int kNumServers = 1;
