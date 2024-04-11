@@ -79,7 +79,11 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
             })),
         call_initiator.PullServerTrailingMetadata(),
         [call_handler](ServerMetadataHandle md) mutable {
-          call_handler.PushServerTrailingMetadata(std::move(md));
+          call_handler.SpawnInfallible(
+              "recv_trailing", [call_handler, md = std::move(md)]() mutable {
+                call_handler.PushServerTrailingMetadata(std::move(md));
+                return Empty{};
+              });
           return Empty{};
         });
   });
