@@ -1305,7 +1305,8 @@ Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
 absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
     ClientMetadataHandle client_initial_metadata, Arena* arena) {
   SetRegisteredMethodOnMetadata(*client_initial_metadata);
-  auto call = MakeServerCall(server_.get(), channel_.get(), arena);
+  auto call = MakeServerCall(std::move(client_initial_metadata), server_.get(),
+                             channel_.get(), arena);
   InitCall(call);
   return CallInitiator(std::move(call));
 }

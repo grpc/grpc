@@ -159,9 +159,10 @@ class CallContext {
 template <>
 struct ContextType<CallContext> {};
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface* server,
-                                                 Channel* channel,
-                                                 Arena* arena);
+// TODO(ctiller): remove once call-v3 finalized
+RefCountedPtr<CallSpineInterface> MakeServerCall(
+    ClientMetadataHandle client_initial_metadata, ServerInterface* server,
+    Channel* channel, Arena* arena);
 
 }  // namespace grpc_core
 

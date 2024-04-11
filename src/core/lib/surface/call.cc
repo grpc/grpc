@@ -3701,7 +3701,8 @@ class ServerCallSpine final : public PipeBasedCallSpine,
                               public ServerCallContext,
                               public BasicPromiseBasedCall {
  public:
-  ServerCallSpine(ServerInterface* server, Channel* channel, Arena* arena);
+  ServerCallSpine(ClientMetadataHandle client_initial_metadata,
+                  ServerInterface* server, Channel* channel, Arena* arena);
 
   // CallSpineInterface
   Pipe<ClientMetadataHandle>& client_initial_metadata() override {
@@ -3786,7 +3787,8 @@ class ServerCallSpine final : public PipeBasedCallSpine,
   ClientMetadataHandle client_initial_metadata_stored_;
 };
 
-ServerCallSpine::ServerCallSpine(ServerInterface* server, Channel* channel,
+ServerCallSpine::ServerCallSpine(ClientMetadataHandle client_initial_metadata,
+                                 ServerInterface* server, Channel* channel,
                                  Arena* arena)
     : BasicPromiseBasedCall(arena, 0, 1,
                             [channel, server]() -> grpc_call_create_args {
@@ -3810,6 +3812,11 @@ ServerCallSpine::ServerCallSpine(ServerInterface* server, Channel* channel,
   global_stats().IncrementServerCallsCreated();
   ScopedContext ctx(this);
   channel->channel_stack()->InitServerCallSpine(this);
+  SpawnGuarded("push_client_initial_metadata",
+               [this, md = std::move(client_initial_metadata)]() mutable {
+                 return Map(client_initial_metadata_.sender.Push(std::move(md)),
+                            [](bool r) { return StatusFlag(r); });
+               });
 }
 
 void ServerCallSpine::PublishInitialMetadata(
@@ -4135,14 +4142,15 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
   }
 }
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface* server,
-                                                 Channel* channel,
-                                                 Arena* arena) {
-  return RefCountedPtr<ServerCallSpine>(
-      arena->New<ServerCallSpine>(server, channel, arena));
+RefCountedPtr<CallSpineInterface> MakeServerCall(
+    ClientMetadataHandle client_initial_metadata, ServerInterface* server,
+    Channel* channel, Arena* arena) {
+  return RefCountedPtr<ServerCallSpine>(arena->New<ServerCallSpine>(
+      std::move(client_initial_metadata), server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface*, Channel*,
+RefCountedPtr<CallSpineInterface> MakeServerCall(ClientMetadataHandle,
+                                                 ServerInterface*, Channel*,
                                                  Arena*) {
   Crash("not implemented");
 }
