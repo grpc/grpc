@@ -46,7 +46,8 @@ def create_docker_jobspec(
         "DOCKER_RUN_SCRIPT_COMMAND": shell_command,
     }
     jobspec = jobset.JobSpec(
-        cmdline=["tools/run_tests/dockerize/build_and_run_docker.sh"] + docker_args,
+        cmdline=["tools/run_tests/dockerize/build_and_run_docker.sh"]
+        + docker_args,
         environ=docker_env,
         shortname="distribtest.%s" % (name),
         timeout_seconds=timeout_seconds,
@@ -125,13 +126,17 @@ class CSharpDistribTest(object):
                 self.name,
                 "tools/dockerfile/distribtest/csharp_%s_%s"
                 % (self.docker_suffix, self.arch),
-                "test/distrib/csharp/run_distrib_test%s.sh" % self.script_suffix,
+                "test/distrib/csharp/run_distrib_test%s.sh"
+                % self.script_suffix,
                 copy_rel_path="test/distrib",
             )
         elif self.platform == "macos":
             return create_jobspec(
                 self.name,
-                ["test/distrib/csharp/run_distrib_test%s.sh" % self.script_suffix],
+                [
+                    "test/distrib/csharp/run_distrib_test%s.sh"
+                    % self.script_suffix
+                ],
                 environ={
                     "EXTERNAL_GIT_ROOT": "../../../..",
                     "SKIP_NETCOREAPP21_DISTRIBTEST": "1",
@@ -157,7 +162,9 @@ class CSharpDistribTest(object):
 class PythonDistribTest(object):
     """Tests Python package"""
 
-    def __init__(self, platform, arch, docker_suffix, source=False, presubmit=False):
+    def __init__(
+        self, platform, arch, docker_suffix, source=False, presubmit=False
+    ):
         self.source = source
         if source:
             self.name = "python_dev_%s_%s_%s" % (platform, arch, docker_suffix)
@@ -344,7 +351,9 @@ class CppDistribTest(object):
         environ = {}
         if inner_jobs is not None:
             # set number of parallel jobs for the C++ build
-            environ["GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS"] = str(inner_jobs)
+            environ["GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS"] = str(
+                inner_jobs
+            )
 
         if self.platform == "linux":
             return create_docker_jobspec(
@@ -393,7 +402,9 @@ def targets():
         CppDistribTest(
             "linux", "x64", "debian10", "cmake_module_install", presubmit=False
         ),
-        CppDistribTest("linux", "x64", "debian10", "cmake_pkgconfig", presubmit=False),
+        CppDistribTest(
+            "linux", "x64", "debian10", "cmake_pkgconfig", presubmit=False
+        ),
         CppDistribTest(
             "linux",
             "x64",
@@ -438,10 +449,18 @@ def targets():
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
         PythonDistribTest("linux", "x64", "ubuntu2204"),
-        PythonDistribTest("linux", "aarch64", "python38_buster", presubmit=True),
-        PythonDistribTest("linux", "x64", "alpine3.7", source=True, presubmit=True),
-        PythonDistribTest("linux", "x64", "bullseye", source=True, presubmit=True),
-        PythonDistribTest("linux", "x86", "bullseye", source=True, presubmit=True),
+        PythonDistribTest(
+            "linux", "aarch64", "python38_buster", presubmit=True
+        ),
+        PythonDistribTest(
+            "linux", "x64", "alpine3.7", source=True, presubmit=True
+        ),
+        PythonDistribTest(
+            "linux", "x64", "bullseye", source=True, presubmit=True
+        ),
+        PythonDistribTest(
+            "linux", "x86", "bullseye", source=True, presubmit=True
+        ),
         PythonDistribTest("linux", "x64", "fedora38", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
         PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
