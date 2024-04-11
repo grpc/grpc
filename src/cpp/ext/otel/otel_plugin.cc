@@ -487,11 +487,6 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                                     descriptor.value_type));
             }
             break;
-          case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge:
-            grpc_core::Crash(
-                "Non-callback gauge is not supported and will be deleted in "
-                "the future.");
-            break;
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
               kCallbackGauge:
             switch (descriptor.value_type) {
