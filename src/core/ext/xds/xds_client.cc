@@ -641,6 +641,10 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
         absl::StrCat(status.message(),
                      " (node ID:", xds_client_->bootstrap_->node()->id(), ")"));
   }
+  // If status was previously OK, report that the channel has gone unhealthy.
+  if (status_.ok() && xds_client_->metrics_reporter_ != nullptr) {
+    xds_client_->metrics_reporter_->ReportServerFailure(server_.server_uri());
+  }
   // Save status in channel, so that we can immediately generate an
   // error for any new watchers that may be started.
   status_ = status;
