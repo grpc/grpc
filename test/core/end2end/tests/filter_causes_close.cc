@@ -103,12 +103,7 @@ const grpc_channel_filter test_filter = {
           absl::PermissionDeniedError("Failure that's not preventable.")));
     },
     [](grpc_channel_element*, CallSpineInterface* args) {
-      args->client_initial_metadata().receiver.InterceptAndMap(
-          [args](ClientMetadataHandle) {
-            return args->Cancel(
-                ServerMetadataFromStatus(absl::PermissionDeniedError(
-                    "Failure that's not preventable.")));
-          });
+      Crash("Should never be called");
     },
     grpc_channel_next_op,
     sizeof(call_data),
