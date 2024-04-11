@@ -221,7 +221,7 @@ class BatchBuilder {
     // completion has already been initialized, or it creates a new completion
     // and returns that.
     template <typename T>
-    T* GetInitializedCompletion(T*(Batch::* field)) {
+    T* GetInitializedCompletion(T*(Batch::*field)) {
       if (this->*field != nullptr) return this->*field;
       this->*field = new T(Ref());
       if (grpc_call_trace.enabled()) {
