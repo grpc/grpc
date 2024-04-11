@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <set>
@@ -28,6 +26,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_audit_logger_registry.h"

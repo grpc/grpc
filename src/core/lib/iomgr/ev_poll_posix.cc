@@ -17,7 +17,6 @@
 //
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/port.h"

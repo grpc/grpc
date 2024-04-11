@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -40,6 +38,7 @@
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/ext/otel_plugin.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -396,14 +395,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
       grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
-  void SetGauge(
-      grpc_core::GlobalInstrumentsRegistry::GlobalInt64GaugeHandle /*handle*/,
-      int64_t /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
-  void SetGauge(
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle /*handle*/,
-      double /*value*/, absl::Span<const absl::string_view> /*label_values*/,
-      absl::Span<const absl::string_view> /*optional_values*/) override {}
   void AddCallback(grpc_core::RegisteredMetricCallback* callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void RemoveCallback(grpc_core::RegisteredMetricCallback* callback)

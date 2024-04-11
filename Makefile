@@ -368,7 +368,7 @@ Q = @
 endif
 
 CORE_VERSION = 40.0.0
-CPP_VERSION = 1.63.0-dev
+CPP_VERSION = 1.64.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1683,6 +1683,10 @@ LIBGRPC_SRC = \
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/compat.c \
+    third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
@@ -1713,13 +1717,11 @@ LIBGRPC_SRC = \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
     third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
-    third_party/utf8_range/naive.c \
-    third_party/utf8_range/range2-neon.c \
-    third_party/utf8_range/range2-sse.c \
+    third_party/utf8_range/utf8_range.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 #define GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -30,6 +28,8 @@
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
 #include "upb/mem/arena.hpp"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"

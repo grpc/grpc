@@ -19,8 +19,6 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -41,6 +39,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"

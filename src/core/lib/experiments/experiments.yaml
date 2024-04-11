@@ -150,6 +150,11 @@
   expiry: 2024/05/05
   owner: ctiller@google.com
   test_tags: []
+- name: pick_first_new
+  description: New pick_first impl with memory reduction.
+  expiry: 2024/07/30
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
 - name: promise_based_client_call
   description:
     If set, use the new gRPC promise based call code when it's appropriate

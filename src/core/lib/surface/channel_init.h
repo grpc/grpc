@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <initializer_list>
@@ -31,6 +29,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

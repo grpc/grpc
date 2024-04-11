@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_TABLE_H
 #define GRPC_SRC_CORE_LIB_GPRPP_TABLE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <initializer_list>
@@ -26,6 +24,8 @@
 
 #include "absl/meta/type_traits.h"
 #include "absl/utility/utility.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/bitset.h"
 

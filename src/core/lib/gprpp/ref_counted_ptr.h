@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 #define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <iosfwd>
@@ -28,6 +26,8 @@
 #include <utility>
 
 #include "absl/hash/hash.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"

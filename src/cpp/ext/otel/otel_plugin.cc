@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 #include <memory>
@@ -32,6 +30,7 @@
 #include "opentelemetry/nostd/variant.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
 
@@ -487,11 +486,6 @@ OpenTelemetryPlugin::OpenTelemetryPlugin(
                     absl::StrFormat("Unknown or unsupported value type: %d",
                                     descriptor.value_type));
             }
-            break;
-          case grpc_core::GlobalInstrumentsRegistry::InstrumentType::kGauge:
-            grpc_core::Crash(
-                "Non-callback gauge is not supported and will be deleted in "
-                "the future.");
             break;
           case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
               kCallbackGauge:

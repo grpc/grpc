@@ -16,12 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options) {
