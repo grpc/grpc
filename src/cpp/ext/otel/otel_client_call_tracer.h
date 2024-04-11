@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -31,6 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
