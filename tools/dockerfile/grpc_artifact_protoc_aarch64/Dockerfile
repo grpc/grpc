@@ -14,3 +14,6 @@
 
 # On aarch64 the protoc and codegen plugins are built via crosscompilation.
 FROM dockcross/linux-arm64
+
+RUN git config --global --add safe.directory /var/local/jenkins/grpc
+RUN git config --global protocol.file.allow always
