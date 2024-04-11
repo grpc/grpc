@@ -107,7 +107,8 @@ class CallSpineInterface {
   // Spawn a promise that returns some status-like type; if the status
   // represents failure automatically cancel the rest of the call.
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
+                    DebugLocation whence = {}) {
     using FactoryType =
         promise_detail::OncePromiseFactory<void, PromiseFactory>;
     using PromiseType = typename FactoryType::Promise;
@@ -116,16 +117,17 @@ class CallSpineInterface {
         std::is_same<bool,
                      decltype(IsStatusOk(std::declval<ResultType>()))>::value,
         "SpawnGuarded promise must return a status-like object");
-    party().Spawn(name, std::move(promise_factory), [this](ResultType r) {
-      if (!IsStatusOk(r)) {
-        if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "SpawnGuarded sees failure: %s",
-                  r.ToString().c_str());
-        }
-        PushServerTrailingMetadata(
-            StatusCast<ServerMetadataHandle>(std::move(r)));
-      }
-    });
+    party().Spawn(
+        name, std::move(promise_factory), [this, whence](ResultType r) {
+          if (!IsStatusOk(r)) {
+            if (grpc_trace_promise_primitives.enabled()) {
+              gpr_log(GPR_INFO, "SpawnGuarded sees failure: %s (source: %s:%d)",
+                      r.ToString().c_str(), whence.file(), whence.line());
+            }
+            PushServerTrailingMetadata(
+                StatusCast<ServerMetadataHandle>(std::move(r)));
+          }
+        });
   }
 
  private:
@@ -198,9 +200,9 @@ class PipeBasedCallSpine : public CallSpineInterface {
     c.Set(std::move(metadata));
     CallOnDone();
     client_initial_metadata().sender.CloseWithError();
-    server_initial_metadata().sender.CloseWithError();
+    server_initial_metadata().sender.Close();
     client_to_server_messages().sender.CloseWithError();
-    server_to_client_messages().sender.CloseWithError();
+    server_to_client_messages().sender.Close();
   }
 
   Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
@@ -232,6 +234,8 @@ class PipeBasedCallSpine : public CallSpineInterface {
  private:
   static ValueOrFailure<absl::optional<MessageHandle>> MapNextMessage(
       NextResult<MessageHandle> r) {
+    gpr_log(GPR_INFO, "MapNextMessage: has_value:%d cancelled:%d",
+            r.has_value(), r.cancelled());
     if (!r.has_value()) {
       if (r.cancelled()) return Failure{};
       return absl::optional<MessageHandle>();
@@ -414,8 +418,9 @@ class CallHandler {
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
-    spine_->SpawnGuarded(name, std::move(promise_factory));
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
+                    DebugLocation whence = {}) {
+    spine_->SpawnGuarded(name, std::move(promise_factory), whence);
   }
 
   template <typename PromiseFactory>
@@ -451,8 +456,9 @@ class UnstartedCallHandler {
   }
 
   template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
-    spine_->SpawnGuarded(name, std::move(promise_factory));
+  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
+                    DebugLocation whence = {}) {
+    spine_->SpawnGuarded(name, std::move(promise_factory), whence);
   }
 
   template <typename PromiseFactory>

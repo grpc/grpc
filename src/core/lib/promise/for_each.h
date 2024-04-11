@@ -72,8 +72,8 @@ struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
 
   static NextValueType Type(const T& t) {
     if (t.has_value()) return NextValueType::kValue;
-    if (t.cancelled()) return NextValueType::kEndOfStream;
-    return NextValueType::kError;
+    if (t.cancelled()) return NextValueType::kError;
+    return NextValueType::kEndOfStream;
   }
 
   static Value& MutableValue(T& t) { return *t; }
@@ -160,14 +160,14 @@ class ForEach {
 
   Poll<Result> PollReaderNext() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s PollReaderNext", DebugTag().c_str());
+      gpr_log(GPR_INFO, "%s PollReaderNext", DebugTag().c_str());
     }
     auto r = reader_next_();
     if (auto* p = r.value_if_ready()) {
       switch (NextValueTraits<ReaderResult>::Type(*p)) {
         case NextValueType::kValue: {
           if (grpc_trace_promise_primitives.enabled()) {
-            gpr_log(GPR_DEBUG, "%s PollReaderNext: got value",
+            gpr_log(GPR_INFO, "%s PollReaderNext: got value",
                     DebugTag().c_str());
           }
           Destruct(&reader_next_);
@@ -179,17 +179,17 @@ class ForEach {
         }
         case NextValueType::kEndOfStream: {
           if (grpc_trace_promise_primitives.enabled()) {
-            gpr_log(GPR_DEBUG, "%s PollReaderNext: got end of stream",
-                    DebugTag().c_str());
-          }
-          return Done<Result>::Make(true);
-        }
-        case NextValueType::kError: {
-          if (grpc_trace_promise_primitives.enabled()) {
-            gpr_log(GPR_DEBUG, "%s PollReaderNext: got error",
+            gpr_log(GPR_INFO, "%s PollReaderNext: got end of stream",
                     DebugTag().c_str());
           }
           return Done<Result>::Make(false);
+        }
+        case NextValueType::kError: {
+          if (grpc_trace_promise_primitives.enabled()) {
+            gpr_log(GPR_INFO, "%s PollReaderNext: got error",
+                    DebugTag().c_str());
+          }
+          return Done<Result>::Make(true);
         }
       }
     }
@@ -198,7 +198,7 @@ class ForEach {
 
   Poll<Result> PollAction() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s PollAction", DebugTag().c_str());
+      gpr_log(GPR_INFO, "%s PollAction", DebugTag().c_str());
     }
     auto r = in_action_.promise();
     if (auto* p = r.value_if_ready()) {
