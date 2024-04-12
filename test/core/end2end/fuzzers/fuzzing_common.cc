@@ -273,7 +273,7 @@ class Call : public std::enable_shared_from_this<Call> {
     ++pending_ops_;
     auto self = shared_from_this();
     return MakeValidator([self](bool success) {
-      CHECK(self->pending_ops_ > 0);
+      CHECK_GT(self->pending_ops_, 0);
       --self->pending_ops_;
       if (success) {
         CHECK_NE(self->call_, nullptr);

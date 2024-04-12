@@ -161,7 +161,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                            /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
-          CHECK(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+          CHECK_GT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)), 0);
           // Perform a cq next just to provide a thread that can read incoming
           // bytes on the client fd
           CHECK(grpc_completion_queue_next(

@@ -1373,7 +1373,7 @@ TEST(CredentialsTest, TestJwtCredsLifetime) {
 
   // Shorter lifetime.
   gpr_timespec token_lifetime = {10, 0, GPR_TIMESPAN};
-  CHECK(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime) > 0);
+  CHECK_GT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime), 0);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
       json_key_string, token_lifetime, nullptr);
   CHECK(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),

@@ -34,7 +34,7 @@ using ::grpc_core::SliceBuffer;
 static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
-  CHECK(len > 0);
+  CHECK_GT(len, 0);
   unsigned char* contents = static_cast<unsigned char*>(gpr_malloc(len));
   memset(contents, 'a', len);
   return Slice(grpc_slice_new(contents, len, gpr_free));
