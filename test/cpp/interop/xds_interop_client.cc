@@ -448,7 +448,7 @@ grpc::CsmObservability EnableCsmObservability() {
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
                RpcConfigurationsQueue* rpc_configs_queue) {
-  CHECK(port != 0);
+  CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
 

@@ -818,7 +818,7 @@ void validate_refresh_token_http_request(const grpc_http_request* request,
                                          const char* body, size_t body_size) {
   // The content of the assertion is tested extensively in json_token_test.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   std::string expected_body = absl::StrFormat(
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
       "32555999999.apps.googleusercontent.com", "EmssLNjJy1332hD4KFsecret",
@@ -1023,7 +1023,7 @@ void validate_sts_token_http_request(const grpc_http_request* request,
                                      bool expect_actor_token) {
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   absl::StatusOr<URI> url = URI::Parse(get_url_equivalent);
@@ -2104,7 +2104,7 @@ void validate_external_account_creds_token_exchage_request(
     const char* body, size_t body_size, bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
@@ -2139,7 +2139,7 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
     const char* body, size_t body_size, bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   CHECK(
       strcmp(
           std::string(body, body_size).c_str(),
@@ -2167,7 +2167,7 @@ void validate_external_account_creds_service_account_impersonation_request(
     const char* body, size_t body_size, bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=3600s"), 0);
   // Check the rest of the request.
   CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
@@ -2186,7 +2186,7 @@ void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
     const char* body, size_t body_size, bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=1800s"), 0);
   // Check the rest of the request.
   CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
@@ -2290,7 +2290,7 @@ void validate_aws_external_account_creds_token_exchage_request(
     const char* body, size_t body_size, bool /*expect_actor_token*/) {
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
-  CHECK(body_size != 0);
+  CHECK_NE(body_size, 0);
   // Check that the regional_cred_verification_url got constructed
   // with the correct AWS Region ("test_regionz" or "test_region").
   CHECK(strstr(body, "regional_cred_verification_url_test_region"));
@@ -3937,8 +3937,8 @@ TEST(CredentialsTest, TestFakeCallCredentialsCompareSuccess) {
 TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   auto fake_creds = MakeRefCounted<fake_call_creds>();
   auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
-  CHECK(fake_creds->cmp(md_creds) != 0);
-  CHECK(md_creds->cmp(fake_creds.get()) != 0);
+  CHECK_NE(fake_creds->cmp(md_creds), 0);
+  CHECK_NE(md_creds->cmp(fake_creds.get()), 0);
   grpc_call_credentials_release(md_creds);
 }
 

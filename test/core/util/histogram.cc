@@ -198,7 +198,7 @@ double grpc_histogram_percentile(grpc_histogram* h, double percentile) {
 }
 
 double grpc_histogram_mean(grpc_histogram* h) {
-  CHECK(h->count != 0);
+  CHECK_NE(h->count, 0);
   return h->sum / h->count;
 }
 
