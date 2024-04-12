@@ -124,8 +124,9 @@ class CallSpineInterface {
               gpr_log(GPR_INFO, "SpawnGuarded sees failure: %s (source: %s:%d)",
                       r.ToString().c_str(), whence.file(), whence.line());
             }
-            PushServerTrailingMetadata(
-                StatusCast<ServerMetadataHandle>(std::move(r)));
+            auto status = StatusCast<ServerMetadataHandle>(std::move(r));
+            status->Set(GrpcCallWasCancelled(), true);
+            PushServerTrailingMetadata(std::move(status));
           }
         });
   }
@@ -369,8 +370,9 @@ class CallInitiator {
   }
 
   void Cancel() {
-    spine_->PushServerTrailingMetadata(
-        ServerMetadataFromStatus(absl::CancelledError()));
+    auto status = ServerMetadataFromStatus(absl::CancelledError());
+    status->Set(GrpcCallWasCancelled(), true);
+    spine_->PushServerTrailingMetadata(std::move(status));
   }
 
   void OnDone(absl::AnyInvocable<void()> fn) { spine_->OnDone(std::move(fn)); }

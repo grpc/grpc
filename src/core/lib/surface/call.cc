@@ -3735,7 +3735,9 @@ class ServerCallSpine final : public PipeBasedCallSpine,
   }
   void CancelWithError(grpc_error_handle error) override {
     SpawnInfallible("CancelWithError", [this, error = std::move(error)] {
-      PushServerTrailingMetadata(ServerMetadataFromStatus(error));
+      auto status = ServerMetadataFromStatus(error);
+      status->Set(GrpcCallWasCancelled(), true);
+      PushServerTrailingMetadata(std::move(status));
       return Empty{};
     });
   }
