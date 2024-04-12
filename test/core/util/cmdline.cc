@@ -90,7 +90,7 @@ static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
   arg* a;
 
   for (a = cl->args; a; a = a->next) {
-    CHECK(0 != strcmp(a->name, name));
+    CHECK_NE(strcmp(a->name, name), 0);
   }
 
   a = static_cast<arg*>(gpr_zalloc(sizeof(arg)));
