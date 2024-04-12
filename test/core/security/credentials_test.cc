@@ -947,7 +947,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
   };
   absl::StatusOr<URI> url_should_be_invalid =
       ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
@@ -961,7 +961,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       nullptr,                      // sts_endpoint_url (Required)
@@ -975,7 +975,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       "not_a_valid_uri",            // sts_endpoint_url
@@ -989,7 +989,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       "ftp://ftp.is.not.a.valid.scheme/bar",  // sts_endpoint_url
@@ -1003,7 +1003,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                                 // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 }
 
 void assert_query_parameters(const URI& uri, absl::string_view expected_key,
@@ -1400,7 +1400,7 @@ TEST(CredentialsTest, TestJwtCredsLifetime) {
 
 TEST(CredentialsTest, TestRemoveServiceFromJwtUri) {
   const char wrong_uri[] = "hello world";
-  CHECK_DONT(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
+  CHECK(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
   const char valid_uri[] = "https://foo.com/get/";
   const char expected_uri[] = "https://foo.com/";
   auto output = RemoveServiceNameFromJwtUri(valid_uri);

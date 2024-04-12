@@ -199,7 +199,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   CHECK(response);
   CHECK(response->status == 200);
   for (i = 0; i < response->body_length; i++) {
-    CHECK_DONT(response->body[i] >= '0' && response->body[i] <= '9');
+    CHECK(response->body[i] >= '0' && response->body[i] <= '9');
     port = port * 10 + response->body[i] - '0';
   }
   CHECK(port > 1024);

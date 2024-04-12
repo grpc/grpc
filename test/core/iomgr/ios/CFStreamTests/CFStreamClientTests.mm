@@ -57,7 +57,7 @@ static void must_succeed(void* arg, grpc_error_handle error) {
 
 static void must_fail(void* arg, grpc_error_handle error) {
   CHECK_EQ(g_connecting, nullptr);
-  CHECK_DONT(!error.ok());
+  CHECK(!error.ok());
   NSLog(@"%s", grpc_core::StatusToString(error).c_str());
   finish_connection();
 }

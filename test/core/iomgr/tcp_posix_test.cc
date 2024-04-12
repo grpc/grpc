@@ -531,7 +531,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
             grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                 grpc_core::ChannelArgs::FromC(&args))),
         "test");
-    CHECK_DONT(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
+    CHECK(grpc_tcp_fd(ep) == sv[1] && sv[1] >= 0);
   }
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
