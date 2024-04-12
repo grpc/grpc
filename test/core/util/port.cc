@@ -131,7 +131,7 @@ void grpc_recycle_unused_port(int port) {
 
 grpc_pick_port_functions grpc_set_pick_port_functions(
     grpc_pick_port_functions new_functions) {
-  CHECK(new_functions.pick_unused_port_or_die_fn != nullptr);
-  CHECK(new_functions.recycle_unused_port_fn != nullptr);
+  CHECK_NE(new_functions.pick_unused_port_or_die_fn, nullptr);
+  CHECK_NE(new_functions.recycle_unused_port_fn, nullptr);
   return std::exchange(functions(), new_functions);
 }

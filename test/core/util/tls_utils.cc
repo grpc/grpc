@@ -63,8 +63,8 @@ std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) ==
              data.size());
   CHECK(fclose(file_descriptor) == 0);
-  CHECK(file_descriptor != nullptr);
-  CHECK(name != nullptr);
+  CHECK_NE(file_descriptor, nullptr);
+  CHECK_NE(name, nullptr);
   std::string name_to_return = name;
   gpr_free(name);
   return name_to_return;

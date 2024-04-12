@@ -67,8 +67,8 @@ typedef struct handshaker_args {
 
 static handshaker_args* handshaker_args_create(tsi_test_fixture* fixture,
                                                bool is_client) {
-  CHECK(fixture != nullptr);
-  CHECK(fixture->config != nullptr);
+  CHECK_NE(fixture, nullptr);
+  CHECK_NE(fixture->config, nullptr);
   handshaker_args* args = new handshaker_args();
   args->fixture = fixture;
   args->handshake_buffer_size = fixture->handshake_buffer_size;
@@ -87,9 +87,9 @@ static void handshaker_args_destroy(handshaker_args* args) {
 static void do_handshaker_next(handshaker_args* args);
 
 static void setup_handshakers(tsi_test_fixture* fixture) {
-  CHECK(fixture != nullptr);
-  CHECK(fixture->vtable != nullptr);
-  CHECK(fixture->vtable->setup_handshakers != nullptr);
+  CHECK_NE(fixture, nullptr);
+  CHECK_NE(fixture->vtable, nullptr);
+  CHECK_NE(fixture->vtable->setup_handshakers, nullptr);
   fixture->vtable->setup_handshakers(fixture);
 }
 
@@ -113,9 +113,9 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
 }
 
 static void check_handshake_results(tsi_test_fixture* fixture) {
-  CHECK(fixture != nullptr);
-  CHECK(fixture->vtable != nullptr);
-  CHECK(fixture->vtable->check_handshaker_peers != nullptr);
+  CHECK_NE(fixture, nullptr);
+  CHECK_NE(fixture->vtable, nullptr);
+  CHECK_NE(fixture->vtable->check_handshaker_peers, nullptr);
   // Check handshaker peers.
   fixture->vtable->check_handshaker_peers(fixture);
   // Check unused bytes.
@@ -135,15 +135,15 @@ static void check_handshake_results(tsi_test_fixture* fixture) {
 static void send_bytes_to_peer(tsi_test_channel* test_channel,
                                const unsigned char* buf, size_t buf_size,
                                bool is_client) {
-  CHECK(test_channel != nullptr);
-  CHECK(buf != nullptr);
+  CHECK_NE(test_channel, nullptr);
+  CHECK_NE(buf, nullptr);
   uint8_t* channel =
       is_client ? test_channel->server_channel : test_channel->client_channel;
-  CHECK(channel != nullptr);
+  CHECK_NE(channel, nullptr);
   size_t* bytes_written = is_client
                               ? &test_channel->bytes_written_to_server_channel
                               : &test_channel->bytes_written_to_client_channel;
-  CHECK(bytes_written != nullptr);
+  CHECK_NE(bytes_written, nullptr);
   CHECK(*bytes_written + buf_size <= TSI_TEST_DEFAULT_CHANNEL_SIZE);
   // Write data to channel.
   memcpy(channel + *bytes_written, buf, buf_size);
@@ -151,8 +151,8 @@ static void send_bytes_to_peer(tsi_test_channel* test_channel,
 }
 
 static void maybe_append_unused_bytes(handshaker_args* args) {
-  CHECK(args != nullptr);
-  CHECK(args->fixture != nullptr);
+  CHECK_NE(args, nullptr);
+  CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   if (fixture->test_unused_bytes && !args->appended_unused_bytes) {
     args->appended_unused_bytes = true;
@@ -170,20 +170,20 @@ static void maybe_append_unused_bytes(handshaker_args* args) {
 static void receive_bytes_from_peer(tsi_test_channel* test_channel,
                                     unsigned char** buf, size_t* buf_size,
                                     bool is_client) {
-  CHECK(test_channel != nullptr);
-  CHECK(*buf != nullptr);
-  CHECK(buf_size != nullptr);
+  CHECK_NE(test_channel, nullptr);
+  CHECK_NE(*buf, nullptr);
+  CHECK_NE(buf_size, nullptr);
   uint8_t* channel =
       is_client ? test_channel->client_channel : test_channel->server_channel;
-  CHECK(channel != nullptr);
+  CHECK_NE(channel, nullptr);
   size_t* bytes_read = is_client
                            ? &test_channel->bytes_read_from_client_channel
                            : &test_channel->bytes_read_from_server_channel;
   size_t* bytes_written = is_client
                               ? &test_channel->bytes_written_to_client_channel
                               : &test_channel->bytes_written_to_server_channel;
-  CHECK(bytes_read != nullptr);
-  CHECK(bytes_written != nullptr);
+  CHECK_NE(bytes_read, nullptr);
+  CHECK_NE(bytes_written, nullptr);
   size_t to_read = *buf_size < *bytes_written - *bytes_read
                        ? *buf_size
                        : *bytes_written - *bytes_read;
@@ -197,16 +197,16 @@ void tsi_test_frame_protector_send_message_to_peer(
     tsi_test_frame_protector_config* config, tsi_test_channel* channel,
     tsi_frame_protector* protector, bool is_client) {
   // Initialization.
-  CHECK(config != nullptr);
-  CHECK(channel != nullptr);
-  CHECK(protector != nullptr);
+  CHECK_NE(config, nullptr);
+  CHECK_NE(channel, nullptr);
+  CHECK_NE(protector, nullptr);
   unsigned char* protected_buffer =
       static_cast<unsigned char*>(gpr_zalloc(config->protected_buffer_size));
   size_t message_size =
       is_client ? config->client_message_size : config->server_message_size;
   uint8_t* message =
       is_client ? config->client_message : config->server_message;
-  CHECK(message != nullptr);
+  CHECK_NE(message, nullptr);
   const unsigned char* message_bytes =
       reinterpret_cast<unsigned char*>(message);
   tsi_result result = TSI_OK;
@@ -248,11 +248,11 @@ void tsi_test_frame_protector_receive_message_from_peer(
     tsi_frame_protector* protector, unsigned char* message,
     size_t* bytes_received, bool is_client) {
   // Initialization.
-  CHECK(config != nullptr);
-  CHECK(channel != nullptr);
-  CHECK(protector != nullptr);
-  CHECK(message != nullptr);
-  CHECK(bytes_received != nullptr);
+  CHECK_NE(config, nullptr);
+  CHECK_NE(channel, nullptr);
+  CHECK_NE(protector, nullptr);
+  CHECK_NE(message, nullptr);
+  CHECK_NE(bytes_received, nullptr);
   size_t read_offset = 0;
   size_t message_offset = 0;
   size_t read_from_peer_size = 0;
@@ -303,8 +303,8 @@ grpc_error_handle on_handshake_next_done(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   handshaker_args* args = static_cast<handshaker_args*>(user_data);
-  CHECK(args != nullptr);
-  CHECK(args->fixture != nullptr);
+  CHECK_NE(args, nullptr);
+  CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   grpc_error_handle error;
   // Read more data if we need to.
@@ -347,8 +347,8 @@ static void on_handshake_next_done_wrapper(
 }
 
 static bool is_handshake_finished_properly(handshaker_args* args) {
-  CHECK(args != nullptr);
-  CHECK(args->fixture != nullptr);
+  CHECK_NE(args, nullptr);
+  CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   return (args->is_client && fixture->client_result != nullptr) ||
          (!args->is_client && fixture->server_result != nullptr);
@@ -356,8 +356,8 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
 
 static void do_handshaker_next(handshaker_args* args) {
   // Initialization.
-  CHECK(args != nullptr);
-  CHECK(args->fixture != nullptr);
+  CHECK_NE(args, nullptr);
+  CHECK_NE(args->fixture, nullptr);
   tsi_test_fixture* fixture = args->fixture;
   tsi_handshaker* handshaker =
       args->is_client ? fixture->client_handshaker : fixture->server_handshaker;
@@ -430,10 +430,10 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
                                   tsi_test_channel* channel,
                                   tsi_frame_protector* client_frame_protector,
                                   tsi_frame_protector* server_frame_protector) {
-  CHECK(config != nullptr);
-  CHECK(channel != nullptr);
-  CHECK(client_frame_protector != nullptr);
-  CHECK(server_frame_protector != nullptr);
+  CHECK_NE(config, nullptr);
+  CHECK_NE(channel, nullptr);
+  CHECK_NE(client_frame_protector, nullptr);
+  CHECK_NE(server_frame_protector, nullptr);
   // Client sends a message to server.
   tsi_test_frame_protector_send_message_to_peer(
       config, channel, client_frame_protector, true /* is_client */);
@@ -464,7 +464,7 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
 
 void tsi_test_frame_protector_do_round_trip_no_handshake(
     tsi_test_frame_protector_fixture* fixture) {
-  CHECK(fixture != nullptr);
+  CHECK_NE(fixture, nullptr);
   tsi_test_do_ping_pong(fixture->config, fixture->channel,
                         fixture->client_frame_protector,
                         fixture->server_frame_protector);
@@ -472,8 +472,8 @@ void tsi_test_frame_protector_do_round_trip_no_handshake(
 
 void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   // Initialization.
-  CHECK(fixture != nullptr);
-  CHECK(fixture->config != nullptr);
+  CHECK_NE(fixture, nullptr);
+  CHECK_NE(fixture->config, nullptr);
   tsi_test_frame_protector_config* config = fixture->config;
   tsi_frame_protector* client_frame_protector = nullptr;
   tsi_frame_protector* server_frame_protector = nullptr;
@@ -576,7 +576,7 @@ void tsi_test_frame_protector_config_set_buffer_size(
     size_t message_buffer_allocated_size, size_t protected_buffer_size,
     size_t client_max_output_protected_frame_size,
     size_t server_max_output_protected_frame_size) {
-  CHECK(config != nullptr);
+  CHECK_NE(config, nullptr);
   config->read_buffer_allocated_size = read_buffer_allocated_size;
   config->message_buffer_allocated_size = message_buffer_allocated_size;
   config->protected_buffer_size = protected_buffer_size;
@@ -641,8 +641,8 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   tsi_handshaker_result_destroy(fixture->client_result);
   tsi_handshaker_result_destroy(fixture->server_result);
   tsi_test_channel_destroy(fixture->channel);
-  CHECK(fixture->vtable != nullptr);
-  CHECK(fixture->vtable->destruct != nullptr);
+  CHECK_NE(fixture->vtable, nullptr);
+  CHECK_NE(fixture->vtable->destruct, nullptr);
   gpr_mu_destroy(&fixture->mu);
   gpr_cv_destroy(&fixture->cv);
   fixture->vtable->destruct(fixture);
@@ -662,7 +662,7 @@ void tsi_test_frame_protector_fixture_init(
     tsi_test_frame_protector_fixture* fixture,
     tsi_frame_protector* client_frame_protector,
     tsi_frame_protector* server_frame_protector) {
-  CHECK(fixture != nullptr);
+  CHECK_NE(fixture, nullptr);
   fixture->client_frame_protector = client_frame_protector;
   fixture->server_frame_protector = server_frame_protector;
 }

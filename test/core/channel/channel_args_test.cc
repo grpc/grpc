@@ -317,7 +317,7 @@ TEST(GrpcChannelArgsTest, ChannelCreateWithArgs) {
 grpc_channel_args* mutate_channel_args(const char* target,
                                        grpc_channel_args* old_args,
                                        grpc_channel_stack_type /*type*/) {
-  CHECK(old_args != nullptr);
+  CHECK_NE(old_args, nullptr);
   CHECK(grpc_channel_args_find(old_args, "arg_int")->value.integer == 0);
   CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
                     "arg_str_val") == 0);

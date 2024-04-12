@@ -85,7 +85,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(grpc_core::ChannelArgs());
-    CHECK(sc != nullptr);
+    CHECK_NE(sc, nullptr);
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 

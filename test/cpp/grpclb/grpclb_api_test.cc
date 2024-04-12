@@ -60,7 +60,7 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  CHECK(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) != nullptr);
+  CHECK_NE(inet_ntop(af, (void*)server.ip_addr, ip_str, 46), nullptr);
   return ip_str;
 }
 

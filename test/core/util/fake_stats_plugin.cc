@@ -43,7 +43,7 @@ absl::StatusOr<FakeStatsClientFilter> FakeStatsClientFilter::Create(
   auto* fake_client_call_tracer_factory =
       args.GetPointer<FakeClientCallTracerFactory>(
           GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY);
-  CHECK(fake_client_call_tracer_factory != nullptr);
+  CHECK_NE(fake_client_call_tracer_factory, nullptr);
   return FakeStatsClientFilter(fake_client_call_tracer_factory);
 }
 

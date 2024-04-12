@@ -143,7 +143,7 @@ grpc_channel* client_create(const char* server_addr,
       grpc_channel_args_copy_and_add(nullptr, args, GPR_ARRAY_SIZE(args));
 
   grpc_channel* client = grpc_channel_create(server_addr, creds, client_args);
-  CHECK(client != nullptr);
+  CHECK_NE(client, nullptr);
   grpc_channel_credentials_release(creds);
 
   {

@@ -55,7 +55,7 @@ static void on_jwt_verification_done(void* user_data,
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
-    CHECK(claims != nullptr);
+    CHECK_NE(claims, nullptr);
     std::string claims_str =
         grpc_core::JsonDump(*grpc_jwt_claims_json(claims), /*indent=*/2);
     printf("Claims: \n\n%s\n", claims_str.c_str());

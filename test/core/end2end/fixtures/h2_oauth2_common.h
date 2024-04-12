@@ -72,7 +72,7 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    CHECK(oauth2 != nullptr);
+    CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
   }
 
@@ -82,8 +82,8 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    CHECK(state != nullptr);
-    CHECK(oauth2 != nullptr);
+    CHECK_NE(state, nullptr);
+    CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

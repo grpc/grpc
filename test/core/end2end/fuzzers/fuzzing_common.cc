@@ -58,7 +58,7 @@ int force_experiments = []() {
 namespace testing {
 
 static void free_non_null(void* p) {
-  CHECK(p != nullptr);
+  CHECK_NE(p, nullptr);
   gpr_free(p);
 }
 
@@ -276,7 +276,7 @@ class Call : public std::enable_shared_from_this<Call> {
       CHECK(self->pending_ops_ > 0);
       --self->pending_ops_;
       if (success) {
-        CHECK(self->call_ != nullptr);
+        CHECK_NE(self->call_, nullptr);
         self->type_ = CallType::SERVER;
       } else {
         self->type_ = CallType::TOMBSTONED;

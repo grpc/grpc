@@ -164,7 +164,7 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
           std::string(grpc_core::StringViewFromSlice(calls[call_idx].details))
               .c_str());
 
-  CHECK(response_payload_recv != nullptr);
+  CHECK_NE(response_payload_recv, nullptr);
   grpc_byte_buffer_reader reader;
   grpc_byte_buffer_reader_init(&reader, response_payload_recv);
   grpc_slice response = grpc_byte_buffer_reader_readall(&reader);

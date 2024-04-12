@@ -65,7 +65,7 @@ grpc_channel* LocalTestFixture::MakeClient(const grpc_core::ChannelArgs& args,
   grpc_channel_credentials* creds = grpc_local_credentials_create(type_);
   auto* client =
       grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-  CHECK(client != nullptr);
+  CHECK_NE(client, nullptr);
   grpc_channel_credentials_release(creds);
   return client;
 }

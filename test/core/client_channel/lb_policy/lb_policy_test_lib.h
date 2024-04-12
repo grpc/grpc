@@ -729,7 +729,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     lb_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             lb_policy_name_, std::move(args));
-    CHECK(lb_policy_ != nullptr);
+    CHECK_NE(lb_policy_, nullptr);
   }
 
   void TearDown() override {
@@ -757,7 +757,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   LoadBalancingPolicy* lb_policy() const {
-    CHECK(lb_policy_ != nullptr);
+    CHECK_NE(lb_policy_, nullptr);
     return lb_policy_.get();
   }
 

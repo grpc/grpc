@@ -482,7 +482,7 @@ class SslProxyFixture : public CoreTestFixture {
         args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr")
             .ToC()
             .get());
-    CHECK(client != nullptr);
+    CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(ssl_creds);
     return client;
   }

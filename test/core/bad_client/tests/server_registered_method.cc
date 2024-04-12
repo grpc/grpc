@@ -59,7 +59,7 @@ static void verifier_succeeds(grpc_server* server, grpc_completion_queue* cq,
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  CHECK(payload != nullptr);
+  CHECK_NE(payload, nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);

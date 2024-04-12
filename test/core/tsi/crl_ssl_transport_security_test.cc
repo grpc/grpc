@@ -114,7 +114,7 @@ class CrlSslTransportSecurityTest
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
       client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
       client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
-      CHECK(root_store_ != nullptr);
+      CHECK_NE(root_store_, nullptr);
     }
 
     void Run() {
@@ -133,7 +133,7 @@ class CrlSslTransportSecurityTest
 
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
-      CHECK(fixture != nullptr);
+      CHECK_NE(fixture, nullptr);
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
       self->SetupHandshakers();
     }
@@ -178,7 +178,7 @@ class CrlSslTransportSecurityTest
     }
 
     static void CheckHandshakerPeers(tsi_test_fixture* fixture) {
-      CHECK(fixture != nullptr);
+      CHECK_NE(fixture, nullptr);
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
       self->CheckHandshakerPeers();
     }

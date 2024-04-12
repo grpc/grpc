@@ -83,7 +83,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       if (!enable_untrusted_alts && !is_on_gcp) {
         CHECK(cred == nullptr);
       } else {
-        CHECK(cred != nullptr);
+        CHECK_NE(cred, nullptr);
       }
       grpc_channel_credentials_release(cred);
       grpc_alts_credentials_options_destroy(options);
@@ -97,7 +97,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       if (!enable_untrusted_alts && !is_on_gcp) {
         CHECK(cred == nullptr);
       } else {
-        CHECK(cred != nullptr);
+        CHECK_NE(cred, nullptr);
       }
       grpc_server_credentials_release(cred);
       grpc_alts_credentials_options_destroy(options);

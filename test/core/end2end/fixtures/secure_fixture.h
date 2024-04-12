@@ -70,7 +70,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeClientCreds(args);
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-    CHECK(client != nullptr);
+    CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(creds);
     return client;
   }

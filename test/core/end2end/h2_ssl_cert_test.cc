@@ -277,8 +277,8 @@ int main(int argc, char** argv) {
   // Set the SSL roots env var.
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
-  CHECK(roots_filename != nullptr);
-  CHECK(roots_file != nullptr);
+  CHECK_NE(roots_filename, nullptr);
+  CHECK_NE(roots_file, nullptr);
   CHECK(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
   grpc_core::ConfigVars::Overrides config_overrides;

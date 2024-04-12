@@ -446,7 +446,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
                             creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
   }
-  CHECK(channel_ != nullptr);
+  CHECK_NE(channel_, nullptr);
   channel_force_delete_ = false;
   return Result::kComplete;
 }
@@ -461,7 +461,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
-    CHECK(server_ != nullptr);
+    CHECK_NE(server_, nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     for (const auto& http2_port : create_server.http2_ports()) {
       auto* creds = ReadServerCreds(http2_port.server_creds());
