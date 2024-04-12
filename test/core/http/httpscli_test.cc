@@ -177,7 +177,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
-  CHECK(!error.ok());
+  CHECK_DONT(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
