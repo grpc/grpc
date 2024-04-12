@@ -416,7 +416,7 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture) {
     // responsible for sending the next chunk of bytes to the other. This can
     // happen e.g. when a bug in the handshaker code results in some bytes being
     // dropped instead of passed to the BIO or SSL objects.
-    CHECK(client_args->transferred_data || server_args->transferred_data);
+    CHECK_DONT(client_args->transferred_data || server_args->transferred_data);
   } while (fixture->client_result == nullptr ||
            fixture->server_result == nullptr);
   // Verify handshake results.

@@ -134,7 +134,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
       MutexLock lock(&state_->mu);
-      CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
+      CHECK_DONT(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
       if (!root_cert_error.ok()) {

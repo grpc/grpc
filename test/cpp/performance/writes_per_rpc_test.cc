@@ -236,7 +236,7 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     CHECK(fixture->cq()->Next(&t, &ok));
     CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1));
+    CHECK_DONT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));

@@ -85,7 +85,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     bool ok;
     CHECK(fixture->cq()->Next(&t, &ok));
     CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1));
+    CHECK_DONT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
