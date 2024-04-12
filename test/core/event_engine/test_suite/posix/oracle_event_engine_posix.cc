@@ -335,7 +335,7 @@ PosixOracleListener::~PosixOracleListener() {
     shutdown(listener_fds_[i], SHUT_RDWR);
   }
   // Send a STOP message over the pipe.
-  CHECK(write(pipefd_[1], kStopMessage, strlen(kStopMessage)) != -1);
+  CHECK_NE(write(pipefd_[1], kStopMessage, strlen(kStopMessage)), -1);
   serve_.Join();
   on_shutdown_(absl::OkStatus());
 }
