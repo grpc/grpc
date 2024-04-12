@@ -2863,6 +2863,10 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
         return cancel_error_;
       }
 
+      Latch<bool>& was_cancelled_latch() override {
+        return was_cancelled_latch_;
+      }
+
       Party& party() override { return *call_; }
       Arena* arena() override { return call_->arena(); }
 
@@ -2882,6 +2886,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       Pipe<ClientMetadataHandle> client_initial_metadata_{call_->arena()};
       Pipe<ServerMetadataHandle> server_trailing_metadata_{call_->arena()};
       Latch<ServerMetadataHandle> cancel_error_;
+      Latch<bool> was_cancelled_latch_;
     };
     GPR_ASSERT(call_args.server_initial_metadata ==
                &server_initial_metadata_.sender);
@@ -3717,6 +3722,7 @@ class ServerCallSpine final : public PipeBasedCallSpine,
     return server_to_client_messages_;
   }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
+  Latch<bool>& was_cancelled_latch() override { return was_cancelled_latch_; }
   Party& party() override { return *this; }
   Arena* arena() override { return BasicPromiseBasedCall::arena(); }
   void IncrementRefCount() override { InternalRef("CallSpine"); }
@@ -3778,10 +3784,9 @@ class ServerCallSpine final : public PipeBasedCallSpine,
   Pipe<MessageHandle> client_to_server_messages_;
   // Messages travelling from the transport to the application.
   Pipe<MessageHandle> server_to_client_messages_;
-  // Trailing metadata from server to client
-  Pipe<ServerMetadataHandle> server_trailing_metadata_;
   // Latch that can be set to terminate the call
   Latch<ServerMetadataHandle> cancel_latch_;
+  Latch<bool> was_cancelled_latch_;
   grpc_byte_buffer** recv_message_ = nullptr;
   ClientMetadataHandle client_initial_metadata_stored_;
 };
@@ -3806,8 +3811,7 @@ ServerCallSpine::ServerCallSpine(ClientMetadataHandle client_initial_metadata,
       client_initial_metadata_(arena),
       server_initial_metadata_(arena),
       client_to_server_messages_(arena),
-      server_to_client_messages_(arena),
-      server_trailing_metadata_(arena) {
+      server_to_client_messages_(arena) {
   global_stats().IncrementServerCallsCreated();
   ScopedContext ctx(this);
   channel->channel_stack()->InitServerCallSpine(this);
@@ -4081,10 +4085,15 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
           metadata->Set(GrpcMessageMetadata(),
                         Slice(grpc_slice_copy(*details)));
         }
+        GPR_ASSERT(metadata != nullptr);
         return [this, metadata = std::move(metadata)]() mutable {
-          server_to_client_messages_.sender.Close();
-          return Map(server_trailing_metadata_.sender.Push(std::move(metadata)),
-                     [](bool r) { return StatusFlag(r); });
+          GPR_ASSERT(metadata != nullptr);
+          return [this,
+                  metadata = std::move(metadata)]() mutable -> Poll<Success> {
+            GPR_ASSERT(metadata != nullptr);
+            PushServerTrailingMetadata(std::move(metadata));
+            return Success{};
+          };
         };
       });
   auto recv_message =
@@ -4099,13 +4108,15 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
         };
       });
   auto primary_ops = AllOk<StatusFlag>(
-      std::move(send_initial_metadata), std::move(send_message),
-      std::move(send_trailing_metadata), std::move(recv_message));
+      TrySeq(AllOk<StatusFlag>(std::move(send_initial_metadata),
+                               std::move(send_message)),
+             std::move(send_trailing_metadata)),
+      std::move(recv_message));
   if (got_ops[GRPC_OP_RECV_CLOSE_ON_SERVER] != 255) {
     auto recv_trailing_metadata = MaybeOp(
         ops, got_ops[GRPC_OP_RECV_CLOSE_ON_SERVER], [this](const grpc_op& op) {
           return [this, cancelled = op.data.recv_close_on_server.cancelled]() {
-            return Map(server_trailing_metadata_.receiver.AwaitClosed(),
+            return Map(WasCancelled(),
                        [cancelled, this](bool result) -> Success {
                          ResetDeadline();
                          *cancelled = result ? 1 : 0;

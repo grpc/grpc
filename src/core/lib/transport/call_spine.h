@@ -79,6 +79,7 @@ class CallSpineInterface {
   PullClientInitialMetadata() = 0;
   virtual Promise<StatusFlag> PushServerInitialMetadata(
       absl::optional<ServerMetadataHandle> md) = 0;
+  virtual Promise<bool> WasCancelled() = 0;
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -143,6 +144,7 @@ class PipeBasedCallSpine : public CallSpineInterface {
   virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
   virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
   virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
+  virtual Latch<bool>& was_cancelled_latch() = 0;
 
   Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
   PullServerInitialMetadata() final {
@@ -196,12 +198,20 @@ class PipeBasedCallSpine : public CallSpineInterface {
     GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
     auto& c = cancel_latch();
     if (c.is_set()) return;
+    const bool was_cancelled =
+        metadata->get(GrpcCallWasCancelled()).value_or(false);
     c.Set(std::move(metadata));
     CallOnDone();
+    was_cancelled_latch().Set(was_cancelled);
     client_initial_metadata().sender.CloseWithError();
     server_initial_metadata().sender.Close();
     client_to_server_messages().sender.CloseWithError();
     server_to_client_messages().sender.Close();
+  }
+
+  Promise<bool> WasCancelled() final {
+    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    return was_cancelled_latch().Wait();
   }
 
   Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
@@ -275,6 +285,7 @@ class CallSpine final : public PipeBasedCallSpine, public Party {
     return server_to_client_messages_;
   }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
+  Latch<bool>& was_cancelled_latch() override { return was_cancelled_latch_; }
   Party& party() override { return *this; }
   Arena* arena() override { return arena_; }
   void IncrementRefCount() override { Party::IncrementRefCount(); }
@@ -328,6 +339,7 @@ class CallSpine final : public PipeBasedCallSpine, public Party {
   Pipe<MessageHandle> server_to_client_messages_{arena()};
   // Latch that can be set to terminate the call
   Latch<ServerMetadataHandle> cancel_latch_;
+  Latch<bool> was_cancelled_latch_;
   // Event engine associated with this call
   grpc_event_engine::experimental::EventEngine* const event_engine_;
 };
