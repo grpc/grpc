@@ -235,8 +235,9 @@ Arena* TransportTest::Acceptor::CreateArena() {
 }
 
 absl::StatusOr<CallInitiator> TransportTest::Acceptor::CreateCall(
-    ClientMetadataHandle md, Arena* arena) {
-  auto call = MakeCall(std::move(md), event_engine_, arena, true);
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  auto call =
+      MakeCall(std::move(client_initial_metadata), event_engine_, arena, true);
   handlers_.push(call.handler.V2HackToStartCallWithoutACallFilterStack());
   return std::move(call.initiator);
 }

@@ -964,17 +964,14 @@ inline void InterceptServerTrailingMetadata(
     void (Derived::Call::*)(ServerMetadata&), typename Derived::Call*, Derived*,
     PipeBasedCallSpine*) {
   gpr_log(GPR_ERROR,
-          "InterceptServerTrailingMetadata not available for call v2.5: %s",
-          __PRETTY_FUNCTION__);
+          "InterceptServerTrailingMetadata not available for call v2.5");
 }
-
 template <typename Derived>
 inline void InterceptServerTrailingMetadata(
     void (Derived::Call::*)(ServerMetadata&, Derived*), typename Derived::Call*,
     Derived*, PipeBasedCallSpine*) {
   gpr_log(GPR_ERROR,
-          "InterceptServerTrailingMetadata not available for call v2.5: %s",
-          __PRETTY_FUNCTION__);
+          "InterceptServerTrailingMetadata not available for call v2.5");
 }
 
 template <typename Derived>
@@ -982,8 +979,7 @@ inline void InterceptServerTrailingMetadata(
     absl::Status (Derived::Call::*)(ServerMetadata&), typename Derived::Call*,
     Derived*, PipeBasedCallSpine*) {
   gpr_log(GPR_ERROR,
-          "InterceptServerTrailingMetadata not available for call v2.5: %s",
-          __PRETTY_FUNCTION__);
+          "InterceptServerTrailingMetadata not available for call v2.5");
 }
 
 inline void InterceptFinalize(const NoInterceptor*, void*, void*) {}
