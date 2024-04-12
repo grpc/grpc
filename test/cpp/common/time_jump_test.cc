@@ -127,7 +127,7 @@ TEST_P(TimeJumpTest, TimedWait) {
     int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
     gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,
             elapsed_ms);
-    CHECK(1 == timedout);
+    CHECK_EQ(timedout, 1);
     CHECK(1 ==
                gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),

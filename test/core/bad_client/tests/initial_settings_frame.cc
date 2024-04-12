@@ -113,7 +113,7 @@ static void single_request_verifier(grpc_server* server,
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
 
-    CHECK(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+    CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
     CHECK(0 == grpc_slice_str_cmp(call_details.method,
                                        absl::StrCat("/foo/bar", i).c_str()));
 

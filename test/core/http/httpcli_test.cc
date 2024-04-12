@@ -166,7 +166,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
   CHECK(error.ok());
   CHECK(response.status == 200);
   CHECK(response.body_length == strlen(expect));
-  CHECK(0 == memcmp(expect, response.body, response.body_length));
+  CHECK_EQ(memcmp(expect, response.body, response.body_length), 0);
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }

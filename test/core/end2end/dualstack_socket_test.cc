@@ -238,8 +238,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     gpr_free(peer);
 
     CHECK(status == GRPC_STATUS_UNIMPLEMENTED);
-    CHECK(0 == grpc_slice_str_cmp(details, "xyz"));
-    CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+    CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
+    CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
     CHECK(0 ==
                grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
     CHECK_EQ(was_cancelled, 0);

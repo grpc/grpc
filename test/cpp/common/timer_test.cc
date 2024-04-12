@@ -96,7 +96,7 @@ TEST_F(TimerTest, OneTimerExpires) {
           },
           &timer_fired, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(1500));
-  CHECK(1 == timer_fired);
+  CHECK_EQ(timer_fired, 1);
 
   // We expect to get 1 wakeup/second + 1 wakeup for the expired timer + maybe 1
   // wakeup during initialization. i.e. in 1.5 seconds we expect 2 or 3 wakeups.

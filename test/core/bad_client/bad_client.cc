@@ -344,8 +344,8 @@ void server_verifier_request_call(grpc_server* server,
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  CHECK(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo/bar"), 0);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);

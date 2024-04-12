@@ -93,8 +93,8 @@ static void must_fail(void* arg, grpc_error_handle error) {
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   CHECK_GE(svr_fd, 0);
-  CHECK(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len));
-  CHECK(0 == listen(svr_fd, 1));
+  CHECK_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len), 0);
+  CHECK_EQ(listen(svr_fd, 1), 0);
 
   gpr_mu_lock(&g_mu);
   connections_complete_before = g_connections_complete;
@@ -149,8 +149,8 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   CHECK_GE(svr_fd, 0);
-  CHECK(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len));
-  CHECK(0 == listen(svr_fd, 1));
+  CHECK_EQ(bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len), 0);
+  CHECK_EQ(listen(svr_fd, 1), 0);
   CHECK_EQ(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len), 0);
   close(svr_fd);
 

@@ -84,8 +84,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
     return;
   }
 
-  CHECK(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo/bar"), 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;

@@ -30,9 +30,9 @@
 static bool log_func_reached = false;
 
 static void test_callback(gpr_log_func_args* args) {
-  CHECK(0 == strcmp(__FILE__, args->file));
+  CHECK_EQ(strcmp(__FILE__, args->file), 0);
   CHECK(args->severity == GPR_LOG_SEVERITY_INFO);
-  CHECK(0 == strcmp(args->message, "hello 1 2 3"));
+  CHECK_EQ(strcmp(args->message, "hello 1 2 3"), 0);
 }
 
 static void test_should_log(gpr_log_func_args* /*args*/) {

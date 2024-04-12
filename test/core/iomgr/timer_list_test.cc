@@ -148,17 +148,17 @@ void destruction_test(void) {
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(2));
   CHECK(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
-  CHECK(1 == cb_called[4][1]);
+  CHECK_EQ(cb_called[4][1], 1);
   grpc_timer_cancel(&timers[0]);
   grpc_timer_cancel(&timers[3]);
   grpc_core::ExecCtx::Get()->Flush();
-  CHECK(1 == cb_called[0][0]);
-  CHECK(1 == cb_called[3][0]);
+  CHECK_EQ(cb_called[0][0], 1);
+  CHECK_EQ(cb_called[3][0], 1);
 
   grpc_timer_list_shutdown();
   grpc_core::ExecCtx::Get()->Flush();
-  CHECK(1 == cb_called[1][0]);
-  CHECK(1 == cb_called[2][0]);
+  CHECK_EQ(cb_called[1][0], 1);
+  CHECK_EQ(cb_called[2][0], 1);
 }
 
 // Cleans up a list with pending timers that simulate long-running-services.
@@ -211,22 +211,22 @@ void long_running_service_cleanup_test(void) {
       now + grpc_core::Duration::Milliseconds(4));
   CHECK(grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED);
   grpc_core::ExecCtx::Get()->Flush();
-  CHECK(0 == cb_called[0][0]);  // Timer 0 not called
-  CHECK(0 == cb_called[0][1]);
-  CHECK(0 == cb_called[1][0]);
-  CHECK(1 == cb_called[1][1]);  // Timer 1 fired
-  CHECK(0 == cb_called[2][0]);  // Timer 2 not called
-  CHECK(0 == cb_called[2][1]);
-  CHECK(0 == cb_called[3][0]);  // Timer 3 not called
-  CHECK(0 == cb_called[3][1]);
+  CHECK_EQ(cb_called[0][0], 0);  // Timer 0 not called
+  CHECK_EQ(cb_called[0][1], 0);
+  CHECK_EQ(cb_called[1][0], 0);
+  CHECK_EQ(cb_called[1][1], 1);  // Timer 1 fired
+  CHECK_EQ(cb_called[2][0], 0);  // Timer 2 not called
+  CHECK_EQ(cb_called[2][1], 0);
+  CHECK_EQ(cb_called[3][0], 0);  // Timer 3 not called
+  CHECK_EQ(cb_called[3][1], 0);
 
   grpc_timer_list_shutdown();
   grpc_core::ExecCtx::Get()->Flush();
   // Timers 0, 2, and 3 were fired with an error during cleanup
-  CHECK(1 == cb_called[0][0]);
-  CHECK(0 == cb_called[1][0]);
-  CHECK(1 == cb_called[2][0]);
-  CHECK(1 == cb_called[3][0]);
+  CHECK_EQ(cb_called[0][0], 1);
+  CHECK_EQ(cb_called[1][0], 0);
+  CHECK_EQ(cb_called[2][0], 1);
+  CHECK_EQ(cb_called[3][0], 1);
 }
 
 int main(int argc, char** argv) {
