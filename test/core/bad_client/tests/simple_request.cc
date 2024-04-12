@@ -182,7 +182,7 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
   cqv.Verify();
 
   // If the call had an error, `was_cancelled` would be 1.
-  // CHECK(was_cancelled == 1);
+  // CHECK_EQ(was_cancelled, 1);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);

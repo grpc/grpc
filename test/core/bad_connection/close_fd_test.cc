@@ -294,7 +294,7 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   CHECK(GRPC_CALL_OK == error);
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  CHECK(event.success == 1);
+  CHECK_EQ(event.success, 1);
   CHECK(event.tag == tag(101));
   CHECK(event.type == GRPC_OP_COMPLETE);
 
@@ -350,12 +350,12 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   // 2. client receives GRPC_STATUS_UNAVAILABLE from server
   //
   if (event.type == GRPC_QUEUE_TIMEOUT) {
-    CHECK(event.success == 0);
+    CHECK_EQ(event.success, 0);
     // status is not initialized
     CHECK(status == GRPC_STATUS__DO_NOT_USE);
   } else {
     CHECK(event.type == GRPC_OP_COMPLETE);
-    CHECK(event.success == 1);
+    CHECK_EQ(event.success, 1);
     CHECK(event.tag == tag(1));
     CHECK(status == GRPC_STATUS_UNAVAILABLE);
   }
@@ -469,7 +469,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   CHECK(GRPC_CALL_OK == error);
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  CHECK(event.success == 1);
+  CHECK_EQ(event.success, 1);
   CHECK(event.tag == tag(101));
   CHECK(event.type == GRPC_OP_COMPLETE);
 
@@ -492,7 +492,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   event = grpc_completion_queue_next(
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   CHECK(event.type == GRPC_OP_COMPLETE);
-  CHECK(event.success == 1);
+  CHECK_EQ(event.success, 1);
   CHECK(event.tag == tag(102));
 
   memset(ops, 0, sizeof(ops));
@@ -536,7 +536,7 @@ static void _test_close_before_server_send(fd_type fdtype) {
   event = grpc_completion_queue_next(
       g_ctx.bound_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   CHECK(event.type == GRPC_OP_COMPLETE);
-  CHECK(event.success == 1);
+  CHECK_EQ(event.success, 1);
   CHECK(event.tag == tag(103));
 
   event = grpc_completion_queue_next(
@@ -547,16 +547,16 @@ static void _test_close_before_server_send(fd_type fdtype) {
   // waiting on the completion queue
   //
   if (event.type == GRPC_OP_COMPLETE) {
-    CHECK(event.success == 1);
+    CHECK_EQ(event.success, 1);
     CHECK(event.tag == tag(1));
     CHECK(status == GRPC_STATUS_UNAVAILABLE);
   } else {
     CHECK(event.type == GRPC_QUEUE_TIMEOUT);
-    CHECK(event.success == 0);
+    CHECK_EQ(event.success, 0);
     // status is not initialized
     CHECK(status == GRPC_STATUS__DO_NOT_USE);
   }
-  CHECK(was_cancelled == 0);
+  CHECK_EQ(was_cancelled, 0);
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
@@ -675,7 +675,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   // closed
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  CHECK(event.success == 1);
+  CHECK_EQ(event.success, 1);
   CHECK(event.type == GRPC_OP_COMPLETE);
   CHECK(event.tag == tag(1));
   CHECK(status == GRPC_STATUS_UNAVAILABLE);
@@ -683,7 +683,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   // No event is received on the server
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
-  CHECK(event.success == 0);
+  CHECK_EQ(event.success, 0);
   CHECK(event.type == GRPC_QUEUE_TIMEOUT);
 
   grpc_slice_unref(details);
@@ -739,12 +739,12 @@ static void _test_close_before_call_create(fd_type fdtype) {
   event = grpc_completion_queue_next(
       g_ctx.client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   CHECK(event.type == GRPC_QUEUE_TIMEOUT);
-  CHECK(event.success == 0);
+  CHECK_EQ(event.success, 0);
 
   event = grpc_completion_queue_next(
       g_ctx.cq, grpc_timeout_milliseconds_to_deadline(100), nullptr);
   CHECK(event.type == GRPC_QUEUE_TIMEOUT);
-  CHECK(event.success == 0);
+  CHECK_EQ(event.success, 0);
 
   grpc_call_unref(call);
   end_test();

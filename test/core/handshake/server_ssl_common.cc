@@ -231,7 +231,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     memcpy(p, alpn_list[i], len);
     p += len;
   }
-  CHECK(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len) == 0);
+  CHECK_EQ(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len), 0);
 
   // Try and connect to server. We allow a bounded number of retries as we might
   // be racing with the server setup on its separate thread.

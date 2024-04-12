@@ -49,7 +49,7 @@ static int free_chosen_port_locked(int port) {
   // freed.
   for (i = 0; i < num_chosen_ports; i++) {
     if (chosen_ports[i] == port) {
-      CHECK(found == 0);
+      CHECK_EQ(found, 0);
       found = 1;
       found_at = i;
     }

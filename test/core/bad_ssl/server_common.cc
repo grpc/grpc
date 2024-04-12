@@ -91,7 +91,7 @@ void bad_ssl_run(grpc_server* server) {
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
         CHECK(ev.tag == (void*)1);
-        CHECK(ev.success == 0);
+        CHECK_EQ(ev.success, 0);
         break;
       case GRPC_QUEUE_SHUTDOWN:
         CHECK(shutdown_started);

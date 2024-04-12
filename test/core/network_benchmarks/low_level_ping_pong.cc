@@ -122,7 +122,7 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       }
     }
     if (err == 0 && spin) continue;
-    CHECK(err == 1);
+    CHECK_EQ(err, 1);
     CHECK(pfd.revents == POLLIN);
     do {
       err2 = read(fd, buf + bytes_read, read_size - bytes_read);
@@ -162,7 +162,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       return -1;
     }
     if (err == 0 && spin) continue;
-    CHECK(err == 1);
+    CHECK_EQ(err, 1);
     CHECK(ev.events & EPOLLIN);
     CHECK(ev.data.fd == args->fds.read_fd);
     do {

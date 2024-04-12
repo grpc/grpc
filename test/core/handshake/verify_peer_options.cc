@@ -229,8 +229,8 @@ int main(int argc, char* argv[]) {
   verify_options.verify_peer_callback_userdata = nullptr;
   verify_options.verify_peer_destruct = nullptr;
   CHECK(verify_peer_options_test(&verify_options));
-  CHECK(strlen(callback_target_host) == 0);
-  CHECK(strlen(callback_target_pem) == 0);
+  CHECK_EQ(strlen(callback_target_host), 0);
+  CHECK_EQ(strlen(callback_target_pem), 0);
   CHECK_EQ(callback_userdata, nullptr);
   CHECK_EQ(destruct_userdata, nullptr);
 
@@ -239,8 +239,8 @@ int main(int argc, char* argv[]) {
   verify_options.verify_peer_callback_userdata = static_cast<void*>(&userdata);
   verify_options.verify_peer_destruct = verify_destruct;
   CHECK(verify_peer_options_test(&verify_options));
-  CHECK(strcmp(callback_target_host, "foo.test.google.fr") == 0);
-  CHECK(strcmp(callback_target_pem, server_cert.c_str()) == 0);
+  CHECK_EQ(strcmp(callback_target_host, "foo.test.google.fr"), 0);
+  CHECK_EQ(strcmp(callback_target_pem, server_cert.c_str()), 0);
   CHECK(callback_userdata == static_cast<void*>(&userdata));
   CHECK(destruct_userdata == static_cast<void*>(&userdata));
 

@@ -101,7 +101,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
   gpr_mu_unlock(&g_mu);
 
   /* connect to it */
-  CHECK(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len) == 0);
+  CHECK_EQ(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len), 0);
   GRPC_CLOSURE_INIT(&done, must_succeed, nullptr, grpc_schedule_on_exec_ctx);
   auto args =
       grpc_core::CoreConfiguration::Get().channel_args_preconditioning().PreconditionChannelArgs(
@@ -151,7 +151,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
   CHECK(svr_fd >= 0);
   CHECK(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len));
   CHECK(0 == listen(svr_fd, 1));
-  CHECK(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len) == 0);
+  CHECK_EQ(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len), 0);
   close(svr_fd);
 
   gpr_mu_lock(&g_mu);

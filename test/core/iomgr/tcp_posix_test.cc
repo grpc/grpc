@@ -80,11 +80,11 @@ static constexpr int64_t kDeadlineMillis = 20000;
 
 static void create_sockets(int sv[2]) {
   int flags;
-  CHECK(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+  CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
   flags = fcntl(sv[0], F_GETFL, 0);
-  CHECK(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+  CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
   flags = fcntl(sv[1], F_GETFL, 0);
-  CHECK(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
+  CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
 }
 
 static ssize_t fill_socket(int fd) {
@@ -337,7 +337,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
       (*current_data)++;
     }
   }
-  CHECK(num_bytes_left == 0);
+  CHECK_EQ(num_bytes_left, 0);
   return slices;
 }
 
@@ -363,7 +363,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
   grpc_core::ExecCtx exec_ctx;
 
   flags = fcntl(fd, F_GETFL, 0);
-  CHECK(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK) == 0);
+  CHECK_EQ(fcntl(fd, F_SETFL, flags & ~O_NONBLOCK), 0);
 
   for (;;) {
     grpc_pollset_worker* worker = nullptr;
@@ -388,7 +388,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
     if (bytes_left == 0) break;
   }
   flags = fcntl(fd, F_GETFL, 0);
-  CHECK(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
+  CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
 
   gpr_free(buf);
 }
@@ -566,7 +566,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_tcp_destroy_and_release_fd(ep, &fd, &fd_released_cb);
   grpc_core::ExecCtx::Get()->Flush();
   rel_fd.notify.WaitForNotificationWithTimeout(absl::Seconds(20));
-  CHECK(rel_fd.fd_released_done == 1);
+  CHECK_EQ(rel_fd.fd_released_done, 1);
   CHECK(fd == sv[1]);
   written_bytes = fill_socket_partial(sv[0], num_bytes);
   drain_socket_blocking(fd, written_bytes, written_bytes);

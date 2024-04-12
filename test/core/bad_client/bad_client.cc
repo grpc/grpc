@@ -301,7 +301,7 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   grpc_slice_buffer_init(&last_frame_buffer);
   grpc_slice_buffer_trim_end(incoming, kExpectedFrameLength,
                              &last_frame_buffer);
-  CHECK(last_frame_buffer.count == 1);
+  CHECK_EQ(last_frame_buffer.count, 1);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 
   const uint8_t* p = GRPC_SLICE_START_PTR(last_frame);

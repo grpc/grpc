@@ -82,7 +82,7 @@ static void add_test(void) {
   grpc_core::ExecCtx::Get()->Flush();
   for (i = 0; i < 20; i++) {
     CHECK(cb_called[i][1] == (i < 10));
-    CHECK(cb_called[i][0] == 0);
+    CHECK_EQ(cb_called[i][0], 0);
   }
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
@@ -91,7 +91,7 @@ static void add_test(void) {
   grpc_core::ExecCtx::Get()->Flush();
   for (i = 0; i < 30; i++) {
     CHECK(cb_called[i][1] == (i < 10));
-    CHECK(cb_called[i][0] == 0);
+    CHECK_EQ(cb_called[i][0], 0);
   }
 
   // collect the rest of the timers
@@ -101,7 +101,7 @@ static void add_test(void) {
   grpc_core::ExecCtx::Get()->Flush();
   for (i = 0; i < 30; i++) {
     CHECK(cb_called[i][1] == (i < 20));
-    CHECK(cb_called[i][0] == 0);
+    CHECK_EQ(cb_called[i][0], 0);
   }
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
@@ -109,7 +109,7 @@ static void add_test(void) {
   CHECK(grpc_timer_check(nullptr) == GRPC_TIMERS_CHECKED_AND_EMPTY);
   for (i = 0; i < 30; i++) {
     CHECK(cb_called[i][1] == (i < 20));
-    CHECK(cb_called[i][0] == 0);
+    CHECK_EQ(cb_called[i][0], 0);
   }
 
   grpc_timer_list_shutdown();

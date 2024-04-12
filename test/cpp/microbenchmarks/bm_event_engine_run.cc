@@ -244,7 +244,7 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
         }));
   }
   for (auto _ : state) {
-    DCHECK(count.load(std::memory_order_relaxed) == 0);
+    DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
     engine->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();

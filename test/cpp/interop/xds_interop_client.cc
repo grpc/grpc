@@ -480,7 +480,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   for (auto& data : rpc_metadata) {
     std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
-    CHECK(metadata.size() == 3);
+    CHECK_EQ(metadata.size(), 3);
     if (metadata[0] == "EmptyCall") {
       metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back(
           {metadata[1], metadata[2]});

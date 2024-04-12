@@ -99,7 +99,7 @@ class BasicFuzzer {
   void ShutdownCalls();
   void ResetServerState() {
     server_shutdown_ = false;
-    CHECK(pending_server_shutdowns_ == 0);
+    CHECK_EQ(pending_server_shutdowns_, 0);
   }
 
   // Poll any created completion queue to drive the RPC forward.

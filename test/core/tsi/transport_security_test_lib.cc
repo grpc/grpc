@@ -105,10 +105,10 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_with_unused_bytes, &bytes, &bytes_size) == TSI_OK);
   CHECK(bytes_size == strlen(TSI_TEST_UNUSED_BYTES));
-  CHECK(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size) == 0);
+  CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
-  CHECK(bytes_size == 0);
+  CHECK_EQ(bytes_size, 0);
   CHECK_EQ(bytes, nullptr);
 }
 
@@ -309,7 +309,7 @@ grpc_error_handle on_handshake_next_done(
   grpc_error_handle error;
   // Read more data if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    CHECK(bytes_to_send_size == 0);
+    CHECK_EQ(bytes_to_send_size, 0);
     notification_signal(fixture);
     return error;
   }

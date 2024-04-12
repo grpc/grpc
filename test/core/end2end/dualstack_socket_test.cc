@@ -242,7 +242,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
     CHECK(0 ==
                grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
-    CHECK(was_cancelled == 0);
+    CHECK_EQ(was_cancelled, 0);
 
     grpc_call_unref(s);
   } else {

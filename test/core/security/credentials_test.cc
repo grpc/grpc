@@ -630,7 +630,7 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
   const grpc_composite_call_credentials::CallCredentialsList& creds_list =
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
-  CHECK(creds_list.size() == 2);
+  CHECK_EQ(creds_list.size(), 2);
   CHECK(creds_list[0]->type() == grpc_md_only_test_credentials::Type());
   CHECK(creds_list[1]->type() == grpc_google_iam_credentials::Type());
   state->RunRequestMetadataTest(composite_creds, kTestUrlScheme, kTestAuthority,
@@ -699,14 +699,14 @@ TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 
 void validate_compute_engine_http_request(const grpc_http_request* request,
                                           const char* host, const char* path) {
-  CHECK(strcmp(host, "metadata.google.internal.") == 0);
+  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
   CHECK(
       strcmp(path,
              "/computeMetadata/v1/instance/service-accounts/default/token") ==
       0);
-  CHECK(request->hdr_count == 1);
-  CHECK(strcmp(request->hdrs[0].key, "Metadata-Flavor") == 0);
-  CHECK(strcmp(request->hdrs[0].value, "Google") == 0);
+  CHECK_EQ(request->hdr_count, 1);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Metadata-Flavor"), 0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "Google"), 0);
 }
 
 int compute_engine_httpcli_get_success_override(
@@ -824,11 +824,11 @@ void validate_refresh_token_http_request(const grpc_http_request* request,
       "32555999999.apps.googleusercontent.com", "EmssLNjJy1332hD4KFsecret",
       "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
   CHECK(expected_body.size() == body_size);
-  CHECK(memcmp(expected_body.data(), body, body_size) == 0);
-  CHECK(strcmp(host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
-  CHECK(strcmp(path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
-  CHECK(request->hdr_count == 1);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(memcmp(expected_body.data(), body, body_size), 0);
+  CHECK_EQ(strcmp(host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST), 0);
+  CHECK_EQ(strcmp(path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH), 0);
+  CHECK_EQ(request->hdr_count, 1);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
 }
@@ -1050,10 +1050,10 @@ void validate_sts_token_http_request(const grpc_http_request* request,
   }
 
   // Check the rest of the request.
-  CHECK(strcmp(host, "foo.com:5555") == 0);
-  CHECK(strcmp(path, "/v1/token-exchange") == 0);
-  CHECK(request->hdr_count == 1);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
+  CHECK_EQ(strcmp(path, "/v1/token-exchange"), 0);
+  CHECK_EQ(request->hdr_count, 1);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
 }
@@ -1315,8 +1315,8 @@ void validate_jwt_encode_and_sign_params(const grpc_auth_json_key* json_key,
              strcmp(json_key->client_email,
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
-  if (scope != nullptr) CHECK(strcmp(scope, test_scope) == 0);
-  CHECK(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) == 0);
+  if (scope != nullptr) CHECK_EQ(strcmp(scope, test_scope), 0);
+  CHECK_EQ(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()), 0);
 }
 
 char* encode_and_sign_jwt_success(const grpc_auth_json_key* json_key,
@@ -1405,7 +1405,7 @@ TEST(CredentialsTest, TestRemoveServiceFromJwtUri) {
   const char expected_uri[] = "https://foo.com/";
   auto output = RemoveServiceNameFromJwtUri(valid_uri);
   CHECK(output.ok());
-  CHECK(strcmp(output->c_str(), expected_uri) == 0);
+  CHECK_EQ(strcmp(output->c_str(), expected_uri), 0);
 }
 
 TEST(CredentialsTest, TestJwtCredsSuccess) {
@@ -1608,8 +1608,8 @@ int default_creds_metadata_server_detection_httpcli_get_success_override(
   headers[0].value = gpr_strdup("Google");
   response->hdr_count = 1;
   response->hdrs = headers;
-  CHECK(strcmp(path, "/") == 0);
-  CHECK(strcmp(host, "metadata.google.internal.") == 0);
+  CHECK_EQ(strcmp(path, "/"), 0);
+  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
 }
@@ -1690,8 +1690,8 @@ int default_creds_gce_detection_httpcli_get_failure_override(
     Timestamp /*deadline*/, grpc_closure* on_done,
     grpc_http_response* response) {
   // No magic header.
-  CHECK(strcmp(path, "/") == 0);
-  CHECK(strcmp(host, "metadata.google.internal.") == 0);
+  CHECK_EQ(strcmp(path, "/"), 0);
+  CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
   *response = http_response(200, "");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -1811,8 +1811,8 @@ int plugin_get_metadata_success(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* /*status*/,
     const char** /*error_details*/) {
-  CHECK(strcmp(context.service_url, test_service_url) == 0);
-  CHECK(strcmp(context.method_name, test_method) == 0);
+  CHECK_EQ(strcmp(context.service_url, test_service_url), 0);
+  CHECK_EQ(strcmp(context.method_name, test_method), 0);
   CHECK_EQ(context.channel_auth_context, nullptr);
   CHECK_EQ(context.reserved, nullptr);
   CHECK(plugin_md.size() < GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
@@ -1837,8 +1837,8 @@ int plugin_get_metadata_failure(
     grpc_metadata /*creds_md*/[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* /*num_creds_md*/, grpc_status_code* status,
     const char** error_details) {
-  CHECK(strcmp(context.service_url, test_service_url) == 0);
-  CHECK(strcmp(context.method_name, test_method) == 0);
+  CHECK_EQ(strcmp(context.service_url, test_service_url), 0);
+  CHECK_EQ(strcmp(context.method_name, test_method), 0);
   CHECK_EQ(context.channel_auth_context, nullptr);
   CHECK_EQ(context.reserved, nullptr);
   plugin_state* s = static_cast<plugin_state*>(state);
@@ -2123,13 +2123,13 @@ void validate_external_account_creds_token_exchage_request(
                           "https://www.googleapis.com/auth/cloud-platform");
 
   // Check the rest of the request.
-  CHECK(strcmp(host, "foo.com:5555") == 0);
-  CHECK(strcmp(path, "/token") == 0);
-  CHECK(request->hdr_count == 3);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
+  CHECK_EQ(strcmp(path, "/token"), 0);
+  CHECK_EQ(request->hdr_count, 3);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  CHECK(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
   CHECK(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
@@ -2151,13 +2151,13 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
           "options=%7B%7D") == 0);
 
   // Check the rest of the request.
-  CHECK(strcmp(host, "foo.com:5555") == 0);
-  CHECK(strcmp(path, "/token_url_encode") == 0);
-  CHECK(request->hdr_count == 3);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
+  CHECK_EQ(strcmp(path, "/token_url_encode"), 0);
+  CHECK_EQ(request->hdr_count, 3);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  CHECK(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
   CHECK(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
@@ -2168,15 +2168,15 @@ void validate_external_account_creds_service_account_impersonation_request(
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
   CHECK(body_size != 0);
-  CHECK(strcmp(body, "scope=scope_1%20scope_2&lifetime=3600s") == 0);
+  CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=3600s"), 0);
   // Check the rest of the request.
-  CHECK(strcmp(host, "foo.com:5555") == 0);
-  CHECK(strcmp(path, "/service_account_impersonation") == 0);
-  CHECK(request->hdr_count == 2);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
+  CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
+  CHECK_EQ(request->hdr_count, 2);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  CHECK(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
   CHECK(strcmp(request->hdrs[1].value,
                     "Bearer token_exchange_access_token") == 0);
 }
@@ -2187,15 +2187,15 @@ void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
   CHECK(body_size != 0);
-  CHECK(strcmp(body, "scope=scope_1%20scope_2&lifetime=1800s") == 0);
+  CHECK_EQ(strcmp(body, "scope=scope_1%20scope_2&lifetime=1800s"), 0);
   // Check the rest of the request.
-  CHECK(strcmp(host, "foo.com:5555") == 0);
-  CHECK(strcmp(path, "/service_account_impersonation") == 0);
-  CHECK(request->hdr_count == 2);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
+  CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
+  CHECK_EQ(request->hdr_count, 2);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  CHECK(strcmp(request->hdrs[1].key, "Authorization") == 0);
+  CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
   CHECK(strcmp(request->hdrs[1].value,
                     "Bearer token_exchange_access_token") == 0);
 }
@@ -2307,19 +2307,19 @@ void validate_aws_external_account_creds_token_exchage_request(
   assert_query_parameters(*uri, "scope",
                           "https://www.googleapis.com/auth/cloud-platform");
   // Check the rest of the request.
-  CHECK(strcmp(host, "foo.com:5555") == 0);
-  CHECK(strcmp(path, "/token") == 0);
-  CHECK(request->hdr_count == 3);
-  CHECK(strcmp(request->hdrs[0].key, "Content-Type") == 0);
+  CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
+  CHECK_EQ(strcmp(path, "/token"), 0);
+  CHECK_EQ(request->hdr_count, 3);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
   CHECK(
       strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") == 0);
-  CHECK(strcmp(request->hdrs[1].key, "x-goog-api-client") == 0);
+  CHECK_EQ(strcmp(request->hdrs[1].key, "x-goog-api-client"), 0);
   EXPECT_EQ(
       request->hdrs[1].value,
       absl::StrFormat("gl-cpp/unknown auth/%s google-byoid-sdk source/aws "
                       "sa-impersonation/false config-lifetime/false",
                       grpc_version_string()));
-  CHECK(strcmp(request->hdrs[2].key, "Authorization") == 0);
+  CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
   CHECK(strcmp(request->hdrs[2].value,
                     "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
 }
@@ -2345,9 +2345,9 @@ int aws_external_account_creds_httpcli_get_success(
 int aws_imdsv2_external_account_creds_httpcli_get_success(
     const grpc_http_request* request, const char* host, const char* path,
     Timestamp deadline, grpc_closure* on_done, grpc_http_response* response) {
-  CHECK(request->hdr_count == 1);
-  CHECK(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token") == 0);
-  CHECK(strcmp(request->hdrs[0].value, aws_imdsv2_session_token) == 0);
+  CHECK_EQ(request->hdr_count, 1);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token"), 0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, aws_imdsv2_session_token), 0);
   return aws_external_account_creds_httpcli_get_success(
       request, host, path, deadline, on_done, response);
 }
@@ -2356,11 +2356,11 @@ int aws_imdsv2_external_account_creds_httpcli_put_success(
     const grpc_http_request* request, const char* /*host*/, const char* path,
     const char* /*body*/, size_t /*body_size*/, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
-  CHECK(request->hdr_count == 1);
+  CHECK_EQ(request->hdr_count, 1);
   CHECK(strcmp(request->hdrs[0].key,
                     "x-aws-ec2-metadata-token-ttl-seconds") == 0);
-  CHECK(strcmp(request->hdrs[0].value, "300") == 0);
-  CHECK(strcmp(path, "/imdsv2_session_token_url") == 0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "300"), 0);
+  CHECK_EQ(strcmp(path, "/imdsv2_session_token_url"), 0);
   *response = http_response(200, aws_imdsv2_session_token);
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
@@ -2662,7 +2662,7 @@ TEST(
   std::string actual_error1,
       expected_error1 = "token_lifetime_seconds must be more than 600s";
   grpc_error_get_str(error1, StatusStrProperty::kDescription, &actual_error1);
-  CHECK(strcmp(actual_error1.c_str(), expected_error1.c_str()) == 0);
+  CHECK_EQ(strcmp(actual_error1.c_str(), expected_error1.c_str()), 0);
 
   const char* options_string2 =
       "{\"type\":\"external_account\",\"audience\":\"audience\","
@@ -2684,7 +2684,7 @@ TEST(
   std::string actual_error2,
       expected_error2 = "token_lifetime_seconds must be less than 43200s";
   grpc_error_get_str(error2, StatusStrProperty::kDescription, &actual_error2);
-  CHECK(strcmp(actual_error2.c_str(), expected_error2.c_str()) == 0);
+  CHECK_EQ(strcmp(actual_error2.c_str(), expected_error2.c_str()), 0);
 }
 
 TEST(CredentialsTest, TestExternalAccountCredsFailureInvalidTokenUrl) {
@@ -3931,7 +3931,7 @@ TEST(CredentialsTest, TestInsecureCredentialsSingletonCreate) {
 
 TEST(CredentialsTest, TestFakeCallCredentialsCompareSuccess) {
   auto call_creds = MakeRefCounted<fake_call_creds>();
-  CHECK(call_creds->cmp(call_creds.get()) == 0);
+  CHECK_EQ(call_creds->cmp(call_creds.get()), 0);
 }
 
 TEST(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
