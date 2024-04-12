@@ -243,8 +243,6 @@ class PipeBasedCallSpine : public CallSpineInterface {
  private:
   static ValueOrFailure<absl::optional<MessageHandle>> MapNextMessage(
       NextResult<MessageHandle> r) {
-    gpr_log(GPR_INFO, "MapNextMessage: has_value:%d cancelled:%d",
-            r.has_value(), r.cancelled());
     if (!r.has_value()) {
       if (r.cancelled()) return Failure{};
       return absl::optional<MessageHandle>();

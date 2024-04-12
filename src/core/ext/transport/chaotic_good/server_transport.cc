@@ -73,8 +73,10 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
   GPR_DEBUG_ASSERT(frame.headers == nullptr);
-  gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
-          frame.ToString().c_str());
+  if (grpc_chaotic_good_trace.enabled()) {
+    gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
+            frame.ToString().c_str());
+  }
   return TrySeq(If(
                     frame.message.has_value(),
                     [&call_initiator, &frame]() mutable {

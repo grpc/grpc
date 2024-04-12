@@ -298,8 +298,10 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
     const uint32_t stream_id = MakeStream(call_handler);
     return Map(CallOutboundLoop(stream_id, call_handler),
                [stream_id, this](absl::Status result) {
-                 gpr_log(GPR_INFO, "CHAOTIC_GOOD: Call %d finished with %s",
-                         stream_id, result.ToString().c_str());
+                 if (grpc_chaotic_good_trace.enabled()) {
+                   gpr_log(GPR_INFO, "CHAOTIC_GOOD: Call %d finished with %s",
+                           stream_id, result.ToString().c_str());
+                 }
                  if (!result.ok()) {
                    CancelFrame frame;
                    frame.stream_id = stream_id;
