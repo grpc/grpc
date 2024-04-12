@@ -63,7 +63,7 @@ inline Validator* MakeValidator(std::function<void(bool)> impl) {
 
 inline Validator* AssertSuccessAndDecrement(int* counter) {
   return MakeValidator([counter](bool success) {
-    GPR_ASSERT(success);
+    CHECK(success);
     --*counter;
   });
 }
@@ -99,7 +99,7 @@ class BasicFuzzer {
   void ShutdownCalls();
   void ResetServerState() {
     server_shutdown_ = false;
-    GPR_ASSERT(pending_server_shutdowns_ == 0);
+    CHECK(pending_server_shutdowns_ == 0);
   }
 
   // Poll any created completion queue to drive the RPC forward.

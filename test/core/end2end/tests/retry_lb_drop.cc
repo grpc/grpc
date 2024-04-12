@@ -106,7 +106,7 @@ CORE_END2END_TEST(RetryTest, RetryLbDrop) {
     RegisterTestPickArgsLoadBalancingPolicy(
         builder,
         [](const PickArgsSeen& pick_args) {
-          GPR_ASSERT(g_pick_args_vector != nullptr);
+          CHECK(g_pick_args_vector != nullptr);
           g_pick_args_vector->push_back(pick_args);
         },
         kDropPolicyName);

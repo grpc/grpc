@@ -70,7 +70,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
   bool got = false;
   cqv.Expect(grpc_core::CqVerifier::tag(101),
              grpc_core::CqVerifier::Maybe{&got});
@@ -84,8 +84,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
     return;
   }
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -101,7 +101,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(102), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
 
   cqv.Expect(grpc_core::CqVerifier::tag(102),
              grpc_core::CqVerifier::AnyStatus());
@@ -124,7 +124,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();

@@ -191,7 +191,7 @@ class XdsRouterFilterTest : public XdsHttpFilterTest {
   XdsRouterFilterTest() {
     XdsExtension extension = MakeXdsExtension(Router());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK(filter_ != nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -275,7 +275,7 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
   XdsFaultInjectionFilterTest() {
     XdsExtension extension = MakeXdsExtension(HTTPFault());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK(filter_ != nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -480,7 +480,7 @@ class XdsRbacFilterTest : public XdsHttpFilterTest {
   XdsRbacFilterTest() {
     XdsExtension extension = MakeXdsExtension(RBAC());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK(filter_ != nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1107,7 +1107,7 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK(filter_ != nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;

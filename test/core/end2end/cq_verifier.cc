@@ -163,7 +163,7 @@ int byte_buffer_eq_slice(grpc_byte_buffer* bb, grpc_slice b) {
   if (bb->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
-    GPR_ASSERT(grpc_msg_decompress(bb->data.raw.compression,
+    CHECK(grpc_msg_decompress(bb->data.raw.compression,
                                    &bb->data.raw.slice_buffer,
                                    &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
@@ -427,7 +427,7 @@ void CqVerifier::VerifyEmpty(Duration timeout, SourceLocation location) {
   }
   const gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC), timeout.as_timespec());
-  GPR_ASSERT(expectations_.empty());
+  CHECK(expectations_.empty());
   grpc_event ev = Step(deadline);
   if (ev.type != GRPC_QUEUE_TIMEOUT) {
     FailUnexpectedEvent(&ev, location);

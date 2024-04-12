@@ -33,8 +33,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
             grpc_event_engine::experimental::URIToResolvedAddress(
                 absl::StrCat("ipv4:0.0.0.0:", port_num))
                 .value());
-        GPR_ASSERT(port.ok());
-        GPR_ASSERT(port.value() == port_num);
+        CHECK(port.ok());
+        CHECK(port.value() == port_num);
         grpc_core::Server::FromC(server)->AddListener(
             grpc_core::OrphanablePtr<
                 grpc_core::chaotic_good::ChaoticGoodServerListener>(listener));

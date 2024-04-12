@@ -73,7 +73,7 @@ class ClientFuzzer final : public BasicFuzzer {
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { GPR_ASSERT(channel_ == nullptr); }
+  ~ClientFuzzer() { CHECK(channel_ == nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {

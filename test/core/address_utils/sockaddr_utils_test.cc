@@ -57,7 +57,7 @@ grpc_resolved_address MakeAddr4(const uint8_t* data, size_t data_len) {
       reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4.addr);
   memset(&resolved_addr4, 0, sizeof(resolved_addr4));
   addr4->sin_family = GRPC_AF_INET;
-  GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
+  CHECK(data_len == sizeof(addr4->sin_addr.s_addr));
   memcpy(&addr4->sin_addr.s_addr, data, data_len);
   addr4->sin_port = grpc_htons(12345);
   resolved_addr4.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
@@ -70,7 +70,7 @@ grpc_resolved_address MakeAddr6(const uint8_t* data, size_t data_len) {
       reinterpret_cast<grpc_sockaddr_in6*>(resolved_addr6.addr);
   memset(&resolved_addr6, 0, sizeof(resolved_addr6));
   addr6->sin6_family = GRPC_AF_INET6;
-  GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
+  CHECK(data_len == sizeof(addr6->sin6_addr.s6_addr));
   memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
   addr6->sin6_port = grpc_htons(12345);
   resolved_addr6.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));

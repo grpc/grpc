@@ -110,7 +110,7 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     grpc_call_error error = grpc_call_start_batch(
         call, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
     int requested_calls = 1;
-    GPR_ASSERT(GRPC_CALL_OK == error);
+    CHECK(GRPC_CALL_OK == error);
     grpc_event ev;
     while (true) {
       grpc_core::ExecCtx::Get()->Flush();
@@ -135,13 +135,13 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      CHECK(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i < requested_calls; i++) {
       ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                       nullptr);
-      GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+      CHECK(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_call_unref(call);
     grpc_completion_queue_destroy(cq);

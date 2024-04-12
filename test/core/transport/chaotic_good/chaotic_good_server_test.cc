@@ -66,8 +66,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
     auto ev = grpc_completion_queue_pluck(
         shutdown_cq, nullptr, grpc_timeout_milliseconds_to_deadline(15000),
         nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == nullptr);
+    CHECK(ev.type == GRPC_OP_COMPLETE);
+    CHECK(ev.tag == nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
   }
@@ -82,8 +82,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
 
   void ConstructConnector() {
     auto uri = URI::Parse("ipv6:" + addr_);
-    GPR_ASSERT(uri.ok());
-    GPR_ASSERT(grpc_parse_uri(*uri, &resolved_addr_));
+    CHECK(uri.ok());
+    CHECK(grpc_parse_uri(*uri, &resolved_addr_));
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();

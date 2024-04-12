@@ -47,7 +47,7 @@ long GetMemUsage(absl::optional<int> pid) {
   stat_stream.close();
 
   // pid does not connect to an existing process
-  GPR_ASSERT(!state.empty());
+  CHECK(!state.empty());
 
   // Calculations in case x86-64 is configured to use 2MB pages
   long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;

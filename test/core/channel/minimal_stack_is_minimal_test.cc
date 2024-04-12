@@ -95,7 +95,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
   builder.SetTarget("foo.test.google.fr");
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    CHECK(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 

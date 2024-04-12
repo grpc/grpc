@@ -121,7 +121,7 @@ class SockpairFixture : public CoreTestFixture {
           "lame channel");
       transport->Orphan();
     }
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
 

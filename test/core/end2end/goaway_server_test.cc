@@ -292,7 +292,7 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(call1, ops, (size_t)(op - ops),
                                    grpc_core::CqVerifier::tag(0x101), nullptr));
   // and receive status to probe termination
@@ -305,7 +305,7 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(call1, ops, (size_t)(op - ops),
                                    grpc_core::CqVerifier::tag(0x102), nullptr));
 
@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
 
   // request a call to the server
   grpc_call* server_call1;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_server_request_call(server1, &server_call1, &request_details1,
                                       &request_metadata1, cq, cq,
                                       grpc_core::CqVerifier::tag(0x301)));
@@ -333,7 +333,7 @@ int main(int argc, char** argv) {
   cqv.Expect(grpc_core::CqVerifier::tag(0x301), true);
   cqv.Verify();
 
-  GPR_ASSERT(GRPC_CHANNEL_READY ==
+  CHECK(GRPC_CHANNEL_READY ==
              grpc_channel_check_connectivity_state(chan, 0));
   grpc_channel_watch_connectivity_state(chan, GRPC_CHANNEL_READY,
                                         gpr_inf_future(GPR_CLOCK_REALTIME), cq,
@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(server_call1, ops, (size_t)(op - ops),
                                    grpc_core::CqVerifier::tag(0x302), nullptr));
 
@@ -372,7 +372,7 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(call2, ops, (size_t)(op - ops),
                                    grpc_core::CqVerifier::tag(0x201), nullptr));
   // and receive status to probe termination
@@ -385,7 +385,7 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(call2, ops, (size_t)(op - ops),
                                    grpc_core::CqVerifier::tag(0x202), nullptr));
 
@@ -402,7 +402,7 @@ int main(int argc, char** argv) {
 
   // request a call to the server
   grpc_call* server_call2;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_server_request_call(server2, &server_call2, &request_details2,
                                       &request_metadata2, cq, cq,
                                       grpc_core::CqVerifier::tag(0x401)));
@@ -419,7 +419,7 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled2;
   op->flags = 0;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
+  CHECK(GRPC_CALL_OK ==
              grpc_call_start_batch(server_call2, ops, (size_t)(op - ops),
                                    grpc_core::CqVerifier::tag(0x402), nullptr));
 

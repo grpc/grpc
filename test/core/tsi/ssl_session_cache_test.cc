@@ -49,7 +49,7 @@ class SessionTracker {
   tsi::SslSessionPtr NewSession(long id) {
     static int ex_data_id = SSL_SESSION_get_ex_new_index(
         0, nullptr, nullptr, nullptr, DestroyExData);
-    GPR_ASSERT(ex_data_id != -1);
+    CHECK(ex_data_id != -1);
     // OpenSSL and different version of BoringSSL don't agree on API
     // so try both.
     tsi::SslSessionPtr session = NewSessionInternal(SSL_SESSION_new);

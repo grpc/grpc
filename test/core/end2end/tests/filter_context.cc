@@ -65,7 +65,7 @@ void start_transport_stream_op_batch(grpc_call_element* elem,
   gpr_log(GPR_INFO, "start_transport_stream_op_batch(): context=%p",
           batch->payload->context);
   if (batch->payload->context != nullptr) {
-    GPR_ASSERT(calld->context == batch->payload->context);
+    CHECK(calld->context == batch->payload->context);
   }
   grpc_call_next_op(elem, batch);
 }

@@ -69,7 +69,7 @@ static void server_thread(void* arg) {
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
+  CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
@@ -84,7 +84,7 @@ static void server_thread(void* arg) {
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
     const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-    GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
+    CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
   gpr_log(GPR_INFO, "Shutting down server");
@@ -94,7 +94,7 @@ static void server_thread(void* arg) {
 
   const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(60);
   grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  CHECK(ev.type == GRPC_OP_COMPLETE);
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
@@ -130,7 +130,7 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   // Launch the gRPC server thread.
   bool ok;
   grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &port, &ok);
-  GPR_ASSERT(ok);
+  CHECK(ok);
   thd.Start();
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
@@ -145,11 +145,11 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   grpc_args.args = &ssl_name_override;
   grpc_channel* channel =
       grpc_channel_create(target.c_str(), ssl_creds, &grpc_args);
-  GPR_ASSERT(channel);
+  CHECK(channel);
 
   // Initially the channel will be idle, the
   // grpc_channel_check_connectivity_state triggers an attempt to connect.
-  GPR_ASSERT(grpc_channel_check_connectivity_state(
+  CHECK(grpc_channel_check_connectivity_state(
                  channel, 1 /* try_to_connect */) == GRPC_CHANNEL_IDLE);
 
   // Wait a bounded number of times for the channel to be ready. When the
@@ -165,7 +165,7 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
         channel, state, grpc_timeout_seconds_to_deadline(3), cq, nullptr);
     gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+    CHECK(ev.type == GRPC_OP_COMPLETE);
     state =
         grpc_channel_check_connectivity_state(channel, 0 /* try_to_connect */);
   }
@@ -228,25 +228,25 @@ int main(int argc, char* argv[]) {
   verify_options.verify_peer_callback = nullptr;
   verify_options.verify_peer_callback_userdata = nullptr;
   verify_options.verify_peer_destruct = nullptr;
-  GPR_ASSERT(verify_peer_options_test(&verify_options));
-  GPR_ASSERT(strlen(callback_target_host) == 0);
-  GPR_ASSERT(strlen(callback_target_pem) == 0);
-  GPR_ASSERT(callback_userdata == nullptr);
-  GPR_ASSERT(destruct_userdata == nullptr);
+  CHECK(verify_peer_options_test(&verify_options));
+  CHECK(strlen(callback_target_host) == 0);
+  CHECK(strlen(callback_target_pem) == 0);
+  CHECK(callback_userdata == nullptr);
+  CHECK(destruct_userdata == nullptr);
 
   // Running with the callbacks and verify we get the expected values
   verify_options.verify_peer_callback = verify_callback;
   verify_options.verify_peer_callback_userdata = static_cast<void*>(&userdata);
   verify_options.verify_peer_destruct = verify_destruct;
-  GPR_ASSERT(verify_peer_options_test(&verify_options));
-  GPR_ASSERT(strcmp(callback_target_host, "foo.test.google.fr") == 0);
-  GPR_ASSERT(strcmp(callback_target_pem, server_cert.c_str()) == 0);
-  GPR_ASSERT(callback_userdata == static_cast<void*>(&userdata));
-  GPR_ASSERT(destruct_userdata == static_cast<void*>(&userdata));
+  CHECK(verify_peer_options_test(&verify_options));
+  CHECK(strcmp(callback_target_host, "foo.test.google.fr") == 0);
+  CHECK(strcmp(callback_target_pem, server_cert.c_str()) == 0);
+  CHECK(callback_userdata == static_cast<void*>(&userdata));
+  CHECK(destruct_userdata == static_cast<void*>(&userdata));
 
   // If the callback returns non-zero, initializing the channel should fail.
   callback_return_value = 1;
-  GPR_ASSERT(!verify_peer_options_test(&verify_options));
+  CHECK(!verify_peer_options_test(&verify_options));
 
   grpc_shutdown();
   return 0;

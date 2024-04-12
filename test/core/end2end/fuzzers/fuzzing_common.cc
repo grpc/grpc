@@ -58,7 +58,7 @@ int force_experiments = []() {
 namespace testing {
 
 static void free_non_null(void* p) {
-  GPR_ASSERT(p != nullptr);
+  CHECK(p != nullptr);
   gpr_free(p);
 }
 
@@ -92,7 +92,7 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
   void SetCall(grpc_call* call) {
-    GPR_ASSERT(call_ == nullptr);
+    CHECK(call_ == nullptr);
     call_ = call;
   }
 
@@ -273,10 +273,10 @@ class Call : public std::enable_shared_from_this<Call> {
     ++pending_ops_;
     auto self = shared_from_this();
     return MakeValidator([self](bool success) {
-      GPR_ASSERT(self->pending_ops_ > 0);
+      CHECK(self->pending_ops_ > 0);
       --self->pending_ops_;
       if (success) {
-        GPR_ASSERT(self->call_ != nullptr);
+        CHECK(self->call_ != nullptr);
         self->type_ = CallType::SERVER;
       } else {
         self->type_ = CallType::TOMBSTONED;
@@ -335,7 +335,7 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
       auto now = gpr_now(deadline.clock_type);
-      GPR_ASSERT(gpr_time_cmp(now, deadline) >= 0);
+      CHECK(gpr_time_cmp(now, deadline) >= 0);
     }
     --*counter;
   });
@@ -368,13 +368,13 @@ BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
 }
 
 BasicFuzzer::~BasicFuzzer() {
-  GPR_ASSERT(ActiveCall() == nullptr);
-  GPR_ASSERT(calls_.empty());
+  CHECK(ActiveCall() == nullptr);
+  CHECK(calls_.empty());
 
   engine_->TickUntilIdle();
 
   grpc_completion_queue_shutdown(cq_);
-  GPR_ASSERT(PollCq() == Result::kComplete);
+  CHECK(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
 
   grpc_shutdown_blocking();
@@ -735,7 +735,7 @@ void BasicFuzzer::TryShutdown() {
   ShutdownCalls();
 
   grpc_timer_manager_tick();
-  GPR_ASSERT(PollCq() == Result::kPending);
+  CHECK(PollCq() == Result::kPending);
 }
 
 void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {

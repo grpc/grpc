@@ -39,7 +39,7 @@ static void test(const uint8_t* data, size_t size,
   auto permissive_decoded_output =
       grpc_core::PermissivePercentDecodeSlice(std::move(output));
   // decoded output must always match the input
-  GPR_ASSERT(input == permissive_decoded_output);
+  CHECK(input == permissive_decoded_output);
   grpc_shutdown();
 }
 

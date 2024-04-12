@@ -83,7 +83,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             Json::FromArray({Json::FromObject(
                 {{std::string(delegate_->name()), Json::FromObject({})}})}));
-    GPR_ASSERT(config.ok());
+    CHECK(config.ok());
     args.config = *config;
     return delegate_->UpdateLocked(std::move(args));
   }
@@ -417,7 +417,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(*uri, &address));
+      CHECK(grpc_parse_uri(*uri, &address));
       addresses.emplace_back(address, ChannelArgs());
     } else {
       gpr_log(GPR_ERROR,

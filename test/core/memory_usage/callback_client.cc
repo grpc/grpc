@@ -124,7 +124,7 @@ std::shared_ptr<CallParams> GetBeforeSnapshot(
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
-  GPR_ASSERT(argc >= 1);
+  CHECK(argc >= 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   if (absl::GetFlag(FLAGS_target).empty()) {
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
 
   // Checking that all channels are still open
   for (int i = 0; i < size; ++i) {
-    GPR_ASSERT(!std::exchange(channels_list[i], nullptr)
+    CHECK(!std::exchange(channels_list[i], nullptr)
                     ->WaitForStateChange(GRPC_CHANNEL_READY,
                                          std::chrono::system_clock::now() +
                                              std::chrono::milliseconds(1)));

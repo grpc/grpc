@@ -240,7 +240,7 @@ grpc_core::ResolverArgs ConstructResolverArgs(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_core::ResolverArgs resolver_args;
   auto uri = grpc_core::URI::Parse("dns:localhost");
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   resolver_args.uri = *uri;
   resolver_args.args = channel_args;
   resolver_args.pollset_set = nullptr;

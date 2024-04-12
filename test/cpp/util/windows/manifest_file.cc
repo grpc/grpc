@@ -57,7 +57,7 @@ std::string ManifestFile::Get(const std::string& key) {
     std::getline(filestream_, line);
     if (!line.empty()) {
       std::vector<std::string> kv = absl::StrSplit(line, " ");
-      GPR_ASSERT(kv.size() == 2);
+      CHECK(kv.size() == 2);
       cache_.emplace(kv[0], kv[1]);
       if (kv[0] == key) {
         return kv[1];

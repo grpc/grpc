@@ -142,7 +142,7 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    GPR_ASSERT(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+    CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
                                           server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
@@ -166,8 +166,8 @@ class TestServer {
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == self);
+    CHECK(ev.type == GRPC_OP_COMPLETE);
+    CHECK(ev.tag == self);
     gpr_log(GPR_DEBUG, "TestServer %p stop polling", self);
   }
 

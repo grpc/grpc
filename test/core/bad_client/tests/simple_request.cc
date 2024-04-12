@@ -116,12 +116,12 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -144,12 +144,12 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
+  CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
 
   grpc_op* op;
   grpc_op ops[6];
@@ -176,13 +176,13 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();
 
   // If the call had an error, `was_cancelled` would be 1.
-  // GPR_ASSERT(was_cancelled == 1);
+  // CHECK(was_cancelled == 1);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -192,7 +192,7 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
 static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
                              void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
+    CHECK(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
                    .type == GRPC_QUEUE_TIMEOUT);
   }

@@ -181,7 +181,7 @@ void FanOutCallback(std::shared_ptr<EventEngine> engine,
     signal.Notify();
     return;
   }
-  GPR_DEBUG_ASSERT(local_cnt < params.limit);
+  DCHECK(local_cnt < params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     engine->Run([engine, params, processing_layer, &count, &signal]() {
@@ -244,7 +244,7 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
         }));
   }
   for (auto _ : state) {
-    GPR_DEBUG_ASSERT(count.load(std::memory_order_relaxed) == 0);
+    DCHECK(count.load(std::memory_order_relaxed) == 0);
     engine->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();

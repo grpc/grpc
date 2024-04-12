@@ -93,7 +93,7 @@ class HttpRequestTest : public ::testing::Test {
   void RunAndKick(const std::function<void()>& f) {
     grpc_core::MutexLockForGprMu lock(mu_);
     f();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+    CHECK(GRPC_LOG_IF_ERROR(
         "pollset_kick",
         grpc_pollset_kick(grpc_polling_entity_pollset(&pops_), nullptr)));
   }
@@ -101,9 +101,9 @@ class HttpRequestTest : public ::testing::Test {
   void PollUntil(const std::function<bool()>& predicate, absl::Time deadline) {
     gpr_mu_lock(mu_);
     while (!predicate()) {
-      GPR_ASSERT(absl::Now() < deadline);
+      CHECK(absl::Now() < deadline);
       grpc_pollset_worker* worker = nullptr;
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      CHECK(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&pops_),
                                             &worker, NSecondsTime(1))));
       gpr_mu_unlock(mu_);
@@ -163,10 +163,10 @@ void OnFinish(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(response.status == 200);
-  GPR_ASSERT(response.body_length == strlen(expect));
-  GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
+  CHECK(error.ok());
+  CHECK(response.status == 200);
+  CHECK(response.body_length == strlen(expect));
+  CHECK(0 == memcmp(expect, response.body, response.body_length));
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -182,7 +182,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -196,7 +196,7 @@ TEST_F(HttpRequestTest, Get) {
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
                                     "" /* fragment */);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -222,7 +222,7 @@ TEST_F(HttpRequestTest, Post) {
   req.body_length = 5;
   auto uri = grpc_core::URI::Create("http", host, "/post",
                                     {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
           std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -251,7 +251,7 @@ void InjectNonResponsiveDNSServer(ares_channel* channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  GPR_ASSERT(ares_set_servers_ports(*channel, dns_server_addrs) ==
+  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
              ARES_SUCCESS);
 }
 
@@ -279,7 +279,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       auto uri = grpc_core::URI::Create(
           "http", "dont-care-since-wont-be-resolved.test.com:443", "/get",
           {} /* query params */, "" /* fragment */);
-      GPR_ASSERT(uri.ok());
+      CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -335,7 +335,7 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       auto uri = grpc_core::URI::Create("http", fake_http_server_ptr->address(),
                                         "/get", {} /* query params */,
                                         "" /* fragment */);
-      GPR_ASSERT(uri.ok());
+      CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -396,7 +396,7 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       auto uri =
           grpc_core::URI::Create("http", fake_server_address, "/get",
                                  {} /* query params */, "" /* fragment */);
-      GPR_ASSERT(uri.ok());
+      CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
               std::move(*uri), nullptr /* channel args */, pops(), &req,
@@ -461,7 +461,7 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
           request_state.pollset_set_to_destroy_eagerly);
   auto uri = grpc_core::URI::Create("http", fake_server_address, "/get",
                                     {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */,
@@ -514,7 +514,7 @@ TEST_F(HttpRequestTest,
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
                                     "" /* fragment */);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), nullptr /* channel args */, pops(), &req,

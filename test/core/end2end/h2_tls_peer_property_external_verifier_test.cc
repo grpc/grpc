@@ -94,7 +94,7 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr,
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(server, server_addr, creds));
+  CHECK(grpc_server_add_http2_port(server, server_addr, creds));
   grpc_server_credentials_release(creds);
 
   grpc_server_start(server);
@@ -143,7 +143,7 @@ grpc_channel* client_create(const char* server_addr,
       grpc_channel_args_copy_and_add(nullptr, args, GPR_ARRAY_SIZE(args));
 
   grpc_channel* client = grpc_channel_create(server_addr, creds, client_args);
-  GPR_ASSERT(client != nullptr);
+  CHECK(client != nullptr);
   grpc_channel_credentials_release(creds);
 
   {
@@ -176,7 +176,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   grpc_call* c = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  GPR_ASSERT(c);
+  CHECK(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -208,12 +208,12 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
                                 nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
 
   grpc_call* s;
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
   cqv.Expect(tag(101), true);
   cqv.Verify();
 
@@ -237,7 +237,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
                                 nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK(GRPC_CALL_OK == error);
 
   cqv.Expect(tag(103), true);
   cqv.Expect(tag(1), true);
@@ -277,7 +277,7 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
 
   do_round_trip(cq, server, server_addr.c_str());
 
-  GPR_ASSERT(grpc_completion_queue_next(
+  CHECK(grpc_completion_queue_next(
                  cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
                  .type == GRPC_QUEUE_TIMEOUT);
 

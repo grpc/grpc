@@ -639,7 +639,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (client_ != nullptr) ShutdownAndDestroyClient();
     auto& f = fixture();
     client_ = f.MakeClient(args, cq_);
-    GPR_ASSERT(client_ != nullptr);
+    CHECK(client_ != nullptr);
   }
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
@@ -649,7 +649,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (server_ != nullptr) ShutdownAndDestroyServer();
     auto& f = fixture();
     server_ = f.MakeServer(args, cq_, pre_server_start_);
-    GPR_ASSERT(server_ != nullptr);
+    CHECK(server_ != nullptr);
   }
   // Remove the client.
   void ShutdownAndDestroyClient() {
@@ -727,7 +727,7 @@ class CoreEnd2endTest : public ::testing::Test {
   }
 
   void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {
-    GPR_ASSERT(fixture_ == nullptr);
+    CHECK(fixture_ == nullptr);
     post_grpc_init_func_ = std::move(fn);
   }
 

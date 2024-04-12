@@ -109,7 +109,7 @@ class ExampleGenerator
     }
     // Make sure we don't succeed without doing anything, which caused
     // us to be blind to our fuzzers not running for 9 months.
-    GPR_ASSERT(!examples_.empty());
+    CHECK(!examples_.empty());
     // Get a consistent ordering of examples so problems don't just show up on
     // CI
     std::sort(examples_.begin(), examples_.end());
