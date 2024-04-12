@@ -86,6 +86,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["client_test.cc"],
     hdrs = ["client_test.h"],
+    external_deps = ["absl/log:check"],
     deps = [
         "//src/core:channel_args",
         "//test/core/event_engine:event_engine_test_utils",
