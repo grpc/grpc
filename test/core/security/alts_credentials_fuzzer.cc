@@ -81,7 +81,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
           options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {
-        CHECK(cred == nullptr);
+        CHECK_EQ(cred, nullptr);
       } else {
         CHECK_NE(cred, nullptr);
       }
@@ -95,7 +95,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           grpc_alts_server_credentials_create_customized(
               options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {
-        CHECK(cred == nullptr);
+        CHECK_EQ(cred, nullptr);
       } else {
         CHECK_NE(cred, nullptr);
       }

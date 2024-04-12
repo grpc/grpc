@@ -108,7 +108,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
                         grpc_process_auth_metadata_done_cb cb,
                         void* user_data) {
-  CHECK(state == nullptr);
+  CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 

@@ -61,7 +61,7 @@ static void on_jwt_verification_done(void* user_data,
     printf("Claims: \n\n%s\n", claims_str.c_str());
     grpc_jwt_claims_destroy(claims);
   } else {
-    CHECK(claims == nullptr);
+    CHECK_EQ(claims, nullptr);
     fprintf(stderr, "Verification failed with error %s\n",
             grpc_jwt_verifier_status_to_string(status));
     fflush(stderr);

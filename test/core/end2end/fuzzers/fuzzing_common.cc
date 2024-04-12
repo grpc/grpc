@@ -92,7 +92,7 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
   void SetCall(grpc_call* call) {
-    CHECK(call_ == nullptr);
+    CHECK_EQ(call_, nullptr);
     call_ = call;
   }
 
@@ -368,7 +368,7 @@ BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
 }
 
 BasicFuzzer::~BasicFuzzer() {
-  CHECK(ActiveCall() == nullptr);
+  CHECK_EQ(ActiveCall(), nullptr);
   CHECK(calls_.empty());
 
   engine_->TickUntilIdle();

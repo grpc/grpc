@@ -195,14 +195,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         auto* w =
             static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
         if (w->type() == OrcaProducer::Type()) {
-          CHECK(orca_watcher_ == nullptr);
+          CHECK_EQ(orca_watcher_, nullptr);
           orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
           state_->orca_watchers_.insert(orca_watcher_.get());
         } else if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          CHECK(health_watcher_ == nullptr);
-          CHECK(health_watcher_wrapper_ == nullptr);
+          CHECK_EQ(health_watcher_, nullptr);
+          CHECK_EQ(health_watcher_wrapper_, nullptr);
           health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();

@@ -219,7 +219,7 @@ grpc_ares_request* my_dns_lookup_ares(
 }
 
 static void my_cancel_ares_request(grpc_ares_request* request) {
-  CHECK(request == nullptr);
+  CHECK_EQ(request, nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -392,13 +392,13 @@ ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
-  CHECK(channel_ == nullptr);
-  CHECK(server_ == nullptr);
+  CHECK_EQ(channel_, nullptr);
+  CHECK_EQ(server_, nullptr);
 }
 
 ApiFuzzer::~ApiFuzzer() {
-  CHECK(channel_ == nullptr);
-  CHECK(server_ == nullptr);
+  CHECK_EQ(channel_, nullptr);
+  CHECK_EQ(server_, nullptr);
 }
 
 void ApiFuzzer::Tick() {

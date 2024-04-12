@@ -102,7 +102,7 @@ void bad_ssl_run(grpc_server* server) {
     }
   }
 
-  CHECK(s == nullptr);
+  CHECK_EQ(s, nullptr);
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
 }

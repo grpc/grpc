@@ -734,7 +734,7 @@ int httpcli_post_should_not_be_called(
     const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
     Timestamp /*deadline*/, grpc_closure* /*on_done*/,
     grpc_http_response* /*response*/) {
-  CHECK("HTTP POST should not be called" == nullptr);
+  CHECK_EQ("HTTP POST should not be called", nullptr);
   return 1;
 }
 
@@ -743,7 +743,7 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
-  CHECK("HTTP GET should not be called" == nullptr);
+  CHECK_EQ("HTTP GET should not be called", nullptr);
   return 1;
 }
 
@@ -754,7 +754,7 @@ int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
-  CHECK("HTTP PUT should not be called" == nullptr);
+  CHECK_EQ("HTTP PUT should not be called", nullptr);
   return 1;
 }
 
@@ -1342,7 +1342,7 @@ char* encode_and_sign_jwt_failure(const grpc_auth_json_key* json_key,
 char* encode_and_sign_jwt_should_not_be_called(
     const grpc_auth_json_key* /*json_key*/, const char* /*audience*/,
     gpr_timespec /*token_lifetime*/, const char* /*scope*/) {
-  CHECK("grpc_jwt_encode_and_sign should not be called" == nullptr);
+  CHECK_EQ("grpc_jwt_encode_and_sign should not be called", nullptr);
   return nullptr;
 }
 
@@ -1709,10 +1709,10 @@ TEST(CredentialsTest, TestNoGoogleDefaultCreds) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   // Simulate a successful detection of GCE.
-  CHECK(grpc_google_default_credentials_create(nullptr) == nullptr);
+  CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
   // Try a second one. GCE detection should occur again.
   g_test_gce_tenancy_checker_called = false;
-  CHECK(grpc_google_default_credentials_create(nullptr) == nullptr);
+  CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
   CHECK(g_test_gce_tenancy_checker_called == true);
   // Cleanup.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1813,8 +1813,8 @@ int plugin_get_metadata_success(
     const char** /*error_details*/) {
   CHECK(strcmp(context.service_url, test_service_url) == 0);
   CHECK(strcmp(context.method_name, test_method) == 0);
-  CHECK(context.channel_auth_context == nullptr);
-  CHECK(context.reserved == nullptr);
+  CHECK_EQ(context.channel_auth_context, nullptr);
+  CHECK_EQ(context.reserved, nullptr);
   CHECK(plugin_md.size() < GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
@@ -1839,8 +1839,8 @@ int plugin_get_metadata_failure(
     const char** error_details) {
   CHECK(strcmp(context.service_url, test_service_url) == 0);
   CHECK(strcmp(context.method_name, test_method) == 0);
-  CHECK(context.channel_auth_context == nullptr);
-  CHECK(context.reserved == nullptr);
+  CHECK_EQ(context.channel_auth_context, nullptr);
+  CHECK_EQ(context.reserved, nullptr);
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   *status = GRPC_STATUS_UNAUTHENTICATED;
@@ -2092,7 +2092,7 @@ TEST(CredentialsTest, TestAuthMetadataContext) {
                             test_cases[i].desired_method_name,
                             auth_md_context.method_name));
     }
-    CHECK(auth_md_context.channel_auth_context == nullptr);
+    CHECK_EQ(auth_md_context.channel_auth_context, nullptr);
     grpc_slice_unref(call_host);
     grpc_slice_unref(call_method);
     grpc_auth_metadata_context_reset(&auth_md_context);
@@ -2939,7 +2939,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds == nullptr);
+  CHECK_EQ(creds, nullptr);
   std::string actual_error;
   CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
                                 &actual_error));
@@ -3728,7 +3728,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK(creds == nullptr);
+  CHECK_EQ(creds, nullptr);
   std::string expected_error = "environment_id does not match.";
   std::string actual_error;
   CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
@@ -3822,7 +3822,7 @@ TEST(CredentialsTest,
   const char* options_string = "invalid_json";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK(creds == nullptr);
+  CHECK_EQ(creds, nullptr);
 }
 
 TEST(CredentialsTest,
@@ -3830,7 +3830,7 @@ TEST(CredentialsTest,
   const char* options_string = "{\"random_key\":\"random_value\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK(creds == nullptr);
+  CHECK_EQ(creds, nullptr);
 }
 
 TEST(
@@ -3848,7 +3848,7 @@ TEST(
       "secret\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK(creds == nullptr);
+  CHECK_EQ(creds, nullptr);
 }
 
 TEST(CredentialsTest,
@@ -3893,7 +3893,7 @@ TEST(CredentialsTest,
   const char* url_scopes_string = "scope1,scope2";
   grpc_call_credentials* url_creds = grpc_external_account_credentials_create(
       url_options_string, url_scopes_string);
-  CHECK(url_creds == nullptr);
+  CHECK_EQ(url_creds, nullptr);
 }
 
 TEST(CredentialsTest, TestInsecureCredentialsCompareSuccess) {

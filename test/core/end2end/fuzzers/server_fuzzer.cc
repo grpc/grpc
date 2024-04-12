@@ -66,7 +66,7 @@ class ServerFuzzer final : public BasicFuzzer {
     }
   }
 
-  ~ServerFuzzer() { CHECK(server_ == nullptr); }
+  ~ServerFuzzer() { CHECK_EQ(server_, nullptr); }
 
  private:
   Result CreateChannel(

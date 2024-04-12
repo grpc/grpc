@@ -231,8 +231,8 @@ int main(int argc, char* argv[]) {
   CHECK(verify_peer_options_test(&verify_options));
   CHECK(strlen(callback_target_host) == 0);
   CHECK(strlen(callback_target_pem) == 0);
-  CHECK(callback_userdata == nullptr);
-  CHECK(destruct_userdata == nullptr);
+  CHECK_EQ(callback_userdata, nullptr);
+  CHECK_EQ(destruct_userdata, nullptr);
 
   // Running with the callbacks and verify we get the expected values
   verify_options.verify_peer_callback = verify_callback;

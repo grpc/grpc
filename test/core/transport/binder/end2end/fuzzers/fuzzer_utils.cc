@@ -23,7 +23,7 @@ std::thread* g_fuzzing_thread = nullptr;
 
 template <typename... Args>
 void CreateFuzzingThread(Args&&... args) {
-  CHECK(g_fuzzing_thread == nullptr);
+  CHECK_EQ(g_fuzzing_thread, nullptr);
   g_fuzzing_thread = new std::thread(std::forward<Args>(args)...);
 }
 

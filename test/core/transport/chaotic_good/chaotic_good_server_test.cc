@@ -67,7 +67,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
         shutdown_cq, nullptr, grpc_timeout_milliseconds_to_deadline(15000),
         nullptr);
     CHECK(ev.type == GRPC_OP_COMPLETE);
-    CHECK(ev.tag == nullptr);
+    CHECK_EQ(ev.tag, nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
   }

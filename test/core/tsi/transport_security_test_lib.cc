@@ -109,7 +109,7 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
   CHECK(bytes_size == 0);
-  CHECK(bytes == nullptr);
+  CHECK_EQ(bytes, nullptr);
 }
 
 static void check_handshake_results(tsi_test_fixture* fixture) {
@@ -322,7 +322,7 @@ grpc_error_handle on_handshake_next_done(
   if (handshaker_result != nullptr) {
     tsi_handshaker_result** result_to_write =
         args->is_client ? &fixture->client_result : &fixture->server_result;
-    CHECK(*result_to_write == nullptr);
+    CHECK_EQ(*result_to_write, nullptr);
     *result_to_write = handshaker_result;
   }
   // Send data to peer, if needed.

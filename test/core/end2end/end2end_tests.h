@@ -727,7 +727,7 @@ class CoreEnd2endTest : public ::testing::Test {
   }
 
   void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {
-    CHECK(fixture_ == nullptr);
+    CHECK_EQ(fixture_, nullptr);
     post_grpc_init_func_ = std::move(fn);
   }
 

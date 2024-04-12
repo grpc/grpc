@@ -129,7 +129,7 @@ class Fuzzer {
       void ScheduleWakeup() {
         CHECK(static_cast<ActivityType*>(this) ==
                    fuzzer_->activity_.get());
-        CHECK(fuzzer_->wakeup_ == nullptr);
+        CHECK_EQ(fuzzer_->wakeup_, nullptr);
         fuzzer_->wakeup_ = [this]() {
           static_cast<ActivityType*>(this)->RunScheduledWakeup();
         };

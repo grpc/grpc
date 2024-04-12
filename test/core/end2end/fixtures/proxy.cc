@@ -434,7 +434,7 @@ static void on_new_call(void* arg, int success) {
 
     unrefpc(pc, "init");
   } else {
-    CHECK(proxy->new_call == nullptr);
+    CHECK_EQ(proxy->new_call, nullptr);
   }
 }
 
