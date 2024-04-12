@@ -102,7 +102,7 @@ const grpc_channel_filter test_filter = {
       return Immediate(ServerMetadataFromStatus(
           absl::PermissionDeniedError("Failure that's not preventable.")));
     },
-    [](grpc_channel_element*, CallSpineInterface* args) {
+    [](grpc_channel_element*, CallSpineInterface*) {
       Crash("Should never be called");
     },
     grpc_channel_next_op,

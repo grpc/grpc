@@ -6451,7 +6451,6 @@ grpc_cc_library(
         "//:endpoint_addresses",
         "//:gpr",
         "//:grpc_base",
-        "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
