@@ -25,7 +25,6 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
-    "http2_stats_fix": "http2_stats_fix",
     "keepalive_fix": "keepalive_fix",
     "keepalive_server_fix": "keepalive_server_fix",
     "monitoring_experiment": "monitoring_experiment",
