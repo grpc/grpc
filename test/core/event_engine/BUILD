@@ -129,7 +129,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     deps = [
         "//:gpr",
         "//:gpr_platform",
@@ -181,6 +184,7 @@ grpc_cc_test(
     name = "tcp_socket_utils_test",
     srcs = ["tcp_socket_utils_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -216,6 +220,7 @@ grpc_cc_library(
     srcs = ["event_engine_test_utils.cc"],
     hdrs = ["event_engine_test_utils.h"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

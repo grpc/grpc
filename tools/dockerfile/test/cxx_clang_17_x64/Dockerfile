@@ -14,7 +14,7 @@
 
 FROM silkeh/clang:17-bullseye
 
-RUN apt-get update && apt-get install -y build-essential curl git time wget zip && apt-get clean
+RUN apt update && apt -y upgrade && apt install -y build-essential curl git time wget zip && apt clean
 #=================
 # Setup git to access working directory across docker boundary.
 # This avoids the "fatal: detected dubious ownership in repository XYZ"

@@ -88,9 +88,19 @@ class ChannelFilter {
                   grpc_channel_element* channel_element)
         : channel_stack_(channel_stack), channel_element_(channel_element) {}
 
+    ABSL_DEPRECATED("Direct access to channel stack is deprecated")
     grpc_channel_stack* channel_stack() const { return channel_stack_; }
-    grpc_channel_element* uninitialized_channel_element() {
-      return channel_element_;
+
+    // Get the instance id of this filter.
+    // This id is unique amongst all filters /of the same type/ and densely
+    // packed (starting at 0) for a given channel stack instantiation.
+    // eg. for a stack with filter types A B C A B D A the instance ids would be
+    // 0 0 0 1 1 0 2.
+    // This is useful for filters that need to store per-instance data in a
+    // parallel data structure.
+    size_t instance_id() const {
+      return grpc_channel_stack_filter_instance_number(channel_stack_,
+                                                       channel_element_);
     }
 
    private:
