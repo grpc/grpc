@@ -106,7 +106,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
   // We expect 1 wakeup/sec when there are not timer expiries
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
-  CHECK(wakeups <= 3);
+  CHECK_LE(wakeups, 3);
   grpc_timer_cancel(&timer);
 }
 
@@ -138,7 +138,7 @@ TEST_P(TimeJumpTest, TimedWait) {
   // We expect 1 wakeup/sec when there are not timer expiries
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
-  CHECK(wakeups <= 3);
+  CHECK_LE(wakeups, 3);
 }
 
 int main(int argc, char** argv) {

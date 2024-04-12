@@ -309,7 +309,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
 int gpr_cmdline_parse(gpr_cmdline* cl, int argc, char** argv) {
   int i;
 
-  CHECK(argc >= 1);
+  CHECK_GE(argc, 1);
   cl->argv0 = argv[0];
 
   for (i = 1; i < argc; i++) {

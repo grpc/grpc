@@ -242,7 +242,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", args->done,
             time_left.tv_sec, time_left.tv_nsec);
-    CHECK(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
+    CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     if (grpc_core::IsEventEngineDnsEnabled()) {

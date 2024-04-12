@@ -335,7 +335,7 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
       auto now = gpr_now(deadline.clock_type);
-      CHECK(gpr_time_cmp(now, deadline) >= 0);
+      CHECK_GE(gpr_time_cmp(now, deadline), 0);
     }
     --*counter;
   });

@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
   grpc_slice slice = grpc_slice_from_copied_string("x");
   char* fake_argv[1];
 
-  CHECK(argc >= 1);
+  CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
 

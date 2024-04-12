@@ -342,8 +342,8 @@ class XdsUpdateClientConfigureServiceImpl
     std::vector<RpcConfig> configs;
     int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
     int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-    CHECK(request_payload_size >= 0);
-    CHECK(response_payload_size >= 0);
+    CHECK_GE(request_payload_size, 0);
+    CHECK_GE(response_payload_size, 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -496,8 +496,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
   int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-  CHECK(request_payload_size >= 0);
-  CHECK(response_payload_size >= 0);
+  CHECK_GE(request_payload_size, 0);
+  CHECK_GE(response_payload_size, 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {

@@ -60,7 +60,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   } else {
     root = gpr_strdup(".");
   }
-  CHECK(argc <= 2);
+  CHECK_LE(argc, 2);
   if (argc == 2) {
     args.push_back(gpr_strdup(argv[1]));
   } else {

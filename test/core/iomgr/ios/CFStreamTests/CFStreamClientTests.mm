@@ -92,7 +92,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
 
   /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-  CHECK(svr_fd >= 0);
+  CHECK_GE(svr_fd, 0);
   CHECK(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len));
   CHECK(0 == listen(svr_fd, 1));
 
@@ -116,7 +116,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
     r = accept(svr_fd, reinterpret_cast<struct sockaddr*>(addr),
                reinterpret_cast<socklen_t*>(&resolved_addr->len));
   } while (r == -1 && errno == EINTR);
-  CHECK(r >= 0);
+  CHECK_GE(r, 0);
   close(r);
 
   grpc_core::ExecCtx::Get()->Flush();
@@ -148,7 +148,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
   struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr->addr);
 
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
-  CHECK(svr_fd >= 0);
+  CHECK_GE(svr_fd, 0);
   CHECK(0 == bind(svr_fd, (struct sockaddr*)addr, (socklen_t)resolved_addr->len));
   CHECK(0 == listen(svr_fd, 1));
   CHECK_EQ(getsockname(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr->len), 0);

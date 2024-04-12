@@ -379,7 +379,7 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
       bytes_read =
           read(fd, buf, bytes_left > read_size ? read_size : bytes_left);
     } while (bytes_read < 0 && errno == EINTR);
-    CHECK(bytes_read >= 0);
+    CHECK_GE(bytes_read, 0);
     for (i = 0; i < bytes_read; ++i) {
       CHECK(buf[i] == current);
       current = (current + 1) % 256;
