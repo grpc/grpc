@@ -16,7 +16,6 @@
 import asyncio
 import concurrent.futures
 import logging
-import threading
 import unittest
 
 import grpc
@@ -28,7 +27,7 @@ from tests_aio.unit._test_server import start_test_server
 _UNARY_CALL_METHOD = "/grpc.testing.TestService/UnaryCall"
 
 _NUM_THREADS = 5
-_NUM_CALLS_IN_THREAD = 10
+_NUM_CALLS_IN_THREAD = 20
 
 
 class TestChannel(AioTestBase):
@@ -54,19 +53,19 @@ class TestChannel(AioTestBase):
                     request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                     response_deserializer=messages_pb2.SimpleResponse.FromString,
                 )
-                for i in range(_NUM_CALLS_IN_THREAD):
+                for _ in range(_NUM_CALLS_IN_THREAD):
                     await hi(messages_pb2.SimpleRequest())
             
             return unhandled_exceptions
         
-        futures = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=_NUM_THREADS) as executor:
+            futures = []
             for _ in range(_NUM_THREADS):
                 futures.append(executor.submit(asyncio.run, run_in_thread()))
 
-        for future in futures:
-            unhandled_exceptions = future.result()
-            self.assertFalse(unhandled_exceptions)
+            for future in futures:
+                unhandled_exceptions = await asyncio.wrap_future(future)
+                self.assertFalse(unhandled_exceptions)
 
 
 if __name__ == "__main__":
