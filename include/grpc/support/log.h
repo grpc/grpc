@@ -22,6 +22,8 @@
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
@@ -92,15 +94,10 @@ GPRAPI void gpr_assertion_failed(const char* filename, int line,
    Intended for internal invariants.  If the error can be recovered from,
    without the possibility of corruption, or might best be reflected via
    an exception in a higher-level language, consider returning error code.  */
-#define GPR_ASSERT(x)                               \
-  do {                                              \
-    if (GPR_UNLIKELY(!(x))) {                       \
-      gpr_assertion_failed(__FILE__, __LINE__, #x); \
-    }                                               \
-  } while (0)
+#define GPR_ASSERT(x) CHECK(x)
 
 #ifndef NDEBUG
-#define GPR_DEBUG_ASSERT(x) GPR_ASSERT(x)
+#define GPR_DEBUG_ASSERT(x) CHECK(x)
 #else
 #define GPR_DEBUG_ASSERT(x)
 #endif
