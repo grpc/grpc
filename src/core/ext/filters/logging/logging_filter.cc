@@ -342,21 +342,23 @@ class CallData {
 
 }  // namespace
 
-absl::StatusOr<ClientLoggingFilter> ClientLoggingFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+absl::StatusOr<std::unique_ptr<ClientLoggingFilter>>
+ClientLoggingFilter::Create(const ChannelArgs& args,
+                            ChannelFilter::Args /*filter_args*/) {
   absl::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority.has_value()) {
-    return ClientLoggingFilter(std::string(default_authority.value()));
+    return std::make_unique<ClientLoggingFilter>(
+        std::string(default_authority.value()));
   }
   absl::optional<std::string> server_uri =
       args.GetOwnedString(GRPC_ARG_SERVER_URI);
   if (server_uri.has_value()) {
-    return ClientLoggingFilter(
+    return std::make_unique<ClientLoggingFilter>(
         CoreConfiguration::Get().resolver_registry().GetDefaultAuthority(
             *server_uri));
   }
-  return ClientLoggingFilter("");
+  return std::make_unique<ClientLoggingFilter>("");
 }
 
 // Construct a promise for one call.
@@ -445,9 +447,10 @@ const grpc_channel_filter ClientLoggingFilter::kFilter =
                                kFilterExaminesInboundMessages |
                                kFilterExaminesOutboundMessages>("logging");
 
-absl::StatusOr<ServerLoggingFilter> ServerLoggingFilter::Create(
-    const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
-  return ServerLoggingFilter();
+absl::StatusOr<std::unique_ptr<ServerLoggingFilter>>
+ServerLoggingFilter::Create(const ChannelArgs& /*args*/,
+                            ChannelFilter::Args /*filter_args*/) {
+  return std::make_unique<ServerLoggingFilter>();
 }
 
 // Construct a promise for one call.

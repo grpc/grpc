@@ -133,18 +133,17 @@ struct LegacyMaxAgeFilter::Config {
 // will be removed at that time also, so just disable the deprecation warning
 // for now.
 ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING
-absl::StatusOr<LegacyClientIdleFilter> LegacyClientIdleFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyClientIdleFilter filter(filter_args.channel_stack(),
-                                GetClientIdleTimeout(args));
-  return absl::StatusOr<LegacyClientIdleFilter>(std::move(filter));
+absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>>
+LegacyClientIdleFilter::Create(const ChannelArgs& args,
+                               ChannelFilter::Args filter_args) {
+  return std::make_unique<LegacyClientIdleFilter>(filter_args.channel_stack(),
+                                                  GetClientIdleTimeout(args));
 }
 
-absl::StatusOr<LegacyMaxAgeFilter> LegacyMaxAgeFilter::Create(
+absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> LegacyMaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyMaxAgeFilter filter(filter_args.channel_stack(),
-                            Config::FromChannelArgs(args));
-  return absl::StatusOr<LegacyMaxAgeFilter>(std::move(filter));
+  return std::make_unique<LegacyMaxAgeFilter>(filter_args.channel_stack(),
+                                              Config::FromChannelArgs(args));
 }
 ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING
 

@@ -42,6 +42,11 @@ namespace grpc_core {
 
 class LegacyChannelIdleFilter : public ChannelFilter {
  public:
+  LegacyChannelIdleFilter(grpc_channel_stack* channel_stack,
+                          Duration client_idle_timeout)
+      : channel_stack_(channel_stack),
+        client_idle_timeout_(client_idle_timeout) {}
+
   ~LegacyChannelIdleFilter() override = default;
 
   LegacyChannelIdleFilter(const LegacyChannelIdleFilter&) = delete;
@@ -58,11 +63,6 @@ class LegacyChannelIdleFilter : public ChannelFilter {
  protected:
   using SingleSetActivityPtr =
       SingleSetPtr<Activity, typename ActivityPtr::deleter_type>;
-
-  LegacyChannelIdleFilter(grpc_channel_stack* channel_stack,
-                          Duration client_idle_timeout)
-      : channel_stack_(channel_stack),
-        client_idle_timeout_(client_idle_timeout) {}
 
   grpc_channel_stack* channel_stack() { return channel_stack_; };
 
@@ -94,11 +94,10 @@ class LegacyClientIdleFilter final : public LegacyChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<LegacyClientIdleFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
-
- private:
   using LegacyChannelIdleFilter::LegacyChannelIdleFilter;
+
+  static absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 };
 
 class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {
@@ -106,7 +105,10 @@ class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {
   static const grpc_channel_filter kFilter;
   struct Config;
 
-  static absl::StatusOr<LegacyMaxAgeFilter> Create(
+  LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,
+                     const Config& max_age_config);
+
+  static absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   void PostInit() override;
@@ -127,9 +129,6 @@ class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {
     RefCountedPtr<grpc_channel_stack> channel_stack_;
     LegacyMaxAgeFilter* filter_;
   };
-
-  LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,
-                     const Config& max_age_config);
 
   void Shutdown() override;
 

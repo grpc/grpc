@@ -49,18 +49,21 @@ namespace grpc_core {
 namespace {
 
 class ServerConfigSelectorFilter final
-    : public ImplementChannelFilter<ServerConfigSelectorFilter> {
+    : public ImplementChannelFilter<ServerConfigSelectorFilter>,
+      public RefCounted<ServerConfigSelectorFilter> {
  public:
   ~ServerConfigSelectorFilter() override;
+
+  explicit ServerConfigSelectorFilter(
+      RefCountedPtr<ServerConfigSelectorProvider>
+          server_config_selector_provider);
 
   ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
   ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
       delete;
-  ServerConfigSelectorFilter(ServerConfigSelectorFilter&&) = default;
-  ServerConfigSelectorFilter& operator=(ServerConfigSelectorFilter&&) = default;
 
-  static absl::StatusOr<ServerConfigSelectorFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
+  static absl::StatusOr<RefCountedPtr<ServerConfigSelectorFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args = {});
 
   class Call {
    public:
@@ -74,63 +77,58 @@ class ServerConfigSelectorFilter final
   };
 
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> config_selector() {
-    MutexLock lock(&state_->mu);
-    return state_->config_selector.value();
+    MutexLock lock(&mu_);
+    return config_selector_.value();
   }
 
  private:
-  struct State {
-    Mutex mu;
-    absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
-        config_selector ABSL_GUARDED_BY(mu);
-  };
   class ServerConfigSelectorWatcher
       : public ServerConfigSelectorProvider::ServerConfigSelectorWatcher {
    public:
-    explicit ServerConfigSelectorWatcher(std::shared_ptr<State> state)
-        : state_(state) {}
+    explicit ServerConfigSelectorWatcher(
+        RefCountedPtr<ServerConfigSelectorFilter> filter)
+        : filter_(filter) {}
     void OnServerConfigSelectorUpdate(
         absl::StatusOr<RefCountedPtr<ServerConfigSelector>> update) override {
-      MutexLock lock(&state_->mu);
-      state_->config_selector = std::move(update);
+      MutexLock lock(&filter_->mu_);
+      filter_->config_selector_ = std::move(update);
     }
 
    private:
-    std::shared_ptr<State> state_;
+    RefCountedPtr<ServerConfigSelectorFilter> filter_;
   };
 
-  explicit ServerConfigSelectorFilter(
-      RefCountedPtr<ServerConfigSelectorProvider>
-          server_config_selector_provider);
-
   RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider_;
-  std::shared_ptr<State> state_;
+  Mutex mu_;
+  absl::optional<absl::StatusOr<RefCountedPtr<ServerConfigSelector>>>
+      config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
-absl::StatusOr<ServerConfigSelectorFilter> ServerConfigSelectorFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
+absl::StatusOr<RefCountedPtr<ServerConfigSelectorFilter>>
+ServerConfigSelectorFilter::Create(const ChannelArgs& args,
+                                   ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
       args.GetObject<ServerConfigSelectorProvider>();
   if (server_config_selector_provider == nullptr) {
     return absl::UnknownError("No ServerConfigSelectorProvider object found");
   }
-  return ServerConfigSelectorFilter(server_config_selector_provider->Ref());
+  return MakeRefCounted<ServerConfigSelectorFilter>(
+      server_config_selector_provider->Ref());
 }
 
 ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
-          std::move(server_config_selector_provider)),
-      state_(std::make_shared<State>()) {
+          std::move(server_config_selector_provider)) {
   GPR_ASSERT(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
-      std::make_unique<ServerConfigSelectorWatcher>(state_);
+      std::make_unique<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(
       std::move(server_config_selector_watcher));
-  MutexLock lock(&state_->mu);
+  MutexLock lock(&mu_);
   // It's possible for the watcher to have already updated config_selector_
-  if (!state_->config_selector.has_value()) {
-    state_->config_selector = std::move(config_selector);
+  if (!config_selector_.has_value()) {
+    config_selector_ = std::move(config_selector);
   }
 }
 

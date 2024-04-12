@@ -1572,7 +1572,7 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
 // metadata and return some trailing metadata.
 void ClientCallData::StartPromise(Flusher* flusher) {
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = promise_filter_detail::ChannelFilterFromElem(elem());
 
   // Construct the promise.
   PollContext ctx(this, flusher);
@@ -2369,7 +2369,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   // Start the promise.
   ScopedContext context(this);
   // Construct the promise.
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = promise_filter_detail::ChannelFilterFromElem(elem());
   FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),
