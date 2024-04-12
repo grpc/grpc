@@ -896,6 +896,7 @@ grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
+        "absl/log:check",
         "absl/strings:cord",
         "absl/synchronization",
         "protobuf_headers",
