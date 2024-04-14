@@ -226,7 +226,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20240116.1'
+    abseil_version = '1.20240116.2'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
