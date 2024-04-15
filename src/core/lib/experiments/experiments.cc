@@ -48,9 +48,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_http2_stats_fix =
-    "Fix on HTTP2 outgoing data stats reporting";
-const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -170,8 +167,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
-    {"http2_stats_fix", description_http2_stats_fix,
-     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -253,9 +248,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_http2_stats_fix =
-    "Fix on HTTP2 outgoing data stats reporting";
-const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -375,8 +367,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
-    {"http2_stats_fix", description_http2_stats_fix,
-     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -458,9 +448,6 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
-const char* const description_http2_stats_fix =
-    "Fix on HTTP2 outgoing data stats reporting";
-const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -580,8 +567,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
-    {"http2_stats_fix", description_http2_stats_fix,
-     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
