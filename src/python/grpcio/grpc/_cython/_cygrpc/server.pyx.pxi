@@ -17,21 +17,25 @@ cdef class RegisteredMethod:
 
   def __cinit__(self, bytes method, uintptr_t server):
     self.method = method
-    cpython.Py_INCREF(method)
+    cpython.Py_INCREF(self.method)
     cdef grpc_server *c_server = <grpc_server *>server
+    # TODO(xuanwn): Consider use GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER for unary request
+    # Note that in generated stubs method is not bound to any host, thus we set the
+    # third-to-last parameter of to a fixed NULL value.
     self.c_registered_method = grpc_server_register_method(c_server,
-      <const char *>method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
-    if (self.c_registered_method == NULL):
-      import sys; sys.stderr.write(f"======= grpc_server_register_method returned NULL\n"); sys.stderr.flush()
-    else:
-      import sys; sys.stderr.write(f"======= grpc_server_register_method returned {<uintptr_t>self.c_registered_method}\n"); sys.stderr.flush()
+      <const char *>self.method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
+    # if (self.c_registered_method == NULL):
+      # import sys; sys.stderr.write(f"======= grpc_server_register_method returned NULL!\n"); sys.stderr.flush()
+    # else:
+      # import sys; sys.stderr.write(f"======= grpc_server_register_method returned {<uintptr_t>self.c_registered_method}\n"); sys.stderr.flush()
 
   def __dealloc__(self):
     cpython.Py_DECREF(self.method)
 
-  @property
-  def registered_method_tag(self):
-    return cpython.PyLong_FromVoidPtr(self.c_registered_method)
+  # @property
+  # def registered_method_tag(self):
+  #   return cpython.PyLong_FromVoidPtr(self.c_registered_method)
+
 
 cdef class Server:
 
@@ -85,8 +89,9 @@ cdef class Server:
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
     cdef RegisteredMethod registered_method = self.registered_methods[method]
-    import sys; sys.stderr.write(f"======= [Cy] calling grpc_server_request_registered_call for method: {method} with tag {registered_method.registered_method_tag}\n"); sys.stderr.flush()
-    # cpython.Py_INCREF(method_tag)
+    # import sys; sys.stderr.write(f"======= [Cy] calling grpc_server_request_registered_call for method: {method} with tag {registered_method.registered_method_tag}\n"); sys.stderr.flush()
+    # Note: Set timeout to _GPR_INF_FUTURE because we don't know when this registered method will be called.
+    # optional_payload is set to NULL because we use GRPC_SRM_PAYLOAD_NONE for all method.
     cdef grpc_call_error c_call_error = grpc_server_request_registered_call(
         self.c_server, registered_method.c_registered_method, &request_call_tag.call.c_call,
         &_GPR_INF_FUTURE,
@@ -95,11 +100,7 @@ cdef class Server:
         call_queue.c_completion_queue, server_queue.c_completion_queue,
         <cpython.PyObject *>request_call_tag)
     if c_call_error != GRPC_CALL_OK:
-      core_error = "======= [Core] call error: " + grpc_call_error_to_string(self.c_call_error).decode()
-      import sys; sys.stderr.write(f"{core_error}\n"); sys.stderr.flush()
-    else:
-      core_error = "======= [Core] No call error! "
-      import sys; sys.stderr.write(f"{core_error}\n"); sys.stderr.flush()
+      raise InternalError("Error in grpc_server_request_registered_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
     return c_call_error
 
   cdef _c_request_general_call(self,
@@ -108,7 +109,7 @@ cdef class Server:
        CompletionQueue server_queue):
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
-    import sys; sys.stderr.write(f"======= [Cy] calling grpc_server_request_call\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= [Cy] calling grpc_server_request_call\n"); sys.stderr.flush()
     cdef grpc_call_error c_call_error = grpc_server_request_call(
         self.c_server, &request_call_tag.call.c_call,
         &request_call_tag.call_details.c_details,
@@ -116,11 +117,7 @@ cdef class Server:
         call_queue.c_completion_queue, server_queue.c_completion_queue,
         <cpython.PyObject *>request_call_tag)
     if c_call_error != GRPC_CALL_OK:
-      core_error = "======= [Core] call error: " + grpc_call_error_to_string(self.c_call_error).decode()
-      import sys; sys.stderr.write(f"{core_error}\n"); sys.stderr.flush()
-    else:
-      core_error = "======= [Core] No call error! "
-      import sys; sys.stderr.write(f"{core_error}\n"); sys.stderr.flush()
+      raise InternalError("Error in grpc_server_request_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
     return c_call_error
 
   def register_completion_queue(
@@ -132,20 +129,11 @@ cdef class Server:
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
-  def register_method(self, str fully_qualified_method, bint request_streaming):
+  def register_method(self, str fully_qualified_method):
     method_bytes = str_to_bytes(fully_qualified_method)
-    self.references.append(method_bytes)
-    # if request_streaming:
-    # payload_handling = GRPC_SRM_PAYLOAD_NONE
-    # else:
-      # payload_handling = GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
-    # self.references.append(payload_handling)
-    # Note that in generated stubs method is not bound to any host, we set the
-    # third-to-last parameter of grpc_server_register_method to a fixed
-    # NULL value.
-
+    # self.references.append(method_bytes)
     cdef RegisteredMethod registered_method = RegisteredMethod(method_bytes, <uintptr_t>self.c_server)
-    cpython.Py_INCREF(registered_method)
+    # cpython.Py_INCREF(registered_method)
     # registered_method.register()
     # self.method = method
     # cpython.Py_INCREF(method)
@@ -157,7 +145,7 @@ cdef class Server:
     # else:
     #   self.references.append(c_registered_method_tag)
     #   import sys; sys.stderr.write(f"======= grpc_server_register_method returned {<uintptr_t>c_registered_method_tag}\n"); sys.stderr.flush()
-    import sys; sys.stderr.write(f"======= [Cy] Saving method: {method_bytes} with tag: {registered_method.registered_method_tag} to self.registered_methods\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= [Cy] Saving method: {method_bytes} with tag: {registered_method.registered_method_tag} to self.registered_methods\n"); sys.stderr.flush()
     self.registered_methods[method_bytes] = registered_method
 
   def start(self, backup_queue=True):

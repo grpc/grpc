@@ -303,7 +303,6 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         registered_method = False
         encoded_method = method.encode("utf8")
         if encoded_method in self._registered_method:
-            print(f">>>>After method.encode: {encoded_method}")
             registered_method = True
         _cyobservability._record_rpc_latency(
             self.exporter, method, target, rpc_latency, status_code, registered_method

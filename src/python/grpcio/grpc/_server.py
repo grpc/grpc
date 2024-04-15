@@ -57,7 +57,6 @@ _LOGGER = logging.getLogger(__name__)
 
 _SHUTDOWN_TAG = "shutdown"
 _REQUEST_CALL_TAG = "request_call"
-_REQUEST_REGISTERED_CALL_TAG = "request_registered_call"
 
 _RECEIVE_CLOSE_ON_SERVER_TOKEN = "receive_close_on_server"
 _SEND_INITIAL_METADATA_TOKEN = "send_initial_metadata"
@@ -942,8 +941,8 @@ def _find_method_handler(
     def query_handlers(
         handler_call_details: _HandlerCallDetails,
     ) -> Optional[grpc.RpcMethodHandler]:
-        import sys; sys.stderr.write(f"======= [Py] Query handler for {registered_method_name} in {registered_method_handlers.keys()}\n"); sys.stderr.flush()
-        if registered_method_name:
+        # import sys; sys.stderr.write(f"======= [Py] Query handler for {registered_method_name} in {registered_method_handlers.keys()}\n"); sys.stderr.flush()
+        if registered_method_name in registered_method_handlers.keys():
             return registered_method_handlers[registered_method_name]
         for generic_handler in generic_handlers:
             method_handler = generic_handler.service(handler_call_details)
@@ -1029,8 +1028,8 @@ def _handle_call(
 ) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
     if not rpc_event.success:
         return None, None
-    if rpc_event.call_details.method is not None or registered_method_name:
-        import sys; sys.stderr.write(f"======= [Py] _handle_call for call_details.method: {rpc_event.call_details.method}, registered_method_name: {registered_method_name}\n"); sys.stderr.flush()
+    if rpc_event.call_details.method or registered_method_name:
+        # import sys; sys.stderr.write(f"======= [Py] _handle_call for call_details.method: {rpc_event.call_details.method}, registered_method_name: {registered_method_name}\n"); sys.stderr.flush()
         rpc_state = _RPCState()
         try:
             method_handler = _find_method_handler(
@@ -1162,8 +1161,10 @@ def _request_call(state: _ServerState) -> None:
     state.server.request_call(
         state.completion_queue, state.completion_queue, _REQUEST_CALL_TAG
     )
-    import sys; sys.stderr.write(f"======= [Py] After cy_server.request_call\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= [Py] After cy_server.request_call\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= [Py] Adding {_REQUEST_CALL_TAG} to due\n"); sys.stderr.flush()
     state.due.add(_REQUEST_CALL_TAG)
+    # import sys; sys.stderr.write(f"  ======= [Py] current due: {state.due}\n"); sys.stderr.flush()
 
  
 def _request_registered_call(state: _ServerState, method: str) -> None:
@@ -1171,8 +1172,10 @@ def _request_registered_call(state: _ServerState, method: str) -> None:
     state.server.request_registered_call(
         state.completion_queue, state.completion_queue, method, call_tag
     )
-    import sys; sys.stderr.write(f"======= [Py] After cy_server.request_registered_call\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= [Py] After cy_server.request_registered_call\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= [Py] Adding {call_tag} to due\n"); sys.stderr.flush()
     state.due.add(call_tag)
+    # import sys; sys.stderr.write(f"  ======= [Py] current due: {state.due}\n"); sys.stderr.flush()
 
 
 # TODO(https://github.com/grpc/grpc/issues/6597): delete this function.
@@ -1195,7 +1198,7 @@ def _on_call_completed(state: _ServerState) -> None:
 def _process_event_and_continue(
     state: _ServerState, event: cygrpc.BaseEvent
 ) -> bool:
-    import sys; sys.stderr.write(f"======= _process_event_and_continue for tag {event.tag}\n"); sys.stderr.flush()
+    # import sys; sys.stderr.write(f"======= _process_event_and_continue for tag {event.tag}\n"); sys.stderr.flush()
     should_continue = True
     if event.tag is _SHUTDOWN_TAG:
         with state.lock:
@@ -1207,7 +1210,8 @@ def _process_event_and_continue(
         if event.tag in state.registered_method_handlers.keys():
             registered_method_name = event.tag
         with state.lock:
-            state.due.remove(_REQUEST_CALL_TAG)
+            # import sys; sys.stderr.write(f"======= try removing {event.tag} from due {state.due}\n"); sys.stderr.flush()
+            state.due.remove(event.tag)
             concurrency_exceeded = (
                 state.maximum_concurrent_rpcs is not None
                 and state.active_rpc_count >= state.maximum_concurrent_rpcs
@@ -1229,13 +1233,12 @@ def _process_event_and_continue(
                     lambda unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
-                method = _common.decode(event.call_details.method)
-                import sys; sys.stderr.write(f"======= [Py] checking if {method} in registered methods: {state.registered_method_handlers.keys()}\n"); sys.stderr.flush()
-                if method in state.registered_method_handlers.keys():
-                    import sys; sys.stderr.write(f"======= [Py] _request_registered_call for {method}\n"); sys.stderr.flush()
-                    _request_registered_call(state, method)
+                # import sys; sys.stderr.write(f"======= [Py] checking if {registered_method_name} in registered methods: {state.registered_method_handlers.keys()}\n"); sys.stderr.flush()
+                if registered_method_name in state.registered_method_handlers.keys():
+                    # import sys; sys.stderr.write(f"======= [Py] _request_registered_call for {registered_method_name}\n"); sys.stderr.flush()
+                    _request_registered_call(state, registered_method_name)
                 else:
-                    import sys; sys.stderr.write(f"======= [Py] _request_call for {method}\n"); sys.stderr.flush()
+                    # import sys; sys.stderr.write(f"======= [Py] _request_call for _request_call\n"); sys.stderr.flush()
                     _request_call(state)
             elif _stop_serving(state):
                 should_continue = False
@@ -1260,16 +1263,15 @@ def _serve(state: _ServerState) -> None:
         event = state.completion_queue.poll(timeout)
         if state.server_deallocated:
             _begin_shutdown_once(state)
-        import sys; sys.stderr.write(f"======= _serve received an event\n"); sys.stderr.flush()
+        # import sys; sys.stderr.write(f"======= _serve received an event\n"); sys.stderr.flush()
         if event.completion_type != cygrpc.CompletionType.queue_timeout:
-            import sys; sys.stderr.write(f"  calling _process_event_and_continue\n"); sys.stderr.flush()
+            # import sys; sys.stderr.write(f"  calling _process_event_and_continue\n"); sys.stderr.flush()
             if not _process_event_and_continue(state, event):
                 return
         # We want to force the deletion of the previous event
         # ~before~ we poll again; if the event has a reference
         # to a shutdown Call object, this can induce spinlock.
         event = None
-
 
 def _begin_shutdown_once(state: _ServerState) -> None:
     with state.lock:
@@ -1311,13 +1313,13 @@ def _start(state: _ServerState) -> None:
             raise ValueError("Cannot start already-started server!")
         state.server.start()
         state.stage = _ServerStage.STARTED
-        import sys; sys.stderr.write(f"======= [Py] _start with state.registered_method_handlers.keys: {state.registered_method_handlers.keys()}\n"); sys.stderr.flush()
+        # import sys; sys.stderr.write(f"======= [Py] server._start with state.registered_method_handlers.keys: {state.registered_method_handlers.keys()}\n"); sys.stderr.flush()
         for method in state.registered_method_handlers.keys():
-            import sys; sys.stderr.write(f"======= [Py] _request_registered_call in _start for {method}\n"); sys.stderr.flush()
+            # import sys; sys.stderr.write(f"======= [Py] _request_registered_call in _start for {method}\n"); sys.stderr.flush()
             _request_registered_call(state, method)
-        else:
-            import sys; sys.stderr.write(f"======= [Py] _request_call in _start\n"); sys.stderr.flush()
-            _request_call(state)
+        # else:
+        # import sys; sys.stderr.write(f"======= [Py] _request_call in _start\n"); sys.stderr.flush()
+        _request_call(state)
         thread = threading.Thread(target=_serve, args=(state,))
         thread.daemon = True
         thread.start()
@@ -1387,13 +1389,12 @@ class _Server(grpc.Server):
         _add_registered_method_handlers(self._state, method_handlers)
 
     def register_methods(self, service_name: str, rpc_method_handlers: Dict[str, grpc.RpcMethodHandler]):
-        for method, method_handler in rpc_method_handlers.items():
+        for method, unused_method_handler in rpc_method_handlers.items():
             fully_qualified_method = _common.fully_qualified_method(service_name, method)
-            import sys; sys.stderr.write(f"========register_method with fully_qualified_method: {fully_qualified_method}\n"); sys.stderr.flush()
+            # import sys; sys.stderr.write(f"========register_method with fully_qualified_method: {fully_qualified_method}\n"); sys.stderr.flush()
             # import sys; sys.stderr.write(f"\n========register_method with request_streaming: {method_handler.request_streaming}\n"); sys.stderr.flush()
             # import sys; sys.stderr.write(f"\n========register_method with address: {method_handler.response_streaming}\n"); sys.stderr.flush()
-            self._cy_server.register_method(fully_qualified_method,
-                                            method_handler.request_streaming)
+            self._cy_server.register_method(fully_qualified_method)
             # self._state.registered_methods.append(fully_qualified_method)
 
     def add_insecure_port(self, address: str) -> int:

@@ -407,17 +407,17 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             server, port = _test_server.start_server()
             self._server = server
             _test_server.unary_unary_call(port=port, registered_method=True)
-            # _test_server.unary_unary_filtered_call(port=port)
+            _test_server.unary_unary_filtered_call(port=port)
 
-        # self._validate_metrics_exist(self.all_metrics)
-        # self._validate_all_metrics_names(self.all_metrics)
-        # method_values = set()
-        # for label_list in self.all_metrics.values():
-        #     for labels in label_list:
-        #         if GRPC_METHOD_LABEL in labels:
-        #             method_values.add(labels[GRPC_METHOD_LABEL])
-        # self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
-        # self.assertTrue(FILTERED_METHOD_NAME not in method_values)
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+        method_values = set()
+        for label_list in self.all_metrics.values():
+            for labels in label_list:
+                if GRPC_METHOD_LABEL in labels:
+                    method_values.add(labels[GRPC_METHOD_LABEL])
+        self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
+        self.assertTrue(FILTERED_METHOD_NAME not in method_values)
 
     def assert_eventually(
         self,

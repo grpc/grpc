@@ -98,19 +98,14 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 RPC_METHOD_HANDLERS = {
-    # _UNARY_UNARY: _MethodHandler(False, False),
     _UNARY_UNARY_FILTERED: _MethodHandler(False, False),
-    _UNARY_STREAM: _MethodHandler(False, True),
-    _STREAM_UNARY: _MethodHandler(True, False),
-    _STREAM_STREAM: _MethodHandler(True, True),
 }
 
 REGISTERED_RPC_METHOD_HANDLERS = {
     _UNARY_UNARY: _MethodHandler(False, False),
-    # _UNARY_UNARY_FILTERED: _MethodHandler(False, False),
-    # _UNARY_STREAM: _MethodHandler(False, True),
-    # _STREAM_UNARY: _MethodHandler(True, False),
-    # _STREAM_STREAM: _MethodHandler(True, True),
+    _UNARY_STREAM: _MethodHandler(False, True),
+    _STREAM_UNARY: _MethodHandler(True, False),
+    _STREAM_STREAM: _MethodHandler(True, True),
 }
 
 def start_server(interceptors=None) -> Tuple[grpc.Server, int]:
@@ -121,7 +116,6 @@ def start_server(interceptors=None) -> Tuple[grpc.Server, int]:
         )
     else:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    # server.add_generic_rpc_handlers((_GenericHandler(),))
     generic_handler = grpc.method_handlers_generic_handler(
             SERVICE_NAME, RPC_METHOD_HANDLERS)
     server.add_generic_rpc_handlers((generic_handler,))

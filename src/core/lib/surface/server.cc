@@ -994,13 +994,6 @@ Server::RegisteredMethod* Server::RegisterMethod(
     return nullptr;
   }
 
-  if (payload_handling == GRPC_SRM_PAYLOAD_NONE) {
-    std::cout << ">>>> [Core] RegisterMethod payload_handling == GRPC_SRM_PAYLOAD_NONE " << std::endl;
-  }
-  if (payload_handling== GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER) {
-    std::cout << ">>>> [Core] RegisterMethod payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER" << std::endl;
-  }
-
   auto it = registered_methods_.emplace(
       key, std::make_unique<RegisteredMethod>(method, host, payload_handling,
                                               flags));
@@ -1182,21 +1175,6 @@ grpc_call_error Server::ValidateServerRequest(
   if ((rm == nullptr && optional_payload != nullptr) ||
       ((rm != nullptr) && ((optional_payload == nullptr) !=
                            (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)))) {
-    if (rm != nullptr) {
-      std::cout << rm->method << std::endl;
-    } else {
-      std::cout << ">>>> [Core] ValidateServerRequest for Null" << std::endl;
-    }
-
-    if (optional_payload == nullptr) {
-      std::cout << ">>>> [Core] ValidateServerRequest optional_payload == nullptr " << std::endl;
-    }
-    if (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE) {
-      std::cout << ">>>> ValidateServerRequest payload_handling == GRPC_SRM_PAYLOAD_NONE " << std::endl;
-    }
-    if (rm->payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER) {
-      std::cout << ">>>> ValidateServerRequest payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER " << std::endl;
-    }
     return GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
   }
   if (!grpc_cq_begin_op(cq_for_notification, tag)) {
@@ -1234,11 +1212,9 @@ grpc_call_error Server::QueueRequestedCall(size_t cq_idx, RequestedCall* rc) {
   RequestMatcherInterface* rm;
   switch (rc->type) {
     case RequestedCall::Type::BATCH_CALL:
-      std::cout << ">>>> [Core] RequestedCall::Type::BATCH_CALL " << std::endl;
       rm = unregistered_request_matcher_.get();
       break;
     case RequestedCall::Type::REGISTERED_CALL:
-      std::cout << ">>>> [Core] RequestedCall::Type::REGISTERED_CALL " << std::endl;
       rm = rc->data.registered.method->matcher.get();
       break;
   }
@@ -1408,7 +1384,7 @@ void Server::ChannelData::SetRegisteredMethodOnMetadata(
   RegisteredMethod* method =
       GetRegisteredMethod(authority->as_string_view(), path->as_string_view());
   // insert in metadata
-  std::cout << ">>>> [Server] set GetRegisteredMethod with authority " << authority->as_string_view() << " path: " << path->as_string_view() << std::endl;
+  // std::cout << ">>>> [Server] set GetRegisteredMethod with authority " << authority->as_string_view() << " path: " << path->as_string_view() << std::endl;
   metadata.Set(GrpcRegisteredMethod(), method);
 }
 
@@ -1958,10 +1934,10 @@ void* grpc_server_register_method(
       4, (server, method, host, flags));
   void* res = grpc_core::Server::FromC(server)->RegisterMethod(
       method, host, payload_handling, flags);
-  std::cout << ">>>> [Core] grpc_server_register_method returned with " << reinterpret_cast<uintptr_t>(res) << std::endl;
+  // std::cout << ">>>> [Core] grpc_server_register_method returned with " << reinterpret_cast<uintptr_t>(res) << std::endl;
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(res);
-  std::cout << "  >>>> Method:" << rm->method << " Host:" << rm->host << " Payload:" << rm->payload_handling << std::endl;
+  // std::cout << "  >>>> Method:" << rm->method << " Host:" << rm->host << " Payload:" << rm->payload_handling << std::endl;
   return res;
 }
 
@@ -2023,11 +1999,11 @@ grpc_call_error grpc_server_request_registered_call(
   grpc_core::ExecCtx exec_ctx;
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
-  if (rm != nullptr) {
-    std::cout << ">>>> [Core] grpc_server_request_registered_call found rm with method: " << rm->method << "host: " << rm->host << std::endl;
-  } else {
-    std::cout << ">>>> [Core] grpc_server_request_registered_call found Null rm!" << std::endl;
-  }
+  // if (rm != nullptr) {
+  //   std::cout << ">>>> [Core] grpc_server_request_registered_call found rm with method: " << rm->method << "host: " << rm->host << std::endl;
+  // } else {
+  //   std::cout << ">>>> [Core] grpc_server_request_registered_call found Null rm!" << std::endl;
+  // }
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
       "server=%p, registered_method=%p, call=%p, deadline=%p, "

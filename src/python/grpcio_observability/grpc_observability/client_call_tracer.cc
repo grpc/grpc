@@ -177,7 +177,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   bool c_registered_method_ =
       send_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
           .value_or(nullptr) != nullptr;
-  std::cout << ">>>> Client registered_method_ MD: " << c_registered_method_ << std::endl;
+  // std::cout << ">>>> Client registered_method_ MD: " << c_registered_method_ << std::endl;
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
