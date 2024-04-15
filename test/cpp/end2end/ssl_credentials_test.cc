@@ -87,14 +87,11 @@ std::size_t GetSessionCacheSize(grpc_ssl_session_cache* cache) {
   return tsi_ssl_session_cache_size(tsi_cache);
 }
 
-void SetTlsVersion(grpc_tls_version tls_version, ChannelCredentials* creds) {
-  grpc_channel_credentials* secure_creds =
-      reinterpret_cast<SecureChannelCredentials*>(creds)->GetRawCreds();
-  grpc_ssl_credentials* ssl_creds =
-      reinterpret_cast<grpc_ssl_credentials*>(secure_creds);
-  ssl_creds->set_min_tls_version(tls_version);
-  ssl_creds->set_max_tls_version(tls_version);
-}
+class WrappedChannelCredentials final : public ChannelCredentials {
+ public:
+  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds)
+      : ChannelCredentials(c_creds) {}
+};
 
 struct SslOptions {
   grpc_ssl_client_certificate_request_type request_type =
@@ -133,7 +130,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
   }
 
   absl::StatusOr<std::shared_ptr<const AuthContext>> DoRpc(
-      const SslCredentialsOptions& ssl_options, grpc_ssl_session_cache* cache,
+      const SslCredentialsOptions& options, grpc_ssl_session_cache* cache,
       bool override_ssl_target_name = true) {
     ChannelArguments channel_args;
     if (GetParam().use_session_cache) {
@@ -143,8 +140,18 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
       channel_args.SetSslTargetNameOverride("foo.test.google.fr");
     }
 
-    auto creds = grpc::SslCredentials(ssl_options);
-    SetTlsVersion(GetParam().tls_version, creds.get());
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
+        options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
+    grpc_channel_credentials* c_creds = grpc_ssl_credentials_create(
+        options.pem_root_certs.empty() ? nullptr
+                                       : options.pem_root_certs.c_str(),
+        options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
+        nullptr);
+    grpc_ssl_credentials* ssl_creds =
+        reinterpret_cast<grpc_ssl_credentials*>(c_creds);
+    ssl_creds->set_min_tls_version(GetParam().tls_version);
+    ssl_creds->set_max_tls_version(GetParam().tls_version);
+    auto creds = std::make_shared<WrappedChannelCredentials>(ssl_creds);
     std::shared_ptr<Channel> channel =
         grpc::CreateCustomChannel(server_addr_, creds, channel_args);
 
