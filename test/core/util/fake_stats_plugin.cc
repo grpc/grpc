@@ -43,7 +43,7 @@ absl::StatusOr<FakeStatsClientFilter> FakeStatsClientFilter::Create(
   auto* fake_client_call_tracer_factory =
       args.GetPointer<FakeClientCallTracerFactory>(
           GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY);
-  GPR_ASSERT(fake_client_call_tracer_factory != nullptr);
+  CHECK_NE(fake_client_call_tracer_factory, nullptr);
   return FakeStatsClientFilter(fake_client_call_tracer_factory);
 }
 
@@ -84,7 +84,7 @@ namespace {
 void AddKeyValuePairs(absl::Span<const absl::string_view> keys,
                       absl::Span<const absl::string_view> values,
                       std::vector<std::string>* key_value_pairs) {
-  GPR_ASSERT(keys.size() == values.size());
+  CHECK(keys.size() == values.size());
   for (size_t i = 0; i < keys.size(); ++i) {
     key_value_pairs->push_back(absl::StrCat(keys[i], "=", values[i]));
   }

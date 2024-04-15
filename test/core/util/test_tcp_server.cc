@@ -82,11 +82,11 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
       &server->shutdown_complete,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args),
       server->on_connect, server->cb_data, &server->tcp_server);
-  GPR_ASSERT(error.ok());
+  CHECK_OK(error);
   error =
       grpc_tcp_server_add_port(server->tcp_server, &resolved_addr, &port_added);
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(port_added == port);
+  CHECK_OK(error);
+  CHECK(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset);
   gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);

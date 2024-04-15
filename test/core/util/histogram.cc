@@ -63,7 +63,7 @@ static size_t bucket_for_unchecked(grpc_histogram* h, double x) {
 static size_t bucket_for(grpc_histogram* h, double x) {
   size_t bucket =
       bucket_for_unchecked(h, grpc_core::Clamp(x, 1.0, h->max_possible));
-  GPR_ASSERT(bucket < h->num_buckets);
+  CHECK(bucket < h->num_buckets);
   return bucket;
 }
 
@@ -76,8 +76,8 @@ grpc_histogram* grpc_histogram_create(double resolution,
                                       double max_bucket_start) {
   grpc_histogram* h =
       static_cast<grpc_histogram*>(gpr_malloc(sizeof(grpc_histogram)));
-  GPR_ASSERT(resolution > 0.0);
-  GPR_ASSERT(max_bucket_start > resolution);
+  CHECK(resolution > 0.0);
+  CHECK(max_bucket_start > resolution);
   h->sum = 0.0;
   h->sum_of_squares = 0.0;
   h->multiplier = 1.0 + resolution;
@@ -87,8 +87,8 @@ grpc_histogram* grpc_histogram_create(double resolution,
   h->min_seen = max_bucket_start;
   h->max_seen = 0.0;
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
-  GPR_ASSERT(h->num_buckets > 1);
-  GPR_ASSERT(h->num_buckets < 100000000);
+  CHECK_GT(h->num_buckets, 1);
+  CHECK(h->num_buckets < 100000000);
   h->buckets =
       static_cast<uint32_t*>(gpr_zalloc(sizeof(uint32_t) * h->num_buckets));
   return h;
@@ -129,7 +129,7 @@ void grpc_histogram_merge_contents(grpc_histogram* histogram,
                                    double min_seen, double max_seen, double sum,
                                    double sum_of_squares, double count) {
   size_t i;
-  GPR_ASSERT(histogram->num_buckets == data_count);
+  CHECK(histogram->num_buckets == data_count);
   histogram->sum += sum;
   histogram->sum_of_squares += sum_of_squares;
   histogram->count += count;
@@ -198,7 +198,7 @@ double grpc_histogram_percentile(grpc_histogram* h, double percentile) {
 }
 
 double grpc_histogram_mean(grpc_histogram* h) {
-  GPR_ASSERT(h->count != 0);
+  CHECK_NE(h->count, 0);
   return h->sum / h->count;
 }
 
