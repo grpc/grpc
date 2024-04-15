@@ -129,7 +129,7 @@ class Verifier {
   // This version of Verify allows optionally ignoring the
   // outcome of the expectation
   void Verify(CompletionQueue* cq, bool ignore_ok) {
-    CHECK(!expectations_.empty() || !maybe_expectations_.empty());
+    CHECK_DONT(!expectations_.empty() || !maybe_expectations_.empty());
     while (!expectations_.empty()) {
       Next(cq, ignore_ok);
     }
@@ -1477,7 +1477,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // just added
       int got_tag = verif.Expect(tag_idx, expected_server_cq_result)
                         .Next(cq_.get(), ignore_cq_result);
-      CHECK((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
+      CHECK_DONT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
       if (got_tag == 11) {
         EXPECT_TRUE(srv_ctx.IsCancelled());
         want_done_tag = false;
@@ -1627,7 +1627,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       // just added
       int got_tag = verif.Expect(tag_idx, expected_cq_result)
                         .Next(cq_.get(), ignore_cq_result);
-      CHECK((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
+      CHECK_DONT((got_tag == tag_idx) || (got_tag == 11 && want_done_tag));
       if (got_tag == 11) {
         EXPECT_TRUE(srv_ctx.IsCancelled());
         want_done_tag = false;
@@ -1739,7 +1739,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
       do {
         got_tag = verif.Next(cq_.get(), ignore_cq_result);
-        CHECK(((got_tag == 3) && !tag_3_done) || (got_tag == 11));
+        CHECK_DONT(((got_tag == 3) && !tag_3_done) || (got_tag == 11));
         if (got_tag == 3) {
           tag_3_done = true;
         }
@@ -1767,7 +1767,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(4, expected_cq_result);
     got_tag = tag_3_done ? 3 : verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
-    CHECK((got_tag == 3) || (got_tag == 4) || (got_tag == 11 && want_done_tag));
+    CHECK_DONT((got_tag == 3) || (got_tag == 4) || (got_tag == 11 && want_done_tag));
     CHECK((got_tag2 == 3) || (got_tag2 == 4) ||
           (got_tag2 == 11 && want_done_tag));
     // If we get 3 and 4, we don't need to wait for 11, but if
@@ -1776,7 +1776,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
       got_tag = verif.Next(cq_.get(), ignore_cq_result);
-      CHECK((got_tag == 3) || (got_tag == 4));
+      CHECK_DONT((got_tag == 3) || (got_tag == 4));
     }
 
     send_response.set_message("Pong");
@@ -1787,7 +1787,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     verif.Expect(6, expected_cq_result);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
     got_tag2 = verif.Next(cq_.get(), ignore_cq_result);
-    CHECK((got_tag == 5) || (got_tag == 6) || (got_tag == 11 && want_done_tag));
+    CHECK_DONT((got_tag == 5) || (got_tag == 6) || (got_tag == 11 && want_done_tag));
     CHECK((got_tag2 == 5) || (got_tag2 == 6) ||
           (got_tag2 == 11 && want_done_tag));
     // If we get 5 and 6, we don't need to wait for 11, but if
@@ -1796,7 +1796,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
       got_tag = verif.Next(cq_.get(), ignore_cq_result);
-      CHECK((got_tag == 5) || (got_tag == 6));
+      CHECK_DONT((got_tag == 5) || (got_tag == 6));
     }
 
     // This is expected to succeed in all cases
@@ -1807,7 +1807,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     bool ignore_cq_wd_result =
         ignore_cq_result || (server_try_cancel == CANCEL_BEFORE_PROCESSING);
     got_tag = verif.Next(cq_.get(), ignore_cq_wd_result);
-    CHECK((got_tag == 7) || (got_tag == 11 && want_done_tag));
+    CHECK_DONT((got_tag == 7) || (got_tag == 11 && want_done_tag));
     if (got_tag == 11) {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;
@@ -1822,7 +1822,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     srv_stream.Read(&recv_request, tag(8));
     verif.Expect(8, false);
     got_tag = verif.Next(cq_.get(), ignore_cq_result);
-    CHECK((got_tag == 8) || (got_tag == 11 && want_done_tag));
+    CHECK_DONT((got_tag == 8) || (got_tag == 11 && want_done_tag));
     if (got_tag == 11) {
       EXPECT_TRUE(srv_ctx.IsCancelled());
       want_done_tag = false;

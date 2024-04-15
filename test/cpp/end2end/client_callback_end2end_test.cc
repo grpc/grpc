@@ -197,7 +197,7 @@ class ClientCallbackEnd2endTest
           &cli_ctx, &request, &response,
           [&cli_ctx, &request, &response, &done, &mu, &cv, val,
            with_binary_metadata](Status s) {
-            CHECK(s.ok());
+            CHECK_OK(s);
 
             EXPECT_EQ(request.message(), response.message());
             if (with_binary_metadata) {
@@ -239,7 +239,7 @@ class ClientCallbackEnd2endTest
       generic_stub_->UnaryCall(
           &cli_ctx, kMethodName, options, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
-            CHECK(s.ok());
+            CHECK_OK(s);
 
             EchoResponse response;
             EXPECT_TRUE(ParseFromByteBuffer(&recv_buf, &response));
@@ -487,7 +487,7 @@ TEST_P(ClientCallbackEnd2endTest, SendClientInitialMetadata) {
   bool done = false;
   stub_->async()->CheckClientInitialMetadata(
       &cli_ctx, &request, &response, [&done, &mu, &cv](Status s) {
-        CHECK(s.ok());
+        CHECK_OK(s);
 
         std::lock_guard<std::mutex> l(mu);
         done = true;
