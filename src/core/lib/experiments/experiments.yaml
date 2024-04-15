@@ -101,7 +101,7 @@
 - name: http2_stats_fix
   description:
     Fix on HTTP2 outgoing data stats reporting
-  expiry: 2024/03/31
+  expiry: 2024/09/30
   owner: yashkt@google.com
   test_tags: []
 - name: keepalive_fix
