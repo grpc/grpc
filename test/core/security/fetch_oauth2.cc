@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
         "Missing --gce, --json_sts_options, or --json_refresh_token option.");
     exit(1);
   }
-  GPR_ASSERT(creds != nullptr);
+  CHECK_NE(creds, nullptr);
 
   token = grpc_test_fetch_oauth2_token_with_credentials(creds);
   if (token != nullptr) {
