@@ -50,10 +50,8 @@ namespace {
 
 class ServerConfigSelectorFilter final
     : public ImplementChannelFilter<ServerConfigSelectorFilter>,
-      public RefCounted<ServerConfigSelectorFilter> {
+      public InternallyRefCounted<ServerConfigSelectorFilter> {
  public:
-  ~ServerConfigSelectorFilter() override;
-
   explicit ServerConfigSelectorFilter(
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider);
@@ -62,8 +60,10 @@ class ServerConfigSelectorFilter final
   ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
       delete;
 
-  static absl::StatusOr<RefCountedPtr<ServerConfigSelectorFilter>> Create(
+  static absl::StatusOr<OrphanablePtr<ServerConfigSelectorFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
+
+  void Orphan() override;
 
   class Call {
    public:
@@ -104,7 +104,7 @@ class ServerConfigSelectorFilter final
       config_selector_ ABSL_GUARDED_BY(mu_);
 };
 
-absl::StatusOr<RefCountedPtr<ServerConfigSelectorFilter>>
+absl::StatusOr<OrphanablePtr<ServerConfigSelectorFilter>>
 ServerConfigSelectorFilter::Create(const ChannelArgs& args,
                                    ChannelFilter::Args) {
   ServerConfigSelectorProvider* server_config_selector_provider =
@@ -112,7 +112,7 @@ ServerConfigSelectorFilter::Create(const ChannelArgs& args,
   if (server_config_selector_provider == nullptr) {
     return absl::UnknownError("No ServerConfigSelectorProvider object found");
   }
-  return MakeRefCounted<ServerConfigSelectorFilter>(
+  return MakeOrphanable<ServerConfigSelectorFilter>(
       server_config_selector_provider->Ref());
 }
 
@@ -132,10 +132,11 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
   }
 }
 
-ServerConfigSelectorFilter::~ServerConfigSelectorFilter() {
+void ServerConfigSelectorFilter::Orphan() {
   if (server_config_selector_provider_ != nullptr) {
     server_config_selector_provider_->CancelWatch();
   }
+  Unref();
 }
 
 absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
