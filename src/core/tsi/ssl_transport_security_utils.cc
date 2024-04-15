@@ -18,9 +18,14 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
+#include <openssl/bio.h>
 #include <openssl/crypto.h>
+#include <openssl/ec_key.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
 #include "absl/status/status.h"
@@ -372,6 +377,78 @@ absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
+}
+
+bool IsPemCertificateChainNonEmptyAndValid(absl::string_view cert_chain_pem) {
+  if (cert_chain_pem.empty()) {
+    return false;
+  }
+  BIO* in = BIO_new_mem_buf(cert_chain_pem.data(), cert_chain_pem.size());
+  if (in == nullptr) {
+    return false;
+  }
+  uint8_t* cert_data = nullptr;
+  long cert_length = 0;
+  size_t number_of_valid_certs = 0;
+  while (PEM_bytes_read_bio(&cert_data, &cert_length, /*pnm=*/nullptr,
+                            PEM_STRING_X509, in, /*cb=*/nullptr,
+                            /*u=*/nullptr)) {
+    // Try to form the X.509 object from the DER-encoding.
+    const uint8_t* der = cert_data;
+    X509* x509 = d2i_X509(/*out=*/nullptr, &der, cert_length);
+    if (x509 == nullptr) {
+      BIO_free(in);
+      return false;
+    }
+    X509_free(x509);
+    number_of_valid_certs++;
+  }
+  // We always have errors at this point because in the above loop we read until
+  // we reach the end of |cert_chain_pem|, which generates a "no start line"
+  // error. Therefore, this error is OK if we have successfully parsed some
+  // certificate data previously.
+  const int last_error = ERR_peek_last_error();
+  if (ERR_GET_LIB(last_error) != ERR_LIB_PEM ||
+      ERR_GET_REASON(last_error) != PEM_R_NO_START_LINE) {
+    BIO_free(in);
+    return false;
+  }
+  ERR_clear_error();
+  BIO_free(in);
+  return (number_of_valid_certs > 0);
+}
+
+bool IsRsaPrivateKey(absl::string_view private_key_pem) {
+  BIO* in = BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size());
+  if (in == nullptr) {
+    return false;
+  }
+  RSA* rsa = PEM_read_bio_RSAPrivateKey(in, /*x=*/nullptr,
+                                        /*cb=*/nullptr, /*u=*/nullptr);
+  bool is_rsa_private_key = (rsa != nullptr);
+  RSA_free(rsa);
+  BIO_free(in);
+  return is_rsa_private_key;
+}
+
+bool IsEcPrivateKey(absl::string_view private_key_pem) {
+  BIO* in = BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size());
+  if (in == nullptr) {
+    return false;
+  }
+  EC_KEY* ec = PEM_read_bio_ECPrivateKey(in, /*x=*/nullptr,
+                                         /*cb=*/nullptr, /*u=*/nullptr);
+  bool is_ec_private_key = (ec != nullptr);
+  EC_KEY_free(ec);
+  BIO_free(in);
+  return is_ec_private_key;
+}
+
+bool IsPemPrivateKeyNonEmptyAndValid(absl::string_view private_key_pem) {
+  if (private_key_pem.empty()) {
+    return false;
+  }
+  return IsRsaPrivateKey(private_key_pem) || IsEcPrivateKey(private_key_pem);
 }
 
 }  // namespace grpc_core

@@ -168,6 +168,13 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert);
 // crl.
 // return: a std::string of the DER encoding of the AKID or a status on failure.
 absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl);
+
+// Returns true if cert_chain_pem contains a non-empty sequence of PEM
+// certificate blocks.
+bool IsPemCertificateChainNonEmptyAndValid(absl::string_view cert_chain_pem);
+
+// Returns true if private_key_pem contains a non-empty PEM private key block.
+bool IsPemPrivateKeyNonEmptyAndValid(absl::string_view private_key_pem);
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
