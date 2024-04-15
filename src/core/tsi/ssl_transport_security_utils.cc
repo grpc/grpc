@@ -401,6 +401,9 @@ bool IsPemCertificateChainNonEmptyAndValid(absl::string_view cert_chain_pem) {
       return false;
     }
     X509_free(x509);
+    OPENSSL_free(cert_data);
+    cert_data = nullptr;
+    cert_length = 0;
     number_of_valid_certs++;
   }
   // We always have errors at this point because in the above loop we read until
