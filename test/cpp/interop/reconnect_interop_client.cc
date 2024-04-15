@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
   Empty empty_response;
   Status start_status =
       control_stub->Start(&start_context, reconnect_params, &empty_response);
-  CHECK(start_status.ok());
+  CHECK_OK(start_status);
 
   gpr_log(GPR_INFO, "Starting connections with retries.");
   server_address.str("");
@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   ClientContext stop_context;
   ReconnectInfo response;
   Status stop_status = control_stub->Stop(&stop_context, Empty(), &response);
-  CHECK(stop_status.ok());
+  CHECK_OK(stop_status);
   CHECK(response.passed() == true);
   gpr_log(GPR_INFO, "Passed");
   return 0;
