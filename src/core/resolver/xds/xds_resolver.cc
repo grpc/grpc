@@ -321,7 +321,7 @@ class XdsResolver final : public Resolver {
         : filter_args_(filter_args) {}
 
     static absl::StatusOr<std::unique_ptr<ClusterSelectionFilter>> Create(
-        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args = {}) {
+        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args) {
       return std::make_unique<ClusterSelectionFilter>(filter_args);
     }
 

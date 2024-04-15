@@ -37,12 +37,12 @@ class GrpcServerAuthzFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
+
   GrpcServerAuthzFilter(
       RefCountedPtr<grpc_auth_context> auth_context, const ChannelArgs& args,
       RefCountedPtr<grpc_authorization_policy_provider> provider);
-
-  static absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
 
   class Call {
    public:

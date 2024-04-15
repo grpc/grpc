@@ -63,7 +63,7 @@ class ServerConfigSelectorFilter final
       delete;
 
   static absl::StatusOr<RefCountedPtr<ServerConfigSelectorFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args = {});
+      const ChannelArgs& args, ChannelFilter::Args);
 
   class Call {
    public:

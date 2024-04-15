@@ -42,11 +42,11 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   // and enforces the RBAC policy.
   static const grpc_channel_filter kFilterVtable;
 
+  static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
   RbacFilter(size_t index,
              EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
-
-  static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:

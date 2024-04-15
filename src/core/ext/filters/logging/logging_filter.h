@@ -39,11 +39,11 @@ class ClientLoggingFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  explicit ClientLoggingFilter(std::string default_authority)
-      : default_authority_(std::move(default_authority)) {}
-
   static absl::StatusOr<std::unique_ptr<ClientLoggingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
+
+  explicit ClientLoggingFilter(std::string default_authority)
+      : default_authority_(std::move(default_authority)) {}
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(

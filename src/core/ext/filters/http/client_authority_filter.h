@@ -39,11 +39,11 @@ class ClientAuthorityFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
+
   explicit ClientAuthorityFilter(Slice default_authority)
       : default_authority_(std::move(default_authority)) {}
-
-  static absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args = {});
 
   class Call {
    public:

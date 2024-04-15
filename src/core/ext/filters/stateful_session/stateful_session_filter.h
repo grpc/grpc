@@ -74,10 +74,10 @@ class StatefulSessionFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
-
   static absl::StatusOr<std::unique_ptr<StatefulSessionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  explicit StatefulSessionFilter(ChannelFilter::Args filter_args);
 
   class Call {
    public:
