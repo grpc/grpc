@@ -106,6 +106,7 @@ absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
+  if (IsChaoticGoodEnabled()) return;
   builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
       GRPC_SERVER_CHANNEL);
 }
