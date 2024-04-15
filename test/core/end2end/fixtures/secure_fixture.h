@@ -58,7 +58,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeServerCreds(args);
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
     grpc_server_credentials_release(creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -70,7 +70,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeClientCreds(args);
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-    GPR_ASSERT(client != nullptr);
+    CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(creds);
     return client;
   }
