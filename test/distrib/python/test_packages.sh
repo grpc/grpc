@@ -30,8 +30,8 @@ then
   OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.whl)
 else
   echo "Testing Python source distribution"
-  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.tar.gz.tar.gz)
-  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?tools[_-]?[0-9a-z.]*.tar.gz.tar.gz)
+  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.tar.gz)
+  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?tools[_-]?[0-9a-z.]*.tar.gz)
   OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.tar.gz)
 fi
 
