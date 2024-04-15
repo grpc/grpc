@@ -200,22 +200,13 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   GenerateServerContext(
       tracing_enabled ? som.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
-  // auto* s_registered_method_ =
-  //     recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod()).value_or(nullptr);
-  // if (s_registered_method_ != nullptr) {
-  //   std::cout << ">>>> Server registered_method_: " << s_registered_method_ << std::endl;
-  // } else{
-  //   std::cout << ">>>> Server registered_method_ is NULL"<< std::endl;
-  // }
   registered_method_ =
       recv_initial_metadata->get(grpc_core::GrpcRegisteredMethod())
           .value_or(nullptr) != nullptr;
-  // std::cout << ">>>> Server registered_method_: " << registered_method_ << std::endl;
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, registered_method_, context_.Labels());
   }
-  // std::cout << ">>>> Server after RecordReceivedInitialMetadata" << std::endl;
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
@@ -232,7 +223,6 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
           grpc_core::Slice::FromCopiedBuffer(stats_buf_, len));
     }
   }
-  // std::cout << ">>>> Server after RecordSendTrailingMetadata: " << std::endl;
 }
 
 void PythonOpenCensusServerCallTracer::RecordEnd(
@@ -266,7 +256,6 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
 
   // After RecordEnd, Core will make no further usage of this ServerCallTracer,
   // so we are free it here.
-  // std::cout << ">>>> Server after RecordEnd: " << std::endl;
   delete this;
 }
 

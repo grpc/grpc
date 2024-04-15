@@ -43,13 +43,9 @@ cdef class _RequestCallTag(_Tag):
   cdef RequestCallEvent event(self, grpc_event c_event):
     cdef tuple invocation_metadata = _metadata(&self.c_invocation_metadata)
     grpc_metadata_array_destroy(&self.c_invocation_metadata)
-    cdef et = RequestCallEvent(
+    return RequestCallEvent(
         c_event.type, c_event.success, self._user_tag, self.call,
         self.call_details, invocation_metadata)
-    # import sys; sys.stderr.write(f"======= [Cy] RequestCallEvent with call_details and call\n"); sys.stderr.flush()
-    # import sys; sys.stderr.write(f"  ======= call_details.method: {et.call_details.method}\n"); sys.stderr.flush()
-    # import sys; sys.stderr.write(f"  ======= invocation_metadata: {invocation_metadata}\n"); sys.stderr.flush()
-    return et
 
 
 cdef class _BatchOperationTag:

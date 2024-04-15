@@ -303,7 +303,6 @@ cdef void _export_census_data(object exporter):
 cdef void _flush_census_data(object exporter):
   exporter: _observability.Exporter
 
-  # import sys; sys.stderr.write(f"======= start _flush_census_data\n"); sys.stderr.flush()
   lk = new unique_lock[mutex](g_census_data_buffer_mutex)
   if g_census_data_buffer.empty():
     del lk
@@ -326,7 +325,6 @@ cdef void _flush_census_data(object exporter):
   del lk
   exporter.export_stats_data(py_metrics_batch)
   exporter.export_tracing_data(py_spans_batch)
-  # import sys; sys.stderr.write(f"======= finished _flush_census_data\n"); sys.stderr.flush()
 
 
 cdef void _shutdown_exporting_thread():

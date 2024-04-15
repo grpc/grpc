@@ -177,7 +177,7 @@ class ObservabilityPlugin(
           enable: A bool indicates whether stats should be enabled.
         """
         self._stats_enabled = enable
-      
+
     def save_registered_method(self, method_name: bytes):
         self._registered_method.add(method_name)
 

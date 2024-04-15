@@ -2745,7 +2745,6 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
                                   std::move(*args->authority));
     }
-    std::cout << ">>>> Client set send_initial_metadata_ to: " << args->registered_method << std::endl;
     send_initial_metadata_->Set(GrpcRegisteredMethod(),
                                 reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));

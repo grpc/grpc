@@ -1384,7 +1384,6 @@ void Server::ChannelData::SetRegisteredMethodOnMetadata(
   RegisteredMethod* method =
       GetRegisteredMethod(authority->as_string_view(), path->as_string_view());
   // insert in metadata
-  // std::cout << ">>>> [Server] set GetRegisteredMethod with authority " << authority->as_string_view() << " path: " << path->as_string_view() << std::endl;
   metadata.Set(GrpcRegisteredMethod(), method);
 }
 
@@ -1932,13 +1931,8 @@ void* grpc_server_register_method(
       "grpc_server_register_method(server=%p, method=%s, host=%s, "
       "flags=0x%08x)",
       4, (server, method, host, flags));
-  void* res = grpc_core::Server::FromC(server)->RegisterMethod(
+  return grpc_core::Server::FromC(server)->RegisterMethod(
       method, host, payload_handling, flags);
-  // std::cout << ">>>> [Core] grpc_server_register_method returned with " << reinterpret_cast<uintptr_t>(res) << std::endl;
-  auto* rm =
-      static_cast<grpc_core::Server::RegisteredMethod*>(res);
-  // std::cout << "  >>>> Method:" << rm->method << " Host:" << rm->host << " Payload:" << rm->payload_handling << std::endl;
-  return res;
 }
 
 void grpc_server_start(grpc_server* server) {
@@ -1999,11 +1993,6 @@ grpc_call_error grpc_server_request_registered_call(
   grpc_core::ExecCtx exec_ctx;
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
-  // if (rm != nullptr) {
-  //   std::cout << ">>>> [Core] grpc_server_request_registered_call found rm with method: " << rm->method << "host: " << rm->host << std::endl;
-  // } else {
-  //   std::cout << ">>>> [Core] grpc_server_request_registered_call found Null rm!" << std::endl;
-  // }
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
       "server=%p, registered_method=%p, call=%p, deadline=%p, "

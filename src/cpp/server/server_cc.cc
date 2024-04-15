@@ -1054,7 +1054,6 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
       continue;
     }
 
-    std::cout << ">>>> [Server] grpc_server_register_method with " << method->name() << std::endl;
     void* method_registration_tag = grpc_server_register_method(
         server_, method->name(), addr ? addr->c_str() : nullptr,
         PayloadHandlingForMethod(method.get()), 0);
