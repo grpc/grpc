@@ -16,12 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this

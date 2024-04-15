@@ -91,26 +91,22 @@ class FakeClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> labels) override {
-      optional_labels_.emplace(component, std::move(labels));
+    void SetOptionalLabel(OptionalLabelKey key,
+                          RefCountedStringValue value) override {
+      optional_labels_.emplace(key, std::move(value));
     }
     std::string TraceId() override { return ""; }
     std::string SpanId() override { return ""; }
     bool IsSampled() override { return false; }
 
-    const std::map<OptionalLabelComponent,
-                   std::shared_ptr<std::map<std::string, std::string>>>&
-    GetOptionalLabels() const {
+    const std::map<OptionalLabelKey, RefCountedStringValue>& GetOptionalLabels()
+        const {
       return optional_labels_;
     }
 
    private:
     std::vector<std::string>* annotation_logger_;
-    std::map<OptionalLabelComponent,
-             std::shared_ptr<std::map<std::string, std::string>>>
-        optional_labels_;
+    std::map<OptionalLabelKey, RefCountedStringValue> optional_labels_;
   };
 
   explicit FakeClientCallTracer(std::vector<std::string>* annotation_logger)
@@ -243,16 +239,6 @@ class FakeStatsPlugin : public StatsPlugin {
               }
               break;
             }
-            case GlobalInstrumentsRegistry::InstrumentType::kGauge: {
-              MutexLock lock(&mu_);
-              if (descriptor.value_type ==
-                  GlobalInstrumentsRegistry::ValueType::kInt64) {
-                int64_gauges_.emplace(descriptor.index, descriptor);
-              } else {
-                double_gauges_.emplace(descriptor.index, descriptor);
-              }
-              break;
-            }
             case GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge: {
               MutexLock lock(&callback_mu_);
               if (descriptor.value_type ==
@@ -351,34 +337,6 @@ class FakeStatsPlugin : public StatsPlugin {
     if (iter == double_histograms_.end()) return;
     iter->second.Record(value, label_values, optional_values);
   }
-  void SetGauge(GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
-                int64_t value, absl::Span<const absl::string_view> label_values,
-                absl::Span<const absl::string_view> optional_values) override {
-    gpr_log(GPR_INFO,
-            "FakeStatsPlugin[%p]::RecordGauge(index=%u, value=(uint64)%lu, "
-            "label_values={%s}, optional_label_values={%s}",
-            this, handle.index, value,
-            absl::StrJoin(label_values, ", ").c_str(),
-            absl::StrJoin(optional_values, ", ").c_str());
-    MutexLock lock(&mu_);
-    auto iter = int64_gauges_.find(handle.index);
-    if (iter == int64_gauges_.end()) return;
-    iter->second.Set(value, label_values, optional_values);
-  }
-  void SetGauge(GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-                double value, absl::Span<const absl::string_view> label_values,
-                absl::Span<const absl::string_view> optional_values) override {
-    gpr_log(GPR_INFO,
-            "FakeStatsPlugin[%p]::RecordGauge(index=%u, value=(double)%f, "
-            "label_values={%s}, optional_label_values={%s}",
-            this, handle.index, value,
-            absl::StrJoin(label_values, ", ").c_str(),
-            absl::StrJoin(optional_values, ", ").c_str());
-    MutexLock lock(&mu_);
-    auto iter = double_gauges_.find(handle.index);
-    if (iter == double_gauges_.end()) return;
-    iter->second.Set(value, label_values, optional_values);
-  }
   void AddCallback(RegisteredMetricCallback* callback) override {
     gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::AddCallback(%p)", this, callback);
     callbacks_.insert(callback);
@@ -442,28 +400,6 @@ class FakeStatsPlugin : public StatsPlugin {
       return absl::nullopt;
     }
     return iter->second.GetValues(label_values, optional_values);
-  }
-  absl::optional<int64_t> GetGaugeValue(
-      GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle,
-      absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) {
-    MutexLock lock(&mu_);
-    auto iter = int64_gauges_.find(handle.index);
-    if (iter == int64_gauges_.end()) {
-      return absl::nullopt;
-    }
-    return iter->second.GetValue(label_values, optional_values);
-  }
-  absl::optional<double> GetGaugeValue(
-      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle,
-      absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) {
-    MutexLock lock(&mu_);
-    auto iter = double_gauges_.find(handle.index);
-    if (iter == double_gauges_.end()) {
-      return absl::nullopt;
-    }
-    return iter->second.GetValue(label_values, optional_values);
   }
   void TriggerCallbacks() {
     gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::TriggerCallbacks(): START", this);
@@ -673,10 +609,6 @@ class FakeStatsPlugin : public StatsPlugin {
       ABSL_GUARDED_BY(&mu_);
   absl::flat_hash_map<uint32_t, Histogram<double>> double_histograms_
       ABSL_GUARDED_BY(&mu_);
-  absl::flat_hash_map<uint32_t, Gauge<int64_t>> int64_gauges_
-      ABSL_GUARDED_BY(&mu_);
-  absl::flat_hash_map<uint32_t, Gauge<double>> double_gauges_
-      ABSL_GUARDED_BY(&mu_);
   Mutex callback_mu_;
   absl::flat_hash_map<uint32_t, Gauge<int64_t>> int64_callback_gauges_
       ABSL_GUARDED_BY(&callback_mu_);
@@ -729,10 +661,6 @@ class GlobalInstrumentsRegistryTestPeer {
   FindUInt64HistogramHandleByName(absl::string_view name);
   static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle>
   FindDoubleHistogramHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>
-  FindInt64GaugeHandleByName(absl::string_view name);
-  static absl::optional<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>
-  FindDoubleGaugeHandleByName(absl::string_view name);
   static absl::optional<
       GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
   FindCallbackInt64GaugeHandleByName(absl::string_view name);

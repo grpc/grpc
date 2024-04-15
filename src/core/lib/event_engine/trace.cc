@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
+
+#include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_event_engine_trace(false, "event_engine");
 grpc_core::TraceFlag grpc_event_engine_dns_trace(false, "event_engine_dns");

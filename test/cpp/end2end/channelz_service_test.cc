@@ -16,15 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -95,7 +95,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
-    GPR_ASSERT(idx < stubs_.size());
+    CHECK(idx < stubs_.size());
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
 
 #include <array>
@@ -34,6 +32,8 @@
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
@@ -113,7 +113,7 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
   // Currently we do not have any optional labels on the server side.
   KeyValueIterable labels(
       injected_labels_from_plugin_options_, additional_labels,
-      /*active_plugin_options_view=*/nullptr, /*optional_labels_span=*/{},
+      /*active_plugin_options_view=*/nullptr, /*optional_labels=*/{},
       /*is_client=*/false, otel_plugin_);
   if (otel_plugin_->server_.call.duration != nullptr) {
     otel_plugin_->server_.call.duration->Record(

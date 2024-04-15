@@ -16,11 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"

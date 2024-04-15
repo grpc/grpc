@@ -17,14 +17,14 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
 #define GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstdint>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
@@ -68,7 +68,8 @@ class DualRefCounted {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
-    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -76,7 +77,8 @@ class DualRefCounted {
   RefCountedPtr<Subclass> RefAsSubclass(const DebugLocation& location,
                                         const char* reason) {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void Unref() {
@@ -179,7 +181,8 @@ class DualRefCounted {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass() {
     IncrementWeakRefCount();
-    return WeakRefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return WeakRefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -187,7 +190,8 @@ class DualRefCounted {
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass(const DebugLocation& location,
                                                 const char* reason) {
     IncrementWeakRefCount(location, reason);
-    return WeakRefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return WeakRefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void WeakUnref() {

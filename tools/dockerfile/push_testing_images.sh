@@ -178,7 +178,13 @@ do
   then
     echo "Running 'docker build' for ${DOCKER_IMAGE_NAME}"
     echo "=========="
-    docker build -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} ${DOCKERFILE_DIR}
+    # Buliding a docker image with two tags;
+    # - one for image identification based on Dockerfile hash
+    # - one to exclude it from the GCP Vulnerability Scanner
+    docker build \
+      -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+      -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
+      ${DOCKERFILE_DIR}
     echo "=========="
   else
     # TRANSFER_FROM_DOCKERHUB is a temporary feature that pulls the corresponding image from dockerhub instead
@@ -200,6 +206,7 @@ do
   if [ "${SKIP_UPLOAD}" == "" ] && [ "${LOCAL_ONLY_MODE}" == "" ]
   then
     docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+    docker push ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG}
 
     # After successful push, the image's RepoDigest info will become available in "docker image inspect",
     # so we update the .current_version file with the repo digest.

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/timeout_encoding.h"
 
 #include <limits>
@@ -25,6 +23,7 @@
 #include "absl/base/attributes.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 namespace grpc_core {

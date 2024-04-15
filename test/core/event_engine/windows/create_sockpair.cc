@@ -17,6 +17,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/windows/win_socket.h"
@@ -42,15 +43,14 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   int addr_len = sizeof(addr);
 
   lst_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
-  GPR_ASSERT(lst_sock != INVALID_SOCKET);
+  CHECK(lst_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(bind(lst_sock, (sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
-  GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) !=
-             SOCKET_ERROR);
+  CHECK(bind(lst_sock, (sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
+  CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
+  CHECK(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
-  GPR_ASSERT(cli_sock != INVALID_SOCKET);
+  CHECK(cli_sock != INVALID_SOCKET);
 
   auto result =
       WSAConnect(cli_sock, (sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL);
@@ -62,7 +62,7 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
     abort();
   }
   svr_sock = accept(lst_sock, (sockaddr*)&addr, &addr_len);
-  GPR_ASSERT(svr_sock != INVALID_SOCKET);
+  CHECK(svr_sock != INVALID_SOCKET);
   closesocket(lst_sock);
   // TODO(hork): see if we can migrate this to IPv6, or break up the socket prep
   // stages.

@@ -19,19 +19,20 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -126,13 +127,16 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
   // as transparent retry attempts.)
   class CallAttemptTracer : public CallTracerInterface {
    public:
-    enum class OptionalLabelComponent : std::uint8_t {
-      kXdsServiceLabels,
-      kXdsLocalityLabels,
-      kSize,  // keep last
+    // Note that not all of the optional label keys are exposed as public API.
+    enum class OptionalLabelKey : std::uint8_t {
+      kXdsServiceName,       // not public
+      kXdsServiceNamespace,  // not public
+      kLocality,
+      kSize  // should be last
     };
 
     ~CallAttemptTracer() override {}
+
     // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
     // and `RecordEnd` should be moved into CallTracerInterface.
     // If the call was cancelled before the recv_trailing_metadata op
@@ -145,10 +149,10 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;
 
-    // Adds optional labels to be reported by the underlying tracer in a call.
-    virtual void AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> labels) = 0;
+    // Sets an optional label on the per-attempt metrics recorded at the end of
+    // the attempt.
+    virtual void SetOptionalLabel(OptionalLabelKey key,
+                                  RefCountedStringValue value) = 0;
   };
 
   ~ClientCallTracer() override {}
