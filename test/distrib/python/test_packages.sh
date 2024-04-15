@@ -27,17 +27,17 @@ then
   echo "Testing Python binary distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.tar.gz.whl)
   TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?tools[_-]?[0-9a-z.]*.tar.gz.whl)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio_observability-[0-9a-z.]*.tar.gz.whl)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.tar.gz.whl)
 else
   echo "Testing Python source distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.tar.gz.tar.gz)
   TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?tools[_-]?[0-9a-z.]*.tar.gz.tar.gz)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.tar.gz.tar.gz)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.tar.gz)
 fi
 
-HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?health[_-]?checking[_-]?[0-9a-z.]*.tar.gz.tar.gz)
-REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?reflection[_-]?[0-9a-z.]*.tar.gz.tar.gz)
-TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?testing[_-]?[0-9a-z.]*.tar.gz.tar.gz)
+HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?health[_-]?checking[_-]?[0-9a-z.]*.tar.gz)
+REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?reflection[_-]?[0-9a-z.]*.tar.gz)
+TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?testing[_-]?[0-9a-z.]*.tar.gz)
 
 VIRTUAL_ENV=$(mktemp -d)
 python3 -m virtualenv "$VIRTUAL_ENV"
