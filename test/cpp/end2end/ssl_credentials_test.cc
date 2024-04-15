@@ -444,6 +444,8 @@ TEST_P(SslCredentialsTest, ServerCertificateIsUntrusted) {
   });
   notification.WaitForNotification();
 
+  // Use the client's own leaf cert as the root cert, so that the server's cert
+  // will not be trusted by the client.
   std::string root_cert = GetFileContents(kClientCertPath);
   std::string client_key = GetFileContents(kClientKeyPath);
   std::string client_cert = GetFileContents(kClientCertPath);
@@ -474,6 +476,8 @@ TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
   server_thread_ = new std::thread([&]() {
+    // Use the server's own leaf cert as the root cert, so that the client's
+    // cert will not be trusted by the server.
     std::string root_cert = GetFileContents(kServerCertPath);
     RunServer(&notification, root_cert);
   });
@@ -497,6 +501,8 @@ TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
           grpc_ssl_client_certificate_request_type::
               GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY) {
     EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
+    // TODO(matthewstevenson88): Investigate having a more descriptive error
+    // message for the client.
     EXPECT_THAT(auth_context.status().message(), HasSubstr("Socket closed"));
     EXPECT_EQ(GetSessionCacheSize(cache), 0);
   } else {
