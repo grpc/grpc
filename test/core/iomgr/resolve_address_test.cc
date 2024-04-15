@@ -546,7 +546,7 @@ int main(int argc, char** argv) {
   } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
     g_resolver_type = "ares";
   } else {
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   grpc_core::ConfigVars::Overrides overrides;
   overrides.dns_resolver = g_resolver_type;
