@@ -503,7 +503,8 @@ TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
     EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
     // TODO(matthewstevenson88): Investigate having a more descriptive error
     // message for the client.
-    EXPECT_THAT(auth_context.status().message(), HasSubstr("Socket closed"));
+    EXPECT_THAT(auth_context.status().message(),
+                HasSubstr("failed to connect"));
     EXPECT_EQ(GetSessionCacheSize(cache), 0);
   } else {
     // TODO(matthewstevenson88): The handshake fails with a certificate
