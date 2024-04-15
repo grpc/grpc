@@ -98,6 +98,12 @@
   expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: http2_stats_fix
+  description:
+    Fix on HTTP2 outgoing data stats reporting
+  expiry: 2024/09/30
+  owner: yashkt@google.com
+  test_tags: []
 - name: keepalive_fix
   description:
     Allows overriding keepalive_permit_without_calls.

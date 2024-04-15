@@ -66,6 +66,8 @@ inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
 inline bool IsEventEngineListenerEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -103,6 +105,8 @@ inline bool IsEventEngineDnsEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -141,6 +145,8 @@ inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -179,6 +185,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineDns,
   kExperimentIdEventEngineListener,
   kExperimentIdFreeLargeAllocator,
+  kExperimentIdHttp2StatsFix,
   kExperimentIdKeepaliveFix,
   kExperimentIdKeepaliveServerFix,
   kExperimentIdMonitoringExperiment,
@@ -232,6 +239,10 @@ inline bool IsEventEngineListenerEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled(kExperimentIdFreeLargeAllocator);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_HTTP2_STATS_FIX
+inline bool IsHttp2StatsFixEnabled() {
+  return IsExperimentEnabled(kExperimentIdHttp2StatsFix);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_FIX
 inline bool IsKeepaliveFixEnabled() {
