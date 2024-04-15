@@ -25,9 +25,9 @@ ls "$EXTERNAL_GIT_ROOT"/input_artifacts
 if [[ "$1" == "binary" ]]
 then
   echo "Testing Python binary distribution"
-  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.tar.gz.whl)
-  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?tools[_-]?[0-9a-z.]*.tar.gz.whl)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.tar.gz.whl)
+  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.whl)
+  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?tools[_-]?[0-9a-z.]*.whl)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?observability[_-]?[0-9a-z.]*.whl)
 else
   echo "Testing Python source distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]?[0-9a-z.]*.tar.gz.tar.gz)
