@@ -24,7 +24,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "absl/strings/str_split.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc_security.h>
@@ -48,7 +47,6 @@
 // - Use a large certificate.
 // - Large trust bundle.
 // - Bad ALPN.
-// - In TLS 1.2, play with the ciphersuites.
 // - More failure modes.
 // - Certs containing more SANs.
 // - Copy all of this over to tls_credentials_test.cc.
@@ -81,16 +79,9 @@ std::size_t GetSessionCacheSize(grpc_ssl_session_cache* cache) {
   return tsi_ssl_session_cache_size(tsi_cache);
 }
 
-class WrappedChannelCredentials final : public ChannelCredentials {
- public:
-  explicit WrappedChannelCredentials(grpc_channel_credentials* c_creds)
-      : ChannelCredentials(c_creds) {}
-};
-
 struct SslOptions {
   grpc_ssl_client_certificate_request_type request_type =
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE;
-  grpc_tls_version tls_version;
   bool use_session_cache;
 };
 
@@ -134,18 +125,7 @@ class SslCredentialsTest : public ::testing::TestWithParam<SslOptions> {
       channel_args.SetSslTargetNameOverride(kTargetNameOverride);
     }
 
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {
-        options.pem_private_key.c_str(), options.pem_cert_chain.c_str()};
-    grpc_channel_credentials* c_creds = grpc_ssl_credentials_create(
-        options.pem_root_certs.empty() ? nullptr
-                                       : options.pem_root_certs.c_str(),
-        options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr,
-        nullptr);
-    grpc_ssl_credentials* ssl_creds =
-        reinterpret_cast<grpc_ssl_credentials*>(c_creds);
-    ssl_creds->set_min_tls_version(GetParam().tls_version);
-    ssl_creds->set_max_tls_version(GetParam().tls_version);
-    auto creds = std::make_shared<WrappedChannelCredentials>(ssl_creds);
+    auto creds = SslCredentials(options);
     std::shared_ptr<Channel> channel =
         grpc::CreateCustomChannel(server_addr_, creds, channel_args);
 
@@ -517,7 +497,7 @@ TEST_P(SslCredentialsTest, ClientCertificateIsUntrusted) {
           grpc_ssl_client_certificate_request_type::
               GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY) {
     EXPECT_EQ(auth_context.status().code(), absl::StatusCode::kUnavailable);
-    EXPECT_FALSE(auth_context.status().message().empty());
+    EXPECT_THAT(auth_context.status().message(), HasSubstr("Socket closed"));
     EXPECT_EQ(GetSessionCacheSize(cache), 0);
   } else {
     // TODO(matthewstevenson88): The handshake fails with a certificate
@@ -571,12 +551,9 @@ std::vector<SslOptions> GetSslOptions() {
             GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
         grpc_ssl_client_certificate_request_type::
             GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY}) {
-    for (grpc_tls_version version :
-         {grpc_tls_version::TLS1_2, grpc_tls_version::TLS1_3}) {
-      for (bool use_session_cache : {false, true}) {
-        SslOptions option = {type, version, use_session_cache};
-        ssl_options.push_back(option);
-      }
+    for (bool use_session_cache : {false, true}) {
+      SslOptions option = {type, use_session_cache};
+      ssl_options.push_back(option);
     }
   }
   return ssl_options;
