@@ -106,7 +106,7 @@ BaseCallData::BaseCallData(
               ? arena_->New<ReceiveMessage>(this, make_recv_interceptor())
               : nullptr),
       event_engine_(
-          static_cast<ChannelFilter*>(elem->channel_data)
+          ChannelFilterFromElem(elem)
               ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
 }
 
