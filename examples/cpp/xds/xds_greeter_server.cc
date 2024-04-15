@@ -22,6 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpcpp/ext/admin_services.h>
