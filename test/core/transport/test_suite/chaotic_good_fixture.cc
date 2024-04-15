@@ -67,13 +67,13 @@ EndpointPair CreateEndpointPair(
       [](absl::Status) {}, endpoint_config,
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
           resource_quota->memory_quota()));
-  GPR_ASSERT(listener->Bind(resolved_address).ok());
-  GPR_ASSERT(listener->Start().ok());
+  CHECK_OK(listener->Bind(resolved_address));
+  CHECK_OK(listener->Start());
 
   event_engine->Connect(
       [&client_endpoint](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        GPR_ASSERT(endpoint.ok());
+        CHECK_OK(endpoint);
         client_endpoint = std::move(endpoint).value();
       },
       resolved_address, endpoint_config,

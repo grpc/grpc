@@ -364,7 +364,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    CHECK(error.ok());
+    CHECK_OK(error);
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }

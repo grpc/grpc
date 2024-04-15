@@ -199,7 +199,7 @@ class TestServer {
           grpc_call_error error = grpc_server_request_call(
               server_, &call, &call_details, &request_metadata_recv, call_cq,
               cq_, request_call_tag);
-          CHECK(error == GRPC_CALL_OK);
+          CHECK_EQ(error, GRPC_CALL_OK);
         }
       }
       grpc_event event = grpc_completion_queue_next(
