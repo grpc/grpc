@@ -52,7 +52,7 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
                 transport_->server()->server_uri().c_str(), this,
                 message.c_str());
       }
-      GPR_ASSERT(from_client_messages_.empty());
+      CHECK(from_client_messages_.empty());
     }
   }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
@@ -79,7 +79,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
-  GPR_ASSERT(!orphaned_);
+  CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   cv_client_msg_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
@@ -122,7 +122,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::
 
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
     bool ok) {
-  GPR_ASSERT(!transport_->auto_complete_messages_from_client());
+  CHECK(!transport_->auto_complete_messages_from_client());
   MutexLock lock(&mu_);
   CompleteSendMessageFromClientLocked(ok);
 }
@@ -280,7 +280,7 @@ FakeXdsTransportFactory::Create(
     absl::Status* /*status*/) {
   MutexLock lock(&mu_);
   auto& entry = transport_map_[server.Key()];
-  GPR_ASSERT(entry == nullptr);
+  CHECK_EQ(entry, nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
       RefAsSubclass<FakeXdsTransportFactory>(), server,
       std::move(on_connectivity_failure), auto_complete_messages_from_client_,
