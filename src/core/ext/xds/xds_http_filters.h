@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FILTERS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <string>
@@ -31,6 +29,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "upb/reflection/def.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_resource_type.h"
@@ -124,7 +124,7 @@ class XdsHttpFilterImpl {
   virtual bool IsTerminalFilter() const { return false; }
 };
 
-class XdsHttpRouterFilter : public XdsHttpFilterImpl {
+class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
@@ -147,7 +147,7 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
   bool IsTerminalFilter() const override { return true; }
 };
 
-class XdsHttpFilterRegistry {
+class XdsHttpFilterRegistry final {
  public:
   explicit XdsHttpFilterRegistry(bool register_builtins = true);
 

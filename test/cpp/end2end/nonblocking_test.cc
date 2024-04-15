@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpcpp/channel.h>
@@ -52,7 +53,7 @@ int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
   // Only assert that this poll should have zero timeout if we're in the
   // middle of a zero-timeout CQ Next.
   if (g_is_nonblocking_poll) {
-    GPR_ASSERT(timeout == 0);
+    CHECK_EQ(timeout, 0);
   }
   return poll(pfds, nfds, timeout);
 }

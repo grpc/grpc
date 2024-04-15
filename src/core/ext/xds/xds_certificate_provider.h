@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_CERTIFICATE_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <string>
@@ -31,6 +29,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -42,7 +41,7 @@
 
 namespace grpc_core {
 
-class XdsCertificateProvider : public grpc_tls_certificate_provider {
+class XdsCertificateProvider final : public grpc_tls_certificate_provider {
  public:
   // ctor for client side
   XdsCertificateProvider(

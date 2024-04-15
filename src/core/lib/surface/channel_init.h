@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <initializer_list>
@@ -31,6 +29,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -162,6 +161,10 @@ class ChannelInit {
     // Add a predicate that ensures this filter does not appear in the minimal
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
+    FilterRegistration& SkipV3() {
+      skip_v3_ = true;
+      return *this;
+    }
 
    private:
     friend class ChannelInit;
@@ -172,6 +175,7 @@ class ChannelInit {
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
+    bool skip_v3_ = false;
     SourceLocation registration_source_;
   };
 
@@ -193,6 +197,15 @@ class ChannelInit {
       return RegisterFilter(type, &Filter::kFilter,
                             VtableForType<Filter>::vtable(),
                             registration_source);
+    }
+
+    // Filter does not participate in v3
+    template <typename Filter>
+    FilterRegistration& RegisterV2Filter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(type, &Filter::kFilter, nullptr,
+                            registration_source)
+          .SkipV3();
     }
 
     // Register a post processor for the builder.
@@ -274,16 +287,18 @@ class ChannelInit {
  private:
   struct Filter {
     Filter(const grpc_channel_filter* filter, const ChannelFilterVtable* vtable,
-           std::vector<InclusionPredicate> predicates,
+           std::vector<InclusionPredicate> predicates, bool skip_v3,
            SourceLocation registration_source)
         : filter(filter),
           vtable(vtable),
           predicates(std::move(predicates)),
-          registration_source(registration_source) {}
+          registration_source(registration_source),
+          skip_v3(skip_v3) {}
     const grpc_channel_filter* filter;
     const ChannelFilterVtable* vtable;
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
+    bool skip_v3 = false;
     bool CheckPredicates(const ChannelArgs& args) const;
   };
   struct StackConfig {

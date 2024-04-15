@@ -37,9 +37,6 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/load_balancing/address_filtering.h"
-#include "src/core/load_balancing/outlier_detection/outlier_detection.h"
-#include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_cluster.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -59,10 +56,13 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/load_balancing/address_filtering.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/outlier_detection/outlier_detection.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 
 namespace grpc_core {
@@ -85,7 +85,7 @@ using XdsConfig = XdsDependencyManager::XdsConfig;
 constexpr absl::string_view kCds = "cds_experimental";
 
 // Config for this LB policy.
-class CdsLbConfig : public LoadBalancingPolicy::Config {
+class CdsLbConfig final : public LoadBalancingPolicy::Config {
  public:
   CdsLbConfig() = default;
 
@@ -115,7 +115,7 @@ class CdsLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // CDS LB policy.
-class CdsLb : public LoadBalancingPolicy {
+class CdsLb final : public LoadBalancingPolicy {
  public:
   explicit CdsLb(Args args);
 
@@ -232,7 +232,7 @@ std::string MakeChildPolicyName(absl::string_view cluster,
                       "}");
 }
 
-class PriorityEndpointIterator : public EndpointAddressesIterator {
+class PriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
   PriorityEndpointIterator(
       std::string cluster_name,
@@ -254,7 +254,7 @@ class PriorityEndpointIterator : public EndpointAddressesIterator {
         const auto& locality = p.second;
         std::vector<RefCountedStringValue> hierarchical_path = {
             RefCountedStringValue(priority_child_name),
-            RefCountedStringValue(locality_name->AsHumanReadableString())};
+            locality_name->human_readable_string()};
         auto hierarchical_path_attr =
             MakeRefCounted<HierarchicalPathArg>(std::move(hierarchical_path));
         for (const auto& endpoint : locality.endpoints) {
@@ -731,7 +731,7 @@ void CdsLb::ReportTransientFailure(absl::Status status) {
 // factory
 //
 
-class CdsLbFactory : public LoadBalancingPolicyFactory {
+class CdsLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

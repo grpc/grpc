@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_UTIL_CMDLINE_H
 #define GRPC_TEST_CORE_UTIL_CMDLINE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 /// Simple command line parser.
 

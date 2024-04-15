@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/metadata.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/error_utils.h"
 
@@ -22,7 +22,7 @@ namespace grpc_core {
 
 ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status,
                                               Arena* arena) {
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  auto hdl = arena->MakePooled<ServerMetadata>();
   grpc_status_code code;
   std::string message;
   grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,

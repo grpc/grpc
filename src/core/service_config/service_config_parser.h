@@ -68,7 +68,7 @@ class ServiceConfigParser {
   using ServiceConfigParserList = std::vector<std::unique_ptr<Parser>>;
   using ParsedConfigVector = std::vector<std::unique_ptr<ParsedConfig>>;
 
-  class Builder {
+  class Builder final {
    public:
     /// Globally register a service config parser. Each new service config
     /// update will go through all the registered parser. Each parser is

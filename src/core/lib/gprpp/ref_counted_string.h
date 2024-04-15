@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_STRING_H
 #define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_STRING_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <string>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

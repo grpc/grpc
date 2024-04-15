@@ -40,6 +40,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -125,9 +126,11 @@ libs:
   deps:
   - absl/base:base
   - absl/base:core_headers
+  - absl/base:log_severity
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/log:log
   - absl/memory:memory
   - absl/random:random
   - absl/status:status
@@ -204,6 +207,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -238,7 +242,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/backend_metrics/backend_metric_filter.h
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
-  - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -247,7 +250,6 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/compression_filter.h
-  - src/core/ext/filters/http/message_compress/legacy_compression_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
@@ -798,6 +800,7 @@ libs:
   - src/core/ext/xds/xds_http_stateful_session_filter.h
   - src/core/ext/xds/xds_lb_policy_registry.h
   - src/core/ext/xds/xds_listener.h
+  - src/core/ext/xds/xds_metrics.h
   - src/core/ext/xds/xds_resource_type.h
   - src/core/ext/xds/xds_resource_type_impl.h
   - src/core/ext/xds/xds_route_config.h
@@ -825,6 +828,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
@@ -844,7 +848,9 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -926,6 +932,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
@@ -1040,6 +1047,7 @@ libs:
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -1103,7 +1111,6 @@ libs:
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -1111,11 +1118,11 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
@@ -1124,18 +1131,20 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/legacy_channel.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
+  - src/core/lib/transport/endpoint_info_handshaker.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -1176,8 +1185,8 @@ libs:
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
   - src/core/load_balancing/ring_hash/ring_hash.h
+  - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
-  - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/xds_channel_args.h
@@ -1236,7 +1245,6 @@ libs:
   - third_party/xxhash/xxhash.h
   src:
   - src/core/client_channel/backup_poller.cc
-  - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -1256,7 +1264,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
-  - src/core/ext/filters/channel_idle/channel_idle_filter.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
@@ -1266,7 +1273,6 @@ libs:
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
   - src/core/ext/filters/http/message_compress/compression_filter.cc
-  - src/core/ext/filters/http/message_compress/legacy_compression_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
@@ -1737,6 +1743,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
@@ -1833,6 +1840,7 @@ libs:
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -1898,28 +1906,25 @@ libs:
   - src/core/lib/security/security_connector/ssl_utils.cc
   - src/core/lib/security/security_connector/tls/tls_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/legacy_server_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -1927,6 +1932,7 @@ libs:
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
@@ -1934,12 +1940,12 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/endpoint_info_handshaker.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
   - src/core/lib/transport/handshaker_registry.cc
@@ -2188,6 +2194,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -2222,7 +2229,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/ext/filters/backend_metrics/backend_metric_filter.h
   - src/core/ext/filters/backend_metrics/backend_metric_provider.h
-  - src/core/ext/filters/channel_idle/channel_idle_filter.h
   - src/core/ext/filters/channel_idle/idle_filter_state.h
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h
   - src/core/ext/filters/deadline/deadline_filter.h
@@ -2231,7 +2237,6 @@ libs:
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/compression_filter.h
-  - src/core/ext/filters/http/message_compress/legacy_compression_filter.h
   - src/core/ext/filters/http/server/http_server_filter.h
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
@@ -2327,6 +2332,7 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/server_call_tracer_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
@@ -2346,7 +2352,9 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -2427,6 +2435,7 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.h
   - src/core/lib/gprpp/type_list.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/handshaker/proxy_mapper.h
@@ -2537,6 +2546,7 @@ libs:
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -2569,7 +2579,6 @@ libs:
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -2577,11 +2586,11 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/surface/completion_queue.h
@@ -2590,18 +2599,20 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/legacy_channel.h
   - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_size_estimator.h
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
+  - src/core/lib/transport/endpoint_info_handshaker.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -2641,8 +2652,8 @@ libs:
   - src/core/load_balancing/oob_backend_metric_internal.h
   - src/core/load_balancing/outlier_detection/outlier_detection.h
   - src/core/load_balancing/pick_first/pick_first.h
+  - src/core/load_balancing/rls/rls.h
   - src/core/load_balancing/subchannel_interface.h
-  - src/core/load_balancing/subchannel_list.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
@@ -2670,8 +2681,6 @@ libs:
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -2682,17 +2691,16 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/client_channel/backup_poller.cc
-  - src/core/client_channel/channel_connectivity.cc
   - src/core/client_channel/client_channel_channelz.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -2712,7 +2720,6 @@ libs:
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/ext/filters/backend_metrics/backend_metric_filter.cc
   - src/core/ext/filters/census/grpc_context.cc
-  - src/core/ext/filters/channel_idle/channel_idle_filter.cc
   - src/core/ext/filters/channel_idle/idle_filter_state.cc
   - src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
@@ -2722,7 +2729,6 @@ libs:
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
   - src/core/ext/filters/http/message_compress/compression_filter.cc
-  - src/core/ext/filters/http/message_compress/legacy_compression_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
@@ -2861,6 +2867,7 @@ libs:
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
   - src/core/lib/handshaker/proxy_mapper_registry.cc
@@ -2953,6 +2960,7 @@ libs:
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -2984,28 +2992,25 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/legacy_server_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -3013,6 +3018,7 @@ libs:
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
   - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
@@ -3020,12 +3026,12 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
   - src/core/lib/transport/bdp_estimator.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_size_estimator.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/endpoint_info_handshaker.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
   - src/core/lib/transport/handshaker_registry.cc
@@ -3089,20 +3095,19 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - z
   - absl/algorithm:container
   - absl/base:config
@@ -3257,6 +3262,7 @@ libs:
   - third_party/upb/upb/base/status.h
   - third_party/upb/upb/base/status.hpp
   - third_party/upb/upb/base/string_view.h
+  - third_party/upb/upb/base/upcast.h
   - third_party/upb/upb/port/atomic.h
   - third_party/upb/upb/port/def.inc
   - third_party/upb/upb/port/undef.inc
@@ -3269,15 +3275,13 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/json/decode.h
   - third_party/upb/upb/json/encode.h
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
+  - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -3313,6 +3317,7 @@ libs:
   - third_party/upb/upb/reflection/internal/oneof_def.h
   - third_party/upb/upb/reflection/internal/service_def.h
   - third_party/upb/upb/reflection/internal/strdup2.h
+  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
   - third_party/upb/upb/reflection/message.h
   - third_party/upb/upb/reflection/message.hpp
   - third_party/upb/upb/reflection/message_def.h
@@ -3321,23 +3326,22 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/json/decode.c
   - third_party/upb/upb/json/encode.c
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  - third_party/upb/upb/message/accessors.c
+  - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -3361,13 +3365,13 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.c
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
 - name: upb_mem_lib
   build: all
   language: c
@@ -3390,23 +3394,27 @@ libs:
   language: c
   public_headers: []
   headers:
+  - third_party/upb/upb/base/internal/endian.h
   - third_party/upb/upb/base/internal/log2.h
   - third_party/upb/upb/hash/common.h
   - third_party/upb/upb/hash/int_table.h
   - third_party/upb/upb/hash/str_table.h
+  - third_party/upb/upb/message/accessors.h
   - third_party/upb/upb/message/array.h
+  - third_party/upb/upb/message/compat.h
+  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/message/internal/array.h
   - third_party/upb/upb/message/internal/extension.h
   - third_party/upb/upb/message/internal/map.h
   - third_party/upb/upb/message/internal/map_entry.h
   - third_party/upb/upb/message/internal/map_sorter.h
   - third_party/upb/upb/message/internal/message.h
+  - third_party/upb/upb/message/internal/tagged_ptr.h
   - third_party/upb/upb/message/internal/types.h
   - third_party/upb/upb/message/map.h
   - third_party/upb/upb/message/map_gencode_util.h
   - third_party/upb/upb/message/message.h
   - third_party/upb/upb/message/tagged_ptr.h
-  - third_party/upb/upb/message/types.h
   - third_party/upb/upb/message/value.h
   - third_party/upb/upb/mini_table/enum.h
   - third_party/upb/upb/mini_table/extension.h
@@ -3418,12 +3426,17 @@ libs:
   - third_party/upb/upb/mini_table/internal/field.h
   - third_party/upb/upb/mini_table/internal/file.h
   - third_party/upb/upb/mini_table/internal/message.h
+  - third_party/upb/upb/mini_table/internal/size_log2.h
   - third_party/upb/upb/mini_table/internal/sub.h
   - third_party/upb/upb/mini_table/message.h
   - third_party/upb/upb/mini_table/sub.h
   src:
   - third_party/upb/upb/hash/common.c
+  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/message/array.c
+  - third_party/upb/upb/message/compat.c
+  - third_party/upb/upb/message/internal/extension.c
+  - third_party/upb/upb/message/internal/message.c
   - third_party/upb/upb/message/map.c
   - third_party/upb/upb/message/map_sorter.c
   - third_party/upb/upb/message/message.c
@@ -3438,13 +3451,11 @@ libs:
   language: c
   public_headers: []
   headers:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
+  - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -3480,6 +3491,7 @@ libs:
   - third_party/upb/upb/reflection/internal/oneof_def.h
   - third_party/upb/upb/reflection/internal/service_def.h
   - third_party/upb/upb/reflection/internal/strdup2.h
+  - third_party/upb/upb/reflection/internal/upb_edition_defaults.h
   - third_party/upb/upb/reflection/message.h
   - third_party/upb/upb/reflection/message.hpp
   - third_party/upb/upb/reflection/message_def.h
@@ -3489,21 +3501,20 @@ libs:
   - third_party/upb/upb/reflection/service_def.h
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  - third_party/upb/upb/message/accessors.c
+  - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -3528,13 +3539,13 @@ libs:
   - third_party/upb/upb/reflection/service_def.c
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
 - name: utf8_range_lib
   build: all
   language: c
@@ -3542,9 +3553,7 @@ libs:
   headers:
   - third_party/utf8_range/utf8_range.h
   src:
-  - third_party/utf8_range/naive.c
-  - third_party/utf8_range/range2-neon.c
-  - third_party/utf8_range/range2-sse.c
+  - third_party/utf8_range/utf8_range.c
   deps: []
 - name: z
   build: private
@@ -3612,6 +3621,7 @@ libs:
   - test/core/util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
+  - absl/log:check
   - benchmark
   - grpc++_unsecure
   - grpc_test_util_unsecure
@@ -3878,7 +3888,9 @@ libs:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -3896,7 +3908,6 @@ libs:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -3917,6 +3928,7 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/server/xds_server_builder.cc
   - src/cpp/server/xds_server_credentials.cc
@@ -4016,6 +4028,7 @@ libs:
   - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/create_test_channel.h
+  - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
@@ -4258,7 +4271,9 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -4288,6 +4303,7 @@ libs:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -4363,6 +4379,7 @@ libs:
   - include/grpc/support/json.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
+  - include/grpc/support/metrics.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
   - include/grpc/support/sync.h
@@ -4377,7 +4394,6 @@ libs:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -4390,7 +4406,6 @@ libs:
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
-  - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/call_tracer.h
   - src/core/lib/channel/channel_args.h
@@ -4426,7 +4441,9 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
@@ -4583,7 +4600,6 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
-  - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/join_state.h
@@ -4607,10 +4623,10 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
-  - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -4646,7 +4662,6 @@ libs:
   - src/core/lib/security/transport/security_handshaker.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
-  - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -4654,7 +4669,6 @@ libs:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/api_trace.h
-  - src/core/lib/surface/builtins.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
@@ -4667,17 +4681,16 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server.h
+  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
-  - src/core/lib/transport/call_factory.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
-  - src/core/lib/transport/call_size_estimator.h
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
+  - src/core/lib/transport/endpoint_info_handshaker.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/handshaker.h
   - src/core/lib/transport/handshaker_factory.h
@@ -4712,8 +4725,6 @@ libs:
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -4724,17 +4735,16 @@ libs:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -4742,7 +4752,6 @@ libs:
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
-  - src/core/lib/backoff/random_early_detection.cc
   - src/core/lib/channel/call_tracer.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_args_preconditioning.cc
@@ -4756,7 +4765,6 @@ libs:
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -4910,6 +4918,7 @@ libs:
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -4944,20 +4953,17 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/legacy_server_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
-  - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
-  - src/core/lib/surface/builtins.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -4965,7 +4971,6 @@ libs:
   - src/core/lib/surface/call_log_batch.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
-  - src/core/lib/surface/channel_ping.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
@@ -4973,17 +4978,15 @@ libs:
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/batch_builder.cc
-  - src/core/lib/transport/call_factory.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
-  - src/core/lib/transport/call_size_estimator.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/endpoint_info_handshaker.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/handshaker.cc
   - src/core/lib/transport/handshaker_registry.cc
@@ -5005,21 +5008,20 @@ libs:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
+  - utf8_range_lib
   - upb_message_lib
   - re2
-  - utf8_range_lib
   - z
   - absl/base:config
   - absl/base:no_destructor
@@ -5030,8 +5032,6 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/random:bit_gen_ref
-  - absl/random:distributions
   - absl/status:statusor
   - absl/types:span
   - absl/utility:utility
@@ -5094,6 +5094,23 @@ libs:
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
   - grpc++
+- name: grpcpp_otel_plugin
+  build: plugin
+  language: c++
+  public_headers:
+  - include/grpcpp/ext/otel_plugin.h
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  src:
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  deps:
+  - grpc++
+  - opentelemetry-cpp::api
 targets:
 - name: fd_conservation_posix_test
   build: test
@@ -5202,6 +5219,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -5270,6 +5288,7 @@ targets:
   - test/core/util/slice_splitter.h
   - test/core/util/tracer_util.h
   - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
@@ -5622,6 +5641,7 @@ targets:
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: auth_context_test
   gtest: true
@@ -5715,12 +5735,14 @@ targets:
   headers:
   - src/core/lib/avl/avl.h
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   src:
   - test/core/avl/avl_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -5754,17 +5776,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: b64_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/slice/b64_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
 - name: backend_metrics_lb_policy_test
   gtest: true
   build: test
@@ -5780,6 +5791,7 @@ targets:
   - test/cpp/interop/backend_metrics_lb_policy_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   - grpc++_test_config
@@ -5829,6 +5841,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -5849,9 +5862,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/bad_ping.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6055,6 +6070,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6075,9 +6091,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/binary_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6108,6 +6126,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: binder_transport_test
   gtest: true
@@ -6165,7 +6184,9 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -6182,7 +6203,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -6203,6 +6223,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -6315,6 +6336,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6335,9 +6357,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/call_creds.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6348,13 +6372,13 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/avl/avl.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -6389,6 +6413,7 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
@@ -6407,6 +6432,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
@@ -6422,8 +6448,6 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -6434,19 +6458,19 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
+  - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -6471,6 +6495,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -6482,21 +6507,20 @@ targets:
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - test/core/transport/call_filters_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/base:no_destructor
   - absl/container:inlined_vector
@@ -6553,6 +6577,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6573,9 +6598,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/call_host_override.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6627,6 +6654,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6647,9 +6675,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_accept.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6688,6 +6718,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6708,9 +6739,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_client_done.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6749,6 +6782,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6769,9 +6803,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_invoke.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6810,6 +6846,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6830,9 +6867,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_after_round_trip.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6888,6 +6927,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6908,9 +6948,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_before_invoke.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -6964,6 +7006,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -6984,9 +7027,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_in_a_vacuum.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7025,6 +7070,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -7045,9 +7091,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/cancel_with_status.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -7383,6 +7431,7 @@ targets:
   - test/core/event_engine/cf/cf_engine_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -7407,6 +7456,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -7428,6 +7478,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: channel_args_test
   gtest: true
@@ -7557,6 +7608,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpcpp_channelz
   - grpc++_test_util
 - name: check_gcp_environment_linux_test
@@ -7626,10 +7678,10 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -7665,6 +7717,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -7676,8 +7729,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -7688,17 +7739,16 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -7714,6 +7764,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -7724,21 +7775,20 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
@@ -7789,6 +7839,7 @@ targets:
   - test/core/filters/filter_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -7806,6 +7857,7 @@ targets:
   - test/core/filters/filter_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -7826,6 +7878,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: client_channel_service_config_test
   gtest: true
@@ -7897,6 +7950,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: client_lb_end2end_test
   gtest: true
@@ -7921,6 +7975,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -7975,6 +8030,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -7995,9 +8051,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/client_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8149,6 +8207,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -8169,9 +8228,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/compressed_payload.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8287,6 +8348,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -8307,9 +8369,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/connectivity.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8328,6 +8392,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: context_test
   gtest: true
@@ -8392,6 +8457,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: crl_ssl_transport_security_test
   gtest: true
@@ -8454,6 +8520,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -8474,9 +8541,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/default_host.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8495,6 +8564,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: destroy_grpclb_channel_with_active_connect_stress_test
   gtest: true
@@ -8552,6 +8622,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -8572,9 +8643,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/disappearing_server.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8686,6 +8759,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -8706,9 +8780,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/empty_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -8732,6 +8808,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -8754,6 +8831,7 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - absl/log:check
   - grpc++_test
   - grpc++_test_util
 - name: endpoint_addresses_test
@@ -8823,7 +8901,9 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -8840,7 +8920,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -8861,6 +8940,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -8883,6 +8963,7 @@ targets:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -8899,6 +8980,7 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9118,10 +9200,10 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -9153,8 +9235,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -9165,17 +9245,16 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -9194,21 +9273,20 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9317,7 +9395,9 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -9334,7 +9414,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -9355,6 +9434,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -9470,6 +9550,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -9490,9 +9571,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filter_causes_close.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9531,6 +9614,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -9551,9 +9635,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filter_context.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9592,6 +9678,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -9612,9 +9699,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filter_init_fails.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9632,6 +9721,7 @@ targets:
   - test/core/filters/filter_test_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_unsecure
   - protobuf
   - grpc_test_util
@@ -9671,6 +9761,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -9691,9 +9782,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filtered_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -9713,6 +9806,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: flow_control_test
   gtest: true
@@ -9724,10 +9818,10 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -9761,6 +9855,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -9775,8 +9870,6 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -9787,12 +9880,12 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
@@ -9800,7 +9893,6 @@ targets:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -9815,6 +9907,7 @@ targets:
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -9827,24 +9920,24 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - test/core/transport/chttp2/flow_control_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -9857,10 +9950,10 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -9904,6 +9997,7 @@ targets:
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -9916,8 +10010,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -9928,17 +10020,16 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -9954,6 +10045,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -9964,21 +10056,20 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
@@ -10113,6 +10204,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   platforms:
@@ -10131,6 +10223,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
 - name: generic_end2end_test
@@ -10207,6 +10300,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -10227,9 +10321,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/graceful_server_shutdown.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10244,6 +10340,7 @@ targets:
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: grpc_alts_credentials_options_test
   gtest: true
@@ -10366,6 +10463,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc++_test_util
 - name: grpc_authz_test
@@ -10403,6 +10501,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -10423,9 +10522,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/grpc_authz.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -10728,6 +10829,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
 - name: grpc_tool_test
@@ -10773,6 +10875,7 @@ targets:
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: grpclb_end2end_test
   gtest: true
@@ -10793,6 +10896,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -10829,6 +10933,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
   gtest: true
@@ -10928,6 +11033,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: high_initial_seqno_test
   gtest: true
@@ -10964,6 +11070,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -10984,9 +11091,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/high_initial_seqno.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11160,6 +11269,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -11180,9 +11290,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/hpack_size.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11198,6 +11310,7 @@ targets:
   - src/proto/grpc/testing/test.proto
   - test/cpp/interop/http2_client.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: http2_settings_test
@@ -11245,6 +11358,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -11265,9 +11379,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/http2_stats.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11335,6 +11451,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: idle_filter_state_test
   gtest: true
@@ -11422,6 +11539,7 @@ targets:
   - test/core/transport/test_suite/test_main.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   platforms:
@@ -11478,6 +11596,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
@@ -11515,10 +11634,10 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -11554,6 +11673,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -11566,8 +11686,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -11578,17 +11696,16 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -11604,6 +11721,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -11614,21 +11732,20 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/interceptor_list_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
@@ -11655,6 +11772,7 @@ targets:
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
@@ -11672,6 +11790,7 @@ targets:
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/server_helper.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: invalid_call_argument_test
@@ -11721,6 +11840,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -11741,9 +11861,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/invoke_large_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11758,6 +11880,7 @@ targets:
   - test/core/event_engine/windows/iocp_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -11921,6 +12044,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -11941,9 +12065,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/keepalive_timeout.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -11994,6 +12120,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12014,9 +12141,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/large_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12026,6 +12155,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -12185,10 +12315,10 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
@@ -12232,6 +12362,7 @@ targets:
   - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -12244,8 +12375,6 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -12256,17 +12385,16 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -12282,6 +12410,7 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
@@ -12292,21 +12421,20 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
@@ -12403,6 +12531,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12423,9 +12552,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_concurrent_streams.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12464,6 +12595,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12484,9 +12616,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_connection_age.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12525,6 +12659,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12545,9 +12680,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_connection_idle.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12586,6 +12723,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12606,9 +12744,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/max_message_length.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12653,6 +12793,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: message_compress_test
   gtest: true
@@ -12793,6 +12934,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/orphanable.h
@@ -12868,6 +13010,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12888,9 +13031,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/negative_deadline.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -12941,6 +13086,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -12961,9 +13107,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/no_logging.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13002,6 +13150,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -13022,9 +13171,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/no_op.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13053,6 +13204,7 @@ targets:
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: notification_test
   gtest: true
@@ -13081,6 +13233,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/notification.h
@@ -13126,6 +13279,7 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -13165,6 +13319,37 @@ targets:
   - test/core/util/osa_distance_test.cc
   deps:
   - gtest
+- name: otel_plugin_test
+  gtest: true
+  build: plugin_test
+  language: c++
+  plugin_option: gRPC_BUILD_GRPCPP_OTEL_PLUGIN
+  headers:
+  - src/cpp/ext/otel/key_value_iterable.h
+  - src/cpp/ext/otel/otel_client_call_tracer.h
+  - src/cpp/ext/otel/otel_plugin.h
+  - src/cpp/ext/otel/otel_server_call_tracer.h
+  - test/core/util/fake_stats_plugin.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/ext/otel/otel_test_library.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/cpp/ext/otel/otel_client_call_tracer.cc
+  - src/cpp/ext/otel/otel_plugin.cc
+  - src/cpp/ext/otel/otel_server_call_tracer.cc
+  - test/core/util/fake_stats_plugin.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/ext/otel/otel_plugin_test.cc
+  - test/cpp/ext/otel/otel_test_library.cc
+  deps:
+  - gtest
+  - absl/log:check
+  - opentelemetry-cpp::api
+  - opentelemetry-cpp::metrics
+  - grpc++_test_util
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
@@ -13206,6 +13391,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -13339,6 +13525,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -13359,9 +13546,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/payload.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13384,7 +13573,6 @@ targets:
   headers:
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -13408,8 +13596,6 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/message/accessors.h
-  - third_party/upb/upb/message/internal/accessors.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
   - third_party/upb/upb/mini_descriptor/internal/base92.h
@@ -13420,17 +13606,16 @@ targets:
   - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
-  - third_party/upb/upb/wire/decode_fast.h
   - third_party/upb/upb/wire/encode.h
   - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
-  - third_party/upb/upb/wire/internal/decode.h
-  - third_party/upb/upb/wire/internal/swap.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
   - third_party/upb/upb/wire/reader.h
   - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
@@ -13449,21 +13634,20 @@ targets:
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
-  - third_party/upb/upb/message/accessors.c
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
   - third_party/upb/upb/mini_descriptor/internal/encode.c
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
-  - third_party/upb/upb/wire/decode_fast.c
   - third_party/upb/upb/wire/encode.c
   - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
   - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
-  - upb_message_lib
   - utf8_range_lib
+  - upb_message_lib
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -13487,6 +13671,7 @@ targets:
   - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -13599,6 +13784,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -13619,9 +13805,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/ping_pong_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13691,6 +13879,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -13711,9 +13900,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/ping.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -13757,6 +13948,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: posix_endpoint_test
   gtest: true
@@ -13775,6 +13967,7 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -13809,6 +14002,7 @@ targets:
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -13836,6 +14030,7 @@ targets:
   - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -13869,6 +14064,7 @@ targets:
   - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -13969,6 +14165,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -14058,6 +14255,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_reflection
   - grpc++_test_util
 - name: proto_utils_test
@@ -14107,6 +14305,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14127,9 +14326,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/proxy_auth.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14173,6 +14374,7 @@ targets:
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: qps_worker
@@ -14206,6 +14408,7 @@ targets:
   - test/cpp/qps/usage_timer.cc
   - test/cpp/qps/worker.cc
   deps:
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: query_extensions_test
@@ -14265,6 +14468,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: rbac_service_config_parser_test
   gtest: true
@@ -14363,6 +14567,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14383,9 +14588,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/registered_call.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14398,6 +14605,7 @@ targets:
   - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -14438,6 +14646,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14458,9 +14667,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/request_with_flags.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14499,6 +14710,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14519,9 +14731,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14712,6 +14926,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14732,9 +14947,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14784,6 +15001,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14804,9 +15022,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14845,6 +15065,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14865,9 +15086,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancel_during_delay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14906,6 +15129,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14926,9 +15150,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -14967,6 +15193,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -14987,9 +15214,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15028,6 +15257,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15048,9 +15278,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15089,6 +15321,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15109,9 +15342,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15150,6 +15385,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15170,9 +15406,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15211,6 +15449,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15231,9 +15470,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15272,6 +15513,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15292,9 +15534,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15333,6 +15577,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15353,9 +15598,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_lb_fail.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15394,6 +15641,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15414,9 +15662,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15455,6 +15705,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15475,9 +15726,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15516,6 +15769,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15536,9 +15790,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15577,6 +15833,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15597,9 +15854,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15638,6 +15897,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15658,9 +15918,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15699,6 +15961,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15719,9 +15982,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_message_replay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15760,6 +16025,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15780,9 +16046,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_message.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15821,6 +16089,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15841,9 +16110,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15882,6 +16153,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15902,9 +16174,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -15943,6 +16217,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -15963,9 +16238,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_send_op_fails.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16004,6 +16281,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16024,9 +16302,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_send_recv_batch.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16065,6 +16345,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16085,9 +16366,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_server_pushback_delay.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16126,6 +16409,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16146,9 +16430,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_server_pushback_disabled.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16198,6 +16484,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16218,9 +16505,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_streaming_after_commit.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16259,6 +16548,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16279,9 +16569,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16320,6 +16612,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16340,9 +16633,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16381,6 +16676,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16401,9 +16697,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16453,6 +16751,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16473,9 +16772,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_throttled.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16514,6 +16815,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16534,9 +16836,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_too_many_attempts.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16575,6 +16879,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16595,9 +16900,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_transparent_goaway.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16636,6 +16943,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16656,9 +16964,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16697,6 +17007,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16717,9 +17028,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16758,6 +17071,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16778,9 +17092,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_unref_before_finish.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16819,6 +17135,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -16839,9 +17156,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/retry_unref_before_recv.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -16860,6 +17179,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -16869,6 +17189,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/rls_server.h
@@ -16880,12 +17201,14 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   - test/cpp/end2end/rls_end2end_test.cc
   - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: rls_lb_config_parser_test
@@ -16914,6 +17237,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -17049,6 +17373,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: server_builder_test
   gtest: true
@@ -17219,6 +17544,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17239,9 +17565,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/server_finishes_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17262,6 +17590,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: server_registered_method_bad_client_test
   gtest: true
@@ -17367,6 +17696,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17387,9 +17717,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/server_streaming.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17419,6 +17751,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: service_config_test
   gtest: true
@@ -17459,6 +17792,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: shutdown_finishes_calls_test
   gtest: true
@@ -17495,6 +17829,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17515,9 +17850,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/shutdown_finishes_calls.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17556,6 +17893,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17576,9 +17914,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/shutdown_finishes_tags.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17596,6 +17936,7 @@ targets:
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: simple_delayed_request_test
   gtest: true
@@ -17632,6 +17973,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17652,9 +17994,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/simple_delayed_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17693,6 +18037,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17713,9 +18058,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/simple_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -17768,6 +18115,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -17788,9 +18136,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/simple_request.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18087,6 +18437,7 @@ targets:
   - test/core/transport/chttp2/stream_leak_with_queued_flow_control_update_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: streaming_error_response_test
   gtest: true
@@ -18123,6 +18474,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -18143,9 +18495,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/streaming_error_response.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18199,6 +18553,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: string_ref_test
   gtest: true
@@ -18424,6 +18779,7 @@ targets:
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc
   uses_polling: false
 - name: test_core_channel_channelz_test
@@ -18440,6 +18796,7 @@ targets:
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_core_end2end_channelz_test
@@ -18477,6 +18834,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -18497,9 +18855,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/channelz.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -18521,6 +18881,7 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -18574,6 +18935,7 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
+  - absl/log:check
   - absl/status:statusor
   - absl/utility:utility
   - gpr
@@ -18756,6 +19118,7 @@ targets:
   - test/core/transport/test_suite/test_main.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   platforms:
@@ -18790,6 +19153,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: test_cpp_ext_chaotic_good_test
   gtest: true
@@ -18903,6 +19267,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
   - src/core/lib/resource_quota/thread_quota.h
@@ -18911,6 +19276,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -18954,6 +19320,7 @@ targets:
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19021,6 +19388,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -19041,9 +19409,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/timeout_before_request_call.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19129,6 +19499,7 @@ targets:
   - test/cpp/end2end/tls_credentials_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: tls_key_export_test
   gtest: true
@@ -19143,6 +19514,7 @@ targets:
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
@@ -19186,6 +19558,7 @@ targets:
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: traced_buffer_list_test
@@ -19197,6 +19570,7 @@ targets:
   - test/core/event_engine/posix/traced_buffer_list_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19238,6 +19612,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -19258,9 +19633,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/trailing_metadata.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19339,7 +19716,9 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -19356,7 +19735,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -19377,6 +19755,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19503,10 +19882,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/gprpp/uuid_v4.h
+  headers: []
   src:
-  - src/core/lib/gprpp/uuid_v4.cc
   - test/core/gprpp/uuid_v4_test.cc
   deps:
   - gtest
@@ -19538,6 +19915,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/notification.h
@@ -19608,6 +19986,7 @@ targets:
   - test/core/util/fake_stats_plugin.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -19622,6 +20001,7 @@ targets:
   - test/core/event_engine/windows/win_socket_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19653,6 +20033,7 @@ targets:
   - test/core/event_engine/windows/windows_endpoint_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19715,7 +20096,9 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -19732,7 +20115,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -19753,6 +20135,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19822,7 +20205,9 @@ targets:
   - src/core/ext/transport/binder/wire_format/transaction.cc
   - src/core/ext/transport/binder/wire_format/wire_reader_impl.cc
   - src/core/ext/transport/binder/wire_format/wire_writer.cc
+  - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/client_interceptor.cc
@@ -19839,7 +20224,6 @@ targets:
   - src/cpp/common/resource_quota_cc.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/common/secure_auth_context.cc
-  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/common/tls_certificate_provider.cc
   - src/cpp/common/tls_certificate_verifier.cc
@@ -19860,6 +20244,7 @@ targets:
   - src/cpp/server/server_callback.cc
   - src/cpp/server/server_cc.cc
   - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
@@ -19885,6 +20270,7 @@ targets:
   - test/core/gprpp/work_serializer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19925,6 +20311,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -19945,9 +20332,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -19986,6 +20375,7 @@ targets:
   - test/core/end2end/fixtures/sockpair_fixture.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/test_lb_policies.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -20006,9 +20396,11 @@ targets:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/util/fake_stats_plugin.cc
   - test/core/util/test_lb_policies.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
@@ -20066,6 +20458,7 @@ targets:
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -20115,7 +20508,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/util/scoped_env_var.h
   src:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
@@ -20139,6 +20533,7 @@ targets:
   language: c++
   headers:
   - test/core/util/scoped_env_var.h
+  - test/core/xds/xds_client_test_peer.h
   - test/core/xds/xds_transport_fake.h
   src:
   - src/proto/grpc/testing/xds/v3/base.proto
@@ -20209,6 +20604,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20301,6 +20697,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20345,6 +20742,7 @@ targets:
   run: false
   language: c++
   headers:
+  - test/core/util/fake_stats_plugin.h
   - test/core/util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
@@ -20384,6 +20782,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/route.proto
   - src/proto/grpc/testing/xds/v3/router.proto
   - src/proto/grpc/testing/xds/v3/string.proto
+  - test/core/util/fake_stats_plugin.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_core_end2end_test.cc
   - test/cpp/end2end/xds/xds_end2end_test_lib.cc
@@ -20392,6 +20791,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20412,6 +20812,7 @@ targets:
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
 - name: xds_credentials_test
   gtest: true
@@ -20498,6 +20899,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20563,6 +20965,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -20588,6 +20991,64 @@ targets:
   - protobuf
   - grpc_test_util
   uses_polling: false
+- name: xds_fallback_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/util/scoped_env_var.h
+  - test/cpp/end2end/counted_service.h
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/end2end/xds/xds_end2end_test_lib.h
+  - test/cpp/end2end/xds/xds_server.h
+  - test/cpp/end2end/xds/xds_utils.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - src/proto/grpc/testing/xds/v3/address.proto
+  - src/proto/grpc/testing/xds/v3/ads.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/cluster.proto
+  - src/proto/grpc/testing/xds/v3/config_source.proto
+  - src/proto/grpc/testing/xds/v3/discovery.proto
+  - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/expr.proto
+  - src/proto/grpc/testing/xds/v3/extension.proto
+  - src/proto/grpc/testing/xds/v3/health_check.proto
+  - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  - src/proto/grpc/testing/xds/v3/http_filter_rbac.proto
+  - src/proto/grpc/testing/xds/v3/listener.proto
+  - src/proto/grpc/testing/xds/v3/load_report.proto
+  - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/metadata.proto
+  - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - src/proto/grpc/testing/xds/v3/outlier_detection.proto
+  - src/proto/grpc/testing/xds/v3/path.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/proto/grpc/testing/xds/v3/protocol.proto
+  - src/proto/grpc/testing/xds/v3/range.proto
+  - src/proto/grpc/testing/xds/v3/rbac.proto
+  - src/proto/grpc/testing/xds/v3/regex.proto
+  - src/proto/grpc/testing/xds/v3/route.proto
+  - src/proto/grpc/testing/xds/v3/router.proto
+  - src/proto/grpc/testing/xds/v3/string.proto
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/end2end/xds/xds_end2end_test_lib.cc
+  - test/cpp/end2end/xds/xds_fallback_end2end_test.cc
+  - test/cpp/end2end/xds/xds_server.cc
+  - test/cpp/end2end/xds/xds_utils.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - gtest
+  - absl/log:check
+  - grpc++_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: xds_fault_injection_end2end_test
   gtest: true
   build: test
@@ -20642,6 +21103,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20836,6 +21298,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20896,6 +21359,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -20927,6 +21391,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20986,6 +21451,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21046,6 +21512,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21107,6 +21574,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21209,6 +21677,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21237,6 +21706,7 @@ targets:
   - test/cpp/interop/xds_stats_watcher_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
@@ -21297,6 +21767,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux

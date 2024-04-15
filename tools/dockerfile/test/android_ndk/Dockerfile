@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:10
+FROM debian:11
 
 #=================
 # Basic C core dependencies
@@ -98,36 +98,26 @@ RUN mkdir /var/local/jenkins
 
 RUN apt update && apt upgrade -y
 
-# Java required by Android SDK (using Eclipse Temurin Package)
-RUN apt install -y wget apt-transport-https && \
-    mkdir -p /etc/apt/keyrings && \
-    wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc && \
-    echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
-RUN apt update && apt install -y temurin-8-jdk
-
-RUN apt-get -y autoremove && \
-    rm -rf /var/lib/apt/lists/*
+# Java
+RUN apt-get install -y openjdk-11-jdk
 
 # Install Android SDK
-ENV ANDROID_SDK_VERSION 4333796
-RUN mkdir -p /opt/android-sdk && cd /opt/android-sdk && \
-    wget -q https://dl.google.com/android/repository/sdk-tools-linux-$ANDROID_SDK_VERSION.zip && \
-    unzip -q sdk-tools-linux-$ANDROID_SDK_VERSION.zip && \
-    rm sdk-tools-linux-$ANDROID_SDK_VERSION.zip
-ENV ANDROID_SDK_PATH /opt/android-sdk
 ENV ANDROID_HOME /opt/android-sdk
-RUN yes | $ANDROID_SDK_PATH/tools/bin/sdkmanager --licenses  # accept all licenses
-
-# Install Android NDK & CMake
-# This is not required but desirable to reduce the time to download and the chance of download failure.
-RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
-RUN $ANDROID_SDK_PATH/tools/bin/sdkmanager 'ndk;25.1.8937393' 'cmake;3.22.1'
+RUN mkdir -p $ANDROID_HOME && \
+    wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip && \
+    unzip cmd.zip && rm cmd.zip && \
+    yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'tools' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
 
 # Install gcloud
-RUN curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-407.0.0-linux-x86_64.tar.gz && \
-    tar -xf google-cloud-cli-407.0.0-linux-x86_64.tar.gz && \
+RUN wget -O google-cloud-cli.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-467.0.0-linux-x86_64.tar.gz && \
+    tar -xf google-cloud-cli.tar.gz && \
     ./google-cloud-sdk/install.sh --bash-completion=false --path-update=true && \
-    rm -rf google-cloud-cli-407.0.0-linux-x86_64.tar.gz
+    rm -rf google-cloud-cli.tar.gz
 RUN ln -s /google-cloud-sdk/bin/gcloud /usr/local/bin/gcloud
 
 # Define the default command.

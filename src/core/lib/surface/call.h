@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -33,6 +31,7 @@
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -50,7 +49,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
@@ -58,7 +57,7 @@ typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
 
 typedef struct grpc_call_create_args {
   grpc_core::RefCountedPtr<grpc_core::Channel> channel;
-  grpc_core::Server* server;
+  grpc_core::ServerInterface* server;
 
   grpc_call* parent;
   uint32_t propagation_mask;
@@ -159,7 +158,7 @@ class CallContext {
 template <>
 struct ContextType<CallContext> {};
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
+RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface* server,
                                                  Channel* channel,
                                                  Arena* arena);
 

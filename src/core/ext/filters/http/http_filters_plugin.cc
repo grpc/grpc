@@ -22,7 +22,6 @@
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
-#include "src/core/ext/filters/http/message_compress/legacy_compression_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -40,40 +39,21 @@ bool IsBuildingHttpLikeTransport(const ChannelArgs& args) {
 }  // namespace
 
 void RegisterHttpFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3CompressionFilterEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_SUBCHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpClientFilter>()
-        .After<ClientMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpClientFilter>()
-        .After<ClientMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpServerFilter>()
-        .After<ServerMessageSizeFilter>();
-  } else {
-    builder->channel_init()
-        ->RegisterFilter<LegacyClientCompressionFilter>(GRPC_CLIENT_SUBCHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpClientFilter>()
-        .After<ClientMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<LegacyClientCompressionFilter>(
-            GRPC_CLIENT_DIRECT_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpClientFilter>()
-        .After<ClientMessageSizeFilter>();
-    builder->channel_init()
-        ->RegisterFilter<LegacyServerCompressionFilter>(GRPC_SERVER_CHANNEL)
-        .If(IsBuildingHttpLikeTransport)
-        .After<HttpServerFilter>()
-        .After<ServerMessageSizeFilter>();
-  }
+  builder->channel_init()
+      ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_SUBCHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<HttpClientFilter>()
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<ClientCompressionFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<HttpClientFilter>()
+      .After<ClientMessageSizeFilter>();
+  builder->channel_init()
+      ->RegisterFilter<ServerCompressionFilter>(GRPC_SERVER_CHANNEL)
+      .If(IsBuildingHttpLikeTransport)
+      .After<HttpServerFilter>()
+      .After<ServerMessageSizeFilter>();
   builder->channel_init()
       ->RegisterFilter<HttpClientFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(IsBuildingHttpLikeTransport)

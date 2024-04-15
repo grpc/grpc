@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/call_size_estimator.h"
 
 #include <algorithm>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

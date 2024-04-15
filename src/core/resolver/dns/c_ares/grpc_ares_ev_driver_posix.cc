@@ -51,7 +51,7 @@
 
 namespace grpc_core {
 
-class GrpcPolledFdPosix : public GrpcPolledFd {
+class GrpcPolledFdPosix final : public GrpcPolledFd {
  public:
   GrpcPolledFdPosix(ares_socket_t as, grpc_pollset_set* driver_pollset_set)
       : name_(absl::StrCat("c-ares fd: ", static_cast<int>(as))), as_(as) {
@@ -105,7 +105,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   grpc_pollset_set* driver_pollset_set_ ABSL_GUARDED_BY(&grpc_ares_request::mu);
 };
 
-class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
+class GrpcPolledFdFactoryPosix final : public GrpcPolledFdFactory {
  public:
   ~GrpcPolledFdFactoryPosix() override {
     for (auto& fd : owned_fds_) {

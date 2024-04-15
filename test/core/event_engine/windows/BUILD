@@ -90,7 +90,10 @@ grpc_cc_library(
     name = "create_sockpair",
     srcs = ["create_sockpair.cc"],
     hdrs = ["create_sockpair.h"],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/log:check",
+        "absl/status",
+    ],
     language = "C++",
     tags = [
         "no_linux",

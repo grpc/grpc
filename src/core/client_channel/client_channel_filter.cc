@@ -94,7 +94,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -192,7 +191,7 @@ class ClientChannelFilter::CallData {
   RefCountedPtr<DynamicFilters> dynamic_filters_;
 };
 
-class ClientChannelFilter::FilterBasedCallData
+class ClientChannelFilter::FilterBasedCallData final
     : public ClientChannelFilter::CallData {
  public:
   static grpc_error_handle Init(grpc_call_element* elem,
@@ -312,7 +311,7 @@ class ClientChannelFilter::FilterBasedCallData
   grpc_error_handle cancel_error_;
 };
 
-class ClientChannelFilter::PromiseBasedCallData
+class ClientChannelFilter::PromiseBasedCallData final
     : public ClientChannelFilter::CallData {
  public:
   explicit PromiseBasedCallData(ClientChannelFilter* chand) : chand_(chand) {}
@@ -452,7 +451,7 @@ ClientChannelServiceConfigCallData* GetServiceConfigCallData(
       context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
 }
 
-class DynamicTerminationFilter {
+class DynamicTerminationFilter final {
  public:
   class CallData;
 
@@ -497,7 +496,7 @@ class DynamicTerminationFilter {
   ClientChannelFilter* chand_;
 };
 
-class DynamicTerminationFilter::CallData {
+class DynamicTerminationFilter::CallData final {
  public:
   static grpc_error_handle Init(grpc_call_element* elem,
                                 const grpc_call_element_args* args) {
@@ -594,7 +593,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
 // ClientChannelFilter::ResolverResultHandler
 //
 
-class ClientChannelFilter::ResolverResultHandler
+class ClientChannelFilter::ResolverResultHandler final
     : public Resolver::ResultHandler {
  public:
   explicit ResolverResultHandler(ClientChannelFilter* chand) : chand_(chand) {
@@ -629,7 +628,8 @@ class ClientChannelFilter::ResolverResultHandler
 // underlying subchannel is shared between channels, this wrapper will only
 // be used within one channel, so it will always be synchronized by the
 // control plane work_serializer.
-class ClientChannelFilter::SubchannelWrapper : public SubchannelInterface {
+class ClientChannelFilter::SubchannelWrapper final
+    : public SubchannelInterface {
  public:
   SubchannelWrapper(ClientChannelFilter* chand,
                     RefCountedPtr<Subchannel> subchannel)
@@ -685,7 +685,7 @@ class ClientChannelFilter::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  void Orphan() override {
+  void Orphaned() override {
     if (!IsWorkSerializerDispatchEnabled()) return;
     // Make sure we clean up the channel's subchannel maps inside the
     // WorkSerializer.
@@ -772,7 +772,8 @@ class ClientChannelFilter::SubchannelWrapper : public SubchannelInterface {
   // This class handles things like hopping into the WorkSerializer
   // before passing notifications to the LB policy and propagating
   // keepalive information betwen subchannels.
-  class WatcherWrapper : public Subchannel::ConnectivityStateWatcherInterface {
+  class WatcherWrapper final
+      : public Subchannel::ConnectivityStateWatcherInterface {
    public:
     WatcherWrapper(
         std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
@@ -1025,7 +1026,7 @@ void ClientChannelFilter::ExternalConnectivityWatcher::RemoveWatcherLocked() {
 // ClientChannelFilter::ConnectivityWatcherAdder
 //
 
-class ClientChannelFilter::ConnectivityWatcherAdder {
+class ClientChannelFilter::ConnectivityWatcherAdder final {
  public:
   ConnectivityWatcherAdder(
       ClientChannelFilter* chand, grpc_connectivity_state initial_state,
@@ -1058,7 +1059,7 @@ class ClientChannelFilter::ConnectivityWatcherAdder {
 // ClientChannelFilter::ConnectivityWatcherRemover
 //
 
-class ClientChannelFilter::ConnectivityWatcherRemover {
+class ClientChannelFilter::ConnectivityWatcherRemover final {
  public:
   ConnectivityWatcherRemover(ClientChannelFilter* chand,
                              AsyncConnectivityStateWatcherInterface* watcher)
@@ -1088,7 +1089,7 @@ class ClientChannelFilter::ConnectivityWatcherRemover {
 // ClientChannelFilter::ClientChannelControlHelper
 //
 
-class ClientChannelFilter::ClientChannelControlHelper
+class ClientChannelFilter::ClientChannelControlHelper final
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   explicit ClientChannelControlHelper(ClientChannelFilter* chand)
@@ -1196,16 +1197,6 @@ class ClientChannelFilter::ClientChannelControlHelper
 //
 // ClientChannelFilter implementation
 //
-
-ClientChannelFilter* ClientChannelFilter::GetFromChannel(Channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(channel->channel_stack());
-  if (elem->filter != &kFilterVtableWithPromises &&
-      elem->filter != &kFilterVtableWithoutPromises) {
-    return nullptr;
-  }
-  return static_cast<ClientChannelFilter*>(elem->channel_data);
-}
 
 grpc_error_handle ClientChannelFilter::Init(grpc_channel_element* elem,
                                             grpc_channel_element_args* args) {
@@ -1351,6 +1342,7 @@ ClientChannelFilter::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
     grpc_closure* on_call_destruction_complete,
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
+  promise_detail::Context<Arena> arena_ctx(args.arena);
   return OrphanablePtr<FilterBasedLoadBalancedCall>(
       args.arena->New<FilterBasedLoadBalancedCall>(
           this, args, pollent, on_call_destruction_complete,
@@ -2488,7 +2480,8 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesResume() {
 
 // A class to handle the call combiner cancellation callback for a
 // queued pick.
-class ClientChannelFilter::FilterBasedCallData::ResolverQueuedCallCanceller {
+class ClientChannelFilter::FilterBasedCallData::ResolverQueuedCallCanceller
+    final {
  public:
   explicit ResolverQueuedCallCanceller(FilterBasedCallData* calld)
       : calld_(calld) {
@@ -2609,7 +2602,7 @@ void ClientChannelFilter::FilterBasedCallData::
 // ClientChannelFilter::LoadBalancedCall::LbCallState
 //
 
-class ClientChannelFilter::LoadBalancedCall::LbCallState
+class ClientChannelFilter::LoadBalancedCall::LbCallState final
     : public ClientChannelLbCallState {
  public:
   explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
@@ -2631,7 +2624,7 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState
 // ClientChannelFilter::LoadBalancedCall::Metadata
 //
 
-class ClientChannelFilter::LoadBalancedCall::Metadata
+class ClientChannelFilter::LoadBalancedCall::Metadata final
     : public LoadBalancingPolicy::MetadataInterface {
  public:
   explicit Metadata(grpc_metadata_batch* batch) : batch_(batch) {}
@@ -2671,7 +2664,7 @@ class ClientChannelFilter::LoadBalancedCall::Metadata
   }
 
  private:
-  class Encoder {
+  class Encoder final {
    public:
     void Encode(const Slice& key, const Slice& value) {
       out_.emplace_back(std::string(key.as_string_view()),
@@ -2724,7 +2717,7 @@ ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttemptTracer()
 // ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor
 //
 
-class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor
+class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
     : public LoadBalancingPolicy::BackendMetricAccessor {
  public:
   BackendMetricAccessor(LoadBalancedCall* lb_call,
@@ -2745,7 +2738,7 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor
   }
 
  private:
-  class BackendMetricAllocator : public BackendMetricAllocatorInterface {
+  class BackendMetricAllocator final : public BackendMetricAllocatorInterface {
    public:
     explicit BackendMetricAllocator(Arena* arena) : arena_(arena) {}
 
@@ -2905,6 +2898,15 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
     set_picker(chand_->picker_);
   }
   while (true) {
+    // TODO(roth): Fix race condition in channel_idle filter and any
+    // other possible causes of this.
+    if (pickers.back() == nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
+        gpr_log(GPR_ERROR, "chand=%p lb_call=%p: picker is null, failing call",
+                chand_, this);
+      }
+      return absl::InternalError("picker is null -- shouldn't happen");
+    }
     // Do pick.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: performing pick with picker=%p",
@@ -3391,7 +3393,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
 // because there may be multiple LB picks happening in parallel.
 // Instead, we will probably need to maintain a list in the CallData
 // object of pending LB picks to be cancelled when the closure runs.
-class ClientChannelFilter::FilterBasedLoadBalancedCall::LbQueuedCallCanceller {
+class ClientChannelFilter::FilterBasedLoadBalancedCall::LbQueuedCallCanceller
+    final {
  public:
   explicit LbQueuedCallCanceller(
       RefCountedPtr<FilterBasedLoadBalancedCall> lb_call)
@@ -3536,7 +3539,7 @@ ClientChannelFilter::PromiseBasedLoadBalancedCall::MakeCallPromise(
         [this]() {
           // TODO(roth): Change CallTracer API to not pass metadata
           // batch to this method, since the batch is always empty.
-          grpc_metadata_batch metadata(GetContext<Arena>());
+          grpc_metadata_batch metadata;
           call_attempt_tracer()->RecordSendTrailingMetadata(&metadata);
         });
   }

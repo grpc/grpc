@@ -49,8 +49,7 @@ class HandshakerFactory {
     // Applicable mainly for Client handshakers.
     kTCPConnectHandshakers,
     // Handshakers responsible for the actual HTTP connect established.
-    // Applicable
-    // mainly for Client handshakers.
+    // Applicable mainly for Client handshakers.
     kHTTPConnectHandshakers,
     // Handshakers that should be called before security handshakes but after
     // connect establishment. Applicable mainly for Server handshakers

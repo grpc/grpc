@@ -39,7 +39,7 @@ CLASSIFIERS = [
 ]
 INSTALL_REQUIRES = [
     "grpcio>=1.49.0",
-    "protobuf>=4.21.6,<5.0dev",
+    "protobuf>=5.26.1,<6.0dev",
 ]
 
 SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools>=1.49.0"]
@@ -55,7 +55,7 @@ setuptools.setup(
     author_email="grpc-io@googlegroups.com",
     url="https://grpc.io",
     license="Apache License 2.0",
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     classifiers=CLASSIFIERS,

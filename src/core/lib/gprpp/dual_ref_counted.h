@@ -17,14 +17,14 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
 #define GRPC_SRC_CORE_LIB_GPRPP_DUAL_REF_COUNTED_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstdint>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
@@ -39,19 +39,19 @@ namespace grpc_core {
 //
 // Each class of refs can be incremented and decremented independently.
 // Objects start with 1 strong ref and 0 weak refs at instantiation.
-// When the strong refcount reaches 0, the object's Orphan() method is called.
+// When the strong refcount reaches 0, the object's Orphaned() method is called.
 // When the weak refcount reaches 0, the object is destroyed.
 //
 // This will be used by CRTP (curiously-recurring template pattern), e.g.:
 //   class MyClass : public RefCounted<MyClass> { ... };
 template <typename Child>
-class DualRefCounted : public Orphanable {
+class DualRefCounted {
  public:
   // Not copyable nor movable.
   DualRefCounted(const DualRefCounted&) = delete;
   DualRefCounted& operator=(const DualRefCounted&) = delete;
 
-  ~DualRefCounted() override = default;
+  virtual ~DualRefCounted() = default;
 
   GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref() {
     IncrementRefCount();
@@ -68,7 +68,8 @@ class DualRefCounted : public Orphanable {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   RefCountedPtr<Subclass> RefAsSubclass() {
     IncrementRefCount();
-    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -76,7 +77,8 @@ class DualRefCounted : public Orphanable {
   RefCountedPtr<Subclass> RefAsSubclass(const DebugLocation& location,
                                         const char* reason) {
     IncrementRefCount(location, reason);
-    return RefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return RefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void Unref() {
@@ -93,7 +95,7 @@ class DualRefCounted : public Orphanable {
     GPR_ASSERT(strong_refs > 0);
 #endif
     if (GPR_UNLIKELY(strong_refs == 1)) {
-      Orphan();
+      Orphaned();
     }
     // Now drop the weak ref.
     WeakUnref();
@@ -116,7 +118,7 @@ class DualRefCounted : public Orphanable {
     (void)reason;
 #endif
     if (GPR_UNLIKELY(strong_refs == 1)) {
-      Orphan();
+      Orphaned();
     }
     // Now drop the weak ref.
     WeakUnref(location, reason);
@@ -179,7 +181,8 @@ class DualRefCounted : public Orphanable {
       std::enable_if_t<std::is_base_of<Child, Subclass>::value, bool> = true>
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass() {
     IncrementWeakRefCount();
-    return WeakRefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return WeakRefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
   template <
       typename Subclass,
@@ -187,7 +190,8 @@ class DualRefCounted : public Orphanable {
   WeakRefCountedPtr<Subclass> WeakRefAsSubclass(const DebugLocation& location,
                                                 const char* reason) {
     IncrementWeakRefCount(location, reason);
-    return WeakRefCountedPtr<Subclass>(static_cast<Subclass*>(this));
+    return WeakRefCountedPtr<Subclass>(
+        DownCast<Subclass*>(static_cast<Child*>(this)));
   }
 
   void WeakUnref() {
@@ -256,6 +260,9 @@ class DualRefCounted : public Orphanable {
 #endif
         refs_(MakeRefPair(initial_refcount, 0)) {
   }
+
+  // Ref count has dropped to zero, so the object is now orphaned.
+  virtual void Orphaned() = 0;
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().

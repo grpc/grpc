@@ -1,5 +1,4 @@
 //
-//
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -36,8 +35,8 @@ void test_unknown_scheme_target(void) {
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
   grpc_channel* chan = grpc_channel_create("blah://blah", creds, nullptr);
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(
+      grpc_core::Channel::FromC(chan)->channel_stack(), 0);
   ASSERT_STREQ(elem->filter->name, "lame-client");
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(chan)->Unref();
@@ -50,8 +49,8 @@ void test_security_connector_already_in_arg(void) {
   args.num_args = 1;
   args.args = &arg;
   grpc_channel* chan = grpc_channel_create(nullptr, nullptr, &args);
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(
+      grpc_core::Channel::FromC(chan)->channel_stack(), 0);
   ASSERT_STREQ(elem->filter->name, "lame-client");
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(chan)->Unref();
@@ -59,8 +58,8 @@ void test_security_connector_already_in_arg(void) {
 
 void test_null_creds(void) {
   grpc_channel* chan = grpc_channel_create(nullptr, nullptr, nullptr);
-  grpc_channel_element* elem =
-      grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
+  grpc_channel_element* elem = grpc_channel_stack_element(
+      grpc_core::Channel::FromC(chan)->channel_stack(), 0);
   ASSERT_STREQ(elem->filter->name, "lame-client");
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(chan)->Unref();

@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 
 #include "absl/status/status.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
-Arena::PoolPtr<grpc_metadata_batch> SettingsMetadata::ToMetadataBatch(
-    Arena* arena) {
-  auto md = Arena::MakePooled<grpc_metadata_batch>(arena);
+Arena::PoolPtr<grpc_metadata_batch> SettingsMetadata::ToMetadataBatch() {
+  auto md = Arena::MakePooled<grpc_metadata_batch>();
   auto add = [&md](absl::string_view key, std::string value) {
     md->Append(key, Slice::FromCopiedString(value),
                [key, value](absl::string_view error, const Slice&) {

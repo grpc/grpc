@@ -231,17 +231,9 @@ TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
 ///////////////////////////////////////////////////////////////////////////////
 // PartyTest
 
-class AllocatorOwner {
- protected:
-  ~AllocatorOwner() { arena_->Destroy(); }
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  Arena* arena_ = Arena::Create(1024, &memory_allocator_);
-};
-
-class TestParty final : public AllocatorOwner, public Party {
+class TestParty final : public Party {
  public:
-  TestParty() : Party(AllocatorOwner::arena_, 1) {}
+  TestParty() : Party(1) {}
   ~TestParty() override {}
   std::string DebugTag() const override { return "TestParty"; }
 
@@ -285,8 +277,7 @@ TEST_F(PartyTest, CanSpawnAndRun) {
       "TestSpawn",
       [i = 10]() mutable -> Poll<int> {
         EXPECT_EQ(GetContext<Activity>()->DebugTag(), "TestParty");
-        gpr_log(GPR_DEBUG, "i=%d", i);
-        GPR_ASSERT(i > 0);
+        EXPECT_GT(i, 0);
         GetContext<Activity>()->ForceImmediateRepoll();
         --i;
         if (i == 0) return 42;
@@ -784,6 +775,60 @@ TEST_F(PartyTest, ThreadStressTestWithInnerSpawn) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST_F(PartyTest, NestedWakeup) {
+  auto party1 = MakeRefCounted<TestParty>();
+  auto party2 = MakeRefCounted<TestParty>();
+  auto party3 = MakeRefCounted<TestParty>();
+  int whats_going_on = 0;
+  Notification started2;
+  Notification done2;
+  Notification started3;
+  Notification notify_done;
+  party1->Spawn(
+      "p1",
+      [&]() {
+        EXPECT_EQ(whats_going_on, 0);
+        whats_going_on = 1;
+        party2->Spawn(
+            "p2",
+            [&]() {
+              started2.Notify();
+              started3.WaitForNotification();
+              EXPECT_EQ(whats_going_on, 3);
+              whats_going_on = 4;
+              return Empty{};
+            },
+            [&](Empty) {
+              EXPECT_EQ(whats_going_on, 4);
+              whats_going_on = 5;
+              done2.Notify();
+            });
+        party3->Spawn(
+            "p3",
+            [&]() {
+              started2.WaitForNotification();
+              started3.Notify();
+              done2.WaitForNotification();
+              EXPECT_EQ(whats_going_on, 5);
+              whats_going_on = 6;
+              return Empty{};
+            },
+            [&](Empty) {
+              EXPECT_EQ(whats_going_on, 6);
+              whats_going_on = 7;
+              notify_done.Notify();
+            });
+        EXPECT_EQ(whats_going_on, 1);
+        whats_going_on = 2;
+        return Empty{};
+      },
+      [&](Empty) {
+        EXPECT_EQ(whats_going_on, 2);
+        whats_going_on = 3;
+      });
+  notify_done.WaitForNotification();
 }
 
 }  // namespace grpc_core

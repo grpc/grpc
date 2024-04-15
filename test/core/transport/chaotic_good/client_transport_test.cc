@@ -36,6 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
@@ -66,8 +67,7 @@ const uint8_t kGrpcStatus0[] = {0x10, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
                                 0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+  auto md = GetContext<Arena>()->MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }

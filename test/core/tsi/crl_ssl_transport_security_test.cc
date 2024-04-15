@@ -68,6 +68,12 @@ const char* kRevokedIntermediateCertPath =
 const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
 const char* kIntermediateCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/intermediate.crl";
+const char* kModifiedSignaturePath =
+    "test/core/tsi/test_creds/crl_data/bad_crls/invalid_signature.crl";
+const char* kModifiedContentPath =
+    "test/core/tsi/test_creds/crl_data/bad_crls/invalid_content.crl";
+const char* kEvilCrlPath =
+    "test/core/tsi/test_creds/crl_data/bad_crls/evil.crl";
 
 class CrlSslTransportSecurityTest
     : public testing::TestWithParam<tsi_tls_version> {
@@ -416,6 +422,51 @@ std::string TestNameSuffix(
   if (version.param == tsi_tls_version::TSI_TLS1_2) return "TLS_1_2";
   GPR_ASSERT(version.param == tsi_tls_version::TSI_TLS1_3);
   return "TLS_1_3";
+}
+
+TEST_P(CrlSslTransportSecurityTest, CrlProviderModifiedContentCrl) {
+  std::string root_crl =
+      grpc_core::testing::GetFileContents(kModifiedContentPath);
+  std::string intermediate_crl =
+      grpc_core::testing::GetFileContents(kIntermediateCrlPath);
+
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
+          {root_crl, intermediate_crl});
+  ASSERT_NE(provider.status(), absl::OkStatus()) << provider.status();
+}
+
+TEST_P(CrlSslTransportSecurityTest, CrlProviderModifiedSignatureCrl) {
+  std::string root_crl =
+      grpc_core::testing::GetFileContents(kModifiedSignaturePath);
+  std::string intermediate_crl =
+      grpc_core::testing::GetFileContents(kIntermediateCrlPath);
+
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
+          {root_crl, intermediate_crl});
+  ASSERT_TRUE(provider.ok()) << provider.status();
+
+  auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
+                                        kValidKeyPath, kValidCertPath, nullptr,
+                                        *provider, false, false, false);
+  fixture->Run();
+}
+
+TEST_P(CrlSslTransportSecurityTest, CrlFromBadCa) {
+  std::string root_crl = grpc_core::testing::GetFileContents(kEvilCrlPath);
+  std::string intermediate_crl =
+      grpc_core::testing::GetFileContents(kIntermediateCrlPath);
+
+  absl::StatusOr<std::shared_ptr<grpc_core::experimental::CrlProvider>>
+      provider = grpc_core::experimental::CreateStaticCrlProvider(
+          {root_crl, intermediate_crl});
+  ASSERT_TRUE(provider.ok()) << provider.status();
+
+  auto* fixture = new SslTsiTestFixture(kValidKeyPath, kValidCertPath,
+                                        kValidKeyPath, kValidCertPath, nullptr,
+                                        *provider, false, false, false);
+  fixture->Run();
 }
 
 // TODO(gtcooke94) Add nullptr issuer test cases - this is not simple to test

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/gcp/observability_config.h"
 
 #include <stddef.h>
@@ -32,6 +30,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"

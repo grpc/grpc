@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
 #define GRPC_SRC_CORE_EXT_XDS_CERTIFICATE_PROVIDER_STORE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <string>
 #include <utility>
@@ -29,6 +27,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -46,7 +45,7 @@
 namespace grpc_core {
 
 // Map for xDS based grpc_tls_certificate_provider instances.
-class CertificateProviderStore
+class CertificateProviderStore final
     : public InternallyRefCounted<CertificateProviderStore> {
  public:
   struct PluginDefinition {
@@ -77,7 +76,8 @@ class CertificateProviderStore
  private:
   // A thin wrapper around `grpc_tls_certificate_provider` which allows removing
   // the entry from the CertificateProviderStore when the refcount reaches zero.
-  class CertificateProviderWrapper : public grpc_tls_certificate_provider {
+  class CertificateProviderWrapper final
+      : public grpc_tls_certificate_provider {
    public:
     CertificateProviderWrapper(
         RefCountedPtr<grpc_tls_certificate_provider> certificate_provider,

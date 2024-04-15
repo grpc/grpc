@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
@@ -28,6 +26,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -38,9 +37,9 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 
+#define GRPC_ARG_LAME_FILTER_ERROR "grpc.lame_filter_error"
+
 namespace grpc_core {
-// Does NOT take ownership of error.
-grpc_arg MakeLameClientErrorArg(grpc_error_handle* error);
 
 // This filter becomes the entire channel stack for a channel that fails to be
 // created. Every call returns failure.
@@ -66,6 +65,11 @@ class LameClientFilter : public ChannelFilter {
   };
   std::unique_ptr<State> state_;
 };
+
+extern const grpc_arg_pointer_vtable kLameFilterErrorArgVtable;
+
+grpc_arg MakeLameClientErrorArg(grpc_error_handle* error);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H

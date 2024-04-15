@@ -42,7 +42,7 @@ namespace grpc_core {
 
 namespace {
 
-class SockaddrResolver : public Resolver {
+class SockaddrResolver final : public Resolver {
  public:
   SockaddrResolver(EndpointAddressesList addresses, ResolverArgs args);
 
@@ -110,7 +110,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
                                           std::move(args));
 }
 
-class IPv4ResolverFactory : public ResolverFactory {
+class IPv4ResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "ipv4"; }
 
@@ -123,7 +123,7 @@ class IPv4ResolverFactory : public ResolverFactory {
   }
 };
 
-class IPv6ResolverFactory : public ResolverFactory {
+class IPv6ResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "ipv6"; }
 
@@ -137,7 +137,7 @@ class IPv6ResolverFactory : public ResolverFactory {
 };
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
-class UnixResolverFactory : public ResolverFactory {
+class UnixResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "unix"; }
 
@@ -150,7 +150,7 @@ class UnixResolverFactory : public ResolverFactory {
   }
 };
 
-class UnixAbstractResolverFactory : public ResolverFactory {
+class UnixAbstractResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "unix-abstract"; }
 
@@ -165,7 +165,7 @@ class UnixAbstractResolverFactory : public ResolverFactory {
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
 #ifdef GRPC_HAVE_VSOCK
-class VSockResolverFactory : public ResolverFactory {
+class VSockResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "vsock"; }
 

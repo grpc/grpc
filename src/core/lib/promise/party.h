@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -30,6 +28,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -41,7 +40,6 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
-#include "src/core/lib/resource_quota/arena.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -130,7 +128,10 @@ class PartySyncUsingAtomics {
         if (poll_one_participant(i)) {
           const uint64_t allocated_bit = (1u << i << kAllocatedShift);
           prev_state &= ~allocated_bit;
-          state_.fetch_and(~allocated_bit, std::memory_order_release);
+          uint64_t finished_prev_state =
+              state_.fetch_and(~allocated_bit, std::memory_order_release);
+          LogStateChange("Run:ParticipantComplete", finished_prev_state,
+                         finished_prev_state & ~allocated_bit);
         }
       }
       // Try to CAS the state we expected to have (with no wakeups or adds)
@@ -208,7 +209,8 @@ class PartySyncUsingAtomics {
 
     // Now we need to wake up the party.
     state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
-    LogStateChange("AddParticipantsAndRef:Wakeup", state, state | kLocked);
+    LogStateChange("AddParticipantsAndRef:Wakeup", state,
+                   state | wakeup_mask | kLocked);
 
     // If the party was already locked, we're done.
     return ((state & kLocked) == 0);
@@ -229,7 +231,7 @@ class PartySyncUsingAtomics {
   void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
                       DebugLocation loc = {}) {
     if (grpc_trace_party_state.enabled()) {
-      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_DEBUG,
+      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
               "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
               prev_state, new_state);
     }
@@ -404,8 +406,6 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
-  Arena* arena() const { return arena_; }
-
   // Return a promise that resolves to Empty{} when the current party poll is
   // complete.
   // This is useful for implementing batching and the like: we can hold some
@@ -438,8 +438,7 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(Arena* arena, size_t initial_refs)
-      : sync_(initial_refs), arena_(arena) {}
+  explicit Party(size_t initial_refs) : sync_(initial_refs) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
@@ -491,13 +490,13 @@ class Party : public Activity, private Wakeable {
       auto p = promise_();
       if (auto* r = p.value_if_ready()) {
         on_complete_(std::move(*r));
-        GetContext<Arena>()->DeletePooled(this);
+        delete this;
         return true;
       }
       return false;
     }
 
-    void Destroy() override { GetContext<Arena>()->DeletePooled(this); }
+    void Destroy() override { delete this; }
 
    private:
     union {
@@ -626,7 +625,6 @@ class Party : public Activity, private Wakeable {
 #error No synchronization method defined
 #endif
 
-  Arena* const arena_;
   uint8_t currently_polling_ = kNotPolling;
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
@@ -646,9 +644,8 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
     gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
             party_->DebugTag().c_str(), this, std::string(name).c_str());
   }
-  participants_[num_participants_++] =
-      party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
-          name, std::move(promise_factory), std::move(on_complete));
+  participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
+      name, std::move(promise_factory), std::move(on_complete));
 }
 
 template <typename Factory, typename OnComplete>

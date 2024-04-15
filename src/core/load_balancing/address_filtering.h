@@ -87,7 +87,7 @@ namespace grpc_core {
 
 // An address channel arg containing the hierarchical path
 // to be associated with the address.
-class HierarchicalPathArg : public RefCounted<HierarchicalPathArg> {
+class HierarchicalPathArg final : public RefCounted<HierarchicalPathArg> {
  public:
   explicit HierarchicalPathArg(std::vector<RefCountedStringValue> path)
       : path_(std::move(path)) {}

@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CORE_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_CLIENT_CHANNEL_LB_POLICY_LB_POLICY_TEST_LIB_H
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -53,6 +51,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
@@ -402,6 +401,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return test_->work_serializer_;
     }
 
+    ConnectivityStateTracker& state_tracker() { return state_tracker_; }
+
    private:
     const std::string address_;
     LoadBalancingPolicyTest* const test_;
@@ -508,7 +509,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                 picker_.get());
       }
 
-      void Orphan() override {
+      void Orphaned() override {
         absl::Notification notification;
         ExecCtx exec_ctx;
         test_->work_serializer_->Run(

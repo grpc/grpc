@@ -37,6 +37,7 @@
 #include <grpc/status.h>
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/promise/activity.h"
@@ -119,8 +120,7 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
 }
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+  auto md = GetContext<Arena>()->MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/test"));
   return md;
 }

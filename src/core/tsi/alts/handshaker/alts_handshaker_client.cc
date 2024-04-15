@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 #include <list>
@@ -28,6 +26,7 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
@@ -742,10 +741,12 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
               0
           ? nullptr
-          : grpc_channel_create_pollset_set_call(
-                channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
-                grpc_slice_from_static_string(ALTS_SERVICE_METHOD), nullptr,
-                grpc_core::Timestamp::InfFuture(), nullptr);
+          : grpc_core::Channel::FromC(channel)->CreateCall(
+                /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS,
+                /*cq=*/nullptr, interested_parties,
+                grpc_core::Slice::FromStaticString(ALTS_SERVICE_METHOD),
+                /*authority=*/absl::nullopt, grpc_core::Timestamp::InfFuture(),
+                /*registered_method=*/true);
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,

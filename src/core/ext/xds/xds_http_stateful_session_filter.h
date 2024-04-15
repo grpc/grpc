@@ -17,12 +17,12 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_STATEFUL_SESSION_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "upb/reflection/def.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -33,7 +33,7 @@
 
 namespace grpc_core {
 
-class XdsHttpStatefulSessionFilter : public XdsHttpFilterImpl {
+class XdsHttpStatefulSessionFilter final : public XdsHttpFilterImpl {
  public:
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;

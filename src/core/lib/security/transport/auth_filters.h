@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -60,31 +59,6 @@ class ClientAuthFilter final : public ChannelFilter {
 
   // Contains refs to security connector and auth context.
   grpc_call_credentials::GetRequestMetadataArgs args_;
-};
-
-class LegacyServerAuthFilter final : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::StatusOr<LegacyServerAuthFilter> Create(const ChannelArgs& args,
-                                                       ChannelFilter::Args);
-
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
-  LegacyServerAuthFilter(
-      RefCountedPtr<grpc_server_credentials> server_credentials,
-      RefCountedPtr<grpc_auth_context> auth_context);
-
-  class RunApplicationCode;
-
-  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
-      CallArgs call_args);
-
-  RefCountedPtr<grpc_server_credentials> server_credentials_;
-  RefCountedPtr<grpc_auth_context> auth_context_;
 };
 
 class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {

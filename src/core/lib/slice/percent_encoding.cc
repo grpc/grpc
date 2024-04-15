@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/percent_encoding.h"
 
 #include <stdlib.h>
@@ -26,6 +24,7 @@
 #include <utility>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/bitset.h"
 

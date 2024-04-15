@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_certificate_provider.h"
 
 #include <utility>
@@ -26,6 +24,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
@@ -35,7 +34,7 @@ namespace grpc_core {
 
 namespace {
 
-class RootCertificatesWatcher
+class RootCertificatesWatcher final
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
@@ -68,7 +67,7 @@ class RootCertificatesWatcher
   RefCountedPtr<grpc_tls_certificate_distributor> parent_;
 };
 
-class IdentityCertificatesWatcher
+class IdentityCertificatesWatcher final
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is

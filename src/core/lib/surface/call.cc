@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/call.h"
 
 #include <inttypes.h>
@@ -53,6 +51,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/call_finalization.h"
@@ -98,7 +97,7 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/batch_builder.h"
@@ -588,6 +587,12 @@ class FilterStackCall final : public Call {
   }
 
  private:
+  class ScopedContext : public promise_detail::Context<Arena> {
+   public:
+    explicit ScopedContext(FilterStackCall* call)
+        : promise_detail::Context<Arena>(call->arena()) {}
+  };
+
   static constexpr gpr_atm kRecvNone = 0;
   static constexpr gpr_atm kRecvInitialMetadataFirst = 1;
 
@@ -716,10 +721,10 @@ class FilterStackCall final : public Call {
   grpc_transport_stream_op_batch_payload stream_op_payload_;
 
   // first idx: is_receiving, second idx: is_trailing
-  grpc_metadata_batch send_initial_metadata_{arena()};
-  grpc_metadata_batch send_trailing_metadata_{arena()};
-  grpc_metadata_batch recv_initial_metadata_{arena()};
-  grpc_metadata_batch recv_trailing_metadata_{arena()};
+  grpc_metadata_batch send_initial_metadata_;
+  grpc_metadata_batch send_trailing_metadata_;
+  grpc_metadata_batch recv_initial_metadata_;
+  grpc_metadata_batch recv_trailing_metadata_;
 
   // Buffered read metadata waiting to be returned to the application.
   // Element 0 is initial metadata, element 1 is trailing metadata.
@@ -757,7 +762,7 @@ class FilterStackCall final : public Call {
     struct {
       int* cancelled;
       // backpointer to owning server if this is a server side call.
-      Server* core_server;
+      ServerInterface* core_server;
     } server;
   } final_op_;
   AtomicError status_error_;
@@ -807,6 +812,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   GPR_DEBUG_ASSERT(FromCallStack(call->call_stack()) == call);
   *out_call = call->c_ptr();
   grpc_slice path = grpc_empty_slice();
+  ScopedContext ctx(call);
   if (call->is_client()) {
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
@@ -822,6 +828,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->send_initial_metadata_.Set(
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
+    channel_stack->stats_plugin_group->AddClientCallTracers(
+        Slice(CSliceRef(path)), args->registered_method, call->context_);
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -830,6 +838,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
+    // TODO(yijiem): OpenCensus and internal Census is still using this way to
+    // set server call tracer. We need to refactor them to stats plugins
+    // (including removing the client channel filters).
     if (args->server != nullptr &&
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
@@ -846,6 +857,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
       }
     }
+    channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -1967,7 +1979,7 @@ class BasicPromiseBasedCall : public Call,
                         const grpc_call_create_args& args)
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
              args.channel->Ref()),
-        Party(arena, initial_internal_refs),
+        Party(initial_internal_refs),
         external_refs_(initial_external_refs),
         cq_(args.cq) {
     if (args.cq != nullptr) {
@@ -2725,8 +2737,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                  "non-nullptr.");
     }
     ScopedContext context(this);
-    send_initial_metadata_ =
-        GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+    args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
+        *args->path, args->registered_method, this->context());
+    send_initial_metadata_ = GetContext<Arena>()->MakePooled<ClientMetadata>();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
       send_initial_metadata_->Set(HttpAuthorityMetadata(),
@@ -2855,6 +2868,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       }
 
       Party& party() override { return *call_; }
+      Arena* arena() override { return call_->arena(); }
 
       void IncrementRefCount() override { refs_.Ref(); }
       void Unref() override {
@@ -3132,7 +3146,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
           is_trailers_only_ = metadata->get(GrpcTrailersOnly()).value_or(false);
         } else {
           is_trailers_only_ = true;
-          metadata = arena()->MakePooled<ServerMetadata>(arena());
+          metadata = arena()->MakePooled<ServerMetadata>();
         }
         ProcessIncomingInitialMetadata(*metadata);
         PublishMetadataArray(metadata.get(), array, true);
@@ -3368,7 +3382,7 @@ class ServerPromiseBasedCall final : public PromiseBasedCall,
                    const Completion& completion);
   void Finish(ServerMetadataHandle result);
 
-  Server* const server_;
+  ServerInterface* const server_;
   const void* const server_transport_data_;
   PipeSender<ServerMetadataHandle>* server_initial_metadata_ = nullptr;
   PipeSender<MessageHandle>* server_to_client_messages_ = nullptr;
@@ -3390,11 +3404,16 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
   if (channelz_node != nullptr) {
     channelz_node->RecordCallStarted();
   }
+  ScopedContext activity_context(this);
   // TODO(yashykt): In the future, we want to also enable stats and trace
   // collecting from when the call is created at the transport. The idea is that
   // the transport would create the call tracer and pass it in as part of the
   // metadata.
-  if (args->server->server_call_tracer_factory() != nullptr) {
+  // TODO(yijiem): OpenCensus and internal Census is still using this way to
+  // set server call tracer. We need to refactor them to stats plugins
+  // (including removing the client channel filters).
+  if (args->server != nullptr &&
+      args->server->server_call_tracer_factory() != nullptr) {
     auto* server_call_tracer =
         args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
             arena, args->server->channel_args());
@@ -3409,7 +3428,8 @@ ServerPromiseBasedCall::ServerPromiseBasedCall(Arena* arena,
       ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
     }
   }
-  ScopedContext activity_context(this);
+  args->channel->channel_stack()->stats_plugin_group->AddServerCallTracers(
+      context());
   Spawn("server_promise",
         channel()->channel_stack()->MakeServerCallPromise(
             CallArgs{nullptr, ClientInitialMetadataOutstandingToken::Empty(),
@@ -3503,7 +3523,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
     const grpc_op& op = ops[op_idx];
     switch (op.op) {
       case GRPC_OP_SEND_INITIAL_METADATA: {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
@@ -3543,7 +3563,7 @@ void ServerPromiseBasedCall::CommitBatch(const grpc_op* ops, size_t nops,
             client_to_server_messages_, true, spawner);
         break;
       case GRPC_OP_SEND_STATUS_FROM_SERVER: {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         CToMetadata(op.data.send_status_from_server.trailing_metadata,
                     op.data.send_status_from_server.trailing_metadata_count,
                     metadata.get());
@@ -3684,7 +3704,7 @@ class ServerCallSpine final : public CallSpineInterface,
                               public ServerCallContext,
                               public BasicPromiseBasedCall {
  public:
-  ServerCallSpine(Server* server, Channel* channel, Arena* arena);
+  ServerCallSpine(ServerInterface* server, Channel* channel, Arena* arena);
 
   // CallSpineInterface
   Pipe<ClientMetadataHandle>& client_initial_metadata() override {
@@ -3704,6 +3724,7 @@ class ServerCallSpine final : public CallSpineInterface,
   }
   Latch<ServerMetadataHandle>& cancel_latch() override { return cancel_latch_; }
   Party& party() override { return *this; }
+  Arena* arena() override { return BasicPromiseBasedCall::arena(); }
   void IncrementRefCount() override { InternalRef("CallSpine"); }
   void Unref() override { InternalUnref("CallSpine"); }
 
@@ -3771,7 +3792,8 @@ class ServerCallSpine final : public CallSpineInterface,
   ClientMetadataHandle client_initial_metadata_stored_;
 };
 
-ServerCallSpine::ServerCallSpine(Server* server, Channel* channel, Arena* arena)
+ServerCallSpine::ServerCallSpine(ServerInterface* server, Channel* channel,
+                                 Arena* arena)
     : BasicPromiseBasedCall(arena, 0, 1,
                             [channel, server]() -> grpc_call_create_args {
                               grpc_call_create_args args;
@@ -4015,7 +4037,7 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
   if (!is_notify_tag_closure) grpc_cq_begin_op(cq(), notify_tag);
   auto send_initial_metadata = MaybeOp(
       ops, got_ops[GRPC_OP_SEND_INITIAL_METADATA], [this](const grpc_op& op) {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
@@ -4045,7 +4067,7 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
       });
   auto send_trailing_metadata = MaybeOp(
       ops, got_ops[GRPC_OP_SEND_STATUS_FROM_SERVER], [this](const grpc_op& op) {
-        auto metadata = arena()->MakePooled<ServerMetadata>(arena());
+        auto metadata = arena()->MakePooled<ServerMetadata>();
         CToMetadata(op.data.send_status_from_server.trailing_metadata,
                     op.data.send_status_from_server.trailing_metadata_count,
                     metadata.get());
@@ -4119,14 +4141,15 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
   }
 }
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
+RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface* server,
                                                  Channel* channel,
                                                  Arena* arena) {
   return RefCountedPtr<ServerCallSpine>(
       arena->New<ServerCallSpine>(server, channel, arena));
 }
 #else
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server*, Channel*, Arena*) {
+RefCountedPtr<CallSpineInterface> MakeServerCall(ServerInterface*, Channel*,
+                                                 Arena*) {
   Crash("not implemented");
 }
 #endif

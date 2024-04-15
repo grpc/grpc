@@ -197,23 +197,10 @@
         deps.append(d)
     return deps
 
-  def get_all_deps(target_dict, all_libs):
-    ret = set()
-    get_all_deps_recurse(target_dict, all_libs, ret)
-    return ret
-
-  def get_all_deps_recurse(target_dict, all_libs, all_deps):
-    for d in target_dict.get('deps', []):
-      if not d in all_deps:
-        all_deps.add(d)
-        for other_lib in all_libs:
-          if other_lib.name == d:
-            get_all_deps_recurse(other_lib, all_libs, all_deps)
-
   def is_generate_cmake_target(lib_or_target):
     """Returns True if a cmake target should be generated for given library/target."""
     # TODO(jtattermusch): extract the metadata to a centralized location.
-    if lib_or_target.build not in ["all", "protoc", "tool", "test", "private"]:
+    if lib_or_target.build not in ["all", "plugin", "plugin_test", "protoc", "tool", "test", "private"]:
       return False
     if lib_or_target.boringssl:
       # Don't generate target for boringssl libs or tests
@@ -374,11 +361,20 @@
     absl_meta
   )
 
+  # The OpenTelemetry plugin supports "package" build only at present.
+  set(gRPC_OPENTELEMETRY_PROVIDER "package")
+  #  set(gRPC_OPENTELEMETRY_PROVIDER "module" CACHE STRING "Provider of opentelemetry library")
+  #  set_property(CACHE gRPC_OPENTELEMETRY_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_USE_PROTO_LITE OFF CACHE BOOL "Use the protobuf-lite library")
 
   if(UNIX)
     if(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Linux")
       set(_gRPC_PLATFORM_LINUX ON)
+      if(NOT CMAKE_CROSSCOMPILING AND CMAKE_SIZEOF_VOID_P EQUAL 4)
+        message("+++ Enabling SSE2 for <%text>${CMAKE_SYSTEM_PROCESSOR}</%text>")
+        set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> -msse2")
+      endif()
     elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Darwin")
       set(_gRPC_PLATFORM_MAC ON)
     elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "iOS")
@@ -428,6 +424,8 @@
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /utf-8")
     # Inconsistent object sizes can cause stack corruption and should be treated as an error
     set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /we4789")
+    # To decrease the size of PDB files
+    set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
   endif()
   if (MINGW)
     add_definitions(-D_WIN32_WINNT=0x600)
@@ -497,6 +495,11 @@
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     include(cmake/systemd.cmake)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> <%text>${_gRPC_SYSTEMD_LIBRARIES}</%text>)
+  endif()
+
+  option(gRPC_BUILD_GRPCPP_OTEL_PLUGIN "Build grpcpp_otel_plugin" OFF)
+  if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
+    include(cmake/opentelemetry-cpp.cmake)
   endif()
 
   % for external_proto_library in external_proto_libraries:
@@ -740,12 +743,16 @@
       if not is_generate_cmake_target(lib): continue
       cmake_libs.append(lib)
   %>
+
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif()
   %   else:
+  %     if lib.build in ["plugin"]:
+  if(gRPC_BUILD_${lib.name.upper()})
+  %     endif
   ${cc_library(lib)}
   %     if not lib.build in ["tool"]:
   %       if any(proto_re.match(src) for src in lib.src):
@@ -756,6 +763,9 @@
   endif()
   %       endif
   %     endif
+  %     if lib.build in ["plugin"]:
+  endif()
+  %     endif
   %   endif
   % endfor
 
@@ -763,6 +773,12 @@
   % if is_generate_cmake_target(tgt):
   % if tgt.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
+  <%block filter='platforms_condition_block(tgt.platforms)'>
+  ${cc_binary(tgt)}
+  </%block>
+  endif()
+  % elif tgt.build in ["plugin_test"]:
+  if(gRPC_BUILD_TESTS AND ${tgt.plugin_option})
   <%block filter='platforms_condition_block(tgt.platforms)'>
   ${cc_binary(tgt)}
   </%block>
@@ -795,7 +811,6 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-
   add_library(${lib.name}${lib_type_for_lib(lib.name)}
   % for src in lib.src:
   % if not proto_re.match(src):
@@ -844,11 +859,11 @@
       dll_annotations.append("GRPC_DLL_EXPORTS")
     if lib.name in grpcxx_libs:
       dll_annotations.append("GRPCXX_DLL_EXPORTS")
-    if set(gpr_libs) & set(get_all_deps(lib, libs)):
+    if set(gpr_libs) & set(lib.transitive_deps):
       dll_annotations.append("GPR_DLL_IMPORTS")
-    if set(grpc_libs) & set(get_all_deps(lib, libs)):
+    if set(grpc_libs) & set(lib.transitive_deps):
       dll_annotations.append("GRPC_DLL_IMPORTS")
-    if set(grpcxx_libs) & set(get_all_deps(lib, libs)):
+    if set(grpcxx_libs) & set(lib.transitive_deps):
       dll_annotations.append("GRPCXX_DLL_IMPORTS")
     %>
     % if dll_annotations:
@@ -945,11 +960,11 @@
   % endfor
   )<%
   dll_annotations = []
-  if set(gpr_libs) & set(get_all_deps(tgt, libs)):
+  if set(gpr_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GPR_DLL_IMPORTS")
-  if set(grpc_libs) & set(get_all_deps(tgt, libs)):
+  if set(grpc_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GRPC_DLL_IMPORTS")
-  if set(grpcxx_libs) & set(get_all_deps(tgt, libs)):
+  if set(grpcxx_libs) & set(tgt.transitive_deps):
     dll_annotations.append("GRPCXX_DLL_IMPORTS")
   %>
   % if dll_annotations:
