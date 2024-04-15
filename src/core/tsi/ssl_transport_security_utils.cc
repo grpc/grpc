@@ -20,7 +20,7 @@
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
-#include <openssl/ec_key.h>
+#include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
