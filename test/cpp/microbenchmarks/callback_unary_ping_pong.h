@@ -48,7 +48,7 @@ inline void SendCallbackUnaryPingPong(
   stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
-        CHECK(s.ok());
+        CHECK_OK(s);
         if (state->KeepRunning()) {
           cli_ctx->~ClientContext();
           new (cli_ctx) ClientContext();

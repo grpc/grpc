@@ -156,7 +156,7 @@ void FanOutCallback(std::shared_ptr<ThreadPool> pool,
     signal.Notify();
     return;
   }
-  GPR_DEBUG_ASSERT(local_cnt < params.limit);
+  DCHECK(local_cnt < params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     pool->Run([pool, params, processing_layer, &count, &signal]() {
@@ -222,7 +222,7 @@ void BM_ThreadPool_Closure_FanOut(benchmark::State& state) {
         }));
   }
   for (auto _ : state) {
-    GPR_DEBUG_ASSERT(count.load(std::memory_order_relaxed) == 0);
+    DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
     pool->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();

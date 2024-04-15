@@ -101,7 +101,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
       CHECK(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
-    CHECK(final_status.ok());
+    CHECK_OK(final_status);
   }
   fixture.reset();
   state.SetBytesProcessed(state.range(0) * state.iterations());
