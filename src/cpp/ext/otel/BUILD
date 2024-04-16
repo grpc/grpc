@@ -55,9 +55,13 @@ grpc_cc_library(
         "absl/types:optional",
         "absl/types:span",
         "otel/api",
+        "otel/sdk",
     ],
     language = "c++",
-    visibility = ["//:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//blockchain/research/falcon/monitoring:__subpackages__",
+    ],
     deps = [
         "//:call_tracer",
         "//:config",
