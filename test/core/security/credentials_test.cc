@@ -562,7 +562,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       ChannelArgs* /*new_args*/) override {
     CHECK(type() == Type());
-    CHECK_NE(call_creds, nullptr);
+    CHECK(call_creds != nullptr);
     CHECK(call_creds->type() == grpc_access_token_credentials::Type());
     return nullptr;
   }
@@ -2830,7 +2830,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   };
   grpc_error_handle error;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -2947,7 +2947,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_EQ(creds, nullptr);
+  CHECK(creds == nullptr);
   std::string actual_error;
   CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
                            &actual_error));
@@ -2980,7 +2980,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   };
   grpc_error_handle error;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3156,7 +3156,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3736,7 +3736,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_EQ(creds, nullptr);
+  CHECK(creds == nullptr);
   std::string expected_error = "environment_id does not match.";
   std::string actual_error;
   CHECK(grpc_error_get_str(error, StatusStrProperty::kDescription,
