@@ -1346,7 +1346,7 @@ char* encode_and_sign_jwt_should_not_be_called(
 
 grpc_service_account_jwt_access_credentials* creds_as_jwt(
     grpc_call_credentials* creds) {
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK(creds->type() == grpc_service_account_jwt_access_credentials::Type());
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
@@ -1636,7 +1636,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsGce) {
           grpc_google_default_credentials_create(nullptr));
 
   // Verify that the default creds actually embeds a GCE creds.
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_NE(creds->call_creds(), nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
                            httpcli_post_should_not_be_called,
@@ -1673,7 +1673,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(nullptr));
   // Verify that the default creds actually embeds a GCE creds.
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_NE(creds->call_creds(), nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
                            httpcli_post_should_not_be_called,
@@ -2909,7 +2909,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   };
   grpc_error_handle error;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3067,7 +3067,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureFileNotFound) {
   };
   grpc_error_handle error;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
@@ -3115,7 +3115,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsFailureInvalidJsonContent) {
   };
   grpc_error_handle error;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
                            httpcli_post_should_not_be_called,
@@ -3238,7 +3238,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3285,7 +3285,7 @@ TEST(
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3326,7 +3326,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3366,7 +3366,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3407,7 +3407,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3450,7 +3450,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3493,7 +3493,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3538,7 +3538,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3587,7 +3587,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3636,7 +3636,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3769,7 +3769,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE("Creating aws request signer failed.");
@@ -3809,7 +3809,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE("Missing role name when retrieving signing keys.");
@@ -3830,7 +3830,7 @@ TEST(CredentialsTest,
   const char* options_string = "invalid_json";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK_EQ(creds, nullptr);
+  CHECK(creds == nullptr);
 }
 
 TEST(CredentialsTest,
@@ -3838,7 +3838,7 @@ TEST(CredentialsTest,
   const char* options_string = "{\"random_key\":\"random_value\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK_EQ(creds, nullptr);
+  CHECK(creds == nullptr);
 }
 
 TEST(
@@ -3856,7 +3856,7 @@ TEST(
       "secret\"}";
   grpc_call_credentials* creds =
       grpc_external_account_credentials_create(options_string, "");
-  CHECK_EQ(creds, nullptr);
+  CHECK(creds == nullptr);
 }
 
 TEST(CredentialsTest,
