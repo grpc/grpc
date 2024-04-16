@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>

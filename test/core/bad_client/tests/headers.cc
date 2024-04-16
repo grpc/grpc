@@ -16,8 +16,9 @@
 //
 //
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"

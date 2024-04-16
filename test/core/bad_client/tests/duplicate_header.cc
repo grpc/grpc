@@ -18,6 +18,8 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>

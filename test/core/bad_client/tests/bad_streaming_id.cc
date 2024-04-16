@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>

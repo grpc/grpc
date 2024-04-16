@@ -18,6 +18,8 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <gtest/gtest.h>
 
 #include <grpc/grpc.h>

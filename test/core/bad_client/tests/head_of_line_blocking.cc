@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include "absl/log/check.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
