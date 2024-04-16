@@ -205,7 +205,8 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
           .value_or(nullptr) != nullptr;
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
-    RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, registered_method_, context_.Labels());
+    RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, registered_method_,
+                    context_.Labels());
   }
 }
 
@@ -236,16 +237,19 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
         kServerStatus,
         std::string(StatusCodeToString(final_info->final_status)));
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
-                       static_cast<double>(response_size), registered_method_, context_.Labels());
-    RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
-                       static_cast<double>(request_size), registered_method_, context_.Labels());
-    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s, registered_method_,
+                       static_cast<double>(response_size), registered_method_,
                        context_.Labels());
-    RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, registered_method_, context_.Labels());
+    RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
+                       static_cast<double>(request_size), registered_method_,
+                       context_.Labels());
+    RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s,
+                       registered_method_, context_.Labels());
+    RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, registered_method_,
+                    context_.Labels());
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName, registered_method_,
                     sent_message_count_, context_.Labels());
-    RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName, registered_method_,
-                    recv_message_count_, context_.Labels());
+    RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName,
+                    registered_method_, recv_message_count_, context_.Labels());
   }
   if (PythonCensusTracingEnabled()) {
     context_.EndSpan();

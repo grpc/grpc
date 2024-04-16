@@ -122,7 +122,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     ) -> ClientCallTracerCapsule:
         trace_id = b"TRACE_ID"
         registered_method = False
-        if method_name in self._registered_method:
+        if method_name in self._registered_methods:
             registered_method = True
         capsule = _cyobservability.create_client_call_tracer(
             method_name, target, trace_id, registered_method
@@ -154,7 +154,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
     ) -> None:
         status_code = GRPC_STATUS_CODE_TO_STRING.get(status_code, "UNKNOWN")
         registered_method = False
-        if method in self._registered_method:
+        if method in self._registered_methods:
             registered_method = True
         _cyobservability._record_rpc_latency(
             self.exporter,

@@ -459,7 +459,7 @@ cdef extern from "grpc/grpc.h":
       gpr_timespec* deadline, grpc_metadata_array* request_metadata,
       grpc_byte_buffer** optional_payload,
       grpc_completion_queue* cq_bound_to_call,
-      grpc_completion_queue* cq_for_notification, void* tag_new)
+      grpc_completion_queue* cq_for_notification, void* tag_new) nogil
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil

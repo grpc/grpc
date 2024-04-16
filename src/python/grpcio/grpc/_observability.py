@@ -55,13 +55,13 @@ class ObservabilityPlugin(
     Attributes:
       _stats_enabled: A bool indicates whether tracing is enabled.
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
-      _registered_method: A set which stores the registered method names in
+      _registered_methods: A set which stores the registered method names in
         bytes.
     """
 
     _tracing_enabled: bool = False
     _stats_enabled: bool = False
-    _registered_method: Set[bytes]
+    _registered_methods: Set[bytes]
 
     @abc.abstractmethod
     def create_client_call_tracer(
@@ -179,7 +179,7 @@ class ObservabilityPlugin(
         self._stats_enabled = enable
 
     def save_registered_method(self, method_name: bytes):
-        self._registered_method.add(method_name)
+        self._registered_methods.add(method_name)
 
     @property
     def tracing_enabled(self) -> bool:

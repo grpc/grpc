@@ -993,7 +993,6 @@ Server::RegisteredMethod* Server::RegisterMethod(
             flags);
     return nullptr;
   }
-
   auto it = registered_methods_.emplace(
       key, std::make_unique<RegisteredMethod>(method, host, payload_handling,
                                               flags));

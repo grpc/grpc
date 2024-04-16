@@ -20,8 +20,8 @@ cdef class RegisteredMethod:
     cpython.Py_INCREF(self.method)
     cdef grpc_server *c_server = <grpc_server *>server
     # TODO(xuanwn): Consider use GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER for unary request
-    # Note that in generated stubs method is not bound to any host, thus we set the
-    # third-to-last parameter of to a fixed NULL value.
+    # as optimization.
+    # Note that in stubs method is not bound to any host, thus we set host as NULL.
     self.c_registered_method = grpc_server_register_method(c_server,
       <const char *>self.method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
 

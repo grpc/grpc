@@ -393,34 +393,6 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         backup_server.stop(0)
 
     def testMethodAttributeFilter(self):
-        # If method name is 'test/UnaryUnaryFiltered', is should be replaced with 'other'.
-        FILTERED_METHOD_NAME = "test/UnaryUnaryFiltered"
-
-        def method_filter(method: str) -> bool:
-            if FILTERED_METHOD_NAME in method:
-                return False
-            return True
-
-        with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider,
-            generic_method_attribute_filter=method_filter,
-        ):
-            server, port = _test_server.start_server()
-            self._server = server
-            _test_server.unary_unary_call(port=port)
-            _test_server.unary_unary_filtered_call(port=port)
-
-        self._validate_metrics_exist(self.all_metrics)
-        self._validate_all_metrics_names(self.all_metrics)
-        method_values = set()
-        for label_list in self.all_metrics.values():
-            for labels in label_list:
-                if GRPC_METHOD_LABEL in labels:
-                    method_values.add(labels[GRPC_METHOD_LABEL])
-        self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
-        self.assertTrue(FILTERED_METHOD_NAME not in method_values)
-
-    def testRegisteredMethodAttributeFilter(self):
         # method_filter should replace method name 'test/UnaryUnaryFiltered' with 'other'.
         FILTERED_METHOD_NAME = "test/UnaryUnaryFiltered"
 
@@ -447,6 +419,27 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     method_values.add(labels[GRPC_METHOD_LABEL])
         self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
         self.assertTrue(FILTERED_METHOD_NAME not in method_values)
+
+    def testNonRegisteredMethod(self):
+        UNARY_METHOD_NAME = "test/UnaryUnary"
+
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider
+        ):
+            server, port = _test_server.start_server(register_method=False)
+            self._server = server
+            _test_server.unary_unary_call(port=port, registered_method=True)
+
+        self._validate_metrics_exist(self.all_metrics)
+        self._validate_all_metrics_names(self.all_metrics)
+        method_values = set()
+        for label_list in self.all_metrics.values():
+            for labels in label_list:
+                if GRPC_METHOD_LABEL in labels:
+                    method_values.add(labels[GRPC_METHOD_LABEL])
+        # For un-registered method, all method name should be replaced with 'other'.
+        self.assertTrue(GRPC_OTHER_LABEL_VALUE in method_values)
+        self.assertTrue(UNARY_METHOD_NAME not in method_values)
 
     def assert_eventually(
         self,

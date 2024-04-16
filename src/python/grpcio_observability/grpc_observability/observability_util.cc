@@ -60,7 +60,8 @@ int GetMaxExportBufferSize() {
 
 }  // namespace
 
-void RecordIntMetric(MetricsName name, int64_t value, const bool registered_method,
+void RecordIntMetric(MetricsName name, int64_t value,
+                     const bool registered_method,
                      const std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
@@ -72,7 +73,8 @@ void RecordIntMetric(MetricsName name, int64_t value, const bool registered_meth
   AddCensusDataToBuffer(data);
 }
 
-void RecordDoubleMetric(MetricsName name, double value, const bool registered_method,
+void RecordDoubleMetric(MetricsName name, double value,
+                        const bool registered_method,
                         const std::vector<Label>& labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
@@ -97,7 +99,8 @@ void* CreateClientCallTracer(const char* method, const char* target,
                              const char* trace_id, const char* parent_span_id,
                              bool registered_method) {
   void* client_call_tracer = new PythonOpenCensusCallTracer(
-      method, target, trace_id, parent_span_id, PythonCensusTracingEnabled(), registered_method);
+      method, target, trace_id, parent_span_id, PythonCensusTracingEnabled(),
+      registered_method);
   return client_call_tracer;
 }
 

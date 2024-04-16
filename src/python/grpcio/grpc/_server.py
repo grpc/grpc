@@ -941,6 +941,7 @@ def _find_method_handler(
     def query_handlers(
         handler_call_details: _HandlerCallDetails,
     ) -> Optional[grpc.RpcMethodHandler]:
+        # If the same method have both generic and registered handler, registered handler will take precedence.
         if registered_method_name in registered_method_handlers.keys():
             return registered_method_handlers[registered_method_name]
         for generic_handler in generic_handlers:
@@ -1168,11 +1169,14 @@ def _request_call(state: _ServerState) -> None:
 
 
 def _request_registered_call(state: _ServerState, method: str) -> None:
-    call_tag = method
+    registered_call_tag = method
     state.server.request_registered_call(
-        state.completion_queue, state.completion_queue, method, call_tag
+        state.completion_queue,
+        state.completion_queue,
+        method,
+        registered_call_tag,
     )
-    state.due.add(call_tag)
+    state.due.add(registered_call_tag)
 
 
 # TODO(https://github.com/grpc/grpc/issues/6597): delete this function.
@@ -1310,8 +1314,10 @@ def _start(state: _ServerState) -> None:
             raise ValueError("Cannot start already-started server!")
         state.server.start()
         state.stage = _ServerStage.STARTED
+        # Request a call for each registered method so we can handle any of them.
         for method in state.registered_method_handlers.keys():
             _request_registered_call(state, method)
+        # Also request a call for non-registered method.
         _request_call(state)
         thread = threading.Thread(target=_serve, args=(state,))
         thread.daemon = True
@@ -1363,7 +1369,6 @@ class _Server(grpc.Server):
             thread_pool,
             maximum_concurrent_rpcs,
         )
-        self._address = None
         self._cy_server = server
 
     def add_generic_rpc_handlers(
@@ -1375,24 +1380,16 @@ class _Server(grpc.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        rpc_method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: Dict[str, grpc.RpcMethodHandler],
     ) -> None:
-        method_handlers = {
+        # TODO(xuanwn): We should validate method_handlers first.
+        method_to_handlers = {
             _common.fully_qualified_method(service_name, method): method_handler
-            for method, method_handler in rpc_method_handlers.items()
+            for method, method_handler in method_handlers.items()
         }
-        _add_registered_method_handlers(self._state, method_handlers)
-
-    def register_methods(
-        self,
-        service_name: str,
-        rpc_method_handlers: Dict[str, grpc.RpcMethodHandler],
-    ):
-        for method, unused_method_handler in rpc_method_handlers.items():
-            fully_qualified_method = _common.fully_qualified_method(
-                service_name, method
-            )
+        for fully_qualified_method in method_to_handlers.keys():
             self._cy_server.register_method(fully_qualified_method)
+        _add_registered_method_handlers(self._state, method_to_handlers)
 
     def add_insecure_port(self, address: str) -> int:
         return _common.validate_port_binding_result(

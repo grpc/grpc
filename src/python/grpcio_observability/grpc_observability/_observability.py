@@ -52,7 +52,8 @@ class StatsData:
         value.
       value_int: The actual metric value if measure_double is False.
       value_float: The actual metric value if measure_double is True.
-      registered_method: Whether the method in this data is registered.
+      registered_method: Whether the method in this data is a registered method
+        in stubs.
       labels: A dictionary that maps label tags associated with this metric to
        corresponding label value.
     """

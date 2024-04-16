@@ -1455,6 +1455,19 @@ class Server(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    def add_registered_method_handlers(self, service_name, method_handlers):
+        """Registers GenericRpcHandlers with this Server.
+
+        This method is only safe to call before the server is started.
+
+        Args:
+          service_name: The service name.
+          method_handlers: A dictionary that maps method names to corresponding
+            RpcMethodHandler.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     def add_insecure_port(self, address):
         """Opens an insecure port for accepting RPCs.
 

@@ -62,10 +62,12 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms);
 
 void AddCensusDataToBuffer(const CensusData& buffer);
 
-void RecordIntMetric(MetricsName name, int64_t value, const bool registered_method,
+void RecordIntMetric(MetricsName name, int64_t value,
+                     const bool registered_method,
                      const std::vector<Label>& labels);
 
-void RecordDoubleMetric(MetricsName name, double value, const bool registered_method,
+void RecordDoubleMetric(MetricsName name, double value,
+                        const bool registered_method,
                         const std::vector<Label>& labels);
 
 void RecordSpan(const SpanCensusData& span_census_data);
