@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "third_party/grpc/src/core/lib/channel/promise_based_filter.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
@@ -121,9 +122,9 @@ const grpc_channel_filter BackendMetricFilter::kFilter =
     MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
         "backend_metric");
 
-absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args) {
-  return BackendMetricFilter();
+absl::StatusOr<std::unique_ptr<BackendMetricFilter>>
+BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
+  return std::make_unique<BackendMetricFilter>();
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
