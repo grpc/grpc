@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 
 #include <utility>
@@ -22,6 +20,7 @@
 #include "absl/random/distributions.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
 
