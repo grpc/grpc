@@ -317,9 +317,10 @@ class XdsResolver final : public Resolver {
    public:
     const static grpc_channel_filter kFilter;
 
-    static absl::StatusOr<ClusterSelectionFilter> Create(
-        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args) {
-      return ClusterSelectionFilter(filter_args);
+    static absl::StatusOr<std::unique_ptr<ClusterSelectionFilter>> Create(
+        const ChannelArgs& /* unused */,
+        ChannelFilter::Args /* filter_args */) {
+      return std::make_unique<ClusterSelectionFilter>();
     }
 
     // Construct a promise for one call.
@@ -332,12 +333,6 @@ class XdsResolver final : public Resolver {
       static const NoInterceptor OnServerToClientMessage;
       static const NoInterceptor OnFinalize;
     };
-
-   private:
-    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
-        : filter_args_(filter_args) {}
-
-    ChannelFilter::Args filter_args_;
   };
 
   RefCountedPtr<ClusterRef> GetOrCreateClusterRef(
