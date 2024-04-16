@@ -536,7 +536,7 @@ TEST(CredentialsTest, TestGoogleIamCreds) {
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   creds->Unref();
@@ -550,7 +550,7 @@ TEST(CredentialsTest, TestAccessTokenCreds) {
       grpc_access_token_credentials_create("blah", nullptr);
   CHECK(creds->type() == grpc_access_token_credentials::Type());
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   creds->Unref();
@@ -611,7 +611,7 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
       "authorization", test_oauth2_bearer_token);
 
   // Check security level of fake credentials.
-  CHECK(oauth2_creds->min_security_level() == GRPC_SECURITY_NONE);
+  CHECK_EQ(oauth2_creds->min_security_level(), GRPC_SECURITY_NONE);
 
   grpc_call_credentials* google_iam_creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
@@ -698,9 +698,10 @@ TEST(CredentialsTest, TestChannelOauth2GoogleIamCompositeCreds) {
 void validate_compute_engine_http_request(const grpc_http_request* request,
                                           const char* host, const char* path) {
   CHECK_EQ(strcmp(host, "metadata.google.internal."), 0);
-  CHECK(strcmp(path,
-               "/computeMetadata/v1/instance/service-accounts/default/token") ==
-        0);
+  CHECK_EQ(
+      strcmp(path,
+             "/computeMetadata/v1/instance/service-accounts/default/token"),
+      0);
   CHECK_EQ(request->hdr_count, 1);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Metadata-Flavor"), 0);
   CHECK_EQ(strcmp(request->hdrs[0].value, "Google"), 0);
@@ -731,7 +732,7 @@ int httpcli_post_should_not_be_called(
     const char* /*path*/, const char* /*body_bytes*/, size_t /*body_size*/,
     Timestamp /*deadline*/, grpc_closure* /*on_done*/,
     grpc_http_response* /*response*/) {
-  CHECK_EQ("HTTP POST should not be called", nullptr);
+  CHECK(false) << "HTTP POST should not be called";
   return 1;
 }
 
@@ -740,7 +741,7 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
-  CHECK_EQ("HTTP GET should not be called", nullptr);
+  CHECK(false) << "HTTP GET should not be called";
   return 1;
 }
 
@@ -751,7 +752,7 @@ int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
-  CHECK_EQ("HTTP PUT should not be called", nullptr);
+  CHECK(false) << "HTTP PUT should not be called";
   return 1;
 }
 
@@ -764,7 +765,7 @@ TEST(CredentialsTest, TestComputeEngineCredsSuccess) {
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http get should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -784,8 +785,8 @@ TEST(CredentialsTest, TestComputeEngineCredsSuccess) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
 
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -804,8 +805,8 @@ TEST(CredentialsTest, TestComputeEngineCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -820,14 +821,14 @@ void validate_refresh_token_http_request(const grpc_http_request* request,
       GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING,
       "32555999999.apps.googleusercontent.com", "EmssLNjJy1332hD4KFsecret",
       "1/Blahblasj424jladJDSGNf-u4Sua3HDA2ngjd42");
-  CHECK(expected_body.size() == body_size);
+  CHECK_EQ(expected_body.size(), body_size);
   CHECK_EQ(memcmp(expected_body.data(), body, body_size), 0);
   CHECK_EQ(strcmp(host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST), 0);
   CHECK_EQ(strcmp(path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH), 0);
   CHECK_EQ(request->hdr_count, 1);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
 }
 
 int refresh_token_httpcli_post_success(const grpc_http_request* request,
@@ -862,7 +863,7 @@ TEST(CredentialsTest, TestRefreshTokenCredsSuccess) {
       test_refresh_token_str, nullptr);
 
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -881,8 +882,8 @@ TEST(CredentialsTest, TestRefreshTokenCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -902,8 +903,8 @@ TEST(CredentialsTest, TestRefreshTokenCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -944,7 +945,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
   };
   absl::StatusOr<URI> url_should_be_invalid =
       ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
@@ -958,7 +959,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       nullptr,                      // sts_endpoint_url (Required)
@@ -972,7 +973,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       "not_a_valid_uri",            // sts_endpoint_url
@@ -986,7 +987,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       "ftp://ftp.is.not.a.valid.scheme/bar",  // sts_endpoint_url
@@ -1000,7 +1001,7 @@ TEST(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                                 // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK_DONT(!url_should_be_invalid.ok());
+  CHECK(!url_should_be_invalid.ok());
 }
 
 void assert_query_parameters(const URI& uri, absl::string_view expected_key,
@@ -1051,8 +1052,8 @@ void validate_sts_token_http_request(const grpc_http_request* request,
   CHECK_EQ(strcmp(path, "/v1/token-exchange"), 0);
   CHECK_EQ(request->hdr_count, 1);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
 }
 
 int sts_token_httpcli_post_success(const grpc_http_request* request,
@@ -1083,7 +1084,7 @@ char* write_tmp_jwt_file(const char* jwt_contents) {
   CHECK_NE(path, nullptr);
   CHECK_NE(tmp, nullptr);
   size_t jwt_length = strlen(jwt_contents);
-  CHECK(fwrite(jwt_contents, 1, jwt_length, tmp) == jwt_length);
+  CHECK_EQ(fwrite(jwt_contents, 1, jwt_length, tmp), jwt_length);
   fclose(tmp);
   return path;
 }
@@ -1111,7 +1112,7 @@ TEST(CredentialsTest, TestStsCredsSuccess) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -1130,8 +1131,8 @@ TEST(CredentialsTest, TestStsCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1156,7 +1157,7 @@ TEST(CredentialsTest, TestStsCredsTokenFileNotFound) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
       GRPC_ERROR_CREATE("Error occurred when fetching oauth2 token."), {});
@@ -1194,7 +1195,7 @@ TEST(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -1213,8 +1214,8 @@ TEST(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1246,8 +1247,8 @@ TEST(CredentialsTest, TestStsCredsLoadTokenFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1280,8 +1281,8 @@ TEST(CredentialsTest, TestStsCredsHttpFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   gpr_free(test_signed_jwt_path);
@@ -1396,7 +1397,7 @@ TEST(CredentialsTest, TestJwtCredsLifetime) {
 
 TEST(CredentialsTest, TestRemoveServiceFromJwtUri) {
   const char wrong_uri[] = "hello world";
-  CHECK_DONT(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
+  CHECK(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
   const char valid_uri[] = "https://foo.com/get/";
   const char expected_uri[] = "https://foo.com/";
   auto output = RemoveServiceNameFromJwtUri(valid_uri);
@@ -1885,13 +1886,13 @@ TEST(CredentialsTest, TestMetadataPluginSuccess) {
   grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   // Check security level.
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   CHECK(state == PLUGIN_INITIAL_STATE);
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
   CHECK(state == PLUGIN_GET_METADATA_CALLED_STATE);
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
   creds->Unref();
 
   CHECK(state == PLUGIN_DESTROY_CALLED_STATE);
@@ -1921,8 +1922,8 @@ TEST(CredentialsTest, TestMetadataPluginFailure) {
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
   CHECK(state == PLUGIN_GET_METADATA_CALLED_STATE);
-  CHECK(strcmp(creds->debug_string().c_str(), expected_creds_debug_string) ==
-        0);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
   creds->Unref();
 
   CHECK(state == PLUGIN_DESTROY_CALLED_STATE);
@@ -2501,7 +2502,7 @@ TEST(CredentialsTest, TestExternalAccountCredsSuccess) {
   };
   TestExternalAccountCredentials creds(options, {});
   // Check security level.
-  CHECK(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds.min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
@@ -2580,7 +2581,7 @@ TEST(CredentialsTest,
   };
   TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
   // Check security level.
-  CHECK(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds.min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -2618,7 +2619,7 @@ TEST(
   };
   TestExternalAccountCredentials creds(options, {"scope_1", "scope_2"});
   // Check security level.
-  CHECK(creds.min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds.min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(),
@@ -2819,7 +2820,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatText) {
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(url_external_account_creds_httpcli_get_success,
@@ -2860,7 +2861,7 @@ TEST(CredentialsTest,
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(url_external_account_creds_httpcli_get_success,
@@ -2898,7 +2899,7 @@ TEST(CredentialsTest, TestUrlExternalAccountCredsSuccessFormatJson) {
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(url_external_account_creds_httpcli_get_success,
@@ -2969,7 +2970,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatText) {
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -3018,7 +3019,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -3145,7 +3146,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccess) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3183,7 +3184,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(
@@ -3227,7 +3228,7 @@ TEST(CredentialsTest,
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3274,7 +3275,7 @@ TEST(
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3315,7 +3316,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessIpv6) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(
@@ -3355,7 +3356,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysUrl) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3396,7 +3397,7 @@ TEST(CredentialsTest,
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3439,7 +3440,7 @@ TEST(CredentialsTest,
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3482,7 +3483,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionUrlKeysEnv) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3527,7 +3528,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsSuccessPathRegionEnvKeysEnv) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3576,7 +3577,7 @@ TEST(CredentialsTest,
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3625,7 +3626,7 @@ TEST(CredentialsTest,
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::OkStatus(), "authorization: Bearer token_exchange_access_token");
   HttpRequest::SetOverride(aws_external_account_creds_httpcli_get_success,
@@ -3758,7 +3759,7 @@ TEST(CredentialsTest,
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE("Creating aws request signer failed.");
   grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
       "Error occurred when fetching oauth2 token.", &error, 1);
@@ -3798,7 +3799,7 @@ TEST(CredentialsTest, TestAwsExternalAccountCredsFailureMissingRoleName) {
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
   CHECK_NE(creds, nullptr);
   CHECK_OK(error);
-  CHECK(creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   error = GRPC_ERROR_CREATE("Missing role name when retrieving signing keys.");
   grpc_error_handle expected_error = GRPC_ERROR_CREATE_REFERENCING(
       "Error occurred when fetching oauth2 token.", &error, 1);
