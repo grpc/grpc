@@ -19,6 +19,8 @@
 
 #include "gtest/gtest.h"
 
+#include "test/core/util/test_config.h"
+
 namespace grpc_core {
 namespace {
 
@@ -46,17 +48,29 @@ TEST(PingRatePolicy, ServerCanSendAtStart) {
             SendGranted());
 }
 
-TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
+TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
   Chttp2PingRatePolicy policy{ChannelArgs(), true};
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
-            TooManyRecentPings());
-  policy.ResetPingsBeforeDataRequired();
+  // First ping is allowed.
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
             SendGranted());
   policy.SentPing();
+  // Second ping is throttled since no data has been sent.
+  auto result = policy.RequestSendPing(Duration::Zero(), 0);
+  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+            Duration::Minutes(1));
+  policy.ResetPingsBeforeDataRequired();
+  // After resetting pings before data required (data sent), we can send pings
+  // without being throttled.
   EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
   policy.SentPing();
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  // After reaching limit, we are throttled again.
+  result = policy.RequestSendPing(Duration::Zero(), 0);
+  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+            Duration::Minutes(1));
 }
 
 TEST(PingRatePolicy, RateThrottlingWorks) {
@@ -86,5 +100,9 @@ TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc::testing::TestEnvironment env(&argc, argv);
+  grpc_init();
+  int result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
 }
