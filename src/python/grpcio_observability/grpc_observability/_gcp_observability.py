@@ -157,5 +157,10 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         if method in self._registered_method:
             registered_method = True
         _cyobservability._record_rpc_latency(
-            self.exporter, method, target, rpc_latency, status_code, registered_method
+            self.exporter,
+            method,
+            target,
+            rpc_latency,
+            status_code,
+            registered_method,
         )

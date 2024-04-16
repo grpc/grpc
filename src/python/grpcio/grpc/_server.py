@@ -1031,7 +1031,12 @@ def _handle_call(
         rpc_state = _RPCState()
         try:
             method_handler = _find_method_handler(
-                rpc_event, rpc_state, registered_method_name, registered_method_handlers, generic_handlers, interceptor_pipeline
+                rpc_event,
+                rpc_state,
+                registered_method_name,
+                registered_method_handlers,
+                generic_handlers,
+                interceptor_pipeline,
             )
         except Exception as exception:  # pylint: disable=broad-except
             details = "Exception servicing handler: {}".format(exception)
@@ -1196,7 +1201,10 @@ def _process_event_and_continue(
             state.due.remove(_SHUTDOWN_TAG)
             if _stop_serving(state):
                 should_continue = False
-    elif (event.tag is _REQUEST_CALL_TAG or event.tag in state.registered_method_handlers.keys()):
+    elif (
+        event.tag is _REQUEST_CALL_TAG
+        or event.tag in state.registered_method_handlers.keys()
+    ):
         registered_method_name = None
         if event.tag in state.registered_method_handlers.keys():
             registered_method_name = event.tag
@@ -1223,7 +1231,10 @@ def _process_event_and_continue(
                     lambda unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
-                if registered_method_name in state.registered_method_handlers.keys():
+                if (
+                    registered_method_name
+                    in state.registered_method_handlers.keys()
+                ):
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)
@@ -1257,6 +1268,7 @@ def _serve(state: _ServerState) -> None:
         # ~before~ we poll again; if the event has a reference
         # to a shutdown Call object, this can induce spinlock.
         event = None
+
 
 def _begin_shutdown_once(state: _ServerState) -> None:
     with state.lock:
@@ -1361,7 +1373,9 @@ class _Server(grpc.Server):
         _add_generic_handlers(self._state, generic_rpc_handlers)
 
     def add_registered_method_handlers(
-        self, service_name: str, rpc_method_handlers: Dict[str, grpc.RpcMethodHandler]
+        self,
+        service_name: str,
+        rpc_method_handlers: Dict[str, grpc.RpcMethodHandler],
     ) -> None:
         method_handlers = {
             _common.fully_qualified_method(service_name, method): method_handler
@@ -1369,9 +1383,15 @@ class _Server(grpc.Server):
         }
         _add_registered_method_handlers(self._state, method_handlers)
 
-    def register_methods(self, service_name: str, rpc_method_handlers: Dict[str, grpc.RpcMethodHandler]):
+    def register_methods(
+        self,
+        service_name: str,
+        rpc_method_handlers: Dict[str, grpc.RpcMethodHandler],
+    ):
         for method, unused_method_handler in rpc_method_handlers.items():
-            fully_qualified_method = _common.fully_qualified_method(service_name, method)
+            fully_qualified_method = _common.fully_qualified_method(
+                service_name, method
+            )
             self._cy_server.register_method(fully_qualified_method)
 
     def add_insecure_port(self, address: str) -> int:

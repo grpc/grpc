@@ -15,7 +15,7 @@
 import logging
 import threading
 import time
-from typing import Any, Set, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Set, Union
 
 import grpc
 
@@ -305,7 +305,12 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         if encoded_method in self._registered_method:
             registered_method = True
         _cyobservability._record_rpc_latency(
-            self.exporter, method, target, rpc_latency, status_code, registered_method
+            self.exporter,
+            method,
+            target,
+            rpc_latency,
+            status_code,
+            registered_method,
         )
 
 
