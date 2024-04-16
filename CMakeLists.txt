@@ -7760,6 +7760,7 @@ target_include_directories(bad_streaming_id_bad_client_test
 target_link_libraries(bad_streaming_id_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -7804,6 +7805,7 @@ target_include_directories(badreq_bad_client_test
 target_link_libraries(badreq_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -11391,6 +11393,7 @@ target_include_directories(connection_prefix_bad_client_test
 target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -12448,6 +12451,7 @@ target_include_directories(duplicate_header_bad_client_test
 target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -16516,6 +16520,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
 target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -16560,6 +16565,7 @@ target_include_directories(headers_bad_client_test
 target_link_libraries(headers_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -17557,6 +17563,7 @@ target_include_directories(initial_settings_frame_bad_client_test
 target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -20785,6 +20792,7 @@ target_include_directories(out_of_bounds_bad_client_test
 target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -27174,6 +27182,7 @@ target_include_directories(server_registered_method_bad_client_test
 target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -27919,6 +27928,7 @@ target_include_directories(simple_request_bad_client_test
 target_link_libraries(simple_request_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -31823,6 +31833,7 @@ target_include_directories(unknown_frame_bad_client_test
 target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -32297,6 +32308,7 @@ target_include_directories(window_overflow_bad_client_test
 target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 

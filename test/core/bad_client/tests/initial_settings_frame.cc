@@ -88,8 +88,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     CHECK(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -115,7 +115,7 @@ static void single_request_verifier(grpc_server* server,
 
     CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
     CHECK(0 == grpc_slice_str_cmp(call_details.method,
-                                       absl::StrCat("/foo/bar", i).c_str()));
+                                  absl::StrCat("/foo/bar", i).c_str()));
 
     grpc_metadata_array_destroy(&request_metadata_recv);
     grpc_call_details_destroy(&call_details);

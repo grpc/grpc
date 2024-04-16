@@ -32,8 +32,8 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
     CHECK(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
