@@ -40,7 +40,6 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_stream_client.h"

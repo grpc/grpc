@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/channelz/channel_trace.h"

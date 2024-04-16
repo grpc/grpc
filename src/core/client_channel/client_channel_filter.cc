@@ -50,7 +50,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
