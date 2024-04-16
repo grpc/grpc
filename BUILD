@@ -237,11 +237,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "giggle"  # @unused
+g_stands_for = "grateful"  # @unused
 
 core_version = "40.0.0"  # @unused
 
-version = "1.63.0-dev"  # @unused
+version = "1.64.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1054,9 +1054,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:optional",
         "absl/types:span",
-        "upb_base_lib",
-        "upb_mem_lib",
-        "upb_message_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb:message",
     ],
     language = "c++",
     deps = [
@@ -1277,9 +1277,9 @@ grpc_cc_library(
         "include/grpcpp/security/alts_util.h",
     ],
     external_deps = [
-        "upb_base_lib",
-        "upb_mem_lib",
-        "upb_message_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb:message",
     ],
     language = "c++",
     standalone = True,
@@ -2347,8 +2347,8 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/transport_security_common_api.h",
     ],
     external_deps = [
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
     ],
     language = "c++",
     visibility = ["@grpc:tsi"],
@@ -2365,8 +2365,8 @@ grpc_cc_library(
         "libssl",
         "libcrypto",
         "absl/strings",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
     ],
     language = "c++",
     tags = ["nofixdeps"],
@@ -2410,8 +2410,8 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/memory",
         "absl/types:optional",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
         "protobuf_headers",
         "absl/container:inlined_vector",
     ],
@@ -2490,8 +2490,8 @@ grpc_cc_library(
         "absl/synchronization",
         "absl/types:optional",
         "absl/memory",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
         "absl/strings:str_format",
         "protobuf_headers",
     ],
@@ -2664,8 +2664,8 @@ grpc_cc_library(
         "absl/strings",
         "absl/time",
         "absl/types:optional",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
     ],
     language = "c++",
     public_hdrs = [
@@ -3501,8 +3501,8 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/status",
         "absl/strings",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
     ],
     language = "c++",
     deps = [
@@ -3602,9 +3602,9 @@ grpc_cc_library(
         "absl/strings:cord",
         "absl/types:optional",
         "absl/types:variant",
-        "upb_base_lib",
-        "upb_mem_lib",
-        "upb_message_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb:message",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -4004,8 +4004,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/strings",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
     ],
     language = "c++",
     visibility = ["@grpc:public"],
@@ -4257,11 +4257,11 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:optional",
-        "upb_base_lib",
-        "upb_mem_lib",
-        "upb_textformat_lib",
-        "upb_json_lib",
-        "upb_reflection",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb:text",
+        "@com_google_protobuf//upb:json",
+        "@com_google_protobuf//upb:reflection",
     ],
     language = "c++",
     tags = ["nofixdeps"],

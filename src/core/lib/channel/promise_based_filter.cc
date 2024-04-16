@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 
 #include <algorithm>
@@ -30,6 +28,7 @@
 #include "absl/strings/str_join.h"
 
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -509,7 +508,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kGotBatch:
       if (allow_push_to_pipe) {
         state_ = State::kPushedToPipe;
-        auto message = GetContext<Arena>()->MakePooled<Message>();
+        auto message = Arena::MakePooled<Message>();
         message->payload()->Swap(batch_->payload->send_message.send_message);
         message->mutable_flags() = batch_->payload->send_message.flags;
         push_ = interceptor()->Push()->Push(std::move(message));
@@ -840,7 +839,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         } else {
           state_ = State::kCompletedWhilePushedToPipe;
         }
-        auto message = GetContext<Arena>()->MakePooled<Message>();
+        auto message = Arena::MakePooled<Message>();
         message->payload()->Swap(&**intercepted_slice_buffer_);
         message->mutable_flags() = *intercepted_flags_;
         push_ = interceptor()->Push()->Push(std::move(message));

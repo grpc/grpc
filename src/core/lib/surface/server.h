@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 #define GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -42,6 +40,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/backoff/random_early_detection.h"
@@ -247,7 +246,7 @@ class Server : public ServerInterface,
 
     Arena* CreateArena() override;
     absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
+        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;

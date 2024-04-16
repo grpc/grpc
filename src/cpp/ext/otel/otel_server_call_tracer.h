@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_SERVER_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_SERVER_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/strip.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_client.h"
 
 #include <inttypes.h>
@@ -45,6 +43,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_api.h"
@@ -641,6 +640,10 @@ void XdsClient::XdsChannel::SetChannelStatusLocked(absl::Status status) {
         status.code(),
         absl::StrCat(status.message(),
                      " (node ID:", xds_client_->bootstrap_->node()->id(), ")"));
+  }
+  // If status was previously OK, report that the channel has gone unhealthy.
+  if (status_.ok() && xds_client_->metrics_reporter_ != nullptr) {
+    xds_client_->metrics_reporter_->ReportServerFailure(server_.server_uri());
   }
   // Save status in channel, so that we can immediately generate an
   // error for any new watchers that may be started.

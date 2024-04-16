@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
 #define GRPC_SRC_CORE_LIB_GPRPP_PER_CPU_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -25,6 +23,7 @@
 #include <memory>
 
 #include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
 
 // Sharded collections of objects
 // This used to be per-cpu, now it's much less so - but still a way to limit

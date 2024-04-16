@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_ORPHANABLE_H
 #define GRPC_SRC_CORE_LIB_GPRPP_ORPHANABLE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cinttypes>
 #include <memory>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"

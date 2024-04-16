@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_API_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_API_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <map>
@@ -33,6 +31,8 @@
 #include "envoy/service/status/v3/csds.upb.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.hpp"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"

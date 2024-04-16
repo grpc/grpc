@@ -14,13 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/endpoint_info_handshaker.h"
 
 #include <memory>
 
 #include "absl/status/status.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"

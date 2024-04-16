@@ -18,12 +18,12 @@
 
 // Posix implementation for gpr threads.
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 
 #include <csignal>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SYNC
 

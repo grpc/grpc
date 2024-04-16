@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 
 #include <map>
@@ -26,6 +24,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/json/json.h"

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <assert.h>
@@ -26,6 +24,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"

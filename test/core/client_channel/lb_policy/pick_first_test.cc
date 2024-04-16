@@ -38,6 +38,7 @@
 #include <grpc/support/json.h>
 
 #include "src/core/lib/channel/metrics.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -1058,6 +1059,119 @@ TEST_F(PickFirstTest, GoesIdleWhenConnectionFailsThenCanReconnect) {
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   }
+}
+
+TEST_F(PickFirstTest, AddressUpdateRemovedSelectedAddress) {
+  if (!IsPickFirstNewEnabled()) return;
+  // Send an update containing two addresses.
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // The second subchannel should not be connecting.
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  // When the first subchannel becomes connected, it reports READY.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  }
+  // Now send an address update that removes the selected address.
+  status = ApplyUpdate(BuildUpdate({kAddresses[1]}, MakePickFirstConfig(false)),
+                       lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // We should see a re-resolution request.
+  ExpectReresolutionRequest();
+  // LB policy reports IDLE with a queueing picker.
+  ExpectStateAndQueuingPicker(GRPC_CHANNEL_IDLE);
+  // By checking the picker, we told the LB policy to trigger a new
+  // connection attempt, so it should start one on the subchannel for
+  // the remaining address.
+  // Note that the picker will have enqueued the ExitIdle() call in the
+  // WorkSerializer, so the first flush will execute that call.  But
+  // executing that call will result in enqueueing subchannel
+  // connectivity state notifications, so we need to flush again to make
+  // sure all of that work is done before we continue.
+  WaitForWorkSerializerToFlush();
+  WaitForWorkSerializerToFlush();
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  // The subchannel starts connecting.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // Subchannel succeeds in connecting.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
+  // LB policy reports READY.
+  picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[1]);
+  }
+}
+
+TEST_F(PickFirstTest, AddressUpdateRetainsSelectedAddress) {
+  // Send an update containing two addresses.
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for both addresses.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  auto* subchannel2 = FindSubchannel(kAddresses[1]);
+  ASSERT_NE(subchannel2, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // The second subchannel should not be connecting.
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
+  // When the first subchannel becomes connected, it reports READY.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
+  // The LB policy will report CONNECTING some number of times (doesn't
+  // matter how many) and then report READY.
+  auto picker = WaitForConnected();
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  }
+  // Now send an address update that reverses the order of the addresses.
+  status = ApplyUpdate(
+      BuildUpdate({kAddresses[1], kAddresses[0]}, MakePickFirstConfig(false)),
+      lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // The address we were already connected to is second in the new list,
+  // but since it's already READY, we should stick with it.
+  picker = ExpectState(GRPC_CHANNEL_READY);
+  ASSERT_NE(picker, nullptr);
+  // Picker should return the same subchannel repeatedly.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
+  }
+  EXPECT_FALSE(subchannel2->ConnectionRequested());
 }
 
 TEST_F(PickFirstTest, WithShuffle) {

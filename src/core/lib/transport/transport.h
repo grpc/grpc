@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -38,6 +36,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/context.h"
@@ -560,7 +559,7 @@ class ServerTransport {
     // Create a call at the server (or fail)
     // arena must have been previously allocated by CreateArena()
     virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
+        ClientMetadataHandle client_initial_metadata, Arena* arena) = 0;
 
    protected:
     ~Acceptor() = default;

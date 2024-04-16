@@ -22,6 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
@@ -91,7 +92,7 @@ void RunServer(const char* hostname) {
   xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
                                grpc::InsecureServerCredentials());
   xds_enabled_server = xds_builder.BuildAndStart();
-  gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
+  LOG(INFO) << "Server starting on 0.0.0.0:" << port;
 
   // Wait for the server to shutdown. Note that some other thread must be
   // responsible for shutting down the server for this call to ever return.
