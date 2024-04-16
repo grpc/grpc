@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_GPR_USEFUL_H
 #define GRPC_SRC_CORE_LIB_GPR_USEFUL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstddef>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
+
+#include <grpc/support/port_platform.h>
 
 /// useful utilities that don't belong anywhere else
 
