@@ -114,8 +114,9 @@ static void single_request_verifier(grpc_server* server,
     cqv.Verify();
 
     CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
-    CHECK(0 == grpc_slice_str_cmp(call_details.method,
-                                  absl::StrCat("/foo/bar", i).c_str()));
+    CHECK_EQ(grpc_slice_str_cmp(call_details.method,
+                                absl::StrCat("/foo/bar", i).c_str()),
+             0);
 
     grpc_metadata_array_destroy(&request_metadata_recv);
     grpc_call_details_destroy(&call_details);
