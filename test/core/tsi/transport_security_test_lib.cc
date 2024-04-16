@@ -106,7 +106,7 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
   size_t bytes_size = 0;
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_with_unused_bytes, &bytes, &bytes_size) == TSI_OK);
-  CHECK(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
+  CHECK_EQ(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
   CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
