@@ -25,9 +25,9 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/endpoint_info_handshaker.h"
-#include "src/core/lib/transport/http_connect_handshaker.h"
-#include "src/core/lib/transport/tcp_connect_handshaker.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
+#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
+#include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 
 namespace grpc_event_engine {
 namespace experimental {

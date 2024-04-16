@@ -1207,7 +1207,7 @@ grpc_cc_library(
     name = "handshaker_factory",
     language = "c++",
     public_hdrs = [
-        "lib/transport/handshaker_factory.h",
+        "handshaker/handshaker_factory.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -1220,11 +1220,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "handshaker_registry",
     srcs = [
-        "lib/transport/handshaker_registry.cc",
+        "handshaker/handshaker_registry.cc",
     ],
     language = "c++",
     public_hdrs = [
-        "lib/transport/handshaker_registry.h",
+        "handshaker/handshaker_registry.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -1238,7 +1238,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tcp_connect_handshaker",
     srcs = [
-        "lib/transport/tcp_connect_handshaker.cc",
+        "handshaker/tcp_connect/tcp_connect_handshaker.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1248,7 +1248,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/transport/tcp_connect_handshaker.h",
+        "handshaker/tcp_connect/tcp_connect_handshaker.h",
     ],
     deps = [
         "channel_args",
@@ -1277,10 +1277,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "endpoint_info_handshaker",
     srcs = [
-        "lib/transport/endpoint_info_handshaker.cc",
+        "handshaker/endpoint_info/endpoint_info_handshaker.cc",
     ],
     hdrs = [
-        "lib/transport/endpoint_info_handshaker.h",
+        "handshaker/endpoint_info/endpoint_info_handshaker.h",
     ],
     external_deps = [
         "absl/status",
@@ -3495,7 +3495,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy_mapper",
-    hdrs = ["lib/handshaker/proxy_mapper.h"],
+    hdrs = ["handshaker/proxy_mapper.h"],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
@@ -3509,8 +3509,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy_mapper_registry",
-    srcs = ["lib/handshaker/proxy_mapper_registry.cc"],
-    hdrs = ["lib/handshaker/proxy_mapper_registry.h"],
+    srcs = ["handshaker/proxy_mapper_registry.cc"],
+    hdrs = ["handshaker/proxy_mapper_registry.h"],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
@@ -3526,10 +3526,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "http_proxy_mapper",
     srcs = [
-        "client_channel/http_proxy_mapper.cc",
+        "handshaker/http_connect/http_proxy_mapper.cc",
     ],
     hdrs = [
-        "client_channel/http_proxy_mapper.h",
+        "handshaker/http_connect/http_proxy_mapper.h",
     ],
     external_deps = [
         "absl/status",

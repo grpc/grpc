@@ -33,6 +33,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/handshaker_registry.h"
+#include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
@@ -49,8 +51,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/handshaker_registry.h"
-#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 namespace grpc_core {
 
