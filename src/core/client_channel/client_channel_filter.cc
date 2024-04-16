@@ -63,7 +63,7 @@
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_trace.h"
+#include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"

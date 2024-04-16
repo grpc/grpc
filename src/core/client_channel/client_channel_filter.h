@@ -46,7 +46,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/orphanable.h"
