@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
@@ -104,7 +106,7 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
   size_t bytes_size = 0;
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_with_unused_bytes, &bytes, &bytes_size) == TSI_OK);
-  CHECK(bytes_size == strlen(TSI_TEST_UNUSED_BYTES));
+  CHECK(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
   CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
   CHECK(tsi_handshaker_result_get_unused_bytes(
                  result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
@@ -144,7 +146,7 @@ static void send_bytes_to_peer(tsi_test_channel* test_channel,
                               ? &test_channel->bytes_written_to_server_channel
                               : &test_channel->bytes_written_to_client_channel;
   CHECK_NE(bytes_written, nullptr);
-  CHECK(*bytes_written + buf_size <= TSI_TEST_DEFAULT_CHANNEL_SIZE);
+  CHECK_LE(*bytes_written + buf_size , TSI_TEST_DEFAULT_CHANNEL_SIZE);
   // Write data to channel.
   memcpy(channel + *bytes_written, buf, buf_size);
   *bytes_written += buf_size;
@@ -444,8 +446,8 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
       config, channel, server_frame_protector, server_received_message,
       &server_received_message_size, false /* is_client */);
   CHECK(config->client_message_size == server_received_message_size);
-  CHECK(memcmp(config->client_message, server_received_message,
-                    server_received_message_size) == 0);
+  CHECK_EQ(memcmp(config->client_message, server_received_message,
+                    server_received_message_size) , 0);
   // Server sends a message to client.
   tsi_test_frame_protector_send_message_to_peer(
       config, channel, server_frame_protector, false /* is_client */);
@@ -455,9 +457,9 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   tsi_test_frame_protector_receive_message_from_peer(
       config, channel, client_frame_protector, client_received_message,
       &client_received_message_size, true /* is_client */);
-  CHECK(config->server_message_size == client_received_message_size);
-  CHECK(memcmp(config->server_message, client_received_message,
-                    client_received_message_size) == 0);
+  CHECK_EQ(config->server_message_size , client_received_message_size);
+  CHECK_EQ(memcmp(config->server_message, client_received_message,
+                    client_received_message_size) , 0);
   gpr_free(server_received_message);
   gpr_free(client_received_message);
 }
