@@ -18,9 +18,9 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

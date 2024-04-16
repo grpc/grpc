@@ -49,14 +49,14 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 // IWYU pragma: no_include <ratio>
 

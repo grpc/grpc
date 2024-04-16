@@ -32,7 +32,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
 
-#include "src/core/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -43,10 +42,11 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6

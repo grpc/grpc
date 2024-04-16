@@ -38,9 +38,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

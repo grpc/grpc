@@ -32,7 +32,7 @@
 #else
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif // GPR_WINDOWS
+#endif  // GPR_WINDOWS
 
 #include <memory>
 #include <utility>
@@ -49,10 +49,10 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {

@@ -40,14 +40,14 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 namespace grpc_core {
 
