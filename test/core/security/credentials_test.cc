@@ -642,7 +642,7 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       ChannelArgs* /*new_args*/) override {
     CHECK(type() == Type());
-    CHECK_NE(call_creds, nullptr);
+    CHECK(call_creds != nullptr);
     CHECK(call_creds->type() == grpc_composite_call_credentials::Type());
     const grpc_composite_call_credentials::CallCredentialsList& creds_list =
         static_cast<const grpc_composite_call_credentials*>(call_creds.get())
@@ -2871,7 +2871,7 @@ TEST(CredentialsTest,
   };
   grpc_error_handle error;
   auto creds = UrlExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3029,7 +3029,7 @@ TEST(CredentialsTest, TestFileExternalAccountCredsSuccessFormatJson) {
   };
   grpc_error_handle error;
   auto creds = FileExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
@@ -3194,7 +3194,7 @@ TEST(CredentialsTest, TestAwsImdsv2ExternalAccountCredsSuccess) {
   };
   grpc_error_handle error;
   auto creds = AwsExternalAccountCredentials::Create(options, {}, &error);
-  CHECK_NE(creds, nullptr);
+  CHECK(creds != nullptr);
   CHECK_OK(error);
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
