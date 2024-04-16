@@ -620,7 +620,7 @@ TEST(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
       grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
                                              nullptr);
   // Check security level of composite credentials.
-  CHECK(composite_creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(composite_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   oauth2_creds->Unref();
   google_iam_creds->Unref();
@@ -1359,13 +1359,15 @@ TEST(CredentialsTest, TestJwtCredsLifetime) {
   grpc_call_credentials* jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
-  CHECK(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
-                     grpc_max_auth_token_lifetime()) == 0);
+  CHECK_EQ(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
+                        grpc_max_auth_token_lifetime()),
+           0);
   // Check security level.
-  CHECK(jwt_creds->min_security_level() == GRPC_PRIVACY_AND_INTEGRITY);
-  CHECK(strncmp(expected_creds_debug_string_prefix,
-                jwt_creds->debug_string().c_str(),
-                strlen(expected_creds_debug_string_prefix)) == 0);
+  CHECK_EQ(jwt_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
+                   jwt_creds->debug_string().c_str(),
+                   strlen(expected_creds_debug_string_prefix)),
+           0);
   grpc_call_credentials_release(jwt_creds);
 
   // Shorter lifetime.
@@ -1373,11 +1375,12 @@ TEST(CredentialsTest, TestJwtCredsLifetime) {
   CHECK_GT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime), 0);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
       json_key_string, token_lifetime, nullptr);
-  CHECK(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(), token_lifetime) ==
-        0);
-  CHECK(strncmp(expected_creds_debug_string_prefix,
-                jwt_creds->debug_string().c_str(),
-                strlen(expected_creds_debug_string_prefix)) == 0);
+  CHECK_EQ(
+      gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(), token_lifetime), 0);
+  CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
+                   jwt_creds->debug_string().c_str(),
+                   strlen(expected_creds_debug_string_prefix)),
+           0);
   grpc_call_credentials_release(jwt_creds);
 
   // Cropped lifetime.
@@ -1439,9 +1442,10 @@ TEST(CredentialsTest, TestJwtCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestOtherAuthority,
                                 kTestOtherPath);
   ExecCtx::Get()->Flush();
-  CHECK(strncmp(expected_creds_debug_string_prefix,
-                creds->debug_string().c_str(),
-                strlen(expected_creds_debug_string_prefix)) == 0);
+  CHECK_EQ(
+      strncmp(expected_creds_debug_string_prefix, creds->debug_string().c_str(),
+              strlen(expected_creds_debug_string_prefix)),
+      0);
 
   creds->Unref();
   gpr_free(json_key_string);
@@ -1464,9 +1468,10 @@ TEST(CredentialsTest, TestJwtCredsSigningFailure) {
                                 kTestPath);
 
   gpr_free(json_key_string);
-  CHECK(strncmp(expected_creds_debug_string_prefix,
-                creds->debug_string().c_str(),
-                strlen(expected_creds_debug_string_prefix)) == 0);
+  CHECK_EQ(
+      strncmp(expected_creds_debug_string_prefix, creds->debug_string().c_str(),
+              strlen(expected_creds_debug_string_prefix)),
+      0);
 
   creds->Unref();
   grpc_jwt_encode_and_sign_set_override(nullptr);
@@ -1479,7 +1484,7 @@ void set_google_default_creds_env_var_with_file_contents(
   FILE* creds_file = gpr_tmpfile(file_prefix, &creds_file_name);
   CHECK_NE(creds_file_name, nullptr);
   CHECK_NE(creds_file, nullptr);
-  CHECK(fwrite(contents, 1, contents_len, creds_file) == contents_len);
+  CHECK_EQ(fwrite(contents, 1, contents_len, creds_file), contents_len);
   fclose(creds_file);
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, creds_file_name);
   gpr_free(creds_file_name);
@@ -1515,9 +1520,9 @@ TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
       reinterpret_cast<const grpc_service_account_jwt_access_credentials*>(
           creds->call_creds());
   CHECK(strcmp(jwt->key().client_id,
-               "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
+               "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com"),
         0);
-  CHECK(g_test_gce_tenancy_checker_called == false);
+  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1540,8 +1545,9 @@ TEST(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   auto* refresh =
       reinterpret_cast<const grpc_google_refresh_token_credentials*>(
           creds->call_creds());
-  CHECK(strcmp(refresh->refresh_token().client_id,
-               "32555999999.apps.googleusercontent.com") == 0);
+  CHECK_EQ(strcmp(refresh->refresh_token().client_id,
+                  "32555999999.apps.googleusercontent.com"),
+           0);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1638,7 +1644,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsGce) {
                                 kTestAuthority, kTestPath);
   ExecCtx::Get()->Flush();
 
-  CHECK(g_test_gce_tenancy_checker_called == true);
+  CHECK_EQ(g_test_gce_tenancy_checker_called, true);
 
   // Cleanup.
   creds->Unref();
@@ -1674,7 +1680,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNonGce) {
   state->RunRequestMetadataTest(creds->mutable_call_creds(), kTestUrlScheme,
                                 kTestAuthority, kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK(g_test_gce_tenancy_checker_called == true);
+  CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1709,7 +1715,7 @@ TEST(CredentialsTest, TestNoGoogleDefaultCreds) {
   // Try a second one. GCE detection should occur again.
   g_test_gce_tenancy_checker_called = false;
   CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
-  CHECK(g_test_gce_tenancy_checker_called == true);
+  CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   grpc_override_well_known_credentials_path_getter(nullptr);
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1732,7 +1738,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds));
-  CHECK(g_test_gce_tenancy_checker_called == false);
+  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
@@ -1782,7 +1788,7 @@ TEST(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds.release()));
-  CHECK(g_test_gce_tenancy_checker_called == false);
+  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
   state->RunRequestMetadataTest(channel_creds->mutable_call_creds(),
@@ -1811,7 +1817,7 @@ int plugin_get_metadata_success(
   CHECK_EQ(strcmp(context.method_name, test_method), 0);
   CHECK_EQ(context.channel_auth_context, nullptr);
   CHECK_EQ(context.reserved, nullptr);
-  CHECK(plugin_md.size() < GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
+  CHECK_LT(plugin_md.size(), GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   size_t i = 0;
@@ -1887,15 +1893,15 @@ TEST(CredentialsTest, TestMetadataPluginSuccess) {
       plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   // Check security level.
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  CHECK(state == PLUGIN_INITIAL_STATE);
+  CHECK_EQ(state, PLUGIN_INITIAL_STATE);
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
-  CHECK(state == PLUGIN_GET_METADATA_CALLED_STATE);
+  CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
   CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
            0);
   creds->Unref();
 
-  CHECK(state == PLUGIN_DESTROY_CALLED_STATE);
+  CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
 }
 
 TEST(CredentialsTest, TestMetadataPluginFailure) {
@@ -1918,15 +1924,15 @@ TEST(CredentialsTest, TestMetadataPluginFailure) {
 
   grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
-  CHECK(state == PLUGIN_INITIAL_STATE);
+  CHECK_EQ(state, PLUGIN_INITIAL_STATE);
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
-  CHECK(state == PLUGIN_GET_METADATA_CALLED_STATE);
+  CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
   CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
            0);
   creds->Unref();
 
-  CHECK(state == PLUGIN_DESTROY_CALLED_STATE);
+  CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
 }
 
 TEST(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
@@ -1971,8 +1977,9 @@ TEST(CredentialsTest, TestChannelCredsDuplicateWithoutCallCreds) {
   grpc_channel_credentials* composite_creds =
       grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                 nullptr);
-  CHECK(strcmp(call_creds->debug_string().c_str(),
-               expected_creds_debug_string) == 0);
+  CHECK_EQ(
+      strcmp(call_creds->debug_string().c_str(), expected_creds_debug_string),
+      0);
 
   call_creds->Unref();
   dup = composite_creds->duplicate_without_call_credentials();
@@ -2123,11 +2130,12 @@ void validate_external_account_creds_token_exchage_request(
   CHECK_EQ(strcmp(path, "/token"), 0);
   CHECK_EQ(request->hdr_count, 3);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
   CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK(strcmp(request->hdrs[2].value,
-               "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
+  CHECK_EQ(
+      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
+      0);
 }
 
 void validate_external_account_creds_token_exchage_request_with_url_encode(
@@ -2136,7 +2144,7 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
   // Check that the body is constructed properly.
   CHECK_NE(body, nullptr);
   CHECK_NE(body_size, 0);
-  CHECK(
+  CHECK_EQ(
       strcmp(
           std::string(body, body_size).c_str(),
           "audience=audience_!%40%23%24&grant_type=urn%3Aietf%3Aparams%3Aoauth%"
@@ -2144,18 +2152,20 @@ void validate_external_account_creds_token_exchage_request_with_url_encode(
           "3Aparams%3Aoauth%3Atoken-type%3Aaccess_token&subject_token_type="
           "subject_token_type_!%40%23%24&subject_token=test_subject_token&"
           "scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform&"
-          "options=%7B%7D") == 0);
+          "options=%7B%7D"),
+      0);
 
   // Check the rest of the request.
   CHECK_EQ(strcmp(host, "foo.com:5555"), 0);
   CHECK_EQ(strcmp(path, "/token_url_encode"), 0);
   CHECK_EQ(request->hdr_count, 3);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
   CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK(strcmp(request->hdrs[2].value,
-               "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
+  CHECK_EQ(
+      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
+      0);
 }
 
 void validate_external_account_creds_service_account_impersonation_request(
@@ -2170,11 +2180,11 @@ void validate_external_account_creds_service_account_impersonation_request(
   CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
   CHECK_EQ(request->hdr_count, 2);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
   CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
-  CHECK(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token"),
+           0);
 }
 
 void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
@@ -2189,11 +2199,11 @@ void validate_external_account_creds_serv_acc_imp_custom_lifetime_request(
   CHECK_EQ(strcmp(path, "/service_account_impersonation"), 0);
   CHECK_EQ(request->hdr_count, 2);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
   CHECK_EQ(strcmp(request->hdrs[1].key, "Authorization"), 0);
-  CHECK(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[1].value, "Bearer token_exchange_access_token"),
+           0);
 }
 
 int external_acc_creds_serv_acc_imp_custom_lifetime_httpcli_post_success(
@@ -2307,8 +2317,8 @@ void validate_aws_external_account_creds_token_exchage_request(
   CHECK_EQ(strcmp(path, "/token"), 0);
   CHECK_EQ(request->hdr_count, 3);
   CHECK_EQ(strcmp(request->hdrs[0].key, "Content-Type"), 0);
-  CHECK(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].value, "application/x-www-form-urlencoded"),
+           0);
   CHECK_EQ(strcmp(request->hdrs[1].key, "x-goog-api-client"), 0);
   EXPECT_EQ(
       request->hdrs[1].value,
@@ -2316,8 +2326,9 @@ void validate_aws_external_account_creds_token_exchage_request(
                       "sa-impersonation/false config-lifetime/false",
                       grpc_version_string()));
   CHECK_EQ(strcmp(request->hdrs[2].key, "Authorization"), 0);
-  CHECK(strcmp(request->hdrs[2].value,
-               "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ=") == 0);
+  CHECK_EQ(
+      strcmp(request->hdrs[2].value, "Basic Y2xpZW50X2lkOmNsaWVudF9zZWNyZXQ="),
+      0);
 }
 
 int aws_external_account_creds_httpcli_get_success(
@@ -2353,8 +2364,8 @@ int aws_imdsv2_external_account_creds_httpcli_put_success(
     const char* /*body*/, size_t /*body_size*/, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
   CHECK_EQ(request->hdr_count, 1);
-  CHECK(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token-ttl-seconds") ==
-        0);
+  CHECK_EQ(strcmp(request->hdrs[0].key, "x-aws-ec2-metadata-token-ttl-seconds"),
+           0);
   CHECK_EQ(strcmp(request->hdrs[0].value, "300"), 0);
   CHECK_EQ(strcmp(path, "/imdsv2_session_token_url"), 0);
   *response = http_response(200, aws_imdsv2_session_token);
