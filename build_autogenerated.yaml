@@ -19024,6 +19024,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: test_core_security_ssl_credentials_test
   gtest: true
