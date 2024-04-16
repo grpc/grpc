@@ -1519,9 +1519,10 @@ TEST(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   auto* jwt =
       reinterpret_cast<const grpc_service_account_jwt_access_credentials*>(
           creds->call_creds());
-  CHECK(strcmp(jwt->key().client_id,
-               "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com"),
-        0);
+  CHECK_EQ(
+      strcmp(jwt->key().client_id,
+             "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com"),
+      0);
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
