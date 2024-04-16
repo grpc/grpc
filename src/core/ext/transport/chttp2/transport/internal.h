@@ -61,6 +61,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -535,6 +536,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   // What percentage of rst_stream frames on the server should cause a ping
   // frame to be generated.
   uint8_t ping_on_rst_stream_percent;
+
+  /// Only set when enabled.
+  grpc_event_engine::experimental::TcpTraceExtension* epte;
+  std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
 };
 
 typedef enum {

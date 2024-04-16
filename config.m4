@@ -474,6 +474,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
+    src/core/lib/event_engine/extensions/tcp_trace.cc \
     src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
@@ -1520,6 +1521,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/cf_engine)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/extensions)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/posix_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/thread_pool)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/thready_event_engine)

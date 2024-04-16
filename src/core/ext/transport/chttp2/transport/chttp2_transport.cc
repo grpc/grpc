@@ -79,6 +79,8 @@
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -91,6 +93,7 @@
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
@@ -591,6 +594,10 @@ static void init_keepalive_pings_if_enabled_locked(
   }
 }
 
+using grpc_event_engine::experimental::Http2TransportTcpTracer;
+using grpc_event_engine::experimental::QueryExtension;
+using grpc_event_engine::experimental::TcpTraceExtension;
+
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client)
@@ -618,6 +625,18 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
       is_client(is_client) {
   cl = new grpc_core::ContextList();
+
+  if (channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false) &&
+      grpc_event_engine::experimental::grpc_is_event_engine_endpoint(ep)) {
+    epte = QueryExtension<TcpTraceExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep));
+    if (epte != nullptr) {
+      tcp_tracer = std::make_shared<Http2TransportTcpTracer>();
+      epte->SetTcpTracer(tcp_tracer);
+    }
+  }
+
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
         GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
