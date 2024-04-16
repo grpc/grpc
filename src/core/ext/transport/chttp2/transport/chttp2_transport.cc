@@ -1471,9 +1471,11 @@ static void perform_stream_op_locked(void* stream_op,
       frame_hdr[3] = static_cast<uint8_t>(len >> 8);
       frame_hdr[4] = static_cast<uint8_t>(len);
 
-      s->stats.outgoing.framing_bytes += GRPC_HEADER_SIZE_IN_BYTES;
-      s->stats.outgoing.data_bytes +=
-          op_payload->send_message.send_message->Length();
+      if (grpc_core::IsHttp2StatsFixEnabled()) {
+        s->stats.outgoing.framing_bytes += GRPC_HEADER_SIZE_IN_BYTES;
+        s->stats.outgoing.data_bytes +=
+            op_payload->send_message.send_message->Length();
+      }
       s->next_message_end_offset =
           s->flow_controlled_bytes_written +
           static_cast<int64_t>(s->flow_controlled_buffer.length) +

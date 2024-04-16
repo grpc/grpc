@@ -44,7 +44,7 @@
   description:
     Avoid overriding call status of successfully finished calls if it races with
     cancellation.
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: call_v3
@@ -98,6 +98,12 @@
   expiry: 2024/08/01
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: http2_stats_fix
+  description:
+    Fix on HTTP2 outgoing data stats reporting
+  expiry: 2024/09/30
+  owner: yashkt@google.com
+  test_tags: []
 - name: keepalive_fix
   description:
     Allows overriding keepalive_permit_without_calls.
@@ -180,7 +186,7 @@
   test_tags: [flow_control_test]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: server_privacy
@@ -206,7 +212,7 @@
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: trace_record_callops
   description: Enables tracing of call batch initiation and completion.
-  expiry: 2024/04/01
+  expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size

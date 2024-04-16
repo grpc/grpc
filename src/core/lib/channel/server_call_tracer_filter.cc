@@ -108,6 +108,7 @@ ServerCallTracerFilter::Create(const ChannelArgs& /*args*/,
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
+  if (IsChaoticGoodEnabled()) return;
   builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
       GRPC_SERVER_CHANNEL);
 }
