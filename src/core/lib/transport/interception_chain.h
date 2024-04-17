@@ -30,8 +30,10 @@ namespace grpc_core {
 
 class InterceptionChainBuilder;
 
-namespace interception_chain_detail {
-
+// One hijacked call. Using this we can get access to the CallHandler for the
+// call object above us, the processed metadata from any filters/interceptors
+// above us, and also create new CallInterceptor objects that will be handled
+// below.
 class HijackedCall {
  public:
   HijackedCall(ClientMetadataHandle metadata,
@@ -41,7 +43,11 @@ class HijackedCall {
         destination_(std::move(destination)),
         call_handler_(std::move(call_handler)) {}
 
+  // Create a new call and pass it down the stack.
+  // This can be called as many times as needed.
   CallInitiator MakeCall();
+  // Per MakeCall(), but precludes creating further calls.
+  // Allows us to optimize by not copying initial metadata.
   CallInitiator MakeLastCall() {
     return MakeCallWithMetadata(std::move(metadata_));
   }
@@ -57,6 +63,8 @@ class HijackedCall {
   RefCountedPtr<UnstartedCallDestination> destination_;
   CallHandler call_handler_;
 };
+
+namespace interception_chain_detail {
 
 inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
                        RefCountedPtr<UnstartedCallDestination> destination,
@@ -83,19 +91,30 @@ inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
 //    be used to start new calls with the same metadata.
 //
 // 2. It can consume the call by calling `Consume`.
+//
+// Upon the StartCall call the UnstartedCallHandler will be from the last
+// *Interceptor* in the call chain (without having been processed by any
+// intervening filters).
 class Interceptor : public UnstartedCallDestination {
  protected:
   using HijackedCall = interception_chain_detail::HijackedCall;
 
-  // Returns a promise that resolves to ...
+  // Returns a promise that resolves to a HijackedCall instance.
+  // Hijacking is the process of taking over a call and starting one or more new
+  // ones.
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
     return interception_chain_detail::HijackCall(
         std::move(unstarted_call_handler), wrapped_destination_, filter_stack_);
   }
 
+  // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
     return unstarted_call_handler.StartCall(filter_stack_);
   }
+
+  // TODO(ctiller): Consider a Passthrough() method that allows the call to be
+  // passed on to the next filter in the chain without any interception by the
+  // current filter.
 
  private:
   friend class InterceptionChainBuilder;

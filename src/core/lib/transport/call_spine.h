@@ -81,6 +81,7 @@ class CallSpineInterface {
       absl::optional<ServerMetadataHandle> md) = 0;
   virtual Promise<bool> WasCancelled() = 0;
   virtual ClientMetadata& UnprocessedClientInitialMetadata() = 0;
+  virtual void V2HackToStartCallWithoutACallFilterStack() = 0;
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -147,7 +148,6 @@ class PipeBasedCallSpine : public CallSpineInterface {
   virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
   virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
   virtual Latch<bool>& was_cancelled_latch() = 0;
-  virtual void V2HackToStartCallWithoutACallFilterStack() = 0;
 
   Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
   PullServerInitialMetadata() final {
@@ -352,6 +352,11 @@ class CallSpine final : public CallSpineInterface, public Party {
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_;
+  }
+
+  void V2HackToStartCallWithoutACallFilterStack() override {
+    CallFilters::StackBuilder empty_stack_builder;
+    call_filters().SetStack(empty_stack_builder.Build());
   }
 
  private:
@@ -579,8 +584,7 @@ class UnstartedCallHandler {
   }
 
   CallHandler V2HackToStartCallWithoutACallFilterStack() {
-    DownCast<PipeBasedCallSpine*>(spine_.get())
-        ->V2HackToStartCallWithoutACallFilterStack();
+    spine_->V2HackToStartCallWithoutACallFilterStack();
     return CallHandler(std::move(spine_));
   }
 
