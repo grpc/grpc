@@ -22,39 +22,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
 namespace {
-
-// FIXME: move to a fucking file instead of copy pasting ever6ywhere
-
-MATCHER(IsPending, "") {
-  if (arg.ready()) {
-    *result_listener << "is ready";
-    return false;
-  }
-  return true;
-}
-
-MATCHER(IsReady, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  return true;
-}
-
-MATCHER_P(IsReady, value, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  if (arg.value() != value) {
-    *result_listener << "is " << ::testing::PrintToString(arg.value());
-    return false;
-  }
-  return true;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Mutate metadata by annotating that it passed through a filter "x"

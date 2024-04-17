@@ -47,6 +47,7 @@ grpc_cc_test(
     deps = [
         "//src/core:interception_chain",
         "//src/core:resource_quota",
+        "//test/core/promise:poll_matcher",
     ],
 )
 
