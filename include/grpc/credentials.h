@@ -93,7 +93,7 @@ typedef struct {
   const char* actor_token_type;           /* Optional. */
 } grpc_sts_credentials_options;
 
-/** Creates an STS credentials following the STS Token Exchanged specifi ed in
+/** Creates an STS credentials following the STS Token Exchanged specified in
    the IETF draft
    https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16. This API is
    used for experimental purposes for now and may change in the future. */
