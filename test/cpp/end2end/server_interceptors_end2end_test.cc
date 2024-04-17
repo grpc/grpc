@@ -265,7 +265,7 @@ TEST_F(ServerInterceptorsEnd2endSyncUnaryTest, UnaryTest) {
   PhonyInterceptor::Reset();
   auto channel =
       grpc::CreateChannel(server_address_, InsecureChannelCredentials());
-  MakeCall(channel);
+  MakeCallPair(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }

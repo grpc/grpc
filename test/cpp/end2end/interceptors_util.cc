@@ -30,8 +30,8 @@ std::atomic<int> PhonyInterceptor::num_times_run_;
 std::atomic<int> PhonyInterceptor::num_times_run_reverse_;
 std::atomic<int> PhonyInterceptor::num_times_cancel_;
 
-void MakeCall(const std::shared_ptr<Channel>& channel,
-              const StubOptions& options) {
+void MakeCallPair(const std::shared_ptr<Channel>& channel,
+                  const StubOptions& options) {
   auto stub = grpc::testing::EchoTestService::NewStub(channel, options);
   ClientContext ctx;
   EchoRequest req;

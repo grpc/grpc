@@ -16,6 +16,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/try_seq.h"
+
 namespace grpc_core {
 
 void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
@@ -89,7 +92,7 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   });
 }
 
-CallInitiatorAndHandler MakeCall(
+CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
     bool is_arena_owned) {

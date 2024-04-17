@@ -122,8 +122,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                       ->as_string_view(),
                   "/demo.Service/Step");
         CallInitiatorAndHandler call =
-            MakeCall(std::move(client_initial_metadata), event_engine().get(),
-                     call_arena, true);
+            MakeCallPair(std::move(client_initial_metadata),
+                         event_engine().get(), call_arena, true);
         auto handler = call.handler.V2HackToStartCallWithoutACallFilterStack();
         handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
           return Seq(

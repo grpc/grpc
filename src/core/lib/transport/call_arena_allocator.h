@@ -18,8 +18,13 @@
 #include <stddef.h>
 
 #include <atomic>
+#include <cstddef>
 
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 namespace grpc_core {
 
@@ -45,6 +50,22 @@ class CallSizeEstimator {
 
  private:
   std::atomic<size_t> call_size_estimate_;
+};
+
+class CallArenaAllocator : public RefCounted<CallArenaAllocator> {
+ public:
+  CallArenaAllocator(MemoryAllocator allocator, size_t initial_size)
+      : allocator_(std::move(allocator)), call_size_estimator_(initial_size) {}
+
+  Arena* MakeArena() {
+    return Arena::Create(call_size_estimator_.CallSizeEstimate(), &allocator_);
+  }
+
+  void Destroy(Arena* arena) { arena->Destroy(); }
+
+ private:
+  MemoryAllocator allocator_;
+  CallSizeEstimator call_size_estimator_;
 };
 
 }  // namespace grpc_core
