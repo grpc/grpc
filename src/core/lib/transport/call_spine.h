@@ -241,22 +241,6 @@
       return spine_->CancelIfFails(std::move(promise));
     }
 
-    auto PullServerInitialMetadata() {
-      return spine_->PullServerInitialMetadata();
-    }
-
-    auto PushMessage(MessageHandle message) {
-      return spine_->PushClientToServerMessage(std::move(message));
-    }
-
-    void FinishSends() { spine_->FinishSends(); }
-
-    auto PullMessage() { return spine_->PullServerToClientMessage(); }
-
-    auto PullServerTrailingMetadata() {
-      return spine_->PullServerTrailingMetadata();
-    }
-
     void Cancel() {
       auto status = ServerMetadataFromStatus(absl::CancelledError());
       status->Set(GrpcCallWasCancelled(), true);
@@ -410,12 +394,6 @@
     auto CancelIfFails(Promise promise) {
       return spine_->CancelIfFails(std::move(promise));
     }
-
-    auto PushMessage(MessageHandle message) {
-      return spine_->PushServerToClientMessage(std::move(message));
-    }
-
-    auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
     template <typename PromiseFactory>
     void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
