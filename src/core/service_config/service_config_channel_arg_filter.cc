@@ -58,9 +58,9 @@ class ServiceConfigChannelArgFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
-    return ServiceConfigChannelArgFilter(args);
+    return std::make_unique<ServiceConfigChannelArgFilter>(args);
   }
 
   explicit ServiceConfigChannelArgFilter(const ChannelArgs& args) {

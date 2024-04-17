@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>

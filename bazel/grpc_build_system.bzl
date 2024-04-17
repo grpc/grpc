@@ -102,6 +102,7 @@ def _update_visibility(visibility):
         "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
+        "core_credentials": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,

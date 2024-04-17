@@ -327,7 +327,9 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
   ~SubchannelCallTracker() override {
     locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
     call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+#ifndef NDEBUG
     GPR_DEBUG_ASSERT(!started_);
+#endif
   }
 
   void Start() override {
