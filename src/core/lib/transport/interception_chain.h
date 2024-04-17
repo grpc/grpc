@@ -48,6 +48,8 @@ class HijackedCall {
 
   CallHandler& original_call_handler() { return call_handler_; }
 
+  ClientMetadata& client_metadata() { return *metadata_; }
+
  private:
   CallInitiator MakeCallWithMetadata(ClientMetadataHandle metadata);
 
@@ -85,6 +87,7 @@ class Interceptor : public UnstartedCallDestination {
  protected:
   using HijackedCall = interception_chain_detail::HijackedCall;
 
+  // Returns a promise that resolves to ...
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
     return interception_chain_detail::HijackCall(
         std::move(unstarted_call_handler), wrapped_destination_, filter_stack_);

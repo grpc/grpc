@@ -26,6 +26,8 @@
 namespace grpc_core {
 namespace {
 
+// FIXME: move to a fucking file instead of copy pasting ever6ywhere
+
 MATCHER(IsPending, "") {
   if (arg.ready()) {
     *result_listener << "is ready";
@@ -212,9 +214,9 @@ class InterceptionChainTest : public ::testing::Test {
 
   // Run a call through a UnstartedCallDestination until it's complete.
   FinishedCall RunCall(UnstartedCallDestination* destination) {
-    auto* arena = Arena::Create(1024, &memory_allocator_);
-    auto call =
-        MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr, arena, true);
+    auto* arena = call_arena_allocator_->MakeArena();
+    auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
+                             arena, call_arena_allocator_, nullptr);
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
@@ -255,8 +257,11 @@ class InterceptionChainTest : public ::testing::Test {
     ClientMetadataHandle metadata_;
   };
   RefCountedPtr<Destination> destination_ = MakeRefCounted<Destination>();
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test"),
+          1024);
 };
 
 ///////////////////////////////////////////////////////////////////////////////

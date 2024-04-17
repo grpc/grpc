@@ -18,6 +18,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/channel/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
@@ -258,11 +259,11 @@ class CallSpine final : public CallSpineInterface, public Party {
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
       grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-      CallSizeEstimator* call_size_estimator_if_arena_is_owned,
+      RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
       grpc_call_context_element* legacy_context) {
     return RefCountedPtr<CallSpine>(arena->New<CallSpine>(
         std::move(client_initial_metadata), event_engine, arena,
-        call_size_estimator_if_arena_is_owned, legacy_context));
+        std::move(call_arena_allocator_if_arena_is_owned), legacy_context));
   }
 
   ~CallSpine() override {
@@ -275,6 +276,72 @@ class CallSpine final : public CallSpineInterface, public Party {
   }
 
   CallFilters& call_filters() { return call_filters_; }
+
+  Party& party() override { return *this; }
+
+  Arena* arena() override { return arena_; }
+
+  void IncrementRefCount() override { Party::IncrementRefCount(); }
+
+  void Unref() override { Party::Unref(); }
+
+  Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
+  PullServerInitialMetadata() override {
+    return call_filters().PullServerInitialMetadata();
+  }
+
+  Promise<ServerMetadataHandle> PullServerTrailingMetadata() override {
+    return call_filters().PullServerTrailingMetadata();
+  }
+
+  Promise<StatusFlag> PushClientToServerMessage(
+      MessageHandle message) override {
+    return call_filters().PushClientToServerMessage(std::move(message));
+  }
+
+  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
+  PullClientToServerMessage() override {
+    return call_filters().PullClientToServerMessage();
+  }
+
+  Promise<StatusFlag> PushServerToClientMessage(
+      MessageHandle message) override {
+    return call_filters().PushServerToClientMessage(std::move(message));
+  }
+
+  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
+  PullServerToClientMessage() override {
+    return call_filters().PullServerToClientMessage();
+  }
+
+  void PushServerTrailingMetadata(ServerMetadataHandle md) override {
+    call_filters().PushServerTrailingMetadata(std::move(md));
+  }
+
+  void FinishSends() override { call_filters().FinishClientToServerSends(); }
+
+  Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
+      override {
+    return call_filters().PullClientInitialMetadata();
+  }
+
+  Promise<StatusFlag> PushServerInitialMetadata(
+      absl::optional<ServerMetadataHandle> md) override {
+    if (md.has_value()) {
+      return call_filters().PushServerInitialMetadata(std::move(*md));
+    } else {
+      call_filters().NoServerInitialMetadata();
+      return Immediate<StatusFlag>(Success{});
+    }
+  }
+
+  Promise<bool> WasCancelled() override {
+    return call_filters().WasCancelled();
+  }
+
+  ClientMetadata& UnprocessedClientInitialMetadata() override {
+    return *call_filters().unprocessed_client_initial_metadata();
+  }
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
@@ -325,18 +392,15 @@ class CallSpine final : public CallSpineInterface, public Party {
     });
   }
 
+  // TODO(ctiller): re-evaluate legacy context apis
   grpc_call_context_element& legacy_context(grpc_context_index index) const {
     return legacy_context_[index];
   }
 
+  grpc_call_context_element* legacy_context() { return legacy_context_; }
+
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_;
-  }
-
-  Arena* arena() const { return arena_; }
-
-  void V2HackToStartCallWithoutACallFilterStack() override {
-    Crash("Cannot use v3 call spine with v2 call stacks");
   }
 
  private:
@@ -344,14 +408,14 @@ class CallSpine final : public CallSpineInterface, public Party {
   CallSpine(ClientMetadataHandle client_initial_metadata,
             grpc_event_engine::experimental::EventEngine* event_engine,
             Arena* arena,
-            CallSizeEstimator* call_size_estimator_if_arena_is_owned,
+            RefCountedPtr<CallArenaAllocator> call_arena_allocator,
             grpc_call_context_element* legacy_context)
       : Party(1),
         call_filters_(std::move(client_initial_metadata)),
         arena_(arena),
         event_engine_(event_engine),
-        call_size_estimator_if_arena_is_owned_(
-            call_size_estimator_if_arena_is_owned) {
+        call_arena_allocator_if_arena_is_owned_(
+            std::move(call_arena_allocator)) {
     if (legacy_context == nullptr) {
       legacy_context_ = static_cast<grpc_call_context_element*>(
           arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
@@ -386,18 +450,16 @@ class CallSpine final : public CallSpineInterface, public Party {
 
   void PartyOver() override {
     Arena* a = arena_;
-    CallSizeEstimator* call_size_estimator_if_arena_is_owned =
-        call_size_estimator_if_arena_is_owned_;
+    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned =
+        std::move(call_arena_allocator_if_arena_is_owned_);
     {
       ScopedContext context(this);
       CancelRemainingParticipants();
       a->DestroyManagedNewObjects();
     }
     this->~CallSpine();
-    if (call_size_estimator_if_arena_is_owned != nullptr) {
-      call_size_estimator_if_arena_is_owned->UpdateCallSizeEstimate(
-          a->TotalUsedBytes());
-      a->Destroy();
+    if (call_arena_allocator_if_arena_is_owned != nullptr) {
+      call_arena_allocator_if_arena_is_owned->Destroy(a);
     }
   }
 
@@ -409,7 +471,7 @@ class CallSpine final : public CallSpineInterface, public Party {
   // Legacy context
   // TODO(ctiller): remove
   grpc_call_context_element* legacy_context_;
-  CallSizeEstimator* const call_size_estimator_if_arena_is_owned_;
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned_;
   bool legacy_context_is_owned_;
 };
 
@@ -516,7 +578,14 @@ class CallHandler {
 
   Arena* arena() { return spine_->arena(); }
 
-  grpc_event_engine::experimental::EventEngine* event_engine();
+  grpc_event_engine::experimental::EventEngine* event_engine() {
+    return DownCast<CallSpine*>(spine_.get())->event_engine();
+  }
+
+  // TODO(ctiller): re-evaluate this API
+  grpc_call_context_element* legacy_context() {
+    return DownCast<CallSpine*>(spine_.get())->legacy_context();
+  }
 
  private:
   RefCountedPtr<CallSpineInterface> spine_;
@@ -564,7 +633,12 @@ class UnstartedCallHandler {
     return CallHandler(std::move(spine_));
   }
 
-  CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters);
+  CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters) {
+    DownCast<CallSpine*>(spine_.get())
+        ->call_filters()
+        .SetStack(std::move(call_filters));
+    return CallHandler(std::move(spine_));
+  }
 
   Arena* arena() { return spine_->arena(); }
 
@@ -580,7 +654,8 @@ struct CallInitiatorAndHandler {
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-    bool is_arena_owned);
+    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
+    grpc_call_context_element* legacy_context);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {

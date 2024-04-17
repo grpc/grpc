@@ -7386,6 +7386,7 @@ grpc_cc_library(
         "status_flag",
         "try_seq",
         "//:gpr",
+        "//:legacy_context",
         "//:promise",
     ],
 )
