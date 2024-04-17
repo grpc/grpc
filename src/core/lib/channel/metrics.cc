@@ -32,11 +32,12 @@ GlobalInstrumentsRegistry::GetInstrumentList() {
   return *instruments;
 }
 
-GlobalInstrumentsRegistry::GlobalUInt64CounterHandle
+template <std::size_t M, std::size_t N>
+GlobalInstrumentsRegistry::GlobalUInt64CounterHandle<M, N>
 GlobalInstrumentsRegistry::RegisterUInt64Counter(
     absl::string_view name, absl::string_view description,
-    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> optional_label_keys,
+    absl::string_view unit, std::array<absl::string_view, M> label_keys,
+    std::array<absl::string_view, N> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
@@ -59,16 +60,17 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
   instruments.push_back(std::move(descriptor));
-  GlobalUInt64CounterHandle handle;
+  GlobalUInt64CounterHandle<M, N> handle;
   handle.index = index;
   return handle;
 }
 
-GlobalInstrumentsRegistry::GlobalDoubleCounterHandle
+template <std::size_t M, std::size_t N>
+GlobalInstrumentsRegistry::GlobalDoubleCounterHandle<M, N>
 GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
-    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> optional_label_keys,
+    absl::string_view unit, std::array<absl::string_view, M> label_keys,
+    std::array<absl::string_view, N> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
@@ -91,7 +93,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
   instruments.push_back(std::move(descriptor));
-  GlobalDoubleCounterHandle handle;
+  GlobalDoubleCounterHandle<M, N> handle;
   handle.index = index;
   return handle;
 }
