@@ -509,6 +509,7 @@ grpc_cc_test(
         "//src/core:map",
         "//src/core:notification",
         "//src/core:observable",
+        "poll_matcher"
     ],
 )
 

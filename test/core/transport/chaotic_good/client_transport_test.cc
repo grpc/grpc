@@ -15,6 +15,7 @@
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <initializer_list>
 #include <memory>
@@ -115,8 +116,7 @@ TEST_F(TransportTest, AddOneStream) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call = MakeCallPair(TestInitialMetadata(), event_engine().get(),
-                           Arena::Create(1024, memory_allocator()), true);
+  auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -202,8 +202,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call = MakeCallPair(TestInitialMetadata(), event_engine().get(),
-                           Arena::Create(8192, memory_allocator()), true);
+  auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());

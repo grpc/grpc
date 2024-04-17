@@ -343,55 +343,6 @@ class CallSpine final : public CallSpineInterface, public Party {
     return *call_filters().unprocessed_client_initial_metadata();
   }
 
-  // Wrap a promise so that if it returns failure it automatically cancels
-  // the rest of the call.
-  // The resulting (returned) promise will resolve to Empty.
-  template <typename Promise>
-  auto CancelIfFails(Promise promise) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
-    using P = promise_detail::PromiseLike<Promise>;
-    using ResultType = typename P::Result;
-    return Map(std::move(promise), [this](ResultType r) {
-      if (!IsStatusOk(r)) {
-        call_filters_.PushServerTrailingMetadata(
-            StatusCast<ServerMetadataHandle>(r));
-      }
-      return r;
-    });
-  }
-
-  // Spawn a promise that returns Empty{} and save some boilerplate handling
-  // that detail.
-  template <typename PromiseFactory>
-  void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    Spawn(name, std::move(promise_factory), [](Empty) {});
-  }
-
-  // Spawn a promise that returns some status-like type; if the status
-  // represents failure automatically cancel the rest of the call.
-  template <typename PromiseFactory>
-  void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
-                    DebugLocation whence = {}) {
-    using FactoryType =
-        promise_detail::OncePromiseFactory<void, PromiseFactory>;
-    using PromiseType = typename FactoryType::Promise;
-    using ResultType = typename PromiseType::Result;
-    static_assert(
-        std::is_same<bool,
-                     decltype(IsStatusOk(std::declval<ResultType>()))>::value,
-        "SpawnGuarded promise must return a status-like object");
-    Spawn(name, std::move(promise_factory), [this](ResultType r) {
-      if (!IsStatusOk(r)) {
-        if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_DEBUG, "SpawnGuarded sees failure: %s",
-                  r.ToString().c_str());
-        }
-        call_filters_.PushServerTrailingMetadata(
-            StatusCast<ServerMetadataHandle>(std::move(r)));
-      }
-    });
-  }
-
   // TODO(ctiller): re-evaluate legacy context apis
   grpc_call_context_element& legacy_context(grpc_context_index index) const {
     return legacy_context_[index];

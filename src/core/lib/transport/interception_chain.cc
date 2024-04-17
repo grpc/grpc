@@ -14,6 +14,8 @@
 
 #include "src/core/lib/transport/interception_chain.h"
 
+#include <cstddef>
+
 #include "call_destination.h"
 
 #include <grpc/support/port_platform.h>
@@ -24,6 +26,8 @@
 #include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
+
+std::atomic<size_t> InterceptionChainBuilder::next_filter_id_{0};
 
 ///////////////////////////////////////////////////////////////////////////////
 // HijackedCall

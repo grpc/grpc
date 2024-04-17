@@ -238,6 +238,13 @@ class TransportTest : public ::testing::Test {
   CallHandler TickUntilServerCall();
   void WaitForAllPendingWork();
 
+  auto MakeCall(ClientMetadataHandle client_initial_metadata) {
+    auto* arena = call_arena_allocator_->MakeArena();
+    return grpc_core::MakeCallPair(std::move(client_initial_metadata),
+                                   event_engine_.get(), arena,
+                                   call_arena_allocator_, nullptr);
+  }
+
   // Alternative for Seq for test driver code.
   // Registers each step so that WaitForAllPendingWork() can report progress,
   // and wait for completion... AND generate good failure messages when a
@@ -266,9 +273,7 @@ class TransportTest : public ::testing::Test {
 
   class Acceptor final : public ServerTransport::Acceptor {
    public:
-    Acceptor(grpc_event_engine::experimental::EventEngine* event_engine,
-             MemoryAllocator* allocator)
-        : event_engine_(event_engine), allocator_(allocator) {}
+    explicit Acceptor(TransportTest* test) : test_(test) {}
 
     Arena* CreateArena() override;
     absl::StatusOr<CallInitiator> CreateCall(
@@ -277,8 +282,7 @@ class TransportTest : public ::testing::Test {
 
    private:
     std::queue<CallHandler> handlers_;
-    grpc_event_engine::experimental::EventEngine* const event_engine_;
-    MemoryAllocator* const allocator_;
+    TransportTest* const test_;
   };
 
   class WatchDog {
@@ -304,10 +308,13 @@ class TransportTest : public ::testing::Test {
               }(),
               fuzzing_event_engine::Actions())};
   std::unique_ptr<TransportFixture> fixture_;
-  MemoryAllocator allocator_ = MakeResourceQuota("test-quota")
-                                   ->memory_quota()
-                                   ->CreateMemoryAllocator("test-allocator");
-  Acceptor acceptor_{event_engine_.get(), &allocator_};
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_{
+      MakeRefCounted<CallArenaAllocator>(
+          MakeResourceQuota("test-quota")
+              ->memory_quota()
+              ->CreateMemoryAllocator("test-allocator"),
+          1024)};
+  Acceptor acceptor_{this};
   TransportFixture::ClientAndServerTransportPair transport_pair_ =
       fixture_->CreateTransportPair(event_engine_);
   std::queue<std::shared_ptr<transport_test_detail::ActionState>>

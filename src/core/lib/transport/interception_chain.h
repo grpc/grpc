@@ -137,7 +137,7 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
   Add() {
     if (!status_.ok()) return *this;
-    auto filter = T::Create(args_);
+    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>())});
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -153,7 +153,7 @@ class InterceptionChainBuilder final {
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
   Add() {
-    AddInterceptor(T::Create(args_));
+    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>())}));
     return *this;
   };
 
@@ -179,12 +179,25 @@ class InterceptionChainBuilder final {
     return stack;
   }
 
+  template <typename T>
+  static size_t FilterTypeId() {
+    static const size_t id =
+        next_filter_id_.fetch_add(1, std::memory_order_relaxed);
+    return id;
+  }
+
+  size_t FilterInstanceId(size_t filter_type) {
+    return filter_type_counts_[filter_type]++;
+  }
+
   void AddInterceptor(absl::StatusOr<RefCountedPtr<Interceptor>> interceptor);
 
   ChannelArgs args_;
   absl::optional<CallFilters::StackBuilder> stack_builder_;
   RefCountedPtr<Interceptor> top_interceptor_;
   absl::Status status_;
+  std::map<size_t, size_t> filter_type_counts_;
+  static std::atomic<size_t> next_filter_id_;
 };
 
 }  // namespace grpc_core

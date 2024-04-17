@@ -48,6 +48,7 @@ grpc_cc_test(
         "//src/core:interception_chain",
         "//src/core:resource_quota",
         "//test/core/promise:poll_matcher",
+        "//:grpc_base",
     ],
 )
 
@@ -62,6 +63,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:call_filters",
+        "//test/core/promise:poll_matcher",
     ],
 )
 
