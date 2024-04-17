@@ -114,7 +114,9 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
 
     grpc_proto_fuzzer(
         name = "%s_fuzzer" % name,
-        srcs = [],
+        srcs = [
+            "end2end_test_fuzzer_main.cc",
+        ],
         corpus = "end2end_test_corpus/%s" % name,
         data = END2END_TEST_DATA,
         external_deps = [
@@ -135,7 +137,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
         uses_event_engine = False,
         uses_polling = False,
         deps = [
-            "end2end_test_fuzzer",
             "%s_library" % name,
+            "end2end_test_fuzzer",
         ],
     )

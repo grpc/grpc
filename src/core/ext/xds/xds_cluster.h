@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_CLUSTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <set>
@@ -35,6 +33,7 @@
 #include "upb/reflection/def.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
@@ -101,7 +100,8 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   XdsHealthStatusSet override_host_statuses;
 
-  std::shared_ptr<std::map<std::string, std::string>> telemetry_labels;
+  RefCountedStringValue service_telemetry_label;
+  RefCountedStringValue namespace_telemetry_label;
 
   bool operator==(const XdsClusterResource& other) const {
     return type == other.type && lb_policy_config == other.lb_policy_config &&
@@ -110,7 +110,9 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
            connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
-           override_host_statuses == other.override_host_statuses;
+           override_host_statuses == other.override_host_statuses &&
+           service_telemetry_label == other.service_telemetry_label &&
+           namespace_telemetry_label == other.namespace_telemetry_label;
   }
 
   std::string ToString() const;

@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <type_traits>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -270,7 +270,7 @@ struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&)>
+          void (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
@@ -307,8 +307,8 @@ struct AddOpImpl<FilterType, T,
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&,
-                                         FilterType*)>
+          void (FilterType::Call::* impl)(typename T::element_type&,
+                                          FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
@@ -348,7 +348,7 @@ struct AddOpImpl<
 
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          T (FilterType::Call::*impl)(T, FilterType*)>
+          T (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
@@ -390,7 +390,7 @@ struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
@@ -435,7 +435,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T,
@@ -463,8 +463,8 @@ struct AddOpImpl<
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&,
+                                                  FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&,
                                                     FilterType*),
@@ -493,7 +493,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
@@ -523,7 +523,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::StatusOr<$VALUE_HANDLE> $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          absl::StatusOr<T> (FilterType::Call::*impl)(T, FilterType*)>
+          absl::StatusOr<T> (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
                  impl> {
@@ -551,7 +551,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -580,7 +580,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -609,7 +609,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -639,7 +639,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -669,7 +669,7 @@ struct AddOpImpl<FilterType, T,
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&)>
+          R (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
     absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
@@ -720,7 +720,7 @@ struct AddOpImpl<
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&, FilterType*)>
+          R (FilterType::Call::* impl)(typename T::element_type&, FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
@@ -776,7 +776,7 @@ struct AddOpImpl<
 // PROMISE_RETURNING(absl::StatusOr<$VALUE_HANDLE>)
 // $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(T, FilterType*)>
+          R (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
@@ -991,7 +991,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*)) {
     GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1005,8 +1005,8 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*,
+                                                 FilterType*)) {
     GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1358,34 +1358,64 @@ class CallFilters {
 
   void SetStack(RefCountedPtr<Stack> stack);
 
+  // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
     return client_initial_metadata_.get();
   }
+
+  // Client: Fetch client initial metadata
+  // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata();
+  // Server: Indicate that no server initial metadata will be sent
   void NoServerInitialMetadata() {
     server_initial_metadata_state_.CloseSending();
   }
+  // Server: Push server initial metadata
+  // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushServerInitialMetadata(ServerMetadataHandle md);
+  // Client: Fetch server initial metadata
+  // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullServerInitialMetadata();
+  // Client: Push client to server message
+  // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message);
+  // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() {
     client_to_server_message_state_.CloseSending();
   }
+  // Server: Fetch client to server message
+  // Returns a promise that resolves to ValueOrFailure<MessageHandle>
   GRPC_MUST_USE_RESULT auto PullClientToServerMessage();
+  // Server: Push server to client message
+  // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message);
+  // Server: Fetch server to client message
+  // Returns a promise that resolves to ValueOrFailure<MessageHandle>
   GRPC_MUST_USE_RESULT auto PullServerToClientMessage();
+  // Server: Indicate end of response
+  // Closes the request entirely - no messages can be sent/received
+  // If no server initial metadata has been sent, implies
+  // NoServerInitialMetadata() called.
   void PushServerTrailingMetadata(ServerMetadataHandle md);
+  // Client: Fetch server trailing metadata
+  // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata();
+  // Server: Wait for server trailing metadata to have been sent
+  // Returns a promise that resolves to a StatusFlag indicating whether the
+  // request was cancelled or not -- failure to send trailing metadata is
+  // considered a cancellation, as is actual cancellation -- but not application
+  // errors.
   GRPC_MUST_USE_RESULT auto WasCancelled();
+  // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 
   std::string DebugString() const;
 
  private:
-  template <filters_detail::PipeState(CallFilters::*state_ptr),
-            void*(CallFilters::*push_ptr), typename T,
+  template <filters_detail::PipeState(CallFilters::* state_ptr),
+            void*(CallFilters::* push_ptr), typename T,
             filters_detail::Layout<filters_detail::FallibleOperator<T>>(
-                filters_detail::StackData::*layout_ptr)>
+                filters_detail::StackData::* layout_ptr)>
   class PipePromise {
    public:
     class Push {
@@ -1581,10 +1611,12 @@ class CallFilters {
       }
       auto p = state().PollPull();
       auto* r = p.value_if_ready();
-      gpr_log(GPR_INFO, "%s",
-              r == nullptr
-                  ? "PENDING"
-                  : (r->ok() ? (r->value() ? "TRUE" : "FALSE") : "FAILURE"));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        gpr_log(GPR_INFO, "%s",
+                r == nullptr
+                    ? "PENDING"
+                    : (r->ok() ? (r->value() ? "TRUE" : "FALSE") : "FAILURE"));
+      }
       if (r == nullptr) return Pending{};
       if (!r->ok()) {
         filters_->CancelDueToFailedPipeOperation();
@@ -1635,35 +1667,34 @@ class CallFilters {
     Poll<ServerMetadataHandle> operator()() {
       if (executor_.IsRunning()) {
         auto r = executor_.Step(filters_->call_data_);
-        if (r.pending()) {
-          gpr_log(GPR_INFO,
-                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_);
-        } else {
-          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_,
-                  r.value()->DebugString().c_str());
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          if (r.pending()) {
+            gpr_log(GPR_INFO,
+                    "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                    GetContext<Activity>()->DebugTag().c_str(), filters_);
+          } else {
+            gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                    GetContext<Activity>()->DebugTag().c_str(), filters_,
+                    r.value()->DebugString().c_str());
+          }
         }
         return r;
       }
       if (filters_->server_trailing_metadata_ == nullptr) {
-        gpr_log(GPR_INFO,
-                "%s PullServerTrailingMetadata[%p]: Pending(not pushed)",
-                GetContext<Activity>()->DebugTag().c_str(), filters_);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(not pushed)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        }
         return filters_->server_trailing_metadata_waiter_.pending();
       }
       // If no stack has been set, we can just return the result of the call
       if (filters_->stack_ == nullptr) {
-        gpr_log(GPR_INFO,
-                "%s PullServerTrailingMetadata[%p]: Ready(no-stack): %s",
-                GetContext<Activity>()->DebugTag().c_str(), filters_,
-                filters_->server_trailing_metadata_->DebugString().c_str());
         return std::move(filters_->server_trailing_metadata_);
       }
       // Otherwise we need to process it through all the filters.
       return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
                              std::move(filters_->server_trailing_metadata_),
-                             filters_->call_data_);
     }
 
    private:

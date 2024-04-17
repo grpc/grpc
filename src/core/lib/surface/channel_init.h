@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <initializer_list>
@@ -31,6 +29,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -204,6 +203,15 @@ class ChannelInit {
           .SkipV3();
     }
 
+    // Filter does not participate in v3
+    template <typename Filter>
+    FilterRegistration& RegisterV2Filter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(type, &Filter::kFilter, nullptr,
+                            registration_source)
+          .SkipV3();
+    }
+
     // Register a post processor for the builder.
     // These run after the main graph has been placed into the builder.
     // At most one filter per slot per channel stack type can be added.
@@ -236,6 +244,11 @@ class ChannelInit {
                               InterceptionChainBuilder& builder) const;
 
  private:
+  // The type of object returned by a filter's Create method.
+  template <typename T>
+  using CreatedType =
+      typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+
   struct Filter {
     Filter(const grpc_channel_filter* filter,
            void (*add_to_interception_chain_builder)(InterceptionChainBuilder&),
@@ -250,6 +263,7 @@ class ChannelInit {
     void (*add_to_interception_chain_builder)(InterceptionChainBuilder&);
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
+    bool skip_v3 = false;
     bool CheckPredicates(const ChannelArgs& args) const;
     bool skip_v3 = false;
   };

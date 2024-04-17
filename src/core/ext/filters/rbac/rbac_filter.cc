@@ -95,10 +95,8 @@ absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
     return GRPC_ERROR_CREATE("No transport configured");
   }
   return std::make_unique<RbacFilter>(
-      grpc_channel_stack_filter_instance_number(
-          filter_args.channel_stack(),
-          filter_args.uninitialized_channel_element()),
-      EvaluateArgs::PerChannelArgs(auth_context, transport->GetEndpoint()));
+      filter_args.instance_id(),
+      EvaluateArgs::PerChannelArgs(auth_context, args));
 }
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {

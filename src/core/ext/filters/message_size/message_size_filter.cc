@@ -142,6 +142,11 @@ const grpc_channel_filter ClientMessageSizeFilter::kFilter =
                            kFilterExaminesOutboundMessages |
                                kFilterExaminesInboundMessages>("message_size");
 
+const grpc_channel_filter ServerMessageSizeFilter::kFilter =
+    MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
+                           kFilterExaminesOutboundMessages |
+                               kFilterExaminesInboundMessages>("message_size");
+
 absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>>
 ClientMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
   return std::make_unique<ClientMessageSizeFilter>(args);
@@ -163,7 +168,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
             is_send ? "send" : "recv", msg.payload()->Length(), *max_length);
   }
   if (msg.payload()->Length() <= *max_length) return nullptr;
-  auto r = GetContext<Arena>()->MakePooled<ServerMetadata>();
+  auto r = Arena::MakePooled<ServerMetadata>();
   r->Set(GrpcStatusMetadata(), GRPC_STATUS_RESOURCE_EXHAUSTED);
   r->Set(GrpcMessageMetadata(),
          Slice::FromCopiedString(absl::StrFormat(

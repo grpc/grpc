@@ -19,8 +19,6 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -40,6 +38,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -82,9 +81,19 @@ class ChannelFilter {
                   grpc_channel_element* channel_element)
         : channel_stack_(channel_stack), channel_element_(channel_element) {}
 
+    ABSL_DEPRECATED("Direct access to channel stack is deprecated")
     grpc_channel_stack* channel_stack() const { return channel_stack_; }
-    grpc_channel_element* uninitialized_channel_element() {
-      return channel_element_;
+
+    // Get the instance id of this filter.
+    // This id is unique amongst all filters /of the same type/ and densely
+    // packed (starting at 0) for a given channel stack instantiation.
+    // eg. for a stack with filter types A B C A B D A the instance ids would be
+    // 0 0 0 1 1 0 2.
+    // This is useful for filters that need to store per-instance data in a
+    // parallel data structure.
+    size_t instance_id() const {
+      return grpc_channel_stack_filter_instance_number(channel_stack_,
+                                                       channel_element_);
     }
 
    private:
@@ -1515,8 +1524,14 @@ struct BaseCallDataMethods {
   }
 };
 
+// The type of object returned by a filter's Create method.
 template <typename T>
-using CreatedType = typename decltype(T::Create(ChannelArgs()))::value_type;
+using CreatedType = typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+
+template <typename GrpcChannelOrCallElement>
+inline ChannelFilter* ChannelFilterFromElem(GrpcChannelOrCallElement* elem) {
+  return *static_cast<ChannelFilter**>(elem->channel_data);
+}
 
 template <typename CallData, uint8_t kFlags>
 struct CallDataFilterWithFlagsMethods {
@@ -1541,21 +1556,19 @@ struct CallDataFilterWithFlagsMethods {
 struct ChannelFilterMethods {
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
-    if (!(*static_cast<ChannelFilter**>(elem->channel_data))
-             ->StartTransportOp(op)) {
+    if (!ChannelFilterFromElem(elem)->StartTransportOp(op)) {
       grpc_channel_next_op(elem, op);
     }
   }
 
   static void PostInitChannelElem(grpc_channel_stack*,
                                   grpc_channel_element* elem) {
-    (*static_cast<ChannelFilter**>(elem->channel_data))->PostInit();
+    ChannelFilterFromElem(elem)->PostInit();
   }
 
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info) {
-    if (!(*static_cast<ChannelFilter**>(elem->channel_data))
-             ->GetChannelInfo(info)) {
+    if (!ChannelFilterFromElem(elem)->GetChannelInfo(info)) {
       grpc_channel_next_get_info(elem, info);
     }
   }
@@ -1577,7 +1590,7 @@ struct ChannelFilterWithFlagsMethods {
   }
 
   static void DestroyChannelElem(grpc_channel_element* elem) {
-    CreatedType<F> channel_elem(static_cast<F*>(elem->channel_data));
+    CreatedType<F> channel_elem(DownCast<F*>(ChannelFilterFromElem(elem)));
   }
 };
 

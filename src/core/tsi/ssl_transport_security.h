@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 #define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include <openssl/x509.h>
@@ -29,6 +27,7 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
@@ -81,6 +80,9 @@ void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache);
 
 // Decrement reference counter of \a cache.
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
+
+// Returns the size of the cache.
+size_t tsi_ssl_session_cache_size(tsi_ssl_session_cache* cache);
 
 // --- tsi_ssl_key_logger object ---
 

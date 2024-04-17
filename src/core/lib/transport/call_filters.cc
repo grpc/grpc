@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/call_filters.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/transport/metadata.h"
@@ -205,17 +205,22 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (server_trailing_metadata_ == nullptr) return;
-  gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
-          "Cancelling due to failed pipe operation: %s", DebugString().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+    gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
+            "Cancelling due to failed pipe operation: %s",
+            DebugString().c_str());
+  }
   server_trailing_metadata_ =
       ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
   server_trailing_metadata_waiter_.Wake();
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
-  gpr_log(GPR_DEBUG, "%s Push server trailing metadata: %s into %s",
-          GetContext<Activity>()->DebugTag().c_str(), md->DebugString().c_str(),
-          DebugString().c_str());
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+    gpr_log(GPR_DEBUG, "%s Push server trailing metadata: %s into %s",
+            GetContext<Activity>()->DebugTag().c_str(),
+            md->DebugString().c_str(), DebugString().c_str());
+  }
   GPR_ASSERT(md != nullptr);
   if (server_trailing_metadata_ != nullptr) return;
   server_trailing_metadata_ = std::move(md);
@@ -304,6 +309,7 @@ Poll<bool> filters_detail::PipeState::PollClosed() {
     case ValueState::kError:
       return true;
   }
+  GPR_UNREACHABLE_CODE(return Pending{});
 }
 
 void filters_detail::PipeState::CloseSending() {

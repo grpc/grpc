@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_client_grpc.h"
 
 #include <algorithm>
@@ -38,6 +36,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/upb_utils.h"
@@ -115,11 +114,20 @@ const auto kMetricResourceUpdatesInvalid =
          kMetricLabelXdsResourceType},
         {}, false);
 
+const auto kMetricServerFailure =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.xds_client.server_failure",
+        "EXPERIMENTAL.  A counter of xDS servers going from healthy to "
+        "unhealthy.  A server goes unhealthy when we have a connectivity "
+        "failure or when the ADS stream fails without seeing a response "
+        "message, as per gRFC A57.",
+        "{failure}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
+
 const auto kMetricConnected =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.xds_client.connected",
         "EXPERIMENTAL.  Whether or not the xDS client currently has a "
-        "working ADS stream to the xDS server. For a given server, this "
+        "working ADS stream to the xDS server.  For a given server, this "
         "will be set to 0 when we have a connectivity failure or when the "
         "ADS stream fails without seeing a response message, as per gRFC "
         "A57.  It will be set to 1 when we receive the first response on "
@@ -155,6 +163,11 @@ class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
     xds_client_.stats_plugin_group_.AddCounter(
         kMetricResourceUpdatesInvalid, num_invalid_resources,
         {xds_client_.key_, xds_server, resource_type}, {});
+  }
+
+  void ReportServerFailure(absl::string_view xds_server) override {
+    xds_client_.stats_plugin_group_.AddCounter(
+        kMetricServerFailure, 1, {xds_client_.key_, xds_server}, {});
   }
 
  private:
@@ -257,8 +270,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO, "xDS client for key: %s was created",
-            std::string(key).c_str());
+    gpr_log(GPR_INFO, "[xds_client %p] Created xDS client for key %s",
+            xds_client.get(), std::string(key).c_str());
   }
   return xds_client;
 }
@@ -271,7 +284,7 @@ GlobalStatsPluginRegistry::StatsPluginGroup GetStatsPluginGroupForKey(
     return GlobalStatsPluginRegistry::GetStatsPluginsForServer(ChannelArgs{});
   }
   // TODO(roth): How do we set the authority here?
-  StatsPlugin::ChannelScope scope(key, "");
+  experimental::StatsPluginChannelScope scope(key, "");
   return GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
 

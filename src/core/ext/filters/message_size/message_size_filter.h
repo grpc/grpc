@@ -91,11 +91,11 @@ class ServerMessageSizeFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::StatusOr<std::unique_ptr<ServerMessageSizeFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
   explicit ServerMessageSizeFilter(const ChannelArgs& args)
       : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
-
-  static absl::StatusOr<std::unique_ptr<ServerMessageSizeFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:
@@ -118,11 +118,11 @@ class ClientMessageSizeFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
   explicit ClientMessageSizeFilter(const ChannelArgs& args)
       : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
-
-  static absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:

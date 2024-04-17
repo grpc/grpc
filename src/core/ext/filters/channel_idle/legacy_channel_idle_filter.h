@@ -94,6 +94,9 @@ class LegacyClientIdleFilter final : public LegacyChannelIdleFilter {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
   using LegacyChannelIdleFilter::LegacyChannelIdleFilter;
 
   static absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>> Create(
@@ -106,7 +109,10 @@ class LegacyMaxAgeFilter final : public LegacyChannelIdleFilter {
   struct Config;
 
   static absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,
+                     const Config& max_age_config);
 
   void PostInit() override;
 

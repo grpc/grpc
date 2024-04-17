@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/server.h"
 
 #include <inttypes.h>
@@ -44,6 +42,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -233,8 +232,8 @@ struct Server::RequestedCall {
     data.registered.optional_payload = optional_payload;
   }
 
-  template <typename NextMessage>
-  void Complete(NextMessage payload, ClientMetadata& md) {
+  template <typename OptionalPayload>
+  void Complete(OptionalPayload payload, ClientMetadata& md) {
     Timestamp deadline = GetContext<ServerCall>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
@@ -1472,21 +1471,16 @@ void Server::MatchThenPublish(CallHandler call_handler, size_t cq_idx) {
               [call_handler]() mutable { return call_handler.PullMessage(); },
               []() { return [] { return CallFilters::NextMessage(false); }; });
           return TryJoin<absl::StatusOr>(
-              Map(std::move(maybe_read_first_message),
-                  [](CallFilters::NextMessage n)
-                      -> ValueOrFailure<CallFilters::NextMessage> {
-                    return ValueOrFailure<CallFilters::NextMessage>{
-                        std::move(n)};
-                  }),
-              rm->MatchRequest(cq_idx), [md = std::move(md)]() mutable {
+              std::move(maybe_read_first_message), rm->MatchRequest(cq_idx),
+              [md = std::move(md)]() mutable {
                 return ValueOrFailure<ClientMetadataHandle>(std::move(md));
               });
         },
         // Publish call to cq
-        [call_handler](std::tuple<CallFilters::NextMessage,
+        [call_handler](std::tuple<absl::optional<MessageHandle>,
                                   RequestMatcherInterface::MatchResult,
                                   ClientMetadataHandle>
-                           r) mutable {
+                           r) {
           RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();

@@ -25,6 +25,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/log/check.h"
 #include "absl/random/random.h"
 
 #include <grpc/slice.h>
@@ -364,7 +365,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      GPR_ASSERT(error.ok());
+      CHECK(error.ok());
     }
   };
   parse_vec(init_slices);
@@ -443,8 +444,8 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    GPR_ASSERT(!out.empty());
-    GPR_ASSERT(GRPC_SLICE_LENGTH(out[0]) > 9);
+    CHECK(!out.empty());
+    CHECK(GRPC_SLICE_LENGTH(out[0]) > 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

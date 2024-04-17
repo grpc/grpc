@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.63.0-dev'
+  version = '1.64.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -119,6 +119,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/credentials.h',
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
                       'include/grpc/event_engine/extensible.h',
@@ -178,6 +179,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/json.h',
                       'include/grpc/support/log.h',
                       'include/grpc/support/log_windows.h',
+                      'include/grpc/support/metrics.h',
                       'include/grpc/support/port_platform.h',
                       'include/grpc/support/string_util.h',
                       'include/grpc/support/sync.h',
@@ -1924,6 +1926,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/connectivity_state.cc',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/custom_metadata.h',
+                      'src/core/lib/transport/endpoint_info_handshaker.cc',
+                      'src/core/lib/transport/endpoint_info_handshaker.h',
                       'src/core/lib/transport/error_utils.cc',
                       'src/core/lib/transport/error_utils.h',
                       'src/core/lib/transport/handshaker.cc',
@@ -3297,6 +3301,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/call_spine.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',
+                              'src/core/lib/transport/endpoint_info_handshaker.h',
                               'src/core/lib/transport/error_utils.h',
                               'src/core/lib/transport/handshaker.h',
                               'src/core/lib/transport/handshaker_factory.h',

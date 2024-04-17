@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/legacy_channel.h"
 
 #include "absl/base/thread_annotations.h"
@@ -29,6 +27,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -48,6 +47,7 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -92,10 +92,11 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {
-    // TODO(roth): Figure out how to populate authority here.
-    // Or maybe just don't worry about this if no one needs it until after
-    // the call v3 stack lands.
-    StatsPlugin::ChannelScope scope(target, "");
+    experimental::StatsPluginChannelScope scope(
+        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                    .value_or(CoreConfiguration::Get()
+                                  .resolver_registry()
+                                  .GetDefaultAuthority(target)));
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }
@@ -111,7 +112,10 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
-      channel_stack_(std::move(channel_stack)) {
+      channel_stack_(std::move(channel_stack)),
+      allocator_(channel_args.GetObject<ResourceQuota>()
+                     ->memory_quota()
+                     ->CreateMemoryOwner()) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,

@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

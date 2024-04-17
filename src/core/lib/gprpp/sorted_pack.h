@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_SORTED_PACK_H
 #define GRPC_SRC_CORE_LIB_GPRPP_SORTED_PACK_H
 
-#include <grpc/support/port_platform.h>
-
 #include <type_traits>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/type_list.h"
 

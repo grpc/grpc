@@ -35,11 +35,11 @@ class HttpClientFilter : public ImplementChannelFilter<HttpClientFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::StatusOr<std::unique_ptr<HttpClientFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
   HttpClientFilter(HttpSchemeMetadata::ValueType scheme, Slice user_agent,
                    bool test_only_use_put_requests);
-
-  static absl::StatusOr<std::unique_ptr<HttpClientFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
 
   class Call {
    public:

@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_TRANSPORT_AUTH_FILTERS_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/statusor.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -126,7 +126,7 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
                    RefCountedPtr<grpc_auth_context> auth_context);
 
   static absl::StatusOr<std::unique_ptr<ServerAuthFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args = {});
+      const ChannelArgs& args, ChannelFilter::Args);
 
   class Call {
    public:

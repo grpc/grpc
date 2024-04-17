@@ -21,56 +21,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "upb_amalgamation_lib",
-        actual = "@com_google_protobuf//upb:amalgamation",
-    )
-
-    native.bind(
-        name = "upb_base_lib",
-        actual = "@com_google_protobuf//upb/base",
-    )
-
-    native.bind(
-        name = "upb_message_lib",
-        actual = "@com_google_protobuf//upb:message",
-    )
-
-    native.bind(
-        name = "upb_mem_lib",
-        actual = "@com_google_protobuf//upb/mem",
-    )
-
-    native.bind(
-        name = "upb_reflection",
-        actual = "@com_google_protobuf//upb:reflection",
-    )
-
-    native.bind(
-        name = "upb_lib_descriptor",
-        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
-    )
-
-    native.bind(
-        name = "upb_lib_descriptor_reflection",
-        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
-    )
-
-    native.bind(
-        name = "upb_textformat_lib",
-        actual = "@com_google_protobuf//upb/text",
-    )
-
-    native.bind(
-        name = "upb_json_lib",
-        actual = "@com_google_protobuf//upb/json",
-    )
-
-    native.bind(
-        name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    )
-
-    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )

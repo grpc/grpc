@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/call_spine.h"
 
 #include "call_size_estimator.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/seq.h"
@@ -85,10 +85,10 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
             })),
         call_initiator.PullServerTrailingMetadata(),
         [call_handler](ServerMetadataHandle md) mutable {
-          call_handler.SpawnGuarded(
-              "recv_trailing_metadata",
-              [md = std::move(md), call_handler]() mutable {
-                return call_handler.PushServerTrailingMetadata(std::move(md));
+          call_handler.SpawnInfallible(
+              "recv_trailing", [call_handler, md = std::move(md)]() mutable {
+                call_handler.PushServerTrailingMetadata(std::move(md));
+                return Empty{};
               });
           return Empty{};
         });

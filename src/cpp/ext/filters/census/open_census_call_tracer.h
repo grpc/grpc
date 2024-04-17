@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_OPEN_CENSUS_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -35,6 +33,7 @@
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/opencensus.h>
 
@@ -103,9 +102,8 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
-    void AddOptionalLabels(
-        OptionalLabelComponent,
-        std::shared_ptr<std::map<std::string, std::string>>) override {}
+    void SetOptionalLabel(OptionalLabelKey,
+                          grpc_core::RefCountedStringValue) override {}
 
     experimental::CensusContext* context() { return &context_; }
 

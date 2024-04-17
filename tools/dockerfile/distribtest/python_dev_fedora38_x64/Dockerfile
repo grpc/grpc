@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM fedora:36
+FROM fedora:38
 
 RUN yum clean all && yum update -y && yum install -y python3 python3-pip
 RUN python3 -m pip install virtualenv

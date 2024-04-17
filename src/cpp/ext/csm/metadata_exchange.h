@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 #define GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 #include <utility>
@@ -30,6 +28,8 @@
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
 #include "upb/mem/arena.hpp"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -55,8 +55,7 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Add optional labels to the traced calls.
   bool AddOptionalLabels(
       bool is_client,
-      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span,
+      absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
       opentelemetry::nostd::function_ref<
           bool(opentelemetry::nostd::string_view,
                opentelemetry::common::AttributeValue)>
@@ -65,8 +64,10 @@ class ServiceMeshLabelsInjector : public LabelsInjector {
   // Gets the size of the actual optional labels.
   size_t GetOptionalLabelsSize(
       bool is_client,
-      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span) const override;
+      absl::Span<const grpc_core::RefCountedStringValue> /*optional_labels*/)
+      const override {
+    return is_client ? 2 : 0;
+  }
 
   const std::vector<std::pair<absl::string_view, std::string>>&
   TestOnlyLocalLabels() const {

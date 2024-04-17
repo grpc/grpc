@@ -43,6 +43,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using OptionalLabelKey =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
 using ::testing::ElementsAre;
 using ::testing::Pair;
 
@@ -155,9 +157,12 @@ class MetadataExchangeTest
     : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
  protected:
-  void Init(const std::vector<absl::string_view>& metric_names,
-            bool enable_client_side_injector = true,
-            std::map<std::string, std::string> labels_to_inject = {}) {
+  void Init(
+      const std::vector<absl::string_view>& metric_names,
+      bool enable_client_side_injector = true,
+      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+               grpc_core::RefCountedStringValue>
+          labels_to_inject = {}) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
         "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
@@ -182,8 +187,9 @@ class MetadataExchangeTest
             .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
                 GetParam().GetTestResource().GetAttributes()))
             .set_labels_to_inject(std::move(labels_to_inject))
-            .set_target_selector(
-                [enable_client_side_injector](absl::string_view /*target*/) {
+            .set_channel_scope_filter(
+                [enable_client_side_injector](
+                    const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
                   return enable_client_side_injector;
                 })));
   }
@@ -405,7 +411,10 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
                              kClientAttemptDurationInstrumentName},
        /*enable_client_side_injector=*/true,
        // Injects CSM service labels to be recorded in the call.
-       {{"service_name", "myservice"}, {"service_namespace", "mynamespace"}});
+       {{OptionalLabelKey::kXdsServiceName,
+         grpc_core::RefCountedStringValue("myservice")},
+        {OptionalLabelKey::kXdsServiceNamespace,
+         grpc_core::RefCountedStringValue("mynamespace")}});
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(

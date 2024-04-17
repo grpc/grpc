@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
@@ -28,6 +26,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -51,7 +50,7 @@ class LameClientFilter : public ChannelFilter {
   explicit LameClientFilter(absl::Status error);
 
   static absl::StatusOr<std::unique_ptr<LameClientFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args = {});
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
   bool StartTransportOp(grpc_transport_op*) override;
@@ -59,12 +58,8 @@ class LameClientFilter : public ChannelFilter {
 
  private:
   absl::Status error_;
-  struct State {
-    State();
-    Mutex mu;
-    ConnectivityStateTracker state_tracker ABSL_GUARDED_BY(mu);
-  };
-  std::unique_ptr<State> state_;
+  Mutex mu_;
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_);
 };
 
 extern const grpc_arg_pointer_vtable kLameFilterErrorArgVtable;

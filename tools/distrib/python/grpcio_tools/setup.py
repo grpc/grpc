@@ -327,9 +327,9 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=setuptools.find_packages("."),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
-        "protobuf>=4.21.6,<5.0dev",
+        "protobuf>=5.26.1,<6.0dev",
         "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
     ],

@@ -16,12 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
@@ -1280,6 +1280,10 @@ void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache) {
 
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
   tsi::SslSessionLRUCache::FromC(cache)->Unref();
+}
+
+size_t tsi_ssl_session_cache_size(tsi_ssl_session_cache* cache) {
+  return tsi::SslSessionLRUCache::FromC(cache)->Size();
 }
 
 // --- tsi_frame_protector methods implementation. ---

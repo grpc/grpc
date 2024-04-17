@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -31,6 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/call_tracer.h"
@@ -92,9 +91,8 @@ class OpenTelemetryPlugin::ClientCallTracer
     void RecordAnnotation(absl::string_view /*annotation*/) override;
     void RecordAnnotation(const Annotation& /*annotation*/) override;
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
-    void AddOptionalLabels(OptionalLabelComponent component,
-                           std::shared_ptr<std::map<std::string, std::string>>
-                               optional_labels) override;
+    void SetOptionalLabel(OptionalLabelKey key,
+                          grpc_core::RefCountedStringValue value) override;
 
    private:
     const ClientCallTracer* parent_;
@@ -102,10 +100,10 @@ class OpenTelemetryPlugin::ClientCallTracer
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
-    // The indices of the array correspond to the OptionalLabelComponent enum.
-    std::array<std::shared_ptr<std::map<std::string, std::string>>,
-               static_cast<size_t>(OptionalLabelComponent::kSize)>
-        optional_labels_array_;
+    // Avoid std::map to avoid per-call allocations.
+    std::array<grpc_core::RefCountedStringValue,
+               static_cast<size_t>(OptionalLabelKey::kSize)>
+        optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
   };

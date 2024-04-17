@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/lame_client.h"
 
 #include <memory>
@@ -30,6 +28,7 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
@@ -67,10 +66,8 @@ absl::StatusOr<std::unique_ptr<LameClientFilter>> LameClientFilter::Create(
 }
 
 LameClientFilter::LameClientFilter(absl::Status error)
-    : error_(std::move(error)), state_(std::make_unique<State>()) {}
-
-LameClientFilter::State::State()
-    : state_tracker("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
+    : error_(std::move(error)),
+      state_tracker_("lame_client", GRPC_CHANNEL_SHUTDOWN) {}
 
 ArenaPromise<ServerMetadataHandle> LameClientFilter::MakeCallPromise(
     CallArgs args, NextPromiseFactory) {
@@ -93,13 +90,13 @@ bool LameClientFilter::GetChannelInfo(const grpc_channel_info*) { return true; }
 
 bool LameClientFilter::StartTransportOp(grpc_transport_op* op) {
   {
-    MutexLock lock(&state_->mu);
+    MutexLock lock(&mu_);
     if (op->start_connectivity_watch != nullptr) {
-      state_->state_tracker.AddWatcher(op->start_connectivity_watch_state,
-                                       std::move(op->start_connectivity_watch));
+      state_tracker_.AddWatcher(op->start_connectivity_watch_state,
+                                std::move(op->start_connectivity_watch));
     }
     if (op->stop_connectivity_watch != nullptr) {
-      state_->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
+      state_tracker_.RemoveWatcher(op->stop_connectivity_watch);
     }
   }
   if (op->send_ping.on_initiate != nullptr) {

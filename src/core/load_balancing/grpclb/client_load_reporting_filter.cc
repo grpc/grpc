@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
 
 #include <functional>
@@ -26,6 +24,8 @@
 #include <utility>
 
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -64,8 +64,7 @@ void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
   }
 }
 
-void ClientLoadReportingFilter::Call::OnServerInitialMetadata(
-    ServerMetadata& server_initial_metadata) {
+void ClientLoadReportingFilter::Call::OnServerInitialMetadata(ServerMetadata&) {
   saw_initial_metadata_ = true;
 }
 

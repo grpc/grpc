@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:buster
+FROM fedora:38
 
-RUN apt-get update && apt-get install -y python3 python3-pip
-RUN python3 -m pip install virtualenv==16.7.9
+RUN yum clean all && yum update -y && yum install -y python3 python3-pip
+RUN python3 -m pip install virtualenv
 
-RUN apt-get install -y build-essential
-RUN apt-get install -y python3-dev
+RUN yum install -y findutils

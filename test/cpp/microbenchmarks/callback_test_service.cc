@@ -18,6 +18,8 @@
 
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
+#include "absl/log/check.h"
+
 namespace grpc {
 namespace testing {
 namespace {
@@ -71,7 +73,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
       StartRead(&request_);
     }
     void OnDone() override {
-      GPR_ASSERT(finished_);
+      CHECK(finished_);
       delete this;
     }
     void OnCancel() override {}

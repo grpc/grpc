@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.63.0-dev
+PROJECT_NUMBER         = 1.64.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -880,6 +880,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -939,6 +940,7 @@ include/grpc/support/cpu.h \
 include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
+include/grpc/support/metrics.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
@@ -2813,6 +2815,8 @@ src/core/lib/transport/call_spine.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/custom_metadata.h \
+src/core/lib/transport/endpoint_info_handshaker.cc \
+src/core/lib/transport/endpoint_info_handshaker.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
 src/core/lib/transport/handshaker.cc \
@@ -3009,7 +3013,9 @@ src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
 src/cpp/README.md \
+src/cpp/client/call_credentials.cc \
 src/cpp/client/channel_cc.cc \
+src/cpp/client/channel_credentials.cc \
 src/cpp/client/client_callback.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/client_interceptor.cc \
@@ -3031,7 +3037,6 @@ src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \
 src/cpp/common/secure_auth_context.cc \
 src/cpp/common/secure_auth_context.h \
-src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
 src/cpp/common/tls_certificate_provider.cc \
 src/cpp/common/tls_certificate_verifier.cc \
@@ -3057,6 +3062,7 @@ src/cpp/server/server_builder.cc \
 src/cpp/server/server_callback.cc \
 src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
+src/cpp/server/server_credentials.cc \
 src/cpp/server/server_posix.cc \
 src/cpp/server/thread_pool_interface.h \
 src/cpp/server/xds_server_builder.cc \

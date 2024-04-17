@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/call.h"
 
 #include <inttypes.h>
@@ -53,6 +51,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/call_tracer.h"
@@ -2260,8 +2259,15 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           metadata->Set(GrpcMessageMetadata(),
                         Slice(grpc_slice_copy(*details)));
         }
+        GPR_ASSERT(metadata != nullptr);
         return [this, metadata = std::move(metadata)]() mutable {
-          return call_handler_.PushServerTrailingMetadata(std::move(metadata));
+          GPR_ASSERT(metadata != nullptr);
+          return [this,
+                  metadata = std::move(metadata)]() mutable -> Poll<Success> {
+            GPR_ASSERT(metadata != nullptr);
+            call_handler_.PushServerTrailingMetadata(std::move(metadata));
+            return Success{};
+          };
         };
       });
   auto recv_message =
@@ -2276,8 +2282,10 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         };
       });
   auto primary_ops = AllOk<StatusFlag>(
-      std::move(send_initial_metadata), std::move(send_message),
-      std::move(send_trailing_metadata), std::move(recv_message));
+      TrySeq(AllOk<StatusFlag>(std::move(send_initial_metadata),
+                               std::move(send_message)),
+             std::move(send_trailing_metadata)),
+      std::move(recv_message));
   if (got_ops[GRPC_OP_RECV_CLOSE_ON_SERVER] != 255) {
     auto recv_trailing_metadata = MaybeOp(
         ops, got_ops[GRPC_OP_RECV_CLOSE_ON_SERVER], [this](const grpc_op& op) {

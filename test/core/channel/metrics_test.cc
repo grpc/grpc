@@ -29,6 +29,8 @@
 namespace grpc_core {
 namespace {
 
+using experimental::StatsPluginChannelScope;
+
 class MetricsTest : public ::testing::Test {
  public:
   void TearDown() override {
@@ -55,13 +57,13 @@ TEST_F(MetricsTest, UInt64Counter) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, ""))
       .AddCounter(uint64_counter_handle, 1, kLabelValues, kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, ""))
       .AddCounter(uint64_counter_handle, 2, kLabelValues, kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, ""))
       .AddCounter(uint64_counter_handle, 3, kLabelValues, kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetCounterValue(uint64_counter_handle, kLabelValues,
                                        kOptionalLabelValues),
@@ -92,15 +94,15 @@ TEST_F(MetricsTest, DoubleCounter) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, ""))
       .AddCounter(double_counter_handle, 1.23, kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, ""))
       .AddCounter(double_counter_handle, 2.34, kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, ""))
       .AddCounter(double_counter_handle, 3.45, kLabelValues,
                   kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetCounterValue(double_counter_handle, kLabelValues,
@@ -133,15 +135,15 @@ TEST_F(MetricsTest, UInt64Histogram) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, ""))
       .RecordHistogram(uint64_histogram_handle, 1, kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, ""))
       .RecordHistogram(uint64_histogram_handle, 2, kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, ""))
       .RecordHistogram(uint64_histogram_handle, 3, kLabelValues,
                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetHistogramValue(uint64_histogram_handle, kLabelValues,
@@ -174,15 +176,15 @@ TEST_F(MetricsTest, DoubleHistogram) {
   auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, ""))
       .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""))
+      StatsPluginChannelScope(kDomain2To4, ""))
       .RecordHistogram(double_histogram_handle, 2.34, kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""))
+      StatsPluginChannelScope(kDomain3To4, ""))
       .RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetHistogramValue(double_histogram_handle, kLabelValues,
@@ -195,80 +197,6 @@ TEST_F(MetricsTest, DoubleHistogram) {
       plugin3->GetHistogramValue(double_histogram_handle, kLabelValues,
                                  kOptionalLabelValues),
       ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34, 3.45)));
-}
-
-TEST_F(MetricsTest, Int64Gauge) {
-  const absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  const absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                  "optional_label_key_2"};
-  auto int64_gauge_handle = GlobalInstrumentsRegistry::RegisterInt64Gauge(
-      "int64_gauge", "A simple int64 gauge.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
-      "optional_label_value_1", "optional_label_value_2"};
-  constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
-  constexpr absl::string_view kDomain2To4 = "domain2.domain3.domain4";
-  constexpr absl::string_view kDomain3To4 = "domain3.domain4";
-  auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
-  auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
-  auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
-      .SetGauge(int64_gauge_handle, 1, kLabelValues, kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""))
-      .SetGauge(int64_gauge_handle, 2, kLabelValues, kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""))
-      .SetGauge(int64_gauge_handle, 3, kLabelValues, kOptionalLabelValues);
-  EXPECT_THAT(plugin1->GetGaugeValue(int64_gauge_handle, kLabelValues,
-                                     kOptionalLabelValues),
-              ::testing::Optional(1));
-  EXPECT_THAT(plugin2->GetGaugeValue(int64_gauge_handle, kLabelValues,
-                                     kOptionalLabelValues),
-              ::testing::Optional(2));
-  EXPECT_THAT(plugin3->GetGaugeValue(int64_gauge_handle, kLabelValues,
-                                     kOptionalLabelValues),
-              ::testing::Optional(3));
-}
-
-TEST_F(MetricsTest, DoubleGauge) {
-  const absl::string_view kLabelKeys[] = {"label_key_1", "label_key_2"};
-  const absl::string_view kOptionalLabelKeys[] = {"optional_label_key_1",
-                                                  "optional_label_key_2"};
-  auto double_gauge_handle = GlobalInstrumentsRegistry::RegisterDoubleGauge(
-      "double_gauge", "A simple double gauge.", "unit", kLabelKeys,
-      kOptionalLabelKeys, true);
-  constexpr absl::string_view kLabelValues[] = {"label_value_1",
-                                                "label_value_2"};
-  constexpr absl::string_view kOptionalLabelValues[] = {
-      "optional_label_value_1", "optional_label_value_2"};
-  constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
-  constexpr absl::string_view kDomain2To4 = "domain2.domain3.domain4";
-  constexpr absl::string_view kDomain3To4 = "domain3.domain4";
-  auto plugin1 = MakeStatsPluginForTarget(kDomain1To4);
-  auto plugin2 = MakeStatsPluginForTarget(kDomain2To4);
-  auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
-      .SetGauge(double_gauge_handle, 1.23, kLabelValues, kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""))
-      .SetGauge(double_gauge_handle, 2.34, kLabelValues, kOptionalLabelValues);
-  GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""))
-      .SetGauge(double_gauge_handle, 3.45, kLabelValues, kOptionalLabelValues);
-  EXPECT_THAT(plugin1->GetGaugeValue(double_gauge_handle, kLabelValues,
-                                     kOptionalLabelValues),
-              ::testing::Optional(1.23));
-  EXPECT_THAT(plugin2->GetGaugeValue(double_gauge_handle, kLabelValues,
-                                     kOptionalLabelValues),
-              ::testing::Optional(2.34));
-  EXPECT_THAT(plugin3->GetGaugeValue(double_gauge_handle, kLabelValues,
-                                     kOptionalLabelValues),
-              ::testing::Optional(3.45));
 }
 
 TEST_F(MetricsTest, Int64CallbackGauge) {
@@ -295,7 +223,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // label values.  The callbacks get used only by plugin1.
   gpr_log(GPR_INFO, "testing callbacks for: plugin1");
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""));
+      StatsPluginChannelScope(kDomain3To4, ""));
   auto callback1 = group1.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, 1, kLabelValues,
@@ -356,7 +284,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // Now register callbacks that hit both plugin1 and plugin2.
   gpr_log(GPR_INFO, "testing callbacks for: plugin1, plugin2");
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""));
+      StatsPluginChannelScope(kDomain2To4, ""));
   callback1 = group2.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, 3, kLabelValues,
@@ -417,7 +345,7 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // Now register callbacks that hit all three plugins.
   gpr_log(GPR_INFO, "testing callbacks for: plugin1, plugin2, plugin3");
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""));
+      StatsPluginChannelScope(kDomain1To4, ""));
   callback1 = group3.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, 5, kLabelValues,
@@ -501,7 +429,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // label values.  The callbacks get used only by plugin1.
   gpr_log(GPR_INFO, "testing callbacks for: plugin1");
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain3To4, ""));
+      StatsPluginChannelScope(kDomain3To4, ""));
   auto callback1 = group1.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 1.23, kLabelValues,
@@ -562,7 +490,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // Now register callbacks that hit both plugin1 and plugin2.
   gpr_log(GPR_INFO, "testing callbacks for: plugin1, plugin2");
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain2To4, ""));
+      StatsPluginChannelScope(kDomain2To4, ""));
   callback1 = group2.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 3.45, kLabelValues,
@@ -623,7 +551,7 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // Now register callbacks that hit all three plugins.
   gpr_log(GPR_INFO, "testing callbacks for: plugin1, plugin2, plugin3");
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""));
+      StatsPluginChannelScope(kDomain1To4, ""));
   callback1 = group3.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 5.67, kLabelValues,
@@ -698,7 +626,7 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
   constexpr absl::string_view kDomain1To4 = "domain1.domain2.domain3.domain4";
   auto plugin = MakeStatsPluginForTarget(kDomain1To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-      StatsPlugin::ChannelScope(kDomain1To4, ""))
+      StatsPluginChannelScope(kDomain1To4, ""))
       .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
                        kOptionalLabelValues);
   EXPECT_EQ(plugin->GetHistogramValue(double_histogram_handle, kLabelValues,

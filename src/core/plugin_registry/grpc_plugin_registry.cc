@@ -25,6 +25,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/server.h"
+#include "src/core/lib/transport/endpoint_info_handshaker.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/transport/tcp_connect_handshaker.h"
 
@@ -95,6 +96,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   // The order of the handshaker registration is crucial here.
   // We want TCP connect handshaker to be registered last so that it is added
   // to the start of the handshaker list.
+  RegisterEndpointInfoHandshaker(builder);
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterPriorityLbPolicy(builder);
