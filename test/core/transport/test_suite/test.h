@@ -191,7 +191,7 @@ void StartSeq(NameAndLocation loc, ActionStateFactory action_state_factory,
       [spawner, first = Factory(std::move(first)), next = std::move(next),
        action_state = std::move(action_state), name = loc.name()]() mutable {
         action_state->Set(ActionState::kNotStarted);
-        auto promise = Promise<Result>(first.Make());
+        Promise<Result> promise(first.Make());
         spawner(name, WrapPromiseAndNext(std::move(action_state),
                                          std::move(promise), std::move(next)));
         return Empty{};
