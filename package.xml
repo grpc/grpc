@@ -1789,12 +1789,12 @@
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_size_estimator.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_size_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_spine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_spine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
