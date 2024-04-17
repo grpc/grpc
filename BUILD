@@ -280,11 +280,16 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/sync_windows.h",
 ]
 
-GRPC_PUBLIC_HDRS = [
-    "include/grpc/grpc_audit_logging.h",
-    "include/grpc/grpc_crl_provider.h",
+GRPC_BYTE_BUFFER_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
+    "include/grpc/impl/codegen/byte_buffer.h",
+    "include/grpc/impl/codegen/byte_buffer_reader.h",
+]
+
+GRPC_PUBLIC_HDRS = GRPC_BYTE_BUFFER_HDRS + [
+    "include/grpc/grpc_audit_logging.h",
+    "include/grpc/grpc_crl_provider.h",
     "include/grpc/compression.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
@@ -296,8 +301,6 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/status.h",
     "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
-    "include/grpc/impl/codegen/byte_buffer.h",
-    "include/grpc/impl/codegen/byte_buffer_reader.h",
     "include/grpc/impl/codegen/compression_types.h",
     "include/grpc/impl/codegen/connectivity_state.h",
     "include/grpc/impl/codegen/grpc_types.h",
@@ -356,7 +359,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_credentials.cc",
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
-    "src/cpp/util/byte_buffer_cc.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
 ]
@@ -371,7 +373,46 @@ GRPCXX_HDRS = [
     "src/cpp/thread_manager/thread_manager.h",
 ]
 
-GRPCXX_PUBLIC_HDRS = [
+GRPCXX_BYTE_BUFFER_HDRS = [
+    "include/grpc++/support/byte_buffer.h",
+    "include/grpcpp/support/byte_buffer.h",
+    "include/grpc++/impl/codegen/byte_buffer.h",
+    "include/grpcpp/impl/codegen/byte_buffer.h",
+]
+
+GRPCXX_SERIALIZATION_TRAITS_HDRS = [
+    "include/grpc++/impl/serialization_traits.h",
+    "include/grpcpp/impl/serialization_traits.h",
+    "include/grpc++/impl/codegen/serialization_traits.h",
+    "include/grpcpp/impl/codegen/serialization_traits.h",
+]
+
+GRPCXX_CONFIG_HDRS = [
+    "include/grpc++/support/config.h",
+    "include/grpcpp/support/config.h",
+    "include/grpc++/impl/codegen/config.h",
+    "include/grpcpp/impl/codegen/config.h",
+]
+
+GRPCXX_SLICE_HDRS = [
+    "include/grpc++/support/slice.h",
+    "include/grpcpp/support/slice.h",
+    "include/grpc++/impl/codegen/slice.h",
+    "include/grpcpp/impl/codegen/slice.h",
+]
+
+GRPCXX_STRING_REF_HDRS = [
+    "include/grpc++/support/string_ref.h",
+    "include/grpcpp/support/string_ref.h",
+    "include/grpc++/impl/codegen/string_ref.h",
+    "include/grpcpp/impl/codegen/string_ref.h",
+]
+
+GRPCXX_PUBLIC_HDRS = (GRPCXX_BYTE_BUFFER_HDRS +
+                      GRPCXX_SERIALIZATION_TRAITS_HDRS +
+                      GRPCXX_CONFIG_HDRS +
+                      GRPCXX_SLICE_HDRS +
+                      GRPCXX_STRING_REF_HDRS + [
     "include/grpc++/alarm.h",
     "include/grpc++/channel.h",
     "include/grpc++/client_context.h",
@@ -390,7 +431,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/method_handler_impl.h",
     "include/grpc++/impl/rpc_method.h",
     "include/grpc++/impl/rpc_service_method.h",
-    "include/grpc++/impl/serialization_traits.h",
     "include/grpc++/impl/server_builder_option.h",
     "include/grpc++/impl/server_builder_plugin.h",
     "include/grpc++/impl/server_initializer.h",
@@ -406,13 +446,9 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/server_posix.h",
     "include/grpc++/support/async_stream.h",
     "include/grpc++/support/async_unary_call.h",
-    "include/grpc++/support/byte_buffer.h",
     "include/grpc++/support/channel_arguments.h",
-    "include/grpc++/support/config.h",
-    "include/grpc++/support/slice.h",
     "include/grpc++/support/status.h",
     "include/grpc++/support/status_code_enum.h",
-    "include/grpc++/support/string_ref.h",
     "include/grpc++/support/stub_options.h",
     "include/grpc++/support/sync_stream.h",
     "include/grpc++/support/time.h",
@@ -444,7 +480,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/method_handler_impl.h",
     "include/grpcpp/impl/rpc_method.h",
     "include/grpcpp/impl/rpc_service_method.h",
-    "include/grpcpp/impl/serialization_traits.h",
     "include/grpcpp/impl/server_builder_option.h",
     "include/grpcpp/impl/server_builder_plugin.h",
     "include/grpcpp/impl/server_callback_handlers.h",
@@ -471,12 +506,10 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/version_info.h",
     "include/grpcpp/support/async_stream.h",
     "include/grpcpp/support/async_unary_call.h",
-    "include/grpcpp/support/byte_buffer.h",
     "include/grpcpp/support/callback_common.h",
     "include/grpcpp/support/channel_arguments.h",
     "include/grpcpp/support/client_callback.h",
     "include/grpcpp/support/client_interceptor.h",
-    "include/grpcpp/support/config.h",
     "include/grpcpp/support/interceptor.h",
     "include/grpcpp/support/message_allocator.h",
     "include/grpcpp/support/method_handler.h",
@@ -484,17 +517,14 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/server_callback.h",
     "include/grpcpp/support/server_interceptor.h",
-    "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
     "include/grpcpp/support/status_code_enum.h",
-    "include/grpcpp/support/string_ref.h",
     "include/grpcpp/support/stub_options.h",
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/time.h",
     "include/grpcpp/support/validate_service_config.h",
     "include/grpc++/impl/codegen/async_stream.h",
     "include/grpc++/impl/codegen/async_unary_call.h",
-    "include/grpc++/impl/codegen/byte_buffer.h",
     "include/grpc++/impl/codegen/call_hook.h",
     "include/grpc++/impl/codegen/call.h",
     "include/grpc++/impl/codegen/channel_interface.h",
@@ -502,28 +532,23 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/impl/codegen/client_unary_call.h",
     "include/grpc++/impl/codegen/completion_queue_tag.h",
     "include/grpc++/impl/codegen/completion_queue.h",
-    "include/grpc++/impl/codegen/config.h",
     "include/grpc++/impl/codegen/create_auth_context.h",
     "include/grpc++/impl/codegen/metadata_map.h",
     "include/grpc++/impl/codegen/method_handler_impl.h",
     "include/grpc++/impl/codegen/rpc_method.h",
     "include/grpc++/impl/codegen/rpc_service_method.h",
     "include/grpc++/impl/codegen/security/auth_context.h",
-    "include/grpc++/impl/codegen/serialization_traits.h",
     "include/grpc++/impl/codegen/server_context.h",
     "include/grpc++/impl/codegen/server_interface.h",
     "include/grpc++/impl/codegen/service_type.h",
-    "include/grpc++/impl/codegen/slice.h",
     "include/grpc++/impl/codegen/status_code_enum.h",
     "include/grpc++/impl/codegen/status.h",
-    "include/grpc++/impl/codegen/string_ref.h",
     "include/grpc++/impl/codegen/stub_options.h",
     "include/grpc++/impl/codegen/sync_stream.h",
     "include/grpc++/impl/codegen/time.h",
     "include/grpcpp/impl/codegen/async_generic_service.h",
     "include/grpcpp/impl/codegen/async_stream.h",
     "include/grpcpp/impl/codegen/async_unary_call.h",
-    "include/grpcpp/impl/codegen/byte_buffer.h",
     "include/grpcpp/impl/codegen/call_hook.h",
     "include/grpcpp/impl/codegen/call_op_set_interface.h",
     "include/grpcpp/impl/codegen/call_op_set.h",
@@ -536,7 +561,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/client_unary_call.h",
     "include/grpcpp/impl/codegen/completion_queue_tag.h",
     "include/grpcpp/impl/codegen/completion_queue.h",
-    "include/grpcpp/impl/codegen/config.h",
     "include/grpcpp/impl/codegen/create_auth_context.h",
     "include/grpcpp/impl/codegen/delegating_channel.h",
     "include/grpcpp/impl/codegen/intercepted_channel.h",
@@ -549,22 +573,19 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/codegen/rpc_method.h",
     "include/grpcpp/impl/codegen/rpc_service_method.h",
     "include/grpcpp/impl/codegen/security/auth_context.h",
-    "include/grpcpp/impl/codegen/serialization_traits.h",
     "include/grpcpp/impl/codegen/server_callback_handlers.h",
     "include/grpcpp/impl/codegen/server_callback.h",
     "include/grpcpp/impl/codegen/server_context.h",
     "include/grpcpp/impl/codegen/server_interceptor.h",
     "include/grpcpp/impl/codegen/server_interface.h",
     "include/grpcpp/impl/codegen/service_type.h",
-    "include/grpcpp/impl/codegen/slice.h",
     "include/grpcpp/impl/codegen/status_code_enum.h",
     "include/grpcpp/impl/codegen/status.h",
-    "include/grpcpp/impl/codegen/string_ref.h",
     "include/grpcpp/impl/codegen/stub_options.h",
     "include/grpcpp/impl/codegen/sync_stream.h",
     "include/grpcpp/impl/codegen/time.h",
     "include/grpcpp/impl/codegen/sync.h",
-]
+])
 
 grpc_cc_library(
     name = "grpc_unsecure",
@@ -1481,14 +1502,50 @@ grpc_cc_library(
         "//src/core:lib/surface/byte_buffer.cc",
         "//src/core:lib/surface/byte_buffer_reader.cc",
     ],
+    hdrs = GRPC_BYTE_BUFFER_HDRS,
     language = "c++",
     deps = [
         "exec_ctx",
-        "gpr_public_hdrs",
-        "grpc_public_hdrs",
         "//src/core:compression",
         "//src/core:slice",
     ],
+)
+
+grpc_cc_library(
+    name = "byte_buffer_cc",
+    srcs = [
+        "src/cpp/util/byte_buffer_cc.cc",
+    ],
+    hdrs = GRPCXX_BYTE_BUFFER_HDRS,
+    language = "c++",
+    deps = [
+        "byte_buffer",
+        "config_cc",
+        "grpcpp_status",
+        "serialization_traits_cc",
+        "slice_cc",
+        "string_ref_cc",
+    ],
+)
+
+grpc_cc_library(
+    name = "serialization_traits_cc",
+    hdrs = GRPCXX_SERIALIZATION_TRAITS_HDRS,
+)
+
+grpc_cc_library(
+    name = "config_cc",
+    hdrs = GRPCXX_CONFIG_HDRS,
+)
+
+grpc_cc_library(
+    name = "slice_cc",
+    hdrs = GRPCXX_SLICE_HDRS,
+)
+
+grpc_cc_library(
+    name = "string_ref_cc",
+    hdrs = GRPCXX_STRING_REF_HDRS,
 )
 
 grpc_cc_library(
@@ -2431,6 +2488,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["@grpc:alt_grpc++_base_legacy"],
     deps = [
+        "byte_buffer_cc",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2515,6 +2573,7 @@ grpc_cc_library(
     ],
     visibility = ["@grpc:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "byte_buffer_cc",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
