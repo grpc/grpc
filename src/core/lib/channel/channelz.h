@@ -301,15 +301,13 @@ class SocketNode final : public BaseNode {
       NameType type = NameType::kUnset;
       // Holds the value of standard_name or other_names if type is not kUnset.
       std::string name;
-      std::string local_certificate;
       std::string remote_certificate;
 
       Json RenderJson();
     };
-    enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
+    enum class ModelType { kUnset = 0, kTls = 1 };
     ModelType type = ModelType::kUnset;
     absl::optional<Tls> tls;
-    absl::optional<Json> other;
 
     Json RenderJson();
 
