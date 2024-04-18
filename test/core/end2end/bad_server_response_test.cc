@@ -262,7 +262,7 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   cqv.Expect(tag(1), true);
   cqv.Verify();
 
-  CHECK(status == expected_status);
+  CHECK_EQ(status, expected_status);
   if (expected_detail != nullptr) {
     CHECK(-1 != grpc_slice_slice(
                     details, grpc_slice_from_static_string(expected_detail)));

@@ -106,9 +106,9 @@ void run_test(bool wait_for_ready) {
 
   gpr_log(GPR_INFO, "call status: %d", status);
   if (wait_for_ready) {
-    CHECK(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_slice_unref(details);

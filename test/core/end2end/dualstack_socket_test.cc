@@ -239,7 +239,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     gpr_log(GPR_DEBUG, "got peer: '%s'", peer);
     gpr_free(peer);
 
-    CHECK(status == GRPC_STATUS_UNIMPLEMENTED);
+    CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
     CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
     CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
     CHECK(0 == grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
@@ -253,7 +253,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
 
     gpr_log(GPR_INFO, "status: %d (expected: %d)", status,
             GRPC_STATUS_UNAVAILABLE);
-    CHECK(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_call_unref(c);

@@ -116,9 +116,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   cqv.Verify();
 
   if (wait_for_ready) {
-    CHECK(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_completion_queue_shutdown(cq);
