@@ -5492,6 +5492,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: alts_grpc_record_protocol_test
   gtest: true
@@ -8476,6 +8477,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -9476,6 +9478,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: fd_posix_test
   gtest: true
@@ -18302,6 +18305,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -18318,6 +18322,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
