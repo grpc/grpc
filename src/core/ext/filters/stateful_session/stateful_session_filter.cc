@@ -72,9 +72,10 @@ const grpc_channel_filter StatefulSessionFilter::kFilter =
                            kFilterExaminesServerInitialMetadata>(
         "stateful_session_filter");
 
-absl::StatusOr<StatefulSessionFilter> StatefulSessionFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args filter_args) {
-  return StatefulSessionFilter(filter_args);
+absl::StatusOr<std::unique_ptr<StatefulSessionFilter>>
+StatefulSessionFilter::Create(const ChannelArgs&,
+                              ChannelFilter::Args filter_args) {
+  return std::make_unique<StatefulSessionFilter>(filter_args);
 }
 
 StatefulSessionFilter::StatefulSessionFilter(ChannelFilter::Args filter_args)
