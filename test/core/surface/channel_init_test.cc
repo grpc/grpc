@@ -15,6 +15,7 @@
 #include "src/core/lib/surface/channel_init.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -206,9 +207,10 @@ class TestFilter1 {
  public:
   explicit TestFilter1(int* p) : p_(p) {}
 
-  static absl::StatusOr<TestFilter1> Create(const ChannelArgs& args, Empty) {
+  static absl::StatusOr<std::unique_ptr<TestFilter1>> Create(
+      const ChannelArgs& args, Empty) {
     EXPECT_EQ(args.GetInt("foo"), 1);
-    return TestFilter1(args.GetPointer<int>("p"));
+    return std::make_unique<TestFilter1>(args.GetPointer<int>("p"));
   }
 
   static const grpc_channel_filter kFilter;

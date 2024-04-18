@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -36,6 +34,7 @@
 
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -328,7 +327,9 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
   ~SubchannelCallTracker() override {
     locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
     call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
+#ifndef NDEBUG
     GPR_DEBUG_ASSERT(!started_);
+#endif
   }
 
   void Start() override {

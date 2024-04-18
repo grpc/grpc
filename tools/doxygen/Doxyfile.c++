@@ -880,6 +880,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -927,6 +928,7 @@ include/grpc/impl/grpc_types.h \
 include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
+include/grpc/passive_listener.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -1039,6 +1041,7 @@ include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
+include/grpcpp/passive_listener.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \

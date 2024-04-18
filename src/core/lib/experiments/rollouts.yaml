@@ -41,7 +41,7 @@
 # Supported platforms: ios, windows, posix
 
 - name: call_status_override_on_cancellation
-  default: debug
+  default: true
 - name: call_v3
   default: false
 - name: canary_client_privacy
@@ -109,7 +109,7 @@
 - name: tcp_rcv_lowat
   default: false
 - name: trace_record_callops
-  default: false
+  default: true
 - name: unconstrained_max_quota_buffer_size
   default: false
 - name: work_serializer_clears_time_cache

@@ -48,6 +48,9 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -139,11 +142,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -152,7 +150,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     kDefaultForDebugOnly, true},
+     true, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -167,6 +165,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, false, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -206,7 +206,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
-     additional_constraints_trace_record_callops, nullptr, 0, false, true},
+     additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -248,6 +248,9 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -339,11 +342,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -352,7 +350,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     kDefaultForDebugOnly, true},
+     true, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -367,6 +365,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -406,7 +406,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
-     additional_constraints_trace_record_callops, nullptr, 0, false, true},
+     additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -448,6 +448,9 @@ const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_http2_stats_fix =
+    "Fix on HTTP2 outgoing data stats reporting";
+const char* const additional_constraints_http2_stats_fix = "{}";
 const char* const description_keepalive_fix =
     "Allows overriding keepalive_permit_without_calls. Refer "
     "https://github.com/grpc/grpc/pull/33428 for more information.";
@@ -539,11 +542,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
 }  // namespace
 
 namespace grpc_core {
@@ -552,7 +550,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-     kDefaultForDebugOnly, true},
+     true, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
      false, true},
     {"canary_client_privacy", description_canary_client_privacy,
@@ -567,6 +565,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_listener, nullptr, 0, true, true},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"http2_stats_fix", description_http2_stats_fix,
+     additional_constraints_http2_stats_fix, nullptr, 0, true, true},
     {"keepalive_fix", description_keepalive_fix,
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
@@ -606,7 +606,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
-     additional_constraints_trace_record_callops, nullptr, 0, false, true},
+     additional_constraints_trace_record_callops, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
