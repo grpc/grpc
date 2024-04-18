@@ -17,9 +17,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_XDS_XDS_OVERRIDE_HOST_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_XDS_XDS_OVERRIDE_HOST_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"

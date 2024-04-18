@@ -16,14 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -57,8 +56,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -71,6 +68,8 @@
 #include "src/core/lib/iomgr/nameser.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;

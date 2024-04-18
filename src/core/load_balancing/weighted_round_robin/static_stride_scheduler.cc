@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 
 #include <algorithm>
@@ -27,6 +25,7 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

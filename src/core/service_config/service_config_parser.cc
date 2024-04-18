@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/service_config/service_config_parser.h"
 
 #include <stdlib.h>
@@ -25,6 +23,7 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
