@@ -258,6 +258,12 @@ typedef struct tsi_handshaker_result tsi_handshaker_result;
 tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
                                               tsi_peer* peer);
 
+// This method extracts tsi local peer. It returns TSI_OK assuming there is no fatal
+// error.
+// The caller is responsible for destructing the local peer.
+tsi_result tsi_handshaker_result_extract_local_peer(const tsi_handshaker_result* self,
+                                              tsi_peer* local_peer);
+
 // This method indicates what type of frame protector is provided by the
 // TSI implementation.
 tsi_result tsi_handshaker_result_get_frame_protector_type(
