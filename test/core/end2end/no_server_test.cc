@@ -86,9 +86,9 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                              grpc_core::CqVerifier::tag(1),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
 
   {
     response_generator->WaitForResolverSet(

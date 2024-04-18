@@ -128,7 +128,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   if (port == 0) {
     port = got_port;
   } else {
-    CHECK(port == got_port);
+    CHECK_EQ(port, got_port);
   }
   grpc_server_start(server);
   grpc_core::CqVerifier cqv(cq);
@@ -242,7 +242,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
     CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
     CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-    CHECK(0 == grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
+    CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"), 0);
     CHECK_EQ(was_cancelled, 0);
 
     grpc_call_unref(s);

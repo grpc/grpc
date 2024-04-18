@@ -108,9 +108,9 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                              grpc_core::CqVerifier::tag(1),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
   // verify that all tags get completed
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();

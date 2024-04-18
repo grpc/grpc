@@ -36,7 +36,7 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
                 absl::StrCat("ipv4:0.0.0.0:", port_num))
                 .value());
         CHECK_OK(port);
-        CHECK(port.value() == port_num);
+        CHECK_EQ(port.value(), port_num);
         grpc_core::Server::FromC(server)->AddListener(
             grpc_core::OrphanablePtr<
                 grpc_core::chaotic_good::ChaoticGoodServerListener>(listener));

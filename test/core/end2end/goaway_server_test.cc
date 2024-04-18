@@ -294,9 +294,9 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(call1, ops, (size_t)(op - ops),
-                                              grpc_core::CqVerifier::tag(0x101),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call1, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(0x101), nullptr));
   // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -307,9 +307,9 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(call1, ops, (size_t)(op - ops),
-                                              grpc_core::CqVerifier::tag(0x102),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call1, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(0x102), nullptr));
 
   // bring a server up on the first port
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
@@ -373,9 +373,9 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(call2, ops, (size_t)(op - ops),
-                                              grpc_core::CqVerifier::tag(0x201),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call2, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(0x201), nullptr));
   // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -386,9 +386,9 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(call2, ops, (size_t)(op - ops),
-                                              grpc_core::CqVerifier::tag(0x202),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call2, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(0x202), nullptr));
 
   // and bring up second server
   set_resolve_port(port2);

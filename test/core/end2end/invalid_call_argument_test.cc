@@ -110,15 +110,15 @@ static void prepare_test(int is_client) {
     op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     op->reserved = nullptr;
     op++;
-    CHECK(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                                (size_t)(op - g_state.ops),
-                                                grpc_core::CqVerifier::tag(1),
-                                                nullptr));
-    CHECK(GRPC_CALL_OK == grpc_server_request_call(
-                              g_state.server, &g_state.server_call,
-                              &g_state.call_details,
-                              &g_state.server_initial_metadata_recv, g_state.cq,
-                              g_state.cq, grpc_core::CqVerifier::tag(101)));
+    CHECK_EQ(GRPC_CALL_OK,
+             grpc_call_start_batch(g_state.call, g_state.ops,
+                                   (size_t)(op - g_state.ops),
+                                   grpc_core::CqVerifier::tag(1), nullptr));
+    CHECK_EQ(GRPC_CALL_OK,
+             grpc_server_request_call(
+                 g_state.server, &g_state.server_call, &g_state.call_details,
+                 &g_state.server_initial_metadata_recv, g_state.cq, g_state.cq,
+                 grpc_core::CqVerifier::tag(101)));
     g_state.cqv->Expect(grpc_core::CqVerifier::tag(101), true);
     g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), true);
     g_state.cqv->Verify();
@@ -195,10 +195,10 @@ static void test_send_initial_metadata_more_than_once() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                              (size_t)(op - g_state.ops),
-                                              grpc_core::CqVerifier::tag(1),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(g_state.call, g_state.ops,
+                                 (size_t)(op - g_state.ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
   g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), false);
   g_state.cqv->Verify();
 
@@ -326,10 +326,10 @@ static void test_receive_initial_metadata_twice_at_client() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                              (size_t)(op - g_state.ops),
-                                              grpc_core::CqVerifier::tag(1),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(g_state.call, g_state.ops,
+                                 (size_t)(op - g_state.ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
   g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), false);
   g_state.cqv->Verify();
   op = g_state.ops;
@@ -423,10 +423,10 @@ static void test_recv_status_on_client_twice() {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK(GRPC_CALL_OK == grpc_call_start_batch(g_state.call, g_state.ops,
-                                              (size_t)(op - g_state.ops),
-                                              grpc_core::CqVerifier::tag(1),
-                                              nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(g_state.call, g_state.ops,
+                                 (size_t)(op - g_state.ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
   g_state.cqv->Expect(grpc_core::CqVerifier::tag(1), true);
   g_state.cqv->Verify();
 
