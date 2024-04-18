@@ -29994,6 +29994,7 @@ target_include_directories(test_core_security_credentials_test
 target_link_libraries(test_core_security_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 

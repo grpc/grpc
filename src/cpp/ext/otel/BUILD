@@ -57,7 +57,7 @@ grpc_cc_library(
         "otel/api",
     ],
     language = "c++",
-    visibility = ["//:__subpackages__"],
+    visibility = ["@grpc:otel_plugin"],
     deps = [
         "//:call_tracer",
         "//:config",
