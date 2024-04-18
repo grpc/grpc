@@ -1384,6 +1384,10 @@ class CallFilters {
      public:
       Push(CallFilters* filters, T x)
           : filters_(filters), value_(std::move(x)) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "BeginPush[%p]: %s", &state(),
+                  state().DebugString().c_str());
+        }
         state().BeginPush();
         push_slot() = this;
       }
@@ -1407,7 +1411,26 @@ class CallFilters {
 
       Push& operator=(Push&&) = delete;
 
-      Poll<StatusFlag> operator()() { return state().PollPush(); }
+      Poll<StatusFlag> operator()() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "Push[%p]: %s", &state(),
+                  state().DebugString().c_str());
+        }
+        auto r = state().PollPush();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          if (r.pending()) {
+            gpr_log(GPR_INFO, "Push[%p]: pending; %s", &state(),
+                    state().DebugString().c_str());
+          } else if (r.value().ok()) {
+            gpr_log(GPR_INFO, "Push[%p]: success; %s", &state(),
+                    state().DebugString().c_str());
+          } else {
+            gpr_log(GPR_INFO, "Push[%p]: failure; %s", &state(),
+                    state().DebugString().c_str());
+          }
+        }
+        return r;
+      }
 
       T TakeValue() { return std::move(value_); }
 
@@ -1508,7 +1531,8 @@ class CallFilters {
 
       Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-          gpr_log(GPR_INFO, "PullMessage: %s", state().DebugString().c_str());
+          gpr_log(GPR_INFO, "PullMessage[%p]: %s executor:%d", &state(),
+                  state().DebugString().c_str(), executor_.IsRunning());
         }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
@@ -1520,7 +1544,11 @@ class CallFilters {
         }
         auto p = state().PollPull();
         auto* r = p.value_if_ready();
-        if (r == nullptr) return Pending{};
+        if (r == nullptr) {
+          gpr_log(GPR_INFO, "PullMessage[%p] pending: %s executor:%d", &state(),
+                  state().DebugString().c_str(), executor_.IsRunning());
+          return Pending{};
+        }
         if (!r->ok()) {
           filters_->CancelDueToFailedPipeOperation();
           return Failure{};

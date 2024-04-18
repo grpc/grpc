@@ -358,6 +358,10 @@ void filters_detail::PipeState::DropPush() {
     case ValueState::kReady:
     case ValueState::kProcessing:
     case ValueState::kWaiting:
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        gpr_log(GPR_INFO, "%p drop push in state %s", this,
+                DebugString().c_str());
+      }
       state_ = ValueState::kError;
       wait_recv_.Wake();
       break;
@@ -374,6 +378,10 @@ void filters_detail::PipeState::DropPull() {
     case ValueState::kReady:
     case ValueState::kProcessing:
     case ValueState::kWaiting:
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        gpr_log(GPR_INFO, "%p drop pull in state %s", this,
+                DebugString().c_str());
+      }
       state_ = ValueState::kError;
       wait_send_.Wake();
       break;
