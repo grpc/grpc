@@ -23,7 +23,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
@@ -32,6 +31,7 @@
 #include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
 
@@ -60,14 +60,15 @@ void RegisterFakeStatsPlugin();
 class FakeClientCallTracer : public ClientCallTracer {
  public:
   class FakeClientCallAttemptTracer
-      : public ClientCallTracer::CallAttemptTracer {
+      : public ClientCallTracer::CallAttemptTracer,
+        public RefCounted<FakeClientCallAttemptTracer> {
    public:
     explicit FakeClientCallAttemptTracer(
         std::vector<std::string>* annotation_logger)
-        : annotation_logger_(annotation_logger) {}
-    ~FakeClientCallAttemptTracer() override {
-      notification.WaitForNotification();
-    }
+        : RefCounted<FakeClientCallAttemptTracer>(nullptr,
+                                                  2),  // RecordEnd holds a ref.
+          annotation_logger_(annotation_logger) {}
+    ~FakeClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
@@ -86,9 +87,7 @@ class FakeClientCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* /*transport_stream_stats*/)
         override {}
-    void RecordEnd(const gpr_timespec& /*latency*/) override {
-      notification.Notify();
-    }
+    void RecordEnd(const gpr_timespec& /*latency*/) override { Unref(); }
     void RecordAnnotation(absl::string_view annotation) override {
       annotation_logger_->push_back(std::string(annotation));
     }
@@ -110,7 +109,6 @@ class FakeClientCallTracer : public ClientCallTracer {
     }
 
    private:
-    absl::Notification notification;
     std::vector<std::string>* annotation_logger_;
     std::map<OptionalLabelKey, RefCountedStringValue> optional_labels_;
   };
@@ -138,7 +136,7 @@ class FakeClientCallTracer : public ClientCallTracer {
 
  private:
   std::vector<std::string>* annotation_logger_;
-  std::vector<std::unique_ptr<FakeClientCallAttemptTracer>>
+  std::vector<grpc_core::RefCountedPtr<FakeClientCallAttemptTracer>>
       call_attempt_tracers_;
 };
 
