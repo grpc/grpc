@@ -130,9 +130,9 @@ PromiseSpawner SpawnerForContext(
 template <typename Arg>
 using NextSpawner = absl::AnyInvocable<void(Arg)>;
 
-template <typename R>
+template <typename R, typename P>
 Promise<Empty> WrapPromiseAndNext(std::shared_ptr<ActionState> action_state,
-                                  Promise<R> promise, NextSpawner<R> next) {
+                                  P promise, NextSpawner<R> next) {
   return Promise<Empty>(OnCancel(
       [action_state, promise = std::move(promise),
        next = std::move(next)]() mutable -> Poll<Empty> {
@@ -172,8 +172,7 @@ NextSpawner<Arg> WrapFollowUps(NameAndLocation loc,
     action_state->Set(ActionState::kNotStarted);
     spawner(name,
             WrapPromiseAndNext(std::move(action_state),
-                               Promise<Result>(factory.Make(std::move(arg))),
-                               std::move(next)));
+                               factory.Make(std::move(arg)), std::move(next)));
   };
 }
 
@@ -191,9 +190,9 @@ void StartSeq(NameAndLocation loc, ActionStateFactory action_state_factory,
       [spawner, first = Factory(std::move(first)), next = std::move(next),
        action_state = std::move(action_state), name = loc.name()]() mutable {
         action_state->Set(ActionState::kNotStarted);
+        auto promise = first.Make();
         spawner(name, WrapPromiseAndNext(std::move(action_state),
-                                         Promise<Result>(first.Make()),
-                                         std::move(next)));
+                                         std::move(promise), std::move(next)));
         return Empty{};
       });
 }

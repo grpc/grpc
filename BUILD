@@ -291,6 +291,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
+    "include/grpc/passive_listener.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
@@ -452,6 +453,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
+    "include/grpcpp/passive_listener.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/tls_crl_provider.h",
@@ -876,7 +878,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_public_hdrs",
-    hdrs = GRPC_PUBLIC_HDRS,
+    hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
@@ -2470,6 +2472,7 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
+        "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
         "//src/core:json_reader",
@@ -2527,6 +2530,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_transport_chttp2",
         "grpc_unsecure",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
@@ -2548,6 +2552,7 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
+        "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:ref_counted",
         "//src/core:resource_quota",

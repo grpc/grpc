@@ -197,6 +197,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -2185,6 +2186,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -3795,6 +3797,7 @@ libs:
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
+  - include/grpcpp/passive_listener.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4223,6 +4226,7 @@ libs:
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
+  - include/grpcpp/passive_listener.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4371,6 +4375,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -5977,6 +5982,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: badreq_bad_client_test
   gtest: true
@@ -5991,6 +5997,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: basic_work_queue_test
   gtest: true
@@ -8275,6 +8282,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: connection_refused_test
   gtest: true
@@ -8728,6 +8736,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: empty_batch_test
   gtest: true
@@ -11004,6 +11013,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: headers_bad_client_test
   gtest: true
@@ -11018,6 +11028,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: health_service_end2end_test
   gtest: true
@@ -11522,6 +11533,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: inproc_test
   gtest: true
@@ -13962,6 +13974,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: outlier_detection_lb_config_parser_test
   gtest: true
@@ -17979,6 +17992,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/util/cmdline.h
   - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
@@ -17995,6 +18009,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/util/cmdline.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -18007,6 +18022,7 @@ targets:
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -18204,6 +18220,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: server_request_call_test
   gtest: true
@@ -18678,6 +18695,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: simple_request_test
   gtest: true
@@ -20455,6 +20473,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: uri_parser_test
   gtest: true
@@ -20620,6 +20639,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: windows_endpoint_test
   gtest: true

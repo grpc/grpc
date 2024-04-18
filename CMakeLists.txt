@@ -2743,6 +2743,7 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
+  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -3445,6 +3446,7 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
+  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -4314,6 +4316,7 @@ foreach(_hdr
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
+  include/grpcpp/passive_listener.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5054,6 +5057,7 @@ foreach(_hdr
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
+  include/grpcpp/passive_listener.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5504,6 +5508,7 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
+  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -7765,6 +7770,7 @@ target_include_directories(bad_streaming_id_bad_client_test
 target_link_libraries(bad_streaming_id_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -7809,6 +7815,7 @@ target_include_directories(badreq_bad_client_test
 target_link_libraries(badreq_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -11396,6 +11403,7 @@ target_include_directories(connection_prefix_bad_client_test
 target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -12453,6 +12461,7 @@ target_include_directories(duplicate_header_bad_client_test
 target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -16521,6 +16530,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
 target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -16565,6 +16575,7 @@ target_include_directories(headers_bad_client_test
 target_link_libraries(headers_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -17562,6 +17573,7 @@ target_include_directories(initial_settings_frame_bad_client_test
 target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -21091,6 +21103,7 @@ target_include_directories(out_of_bounds_bad_client_test
 target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -26965,6 +26978,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/util/cmdline.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
@@ -27009,6 +27023,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -27480,6 +27495,7 @@ target_include_directories(server_registered_method_bad_client_test
 target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -28225,6 +28241,7 @@ target_include_directories(simple_request_bad_client_test
 target_link_libraries(simple_request_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -32129,6 +32146,7 @@ target_include_directories(unknown_frame_bad_client_test
 target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -32603,6 +32621,7 @@ target_include_directories(window_overflow_bad_client_test
 target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
