@@ -62,10 +62,9 @@ def handle_unary_unary(request, servicer_context):
         }
     )
 
+
 _METHOD_HANDLERS = {
-    "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-        handle_unary_unary
-    )
+    "UnaryUnary": grpc.unary_unary_rpc_method_handler(handle_unary_unary)
 }
 
 
@@ -79,7 +78,9 @@ class AuthContextTest(unittest.TestCase):
         with grpc.insecure_channel("localhost:%d" % port) as channel:
             response = channel.unary_unary(
                 # _UNARY_UNARY,
-                grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _UNARY_UNARY
+                ),
                 _registered_method=True,
             )(_REQUEST)
         server.stop(None)

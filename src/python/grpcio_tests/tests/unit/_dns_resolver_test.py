@@ -29,14 +29,17 @@ _RESPONSE = _REQUEST
 
 _METHOD_HANDLERS = {
     _METHOD: grpc.unary_unary_rpc_method_handler(
-        lambda request, unused_context: request,)
+        lambda request, unused_context: request,
+    )
 }
 
 
 class DNSResolverTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _METHOD_HANDLERS
+        )
         self._port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 

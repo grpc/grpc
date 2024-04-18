@@ -149,6 +149,7 @@ class _MethodHandler(grpc.RpcMethodHandler):
         else:
             self.stream_unary = _make_handle_stream_unary(pre_response_callback)
 
+
 def get_method_handlers(pre_response_callback):
     return {
         _UNARY_UNARY: _MethodHandler(False, False, pre_response_callback),
@@ -156,6 +157,7 @@ def get_method_handlers(pre_response_callback):
         _STREAM_UNARY: _MethodHandler(True, False, pre_response_callback),
         _STREAM_STREAM: _MethodHandler(True, True, pre_response_callback),
     }
+
 
 @contextlib.contextmanager
 def _instrumented_client_server_pair(
@@ -343,7 +345,9 @@ class CompressionTest(unittest.TestCase):
             else {}
         )
         if server_call_compression:
-            server_handler = get_method_handlers(functools.partial(set_call_compression, grpc.Compression.Gzip))
+            server_handler = get_method_handlers(
+                functools.partial(set_call_compression, grpc.Compression.Gzip)
+            )
         else:
             server_handler = get_method_handlers(None)
 

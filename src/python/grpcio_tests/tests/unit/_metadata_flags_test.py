@@ -94,6 +94,7 @@ def get_method_handlers(test):
         _STREAM_STREAM: _MethodHandler(test, True, True),
     }
 
+
 def create_phony_channel():
     """Creating phony channels is a workaround for retries"""
     host, port, sock = get_socket(sock_options=(socket.SO_REUSEADDR,))
@@ -131,7 +132,9 @@ def perform_unary_unary_future(channel, wait_for_ready=None):
         _REQUEST,
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
-    ).result(timeout=test_constants.LONG_TIMEOUT)
+    ).result(
+        timeout=test_constants.LONG_TIMEOUT
+    )
 
 
 def perform_unary_stream_call(channel, wait_for_ready=None):
@@ -177,13 +180,15 @@ def perform_stream_unary_future(channel, wait_for_ready=None):
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
         wait_for_ready=wait_for_ready,
-    ).result(timeout=test_constants.LONG_TIMEOUT)
+    ).result(
+        timeout=test_constants.LONG_TIMEOUT
+    )
 
 
 def perform_stream_stream_call(channel, wait_for_ready=None):
     response_iterator = channel.stream_stream(
         grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
-        _registered_method=True
+        _registered_method=True,
     ).__call__(
         iter([_REQUEST] * test_constants.STREAM_LENGTH),
         timeout=test_constants.LONG_TIMEOUT,
@@ -272,7 +277,9 @@ class MetadataFlagsTest(unittest.TestCase):
         # Start the server after the connections are waiting
         wg.wait()
         server = test_common.test_server(reuse_port=True)
-        server.add_registered_method_handlers(_SERVICE_NAME, get_method_handlers(weakref.proxy(self)))
+        server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(weakref.proxy(self))
+        )
         server.add_insecure_port(addr)
         server.start()
 

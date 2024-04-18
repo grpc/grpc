@@ -137,65 +137,65 @@ class _MethodHandler(grpc.RpcMethodHandler):
 def get_method_handlers(handler):
     return {
         _UNARY_UNARY: _MethodHandler(
-                    False,
-                    False,
-                    None,
-                    None,
-                    handler.handle_unary_unary,
-                    None,
-                    None,
-                    None,
-                ),
+            False,
+            False,
+            None,
+            None,
+            handler.handle_unary_unary,
+            None,
+            None,
+            None,
+        ),
         _UNARY_STREAM: _MethodHandler(
-                    False,
-                    True,
-                    _DESERIALIZE_REQUEST,
-                    _SERIALIZE_RESPONSE,
-                    None,
-                    handler.handle_unary_stream,
-                    None,
-                    None,
-                ),
+            False,
+            True,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            handler.handle_unary_stream,
+            None,
+            None,
+        ),
         _STREAM_UNARY: _MethodHandler(
-                True,
-                False,
-                _DESERIALIZE_REQUEST,
-                _SERIALIZE_RESPONSE,
-                None,
-                None,
-                handler.handle_stream_unary,
-                None,
-            ),
+            True,
+            False,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            None,
+            handler.handle_stream_unary,
+            None,
+        ),
         _STREAM_STREAM: _MethodHandler(
-                True,
-                True,
-                None,
-                None,
-                None,
-                None,
-                None,
-                handler.handle_stream_stream,
-            ),
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            handler.handle_stream_stream,
+        ),
         _DEFECTIVE_GENERIC_RPC_HANDLER: _MethodHandler(
-                    False,
-                    False,
-                    None,
-                    None,
-                    handler.defective_generic_rpc_handler,
-                    None,
-                    None,
-                    None,
-            ),
-        _UNARY_UNARY_NESTED_EXCEPTION:  _MethodHandler(
-                False,
-                False,
-                None,
-                None,
-                handler.handle_unary_unary_with_nested_exception,
-                None,
-                None,
-                None,
-            )
+            False,
+            False,
+            None,
+            None,
+            handler.defective_generic_rpc_handler,
+            None,
+            None,
+            None,
+        ),
+        _UNARY_UNARY_NESTED_EXCEPTION: _MethodHandler(
+            False,
+            False,
+            None,
+            None,
+            handler.handle_unary_unary_with_nested_exception,
+            None,
+            None,
+            None,
+        ),
     }
 
 
@@ -252,14 +252,18 @@ def _stream_stream_multi_callable(channel):
 
 def _defective_handler_multi_callable(channel):
     return channel.unary_unary(
-        grpc._common.fully_qualified_method(_SERVICE_NAME, _DEFECTIVE_GENERIC_RPC_HANDLER),
+        grpc._common.fully_qualified_method(
+            _SERVICE_NAME, _DEFECTIVE_GENERIC_RPC_HANDLER
+        ),
         _registered_method=True,
     )
 
 
 def _defective_nested_exception_handler_multi_callable(channel):
     return channel.unary_unary(
-        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY_NESTED_EXCEPTION),
+        grpc._common.fully_qualified_method(
+            _SERVICE_NAME, _UNARY_UNARY_NESTED_EXCEPTION
+        ),
         _registered_method=True,
     )
 
@@ -274,7 +278,9 @@ class InvocationDefectsTest(unittest.TestCase):
         self._server = test_common.test_server()
         port = self._server.add_insecure_port("[::]:0")
         # self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
-        self._server.add_registered_method_handlers(_SERVICE_NAME, get_method_handlers(self._handler))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(self._handler)
+        )
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)

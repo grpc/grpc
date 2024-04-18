@@ -178,6 +178,7 @@ class _MethodHandler(grpc.RpcMethodHandler):
 #         else:
 #             return None
 
+
 def get_method_handlers(test):
     return {
         _UNARY_UNARY: _MethodHandler(test, False, False),
@@ -190,7 +191,9 @@ def get_method_handlers(test):
 class MetadataTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_registered_method_handlers(_SERVICE_NAME, get_method_handlers(weakref.proxy(self)))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(weakref.proxy(self))
+        )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
         self._channel = grpc.insecure_channel(
@@ -204,7 +207,7 @@ class MetadataTest(unittest.TestCase):
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
-            _registered_method=True
+            _registered_method=True,
         )
         unused_response, call = multi_callable.with_call(
             _REQUEST, metadata=_INVOCATION_METADATA
@@ -223,7 +226,7 @@ class MetadataTest(unittest.TestCase):
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
-            _registered_method=True
+            _registered_method=True,
         )
         call = multi_callable(_REQUEST, metadata=_INVOCATION_METADATA)
         self.assertTrue(
@@ -242,7 +245,7 @@ class MetadataTest(unittest.TestCase):
     def testStreamUnary(self):
         multi_callable = self._channel.stream_unary(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
-            _registered_method=True
+            _registered_method=True,
         )
         unused_response, call = multi_callable.with_call(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),
@@ -262,7 +265,7 @@ class MetadataTest(unittest.TestCase):
     def testStreamStream(self):
         multi_callable = self._channel.stream_stream(
             grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
-            _registered_method=True
+            _registered_method=True,
         )
         call = multi_callable(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),

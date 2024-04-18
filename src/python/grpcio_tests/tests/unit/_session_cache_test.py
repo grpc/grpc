@@ -27,7 +27,7 @@ from tests.unit import test_common
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_SERVICE_NAME= "test"
+_SERVICE_NAME = "test"
 _UNARY_UNARY = "UnaryUnary"
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
@@ -56,9 +56,11 @@ def handle_unary_unary(request, servicer_context):
         }
     )
 
+
 _METHOD_HANDLERS = {
     _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(handle_unary_unary)
 }
+
 
 def start_secure_server():
     server = test_common.test_server()

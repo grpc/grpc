@@ -132,7 +132,9 @@ class ResourceExhaustedTest(unittest.TestCase):
             options=(("grpc.so_reuseport", 0),),
             maximum_concurrent_rpcs=test_constants.THREAD_CONCURRENCY,
         )
-        self._server.add_registered_method_handlers(_SERVICE_NAME, get_method_handlers(self._trigger))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(self._trigger)
+        )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
         self._channel = grpc.insecure_channel("localhost:%d" % port)

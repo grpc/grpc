@@ -33,7 +33,10 @@ _STREAM_STREAM = "StreamStream"
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY), _registered_method=True)
+    return channel.unary_unary(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        _registered_method=True,
+    )
 
 
 def _unary_stream_multi_callable(channel):

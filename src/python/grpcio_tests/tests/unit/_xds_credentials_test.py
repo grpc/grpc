@@ -29,9 +29,10 @@ _METHOD = "method"
 
 _METHOD_HANDLERS = {
     _METHOD: grpc.unary_unary_rpc_method_handler(
-            lambda request, unused_context: request
-        )
+        lambda request, unused_context: request
+    )
 }
+
 
 @contextlib.contextmanager
 def xds_channel_server_without_xds(server_fallback_creds):

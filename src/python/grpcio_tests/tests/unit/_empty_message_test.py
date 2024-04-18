@@ -81,7 +81,9 @@ _METHOD_HANDLERS = {
 class EmptyMessageTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _METHOD_HANDLERS
+        )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
         self._channel = grpc.insecure_channel("localhost:%d" % port)

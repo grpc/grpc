@@ -181,50 +181,53 @@ class _MethodHandler(grpc.RpcMethodHandler):
 def get_method_handlers(handler):
     return {
         _UNARY_UNARY: _MethodHandler(
-                    False,
-                    False,
-                    None,
-                    None,
-                    handler.handle_unary_unary,
-                    None,
-                    None,
-                    None,
-                ),
+            False,
+            False,
+            None,
+            None,
+            handler.handle_unary_unary,
+            None,
+            None,
+            None,
+        ),
         _UNARY_STREAM: _MethodHandler(
-                    False,
-                    True,
-                    _DESERIALIZE_REQUEST,
-                    _SERIALIZE_RESPONSE,
-                    None,
-                    handler.handle_unary_stream,
-                    None,
-                    None,
-                ),
+            False,
+            True,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            handler.handle_unary_stream,
+            None,
+            None,
+        ),
         _STREAM_UNARY: _MethodHandler(
-                True,
-                False,
-                _DESERIALIZE_REQUEST,
-                _SERIALIZE_RESPONSE,
-                None,
-                None,
-                handler.handle_stream_unary,
-                None,
-            ),
+            True,
+            False,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            None,
+            handler.handle_stream_unary,
+            None,
+        ),
         _STREAM_STREAM: _MethodHandler(
-                True,
-                True,
-                None,
-                None,
-                None,
-                None,
-                None,
-                handler.handle_stream_stream,
-            ),
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            handler.handle_stream_stream,
+        ),
     }
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY), _registered_method=True)
+    return channel.unary_unary(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        _registered_method=True,
+    )
 
 
 def _unary_stream_multi_callable(channel):
@@ -246,7 +249,10 @@ def _stream_unary_multi_callable(channel):
 
 
 def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM), _registered_method=True)
+    return channel.stream_stream(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+        _registered_method=True,
+    )
 
 
 class _ClientCallDetails(
@@ -470,7 +476,9 @@ class InterceptorTest(unittest.TestCase):
             ),
         )
         port = self._server.add_insecure_port("[::]:0")
-        self._server.add_registered_method_handlers(_SERVICE_NAME, get_method_handlers(self._handler))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(self._handler)
+        )
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)

@@ -60,8 +60,9 @@ _UNARY_METHOD_HANDLER = _UnaryMethodHandler()
 
 _METHOD_HANDLERS = {
     _STREAM_URI: _STREAMING_METHOD_HANDLER,
-    _UNARY_URI: _UNARY_METHOD_HANDLER
+    _UNARY_URI: _UNARY_METHOD_HANDLER,
 }
+
 
 class _Pipe(object):
     def __init__(self, values):

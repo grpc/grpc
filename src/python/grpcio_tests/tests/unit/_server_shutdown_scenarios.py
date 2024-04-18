@@ -52,6 +52,7 @@ class GenericHandler(grpc.GenericRpcHandler):
         else:
             return None
 
+
 _METHOD_HANDLERS = {
     FORK_EXIT: grpc.unary_unary_rpc_method_handler(fork_and_exit)
 }

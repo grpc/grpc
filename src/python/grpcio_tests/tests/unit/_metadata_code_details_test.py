@@ -199,7 +199,9 @@ class MetadataCodeDetailsTest(unittest.TestCase):
     def setUp(self):
         self._servicer = _Servicer()
         self._server = test_common.test_server()
-        self._server.add_registered_method_handlers(_SERVICE, get_method_handlers(self._servicer))
+        self._server.add_registered_method_handlers(
+            _SERVICE, get_method_handlers(self._servicer)
+        )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
@@ -826,7 +828,9 @@ class InspectContextTest(unittest.TestCase):
     def setUp(self):
         self._servicer = _InspectServicer()
         self._server = test_common.test_server()
-        self._server.add_registered_method_handlers(_SERVICE, get_method_handlers(self._servicer))
+        self._server.add_registered_method_handlers(
+            _SERVICE, get_method_handlers(self._servicer)
+        )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 

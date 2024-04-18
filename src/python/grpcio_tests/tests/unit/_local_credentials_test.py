@@ -19,12 +19,12 @@ import unittest
 
 import grpc
 
-
 _SERVICE_NAME = "test"
 _METHOD = "method"
 _METHOD_HANDLERS = {
     _METHOD: grpc.unary_unary_rpc_method_handler(
-        lambda request, unused_context: request,)
+        lambda request, unused_context: request,
+    )
 }
 
 

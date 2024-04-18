@@ -115,7 +115,6 @@ def get_method_handlers(handler):
     }
 
 
-
 def _read_stream(stream):
     stream.seek(0)
     return stream.read()
@@ -135,7 +134,9 @@ class SignalHandlingTest(unittest.TestCase):
         self._server = test_common.test_server()
         self._port = self._server.add_insecure_port("{}:0".format(_HOST))
         self._handler = _GenericHandler()
-        self._server.add_registered_method_handlers(_signal_client._SERVICE_NAME, get_method_handlers(self._handler))
+        self._server.add_registered_method_handlers(
+            _signal_client._SERVICE_NAME, get_method_handlers(self._handler)
+        )
         self._server.start()
 
     def tearDown(self):

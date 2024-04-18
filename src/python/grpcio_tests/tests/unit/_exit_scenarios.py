@@ -140,6 +140,7 @@ class GenericHandler(grpc.GenericRpcHandler):
         else:
             return None
 
+
 _METHOD_HANDLERS = {
     UNARY_UNARY: MethodHandler(False, False, False),
     UNARY_STREAM: MethodHandler(False, True, False),
@@ -219,7 +220,11 @@ if __name__ == "__main__":
         server.start()
         channel = grpc.insecure_channel("localhost:%d" % port)
 
-        method = grpc._common.fully_qualified_method(_SERVICE_NAME, TEST_TO_METHOD[args.scenario]),
+        method = (
+            grpc._common.fully_qualified_method(
+                _SERVICE_NAME, TEST_TO_METHOD[args.scenario]
+            ),
+        )
 
         if args.scenario == IN_FLIGHT_UNARY_UNARY_CALL:
             multi_callable = channel.unary_unary(
