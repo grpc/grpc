@@ -1222,9 +1222,10 @@ def _on_call_completed(state: _ServerState) -> None:
         state.active_rpc_count -= 1
 
 
+# pylint: disable=too-many-branches
 def _process_event_and_continue(
     state: _ServerState, event: cygrpc.BaseEvent
-) -> bool:  # pylint: disable=too-many-branches
+) -> bool:
     should_continue = True
     if event.tag is _SHUTDOWN_TAG:
         with state.lock:
