@@ -77,7 +77,6 @@ class AuthContextTest(unittest.TestCase):
 
         with grpc.insecure_channel("localhost:%d" % port) as channel:
             response = channel.unary_unary(
-                # _UNARY_UNARY,
                 grpc._common.fully_qualified_method(
                     _SERVICE_NAME, _UNARY_UNARY
                 ),

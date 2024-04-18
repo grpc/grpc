@@ -567,7 +567,8 @@ bool PrivateGenerator::PrintAddServicerToServer(
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
     out->Print("}\n");
     out->Print(method_dict,
-              "server.add_registered_method_handlers('$PackageQualifiedServiceName$', rpc_method_handlers)\n");
+               "server.add_registered_method_handlers('$"
+               "PackageQualifiedServiceName$', rpc_method_handlers)\n");
   }
   return true;
 }

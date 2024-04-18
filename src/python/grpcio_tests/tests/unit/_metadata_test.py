@@ -162,23 +162,6 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_unary = lambda x, y: handle_unary_unary(test, x, y)
 
 
-# class _GenericHandler(grpc.GenericRpcHandler):
-#     def __init__(self, test):
-#         self._test = test
-
-#     def service(self, handler_call_details):
-#         if handler_call_details.method == _UNARY_UNARY:
-#             return _MethodHandler(self._test, False, False)
-#         elif handler_call_details.method == _UNARY_STREAM:
-#             return _MethodHandler(self._test, False, True)
-#         elif handler_call_details.method == _STREAM_UNARY:
-#             return _MethodHandler(self._test, True, False)
-#         elif handler_call_details.method == _STREAM_STREAM:
-#             return _MethodHandler(self._test, True, True)
-#         else:
-#             return None
-
-
 def get_method_handlers(test):
     return {
         _UNARY_UNARY: _MethodHandler(test, False, False),

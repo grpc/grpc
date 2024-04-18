@@ -28,6 +28,10 @@ cdef class RegisteredMethod:
       c_method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
 
   def __dealloc__(self):
+    # c_registered_method should have the same lifetime as Cython Server since the method
+    # maybe called at any time during the server's lifetime.
+    # Since all RegisteredMethod belongs to Cython Server, they'll be destructed at the same
+    # time with Cython Server, at which point it's safe to assume core no longer holds any reference.
     cpython.Py_DECREF(self.method)
 
 

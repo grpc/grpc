@@ -139,7 +139,8 @@ class _Method(object):
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
-        # If the same method have both generic and registered handler, registered handler will take precedence.
+        # If the same method have both generic and registered handler,
+        # registered handler will take precedence.
         if self._registered_handler:
             return self._registered_handler
         for generic_handler in self._generic_handlers:
@@ -1223,7 +1224,7 @@ def _on_call_completed(state: _ServerState) -> None:
 
 def _process_event_and_continue(
     state: _ServerState, event: cygrpc.BaseEvent
-) -> bool:
+) -> bool:  # pylint: disable=too-many-branches
     should_continue = True
     if event.tag is _SHUTDOWN_TAG:
         with state.lock:

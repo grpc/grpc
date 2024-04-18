@@ -212,10 +212,8 @@ if __name__ == "__main__":
             time.sleep(WAIT_TIME)
 
     else:
-        # handler = GenericHandler()
         server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
         port = server.add_insecure_port("[::]:0")
-        # server.add_generic_rpc_handlers((handler,))
         server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server.start()
         channel = grpc.insecure_channel("localhost:%d" % port)

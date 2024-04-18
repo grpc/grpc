@@ -61,7 +61,7 @@ class ObservabilityPlugin(
 
     _tracing_enabled: bool = False
     _stats_enabled: bool = False
-    _registered_methods: Set[bytes]
+    _registered_methods: Set[bytes] = set()
 
     @abc.abstractmethod
     def create_client_call_tracer(
