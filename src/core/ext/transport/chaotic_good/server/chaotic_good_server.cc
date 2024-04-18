@@ -102,8 +102,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
             str.ok() ? str->c_str() : str.status().ToString().c_str());
   }
   EventEngine::Listener::AcceptCallback accept_cb =
-      [self = RefAsSubclass<ChaoticGoodServerListener>()](
-          std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
+      [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
+                     MemoryAllocator) {
         ExecCtx exec_ctx;
         MutexLock lock(&self->mu_);
         if (self->shutdown_) return;
@@ -148,8 +148,7 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : memory_allocator_(listener->memory_allocator_),
-      listener_(std::move(listener)) {
+    : memory_allocator_(listener->memory_allocator_), listener_(listener) {
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }
