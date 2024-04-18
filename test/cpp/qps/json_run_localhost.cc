@@ -28,6 +28,8 @@
 #include <sys/wait.h>
 #endif
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -134,5 +136,5 @@ int main(int argc, char** argv) {
       delete g_workers[i];
     }
   }
-  GPR_ASSERT(driver_join_status == 0);
+  CHECK_EQ(driver_join_status, 0);
 }

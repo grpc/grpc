@@ -58,7 +58,9 @@ def if_windows(a):
 def _get_external_deps(external_deps):
     ret = []
     for dep in external_deps:
-        if dep == "address_sorting":
+        if dep.startswith("@"):
+            ret.append(dep)
+        elif dep == "address_sorting":
             ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
@@ -100,6 +102,7 @@ def _update_visibility(visibility):
         "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
+        "core_credentials": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
@@ -114,6 +117,7 @@ def _update_visibility(visibility):
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
+        "otel_plugin": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "tcp_tracer": PRIVATE,

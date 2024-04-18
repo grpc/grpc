@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/channel_init.h"
 
 #include <string.h>
@@ -34,6 +32,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"

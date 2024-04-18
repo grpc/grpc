@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/polling_resolver.h"
 
 #include <inttypes.h>
@@ -31,6 +29,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,9 +37,9 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -28,9 +26,11 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"

@@ -18,9 +18,8 @@
 
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_CLIENT_SECURE_CRONET_CHANNEL_CREATE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CRONET_CLIENT_SECURE_CRONET_CHANNEL_CREATE_H
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

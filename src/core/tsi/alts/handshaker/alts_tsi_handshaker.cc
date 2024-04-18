@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
 #include <stdio.h>
@@ -26,9 +24,11 @@
 
 #include "upb/mem/arena.hpp"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>

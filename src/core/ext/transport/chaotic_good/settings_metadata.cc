@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
 
 #include "absl/status/status.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 

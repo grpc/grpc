@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 #define GRPC_TEST_CORE_UTIL_TEST_LB_POLICIES_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <functional>
 #include <string>
@@ -27,6 +25,8 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/load_balancing/backend_metric_data.h"

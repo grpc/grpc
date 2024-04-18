@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 
 #include <cstring>
@@ -28,6 +26,7 @@
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

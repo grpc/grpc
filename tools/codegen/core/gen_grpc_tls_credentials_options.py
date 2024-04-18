@@ -305,6 +305,7 @@ print(
 
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -468,6 +469,8 @@ print(
 #include <string>
 
 #include <gmock/gmock.h>
+
+#include <grpc/credentials.h>
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"

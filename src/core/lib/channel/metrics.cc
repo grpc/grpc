@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/metrics.h"
 
 #include <memory>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -156,70 +156,6 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
                                     optional_label_keys.end()};
   instruments.push_back(std::move(descriptor));
   GlobalDoubleHistogramHandle handle;
-  handle.index = index;
-  return handle;
-}
-
-GlobalInstrumentsRegistry::GlobalInt64GaugeHandle
-GlobalInstrumentsRegistry::RegisterInt64Gauge(
-    absl::string_view name, absl::string_view description,
-    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
-  auto& instruments = GetInstrumentList();
-  for (const auto& descriptor : instruments) {
-    if (descriptor.name == name) {
-      Crash(
-          absl::StrFormat("Metric name %s has already been registered.", name));
-    }
-  }
-  uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
-  GlobalInstrumentDescriptor descriptor;
-  descriptor.value_type = ValueType::kInt64;
-  descriptor.instrument_type = InstrumentType::kGauge;
-  descriptor.index = index;
-  descriptor.enable_by_default = enable_by_default;
-  descriptor.name = name;
-  descriptor.description = description;
-  descriptor.unit = unit;
-  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
-  descriptor.optional_label_keys = {optional_label_keys.begin(),
-                                    optional_label_keys.end()};
-  instruments.push_back(std::move(descriptor));
-  GlobalInt64GaugeHandle handle;
-  handle.index = index;
-  return handle;
-}
-
-GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle
-GlobalInstrumentsRegistry::RegisterDoubleGauge(
-    absl::string_view name, absl::string_view description,
-    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-    absl::Span<const absl::string_view> optional_label_keys,
-    bool enable_by_default) {
-  auto& instruments = GetInstrumentList();
-  for (const auto& descriptor : instruments) {
-    if (descriptor.name == name) {
-      Crash(
-          absl::StrFormat("Metric name %s has already been registered.", name));
-    }
-  }
-  uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
-  GlobalInstrumentDescriptor descriptor;
-  descriptor.value_type = ValueType::kDouble;
-  descriptor.instrument_type = InstrumentType::kGauge;
-  descriptor.index = index;
-  descriptor.enable_by_default = enable_by_default;
-  descriptor.name = name;
-  descriptor.description = description;
-  descriptor.unit = unit;
-  descriptor.label_keys = {label_keys.begin(), label_keys.end()};
-  descriptor.optional_label_keys = {optional_label_keys.begin(),
-                                    optional_label_keys.end()};
-  instruments.push_back(std::move(descriptor));
-  GlobalDoubleGaugeHandle handle;
   handle.index = index;
   return handle;
 }

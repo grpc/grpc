@@ -24,6 +24,8 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -398,7 +400,7 @@ class SynchronousStreamingBothWaysClient final
 };
 
 std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
-  GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
+  CHECK(!config.use_coalesce_api());  // not supported yet.
   switch (config.rpc_type()) {
     case UNARY:
       return std::unique_ptr<Client>(new SynchronousUnaryClient(config));

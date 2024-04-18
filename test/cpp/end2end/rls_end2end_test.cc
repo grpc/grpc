@@ -28,10 +28,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
 
+#include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
@@ -413,7 +415,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Start() {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;

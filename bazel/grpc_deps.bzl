@@ -21,56 +21,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "upb_amalgamation_lib",
-        actual = "@com_google_protobuf//upb:amalgamation",
-    )
-
-    native.bind(
-        name = "upb_base_lib",
-        actual = "@com_google_protobuf//upb/base",
-    )
-
-    native.bind(
-        name = "upb_message_lib",
-        actual = "@com_google_protobuf//upb:message",
-    )
-
-    native.bind(
-        name = "upb_mem_lib",
-        actual = "@com_google_protobuf//upb/mem",
-    )
-
-    native.bind(
-        name = "upb_reflection",
-        actual = "@com_google_protobuf//upb:reflection",
-    )
-
-    native.bind(
-        name = "upb_lib_descriptor",
-        actual = "@com_google_protobuf//upb:descriptor_upb_proto",
-    )
-
-    native.bind(
-        name = "upb_lib_descriptor_reflection",
-        actual = "@com_google_protobuf//upb:descriptor_upb_proto_reflection",
-    )
-
-    native.bind(
-        name = "upb_textformat_lib",
-        actual = "@com_google_protobuf//upb/text",
-    )
-
-    native.bind(
-        name = "upb_json_lib",
-        actual = "@com_google_protobuf//upb/json",
-    )
-
-    native.bind(
-        name = "upb_generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-        actual = "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-    )
-
-    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )
@@ -263,12 +213,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "70f480fe9cb0c6829dbf6be3c388103313aacb65de667b86d981bbc9eaedb905",
-            strip_prefix = "protobuf-7f94235e552599141950d7a4a3eaf93bc87d1b22",
+            sha256 = "387478260190c540388839a3449c635a69708d92fc38ea6e2364b1196db90ea5",
+            strip_prefix = "protobuf-2434ef2adf0c74149b9d547ac5fb545a1ff8b6b5",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v25.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/7f94235e552599141950d7a4a3eaf93bc87d1b22.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/7f94235e552599141950d7a4a3eaf93bc87d1b22.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v26.1
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/2434ef2adf0c74149b9d547ac5fb545a1ff8b6b5.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/2434ef2adf0c74149b9d547ac5fb545a1ff8b6b5.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",

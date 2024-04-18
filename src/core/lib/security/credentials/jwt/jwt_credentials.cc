@@ -15,8 +15,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 
 #include <inttypes.h>
@@ -29,9 +27,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/credentials.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 

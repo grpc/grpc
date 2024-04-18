@@ -16,11 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"

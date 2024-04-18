@@ -52,6 +52,7 @@ add_library(kvs_grpc_proto
   ${kvs_proto_srcs}
   ${kvs_proto_hdrs})
 target_link_libraries(kvs_grpc_proto
+  absl::check
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -59,6 +60,7 @@ target_link_libraries(kvs_grpc_proto
 # client
 add_executable(client "client.cc" "caching_interceptor.h")
 target_link_libraries(client
+  absl::check
   kvs_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
@@ -67,6 +69,7 @@ target_link_libraries(client
 # server
 add_executable(server "server.cc")
 target_link_libraries(server
+  absl::check
   kvs_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}

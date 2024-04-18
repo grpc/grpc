@@ -19,10 +19,10 @@
 #ifndef GRPC_SUPPORT_LOG_H
 #define GRPC_SUPPORT_LOG_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
+
+#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -102,7 +102,7 @@ GPRAPI void gpr_assertion_failed(const char* filename, int line,
 #ifndef NDEBUG
 #define GPR_DEBUG_ASSERT(x) GPR_ASSERT(x)
 #else
-#define GPR_DEBUG_ASSERT(x)
+#define GPR_DEBUG_ASSERT(x) GPR_ASSERT(true || (x))
 #endif
 
 #ifdef __cplusplus

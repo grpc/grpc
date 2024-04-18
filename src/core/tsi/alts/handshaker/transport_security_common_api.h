@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
 #define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/gcp/transport_security_common.upb.h"

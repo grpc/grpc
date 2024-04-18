@@ -19,8 +19,6 @@
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cassert>
 #include <map>
@@ -31,6 +29,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpc/impl/compression_types.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/call_op_set.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>

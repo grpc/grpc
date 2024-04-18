@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -29,6 +27,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -50,7 +49,9 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodServerListener final : public Server::ListenerInterface {
+class ChaoticGoodServerListener final
+    : public Server::ListenerInterface,
+      public RefCounted<ChaoticGoodServerListener> {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
     return [bitgen = absl::BitGen()]() mutable {

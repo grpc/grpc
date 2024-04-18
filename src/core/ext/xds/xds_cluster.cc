@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_cluster.h"
 
 #include <stddef.h>
@@ -55,6 +53,7 @@
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -117,6 +116,15 @@ std::string XdsClusterResource::ToString() const {
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
   contents.push_back(absl::StrCat("override_host_statuses=",
                                   override_host_statuses.ToString()));
+  if (!service_telemetry_label.as_string_view().empty()) {
+    contents.push_back(absl::StrCat("service_name_telemetry_label=",
+                                    service_telemetry_label.as_string_view()));
+  }
+  if (!namespace_telemetry_label.as_string_view().empty()) {
+    contents.push_back(
+        absl::StrCat("service_namespace_telemetry_label=",
+                     namespace_telemetry_label.as_string_view()));
+  }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -714,8 +722,6 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
             StdStringToUpbString(
                 absl::string_view("com.google.csm.telemetry_labels")),
             &telemetry_labels_struct)) {
-      auto telemetry_labels =
-          std::make_shared<std::map<std::string, std::string>>();
       size_t iter = kUpb_Map_Begin;
       const google_protobuf_Struct_FieldsEntry* fields_entry;
       while ((fields_entry = google_protobuf_Struct_fields_next(
@@ -724,14 +730,16 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
         const google_protobuf_Value* value =
             google_protobuf_Struct_FieldsEntry_value(fields_entry);
         if (google_protobuf_Value_has_string_value(value)) {
-          telemetry_labels->emplace(
-              UpbStringToStdString(
-                  google_protobuf_Struct_FieldsEntry_key(fields_entry)),
-              UpbStringToStdString(google_protobuf_Value_string_value(value)));
+          if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
+                  fields_entry)) == "service_name") {
+            cds_update->service_telemetry_label = RefCountedStringValue(
+                UpbStringToAbsl(google_protobuf_Value_string_value(value)));
+          } else if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
+                         fields_entry)) == "service_namespace") {
+            cds_update->namespace_telemetry_label = RefCountedStringValue(
+                UpbStringToAbsl(google_protobuf_Value_string_value(value)));
+          }
         }
-      }
-      if (!telemetry_labels->empty()) {
-        cds_update->telemetry_labels = std::move(telemetry_labels);
       }
     }
   }

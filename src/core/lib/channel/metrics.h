@@ -15,13 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
@@ -29,6 +26,7 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,7 +57,6 @@ class GlobalInstrumentsRegistry {
     kUndefined,
     kCounter,
     kHistogram,
-    kGauge,
     kCallbackGauge,
   };
   using InstrumentID = uint32_t;
@@ -85,8 +82,6 @@ class GlobalInstrumentsRegistry {
   struct GlobalDoubleCounterHandle : public GlobalInstrumentHandle {};
   struct GlobalUInt64HistogramHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
-  struct GlobalInt64GaugeHandle : public GlobalInstrumentHandle {};
-  struct GlobalDoubleGaugeHandle : public GlobalInstrumentHandle {};
   struct GlobalCallbackInt64GaugeHandle : public GlobalInstrumentHandle {};
   struct GlobalCallbackDoubleGaugeHandle : public GlobalInstrumentHandle {};
   using GlobalCallbackHandle = absl::variant<GlobalCallbackInt64GaugeHandle,
@@ -109,16 +104,6 @@ class GlobalInstrumentsRegistry {
       absl::Span<const absl::string_view> optional_label_keys,
       bool enable_by_default);
   static GlobalDoubleHistogramHandle RegisterDoubleHistogram(
-      absl::string_view name, absl::string_view description,
-      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
-  static GlobalInt64GaugeHandle RegisterInt64Gauge(
-      absl::string_view name, absl::string_view description,
-      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
-      absl::Span<const absl::string_view> optional_label_keys,
-      bool enable_by_default);
-  static GlobalDoubleGaugeHandle RegisterDoubleGauge(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, absl::Span<const absl::string_view> label_keys,
       absl::Span<const absl::string_view> optional_label_keys,
@@ -221,22 +206,6 @@ class StatsPlugin {
       GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
-  // Sets an int64 \a value to the gauge specifed by \a handle. \a
-  // label_values and \a optional_label_values specify attributes that are
-  // associated with this measurement and must match with their corresponding
-  // keys in GlobalInstrumentsRegistry::RegisterInt64Gauge().
-  virtual void SetGauge(
-      GlobalInstrumentsRegistry::GlobalInt64GaugeHandle handle, int64_t value,
-      absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_label_values) = 0;
-  // Sets a double \a value to the gauge specifed by \a handle. \a
-  // label_values and \a optional_label_values specify attributes that are
-  // associated with this measurement and must match with their corresponding
-  // keys in GlobalInstrumentsRegistry::RegisterDoubleGauge().
-  virtual void SetGauge(
-      GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle handle, double value,
-      absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
   virtual void AddCallback(RegisteredMetricCallback* callback) = 0;
@@ -303,16 +272,6 @@ class GlobalStatsPluginRegistry {
       for (auto& state : plugins_state_) {
         state.plugin->RecordHistogram(handle, value, label_values,
                                       optional_values);
-      }
-    }
-    // Sets a value to a gauge in all stats plugins within the group. See the
-    // StatsPlugin interface for more documentation and valid types.
-    template <class HandleType, class ValueType>
-    void SetGauge(HandleType handle, ValueType value,
-                  absl::Span<const absl::string_view> label_values,
-                  absl::Span<const absl::string_view> optional_values) {
-      for (auto& state : plugins_state_) {
-        state.plugin->SetGauge(handle, value, label_values, optional_values);
       }
     }
 

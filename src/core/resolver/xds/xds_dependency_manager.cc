@@ -14,11 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 
+#include <set>
+
 #include "absl/strings/str_join.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -635,11 +637,12 @@ void XdsDependencyManager::OnEndpointUpdate(
     it->second.update.resolution_note =
         absl::StrCat("EDS resource ", name, " contains no localities");
   } else {
-    std::set<std::string> empty_localities;
+    std::set<absl::string_view> empty_localities;
     for (const auto& priority : endpoint->priorities) {
       for (const auto& p : priority.localities) {
         if (p.second.endpoints.empty()) {
-          empty_localities.insert(p.first->AsHumanReadableString());
+          empty_localities.insert(
+              p.first->human_readable_string().as_string_view());
         }
       }
     }

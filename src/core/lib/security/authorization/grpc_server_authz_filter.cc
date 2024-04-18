@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
 #include <functional>
@@ -25,6 +23,7 @@
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -52,14 +51,14 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       per_channel_evaluate_args_(auth_context_.get(), args),
       provider_(std::move(provider)) {}
 
-absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>>
+GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   auto* provider = args.GetObject<grpc_authorization_policy_provider>();
   if (provider == nullptr) {
     return absl::InvalidArgumentError("Failed to get authorization provider.");
   }
-  return GrpcServerAuthzFilter(
+  return std::make_unique<GrpcServerAuthzFilter>(
       auth_context != nullptr ? auth_context->Ref() : nullptr, args,
       provider->Ref());
 }

@@ -99,10 +99,8 @@ class FakeCallTracer : public ClientCallTracer {
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
-    void AddOptionalLabels(
-        OptionalLabelComponent /*component*/,
-        std::shared_ptr<std::map<std::string, std::string>> /*labels*/)
-        override {}
+    void SetOptionalLabel(OptionalLabelKey /*key*/,
+                          RefCountedStringValue /*value*/) override {}
 
     static grpc_transport_stream_stats transport_stream_stats() {
       MutexLock lock(g_mu);

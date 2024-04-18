@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 39.0.0
-CPP_VERSION = 1.63.0-dev
+CORE_VERSION = 40.0.0
+CPP_VERSION = 1.64.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -39
+SHARED_VERSION_CORE = -40
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -1683,6 +1683,10 @@ LIBGRPC_SRC = \
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/compat.c \
+    third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
@@ -1713,19 +1717,18 @@ LIBGRPC_SRC = \
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
     third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
-    third_party/utf8_range/naive.c \
-    third_party/utf8_range/range2-neon.c \
-    third_party/utf8_range/range2-sse.c \
+    third_party/utf8_range/utf8_range.c \
 
 PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/compression.h \
+    include/grpc/credentials.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \
     include/grpc/event_engine/extensible.h \
@@ -1773,7 +1776,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/propagation_bits.h \
     include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
-    include/grpc/passive_listener.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
@@ -1834,8 +1836,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.39 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.39
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.40 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.40
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

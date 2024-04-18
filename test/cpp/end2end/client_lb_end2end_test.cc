@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -238,9 +239,9 @@ class FakeResolverResponseGeneratorWrapper {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      GPR_ASSERT(lb_uri.ok());
+      CHECK(lb_uri.ok());
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
+      CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, per_address_args);
     }
     if (result.addresses->empty()) {
@@ -1288,50 +1289,6 @@ TEST_F(PickFirstTest, IdleOnDisconnect) {
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   servers_.clear();
-}
-
-TEST_F(PickFirstTest, PendingUpdateAndSelectedSubchannelFails) {
-  FakeResolverResponseGeneratorWrapper response_generator;
-  auto channel =
-      BuildChannel("", response_generator);  // pick_first is the default.
-  auto stub = BuildStub(channel);
-  StartServers(2);
-  // Initially resolve to first server and make sure it connects.
-  gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
-  response_generator.SetNextResolution({servers_[0]->port_});
-  CheckRpcSendOk(DEBUG_LOCATION, stub, true /* wait_for_ready */);
-  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
-  ConnectionAttemptInjector injector;
-  auto hold = injector.AddHold(servers_[1]->port_);
-  // Send a resolution update with the remaining servers, none of which are
-  // running yet, so the update will stay pending.
-  gpr_log(GPR_INFO,
-          "Phase 2: Resolver update pointing to remaining "
-          "(not started) servers.");
-  response_generator.SetNextResolution(GetServersPorts(1 /* start_index */));
-  // Add hold before connection attempt to ensure RPCs will be sent to first
-  // server. Otherwise, pending subchannel list might already have gone into
-  // TRANSIENT_FAILURE due to hitting the end of the server list by the time
-  // we check the state.
-  hold->Wait();
-  // RPCs will continue to be sent to the first server.
-  CheckRpcSendOk(DEBUG_LOCATION, stub);
-  // Now stop the first server, so that the current subchannel list
-  // fails.  This should cause us to immediately swap over to the
-  // pending list, even though it's not yet connected.  The state should
-  // be set to CONNECTING, since that's what the pending subchannel list
-  // was doing when we swapped over.
-  gpr_log(GPR_INFO, "Phase 3: Stopping first server.");
-  servers_[0]->Shutdown();
-  WaitForChannelNotReady(channel.get());
-  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_CONNECTING);
-  // Resume connection attempt to second server now that first server is down.
-  // The channel should go to READY state and RPCs should go to the second
-  // server.
-  gpr_log(GPR_INFO, "Phase 4: Resuming connection attempt to second server.");
-  hold->Resume();
-  WaitForChannelReady(channel.get());
-  WaitForServer(DEBUG_LOCATION, stub, 1);
 }
 
 TEST_F(PickFirstTest, StaysIdleUponEmptyUpdate) {
@@ -3061,7 +3018,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes = 3,
       EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
-    GPR_ASSERT(expected_weights.size() == servers_.size());
+    CHECK(expected_weights.size() == servers_.size());
     size_t total_picks_per_pass = 0;
     for (size_t picks : expected_weights) {
       total_picks_per_pass += picks;

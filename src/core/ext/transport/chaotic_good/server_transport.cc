@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 
 #include <memory>
@@ -29,6 +27,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -73,33 +72,29 @@ auto ChaoticGoodServerTransport::TransportWriteLoop(
 auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
-  auto& headers = frame.headers;
-  return TrySeq(
-      If(
-          headers != nullptr,
-          [call_initiator, &headers]() mutable {
-            return call_initiator.PushClientInitialMetadata(std::move(headers));
-          },
-          []() -> StatusFlag { return Success{}; }),
-      [call_initiator, message = std::move(frame.message)]() mutable {
-        return If(
-            message.has_value(),
-            [&call_initiator, &message]() mutable {
-              return call_initiator.PushMessage(std::move(message->message));
-            },
-            []() -> StatusFlag { return Success{}; });
-      },
-      [this, call_initiator, end_of_stream = frame.end_of_stream,
-       stream_id]() mutable -> StatusFlag {
-        if (end_of_stream) {
-          call_initiator.FinishSends();
-          // We have received end_of_stream. It is now safe to remove the call
-          // from the stream map.
-          MutexLock lock(&mu_);
-          stream_map_.erase(stream_id);
-        }
-        return Success{};
-      });
+  GPR_DEBUG_ASSERT(frame.headers == nullptr);
+  if (grpc_chaotic_good_trace.enabled()) {
+    gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
+            frame.ToString().c_str());
+  }
+  return TrySeq(If(
+                    frame.message.has_value(),
+                    [&call_initiator, &frame]() mutable {
+                      return call_initiator.PushMessage(
+                          std::move(frame.message->message));
+                    },
+                    []() -> StatusFlag { return Success{}; }),
+                [this, call_initiator, end_of_stream = frame.end_of_stream,
+                 stream_id]() mutable -> StatusFlag {
+                  if (end_of_stream) {
+                    call_initiator.FinishSends();
+                    // We have received end_of_stream. It is now safe to remove
+                    // the call from the stream map.
+                    MutexLock lock(&mu_);
+                    stream_map_.erase(stream_id);
+                  }
+                  return Success{};
+                });
 }
 
 auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
@@ -245,8 +240,8 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
-    auto create_call_result =
-        acceptor_->CreateCall(*fragment_frame.headers, arena.release());
+    auto create_call_result = acceptor_->CreateCall(
+        std::move(fragment_frame.headers), arena.release());
     if (grpc_chaotic_good_trace.enabled()) {
       gpr_log(GPR_INFO,
               "CHAOTIC_GOOD: DeserializeAndPushFragmentToNewCall: "
