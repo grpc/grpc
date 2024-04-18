@@ -172,8 +172,7 @@ NextSpawner<Arg> WrapFollowUps(NameAndLocation loc,
     action_state->Set(ActionState::kNotStarted);
     spawner(name,
             WrapPromiseAndNext(std::move(action_state),
-                               Promise<Result>(factory.Make(std::move(arg))),
-                               std::move(next)));
+                               factory.Make(std::move(arg)), std::move(next)));
   };
 }
 
