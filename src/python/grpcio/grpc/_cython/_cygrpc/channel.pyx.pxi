@@ -79,9 +79,8 @@ cdef class _CallState:
 
   cdef void maybe_save_registered_method(self, bytes method_name) except *:
     with _observability.get_plugin() as plugin:
-      if not (plugin and plugin.observability_enabled):
-        return
-      plugin.save_registered_method(method_name)
+      if plugin and plugin.observability_enabled:
+        plugin.save_registered_method(method_name)
 
   cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name, bytes target) except *:
     # TODO(xuanwn): use channel args to exclude those metrics.
@@ -89,12 +88,11 @@ cdef class _CallState:
       if exclude_prefix in method_name:
         return
     with _observability.get_plugin() as plugin:
-      if not (plugin and plugin.observability_enabled):
-        return
-      capsule = plugin.create_client_call_tracer(method_name, target)
-      capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
-      _set_call_tracer(self.c_call, capsule_ptr)
-      self.call_tracer_capsule = capsule
+      if plugin and plugin.observability_enabled:
+        capsule = plugin.create_client_call_tracer(method_name, target)
+        capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+        _set_call_tracer(self.c_call, capsule_ptr)
+        self.call_tracer_capsule = capsule
 
 cdef class _ChannelState:
 

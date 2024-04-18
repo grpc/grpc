@@ -18,12 +18,14 @@ cdef class RegisteredMethod:
   def __cinit__(self, bytes method, uintptr_t server):
     self.method = method
     cpython.Py_INCREF(self.method)
+    cdef const char *c_method = <const char *>self.method
     cdef grpc_server *c_server = <grpc_server *>server
     # TODO(xuanwn): Consider use GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER for unary request
     # as optimization.
     # Note that in stubs method is not bound to any host, thus we set host as NULL.
-    self.c_registered_method = grpc_server_register_method(c_server,
-      <const char *>self.method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
+    with nogil:
+      self.c_registered_method = grpc_server_register_method(c_server,
+      c_method, NULL, GRPC_SRM_PAYLOAD_NONE, 0)
 
   def __dealloc__(self):
     cpython.Py_DECREF(self.method)
@@ -58,7 +60,7 @@ cdef class Server:
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
     cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
-    return self._c_request_general_call(request_call_tag, call_queue, server_queue)
+    return self._c_request_unregistered_call(request_call_tag, call_queue, server_queue)
 
   def request_registered_call(
       self, CompletionQueue call_queue not None,
@@ -80,32 +82,38 @@ cdef class Server:
        bytes method):
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
+    cdef cpython.PyObject *c_request_call_tag = <cpython.PyObject *>request_call_tag
     cdef RegisteredMethod registered_method = self.registered_methods[method]
     # Note: Set timeout to _GPR_INF_FUTURE because we don't know when this registered method will be called.
     # optional_payload is set to NULL because we use GRPC_SRM_PAYLOAD_NONE for all method.
-    cdef grpc_call_error c_call_error = grpc_server_request_registered_call(
-        self.c_server, registered_method.c_registered_method, &request_call_tag.call.c_call,
-        &_GPR_INF_FUTURE,
-        &request_call_tag.c_invocation_metadata,
-        NULL,
-        call_queue.c_completion_queue, server_queue.c_completion_queue,
-        <cpython.PyObject *>request_call_tag)
+    cdef grpc_call_error c_call_error = GRPC_CALL_OK
+    with nogil:
+      c_call_error = grpc_server_request_registered_call(
+          self.c_server, registered_method.c_registered_method, &request_call_tag.call.c_call,
+          &_GPR_INF_FUTURE,
+          &request_call_tag.c_invocation_metadata,
+          NULL,
+          call_queue.c_completion_queue, server_queue.c_completion_queue,
+          c_request_call_tag)
     if c_call_error != GRPC_CALL_OK:
       raise InternalError("Error in grpc_server_request_registered_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
     return c_call_error
 
-  cdef _c_request_general_call(self,
+  cdef _c_request_unregistered_call(self,
        _RequestCallTag request_call_tag,
        CompletionQueue call_queue,
        CompletionQueue server_queue):
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
-    cdef grpc_call_error c_call_error = grpc_server_request_call(
-        self.c_server, &request_call_tag.call.c_call,
-        &request_call_tag.call_details.c_details,
-        &request_call_tag.c_invocation_metadata,
-        call_queue.c_completion_queue, server_queue.c_completion_queue,
-        <cpython.PyObject *>request_call_tag)
+    cdef cpython.PyObject *c_request_call_tag = <cpython.PyObject *>request_call_tag
+    cdef grpc_call_error c_call_error = GRPC_CALL_OK
+    with nogil:
+      c_call_error = grpc_server_request_call(
+          self.c_server, &request_call_tag.call.c_call,
+          &request_call_tag.call_details.c_details,
+          &request_call_tag.c_invocation_metadata,
+          call_queue.c_completion_queue, server_queue.c_completion_queue,
+          c_request_call_tag)
     if c_call_error != GRPC_CALL_OK:
       raise InternalError("Error in grpc_server_request_call: %s" % grpc_call_error_to_string(self.c_call_error).decode())
     return c_call_error

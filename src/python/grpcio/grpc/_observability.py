@@ -179,6 +179,14 @@ class ObservabilityPlugin(
         self._stats_enabled = enable
 
     def save_registered_method(self, method_name: bytes):
+        """Saves the method name to registered_method list.
+
+        When exporting metrics, method name for unregistered methods will be replaced
+        with 'other' by default.
+
+        Args:
+          method_name: The method name in bytes.
+        """
         self._registered_methods.add(method_name)
 
     @property
@@ -266,9 +274,8 @@ def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
       client_call_tracer_capsule: A PyCapsule which stores a ClientCallTracer object.
     """
     with get_plugin() as plugin:
-        if not (plugin and plugin.observability_enabled):
-            return
-        plugin.delete_client_call_tracer(client_call_tracer_capsule)
+        if plugin and plugin.observability_enabled:
+            plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:

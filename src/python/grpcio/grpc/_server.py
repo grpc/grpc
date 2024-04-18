@@ -122,6 +122,33 @@ class _HandlerCallDetails(
     pass
 
 
+class _Method(object):
+    def __init__(
+        self,
+        name: Optional[str],
+        registered_handler: Optional[grpc.RpcMethodHandler],
+        generic_handlers: List[grpc.GenericRpcHandler],
+    ):
+        self._name = name
+        self._registered_handler = registered_handler
+        self._generic_handlers = generic_handlers
+
+    def name(self) -> Optional[str]:
+        return self._name
+
+    def handler(
+        self, handler_call_details: _HandlerCallDetails
+    ) -> Optional[grpc.RpcMethodHandler]:
+        # If the same method have both generic and registered handler, registered handler will take precedence.
+        if self._registered_handler:
+            return self._registered_handler
+        for generic_handler in self._generic_handlers:
+            method_handler = generic_handler.service(handler_call_details)
+            if method_handler is not None:
+                return method_handler
+        return None
+
+
 class _RPCState(object):
     context: contextvars.Context
     condition: threading.Condition
@@ -933,22 +960,13 @@ def _handle_stream_stream(
 def _find_method_handler(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
-    registered_method_name: Optional[str],
-    registered_method_handlers: Dict[str, grpc.RpcMethodHandler],
-    generic_handlers: List[grpc.GenericRpcHandler],
+    method_with_handler: _Method,
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
 ) -> Optional[grpc.RpcMethodHandler]:
     def query_handlers(
         handler_call_details: _HandlerCallDetails,
     ) -> Optional[grpc.RpcMethodHandler]:
-        # If the same method have both generic and registered handler, registered handler will take precedence.
-        if registered_method_name in registered_method_handlers.keys():
-            return registered_method_handlers[registered_method_name]
-        for generic_handler in generic_handlers:
-            method_handler = generic_handler.service(handler_call_details)
-            if method_handler is not None:
-                return method_handler
-        return None
+        return method_with_handler.handler(handler_call_details)
 
     handler_call_details = _HandlerCallDetails(
         _common.decode(rpc_event.call_details.method),
@@ -1019,24 +1037,31 @@ def _handle_with_method_handler(
 
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
-    registered_method_name: Optional[str],
-    registered_method_handlers: Dict[str, grpc.RpcMethodHandler],
-    generic_handlers: List[grpc.GenericRpcHandler],
+    method_with_handler: _Method,
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor,
     concurrency_exceeded: bool,
 ) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
+    """Handles RPC based on provided handlers.
+
+      When receiving a call event from Core, registered method will have it's
+    name as tag, we pass the tag as registered_method_name to this method,
+    then we can find the handler in registered_method_handlers based on
+    the method name.
+
+      For call event with unregistered method, the method name will be included
+    in rpc_event.call_details.method and we need to query the generics handlers
+    to find the actual handler.
+    """
     if not rpc_event.success:
         return None, None
-    if rpc_event.call_details.method or registered_method_name:
+    if rpc_event.call_details.method or method_with_handler.name():
         rpc_state = _RPCState()
         try:
             method_handler = _find_method_handler(
                 rpc_event,
                 rpc_state,
-                registered_method_name,
-                registered_method_handlers,
-                generic_handlers,
+                method_with_handler,
                 interceptor_pipeline,
             )
         except Exception as exception:  # pylint: disable=broad-except
@@ -1218,11 +1243,16 @@ def _process_event_and_continue(
                 state.maximum_concurrent_rpcs is not None
                 and state.active_rpc_count >= state.maximum_concurrent_rpcs
             )
+            method_with_handler = _Method(
+                registered_method_name,
+                state.registered_method_handlers.get(
+                    registered_method_name, None
+                ),
+                state.generic_handlers,
+            )
             rpc_state, rpc_future = _handle_call(
                 event,
-                registered_method_name,
-                state.registered_method_handlers,
-                state.generic_handlers,
+                method_with_handler,
                 state.interceptor_pipeline,
                 state.thread_pool,
                 concurrency_exceeded,

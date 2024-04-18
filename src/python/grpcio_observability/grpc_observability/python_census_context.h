@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_PYTHON_OPENCENSUS_H
-#define GRPC_PYTHON_OPENCENSUS_H
+#ifndef GRPC_PYTHON_CENSUS_H
+#define GRPC_PYTHON_CENSUS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -329,4 +329,4 @@ uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info);
 
 }  // namespace grpc_observability
 
-#endif  // GRPC_PYTHON_OPENCENSUS_H
+#endif  // GRPC_PYTHON_CENSUS_H

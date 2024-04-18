@@ -27,7 +27,7 @@ cdef class Server:
   cdef dict registered_methods # Mapping[str, RegisteredMethod]
 
   cdef _c_shutdown(self, CompletionQueue queue, tag)
-  cdef _c_request_general_call(self,
+  cdef _c_request_unregistered_call(self,
        _RequestCallTag request_call_tag,
        CompletionQueue call_queue,
        CompletionQueue server_queue)
