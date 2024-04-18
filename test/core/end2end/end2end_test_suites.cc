@@ -34,6 +34,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>

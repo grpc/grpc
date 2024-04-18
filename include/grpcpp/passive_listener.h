@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2016 gRPC authors.
+// Copyright 2024 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,26 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
+#ifndef GRPCPP_PASSIVE_LISTENER_H
+#define GRPCPP_PASSIVE_LISTENER_H
 
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_posix.h>
-#include <grpc/grpc_security.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_posix.h>
+#include <grpc/passive_listener.h>
 
 namespace grpc {
+namespace experimental {
 
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+using grpc_core::experimental::PassiveListener;
 
-void AddInsecureChannelFromFd(grpc::Server* server, int fd) {
-  grpc_server_credentials* creds = grpc_insecure_server_credentials_create();
-  grpc_server_add_channel_from_fd(server->c_server(), fd, creds);
-  grpc_server_credentials_release(creds);
-}
-
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
-
+}  // namespace experimental
 }  // namespace grpc
+
+#endif  // GRPCPP_PASSIVE_LISTENER_H

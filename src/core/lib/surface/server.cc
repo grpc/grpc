@@ -232,7 +232,8 @@ struct Server::RequestedCall {
     data.registered.optional_payload = optional_payload;
   }
 
-  void Complete(NextResult<MessageHandle> payload, ClientMetadata& md) {
+  template <typename OptionalPayload>
+  void Complete(OptionalPayload payload, ClientMetadata& md) {
     Timestamp deadline = GetContext<CallContext>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
@@ -1301,9 +1302,10 @@ Server::ChannelData::~ChannelData() {
 Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
 
 absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
-    ClientMetadata& client_initial_metadata, Arena* arena) {
-  SetRegisteredMethodOnMetadata(client_initial_metadata);
-  auto call = MakeServerCall(server_.get(), channel_.get(), arena);
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  SetRegisteredMethodOnMetadata(*client_initial_metadata);
+  auto call = MakeServerCall(std::move(client_initial_metadata), server_.get(),
+                             channel_.get(), arena);
   InitCall(call);
   return CallInitiator(std::move(call));
 }
@@ -1427,10 +1429,10 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
   call->SpawnGuarded("request_matcher", [this, call]() {
     return TrySeq(
         // Wait for initial metadata to pass through all filters
-        Map(call->client_initial_metadata().receiver.Next(),
-            [](NextResult<ClientMetadataHandle> md)
+        Map(call->PullClientInitialMetadata(),
+            [](ValueOrFailure<ClientMetadataHandle> md)
                 -> absl::StatusOr<ClientMetadataHandle> {
-              if (!md.has_value()) {
+              if (!md.ok()) {
                 return absl::InternalError("Missing metadata");
               }
               if (!md.value()->get_pointer(HttpPathMetadata())) {
@@ -1456,24 +1458,19 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           }
           auto maybe_read_first_message = If(
               payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call]() {
-                return call->client_to_server_messages().receiver.Next();
-              },
-              []() -> NextResult<MessageHandle> {
-                return NextResult<MessageHandle>();
+              [call]() { return call->PullClientToServerMessage(); },
+              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
+                return ValueOrFailure<absl::optional<MessageHandle>>(
+                    absl::nullopt);
               });
           return TryJoin<absl::StatusOr>(
-              Map(std::move(maybe_read_first_message),
-                  [](NextResult<MessageHandle> n) {
-                    return ValueOrFailure<NextResult<MessageHandle>>{
-                        std::move(n)};
-                  }),
-              rm->MatchRequest(cq_idx()), [md = std::move(md)]() mutable {
+              std::move(maybe_read_first_message), rm->MatchRequest(cq_idx()),
+              [md = std::move(md)]() mutable {
                 return ValueOrFailure<ClientMetadataHandle>(std::move(md));
               });
         },
         // Publish call to cq
-        [](std::tuple<NextResult<MessageHandle>,
+        [](std::tuple<absl::optional<MessageHandle>,
                       RequestMatcherInterface::MatchResult,
                       ClientMetadataHandle>
                r) {

@@ -25,6 +25,7 @@
 
 #include "absl/status/status.h"
 
+#include <grpc/credentials.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>

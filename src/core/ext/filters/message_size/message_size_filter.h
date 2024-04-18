@@ -91,8 +91,11 @@ class ServerMessageSizeFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerMessageSizeFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServerMessageSizeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  explicit ServerMessageSizeFilter(const ChannelArgs& args)
+      : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
 
   class Call {
    public:
@@ -107,8 +110,6 @@ class ServerMessageSizeFilter final
   };
 
  private:
-  explicit ServerMessageSizeFilter(const ChannelArgs& args)
-      : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
   const MessageSizeParsedConfig parsed_config_;
 };
 
@@ -117,8 +118,11 @@ class ClientMessageSizeFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientMessageSizeFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  explicit ClientMessageSizeFilter(const ChannelArgs& args)
+      : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
 
   class Call {
    public:
@@ -136,8 +140,6 @@ class ClientMessageSizeFilter final
   };
 
  private:
-  explicit ClientMessageSizeFilter(const ChannelArgs& args)
-      : parsed_config_(MessageSizeParsedConfig::GetFromChannelArgs(args)) {}
   const size_t service_config_parser_index_{MessageSizeParser::ParserIndex()};
   const MessageSizeParsedConfig parsed_config_;
 };

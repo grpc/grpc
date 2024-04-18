@@ -1282,6 +1282,10 @@ void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache) {
   tsi::SslSessionLRUCache::FromC(cache)->Unref();
 }
 
+size_t tsi_ssl_session_cache_size(tsi_ssl_session_cache* cache) {
+  return tsi::SslSessionLRUCache::FromC(cache)->Size();
+}
+
 // --- tsi_frame_protector methods implementation. ---
 
 static tsi_result ssl_protector_protect(tsi_frame_protector* self,
