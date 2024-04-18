@@ -23,6 +23,7 @@
 //
 #include <stdint.h>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -175,9 +176,9 @@ static void shutdown_server() {
   if (!g_ctx.server) return;
   grpc_server_shutdown_and_notify(g_ctx.server, g_ctx.shutdown_cq, tag(1000));
   CHECK(grpc_completion_queue_pluck(g_ctx.shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(1),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+                                    grpc_timeout_seconds_to_deadline(1),
+                                    nullptr)
+            .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(g_ctx.server);
   g_ctx.server = nullptr;
 }
@@ -352,12 +353,12 @@ static void _test_close_before_server_recv(fd_type fdtype) {
   if (event.type == GRPC_QUEUE_TIMEOUT) {
     CHECK_EQ(event.success, 0);
     // status is not initialized
-    CHECK(status == GRPC_STATUS__DO_NOT_USE);
+    CHECK_EQ(status, GRPC_STATUS__DO_NOT_USE);
   } else {
     CHECK(event.type == GRPC_OP_COMPLETE);
     CHECK_EQ(event.success, 1);
     CHECK(event.tag == tag(1));
-    CHECK(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -549,12 +550,12 @@ static void _test_close_before_server_send(fd_type fdtype) {
   if (event.type == GRPC_OP_COMPLETE) {
     CHECK_EQ(event.success, 1);
     CHECK(event.tag == tag(1));
-    CHECK(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   } else {
     CHECK(event.type == GRPC_QUEUE_TIMEOUT);
     CHECK_EQ(event.success, 0);
     // status is not initialized
-    CHECK(status == GRPC_STATUS__DO_NOT_USE);
+    CHECK_EQ(status, GRPC_STATUS__DO_NOT_USE);
   }
   CHECK_EQ(was_cancelled, 0);
 
@@ -678,7 +679,7 @@ static void _test_close_before_client_send(fd_type fdtype) {
   CHECK_EQ(event.success, 1);
   CHECK(event.type == GRPC_OP_COMPLETE);
   CHECK(event.tag == tag(1));
-  CHECK(status == GRPC_STATUS_UNAVAILABLE);
+  CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
 
   // No event is received on the server
   event = grpc_completion_queue_next(
