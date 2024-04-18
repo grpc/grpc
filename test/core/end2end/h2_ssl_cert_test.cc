@@ -24,6 +24,7 @@
 #include <string>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -236,8 +237,8 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
   CHECK(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                        nullptr)
-                 .type == GRPC_QUEUE_SHUTDOWN);
+                                   nullptr)
+            .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
 }
 

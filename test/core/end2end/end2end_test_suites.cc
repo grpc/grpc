@@ -26,6 +26,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -133,8 +134,7 @@ class CensusFixture : public CoreTestFixture {
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_ENABLE_CENSUS, true).ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(
-        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -167,8 +167,7 @@ class CompressionFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(
-        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -283,10 +282,8 @@ class FdFixture : public CoreTestFixture {
     CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
     flags = fcntl(sv[1], F_GETFL, 0);
     CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
-               absl::OkStatus());
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
-               absl::OkStatus());
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
   }
 
   int fd_pair_[2];

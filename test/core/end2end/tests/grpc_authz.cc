@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

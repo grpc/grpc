@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc_security.h>
 
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"

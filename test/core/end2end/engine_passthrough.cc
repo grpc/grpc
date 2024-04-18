@@ -25,6 +25,8 @@
 #include <openssl/engine.h>
 #include <openssl/pem.h>
 
+#include "absl/log/check.h"
+
 #ifndef OPENSSL_IS_BORINGSSL
 
 #include <stdio.h>

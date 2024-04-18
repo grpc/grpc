@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/impl/propagation_bits.h>
@@ -120,8 +121,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  CHECK((got_port = grpc_server_add_http2_port(
-                  server, server_hostport.c_str(), server_creds)) > 0);
+  CHECK((got_port = grpc_server_add_http2_port(server, server_hostport.c_str(),
+                                               server_creds)) > 0);
   grpc_server_credentials_release(server_creds);
   if (port == 0) {
     port = got_port;
@@ -240,8 +241,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     CHECK(status == GRPC_STATUS_UNIMPLEMENTED);
     CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
     CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-    CHECK(0 ==
-               grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
+    CHECK(0 == grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"));
     CHECK_EQ(was_cancelled, 0);
 
     grpc_call_unref(s);

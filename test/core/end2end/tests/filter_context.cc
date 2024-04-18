@@ -19,6 +19,7 @@
 #include <initializer_list>
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 

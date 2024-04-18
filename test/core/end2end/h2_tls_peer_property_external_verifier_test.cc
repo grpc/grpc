@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -278,8 +279,8 @@ TEST(H2TlsPeerPropertyExternalVerifier, PeerPropertyExternalVerifierTest) {
   do_round_trip(cq, server, server_addr.c_str());
 
   CHECK(grpc_completion_queue_next(
-                 cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-                 .type == GRPC_QUEUE_TIMEOUT);
+            cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
 
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
   grpc_event ev;

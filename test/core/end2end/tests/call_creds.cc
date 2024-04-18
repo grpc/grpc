@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 

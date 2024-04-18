@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
@@ -261,8 +263,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   CHECK(status == expected_status);
   if (expected_detail != nullptr) {
-    CHECK(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
-                                                   expected_detail)));
+    CHECK(-1 != grpc_slice_slice(
+                    details, grpc_slice_from_static_string(expected_detail)));
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);

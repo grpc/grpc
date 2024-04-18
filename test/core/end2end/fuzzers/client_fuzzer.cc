@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 

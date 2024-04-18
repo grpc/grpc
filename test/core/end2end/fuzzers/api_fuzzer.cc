@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -89,8 +90,7 @@ static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
     *r.addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address fake_resolved_address;
-    CHECK(
-        grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
+    CHECK(grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
