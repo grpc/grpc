@@ -566,14 +566,8 @@ bool PrivateGenerator::PrintAddServicerToServer(
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
     out->Print("}\n");
-    out->Print("generic_handler = grpc.method_handlers_generic_handler(\n");
-    {
-      IndentScope raii_call_first_indent(out);
-      IndentScope raii_call_second_indent(out);
-      out->Print(method_dict,
-                 "'$PackageQualifiedServiceName$', rpc_method_handlers)\n");
-    }
-    out->Print("server.add_generic_rpc_handlers((generic_handler,))\n");
+    out->Print(method_dict,
+              "server.add_registered_method_handlers('$PackageQualifiedServiceName$', rpc_method_handlers)\n");
   }
   return true;
 }
