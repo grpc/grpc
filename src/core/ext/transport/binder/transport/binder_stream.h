@@ -20,39 +20,40 @@
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 
 struct RecvInitialMetadataArgs {
-  grpc_binder_stream* stream;
-  grpc_binder_transport* transport;
+  BinderStream* stream;
+  BinderTransport* transport;
+
   int tx_code;
   absl::StatusOr<grpc_binder::Metadata> initial_metadata;
 };
 
 struct RecvMessageArgs {
-  grpc_binder_stream* stream;
-  grpc_binder_transport* transport;
+  BinderStream* stream;
+  BinderTransport* transport;
   int tx_code;
   absl::StatusOr<std::string> message;
 };
 
 struct RecvTrailingMetadataArgs {
-  grpc_binder_stream* stream;
-  grpc_binder_transport* transport;
+  BinderStream* stream;
+  BinderTransport* transport;
   int tx_code;
   absl::StatusOr<grpc_binder::Metadata> trailing_metadata;
   int status;
 };
 
 struct RegisterStreamArgs {
-  grpc_binder_stream* stream;
-  grpc_binder_transport* transport;
+  BinderStream* stream;
+  BinderTransport* transport;
 };
 
 // TODO(mingcl): Figure out if we want to use class instead of struct here
-struct grpc_binder_stream {
+struct BinderStream {
   // server_data will be null for client, and for server it will be whatever
   // passed in to the accept_stream_fn callback by client.
-  grpc_binder_stream(grpc_binder_transport* t, grpc_stream_refcount* refcount,
-                     const void* /*server_data*/, grpc_core::Arena* arena,
-                     int tx_code, bool is_client)
+  BinderStream(BinderTransport* t, grpc_stream_refcount* refcount,
+               const void* /*server_data*/, grpc_core::Arena* arena,
+               int tx_code, bool is_client)
       : t(t),
         refcount(refcount),
         arena(arena),
@@ -67,7 +68,7 @@ struct grpc_binder_stream {
     recv_trailing_metadata_args.transport = t;
   }
 
-  ~grpc_binder_stream() {
+  ~BinderStream() {
     if (destroy_stream_then_closure != nullptr) {
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_then_closure,
                               absl::OkStatus());
@@ -76,7 +77,7 @@ struct grpc_binder_stream {
 
   int GetTxCode() const { return tx_code; }
 
-  grpc_binder_transport* t;
+  BinderTransport* t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* arena;
   int tx_code;
@@ -100,7 +101,7 @@ struct grpc_binder_stream {
   RegisterStreamArgs register_stream_args;
 
   // We store these fields passed from op batch, in order to access them through
-  // grpc_binder_stream
+  // BinderStream
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready = nullptr;
   bool* trailing_metadata_available = nullptr;
