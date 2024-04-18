@@ -17,8 +17,6 @@
 // This is similar to the sockaddr resolver, except that it supports a
 // bunch of query args that are useful for dependency injection in tests.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/fake/fake_resolver.h"
 
 #include <memory>
@@ -28,6 +26,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
