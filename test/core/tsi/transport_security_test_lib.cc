@@ -312,7 +312,7 @@ grpc_error_handle on_handshake_next_done(
   grpc_error_handle error;
   // Read more data if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    CHECK_EQ(bytes_to_send_size, 0);
+    CHECK_EQ(bytes_to_send_size, 0u);
     notification_signal(fixture);
     return error;
   }
