@@ -66,7 +66,6 @@ class FakeClientCallTracer : public ClientCallTracer {
     explicit FakeClientCallAttemptTracer(
         std::vector<std::string>* annotation_logger)
         : annotation_logger_(annotation_logger) {}
-    ~FakeClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
