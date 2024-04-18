@@ -963,6 +963,7 @@ grpc_cc_library(
         "activity",
         "poll",
         "//:gpr_platform",
+        "//:grpc",
     ],
 )
 
@@ -1110,6 +1111,7 @@ grpc_cc_library(
         "wait_set",
         "//:gpr",
         "//:ref_counted_ptr",
+        "//:grpc",
     ],
 )
 
@@ -6915,6 +6917,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:hpack_encoder",
         "//:hpack_parser",
+        #//:grpc",
     ],
 )
 
@@ -6954,6 +6957,7 @@ grpc_cc_library(
         "bitset",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc",
     ],
 )
 
@@ -7008,6 +7012,7 @@ grpc_cc_library(
     deps = [
         "time",
         "//:gpr_platform",
+        "//:grpc",
     ],
 )
 

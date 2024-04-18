@@ -1451,6 +1451,225 @@ _populate_transitive_metadata(bazel_rules, list(all_extra_metadata.keys()))
 # metadata that wasn't available earlier.
 update_test_metadata_with_transitive_metadata(all_extra_metadata, bazel_rules)
 
+
+def perform_layer_checks(bazel_rules):
+    # external deps
+    layer0_libs = set()
+    for lib_name, bazel_rule in bazel_rules.items():
+        if bazel_rule["class"] != "cc_library":
+            continue
+        if lib_name.startswith("@"):
+            layer0_libs.add(lib_name)
+        # TODO: more general rule for determining external deps
+        if (
+            lib_name.startswith("//third_party/address_sorting:")
+            or lib_name.startswith("//third_party/xxhash:")
+            or lib_name.startswith(
+                "third_party/address_sorting:address_sorting"
+            )
+            or lib_name in ["libssl", "cares"]
+        ):
+            layer0_libs.add(lib_name)
+        # if lib_name.startswith('//external:'):
+        #    layer0_libs.add(lib_name)
+
+    import pprint
+
+    print("layer0")
+    pprint.pprint(sorted(layer0_libs), indent=2)
+    print("--------")
+
+    public_lib_layers = [
+        layer0_libs,
+        set(
+            ["//:gpr", "//:gpr_platform", "//:gpr_public_hdrs"]
+        ),  # //:gpr_platform ?
+        set(
+            [
+                "//:grpc",
+                "//:grpc_unsecure",
+                "//:grpc_cronet_hdrs",
+                "//:grpc_public_hdrs",
+            ]
+        ),
+        set(
+            [
+                "//:grpc++",
+                "//:grpc++_unsecure",
+                "//:grpc++_alts",
+                "//:grpc++_public_hdrs",
+            ]
+        ),
+    ]
+
+    private_lib_layers = []
+    for layer_index in range(0, len(public_lib_layers)):
+        if layer_index == 0:
+            # no private libs for layer0
+            private_lib_layers.append([])
+            continue
+
+        layer_private_libs = set()
+        for public_lib in public_lib_layers[layer_index]:
+            for dep in bazel_rules[public_lib]["_TRANSITIVE_DEPS"]:
+                if dep in public_lib_layers[0]:
+                    # skip externale deps
+                    continue
+
+                dep_rule = bazel_rules.get(dep, None)
+                if not dep_rule:
+                    continue
+
+                if dep_rule["class"] != "cc_library":
+                    continue
+
+                layer_private_libs.add(dep)
+
+        for lower_layer_index in range(0, layer_index):
+            # exclude libs that are already in lower layers
+            layer_private_libs = layer_private_libs.difference(
+                public_lib_layers[lower_layer_index]
+            ).difference(private_lib_layers[lower_layer_index])
+
+        # make sure all the private libs are actually private
+        layer_private_libs = layer_private_libs.difference(
+            public_lib_layers[layer_index]
+        )
+
+        # add new layer for private libs
+        private_lib_layers.append(layer_private_libs)
+
+        print("layer %s" % layer_index)
+        pprint.pprint(sorted(private_lib_layers[layer_index]), indent=2)
+        print("--------")
+
+    # layer05_public_libs = set(['//:gpr'])
+
+    # layer1_public_libs = set(['//:grpc', '//:grpc_unsecure', '//:grpc_cronet_hdrs', '//:grpc_public_hdrs'])
+
+    # # layer 1 libs
+    # layer1_libs = set()
+    # for lib in layer1_public_libs:
+    #     for dep in bazel_rules[lib]['_TRANSITIVE_DEPS']:
+    #         if dep in layer0_libs:
+    #             continue
+
+    #         dep_rule = bazel_rules.get(dep, None)
+    #         if not dep_rule:
+    #             continue
+
+    #         if dep_rule['class'] != 'cc_library':
+    #             continue
+
+    #         # TODO: don't add external deps
+    #         layer1_libs.add(dep)
+    # print("layer1")
+    # pprint.pprint(sorted(layer1_libs), indent=2)
+    # print("--------")
+
+    # cc_libs that layerX_public libs that depend on transitively.
+
+    # checks:
+    for lib_name, bazel_rule in bazel_rules.items():
+        # check libaries AND binaries.
+        if (
+            bazel_rule["class"] != "cc_library"
+            and bazel_rule["class"] != "cc_binary"
+        ):
+            continue
+
+        is_in_public_layer = False
+        for public_layer_index in range(0, len(public_lib_layers)):
+            if lib_name in public_lib_layers[public_layer_index]:
+                # print('%s PUBLIC layer %s' % (lib_name, public_layer_index))
+                is_in_public_layer = True
+                break
+
+        if is_in_public_layer:
+            # if public lib, skip check
+            continue
+
+        # find to what layer it belongs
+        layer_index = -1
+        for private_layer_index in range(0, len(private_lib_layers)):
+            if lib_name in private_lib_layers[private_layer_index]:
+                layer_index = private_layer_index
+                break
+
+        if layer_index == -1:
+            #    # not much to check for layer1?
+            # skipping
+            # if this is not a private library from any of the layers, check all layers
+            layer_index = len(private_lib_layers)
+            # print(lib_name + " layer " + str(layer_index))
+
+            # TODO: figure out the highest layer on which the lib depends
+
+        transitive_deps = bazel_rule["_TRANSITIVE_DEPS"]
+        for lower_layer_index in range(1, layer_index):
+            public_deps_from_single_layer = public_lib_layers[
+                lower_layer_index
+            ].intersection(transitive_deps)
+            public_representative_lib_layers = [
+                [],
+                set(
+                    [
+                        "//:gpr",
+                    ]
+                ),
+                set(["//:grpc"]),
+                set(["//:grpc++"]),
+            ]
+            if len(
+                public_deps_from_single_layer
+            ) >= 1 and not public_representative_lib_layers[
+                lower_layer_index
+            ].intersection(
+                transitive_deps
+            ):
+                print(
+                    "WARNING: layer %s library %s depends on libs from given public layer %s: %s and the representative one is not one of them"
+                    % (
+                        layer_index,
+                        lib_name,
+                        lower_layer_index,
+                        public_deps_from_single_layer,
+                    )
+                )
+
+            for dep in transitive_deps:
+                if dep in private_lib_layers[
+                    lower_layer_index
+                ] and not public_lib_layers[lower_layer_index].intersection(
+                    transitive_deps
+                ):
+                    # not a layer1 library that depends on internal layer1_libs and it has no dependency on public layer1 lib
+                    print(
+                        "WARNING: layer %s library %s depends on %s (from layer %s) without depending on any of %s"
+                        % (
+                            layer_index,
+                            lib_name,
+                            dep,
+                            lower_layer_index,
+                            public_lib_layers[lower_layer_index],
+                        )
+                    )
+                    # if set(transitive_deps).intersection(['//:grpc++']):
+                    #    print("  but depends on grpc++")
+                    # if set(transitive_deps).intersection(['//:gpr']):
+                    #    print("  but depends on gpr")
+
+    # pprint.pprint(set(bazel_rules['//:grpc']['_TRANSITIVE_DEPS']).difference(bazel_rules['//:grpc_unsecure']['_TRANSITIVE_DEPS']), indent=2)
+    # pprint.pprint(, indent=2)
+
+    import sys
+
+    sys.exit(1)
+
+
+perform_layer_checks(bazel_rules)
+
+
 # Step 5: Generate the final metadata for all the targets.
 # This is done by combining the bazel build metadata and the "extra metadata"
 # we obtained in the previous step.
