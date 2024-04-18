@@ -502,6 +502,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/status",
         "absl/strings",
+        "absl/synchronization",
         "absl/types:optional",
         "absl/types:span",
         "gtest",
