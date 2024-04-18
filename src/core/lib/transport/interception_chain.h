@@ -94,7 +94,8 @@ inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
 //
 // Upon the StartCall call the UnstartedCallHandler will be from the last
 // *Interceptor* in the call chain (without having been processed by any
-// intervening filters).
+// intervening filters) -- note that this is commonly not useful (not enough
+// guarantees), and so it's usually better to Hijack and examine the metadata.
 class Interceptor : public UnstartedCallDestination {
  protected:
   using HijackedCall = interception_chain_detail::HijackedCall;
@@ -176,11 +177,13 @@ class InterceptionChainBuilder final {
     return *this;
   };
 
+  // Add a filter that just mutates server trailing metadata.
   template <typename F>
   void AddOnServerTrailingMetadata(F f) {
     stack_builder().AddOnServerTrailingMetadata(std::move(f));
   }
 
+  // Build this stack
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> Build(
       FinalDestination final_destination);
 
