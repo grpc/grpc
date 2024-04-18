@@ -106,7 +106,7 @@ _REGISTERED_METHOD_HANDLERS = {
 
 
 class ServerTest(unittest.TestCase):
-    def a_test_not_a_generic_rpc_handler_at_construction(self):
+    def test_not_a_generic_rpc_handler_at_construction(self):
         with self.assertRaises(AttributeError) as exception_context:
             grpc.server(
                 futures.ThreadPoolExecutor(max_workers=5),
@@ -119,7 +119,7 @@ class ServerTest(unittest.TestCase):
             "grpc.GenericRpcHandler", str(exception_context.exception)
         )
 
-    def a_test_not_a_generic_rpc_handler_after_construction(self):
+    def test_not_a_generic_rpc_handler_after_construction(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
         with self.assertRaises(AttributeError) as exception_context:
             server.add_generic_rpc_handlers(
@@ -132,7 +132,7 @@ class ServerTest(unittest.TestCase):
             "grpc.GenericRpcHandler", str(exception_context.exception)
         )
 
-    def a_test_failed_port_binding_exception(self):
+    def test_failed_port_binding_exception(self):
         server = grpc.server(None, options=(("grpc.so_reuseport", 0),))
         port = server.add_insecure_port("localhost:0")
         bind_address = "localhost:%d" % port

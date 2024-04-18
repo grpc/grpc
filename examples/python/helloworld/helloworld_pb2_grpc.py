@@ -99,6 +99,8 @@ def add_GreeterServicer_to_server(servicer, server):
                     response_serializer=helloworld__pb2.HelloReply.SerializeToString,
             ),
     }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'helloworld.Greeter', rpc_method_handlers)
     server.add_registered_method_handlers('helloworld.Greeter', rpc_method_handlers)
 
 
