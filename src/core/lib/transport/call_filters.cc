@@ -217,8 +217,8 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-    gpr_log(GPR_DEBUG, "%s Push server trailing metadata: %s into %s",
-            GetContext<Activity>()->DebugTag().c_str(),
+    gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
+            GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());
   }
   GPR_ASSERT(md != nullptr);
@@ -227,7 +227,7 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   client_initial_metadata_state_.CloseWithError();
   server_initial_metadata_state_.CloseSending();
   client_to_server_message_state_.CloseWithError();
-  server_to_client_message_state_.CloseWithError();
+  server_to_client_message_state_.CloseSending();
   server_trailing_metadata_waiter_.Wake();
 }
 

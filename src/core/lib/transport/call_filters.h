@@ -1507,6 +1507,9 @@ class CallFilters {
       PullMessage& operator=(PullMessage&&) = delete;
 
       Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMessage: %s", state().DebugString().c_str());
+        }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
           if (c.ready() && c.value()) {
@@ -1661,9 +1664,21 @@ class CallFilters {
         return std::move(filters_->server_trailing_metadata_);
       }
       // Otherwise we need to process it through all the filters.
-      return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
-                             std::move(filters_->server_trailing_metadata_),
-                             filters_->call_data_);
+      auto r = executor_.Start(
+          &filters_->stack_->data_.server_trailing_metadata,
+          std::move(filters_->server_trailing_metadata_), filters_->call_data_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        if (r.pending()) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        } else {
+          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_,
+                  r.value()->DebugString().c_str());
+        }
+      }
+      return r;
     }
 
    private:
