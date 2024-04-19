@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_POLLING_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_POLLING_RESOLVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 
@@ -26,6 +24,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"

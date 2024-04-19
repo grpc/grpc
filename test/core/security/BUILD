@@ -97,7 +97,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

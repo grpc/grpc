@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/dns/dns_resolver_plugin.h"
 
 #include <memory>
@@ -20,13 +18,14 @@
 #include "absl/strings/match.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"
-#include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
-#include "src/core/resolver/dns/native/dns_resolver.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"
+#include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
+#include "src/core/resolver/dns/native/dns_resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 
 namespace grpc_core {
