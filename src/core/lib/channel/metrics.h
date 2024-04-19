@@ -79,9 +79,7 @@ class GlobalInstrumentsRegistry {
     // runs or between different versions.
     InstrumentID index;
   };
-  template <std::size_t M, std::size_t N>
   struct GlobalUInt64CounterHandle : public GlobalInstrumentHandle {};
-  template <std::size_t M, std::size_t N>
   struct GlobalDoubleCounterHandle : public GlobalInstrumentHandle {};
   struct GlobalUInt64HistogramHandle : public GlobalInstrumentHandle {};
   struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
@@ -89,19 +87,35 @@ class GlobalInstrumentsRegistry {
   struct GlobalCallbackDoubleGaugeHandle : public GlobalInstrumentHandle {};
   using GlobalCallbackHandle = absl::variant<GlobalCallbackInt64GaugeHandle,
                                              GlobalCallbackDoubleGaugeHandle>;
+  template <std::size_t M, std::size_t N>
+  struct TemplatizedGlobalUInt64CounterHandle : public GlobalInstrumentHandle {
+    GlobalUInt64CounterHandle convert() {
+      GlobalUInt64CounterHandle handle;
+      handle.index = index;
+      return handle;
+    }
+  };
+  template <std::size_t M, std::size_t N>
+  struct TemplatizedGlobalDoubleCounterHandle : public GlobalInstrumentHandle {
+    GlobalDoubleCounterHandle convert() {
+      GlobalDoubleCounterHandle handle;
+      handle.index = index;
+      return handle;
+    }
+  };
 
   // Creates instrument in the GlobalInstrumentsRegistry.
   template <std::size_t M, std::size_t N>
-  static GlobalUInt64CounterHandle<M, N> RegisterUInt64Counter(
+  static TemplatizedGlobalUInt64CounterHandle<M, N> RegisterUInt64Counter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, std::array<absl::string_view, M> label_keys,
       std::array<absl::string_view, N> optional_label_keys,
       bool enable_by_default);
   template <std::size_t M, std::size_t N>
-  static GlobalDoubleCounterHandle<M, N> RegisterDoubleCounter(
+  static TemplatizedGlobalDoubleCounterHandle<M, N> RegisterDoubleCounter(
       absl::string_view name, absl::string_view description,
       absl::string_view unit, std::array<absl::string_view, M> label_keys,
-      std::array<absl::string_view, M> optional_label_keys,
+      std::array<absl::string_view, N> optional_label_keys,
       bool enable_by_default);
   static GlobalUInt64HistogramHandle RegisterUInt64Histogram(
       absl::string_view name, absl::string_view description,
@@ -136,6 +150,12 @@ class GlobalInstrumentsRegistry {
 
   static std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
   GetInstrumentList();
+  static InstrumentID RegisterInstrument(
+      ValueType value_type, InstrumentType instrument_type,
+      absl::string_view name, absl::string_view description,
+      absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+      absl::Span<const absl::string_view> optional_label_keys,
+      bool enable_by_default);
 };
 
 // An interface for implementing callback-style metrics.
@@ -184,17 +204,17 @@ class StatsPlugin {
   // this measurement and must match with their corresponding keys in
   // GlobalInstrumentsRegistry::RegisterUInt64Counter().
   virtual void AddCounter(
-      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle<M, N> handle,
-      uint64_t value, std::array<absl::string_view, M> label_values,
-      std::array<absl::string_view, N> optional_label_values) = 0;
+      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+      uint64_t value, absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds \a value to the double counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
   // this measurement and must match with their corresponding keys in
   // GlobalInstrumentsRegistry::RegisterDoubleCounter().
   virtual void AddCounter(
-      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle<M, N> handle,
-      double value, std::array<absl::string_view, M> label_values,
-      std::array<absl::string_view, N> optional_label_values) = 0;
+      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_label_values) = 0;
   // Records a uint64 \a value to the histogram specified by \a handle. \a
   // label_values and \a optional_label_values specify attributes that are
   // associated with this measurement and must match with their corresponding
@@ -260,13 +280,14 @@ class GlobalStatsPluginRegistry {
     }
     // Adds a counter in all stats plugins within the group. See the StatsPlugin
     // interface for more documentation and valid types.
-    template <template <typename, typename, typename> class HandleType,
+    template <template <std::size_t, std::size_t> class HandleType,
               std::size_t M, std::size_t N, typename ValueType>
     void AddCounter(HandleType<M, N> handle, ValueType value,
                     std::array<absl::string_view, M> label_values,
                     std::array<absl::string_view, N> optional_values) {
       for (auto& state : plugins_state_) {
-        state.plugin->AddCounter(handle, value, label_values, optional_values);
+        state.plugin->AddCounter(handle.convert(), value, label_values,
+                                 optional_values);
       }
     }
     // Records a value to a histogram in all stats plugins within the group. See

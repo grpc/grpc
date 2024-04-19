@@ -93,26 +93,26 @@ constexpr absl::string_view kMetricLabelXdsResourceType =
     "grpc.xds.resource_type";
 constexpr absl::string_view kMetricLabelXdsCacheState = "grpc.xds.cache_state";
 
+std::array<absl::string_view, 3> kLabelKeys3 = {
+    kMetricLabelTarget, kMetricLabelXdsServer, kMetricLabelXdsResourceType};
+std::array<absl::string_view, 3> kLabelKeys2 = {kMetricLabelTarget,
+                                                kMetricLabelXdsServer};
+std::array<absl::string_view, 0> kEmptyOptionalLabelKeys = {};
+
 const auto kMetricResourceUpdatesValid =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.xds_client.resource_updates_valid",
         "EXPERIMENTAL.  A counter of resources received that were considered "
         "valid.  The counter will be incremented even for resources that "
         "have not changed.",
-        "{resource}",
-        {kMetricLabelTarget, kMetricLabelXdsServer,
-         kMetricLabelXdsResourceType},
-        {}, false);
+        "{resource}", kLabelKeys3, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricResourceUpdatesInvalid =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.xds_client.resource_updates_invalid",
         "EXPERIMENTAL.  A counter of resources received that were considered "
         "invalid.",
-        "{resource}",
-        {kMetricLabelTarget, kMetricLabelXdsServer,
-         kMetricLabelXdsResourceType},
-        {}, false);
+        "{resource}", kLabelKeys3, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricServerFailure =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -121,7 +121,7 @@ const auto kMetricServerFailure =
         "unhealthy.  A server goes unhealthy when we have a connectivity "
         "failure or when the ADS stream fails without seeing a response "
         "message, as per gRFC A57.",
-        "{failure}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
+        "{failure}", kLabelKeys2, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricConnected =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(

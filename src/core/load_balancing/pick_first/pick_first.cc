@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/pick_first/pick_first.h"
 
 #include <inttypes.h>
@@ -40,8 +38,8 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/load_balancing/health_check_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/metrics.h"
@@ -62,6 +60,7 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/health_check_client.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/subchannel_interface.h"
@@ -79,24 +78,27 @@ namespace {
 
 constexpr absl::string_view kPickFirst = "pick_first";
 
+std::array<absl::string_view, 1> kLabelKeys = {kMetricLabelTarget};
+std::array<absl::string_view, 0> kEmptyOptionalLabelKeys = {};
+
 const auto kMetricDisconnections =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.disconnections",
         "EXPERIMENTAL.  Number of times the selected subchannel becomes "
         "disconnected.",
-        "{disconnection}", {kMetricLabelTarget}, {}, false);
+        "{disconnection}", kLabelKeys, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricConnectionAttemptsSucceeded =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_succeeded",
-        "EXPERIMENTAL.  Number of successful connection attempts.",
-        "{attempt}", {kMetricLabelTarget}, {}, false);
+        "EXPERIMENTAL.  Number of successful connection attempts.", "{attempt}",
+        kLabelKeys, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricConnectionAttemptsFailed =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_failed",
-        "EXPERIMENTAL.  Number of failed connection attempts.",
-        "{attempt}", {kMetricLabelTarget}, {}, false);
+        "EXPERIMENTAL.  Number of failed connection attempts.", "{attempt}",
+        kLabelKeys, kEmptyOptionalLabelKeys, false);
 
 class PickFirstConfig final : public LoadBalancingPolicy::Config {
  public:
@@ -777,9 +779,9 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // connection.  Report the failure.
   auto& stats_plugins =
       pick_first_->channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(
-      kMetricDisconnections, 1,
-      {pick_first_->channel_control_helper()->GetTarget()}, {});
+  stats_plugins.AddCounter(kMetricDisconnections, 1,
+                           {pick_first_->channel_control_helper()->GetTarget()},
+                           {});
   // Report IDLE.
   pick_first_->GoIdle();
 }
@@ -874,9 +876,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // We've already started trying to connect.  Any subchannel that
   // reports TF is a connection attempt failure.
   if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    auto& stats_plugins =
-        subchannel_list_->policy_->channel_control_helper()
-            ->GetStatsPluginGroup();
+    auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
+                              ->GetStatsPluginGroup();
     stats_plugins.AddCounter(
         kMetricConnectionAttemptsFailed, 1,
         {subchannel_list_->policy_->channel_control_helper()->GetTarget()}, {});
@@ -1551,8 +1552,8 @@ absl::Status OldPickFirst::UpdateLocked(UpdateArgs args) {
 }
 
 void OldPickFirst::UpdateState(grpc_connectivity_state state,
-                            const absl::Status& status,
-                            RefCountedPtr<SubchannelPicker> picker) {
+                               const absl::Status& status,
+                               RefCountedPtr<SubchannelPicker> picker) {
   state_ = state;
   channel_control_helper()->UpdateState(state, status, std::move(picker));
 }
@@ -1665,9 +1666,8 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
         p->latest_pending_subchannel_list_.get());
   }
   if (subchannel_list_->shutting_down_ || pending_watcher_ == nullptr) return;
-  auto& stats_plugins =
-      subchannel_list_->policy_->channel_control_helper()
-          ->GetStatsPluginGroup();
+  auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
+                            ->GetStatsPluginGroup();
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get() ||
@@ -1851,7 +1851,8 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   }
 }
 
-void OldPickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
+void OldPickFirst::SubchannelList::SubchannelData::
+    RequestConnectionWithTimer() {
   GPR_ASSERT(connectivity_state_.has_value());
   if (connectivity_state_ == GRPC_CHANNEL_IDLE) {
     subchannel_->RequestConnection();
@@ -1898,7 +1899,8 @@ void OldPickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() 
   }
 }
 
-void OldPickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked() {
+void OldPickFirst::SubchannelList::SubchannelData::
+    ProcessUnselectedReadyLocked() {
   OldPickFirst* p = subchannel_list_->policy_.get();
   // Cancel Happy Eyeballs timer, if any.
   if (subchannel_list_->timer_handle_.has_value()) {
@@ -1965,9 +1967,9 @@ void OldPickFirst::SubchannelList::SubchannelData::ProcessUnselectedReadyLocked(
 // OldPickFirst::SubchannelList
 //
 
-OldPickFirst::SubchannelList::SubchannelList(RefCountedPtr<OldPickFirst> policy,
-                                          EndpointAddressesIterator* addresses,
-                                          const ChannelArgs& args)
+OldPickFirst::SubchannelList::SubchannelList(
+    RefCountedPtr<OldPickFirst> policy, EndpointAddressesIterator* addresses,
+    const ChannelArgs& args)
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace) ? "SubchannelList"
                                                             : nullptr),

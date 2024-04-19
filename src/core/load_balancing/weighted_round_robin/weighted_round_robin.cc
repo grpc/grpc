@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -43,6 +41,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/metrics.h"
@@ -85,12 +84,15 @@ constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
+std::array<absl::string_view, 1> kLabelKeys = {kMetricLabelTarget};
+std::array<absl::string_view, 1> kOptionalLabelKeys = {kMetricLabelLocality};
+
 const auto kMetricRrFallback = GlobalInstrumentsRegistry::RegisterUInt64Counter(
     "grpc.lb.wrr.rr_fallback",
     "EXPERIMENTAL.  Number of scheduler updates in which there were not "
     "enough endpoints with valid weight, which caused the WRR policy to "
     "fall back to RR behavior.",
-    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+    "{update}", kLabelKeys, kOptionalLabelKeys, false);
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -99,14 +101,14 @@ const auto kMetricEndpointWeightNotYetUsable =
         "don't yet have usable weight information (i.e., either the load "
         "report has not yet been received, or it is within the blackout "
         "period).",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", kLabelKeys, kOptionalLabelKeys, false);
 
 const auto kMetricEndpointWeightStale =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_stale",
         "EXPERIMENTAL.  Number of endpoints from each scheduler update whose "
         "latest weight is older than the expiration period.",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", kLabelKeys, kOptionalLabelKeys, false);
 
 const auto kMetricEndpointWeights =
     GlobalInstrumentsRegistry::RegisterDoubleHistogram(

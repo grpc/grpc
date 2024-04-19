@@ -32,12 +32,19 @@ GlobalInstrumentsRegistry::GetInstrumentList() {
   return *instruments;
 }
 
-template <std::size_t M, std::size_t N>
-GlobalInstrumentsRegistry::GlobalUInt64CounterHandle<M, N>
-GlobalInstrumentsRegistry::RegisterUInt64Counter(
+// 1 0
+// 3 0
+// 2 0
+// 4 0
+// 1 1
+
+GlobalInstrumentsRegistry::InstrumentID
+GlobalInstrumentsRegistry::RegisterInstrument(
+    GlobalInstrumentsRegistry::ValueType value_type,
+    GlobalInstrumentsRegistry::InstrumentType instrument_type,
     absl::string_view name, absl::string_view description,
-    absl::string_view unit, std::array<absl::string_view, M> label_keys,
-    std::array<absl::string_view, N> optional_label_keys,
+    absl::string_view unit, absl::Span<const absl::string_view> label_keys,
+    absl::Span<const absl::string_view> optional_label_keys,
     bool enable_by_default) {
   auto& instruments = GetInstrumentList();
   for (const auto& descriptor : instruments) {
@@ -46,11 +53,11 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
           absl::StrFormat("Metric name %s has already been registered.", name));
     }
   }
-  uint32_t index = instruments.size();
+  InstrumentID index = instruments.size();
   GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
-  descriptor.value_type = ValueType::kUInt64;
-  descriptor.instrument_type = InstrumentType::kCounter;
+  descriptor.value_type = value_type;
+  descriptor.instrument_type = instrument_type;
   descriptor.index = index;
   descriptor.enable_by_default = enable_by_default;
   descriptor.name = name;
@@ -60,13 +67,81 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
   instruments.push_back(std::move(descriptor));
-  GlobalUInt64CounterHandle<M, N> handle;
-  handle.index = index;
+  return index;
+}
+
+template <>
+GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<1, 0>
+GlobalInstrumentsRegistry::RegisterUInt64Counter<1, 0>(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, std::array<absl::string_view, 1> label_keys,
+    std::array<absl::string_view, 0> optional_label_keys,
+    bool enable_by_default) {
+  TemplatizedGlobalUInt64CounterHandle<1, 0> handle;
+  handle.index = RegisterInstrument(
+      ValueType::kUInt64, InstrumentType::kCounter, name, description, unit,
+      label_keys, optional_label_keys, enable_by_default);
+  return handle;
+}
+
+template <>
+GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<3, 0>
+GlobalInstrumentsRegistry::RegisterUInt64Counter<3, 0>(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, std::array<absl::string_view, 3> label_keys,
+    std::array<absl::string_view, 0> optional_label_keys,
+    bool enable_by_default) {
+  TemplatizedGlobalUInt64CounterHandle<3, 0> handle;
+  handle.index = RegisterInstrument(
+      ValueType::kUInt64, InstrumentType::kCounter, name, description, unit,
+      label_keys, optional_label_keys, enable_by_default);
+  return handle;
+}
+
+template <>
+GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<2, 0>
+GlobalInstrumentsRegistry::RegisterUInt64Counter<2, 0>(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, std::array<absl::string_view, 2> label_keys,
+    std::array<absl::string_view, 0> optional_label_keys,
+    bool enable_by_default) {
+  TemplatizedGlobalUInt64CounterHandle<2, 0> handle;
+  handle.index = RegisterInstrument(
+      ValueType::kUInt64, InstrumentType::kCounter, name, description, unit,
+      label_keys, optional_label_keys, enable_by_default);
+  return handle;
+}
+
+template <>
+GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<4, 0>
+GlobalInstrumentsRegistry::RegisterUInt64Counter<4, 0>(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, std::array<absl::string_view, 4> label_keys,
+    std::array<absl::string_view, 0> optional_label_keys,
+    bool enable_by_default) {
+  TemplatizedGlobalUInt64CounterHandle<4, 0> handle;
+  handle.index = RegisterInstrument(
+      ValueType::kUInt64, InstrumentType::kCounter, name, description, unit,
+      label_keys, optional_label_keys, enable_by_default);
+  return handle;
+}
+
+template <>
+GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<1, 1>
+GlobalInstrumentsRegistry::RegisterUInt64Counter<1, 1>(
+    absl::string_view name, absl::string_view description,
+    absl::string_view unit, std::array<absl::string_view, 1> label_keys,
+    std::array<absl::string_view, 1> optional_label_keys,
+    bool enable_by_default) {
+  TemplatizedGlobalUInt64CounterHandle<1, 1> handle;
+  handle.index = RegisterInstrument(
+      ValueType::kUInt64, InstrumentType::kCounter, name, description, unit,
+      label_keys, optional_label_keys, enable_by_default);
   return handle;
 }
 
 template <std::size_t M, std::size_t N>
-GlobalInstrumentsRegistry::GlobalDoubleCounterHandle<M, N>
+GlobalInstrumentsRegistry::TemplatizedGlobalDoubleCounterHandle<M, N>
 GlobalInstrumentsRegistry::RegisterDoubleCounter(
     absl::string_view name, absl::string_view description,
     absl::string_view unit, std::array<absl::string_view, M> label_keys,
@@ -93,7 +168,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
   descriptor.optional_label_keys = {optional_label_keys.begin(),
                                     optional_label_keys.end()};
   instruments.push_back(std::move(descriptor));
-  GlobalDoubleCounterHandle<M, N> handle;
+  TemplatizedGlobalDoubleCounterHandle<M, N> handle;
   handle.index = index;
   return handle;
 }

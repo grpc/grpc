@@ -20,8 +20,6 @@
 // to use. A child policy that recognizes the name as a field of its
 // configuration will take further load balancing action on the request.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/rls/rls.h"
 
 #include <inttypes.h>
@@ -65,6 +63,7 @@
 #include <grpc/status.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -125,6 +124,13 @@ constexpr absl::string_view kMetricRlsDataPlaneTarget =
     "grpc.lb.rls.data_plane_target";
 constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
 
+std::array<absl::string_view, 4> kLabelKeys4 = {
+    kMetricLabelTarget, kMetricLabelRlsServerTarget, kMetricRlsDataPlaneTarget,
+    kMetricLabelPickResult};
+std::array<absl::string_view, 2> kLabelKeys2 = {kMetricLabelTarget,
+                                                kMetricLabelRlsServerTarget};
+std::array<absl::string_view, 0> kEmptyOptionalLabelKeys = {};
+
 const auto kMetricCacheSize =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.", "By",
@@ -144,10 +150,7 @@ const auto kMetricDefaultTargetPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.default_target_picks",
         "EXPERIMENTAL.  Number of LB picks sent to the default target.",
-        "{pick}",
-        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
-        {}, false);
+        "{pick}", kLabelKeys4, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricTargetPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -156,17 +159,14 @@ const auto kMetricTargetPicks =
         "if the default target is also returned by the RLS server, RPCs sent "
         "to that target from the cache will be counted in this metric, not "
         "in grpc.rls.default_target_picks.",
-        "{pick}",
-        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
-        {}, false);
+        "{pick}", kLabelKeys4, kEmptyOptionalLabelKeys, false);
 
 const auto kMetricFailedPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.failed_picks",
         "EXPERIMENTAL.  Number of LB picks failed due to either a failed RLS "
         "request or the RLS channel being throttled.",
-        "{pick}", {kMetricLabelTarget, kMetricLabelRlsServerTarget}, {}, false);
+        "{pick}", kLabelKeys2, kEmptyOptionalLabelKeys, false);
 
 constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
@@ -755,7 +755,8 @@ class RlsLb final : public LoadBalancingPolicy {
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
   void MaybeExportPickCount(
-      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+      GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<4, 0>
+          handle,
       absl::string_view target, const PickResult& pick_result);
 
   const std::string instance_uuid_;
@@ -2224,7 +2225,8 @@ void RlsLb::UpdatePickerLocked() {
 }
 
 void RlsLb::MaybeExportPickCount(
-    GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+    GlobalInstrumentsRegistry::TemplatizedGlobalUInt64CounterHandle<4, 0>
+        handle,
     absl::string_view target, const PickResult& pick_result) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
