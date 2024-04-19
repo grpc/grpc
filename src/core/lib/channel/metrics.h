@@ -157,7 +157,6 @@ class CallbackMetricReporter {
 class RegisteredMetricCallback;
 
 // The StatsPlugin interface.
-template <std::size_t M, std::size_t N>
 class StatsPlugin {
  public:
   // A general-purpose way for stats plugin to store per-channel or per-server
