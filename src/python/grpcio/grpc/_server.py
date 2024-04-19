@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import abc
 import collections
 from concurrent import futures
 import contextvars
@@ -122,16 +123,26 @@ class _HandlerCallDetails(
     pass
 
 
-class _Method(object):
+class _Method(abc.ABC):
+    @abc.abstractmethod
+    def name(self) -> Optional[str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def handler(
+        self, handler_call_details: _HandlerCallDetails
+    ) -> Optional[grpc.RpcMethodHandler]:
+        raise NotImplementedError()
+
+
+class _RegisteredMethod(_Method):
     def __init__(
         self,
-        name: Optional[str],
+        name: str,
         registered_handler: Optional[grpc.RpcMethodHandler],
-        generic_handlers: List[grpc.GenericRpcHandler],
     ):
         self._name = name
         self._registered_handler = registered_handler
-        self._generic_handlers = generic_handlers
 
     def name(self) -> Optional[str]:
         return self._name
@@ -139,10 +150,24 @@ class _Method(object):
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
+        return self._registered_handler
+
+
+class _GenericMethod(_Method):
+    def __init__(
+        self,
+        generic_handlers: List[grpc.GenericRpcHandler],
+    ):
+        self._generic_handlers = generic_handlers
+
+    def name(self) -> Optional[str]:
+        return None
+
+    def handler(
+        self, handler_call_details: _HandlerCallDetails
+    ) -> Optional[grpc.RpcMethodHandler]:
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
-        if self._registered_handler:
-            return self._registered_handler
         for generic_handler in self._generic_handlers:
             method_handler = generic_handler.service(handler_call_details)
             if method_handler is not None:
@@ -1239,18 +1264,21 @@ def _process_event_and_continue(
         registered_method_name = None
         if event.tag in state.registered_method_handlers.keys():
             registered_method_name = event.tag
+            method_with_handler = _RegisteredMethod(
+                registered_method_name,
+                state.registered_method_handlers.get(
+                    registered_method_name, None
+                ),
+            )
+        else:
+            method_with_handler = _GenericMethod(
+                state.generic_handlers,
+            )
         with state.lock:
             state.due.remove(event.tag)
             concurrency_exceeded = (
                 state.maximum_concurrent_rpcs is not None
                 and state.active_rpc_count >= state.maximum_concurrent_rpcs
-            )
-            method_with_handler = _Method(
-                registered_method_name,
-                state.registered_method_handlers.get(
-                    registered_method_name, None
-                ),
-                state.generic_handlers,
             )
             rpc_state, rpc_future = _handle_call(
                 event,
