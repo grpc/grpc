@@ -97,7 +97,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
       CHECK(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
-    CHECK_OK(recv_status);
+    CHECK(recv_status.ok());
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();
