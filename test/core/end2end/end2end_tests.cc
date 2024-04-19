@@ -375,7 +375,7 @@ void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
                                            SourceLocation) {
   if (absl::StartsWith(name, "DISABLED_")) return;
   auto& tests = tests_by_suite_[suite];
-  CHECK_EQ(tests.count(name), 0);
+  CHECK_EQ(tests.count(name), 0u);
   tests[name] = std::move(make_test);
 }
 
