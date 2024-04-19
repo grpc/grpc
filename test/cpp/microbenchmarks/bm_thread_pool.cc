@@ -156,7 +156,7 @@ void FanOutCallback(std::shared_ptr<ThreadPool> pool,
     signal.Notify();
     return;
   }
-  DCHECK(local_cnt < params.limit);
+  DCHECK_LT(local_cnt, params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     pool->Run([pool, params, processing_layer, &count, &signal]() {

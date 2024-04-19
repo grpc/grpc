@@ -181,7 +181,7 @@ void FanOutCallback(std::shared_ptr<EventEngine> engine,
     signal.Notify();
     return;
   }
-  DCHECK(local_cnt < params.limit);
+  DCHECK_LT(local_cnt, params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     engine->Run([engine, params, processing_layer, &count, &signal]() {
