@@ -115,8 +115,7 @@ class FakeClientCallTracer : public ClientCallTracer {
   ~FakeClientCallTracer() override {}
   CallAttemptTracer* StartNewAttempt(bool /*is_transparent_retry*/) override {
     auto call_attempt_tracer =
-        grpc_core::MakeRefCounted<FakeClientCallAttemptTracer>(
-            annotation_logger_);
+        MakeRefCounted<FakeClientCallAttemptTracer>(annotation_logger_);
     call_attempt_tracers_.emplace_back(call_attempt_tracer);
     return call_attempt_tracer.release();  // Released in RecordEnd().
   }
@@ -135,8 +134,7 @@ class FakeClientCallTracer : public ClientCallTracer {
 
  private:
   std::vector<std::string>* annotation_logger_;
-  std::vector<grpc_core::RefCountedPtr<FakeClientCallAttemptTracer>>
-      call_attempt_tracers_;
+  std::vector<RefCountedPtr<FakeClientCallAttemptTracer>> call_attempt_tracers_;
 };
 
 #define GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY \
