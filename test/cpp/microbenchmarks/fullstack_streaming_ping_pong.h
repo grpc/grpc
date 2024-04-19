@@ -130,7 +130,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
         need_tags &= ~(1 << i);
       }
 
-      CHECK_OK(recv_status);
+      CHECK(recv_status.ok());
     }
   }
 
@@ -216,7 +216,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
 
-    CHECK_OK(recv_status);
+    CHECK(recv_status.ok());
   }
 
   fixture.reset();
@@ -390,7 +390,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         expect_tags &= ~(1 << i);
       }
 
-      CHECK_OK(recv_status);
+      CHECK(recv_status.ok());
     }
   }
 
