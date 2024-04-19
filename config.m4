@@ -41,8 +41,10 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
+    src/core/channelz/channel_trace.cc \
+    src/core/channelz/channelz.cc \
+    src/core/channelz/channelz_registry.cc \
     src/core/client_channel/backup_poller.cc \
-    src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
     src/core/client_channel/client_channel_plugin.cc \
@@ -476,9 +478,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
     src/core/lib/channel/channel_stack_trace.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
@@ -1383,6 +1382,7 @@ if test "$PHP_GRPC" != "no"; then
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
     -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.64.0dev\""')
 
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
-#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
+#ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H
+#define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H
 
 #include <cstdint>
 #include <map>
@@ -27,7 +27,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -99,4 +99,4 @@ class ChannelzRegistry final {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
+#endif  // GRPC_SRC_CORE_CHANNELZ_CHANNELZ_REGISTRY_H

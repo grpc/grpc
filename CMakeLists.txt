@@ -1819,8 +1819,10 @@ endif()
 
 
 add_library(grpc
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
@@ -2254,9 +2256,6 @@ add_library(grpc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
@@ -2916,8 +2915,10 @@ endif()
 endif()
 
 add_library(grpc_unsecure
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
@@ -3020,9 +3021,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
@@ -5113,6 +5111,9 @@ endif()
 
 
 add_library(grpc_authorization_provider
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -5135,9 +5136,6 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc

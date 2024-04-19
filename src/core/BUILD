@@ -3310,29 +3310,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "client_channel_channelz",
-    srcs = [
-        "client_channel/client_channel_channelz.cc",
-    ],
-    hdrs = [
-        "client_channel/client_channel_channelz.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/strings",
-    ],
-    language = "c++",
-    deps = [
-        "connectivity_state",
-        "json",
-        "//:channelz",
-        "//:gpr",
-        "//:grpc_public_hdrs",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
     name = "service_config_channel_arg_filter",
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",
@@ -5511,7 +5488,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "channel_args",
-        "client_channel_channelz",
         "client_channel_internal_header",
         "closure",
         "connectivity_state",
