@@ -175,7 +175,7 @@ class MessageAllocatorEnd2endTestBase
       stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
-            CHECK_OK(s);
+            CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
