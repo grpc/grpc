@@ -116,6 +116,15 @@ std::string XdsClusterResource::ToString() const {
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
   contents.push_back(absl::StrCat("override_host_statuses=",
                                   override_host_statuses.ToString()));
+  if (!service_telemetry_label.as_string_view().empty()) {
+    contents.push_back(absl::StrCat("service_name_telemetry_label=",
+                                    service_telemetry_label.as_string_view()));
+  }
+  if (!namespace_telemetry_label.as_string_view().empty()) {
+    contents.push_back(
+        absl::StrCat("service_namespace_telemetry_label=",
+                     namespace_telemetry_label.as_string_view()));
+  }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 

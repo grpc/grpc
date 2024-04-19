@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>

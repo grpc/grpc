@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>

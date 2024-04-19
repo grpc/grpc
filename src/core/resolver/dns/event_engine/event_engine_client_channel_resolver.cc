@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
 #include <inttypes.h>
@@ -37,6 +35,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -49,14 +48,14 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 // IWYU pragma: no_include <ratio>
 

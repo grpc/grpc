@@ -33,6 +33,7 @@
 #include "absl/synchronization/notification.h"
 #include "absl/types/span.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

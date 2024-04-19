@@ -45,8 +45,10 @@ class FaultInjectionFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<FaultInjectionFilter> Create(
+  static absl::StatusOr<std::unique_ptr<FaultInjectionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  explicit FaultInjectionFilter(ChannelFilter::Args filter_args);
 
   // Construct a promise for one call.
   class Call {
@@ -61,8 +63,6 @@ class FaultInjectionFilter
   };
 
  private:
-  explicit FaultInjectionFilter(ChannelFilter::Args filter_args);
-
   class InjectionDecision;
   InjectionDecision MakeInjectionDecision(
       const ClientMetadata& initial_metadata);
@@ -70,7 +70,7 @@ class FaultInjectionFilter
   // The relative index of instances of the same filter.
   size_t index_;
   const size_t service_config_parser_index_;
-  std::unique_ptr<Mutex> mu_;
+  Mutex mu_;
   absl::InsecureBitGen abort_rand_generator_ ABSL_GUARDED_BY(mu_);
   absl::InsecureBitGen delay_rand_generator_ ABSL_GUARDED_BY(mu_);
 };

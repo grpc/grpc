@@ -50,9 +50,15 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<AddLabelsFilter> Create(
+  explicit AddLabelsFilter(
+      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+               grpc_core::RefCountedStringValue>
+          labels_to_inject)
+      : labels_to_inject_(std::move(labels_to_inject)) {}
+
+  static absl::StatusOr<std::unique_ptr<AddLabelsFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
-    return AddLabelsFilter(
+    return absl::make_unique<AddLabelsFilter>(
         *args.GetPointer<std::map<
              grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
              grpc_core::RefCountedStringValue>>(GRPC_ARG_LABELS_TO_INJECT));
@@ -73,12 +79,6 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
   }
 
  private:
-  explicit AddLabelsFilter(
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          labels_to_inject)
-      : labels_to_inject_(std::move(labels_to_inject)) {}
-
   const std::map<
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
       grpc_core::RefCountedStringValue>

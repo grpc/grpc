@@ -23,8 +23,8 @@ let package = Package(
   ],
 
   dependencies: [
-    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20230802.0"..<"0.20230803.0"),
-    .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.9.0"..<"0.10.0"),
+    .package(url: "https://github.com/firebase/abseil-cpp-SwiftPM.git", "0.20240116.1"..<"0.20240117.0"),
+    .package(url: "https://github.com/firebase/boringssl-SwiftPM.git", "0.32.0"..<"0.33.0"),
   ],
 
   targets: [
@@ -45,6 +45,7 @@ let package = Package(
         "include/grpc/byte_buffer_reader.h",
         "include/grpc/census.h",
         "include/grpc/compression.h",
+        "include/grpc/credentials.h",
         "include/grpc/event_engine/endpoint_config.h",
         "include/grpc/event_engine/event_engine.h",
         "include/grpc/event_engine/extensible.h",
