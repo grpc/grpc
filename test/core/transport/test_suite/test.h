@@ -86,10 +86,11 @@ class ActionState {
   explicit ActionState(NameAndLocation name_and_location);
 
   State Get() const { return state_; }
-  void Set(State state) {
+  void Set(State state, SourceLocation whence = {}) {
     gpr_log(GPR_INFO, "%s",
             absl::StrCat(StateString(state), " ", name(), " [", step(), "] ",
-                         file(), ":", line())
+                         file(), ":", line(), " @ ", whence.file(), ":",
+                         whence.line())
                 .c_str());
     state_ = state;
   }

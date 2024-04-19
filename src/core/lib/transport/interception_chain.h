@@ -98,8 +98,6 @@ inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
 // guarantees), and so it's usually better to Hijack and examine the metadata.
 class Interceptor : public UnstartedCallDestination {
  protected:
-  using HijackedCall = interception_chain_detail::HijackedCall;
-
   // Returns a promise that resolves to a HijackedCall instance.
   // Hijacking is the process of taking over a call and starting one or more new
   // ones.

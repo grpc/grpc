@@ -53,6 +53,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::Start(
 
 template <typename T>
 Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
+  GPR_ASSERT(input != nullptr);
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
@@ -216,6 +217,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
+  GPR_ASSERT(md != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
     gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
             GetContext<Activity>()->DebugTag().c_str(), this,
@@ -394,9 +396,12 @@ void filters_detail::PipeState::DropPull() {
 
 Poll<StatusFlag> filters_detail::PipeState::PollPush() {
   switch (state_) {
-    case ValueState::kIdle:
     // Read completed and new read started => we see waiting here
     case ValueState::kWaiting:
+      state_ = ValueState::kReady;
+      wait_recv_.Wake();
+      return wait_send_.pending();
+    case ValueState::kIdle:
     case ValueState::kClosed:
       return Success{};
     case ValueState::kQueued:

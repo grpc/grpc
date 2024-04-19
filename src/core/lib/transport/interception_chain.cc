@@ -32,8 +32,6 @@ std::atomic<size_t> InterceptionChainBuilder::next_filter_id_{0};
 ///////////////////////////////////////////////////////////////////////////////
 // HijackedCall
 
-namespace interception_chain_detail {
-
 CallInitiator HijackedCall::MakeCall() {
   auto metadata = Arena::MakePooled<ClientMetadata>();
   *metadata = metadata_->Copy();
@@ -48,7 +46,6 @@ CallInitiator HijackedCall::MakeCallWithMetadata(
   destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }
-}  // namespace interception_chain_detail
 
 namespace {
 class CallStarter final : public UnstartedCallDestination {
@@ -88,8 +85,7 @@ class TerminalInterceptor final : public UnstartedCallDestination {
         "start_call",
         Map(interception_chain_detail::HijackCall(
                 std::move(unstarted_call_handler), destination_, stack_),
-            [](ValueOrFailure<interception_chain_detail::HijackedCall>
-                   hijacked_call) -> StatusFlag {
+            [](ValueOrFailure<HijackedCall> hijacked_call) -> StatusFlag {
               if (!hijacked_call.ok()) return Failure{};
               ForwardCall(hijacked_call.value().original_call_handler(),
                           hijacked_call.value().MakeLastCall());
