@@ -25,7 +25,6 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -142,19 +141,20 @@ const grpc_channel_filter ClientMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ClientMessageSizeFilter, FilterEndpoint::kClient,
                            kFilterExaminesOutboundMessages |
                                kFilterExaminesInboundMessages>("message_size");
+
 const grpc_channel_filter ServerMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
                            kFilterExaminesOutboundMessages |
                                kFilterExaminesInboundMessages>("message_size");
 
-absl::StatusOr<ClientMessageSizeFilter> ClientMessageSizeFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ClientMessageSizeFilter(args);
+absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>>
+ClientMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ClientMessageSizeFilter>(args);
 }
 
-absl::StatusOr<ServerMessageSizeFilter> ServerMessageSizeFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ServerMessageSizeFilter(args);
+absl::StatusOr<std::unique_ptr<ServerMessageSizeFilter>>
+ServerMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ServerMessageSizeFilter>(args);
 }
 
 namespace {

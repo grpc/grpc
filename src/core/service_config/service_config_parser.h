@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_PARSER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <algorithm>
@@ -27,6 +25,8 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/validation_errors.h"

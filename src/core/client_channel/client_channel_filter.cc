@@ -644,7 +644,9 @@ class ClientChannelFilter::SubchannelWrapper final
               chand, this, subchannel_.get());
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
+#ifndef NDEBUG
     GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
+#endif
     if (chand_->channelz_node_ != nullptr) {
       auto* subchannel_node = subchannel_->channelz_node();
       if (subchannel_node != nullptr) {

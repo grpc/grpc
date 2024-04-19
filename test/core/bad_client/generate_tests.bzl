@@ -51,6 +51,9 @@ def grpc_bad_client_tests():
             "//test/core/end2end:cq_verifier",
             "//:grpc_http_filters",
         ],
+        external_deps = [
+            "absl/log:check",
+        ],
     )
     for t, topt in BAD_CLIENT_TESTS.items():
         grpc_cc_test(
@@ -59,6 +62,7 @@ def grpc_bad_client_tests():
             deps = [":bad_client_test"],
             tags = ["bad_client_test"],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
         )

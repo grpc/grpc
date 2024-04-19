@@ -1841,6 +1841,15 @@ struct BaseCallDataMethods {
   }
 };
 
+// The type of object returned by a filter's Create method.
+template <typename T>
+using CreatedType = typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+
+template <typename GrpcChannelOrCallElement>
+inline ChannelFilter* ChannelFilterFromElem(GrpcChannelOrCallElement* elem) {
+  return *static_cast<ChannelFilter**>(elem->channel_data);
+}
+
 template <typename CallData, uint8_t kFlags>
 struct CallDataFilterWithFlagsMethods {
   static absl::Status InitCallElem(grpc_call_element* elem,
@@ -1865,32 +1874,25 @@ struct ChannelFilterMethods {
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,
       NextPromiseFactory next_promise_factory) {
-    return static_cast<ChannelFilter*>(elem->channel_data)
-        ->MakeCallPromise(std::move(call_args),
-                          std::move(next_promise_factory));
+    return ChannelFilterFromElem(elem)->MakeCallPromise(
+        std::move(call_args), std::move(next_promise_factory));
   }
 
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
-    if (!static_cast<ChannelFilter*>(elem->channel_data)
-             ->StartTransportOp(op)) {
+    if (!ChannelFilterFromElem(elem)->StartTransportOp(op)) {
       grpc_channel_next_op(elem, op);
     }
   }
 
   static void PostInitChannelElem(grpc_channel_stack*,
                                   grpc_channel_element* elem) {
-    static_cast<ChannelFilter*>(elem->channel_data)->PostInit();
-  }
-
-  static void DestroyChannelElem(grpc_channel_element* elem) {
-    static_cast<ChannelFilter*>(elem->channel_data)->~ChannelFilter();
+    ChannelFilterFromElem(elem)->PostInit();
   }
 
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info) {
-    if (!static_cast<ChannelFilter*>(elem->channel_data)
-             ->GetChannelInfo(info)) {
+    if (!ChannelFilterFromElem(elem)->GetChannelInfo(info)) {
       grpc_channel_next_get_info(elem, info);
     }
   }
@@ -1904,14 +1906,15 @@ struct ChannelFilterWithFlagsMethods {
     auto status = F::Create(args->channel_args,
                             ChannelFilter::Args(args->channel_stack, elem));
     if (!status.ok()) {
-      static_assert(
-          sizeof(promise_filter_detail::InvalidChannelFilter) <= sizeof(F),
-          "InvalidChannelFilter must fit in F");
-      new (elem->channel_data) promise_filter_detail::InvalidChannelFilter();
+      new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());
     }
-    new (elem->channel_data) F(std::move(*status));
+    new (elem->channel_data) F*(status->release());
     return absl::OkStatus();
+  }
+
+  static void DestroyChannelElem(grpc_channel_element* elem) {
+    CreatedType<F> channel_elem(DownCast<F*>(ChannelFilterFromElem(elem)));
   }
 };
 
@@ -1958,7 +1961,8 @@ MakePromiseBasedFilter(const char* name) {
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name
@@ -2004,7 +2008,8 @@ MakePromiseBasedFilter(const char* name) {
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name
@@ -2046,7 +2051,8 @@ MakePromiseBasedFilter(const char* name) {
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name

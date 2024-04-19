@@ -20,6 +20,7 @@
 
 #include "absl/functional/any_invocable.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
