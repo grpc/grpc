@@ -207,7 +207,9 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
     auto* ops = ops_;
 #endif
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
+#ifndef NDEBUG
     GPR_DEBUG_ASSERT(ignored == ops);
+#endif
 
     if (do_callback) {
       CatchingCallback(func_, ok);

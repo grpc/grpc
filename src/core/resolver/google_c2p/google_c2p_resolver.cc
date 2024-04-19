@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <random>
@@ -31,6 +29,7 @@
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -46,12 +45,12 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "src/core/resolver/resolver.h"
-#include "src/core/resolver/resolver_factory.h"
-#include "src/core/resolver/resolver_registry.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/resolver/resolver_registry.h"
 
 namespace grpc_core {
 
