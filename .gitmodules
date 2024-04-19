@@ -30,7 +30,7 @@
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
-	branch = lts_2020_02_25
+	branch = lts_2021_11_02
 [submodule "third_party/envoy-api"]
 	path = third_party/envoy-api
 	url = https://github.com/envoyproxy/data-plane-api.git
