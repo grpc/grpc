@@ -23,6 +23,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/propagation_bits.h>
@@ -440,8 +442,8 @@ static void on_new_call(void* arg, int success) {
 
 static void request_call(grpc_end2end_proxy* proxy) {
   proxy->new_call = nullptr;
-  CHECK(GRPC_CALL_OK == grpc_server_request_call(
-                                 proxy->server, &proxy->new_call,
+  CHECK(GRPC_CALL_OK ==
+        grpc_server_request_call(proxy->server, &proxy->new_call,
                                  &proxy->new_call_details,
                                  &proxy->new_call_metadata, proxy->cq,
                                  proxy->cq, new_closure(on_new_call, proxy)));
