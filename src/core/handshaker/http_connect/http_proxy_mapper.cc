@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/http_connect/http_proxy_mapper.h"
 
 #include <stdint.h>
@@ -42,6 +40,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
