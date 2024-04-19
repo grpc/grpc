@@ -32,10 +32,10 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"

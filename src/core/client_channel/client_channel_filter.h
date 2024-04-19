@@ -37,6 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
@@ -46,7 +47,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/orphanable.h"
