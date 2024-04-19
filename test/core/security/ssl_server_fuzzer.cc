@@ -15,6 +15,7 @@
 // limitations under the License.
 //
 //
+#include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
@@ -56,7 +57,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   CHECK(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  CHECK_DONT(!error.ok());
+  CHECK(!error.ok());
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {

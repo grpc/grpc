@@ -22,6 +22,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -134,7 +136,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
       MutexLock lock(&state_->mu);
-      CHECK_DONT(!root_cert_error.ok() || !identity_cert_error.ok());
+      CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
       if (!root_cert_error.ok()) {
@@ -143,8 +145,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
       }
       if (!identity_cert_error.ok()) {
         CHECK(grpc_error_get_str(identity_cert_error,
-                                      StatusStrProperty::kDescription,
-                                      &identity_error_str));
+                                 StatusStrProperty::kDescription,
+                                 &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));
