@@ -323,10 +323,10 @@ int main(int argc, char** argv) {
 
   // request a call to the server
   grpc_call* server_call1;
-  CHECK(GRPC_CALL_OK ==
-        grpc_server_request_call(server1, &server_call1, &request_details1,
-                                 &request_metadata1, cq, cq,
-                                 grpc_core::CqVerifier::tag(0x301)));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_server_request_call(server1, &server_call1, &request_details1,
+                                    &request_metadata1, cq, cq,
+                                    grpc_core::CqVerifier::tag(0x301)));
 
   set_resolve_port(port1);
 
@@ -347,9 +347,9 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
   op->flags = 0;
   op++;
-  CHECK(GRPC_CALL_OK ==
-        grpc_call_start_batch(server_call1, ops, (size_t)(op - ops),
-                              grpc_core::CqVerifier::tag(0x302), nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(server_call1, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(0x302), nullptr));
 
   // shutdown first server:
   // we should see a connectivity change and then nothing
@@ -403,10 +403,10 @@ int main(int argc, char** argv) {
 
   // request a call to the server
   grpc_call* server_call2;
-  CHECK(GRPC_CALL_OK ==
-        grpc_server_request_call(server2, &server_call2, &request_details2,
-                                 &request_metadata2, cq, cq,
-                                 grpc_core::CqVerifier::tag(0x401)));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_server_request_call(server2, &server_call2, &request_details2,
+                                    &request_metadata2, cq, cq,
+                                    grpc_core::CqVerifier::tag(0x401)));
 
   // second call should now start
   cqv.Expect(grpc_core::CqVerifier::tag(0x201), true);
@@ -420,9 +420,9 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled2;
   op->flags = 0;
   op++;
-  CHECK(GRPC_CALL_OK ==
-        grpc_call_start_batch(server_call2, ops, (size_t)(op - ops),
-                              grpc_core::CqVerifier::tag(0x402), nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(server_call2, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(0x402), nullptr));
 
   // shutdown second server: we should see nothing
   grpc_server_shutdown_and_notify(server2, cq,
