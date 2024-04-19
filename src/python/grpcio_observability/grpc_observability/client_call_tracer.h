@@ -24,7 +24,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <grpc/support/time.h>
 

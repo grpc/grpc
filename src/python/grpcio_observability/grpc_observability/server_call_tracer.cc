@@ -31,7 +31,7 @@
 #include "absl/time/time.h"
 #include "constants.h"
 #include "observability_util.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <grpc/support/port_platform.h>
 

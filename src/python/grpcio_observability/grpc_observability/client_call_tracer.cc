@@ -23,7 +23,7 @@
 #include "absl/time/clock.h"
 #include "constants.h"
 #include "observability_util.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <grpc/slice.h>
 

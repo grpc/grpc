@@ -27,7 +27,7 @@
 
 #include "absl/strings/string_view.h"
 #include "constants.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <grpc/status.h>
 

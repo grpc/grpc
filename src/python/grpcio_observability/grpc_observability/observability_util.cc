@@ -24,7 +24,7 @@
 #include "absl/types/optional.h"
 #include "client_call_tracer.h"
 #include "constants.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 #include "server_call_tracer.h"
 
 #include <grpc/support/log.h>

@@ -38,7 +38,7 @@ cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
   cdef cppclass ClientCallTracer:
     pass
 
-cdef extern from "python_census_context.h" namespace "grpc_observability":
+cdef extern from "python_observability_context.h" namespace "grpc_observability":
   cdef void EnablePythonCensusStats(bint enable) nogil
   cdef void EnablePythonCensusTracing(bint enable) nogil
 
