@@ -42,6 +42,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

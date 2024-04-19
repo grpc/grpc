@@ -1243,6 +1243,7 @@ grpc_cc_library(
         "gpr",
         "grpc++_base_unsecure",
         "grpc++_codegen_proto",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_security_base",
         "grpc_unsecure",
@@ -2267,6 +2268,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_trace",
         "handshaker",
@@ -2328,6 +2330,14 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): split credentials types into their own source files and targets.
+grpc_cc_library(
+    name = "grpc_core_credentials_header",
+    hdrs = ["include/grpc/credentials.h"],
+    language = "c++",
+    visibility = ["@grpc:core_credentials"],
+)
+
 grpc_cc_library(
     name = "alts_util",
     srcs = [
@@ -2355,6 +2365,7 @@ grpc_cc_library(
     deps = [
         "alts_upb",
         "gpr",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
     ],
 )
@@ -2428,6 +2439,7 @@ grpc_cc_library(
         "grpc",
         "grpc++_codegen_proto",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_credentials_util",
         "grpc_health_upb",
         "grpc_public_hdrs",
@@ -2509,6 +2521,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_health_upb",
         "grpc_public_hdrs",
         "grpc_security_base",
@@ -3858,6 +3871,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_security_base",
         "handshaker",
@@ -3927,6 +3941,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_credentials_util",
         "grpc_security_base",
         "grpc_trace",
@@ -4015,6 +4030,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_security_base",
         "tsi_alts_frame_protector",
         "tsi_base",
@@ -4132,6 +4148,7 @@ grpc_cc_library(
         "config_vars",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_credentials_util",
         "grpc_public_hdrs",
         "grpc_security_base",

@@ -149,6 +149,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -2134,6 +2135,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -4317,6 +4319,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
+  - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/extensible.h
@@ -5485,6 +5488,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: alts_grpc_record_protocol_test
   gtest: true
@@ -5969,6 +5973,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: badreq_bad_client_test
   gtest: true
@@ -5983,6 +5988,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: basic_work_queue_test
   gtest: true
@@ -8266,6 +8272,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: connection_refused_test
   gtest: true
@@ -8466,6 +8473,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -8719,6 +8727,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: empty_batch_test
   gtest: true
@@ -9465,6 +9474,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: fd_posix_test
   gtest: true
@@ -10995,6 +11005,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: headers_bad_client_test
   gtest: true
@@ -11009,6 +11020,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: health_service_end2end_test
   gtest: true
@@ -11513,6 +11525,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: inproc_test
   gtest: true
@@ -13359,6 +13372,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: outlier_detection_lb_config_parser_test
   gtest: true
@@ -17601,6 +17615,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: server_request_call_test
   gtest: true
@@ -18075,6 +18090,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: simple_request_test
   gtest: true
@@ -18285,6 +18301,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -18301,6 +18318,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19020,6 +19038,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: test_core_security_ssl_credentials_test
   gtest: true
@@ -19852,6 +19871,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: uri_parser_test
   gtest: true
@@ -20017,6 +20037,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: windows_endpoint_test
   gtest: true

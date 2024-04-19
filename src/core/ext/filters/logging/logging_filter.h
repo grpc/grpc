@@ -39,24 +39,25 @@ class ClientLoggingFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientLoggingFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ClientLoggingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
+
+  explicit ClientLoggingFilter(std::string default_authority)
+      : default_authority_(std::move(default_authority)) {}
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  explicit ClientLoggingFilter(std::string default_authority)
-      : default_authority_(std::move(default_authority)) {}
-  std::string default_authority_;
+  const std::string default_authority_;
 };
 
 class ServerLoggingFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerLoggingFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServerLoggingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
 
   // Construct a promise for one call.

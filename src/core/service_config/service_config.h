@@ -17,13 +17,12 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"

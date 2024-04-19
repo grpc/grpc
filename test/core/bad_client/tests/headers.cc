@@ -16,8 +16,9 @@
 //
 //
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
@@ -30,9 +31,9 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    CHECK(grpc_completion_queue_next(
+              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
