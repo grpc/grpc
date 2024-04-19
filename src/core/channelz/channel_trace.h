@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
-#define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
+#ifndef GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
+#define GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -134,4 +134,4 @@ class ChannelTrace {
 }  // namespace channelz
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
+#endif  // GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
