@@ -382,7 +382,7 @@ void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
 void CoreEnd2endTestRegistry::RegisterSuite(
     absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
     SourceLocation) {
-  CHECK_EQ(suites_.count(suite), 0);
+  CHECK_EQ(suites_.count(suite), 0u);
   suites_[suite] = std::move(configs);
 }
 
