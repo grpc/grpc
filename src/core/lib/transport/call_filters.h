@@ -1398,10 +1398,10 @@ class CallFilters {
         push_slot() = this;
       }
       ~Push() {
-        if (value_ != nullptr) {
-          state().DropPush();
-        }
         if (filters_ != nullptr) {
+          if (value_ != nullptr) {
+            state().DropPush();
+          }
           GPR_ASSERT(push_slot() == this);
           push_slot() = nullptr;
         }
