@@ -105,16 +105,19 @@ struct MockPromiseEndpoint {
 auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   return Loop([initiator, num_messages]() mutable {
     bool has_message = (num_messages > 0);
-    return If(has_message,
-              Seq(initiator.PushMessage(Arena::MakePooled<Message>()),
-                  [&num_messages]() -> LoopCtl<absl::Status> {
-                    --num_messages;
-                    return Continue();
-                  }),
-              [initiator]() mutable -> LoopCtl<absl::Status> {
-                initiator.FinishSends();
-                return absl::OkStatus();
-              });
+    return If(
+        has_message,
+        [initiator, &num_messages]() mutable {
+          return Seq(initiator.PushMessage(Arena::MakePooled<Message>()),
+                     [&num_messages]() -> LoopCtl<absl::Status> {
+                       --num_messages;
+                       return Continue();
+                     });
+        },
+        [initiator]() mutable -> LoopCtl<absl::Status> {
+          initiator.FinishSends();
+          return absl::OkStatus();
+        });
   });
 }
 
