@@ -62,6 +62,7 @@ grpc_cc_library(
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -94,6 +95,7 @@ grpc_cc_library(
     name = "proxy",
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         "//:channel_arg_names",
@@ -159,6 +161,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
