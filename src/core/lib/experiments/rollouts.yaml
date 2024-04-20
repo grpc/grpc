@@ -85,6 +85,8 @@
   default: false
 - name: monitoring_experiment
   default: true
+- name: peer_metadata_hack
+  default: true
 - name: peer_state_based_framing
   default: false
 - name: pending_queue_cap

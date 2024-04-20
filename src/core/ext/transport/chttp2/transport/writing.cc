@@ -571,7 +571,8 @@ class StreamWriteContext {
                                         *send_content_type_);
       }
       // TODO(yashykt): This special casing is ugly.
-      if (peer_metadata_.has_value()) {
+      if (grpc_core::IsPeerMetadataHackEnabled() &&
+          peer_metadata_.has_value()) {
         s_->send_trailing_metadata->Set(grpc_core::XEnvoyPeerMetadata(),
                                         *std::move(peer_metadata_));
       }

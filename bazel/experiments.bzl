@@ -30,6 +30,7 @@ EXPERIMENT_ENABLES = {
     "keepalive_server_fix": "keepalive_server_fix",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "peer_metadata_hack": "peer_metadata_hack",
     "peer_state_based_framing": "peer_state_based_framing",
     "pending_queue_cap": "pending_queue_cap",
     "pick_first_new": "pick_first_new",

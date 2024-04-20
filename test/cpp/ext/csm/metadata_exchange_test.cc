@@ -465,8 +465,10 @@ TEST_P(MetadataExchangeTest, Retries) {
                 data.at(kMetricName)[0].point_data)
                 .count_,
             3);
-  VerifyServiceMeshAttributes(data.at(kMetricName)[0].attributes,
-                              /*is_client=*/true);
+  if (grpc_core::IsPeerMetadataHackEnabled()) {
+    VerifyServiceMeshAttributes(data.at(kMetricName)[0].attributes,
+                                /*is_client=*/true);
+  }
 }
 
 // Creates a serialized slice with labels for metadata exchange based on \a

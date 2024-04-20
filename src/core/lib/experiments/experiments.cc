@@ -65,6 +65,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_peer_metadata_hack =
+    "On a trailers-only response, peer_metadata is copied from headers to "
+    "trailers.";
+const char* const additional_constraints_peer_metadata_hack = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -175,6 +179,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"peer_metadata_hack", description_peer_metadata_hack,
+     additional_constraints_peer_metadata_hack, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -265,6 +271,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_peer_metadata_hack =
+    "On a trailers-only response, peer_metadata is copied from headers to "
+    "trailers.";
+const char* const additional_constraints_peer_metadata_hack = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -375,6 +385,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"peer_metadata_hack", description_peer_metadata_hack,
+     additional_constraints_peer_metadata_hack, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -465,6 +477,10 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_peer_metadata_hack =
+    "On a trailers-only response, peer_metadata is copied from headers to "
+    "trailers.";
+const char* const additional_constraints_peer_metadata_hack = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -575,6 +591,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"peer_metadata_hack", description_peer_metadata_hack,
+     additional_constraints_peer_metadata_hack, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,

@@ -73,6 +73,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
+inline bool IsPeerMetadataHackEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -112,6 +114,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
+inline bool IsPeerMetadataHackEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -152,6 +156,8 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
+inline bool IsPeerMetadataHackEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -190,6 +196,7 @@ enum ExperimentIds {
   kExperimentIdKeepaliveServerFix,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
+  kExperimentIdPeerMetadataHack,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPendingQueueCap,
   kExperimentIdPickFirstNew,
@@ -259,6 +266,10 @@ inline bool IsMonitoringExperimentEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_MULTIPING
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled(kExperimentIdMultiping);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
+inline bool IsPeerMetadataHackEnabled() {
+  return IsExperimentEnabled(kExperimentIdPeerMetadataHack);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() {

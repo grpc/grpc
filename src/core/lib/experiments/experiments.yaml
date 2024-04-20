@@ -131,6 +131,13 @@
   expiry: 2024/06/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: peer_metadata_hack
+  description:
+    On a trailers-only response, peer_metadata is copied from headers to
+    trailers.
+  expiry: 2024/09/30
+  owner: yashkt@google.com
+  test_tags: []
 - name: peer_state_based_framing
   description:
     If set, the max sizes of frames sent to lower layers is controlled based
