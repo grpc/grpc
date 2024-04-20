@@ -79,12 +79,15 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
     bool has_message = (i < num_messages);
     return If(
         has_message,
-        Seq(initiator.PushMessage(Arena::MakePooled<Message>(
-                SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
-            [&i]() -> LoopCtl<absl::Status> {
-              ++i;
-              return Continue();
-            }),
+        [initiator, &i]() mutable {
+          return Seq(
+              initiator.PushMessage(Arena::MakePooled<Message>(
+                  SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
+              [&i]() -> LoopCtl<absl::Status> {
+                ++i;
+                return Continue();
+              });
+        },
         [initiator]() mutable -> LoopCtl<absl::Status> {
           initiator.FinishSends();
           return absl::OkStatus();

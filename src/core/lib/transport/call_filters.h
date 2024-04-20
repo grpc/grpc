@@ -1422,8 +1422,10 @@ class CallFilters {
 
       Poll<StatusFlag> operator()() {
         if (value_ == nullptr) {
-          push_slot() = nullptr;
-          filters_ = nullptr;
+          GPR_ASSERT(filters_ == nullptr);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+            gpr_log(GPR_INFO, "Push[|%p]: already done", this);
+          }
           return Success{};
         }
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
@@ -1456,6 +1458,9 @@ class CallFilters {
                   state().DebugString().c_str());
         }
         GPR_ASSERT(value_ != nullptr);
+        GPR_ASSERT(filters_ != nullptr);
+        push_slot() = nullptr;
+        filters_ = nullptr;
         return std::move(value_);
       }
 
@@ -1495,6 +1500,10 @@ class CallFilters {
       PullMaybe& operator=(PullMaybe&&) = delete;
 
       Poll<ValueOrFailure<absl::optional<T>>> operator()() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMaybe[%p|%p]: %s executor:%d", &state(), this,
+                  state().DebugString().c_str(), executor_.IsRunning());
+        }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
           if (c.ready() && c.value()) {
