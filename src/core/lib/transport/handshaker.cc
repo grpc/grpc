@@ -101,6 +101,11 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
             HandshakerArgsString(&args_).c_str());
   }
   GPR_ASSERT(index_ <= handshakers_.size());
+  if (args_.read_buffer != nullptr) {
+        grpc_slice_buffer_destroy(args_.read_buffer);
+        gpr_free(args_.read_buffer);
+        args_.read_buffer = nullptr;
+  }
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
   // callback.  Otherwise, call the next handshaker.
@@ -120,9 +125,6 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
         grpc_endpoint_destroy(args_.endpoint);
         args_.endpoint = nullptr;
         args_.args = ChannelArgs();
-        grpc_slice_buffer_destroy(args_.read_buffer);
-        gpr_free(args_.read_buffer);
-        args_.read_buffer = nullptr;
       }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
