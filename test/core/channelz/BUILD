@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,28 +14,48 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/client_channel")
+grpc_package(name = "test/core/channel")
 
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "client_channel_test",
-    srcs = ["client_channel_test.cc"],
-    external_deps = ["gtest"],
+    name = "channel_trace_test",
+    srcs = ["channel_trace_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
-        "//:grpc_client_channel",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
         "//src/core:channel_args",
-        "//src/core:subchannel_pool_interface",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:channel_trace_proto_helper",
     ],
 )
 
 grpc_cc_test(
-    name = "retry_throttle_test",
-    srcs = ["retry_throttle_test.cc"],
+    name = "channelz_test",
+    srcs = ["channelz_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:channel_args",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:channel_trace_proto_helper",
+    ],
+)
+
+grpc_cc_test(
+    name = "channelz_registry_test",
+    srcs = ["channelz_registry_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -45,40 +65,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "client_channel_service_config_test",
-    srcs = ["client_channel_service_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "retry_service_config_test",
-    srcs = ["retry_service_config_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//src/core:channel_args",
+        "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
 )

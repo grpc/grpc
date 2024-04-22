@@ -10238,7 +10238,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "test_core_channel_channelz_test",
+    "name": "test_core_channelz_channelz_test",
     "platforms": [
       "linux",
       "mac",
