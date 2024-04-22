@@ -102,9 +102,9 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
   }
   GPR_ASSERT(index_ <= handshakers_.size());
   if (args_.read_buffer != nullptr) {
-        grpc_slice_buffer_destroy(args_.read_buffer);
-        gpr_free(args_.read_buffer);
-        args_.read_buffer = nullptr;
+    grpc_slice_buffer_destroy(args_.read_buffer);
+    gpr_free(args_.read_buffer);
+    args_.read_buffer = nullptr;
   }
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
