@@ -87,6 +87,9 @@ CORE_END2END_TEST(RetryHttp2Test, BadPing) {
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
 CORE_END2END_TEST(RetryHttp2Test, PingsWithoutData) {
+  if (IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP() << "pings are not limited if this experiment is enabled";
+  }
   // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
   // so that the transport will throttle the excess pings.
   InitClient(ChannelArgs()

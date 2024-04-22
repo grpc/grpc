@@ -83,6 +83,8 @@
   default: false
 - name: keepalive_server_fix
   default: false
+- name: max_pings_wo_data_throttle
+  default: false
 - name: monitoring_experiment
   default: true
 - name: peer_state_based_framing

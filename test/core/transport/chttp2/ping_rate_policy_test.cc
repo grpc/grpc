@@ -19,6 +19,7 @@
 
 #include "gtest/gtest.h"
 
+#include "src/core/lib/experiments/experiments.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
@@ -48,7 +49,28 @@ TEST(PingRatePolicy, ServerCanSendAtStart) {
             SendGranted());
 }
 
+TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
+  if (IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP()
+        << "Pings are not blocked if max_pings_wo_data_throttle is enabled.";
+  }
+  Chttp2PingRatePolicy policy{ChannelArgs(), true};
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
+            TooManyRecentPings());
+  policy.ResetPingsBeforeDataRequired();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
+            SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
+}
+
 TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
+  if (!IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP()
+        << "Throttling behavior is enabled with max_pings_wo_data_throttle.";
+  }
   Chttp2PingRatePolicy policy{ChannelArgs(), true};
   // First ping is allowed.
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
