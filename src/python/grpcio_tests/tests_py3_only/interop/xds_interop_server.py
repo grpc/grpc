@@ -185,10 +185,10 @@ if __name__ == "__main__":
         action="store_true",
     )
     args = parser.parse_args()
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
+    # if args.verbose:
+    logger.setLevel(logging.DEBUG)
+    # else:
+    #     logger.setLevel(logging.INFO)
     if args.secure_mode and args.port == args.maintenance_port:
         raise ValueError(
             "--port and --maintenance_port must not be the same when"

@@ -1448,6 +1448,7 @@ class _Server(grpc.Server):
             for method, method_handler in method_handlers.items()
         }
         for fully_qualified_method in method_to_handlers.keys():
+            import sys; sys.stderr.write(f"  ======= [Py] Calling register_method for {fully_qualified_method}\n"); sys.stderr.flush()
             self._cy_server.register_method(fully_qualified_method)
         _add_registered_method_handlers(self._state, method_to_handlers)
 

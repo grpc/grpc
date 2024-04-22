@@ -57,15 +57,27 @@ def _set_union(a: Iterable, b: Iterable) -> Set:
 
 @contextlib.contextmanager
 def _start_python_with_args(
-    file: str, args: List[str]
+    file: str, args: List[str], with_debug=False,
 ) -> Tuple[subprocess.Popen, tempfile.TemporaryFile, tempfile.TemporaryFile]:
     with tempfile.TemporaryFile(mode="r") as stdout:
         with tempfile.TemporaryFile(mode="r") as stderr:
-            proc = subprocess.Popen(
-                (sys.executable, file) + tuple(args),
-                stdout=stdout,
-                stderr=stderr,
-            )
+            if with_debug:
+                import os
+                new_env = os.environ.copy()
+                new_env["GRPC_VERBOSITY"] = "debug"
+                new_env["GRPC_TRACE"] = "api"
+                proc = subprocess.Popen(
+                    (sys.executable, file) + tuple(args),
+                    stdout=stdout,
+                    stderr=stderr,
+                    env=new_env,
+                )
+            else:
+                proc = subprocess.Popen(
+                    (sys.executable, file) + tuple(args),
+                    stdout=stdout,
+                    stderr=stderr,
+                )
             yield proc, stdout, stderr
 
 
@@ -155,10 +167,9 @@ class XdsInteropClientTest(unittest.TestCase):
 
     def test_configure_consistency(self):
         _, server_port, socket = framework_common.get_socket()
-
         with _start_python_with_args(
             _SERVER_PATH,
-            [f"--port={server_port}", f"--maintenance_port={server_port}", f"--verbose=True"],
+            [f"--port={server_port}", f"--maintenance_port={server_port}"],
         ) as (server, server_stdout, server_stderr):
             # Send RPC to server to make sure it's running.
             logging.info("Sending RPC to server.")
@@ -178,17 +189,17 @@ class XdsInteropClientTest(unittest.TestCase):
                     f"--stats_port={stats_port}",
                     f"--qps={_QPS}",
                     f"--num_channels={_NUM_CHANNELS}",
-                    f"--verbose=True",
                 ],
+                with_debug=True,
             ) as (client, client_stdout, client_stderr):
                 stats_socket.close()
                 try:
                     self._assert_client_consistent(
                         server_port, stats_port, _QPS, _NUM_CHANNELS
                     )
-                except:
                     _dump_streams("server", server_stdout, server_stderr)
                     _dump_streams("client", client_stdout, client_stderr)
+                except:
                     raise
                 finally:
                     server.kill()
