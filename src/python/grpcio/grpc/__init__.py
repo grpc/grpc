@@ -1460,6 +1460,9 @@ class Server(abc.ABC):
 
         This method is only safe to call before the server is started.
 
+        If the same method have both generic and registered handler,
+        registered handler will take precedence.
+
         Args:
           service_name: The service name.
           method_handlers: A dictionary that maps method names to corresponding

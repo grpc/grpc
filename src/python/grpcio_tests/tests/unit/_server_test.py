@@ -23,12 +23,12 @@ from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
 _REQUEST = b""
-_RESPONSE = b""
+_RESPONSE = b"response"
 _REGISTERED_RESPONSE = b"registered_response"
 
 _SERVICE_NAME = "test"
 _UNARY_UNARY = "UnaryUnary"
-_UNARY_UNARY_REGISTERED = "RegisteredUnaryUnary"
+_UNARY_UNARY_REGISTERED = "UnaryUnaryRegistered"
 _UNARY_STREAM = "UnaryStream"
 _STREAM_UNARY = "StreamUnary"
 _STREAM_STREAM = "StreamStream"
@@ -96,6 +96,20 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return _MethodHandler(True, False)
         elif handler_call_details.method == _STREAM_STREAM:
             return _MethodHandler(True, True)
+        elif handler_call_details.method == grpc._common.fully_qualified_method(
+            _SERVICE_NAME, _UNARY_UNARY_REGISTERED
+        ):
+            return _MethodHandler(False, False)
+        else:
+            return None
+
+
+class _GenericHandlerWithRegisteredName(grpc.GenericRpcHandler):
+    def service(self, handler_call_details):
+        if handler_call_details.method == grpc._common.fully_qualified_method(
+            _SERVICE_NAME, _UNARY_UNARY_REGISTERED
+        ):
+            return _MethodHandler(False, False)
         else:
             return None
 
@@ -223,6 +237,28 @@ class ServerHandlerTest(unittest.TestCase):
             _registered_method=True,
         )(_REQUEST)
         self.assertEqual(_RESPONSE, generic_response)
+
+        registered_response = self._channel.unary_unary(
+            grpc._common.fully_qualified_method(
+                _SERVICE_NAME, _UNARY_UNARY_REGISTERED
+            ),
+            _registered_method=True,
+        )(_REQUEST)
+        self.assertEqual(_REGISTERED_RESPONSE, registered_response)
+
+    def test_server_registered_handler_take_precedence(self):
+        # Test if the same method have both generic and registered handler,
+        # registered handler will take precedence.
+        self._server = test_common.test_server()
+        self._server.add_generic_rpc_handlers(
+            (_GenericHandlerWithRegisteredName(),)
+        )
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
+        )
+        port = self._server.add_insecure_port("[::]:0")
+        self._server.start()
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
 
         registered_response = self._channel.unary_unary(
             grpc._common.fully_qualified_method(
