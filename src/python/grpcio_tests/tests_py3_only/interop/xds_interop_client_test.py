@@ -190,7 +190,6 @@ class XdsInteropClientTest(unittest.TestCase):
                     f"--qps={_QPS}",
                     f"--num_channels={_NUM_CHANNELS}",
                 ],
-                with_debug=True,
             ) as (client, client_stdout, client_stderr):
                 stats_socket.close()
                 try:
