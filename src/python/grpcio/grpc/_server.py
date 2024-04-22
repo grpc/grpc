@@ -1261,6 +1261,7 @@ def _process_event_and_continue(
         event.tag is _REQUEST_CALL_TAG
         or event.tag in state.registered_method_handlers.keys()
     ):
+        import sys; sys.stderr.write(f"  ======= [Py] handle event with tag: {event.tag}\n"); sys.stderr.flush()
         registered_method_name = None
         if event.tag in state.registered_method_handlers.keys():
             registered_method_name = event.tag

@@ -634,8 +634,8 @@ if __name__ == "__main__":
     parser.add_argument("--metadata", default="", type=str, help=metadata_help)
     args = parser.parse_args()
     signal.signal(signal.SIGINT, _handle_sigint)
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
+    # if args.verbose:
+    logger.setLevel(logging.DEBUG)
     if args.log_file:
         file_handler = logging.FileHandler(args.log_file, mode="a")
         file_handler.setFormatter(formatter)
