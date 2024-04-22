@@ -67,6 +67,30 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         data_endpoint_.Write(std::move(buffers.data)));
   }
 
+  void SerializeFrameIntoBuffers(const FrameInterface& frame,
+                                 SliceBuffer& control_buffer,
+                                 SliceBuffer& data_buffer) {
+    auto buffers = frame.Serialize(&encoder_);
+    if (grpc_chaotic_good_trace.enabled()) {
+      gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
+              ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+                  .value_or("<<unknown peer address>>")
+                  .c_str(),
+              frame.ToString().c_str());
+    }
+    buffers.control.MoveFirstNBytesIntoSliceBuffer(buffers.control.Length(),
+                                                   control_buffer);
+    buffers.data.MoveFirstNBytesIntoSliceBuffer(buffers.data.Length(),
+                                                data_buffer);
+  }
+
+  auto WriteSerializedFrames(SliceBuffer& control_buffer,
+                             SliceBuffer& data_buffer) {
+    return TryJoin<absl::StatusOr>(
+        control_endpoint_.Write(std::move(control_buffer)),
+        data_endpoint_.Write(std::move(data_buffer)));
+  }
+
   // Read frame header and payloads for control and data portions of one frame.
   // Resolves to StatusOr<tuple<FrameHeader, BufferPair>>.
   auto ReadFrameBytes() {

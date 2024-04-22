@@ -175,6 +175,30 @@ TEST(MpscTest, ImmediateSendWorks) {
   activity.Deactivate();
 }
 
+TEST(MpscTest, AllNextReceiveWorks) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6)), true);
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7)), true);
+
+  activity.Activate();
+  auto payloads = NowOrNever(receiver.AllNext());
+  EXPECT_TRUE(payloads.has_value());
+  EXPECT_EQ(payloads.value().size(), 7);
+  int i = 1;
+  for (const auto& payload : *payloads) {
+    EXPECT_EQ(payload, MakePayload(i++));
+  }
+  activity.Deactivate();
+}
+
 }  // namespace
 }  // namespace grpc_core
 

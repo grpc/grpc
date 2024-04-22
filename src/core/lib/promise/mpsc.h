@@ -204,6 +204,27 @@ class MpscReceiver {
     };
   }
 
+  // Return a promise that will resolve to a vector containing all available
+  // items.
+  auto AllNext() {
+    return [this]() -> Poll<std::vector<T>> {
+      if (buffer_it_ == buffer_.end()) {
+        if (center_->PollReceiveBatch(buffer_) && !buffer_.empty()) {
+          return std::move(buffer_);
+        }
+      }
+      if (buffer_it_ != buffer_.end()) {
+        std::vector<T> dest;
+        buffer_it_ = buffer_.begin();
+        while (buffer_it_ != buffer_.end()) {
+          dest.push_back(std::move(*buffer_it_++));
+        }
+        return Poll<std::vector<T>>(std::move(dest));
+      }
+      return Pending{};
+    };
+  }
+
  private:
   // Received items. We move out of here one by one, but don't resize the
   // vector. Instead, when we run out of items, we poll the center for more -

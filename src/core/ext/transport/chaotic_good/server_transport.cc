@@ -54,11 +54,17 @@ auto ChaoticGoodServerTransport::TransportWriteLoop(
     RefCountedPtr<ChaoticGoodTransport> transport) {
   return Loop([this, transport = std::move(transport)] {
     return TrySeq(
-        // Get next outgoing frame.
-        outgoing_frames_.Next(),
+        // Get all the next outgoing frames.
+        outgoing_frames_.AllNext(),
         // Serialize and write it out.
-        [transport = transport.get()](ServerFrame client_frame) {
-          return transport->WriteFrame(GetFrameInterface(client_frame));
+        [transport = transport.get()](std::vector<ServerFrame> server_frame) {
+          SliceBuffer control_buffer;
+          SliceBuffer data_buffer;
+          for (auto& frame : server_frame) {
+            transport->SerializeFrameIntoBuffers(GetFrameInterface(frame),
+                                                 control_buffer, data_buffer);
+          }
+          return transport->WriteSerializedFrames(control_buffer, data_buffer);
         },
         []() -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit loop.
