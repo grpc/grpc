@@ -21037,6 +21037,7 @@ target_include_directories(parsed_metadata_test
 target_link_libraries(parsed_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 

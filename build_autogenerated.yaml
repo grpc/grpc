@@ -13440,6 +13440,7 @@ targets:
   - test/core/transport/parsed_metadata_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: parser_test
   gtest: true

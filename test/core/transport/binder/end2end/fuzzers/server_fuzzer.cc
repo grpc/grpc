@@ -63,8 +63,8 @@ DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
     int requested_calls = 0;
 
     CHECK(GRPC_CALL_OK ==
-               grpc_server_request_call(server, &call1, &call_details1,
-                                        &request_metadata1, cq, cq, tag(1)));
+          grpc_server_request_call(server, &call1, &call_details1,
+                                   &request_metadata1, cq, cq, tag(1)));
     requested_calls++;
 
     grpc_event ev;

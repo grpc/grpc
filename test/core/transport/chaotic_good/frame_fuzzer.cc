@@ -56,7 +56,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
   auto serialized = input.Serialize(&hpack_compressor);
   CHECK(serialized.control.Length() >=
-             24);  // Initial output buffer size is 64 byte.
+        24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
   serialized.control.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
