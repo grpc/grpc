@@ -105,3 +105,18 @@ grpc_cc_test(
 #        "//test/core/util:grpc_test_util",
 #    ],
 #)
+
+grpc_cc_test(
+    name = "http_proxy_mapper_test",
+    srcs = ["http_proxy_mapper_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:channel_args",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:scoped_env_var",
+    ],
+)
