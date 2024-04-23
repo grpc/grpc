@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/channel")
+grpc_package(name = "test/core/channelz")
 
 licenses(["notice"])
 
