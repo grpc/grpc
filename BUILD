@@ -128,6 +128,11 @@ config_setting(
 )
 
 config_setting(
+    name = "visionos",
+    constraint_values = ["//third_party/bazel_platforms/os:visionos"],
+)
+
+config_setting(
     name = "watchos",
     values = {"apple_platform_type": "watchos"},
 )
