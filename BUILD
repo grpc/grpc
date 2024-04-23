@@ -823,6 +823,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
+    visibility = ["@grpc:gpr_public_hdrs"],
 )
 
 grpc_cc_library(
