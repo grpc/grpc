@@ -17,14 +17,13 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

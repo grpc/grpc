@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -36,8 +34,8 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -51,10 +49,11 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/service_config/service_config.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 #if GRPC_ARES == 1
 
@@ -66,12 +65,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
+#include "src/core/service_config/service_config_impl.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6

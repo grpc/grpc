@@ -32,8 +32,11 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -157,9 +160,18 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
-      absl::string_view /* name */,
-      absl::string_view /* default_port */) override {
-    GPR_ASSERT(0);
+      absl::string_view name, absl::string_view default_port) override {
+    // To mimic the resolution delay
+    absl::SleepFor(absl::Seconds(1));
+    if (name == "server") {
+      std::vector<grpc_resolved_address> addrs;
+      grpc_resolved_address addr;
+      memset(&addr, 0, sizeof(addr));
+      addrs.push_back(addr);
+      return addrs;
+    } else {
+      return absl::UnknownError("Resolution failed");
+    }
   }
 
   TaskHandle LookupSRV(

@@ -16,13 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 
 #include <string.h>
 
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/sync.h"

@@ -22,6 +22,7 @@
 
 #include "absl/synchronization/notification.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>

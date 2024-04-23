@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -50,7 +53,7 @@ static void on_metadata_response(void* arg, grpc_error_handle error) {
     fflush(stderr);
   } else {
     char* token;
-    GPR_ASSERT(sync->md_array.size == 1);
+    CHECK_EQ(sync->md_array.size, 1u);
     token = grpc_slice_to_c_string(GRPC_MDVALUE(sync->md_array.md[0]));
     printf("\nGot token: %s\n\n", token);
     gpr_free(token);

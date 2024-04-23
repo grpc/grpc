@@ -105,22 +105,21 @@ struct MockPromiseEndpoint {
 auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
   return Loop([initiator, num_messages]() mutable {
     bool has_message = (num_messages > 0);
-    return If(
-        has_message,
-        Seq(initiator.PushMessage(GetContext<Arena>()->MakePooled<Message>()),
-            [&num_messages]() -> LoopCtl<absl::Status> {
-              --num_messages;
-              return Continue();
-            }),
-        [initiator]() mutable -> LoopCtl<absl::Status> {
-          initiator.FinishSends();
-          return absl::OkStatus();
-        });
+    return If(has_message,
+              Seq(initiator.PushMessage(Arena::MakePooled<Message>()),
+                  [&num_messages]() -> LoopCtl<absl::Status> {
+                    --num_messages;
+                    return Continue();
+                  }),
+              [initiator]() mutable -> LoopCtl<absl::Status> {
+                initiator.FinishSends();
+                return absl::OkStatus();
+              });
   });
 }
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md = GetContext<Arena>()->MakePooled<ClientMetadata>();
+  auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/test"));
   return md;
 }
@@ -178,14 +177,13 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call.handler));
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
+  auto call = MakeCall(TestInitialMetadata(), event_engine().get(),
+                       Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 1);
+                              });
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   call.initiator.SpawnInfallible(
@@ -193,7 +191,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithWriteFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -224,14 +222,13 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call.handler));
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
+  auto call = MakeCall(TestInitialMetadata(), event_engine().get(),
+                       Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 1);
+                              });
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   call.initiator.SpawnInfallible(
@@ -239,7 +236,7 @@ TEST_F(ClientTransportTest, AddOneStreamWithReadFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -278,22 +275,22 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call1 =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call1.handler));
-  auto call2 =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call2.handler));
-  call1.initiator.SpawnGuarded("test-send-1", [initiator =
-                                                   call1.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
-  call2.initiator.SpawnGuarded("test-send-2", [initiator =
-                                                   call2.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
+  auto call1 = MakeCall(TestInitialMetadata(), event_engine().get(),
+                        Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(
+      call1.handler.V2HackToStartCallWithoutACallFilterStack());
+  auto call2 = MakeCall(TestInitialMetadata(), event_engine().get(),
+                        Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(
+      call2.handler.V2HackToStartCallWithoutACallFilterStack());
+  call1.initiator.SpawnGuarded(
+      "test-send-1", [initiator = call1.initiator]() mutable {
+        return SendClientToServerMessages(initiator, 1);
+      });
+  call2.initiator.SpawnGuarded(
+      "test-send-2", [initiator = call2.initiator]() mutable {
+        return SendClientToServerMessages(initiator, 1);
+      });
   StrictMock<MockFunction<void()>> on_done1;
   EXPECT_CALL(on_done1, Call());
   StrictMock<MockFunction<void()>> on_done2;
@@ -303,7 +300,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -319,7 +316,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithWriteFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -350,22 +347,22 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call1 =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call1.handler));
-  auto call2 =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call2.handler));
-  call1.initiator.SpawnGuarded("test-send", [initiator =
-                                                 call1.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
-  call2.initiator.SpawnGuarded("test-send", [initiator =
-                                                 call2.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
+  auto call1 = MakeCall(TestInitialMetadata(), event_engine().get(),
+                        Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(
+      call1.handler.V2HackToStartCallWithoutACallFilterStack());
+  auto call2 = MakeCall(TestInitialMetadata(), event_engine().get(),
+                        Arena::Create(8192, memory_allocator()), true);
+  transport->StartCall(
+      call2.handler.V2HackToStartCallWithoutACallFilterStack());
+  call1.initiator.SpawnGuarded(
+      "test-send", [initiator = call1.initiator]() mutable {
+        return SendClientToServerMessages(initiator, 1);
+      });
+  call2.initiator.SpawnGuarded(
+      "test-send", [initiator = call2.initiator]() mutable {
+        return SendClientToServerMessages(initiator, 1);
+      });
   StrictMock<MockFunction<void()>> on_done1;
   EXPECT_CALL(on_done1, Call());
   StrictMock<MockFunction<void()>> on_done2;
@@ -375,7 +372,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
@@ -391,7 +388,7 @@ TEST_F(ClientTransportTest, AddMultipleStreamWithReadFailed) {
         return Seq(
             initiator.PullServerInitialMetadata(),
             [](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
-              EXPECT_FALSE(md.ok());
+              EXPECT_TRUE(md.ok());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),
