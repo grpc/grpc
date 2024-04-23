@@ -17780,6 +17780,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interception_chain_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -17795,9 +17798,6 @@ add_executable(interception_chain_test
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
