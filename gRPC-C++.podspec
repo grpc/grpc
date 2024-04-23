@@ -175,7 +175,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/impl/status.h',
                       'include/grpcpp/impl/sync.h',
-                      'include/grpcpp/passive_listener.h',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/audit_logging.h',
                       'include/grpcpp/security/auth_context.h',
@@ -226,7 +225,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20240116.1'
+    abseil_version = '~> 1.20240116.2'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -261,8 +260,10 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/client_channel/backup_poller.h',
-                      'src/core/client_channel/client_channel_channelz.h',
+    ss.source_files = 'src/core/channelz/channel_trace.h',
+                      'src/core/channelz/channelz.h',
+                      'src/core/channelz/channelz_registry.h',
+                      'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.h',
                       'src/core/client_channel/client_channel_internal.h',
@@ -901,9 +902,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack_builder.h',
                       'src/core/lib/channel/channel_stack_builder_impl.h',
                       'src/core/lib/channel/channel_stack_trace.h',
-                      'src/core/lib/channel/channel_trace.h',
-                      'src/core/lib/channel/channelz.h',
-                      'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
                       'src/core/lib/channel/metrics.h',
@@ -1551,8 +1549,10 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.h'
 
-    ss.private_header_files = 'src/core/client_channel/backup_poller.h',
-                              'src/core/client_channel/client_channel_channelz.h',
+    ss.private_header_files = 'src/core/channelz/channel_trace.h',
+                              'src/core/channelz/channelz.h',
+                              'src/core/channelz/channelz_registry.h',
+                              'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
                               'src/core/client_channel/client_channel_internal.h',
@@ -2173,9 +2173,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_stack_builder_impl.h',
                               'src/core/lib/channel/channel_stack_trace.h',
-                              'src/core/lib/channel/channel_trace.h',
-                              'src/core/lib/channel/channelz.h',
-                              'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
                               'src/core/lib/channel/metrics.h',

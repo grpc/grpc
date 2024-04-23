@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/server/binder_server.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
@@ -159,7 +159,7 @@ class BinderServerListener : public Server::ListenerInterface {
     on_destroy_done_ = on_destroy_done;
   }
 
-  void Orphan() override { Unref(); }
+  void Orphan() override { delete this; }
 
   ~BinderServerListener() override {
     ExecCtx::Get()->Flush();
@@ -239,8 +239,9 @@ bool AddBinderPort(const std::string& addr, grpc_server* server,
   }
   std::string conn_id = addr.substr(kBinderUriScheme.size());
   Server* core_server = Server::FromC(server);
-  core_server->AddListener(MakeOrphanable<BinderServerListener>(
-      core_server, conn_id, std::move(factory), security_policy));
+  core_server->AddListener(
+      OrphanablePtr<Server::ListenerInterface>(new BinderServerListener(
+          core_server, conn_id, std::move(factory), security_policy)));
   return true;
 }
 

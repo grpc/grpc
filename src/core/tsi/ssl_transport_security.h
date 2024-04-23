@@ -81,9 +81,6 @@ void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache);
 // Decrement reference counter of \a cache.
 void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
 
-// Returns the size of the cache.
-size_t tsi_ssl_session_cache_size(tsi_ssl_session_cache* cache);
-
 // --- tsi_ssl_key_logger object ---
 
 // Experimental SSL Key logging functionality to enable decryption of

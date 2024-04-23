@@ -77,15 +77,9 @@ TEST(CsmChannelTargetSelectorTest, CsmObservabilityOutOfScope) {
       "xds://traffic-director-global.xds.googleapis.com/foo"));
 }
 
-TEST(CsmServerSelectorTest, ChannelArgsWithoutXdsServerArg) {
+TEST(CsmServerSelectorTest, ChannelArgs) {
   auto obs = CsmObservabilityBuilder().BuildAndRegister();
-  EXPECT_FALSE(internal::CsmServerSelector(grpc_core::ChannelArgs()));
-}
-
-TEST(CsmServerSelectorTest, ChannelArgsWithXdsServerArg) {
-  auto obs = CsmObservabilityBuilder().BuildAndRegister();
-  EXPECT_TRUE(internal::CsmServerSelector(
-      grpc_core::ChannelArgs().Set(GRPC_ARG_XDS_ENABLED_SERVER, true)));
+  EXPECT_TRUE(internal::CsmServerSelector(grpc_core::ChannelArgs()));
 }
 
 TEST(CsmServerSelectorTest, CsmObservabilityOutOfScope) {

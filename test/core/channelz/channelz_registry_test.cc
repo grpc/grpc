@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/channelz_registry.h"
+#include "src/core/channelz/channelz_registry.h"
 
 #include <stdlib.h>
 
@@ -25,7 +25,7 @@
 
 #include "gtest/gtest.h"
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
