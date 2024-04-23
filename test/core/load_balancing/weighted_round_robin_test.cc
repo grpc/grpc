@@ -50,7 +50,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "test/core/client_channel/lb_policy/lb_policy_test_lib.h"
+#include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/test_config.h"
 
